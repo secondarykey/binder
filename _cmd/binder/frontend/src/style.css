@@ -1,0 +1,122 @@
+html {
+    background-color: rgba(5, 5, 5, 1);
+    text-align: left;
+    color: white;
+}
+
+body {
+    margin: 0;
+    padding:0;
+    color: white;
+    font-family: "Meiryo","Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+    --wails-draggable:"drag";
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-style: normal;
+    font-weight: 400;
+    src: local(""),
+    url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
+}
+
+#App {
+    margin:0;
+    padding:0;
+    display: flex;
+    width:100%;
+    height: 100vh;
+}
+
+#mainmenu {
+    background-color: #111111;
+    color: #f1f1f1;
+    padding-right:0;
+}
+
+#leftmenu {
+    background-color: #191919;
+    color: #f1f1f1;
+
+    width: 320px;
+    min-width: 320px;
+    height: 100vh;
+}
+
+#expandBar {
+    padding-left:0px;
+    padding-right:0px;
+    background-color: #050505;
+    color: #f1f1f1;
+}
+
+#homeButton {
+  margin-left:0px !important;
+  margin-right:0px !important;
+}
+
+#expandButton {
+  margin-right:0px !important;
+}
+
+#expandIcon {
+  transform: rotate(90deg);
+}
+
+#viewer {
+    width:100%;
+}
+
+#splitScreen {
+  display: flex;
+}
+
+#editorWrapper {
+    position: absolute;
+    top:64px;
+    bottom: 0;
+}
+
+#splitter {
+    --wails-draggable:no-drag;
+    position: absolute;
+    top: 64px;
+    bottom: 0;
+
+    border:5px solid #444444;
+    cursor: ew-resize;
+}
+
+#dataViewer {
+    position: absolute;
+    top: 64px;
+    right:0;
+    bottom: 48px;
+    --wails-draggable:no-drag;
+    overflow: auto;
+    display: flex;
+}
+
+#editor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 48px;
+
+    --wails-draggable:no-drag;
+    background-color: #252525;
+    caret-color: #ffffff;
+
+    border:1 solid #000000;
+
+    padding: 5px;
+    margin: 0px;
+}
+
+.treeText {
+    margin-top: 10px !important;
+    text-align:left;
+}

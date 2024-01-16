@@ -1,0 +1,92 @@
+import { useState } from "react";
+
+import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+
+import {Close} from "../../wailsjs/go/main/App";
+import Editor from "./Editor";
+import Note from "./Note";
+import Data from "./Data";
+/**
+ * 表示部分
+ * 左メニューとのコントロールを基本的に行い、他の処理は他のコンポーネントで行う
+ * @param {*} props 
+ * @returns 
+ */
+function MainViewer(props) {
+
+    function open() {
+        props.onOpen();
+    }
+
+    function exit() {
+        Close();
+    }
+
+    const mode = props.mode;
+    const [editorMode,setEditorMode] = useState("note");
+
+    return (
+    <>
+    {/** タイトルと他を表示 */}
+    <Paper id="viewer">
+      <Toolbar id="mainmenu">
+{/**    メニューを開いてない時だけ表示する */}
+{!props.showMenu &&
+        <IconButton size="large" edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={open}>
+          <MenuIcon />
+        </IconButton>
+}
+
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          {/** ノート選択時はノートID ＋データID */}
+          sample
+        </Typography>
+
+        <IconButton size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={exit}>
+          <CloseIcon />
+        </IconButton>
+
+      </Toolbar>
+
+      {/** ここが分岐点になります 
+        *  選んでいるファイルによって編集可能かどうかを判定
+        *  基本的にノート、データ設定のあるもののみを編集対象にする
+        *
+        * History(最初に表示？)
+        * Editor
+        * Config 
+        */}
+{mode === "binder" &&
+<></>
+}
+
+{mode === "history" &&
+<></>
+}
+
+{mode === "editor" &&
+<>
+  <Editor noteId={props.noteId} dataId={props.dataId} mode={editorMode} />
+</>
+}
+
+{mode === "note" &&
+<>
+  <Note id={props.noteId} onChangeMode={props.onChangeMode}/>
+</>
+}
+
+{mode === "data" &&
+<>
+  <Data id={props.dataId} noteId={props.noteId} onChangeMode={props.onChangeMode}/>
+</>
+}
+    </Paper>
+
+    </>
+    );
+}
+
+export default MainViewer;
