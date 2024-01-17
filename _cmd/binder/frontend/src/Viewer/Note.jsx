@@ -1,7 +1,8 @@
 import { useState } from "react";
 
 import {SelectFile,CreateNote} from "../../wailsjs/go/main/App";
-import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
+import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 /**
  * ノートのメタデータを表示,編集
  * @param {*} props 
@@ -44,14 +45,30 @@ function Note(props) {
 */}
 
   <FormControl>
-    <FormLabel>Note Image
-      <Button onClick={selectFile}>Select</Button>
-    </FormLabel>
-    <TextField value={imageFile}></TextField>
+    <FormLabel>Note Image</FormLabel>
+    <TextField value={imageFile}
+               onClick={selectFile}
+               InputProps={{
+               startAdornment: (
+                 <InputAdornment position="start">
+                   <AttachFileIcon />
+                 </InputAdornment>
+               )}}></TextField>
   </FormControl>
 
   <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
-    <Button variant="contained" onClick={handleSave}>Save</Button>
+    <Button variant="contained" onClick={handleSave}>
+{props.id !== "" &&
+<>
+      Save
+</>
+}
+{props.id === "" &&
+<>
+      Create
+</>
+}
+    </Button>
   </FormControl>
 
 </Grid>

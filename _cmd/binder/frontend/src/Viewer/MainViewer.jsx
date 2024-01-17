@@ -8,6 +8,7 @@ import {Close} from "../../wailsjs/go/main/App";
 import Editor from "./Editor";
 import Note from "./Note";
 import Data from "./Data";
+import Assets from "./Assets";
 /**
  * 表示部分
  * 左メニューとのコントロールを基本的に行い、他の処理は他のコンポーネントで行う
@@ -83,6 +84,13 @@ function MainViewer(props) {
   <Data id={props.dataId} noteId={props.noteId} onChangeMode={props.onChangeMode}/>
 </>
 }
+
+{mode === "assets" &&
+<>
+  <Assets id={props.dataId} noteId={props.noteId} onChangeMode={props.onChangeMode}/>
+</>
+}
+
     </Paper>
 
     </>

@@ -14,7 +14,7 @@ type Datum struct {
 	Updated time.Time
 
 	// not schema
-	Note *Note
+	Note *Note `json:"-"`
 }
 
 func (d *Datum) SetParent(n *Note) {

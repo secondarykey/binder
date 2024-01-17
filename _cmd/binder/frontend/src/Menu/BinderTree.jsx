@@ -16,8 +16,16 @@ function BinderTree(props) {
 
     var currentId = {
         noteId : undefined,
-        dataId : undefined,
-        assets : undefined
+        dataId : undefined
+    }
+
+    const [ids, setCurrentId] = useState(currentId);
+    const setIds = (nId,dId) => {
+      var idObj = {
+        noteId : nId,
+        dataId : dId
+      }
+      setCurrentId(idObj)
     }
 
     //リソースを作成
@@ -45,42 +53,46 @@ function BinderTree(props) {
     const [assetRootEl, setAssetRootEl] = useState(null);
     const assetRootMenu = Boolean(assetRootEl);
 
-    const showMenu = (e,call,noteId,dataId,assets) => {
+    const showMenu = (e,call,noteId,dataId) => {
       e.preventDefault();
       call(e.target);
       e.stopPropagation();
-      currentId.noteId = noteId;
-      currentId.dataId = dataId;
-      currentId.assets = assets;
+     
+      setIds(noteId,dataId);
     }
 
     const closeMenu = (call) => {
-      currentId.noteId = undefined;
-      currentId.dataId = undefined;
-      currentId.assets = undefined;
+      setIds(undefined,undefined);
       call(null);
     };
 
     //ノート作成
-    const handleCreateNote = () => {
-      props.onChangeMode("note","");
-      closeMenu(setNoteRootEl);
+    const handleEditNote = (call) => {
+      props.onChangeMode("note",ids.noteId);
+      closeMenu(call);
     }
 
     //データ作成
-    const handleCreateData = () => {
-      props.onChangeMode("data","","");
-      closeMenu(setDataRootEl);
+    const handleEditData = (call) => {
+      props.onChangeMode("data",ids.dataId,ids.noteId);
+      closeMenu(call);
+    }
+
+    const handleEditAssets = (call) => {
+      props.onChangeMode("assets",ids.dataId,ids.noteId);
+      closeMenu(call);
     }
 
     //ノートを開く処理
-    const handleNoteOpen = (n) => {
+    const handleNoteOpen = (e,n) => {
       props.onChangeMode("editor",n.ID);
+      e.stopPropagation();
     }
 
     //データを開く処理
-    const handleDataOpen = (d) => {
+    const handleDataOpen = (e,d) => {
       props.onChangeMode("editor",d.ID,d.NoteId);
+      e.stopPropagation();
     }
 
     //データを設定
@@ -102,30 +114,40 @@ function BinderTree(props) {
                 defaultExpandIcon={<ChevronRightIcon />} >
 
         {/** ノートの表示 */}
-        <TreeItem nodeId="Notes" label="Notes">
+        <TreeItem nodeId="Notes" label="Notes"
+                  onContextMenu={(e) =>showMenu(e,setNoteRootEl,"","")}>
           {notes.map( (n) => {
             //n.Data から assets データを設定
             var assets = [];
             var data = [];
+            if ( n.Data !== null ) {
+              n.Data.map( (v) => {
+                if ( v.PluginId == "assets" ) {
+                  assets.push(v);
+                } else {
+                  data.push(v);
+                }
+              });
+            }
             return (
               <TreeItem nodeId={n.ID} label={n.Title} 
-                        onDoubleClick={() => handleNoteOpen(n)}
+                        onDoubleClick={(e) => handleNoteOpen(e,n)}
                         onContextMenu={(e) =>showMenu(e,setNoteEl,n.ID)}>
 
                 <TreeItem nodeId={n.ID + "Assets"} label="Assets" 
-                          onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.ID,"",true)}>
+                          onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.ID,"")}>
                   {assets.map( (d) => {
                     return (<>
                       <TreeItem nodeId={d.NoteID + "/" + d.ID} label={d.Name}
-                                onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,d.ID,true)}/>
+                                onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,d.ID)}/>
                     </>);
                   })}
                 </TreeItem>
                 {data.map( (d) => {
                     return (<>
                       <TreeItem nodeId={d.NoteID + "/" + d.ID} label={d.Name} 
-                                onDoubleClick={() => handleDataOpen(d)}
-                                onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,dID,false)}/>
+                                onDoubleClick={(e) => handleDataOpen(e,d)}
+                                onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,dID)}/>
                     </>);
                 })}
               </TreeItem>
@@ -135,21 +157,21 @@ function BinderTree(props) {
 
         {/** データの表示 */}
         <TreeItem nodeId="Data" label="Data" 
-                  onContextMenu={(e) => showMenu(e,setDataRootEl,"","",true)}>
+                  onContextMenu={(e) => showMenu(e,setDataRootEl,"","")}>
           <TreeItem nodeId="Assets" label="Assets"
-                    onContextMenu={(e) => showMenu(e,setAssetRootEl,"","",true)}>
+                    onContextMenu={(e) => showMenu(e,setAssetRootEl,"","")}>
             {dataAssets.map( (d) => {
               return (<>
                 <TreeItem nodeId={d.ID} label={d.Name}
-                          onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID,true)}/>
+                          onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID)}/>
               </>);
             })}
           </TreeItem>
           {dataText.map( (d) => {
             return (<>
               <TreeItem nodeId={d.ID} label={d.Name} 
-                        onDoubleClick={() => handleDataOpen(d)}
-                        onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID,false)}/>
+                        onDoubleClick={(e) => handleDataOpen(e,d)}
+                        onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID)}/>
             </>);
           })}
         </TreeItem>
@@ -171,9 +193,9 @@ function BinderTree(props) {
       */}
     <Menu anchorEl={noteRootEl}
           open={noteRootMenu}
-          onClose={setNoteRootEl}>
+          onClose={() => closeMenu(setNoteRootEl)}>
 
-      <MenuItem onClick={handleCreateNote}>Create Note</MenuItem>
+      <MenuItem onClick={() => handleEditNote(setNoteRootEl)}>Create Note</MenuItem>
 
     </Menu>
 
@@ -185,9 +207,9 @@ function BinderTree(props) {
     <Menu anchorEl={noteEl}
           open={noteMenu}
           onClose={() => closeMenu(setNoteEl)}>
-      <MenuItem onClick={handleCreateNote}>Edit</MenuItem>
-      <MenuItem onClick={handleCreateData}>Import Assets</MenuItem>
-      <MenuItem onClick={handleCreateData}>Add Data</MenuItem>
+      <MenuItem onClick={() => handleEditNote(setNoteEl)}>Edit</MenuItem>
+      <MenuItem onClick={() => handleEditAssets(setNoteEl)}>Import Assets</MenuItem>
+      <MenuItem onClick={() => handleEditData(setNoteEl)}>Add Data</MenuItem>
     </Menu>
 
     {/** データのメニュー 
@@ -197,8 +219,8 @@ function BinderTree(props) {
     <Menu anchorEl={dataRootEl}
           open={dataRootMenu}
           onClose={() => closeMenu(setDataRootEl)}>
-      <MenuItem onClick={handleCreateData}>Import Assets</MenuItem>
-      <MenuItem onClick={handleCreateData}>Add Data</MenuItem>
+      <MenuItem onClick={() => handleEditAssets(setDataRootEl)}>Import Assets</MenuItem>
+      <MenuItem onClick={() => handleEditData(setDataRootEl)}>Add Data</MenuItem>
     </Menu>
 
     {/** データ個別のメニュー 
@@ -207,14 +229,14 @@ function BinderTree(props) {
     <Menu anchorEl={dataEl}
           open={dataMenu}
           onClose={() => closeMenu(setDataEl)}>
-      <MenuItem onClick={handleCreateNote}>Edit</MenuItem>
+      <MenuItem onClick={() => handleEditData(setDataEl)}>Edit</MenuItem>
     </Menu>
 
     {/** アセットのメニュー */}
     <Menu anchorEl={assetRootEl}
           open={assetRootMenu}
           onClose={() => closeMenu(setAssetRootEl)}>
-      <MenuItem onClick={handleCreateData}>Import</MenuItem>
+      <MenuItem onClick={() => handleEditAssets(setAssetRootEl)}>Import</MenuItem>
     </Menu>
 
     {/** テンプレートのメニューはなし？ */}

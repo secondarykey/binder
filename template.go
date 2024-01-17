@@ -60,7 +60,7 @@ func writeHTML(w io.Writer, b *fs.Binder, file bool, t string, elm string) error
 
 	if t != "index" && t != "list" {
 		tName += "note.tmpl"
-		assets := "../assets"
+		assets = "../assets"
 		home = "../"
 	} else {
 		tName += t + ".tmpl"
