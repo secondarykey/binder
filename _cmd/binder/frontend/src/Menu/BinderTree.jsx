@@ -2,14 +2,17 @@ import { useState,useEffect } from 'react';
 
 import { Menu,MenuItem } from '@mui/material';
 import { TreeView,TreeItem } from '@mui/x-tree-view';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
+import WebAssetIcon from '@mui/icons-material/WebAsset';
+import NoteIcon from '@mui/icons-material/Note';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import HtmlIcon from '@mui/icons-material/Html';
+import FolderIcon from '@mui/icons-material/Folder';
+import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
+import CodeIcon from '@mui/icons-material/Code';
 
 import { GetResource } from '../../wailsjs/go/main/App';
 
 function BinderTree(props) {
-
-    ExpandMoreIcon
 
     const [notes, setNotes] = useState([]);
     const [data, setData] = useState([]);
@@ -109,12 +112,11 @@ function BinderTree(props) {
 
     return (<>
       <TreeView className='treeText'
-                aria-label="binder system navigator"
-                defaultCollapseIcon={<ExpandMoreIcon />}
-                defaultExpandIcon={<ChevronRightIcon />} >
+                aria-label="binder system navigator">
 
         {/** ノートの表示 */}
         <TreeItem nodeId="Notes" label="Notes"
+                  icon={<FolderIcon/>}
                   onContextMenu={(e) =>showMenu(e,setNoteRootEl,"","")}>
           {notes.map( (n) => {
             //n.Data から assets データを設定
@@ -131,10 +133,12 @@ function BinderTree(props) {
             }
             return (
               <TreeItem nodeId={n.ID} label={n.Title} 
+                        icon={<NoteIcon/>}
                         onDoubleClick={(e) => handleNoteOpen(e,n)}
                         onContextMenu={(e) =>showMenu(e,setNoteEl,n.ID)}>
 
                 <TreeItem nodeId={n.ID + "Assets"} label="Assets" 
+                          icon={<WebAssetIcon/>}
                           onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.ID,"")}>
                   {assets.map( (d) => {
                     return (<>
@@ -146,6 +150,7 @@ function BinderTree(props) {
                 {data.map( (d) => {
                     return (<>
                       <TreeItem nodeId={d.NoteID + "/" + d.ID} label={d.Name} 
+                                icon={<TextSnippetIcon/>}
                                 onDoubleClick={(e) => handleDataOpen(e,d)}
                                 onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,dID)}/>
                     </>);
@@ -157,8 +162,10 @@ function BinderTree(props) {
 
         {/** データの表示 */}
         <TreeItem nodeId="Data" label="Data" 
+                  icon={<SnippetFolderIcon/>}
                   onContextMenu={(e) => showMenu(e,setDataRootEl,"","")}>
           <TreeItem nodeId="Assets" label="Assets"
+                    icon={<WebAssetIcon/>}
                     onContextMenu={(e) => showMenu(e,setAssetRootEl,"","")}>
             {dataAssets.map( (d) => {
               return (<>
@@ -170,6 +177,7 @@ function BinderTree(props) {
           {dataText.map( (d) => {
             return (<>
               <TreeItem nodeId={d.ID} label={d.Name} 
+                        icon={<TextSnippetIcon/>}
                         onDoubleClick={(e) => handleDataOpen(e,d)}
                         onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID)}/>
             </>);
@@ -177,11 +185,13 @@ function BinderTree(props) {
         </TreeItem>
 
         {/** テンプレートの表示 */}
-        <TreeItem nodeId="Templates" label="Templates">
-          <TreeItem nodeId="layout" label="Layout" />
-          <TreeItem nodeId="index" label="Home" />
-          <TreeItem nodeId="list" label="PageList" />
-          <TreeItem nodeId="note" label="Note" />
+        <TreeItem nodeId="Templates" label="Templates"
+                  icon={<HtmlIcon/>} >
+          <TreeItem nodeId="layout" label="Layout" icon={<CodeIcon/>}/>
+          <TreeItem nodeId="index" label="Home" 
+                    icon={<CodeIcon/>}/>
+          <TreeItem nodeId="list" label="PageList" icon={<CodeIcon/>}/>
+          <TreeItem nodeId="note" label="Note" icon={<CodeIcon/>}/>
         </TreeItem>
 
       </TreeView>

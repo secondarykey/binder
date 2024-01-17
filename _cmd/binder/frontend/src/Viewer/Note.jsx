@@ -58,16 +58,8 @@ function Note(props) {
 
   <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
     <Button variant="contained" onClick={handleSave}>
-{props.id !== "" &&
-<>
-      Save
-</>
-}
-{props.id === "" &&
-<>
-      Create
-</>
-}
+{props.id !== "" && <> Save </> }
+{props.id === "" && <> Create </> }
     </Button>
   </FormControl>
 
