@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	stdFs "io/fs"
+	"os"
+	"path/filepath"
 	"time"
 
 	uuid "github.com/google/uuid"
@@ -18,8 +20,11 @@ func (b *Binder) ExistsData(id, noteId string) bool {
 
 func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 
+	plugin := "mermaid"
+
 	regFlag := false
 	now := time.Now()
+
 	if d.ID == "" {
 		regFlag = true
 	}
@@ -27,9 +32,30 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 	//プラグイン設定がなく、ファイル指定がある場合
 	// Assetsのファイルなし更新を考慮
 	if f != "" {
+		plugin = "assets"
+
 		if regFlag {
 			//ファイル名からIDを作成
-			//d.ID = fn
+			fn := filepath.Base(f)
+			d.ID = fn
+			d.Name = fn
+		}
+
+		dataF := dataPath(d.ID, d.NoteId)
+		fp, err := b.Create(dataF)
+		if err != nil {
+			return nil, xerrors.Errorf("CreateFile() error: %w", err)
+		}
+		defer fp.Close()
+
+		data, err := os.ReadFile(f)
+		if err != nil {
+			return nil, xerrors.Errorf("ReadFile() error: %w", err)
+		}
+
+		_, err = fp.(io.Writer).Write(data)
+		if err != nil {
+			return nil, xerrors.Errorf("Write() error: %w", err)
 		}
 	}
 
@@ -38,7 +64,7 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		d.ID = uuid.New().String()
 	}
 
-	if regFlag {
+	if regFlag && f == "" {
 		//新規にデータを作成
 		//テキストでない場合
 		n := DataTextFile(d.ID, d.NoteId)
@@ -55,10 +81,7 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		d.Created = now
 	}
 
-	if f != "" {
-		//asset指定の為、そのまま出力ファイルを書き込む
-	}
-
+	d.PluginId = plugin
 	d.Updated = now
 	if regFlag {
 		//DBに追加

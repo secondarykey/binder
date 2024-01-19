@@ -12,16 +12,24 @@ import { GetNote } from "../../wailsjs/go/api/App";
 function Note(props) {
 
   const [name, setName] = useState("");
+  const [imageFile, setImageFile] = useState("");
+
   useEffect( () => {
-    if ( props.id === "" ) return;
+
+    setImageFile("");
+    if ( props.id === "" ) {
+      setName("");
+      return;
+    }
+
     GetNote(props.id).then( (note) => {
       setName(note.title);
     }).catch ( (err) => {
       console.warn(err);
+      props.onMessage("error",err);
     })
-  },[props.id]);
 
-  const [imageFile, setImageFile] = useState("");
+  },[props.id]);
 
   const handleSave = () => {
 
@@ -30,19 +38,26 @@ function Note(props) {
     note.title = name;
 
     EditNote(note,imageFile).then((resp) => {
+      //新規作成時のみ切り替え
       if ( props.id === "" ) {
         props.onChangeMode("editor",resp.id);
       }
+      props.onRefreshTree();
+      props.onMessage("success","update note.")
     }).catch( (err) => {
-      console.log(err);
+      console.warn(err);
+      props.onMessage("error",err);
     });
   }
 
   const selectFile = () => {
     SelectFile("Page Image File","*.png;*.jpg;*.jpeg;*.webp;").then((f) => {
-      setImageFile(f);
+      if ( f != "" ) {
+        setImageFile(f);
+      }
     }).catch( (err) => {
-      console.log(err);
+      console.warn(err);
+      props.onMessage("error",err);
     });
   }
 

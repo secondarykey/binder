@@ -17,6 +17,7 @@ function Data(props) {
       setName(data.name);
     }).catch( (err) => {
       console.warn(err);
+      props.onMessage("error",err);
     })
   },[props.id,props.noteId]);
 
@@ -33,14 +34,7 @@ function Data(props) {
       }
     }).catch( (err) => {
       console.warn(err);
-    });
-  }
-
-  const selectFile = () => {
-    SelectFile("Any File","*").then((f) => {
-      setFile(f);
-    }).catch( (err) => {
-      console.log(err);
+      props.onMessage("error",err);
     });
   }
 

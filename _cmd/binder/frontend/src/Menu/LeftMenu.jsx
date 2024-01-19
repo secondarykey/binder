@@ -56,14 +56,14 @@ function LeftMenu(props) {
 {/** バインダーを開いてない場合や戻ってきた場合に利用 */}
 {mode === "file" &&
 <>
-  <FileMenu />
+  <FileMenu onMessage={props.onMessage} />
 </>
 }
 
 {/** バインダーを開いている場合に利用 */}
 {mode === "binder" &&
     <>
-    <BinderTree onChangeMode={props.onChangeMode} />
+    <BinderTree onChangeMode={props.onChangeMode} onMessage={props.onMessage} redraw={props.redraw}/>
     </>
 }
 

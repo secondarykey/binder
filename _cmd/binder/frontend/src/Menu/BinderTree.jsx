@@ -39,13 +39,14 @@ function BinderTree(props) {
         setNotes(resp.notes);
         setData(resp.data);
       }).catch( (err) => {
-        console.log(err);
+        console.warn(err);
+        props.onMessage("error",err);
       });
     }
 
     useEffect(() => {
       viewResource();
-    },[])
+    },[props.redraw])
 
     const [noteRootEl, setNoteRootEl] = useState(null);
     const noteRootMenu = Boolean(noteRootEl);
@@ -57,6 +58,8 @@ function BinderTree(props) {
     const dataMenu = Boolean(dataEl);
     const [assetRootEl, setAssetRootEl] = useState(null);
     const assetRootMenu = Boolean(assetRootEl);
+    const [assetEl, setAssetEl] = useState(null);
+    const assetMenu = Boolean(assetEl);
 
     const showMenu = (e,call,noteId,dataId) => {
       e.preventDefault();
@@ -111,7 +114,7 @@ function BinderTree(props) {
     var dataText = [];
 
     data.map( (v) => {
-      if ( v.PluginId == "assets" ) {
+      if ( v.pluginId == "assets" ) {
         dataAssets.push(v);
       } else {
         dataText.push(v);
@@ -138,7 +141,7 @@ function BinderTree(props) {
             var data = [];
             if ( n.data !== null ) {
               n.data.map( (v) => {
-                if ( v.PluginId == "assets" ) {
+                if ( v.pluginId == "assets" ) {
                   assets.push(v);
                 } else {
                   data.push(v);
@@ -163,7 +166,7 @@ function BinderTree(props) {
                       <TreeItem nodeId={d.noteId + "/" + d.id} label={d.name}
                                 key={key}
                                 icon={<AttachmentIcon/>}
-                                onContextMenu={(e) =>showMenu(e,setDataEl,d.noteId,d.id)}/>
+                                onContextMenu={(e) =>showMenu(e,setAssetEl,d.noteId,d.id)}/>
                     </>);
                   })}
                 </TreeItem>
@@ -200,7 +203,7 @@ function BinderTree(props) {
                 <TreeItem nodeId={key} label={d.name}
                           key={key}
                           icon={<AttachmentIcon/>}
-                          onContextMenu={(e) =>showMenu(e,setDataEl,"",d.id)}/>
+                          onContextMenu={(e) =>showMenu(e,setAssetEl,"",d.id)}/>
               </>);
             })}
           </TreeItem>
@@ -287,6 +290,13 @@ function BinderTree(props) {
           open={assetRootMenu}
           onClose={() => closeMenu(setAssetRootEl)}>
       <MenuItem onClick={() => handleEditAssets(setAssetRootEl)}>Import</MenuItem>
+    </Menu>
+
+    {/** アセットのメニュー */}
+    <Menu anchorEl={assetEl}
+          open={assetMenu}
+          onClose={() => closeMenu(setAssettEl)}>
+      <MenuItem onClick={() => handleEditAssets(setAssetEl)}>Edit</MenuItem>
     </Menu>
 
     {/** テンプレートのメニューはなし？ */}

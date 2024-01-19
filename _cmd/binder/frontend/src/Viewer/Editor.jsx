@@ -39,6 +39,7 @@ function Editor(props) {
           viewData(resp);
         }).catch( (err)=> {
           console.warn(err);
+          props.onMessage("error",err);
         })
 
       } else if ( m === "note" ) {
@@ -46,7 +47,7 @@ function Editor(props) {
           setText(resp);
           viewHTML(resp);
         }).catch( (err) => {
-          console.warn(err);
+          props.onMessage("error",err);
         });
 
       } else if ( m === "template" ) {
@@ -54,6 +55,7 @@ function Editor(props) {
         //テンプレートを開く
 
         //index 表示
+        props.onMessage("error","not implemented");
 
 
       }
@@ -79,29 +81,30 @@ function Editor(props) {
         elm.contentWindow.location.reload();
     }
 
-    function viewHTML(txt) {
+    const viewHTML = (txt) => {
         var elm = document.querySelector('#htmlViewer');
         var embed = marked.marked(txt);
         CreateNoteHTML(props.noteId,embed).then( (html) => {
           elm.srcdoc = html;
         }).catch( (err) => {
-          console.warn(err);
+          console.warn(err)
+          props.onMessage("error",err);
         })
     }
 
-    function viewData(txt) {
+    const viewData = (txt) => {
       mermaid.parse(txt).then( (flag) => {
         var elm = document.querySelector('#mermaidViewer');
         mermaid.render('svg', txt).then( (data) => {
           elm.innerHTML = data.svg;
         });
       }).catch( (err) => {
-        {/** うまいことエラーを伝達する */}
-        console.log(err);
+        console.warn(err)
+        props.onMessage("error",err);
       });
     }
 
-    function dragSplitter(e) {
+    const dragSplitter = (e) => {
       //typeでやる？
       //824
       //400
@@ -112,7 +115,7 @@ function Editor(props) {
       }
     }
 
-    function changeText(txt) {
+    const changeText = (txt) => {
 
       setText(txt);
       if ( mode === "note" ) {
@@ -122,6 +125,7 @@ function Editor(props) {
           console.log("ok");
         }).catch( (err) => {
           console.warn(err)
+          props.onMessage("error",err);
         })
 
       } else if ( mode === "data" ) {
@@ -131,10 +135,12 @@ function Editor(props) {
           console.log("ok");
         }).catch( (err) => {
           console.warn(err)
+          props.onMessage("error",err);
         })
 
       } else if ( mode === "template" ) {
         //触っているテンプレートで処理が違うので注意
+        props.onMessage("error","not implemented");
       }
     }
 

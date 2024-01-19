@@ -29,7 +29,7 @@ func createDatum(row scanner) (*model.Datum, error) {
 	var pluginId sql.NullString
 
 	var d model.Datum
-	err := row.Scan(&d.ID, &noteId, &d.Name, &detail, &pluginId, &d.Publish, &d.Created, &d.Updated)
+	err := row.Scan(&d.ID, &noteId, &d.Name, &pluginId, &detail, &d.Publish, &d.Created, &d.Updated)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil

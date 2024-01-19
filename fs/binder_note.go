@@ -43,7 +43,6 @@ func (b *Binder) EditNote(n *model.Note, image string) (*model.Note, error) {
 	//画像指定がある場合画像を作成
 	if image != "" {
 
-		//TODO 存在する場合は更新になります
 		fp, err := b.Create(noteImage(n.ID))
 		if err != nil {
 			return nil, xerrors.Errorf("binder Create() error: %w", err)

@@ -3,6 +3,7 @@ import './App.css';
 import './assets/vim.min.js';
 import LeftMenu from './Menu/LeftMenu.jsx';
 import MainViewer from './Viewer/MainViewer.jsx';
+import { Button,Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Popover, Slide, Snackbar, Typography } from '@mui/material';
 
 /**
  * アプリケーション全体
@@ -10,10 +11,39 @@ import MainViewer from './Viewer/MainViewer.jsx';
  */
 function App() {
 
+    function createMessage(type,msg) {
+
+      var obj = {};
+      obj.type = type;
+
+      var idx = msg.indexOf("\n");
+      if ( idx === -1 ) {
+        obj.title = msg;
+        obj.message = "";
+      } else {
+        obj.title = msg.substring(0,idx);
+        obj.message = msg.substring(idx+1);
+      }
+
+      obj.show = false;
+      return obj;
+    }
+
+    //メニューの開閉管理
+    const [msg, setMessage] = useState(createMessage("success",""));
+    const [msgDlg, setMessageDialog] = useState(false);
+
     //メニューの開閉管理
     const [isMenuOpen, showMenu] = useState(true);
+
+    const [redraw, setRedraw] = useState(new Date());
+    const refreshTree = () => {
+      setRedraw(new Date());
+    }
+
     //表示モード指定用
     const [mode, setMode] = useState('note');
+
     //指定ID
     const [dataId, setDataId] = useState(undefined);
     const [noteId, setNoteId] = useState(undefined);
@@ -68,16 +98,75 @@ function App() {
       setMode(mode);
     }
 
+    function SlideTransition(props) {
+      return <Slide {...props} direction="left" />;
+    }
+
+    function hideMessage() {
+      setMessage(createMessage("success",""));
+    }
+
+    function showMessage(type,msg) {
+      var obj = createMessage(type,msg);
+      obj.show = true;
+      setMessage(obj);
+    }
+
+    function closeDialog() {
+      setMessageDialog(false);
+      hideMessage();
+    }
+
+    function showMessageDialog() {
+      if ( msg.message !== "" ) {
+        setMessageDialog(true);
+      }
+    }
+
     return (
     <>
     <div id="App">
 
 {isMenuOpen &&
-      <LeftMenu onClose={hideMenu} onChangeMode={changeMode}/>
+
+      <LeftMenu onClose={hideMenu} onChangeMode={changeMode} onMessage={showMessage}
+                onRefreshTree={refreshTree} redraw={redraw}/>
 }
+
       <MainViewer showMenu={isMenuOpen} onOpen={openMenu} 
                   mode={mode} dataId={dataId} noteId={noteId} templateId={templateId} 
-                  onChangeMode={changeMode} />
+                  onChangeMode={changeMode} 
+                  onMessage={showMessage}
+                  onRefreshTree={refreshTree}/>
+
+      <Snackbar open={msg.show}
+                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+                TransitionComponent={SlideTransition}
+                onClose={hideMessage}
+                autoHideDuration={msg.type === "success" ? 3000 : null}>
+        <Alert severity={msg.type}
+               variant="filled"
+               onClick={showMessageDialog}
+               sx={{ width: '100%' }}>
+          {msg.title}
+        </Alert>
+      </Snackbar>
+
+      <Dialog open={msgDlg}
+              keepMounted
+              onClose={closeDialog}
+              aria-describedby="alert-dialog-slide-description" >
+        <DialogTitle>{msg.title}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-slide-description">
+            {msg.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
     </div>
     </>);
 }

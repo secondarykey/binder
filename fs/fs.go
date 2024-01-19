@@ -51,10 +51,10 @@ func noteHTML(id string) string {
 }
 
 func noteImage(id string) string {
-	return filepath.Join(publishDir, "assets", fmt.Sprintf("%s", id), "index")
+	return filepath.Join(publishDir, "assets", id, "index")
 }
 
-func assetsPath(id string, noteId string) string {
+func dataPath(id string, noteId string) string {
 	if noteId == "" {
 		return filepath.Join(publishDir, "assets", id)
 	}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {SelectFile,EditAssets} from "../../wailsjs/go/api/App";
+import {SelectFile,EditAssets,GetData} from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 /**
@@ -10,8 +10,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
  */
 function Assets(props) {
 
-    const [file, setFile] = useState("");
     const [name, setName] = useState("");
+    const [file, setFile] = useState("");
 
     const handleSave = () => {
 
@@ -24,19 +24,28 @@ function Assets(props) {
         //props.onChangeMode("editor",resp.ID,resp.NoteId);
       }).catch( (err) => {
         console.warn(err);
+        props.onMessage("error",err);
       });
     }
 
     useEffect( () => {
-      console.log(props.id);
-      console.log(props.noteId);
+      if ( props.id === "" ) return;
+      GetData(props.id,props.noteId).then( (data) => {
+        setName(data.name);
+      }).catch( (err) => {
+        console.warn(err);
+        props.onMessage("error",err);
+      })
     },[props.id,props.noteId]);
 
     const selectFile = () => {
       SelectFile("Any File","*").then((f) => {
-        setFile(f);
+        if ( f != "" ) {
+          setFile(f);
+        }
       }).catch( (err) => {
-        console.log(err);
+        console.warn(err);
+        props.onMessage("error",err);
       });
     }
 

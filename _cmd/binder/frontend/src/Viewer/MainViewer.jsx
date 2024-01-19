@@ -17,11 +17,11 @@ import Assets from "./Assets";
  */
 function MainViewer(props) {
 
-    function open() {
+    const open = () => {
         props.onOpen();
     }
 
-    function exit() {
+    const exit = () => {
         Close();
     }
 
@@ -59,7 +59,7 @@ function MainViewer(props) {
         * Editor
         * Config 
         */}
-    <Paper id="viewer">
+      <Paper id="viewer">
 {mode === "binder" &&
 <></>
 }
@@ -70,29 +70,40 @@ function MainViewer(props) {
 
 {mode === "editor" &&
 <>
-  <Editor templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} mode={editorMode} />
+  <Editor templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
+          mode={editorMode} 
+          onRefreshTree={props.onRefreshTree}
+          onMessage={props.onMessage}/>
 </>
 }
 
 {mode === "note" &&
 <>
-  <Note id={props.noteId} onChangeMode={props.onChangeMode}/>
+  <Note id={props.noteId} 
+        onChangeMode={props.onChangeMode} 
+        onRefreshTree={props.onRefreshTree}
+        onMessage={props.onMessage}/>
 </>
 }
 
 {mode === "data" &&
 <>
-  <Data id={props.dataId} noteId={props.noteId} onChangeMode={props.onChangeMode}/>
+  <Data id={props.dataId} noteId={props.noteId} 
+        onChangeMode={props.onChangeMode} 
+        onRefreshTree={props.onRefreshTree}
+        onMessage={props.onMessage}/>
 </>
 }
 
 {mode === "assets" &&
 <>
-  <Assets id={props.dataId} noteId={props.noteId} onChangeMode={props.onChangeMode}/>
+  <Assets id={props.dataId} noteId={props.noteId} 
+          onChangeMode={props.onChangeMode} 
+          onRefreshTree={props.onRefreshTree}
+          onMessage={props.onMessage}/>
 </>
 }
-    </Paper>
-
+      </Paper>
     </Paper>
 
     </>
