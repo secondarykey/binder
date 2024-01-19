@@ -2,6 +2,7 @@ import { useState,useEffect } from 'react';
 
 import { Menu,MenuItem } from '@mui/material';
 import { TreeView,TreeItem } from '@mui/x-tree-view';
+
 import WebAssetIcon from '@mui/icons-material/WebAsset';
 import NoteIcon from '@mui/icons-material/Note';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
@@ -9,8 +10,9 @@ import HtmlIcon from '@mui/icons-material/Html';
 import FolderIcon from '@mui/icons-material/Folder';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CodeIcon from '@mui/icons-material/Code';
+import AttachmentIcon from '@mui/icons-material/Attachment';
 
-import { GetResource } from '../../wailsjs/go/main/App';
+import { GetResource } from '../../wailsjs/go/api/App';
 
 function BinderTree(props) {
 
@@ -34,8 +36,8 @@ function BinderTree(props) {
     //リソースを作成
     const viewResource = () => {
       GetResource().then( (resp) => {
-        setNotes(resp.Notes);
-        setData(resp.Data);
+        setNotes(resp.notes);
+        setData(resp.data);
       }).catch( (err) => {
         console.log(err);
       });
@@ -88,13 +90,19 @@ function BinderTree(props) {
 
     //ノートを開く処理
     const handleNoteOpen = (e,n) => {
-      props.onChangeMode("editor",n.ID);
+      props.onChangeMode("editor",n.id);
       e.stopPropagation();
     }
 
     //データを開く処理
     const handleDataOpen = (e,d) => {
-      props.onChangeMode("editor",d.ID,d.NoteId);
+      props.onChangeMode("editor",d.id,d.noteId);
+      e.stopPropagation();
+    }
+
+    //テンプレートを開く処理
+    const handleTemplateOpen = (e,id) => {
+      props.onChangeMode("template",id);
       e.stopPropagation();
     }
 
@@ -111,19 +119,25 @@ function BinderTree(props) {
     })
 
     return (<>
+
+      {/** Binderの表示 */}
       <TreeView className='treeText'
+                key={"key"}
                 aria-label="binder system navigator">
 
-        {/** ノートの表示 */}
+        {/** ノートの一覧表示 */}
         <TreeItem nodeId="Notes" label="Notes"
+                  key="Notes"
                   icon={<FolderIcon/>}
                   onContextMenu={(e) =>showMenu(e,setNoteRootEl,"","")}>
+
           {notes.map( (n) => {
+
             //n.Data から assets データを設定
             var assets = [];
             var data = [];
-            if ( n.Data !== null ) {
-              n.Data.map( (v) => {
+            if ( n.data !== null ) {
+              n.data.map( (v) => {
                 if ( v.PluginId == "assets" ) {
                   assets.push(v);
                 } else {
@@ -131,55 +145,74 @@ function BinderTree(props) {
                 }
               });
             }
-            return (
-              <TreeItem nodeId={n.ID} label={n.Title} 
+            return (<>
+              {/** ノートの表示 */}
+              <TreeItem key={n.id}
+                        nodeId={n.id} label={n.title} 
                         icon={<NoteIcon/>}
                         onDoubleClick={(e) => handleNoteOpen(e,n)}
-                        onContextMenu={(e) =>showMenu(e,setNoteEl,n.ID)}>
-
-                <TreeItem nodeId={n.ID + "Assets"} label="Assets" 
+                        onContextMenu={(e) =>showMenu(e,setNoteEl,n.id)}>
+                {/** Assetsの表示 */}
+                <TreeItem nodeId={n.id + "Assets"} label="Assets" 
+                          key={"assets/" + n.id}
                           icon={<WebAssetIcon/>}
-                          onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.ID,"")}>
+                          onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.id,"")}>
                   {assets.map( (d) => {
+                    var key= d.noteId + "/" + d.id;
                     return (<>
-                      <TreeItem nodeId={d.NoteID + "/" + d.ID} label={d.Name}
-                                onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,d.ID)}/>
+                      <TreeItem nodeId={d.noteId + "/" + d.id} label={d.name}
+                                key={key}
+                                icon={<AttachmentIcon/>}
+                                onContextMenu={(e) =>showMenu(e,setDataEl,d.noteId,d.id)}/>
                     </>);
                   })}
                 </TreeItem>
+
+                {/** TextData の表示 */}
                 {data.map( (d) => {
+                    var key= d.noteId + "/" + d.id;
                     return (<>
-                      <TreeItem nodeId={d.NoteID + "/" + d.ID} label={d.Name} 
+                      <TreeItem nodeId={key} label={d.name} 
+                                key={key}
                                 icon={<TextSnippetIcon/>}
                                 onDoubleClick={(e) => handleDataOpen(e,d)}
-                                onContextMenu={(e) =>showMenu(e,setDataEl,d.NoteID,dID)}/>
+                                onContextMenu={(e) =>showMenu(e,setDataEl,d.noteId,d.id)}/>
                     </>);
                 })}
               </TreeItem>
-            );
+            </>);
           })}
         </TreeItem>
 
-        {/** データの表示 */}
+        {/** データのディレクトリ表示 */}
         <TreeItem nodeId="Data" label="Data" 
+                  key="Data"
                   icon={<SnippetFolderIcon/>}
                   onContextMenu={(e) => showMenu(e,setDataRootEl,"","")}>
+          {/** Assetsの表示 */}
           <TreeItem nodeId="Assets" label="Assets"
                     icon={<WebAssetIcon/>}
                     onContextMenu={(e) => showMenu(e,setAssetRootEl,"","")}>
+            {/** Assets dataの表示 */}
             {dataAssets.map( (d) => {
+              var key= "assets/" + d.id;
               return (<>
-                <TreeItem nodeId={d.ID} label={d.Name}
-                          onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID)}/>
+                <TreeItem nodeId={key} label={d.name}
+                          key={key}
+                          icon={<AttachmentIcon/>}
+                          onContextMenu={(e) =>showMenu(e,setDataEl,"",d.id)}/>
               </>);
             })}
           </TreeItem>
+          {/** TextData の表示 */}
           {dataText.map( (d) => {
+            var key= "data/" + d.id;
             return (<>
-              <TreeItem nodeId={d.ID} label={d.Name} 
+              <TreeItem nodeId={key} label={d.name} 
+                        key={key}
                         icon={<TextSnippetIcon/>}
                         onDoubleClick={(e) => handleDataOpen(e,d)}
-                        onContextMenu={(e) =>showMenu(e,setDataEl,"",d.ID)}/>
+                        onContextMenu={(e) =>showMenu(e,setDataEl,"",d.id)}/>
             </>);
           })}
         </TreeItem>
@@ -187,11 +220,18 @@ function BinderTree(props) {
         {/** テンプレートの表示 */}
         <TreeItem nodeId="Templates" label="Templates"
                   icon={<HtmlIcon/>} >
-          <TreeItem nodeId="layout" label="Layout" icon={<CodeIcon/>}/>
-          <TreeItem nodeId="index" label="Home" 
+          <TreeItem nodeId="layout" label="Layout" 
+                    onDoubleClick={((e) => handleTemplateOpen(e,"layout"))}
                     icon={<CodeIcon/>}/>
-          <TreeItem nodeId="list" label="PageList" icon={<CodeIcon/>}/>
-          <TreeItem nodeId="note" label="Note" icon={<CodeIcon/>}/>
+          <TreeItem nodeId="index" label="Home" 
+                    onDoubleClick={((e) => handleTemplateOpen(e,"index"))}
+                    icon={<CodeIcon/>}/>
+          <TreeItem nodeId="list" label="PageList" 
+                    onDoubleClick={((e) => handleTemplateOpen(e,"list"))}
+                    icon={<CodeIcon/>}/>
+          <TreeItem nodeId="note" label="Note" 
+                    onDoubleClick={((e) => handleTemplateOpen(e,"note"))}
+                    icon={<CodeIcon/>}/>
         </TreeItem>
 
       </TreeView>

@@ -4,7 +4,7 @@ import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
-import {Close} from "../../wailsjs/go/main/App";
+import {Close} from "../../wailsjs/go/api/App";
 import Editor from "./Editor";
 import Note from "./Note";
 import Data from "./Data";
@@ -31,7 +31,7 @@ function MainViewer(props) {
     return (
     <>
     {/** タイトルと他を表示 */}
-    <Paper id="viewer">
+    <Paper id="mainViewer">
       <Toolbar id="mainmenu">
 {/**    メニューを開いてない時だけ表示する */}
 {!props.showMenu &&
@@ -59,6 +59,7 @@ function MainViewer(props) {
         * Editor
         * Config 
         */}
+    <Paper id="viewer">
 {mode === "binder" &&
 <></>
 }
@@ -69,7 +70,7 @@ function MainViewer(props) {
 
 {mode === "editor" &&
 <>
-  <Editor noteId={props.noteId} dataId={props.dataId} mode={editorMode} />
+  <Editor templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} mode={editorMode} />
 </>
 }
 
@@ -90,6 +91,7 @@ function MainViewer(props) {
   <Assets id={props.dataId} noteId={props.noteId} onChangeMode={props.onChangeMode}/>
 </>
 }
+    </Paper>
 
     </Paper>
 

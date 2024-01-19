@@ -3,15 +3,15 @@ package model
 import "time"
 
 type Note struct {
-	ID      string
-	Title   string
-	Detail  string
-	Publish time.Time
-	Created time.Time
-	Updated time.Time
+	ID      string    `json:"id"`
+	Title   string    `json:"title"`
+	Detail  string    `json:"detail"`
+	Publish time.Time `json:"publish"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
 
 	//non schema
-	Data []*Datum
+	Data []*Datum `json:"data"`
 }
 
 func (n *Note) addDatum(d *Datum) {

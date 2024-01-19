@@ -13,7 +13,7 @@ var configCSV = `name,description,created_date,updated_date
 "Sample Binder","Sample Description",0001-01-01T00:00:00Z,0001-01-01T00:00:00Z
 `
 
-const notesCSV = `note_id,title,detail,publish_date,created_date,updated_date
+const notesCSV = `id,title,detail,publish_date,created_date,updated_date
 "test","日本語","詳細",2018-02-17T07:01:05.0Z,2018-02-17T07:01:05.0Z,2018-02-17T07:01:05.0Z
 `
 

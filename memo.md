@@ -298,3 +298,21 @@ import(remote)
 ### 作業
 
 
+
+
+
+
+### api
+
+//id,title,detail,publish_date,created_date,updated_date
+//id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date
+//日付データは後日修正
+
+OpenXxxx() -> テキストの中身
+SaveXxxx() -> テキストの保存
+GetXxxx() -> メタデータの取得
+EditXxxx() -> メタデータの設定(追加も行う)
+
+PublishXxxxx() -> 出力物の保存
+ConvertXxxxx() -> ID変更
+RemoveXxxx() -> 削除

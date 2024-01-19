@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import {SelectFile,CreateData} from "../../wailsjs/go/main/App";
+import {SelectFile,EditAssets} from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 /**
@@ -14,12 +14,23 @@ function Assets(props) {
     const [name, setName] = useState("");
 
     const handleSave = () => {
-      EditAssets(props.id,props.noteId,name,"",file).then((resp) => {
-        props.onChangeMode("editor",resp.ID,resp.NoteId);
+
+      var data = {};
+      data.id = props.id
+      data.noteId = props.noteId
+      data.name = name
+
+      EditAssets(data,file).then((resp) => {
+        //props.onChangeMode("editor",resp.ID,resp.NoteId);
       }).catch( (err) => {
         console.warn(err);
       });
     }
+
+    useEffect( () => {
+      console.log(props.id);
+      console.log(props.noteId);
+    },[props.id,props.noteId]);
 
     const selectFile = () => {
       SelectFile("Any File","*").then((f) => {

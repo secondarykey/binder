@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"binder/db/model"
 
@@ -98,10 +97,6 @@ func InsertDatum(d *model.Datum) error {
 		return DuplicateKey
 	}
 
-	now := time.Now()
-	d.Created = now
-	d.Updated = now
-
 	s := "INSERT INTO data (id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?,?,?)"
 	stmt, err := db.Prepare(s)
 	if err != nil {
@@ -113,5 +108,20 @@ func InsertDatum(d *model.Datum) error {
 		return xerrors.Errorf("stmt.Exec() error: %w", err)
 	}
 
+	return nil
+}
+
+func UpdateDatum(d *model.Datum) error {
+
+	s := "UPDATE data SET note_id = ?,name = ?,detail = ?,plugin_id = ?,publish_date = ?,created_date = ?,updated_date = ? WHERE id = ?"
+	stmt, err := db.Prepare(s)
+	if err != nil {
+		return xerrors.Errorf("db.Prepare() error: %w", err)
+	}
+
+	_, err = stmt.Exec(d.NoteId, d.Name, d.Detail, d.PluginId, d.Publish, d.Created, d.Updated, d.ID)
+	if err != nil {
+		return xerrors.Errorf("stmt.Exec() error: %w", err)
+	}
 	return nil
 }

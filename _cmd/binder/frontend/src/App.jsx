@@ -10,17 +10,18 @@ import MainViewer from './Viewer/MainViewer.jsx';
  */
 function App() {
 
+    //メニューの開閉管理
+    const [isMenuOpen, showMenu] = useState(true);
     //表示モード指定用
     const [mode, setMode] = useState('note');
     //指定ID
     const [dataId, setDataId] = useState(undefined);
     const [noteId, setNoteId] = useState(undefined);
-    //メニューの開閉管理
-    const [isMenuOpen, showMenu] = useState(true);
+    const [templateId, setTemplateId] = useState(undefined);
 
     useEffect(() => {
       vim.open({
-        debug   : true,
+        debug   : false,
         showMsg : function(msg){
             alert('vim.js say:' + msg);
         }
@@ -49,11 +50,20 @@ function App() {
     const changeMode = (mode,id,parentId) => {
       //指定のあったIDに変更
       if ( parentId === undefined ) {
-        setNoteId(id);
-        setDataId(undefined)
+        if ( mode === "template" ) {
+          mode = "editor"
+          setTemplateId(id);
+          setNoteId(undefined);
+          setDataId(undefined)
+        } else {
+          setNoteId(id);
+          setDataId(undefined)
+          setTemplateId(undefined);
+        }
       } else {
         setNoteId(parentId);
         setDataId(id)
+        setTemplateId(undefined);
       }
       setMode(mode);
     }
@@ -65,8 +75,9 @@ function App() {
 {isMenuOpen &&
       <LeftMenu onClose={hideMenu} onChangeMode={changeMode}/>
 }
-      <MainViewer showMenu={isMenuOpen} onOpen={openMenu} mode={mode} dataId={dataId} noteId={noteId} onChangeMode={changeMode} />
-
+      <MainViewer showMenu={isMenuOpen} onOpen={openMenu} 
+                  mode={mode} dataId={dataId} noteId={noteId} templateId={templateId} 
+                  onChangeMode={changeMode} />
     </div>
     </>);
 }

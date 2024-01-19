@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 
-import {SelectFile,CreateNote} from "../../wailsjs/go/main/App";
+import {SelectFile,EditNote} from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { GetNote } from "../../wailsjs/go/api/App";
 /**
  * ノートのメタデータを表示,編集
  * @param {*} props 
@@ -10,12 +11,28 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
  */
 function Note(props) {
 
-  const [imageFile, setImageFile] = useState("");
   const [name, setName] = useState("");
+  useEffect( () => {
+    if ( props.id === "" ) return;
+    GetNote(props.id).then( (note) => {
+      setName(note.title);
+    }).catch ( (err) => {
+      console.warn(err);
+    })
+  },[props.id]);
+
+  const [imageFile, setImageFile] = useState("");
 
   const handleSave = () => {
-    CreateNote(props.id,name,imageFile).then((resp) => {
-      props.onChangeMode("editor",resp.ID);
+
+    var note = {};
+    note.id = props.id;
+    note.title = name;
+
+    EditNote(note,imageFile).then((resp) => {
+      if ( props.id === "" ) {
+        props.onChangeMode("editor",resp.id);
+      }
     }).catch( (err) => {
       console.log(err);
     });

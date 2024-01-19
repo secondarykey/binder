@@ -1,0 +1,67 @@
+package api
+
+import (
+	"binder"
+	"binder/db"
+	"binder/db/model"
+
+	"fmt"
+)
+
+func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
+
+	if a.current == nil {
+		return nil, fmt.Errorf("Not Open Binder")
+	}
+	//ノートを追加
+	n, err := a.current.EditNote(n, imageName)
+	if err != nil {
+		return nil, fmt.Errorf("EditNote() error\n%+v", err)
+	}
+	return n, nil
+}
+
+func (a *App) GetNote(id string) (*model.Note, error) {
+	if a.current == nil {
+		return nil, fmt.Errorf("Not Open Binder")
+	}
+	n, err := db.GetNote(id)
+	if err != nil {
+		return nil, fmt.Errorf("GetNote() error\n%+v", err)
+	}
+	return n, nil
+}
+
+func (a *App) OpenNote(noteId string) (string, error) {
+
+	if a.current == nil {
+		return "", fmt.Errorf("Not Open Binder")
+	}
+
+	data, err := a.current.ReadNoteText(noteId)
+	if err != nil {
+		return "", fmt.Errorf("ReadNote() error\n%+v", err)
+	}
+	return string(data), nil
+}
+
+func (a *App) SaveNote(noteId string, data string) error {
+
+	if a.current == nil {
+		return fmt.Errorf("Not Open Binder")
+	}
+
+	err := a.current.WriteNoteText(noteId, []byte(data))
+	if err != nil {
+		return fmt.Errorf("ReadNote() error\n%+v", err)
+	}
+	return nil
+}
+
+func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
+	html, err := binder.CreateNoteHTML(a.current, id, elm)
+	if err != nil {
+		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
+	}
+	return html, nil
+}

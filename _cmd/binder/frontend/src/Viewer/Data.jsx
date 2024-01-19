@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 
-import {SelectFile,CreateData} from "../../wailsjs/go/main/App";
+import {SelectFile,EditData,GetData} from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
 /**
  * データのメタ情報を表示、編集
@@ -9,26 +9,42 @@ import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
  */
 function Data(props) {
 
-    const [file, setFile] = useState("");
-    const [name, setName] = useState("");
+  const [name, setName] = useState("");
 
-    const handleSave = () => {
-      CreateData("",props.noteId,name,"").then((resp) => {
-        props.onChangeMode("editor",resp.ID,resp.NoteId);
-      }).catch( (err) => {
-        console.warn(err);
-      });
-    }
+  useEffect( () => {
+    if ( props.id === "" ) return;
+    GetData(props.id,props.noteId).then( (data) => {
+      setName(data.name);
+    }).catch( (err) => {
+      console.warn(err);
+    })
+  },[props.id,props.noteId]);
 
-    const selectFile = () => {
-      SelectFile("Any File","*").then((f) => {
-        setFile(f);
-      }).catch( (err) => {
-        console.log(err);
-      });
-    }
+  const handleSave = () => {
 
-    return (<>
+    var data = {};
+    data.id = props.id
+    data.noteId = props.noteId
+    data.name = name
+
+    EditData(data).then((resp) => {
+      if ( props.id === "" ) {
+        props.onChangeMode("editor",resp.id,resp.noteId);
+      }
+    }).catch( (err) => {
+      console.warn(err);
+    });
+  }
+
+  const selectFile = () => {
+    SelectFile("Any File","*").then((f) => {
+      setFile(f);
+    }).catch( (err) => {
+      console.log(err);
+    });
+  }
+
+  return (<>
 <Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
 
   <FormControl>

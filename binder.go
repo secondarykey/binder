@@ -6,11 +6,23 @@ import (
 	"binder/fs"
 
 	"io"
-	stdFs "io/fs"
 	"strings"
 
 	"golang.org/x/xerrors"
 )
+
+type Binder struct {
+	fileSystem *fs.FileSystem
+	instance   *db.Instance
+}
+
+func New(path string) (*Binder, error) {
+
+	//ファイルシステムのインスタンス
+	//DB のインスタンス
+
+	return nil, nil
+}
 
 // 渡されたパスをBinderに設定する
 // ディレクトリが存在する場合は行えない
@@ -77,8 +89,8 @@ func Load(dir string) (*fs.Binder, error) {
 }
 
 type Resource struct {
-	Notes []*model.Note
-	Data  []*model.Datum
+	Notes []*model.Note  `json:"notes"`
+	Data  []*model.Datum `json:"data"`
 }
 
 func CreateResource() (*Resource, error) {
@@ -138,29 +150,26 @@ func GenerateNoteHTML(b *fs.Binder, id string) error {
 // HTMLファイル出力用
 func generateHTML(b *fs.Binder, id string) error {
 
+	//TODO 取得をfsから行う
 	n := "docs/" + id + ".html"
 	//List時はページャーを作る
 	if id != "index" && id != "list" {
 		dir := "docs/notes/" + id
-		b.Mkdir(dir)
 		n = dir + "/index.html"
 	}
 
 	//list 時にループする
-	var fp stdFs.File
-	var err error
-	if !b.IsExist(n) {
-		fp, err = b.Create(n)
-		if err != nil {
-			return xerrors.Errorf("Create() error: %w", err)
-		}
-	} else {
-		fp, err = b.Open(n)
-		if err != nil {
-			return xerrors.Errorf("Open() error: %w", err)
-		}
+	fp, err := b.Create(n)
+	if err != nil {
+		return xerrors.Errorf("Create() error: %w", err)
 	}
-	err = writeHTML(fp.(io.Writer), b, true, id, "")
+
+	tmpl, err := createTemplate(b, false, id, "")
+	if err != nil {
+		return xerrors.Errorf("writeHTML() error: %w", err)
+	}
+
+	err = writeHTML(fp.(io.Writer), b, tmpl, "")
 	if err != nil {
 		return xerrors.Errorf("writeHTML() error: %w", err)
 	}
@@ -174,8 +183,30 @@ func generateHTML(b *fs.Binder, id string) error {
 
 // HTMLメモリ作成
 func CreateNoteHTML(b *fs.Binder, id string, elm string) (string, error) {
+
+	tmpl, err := createTemplate(b, true, id, "")
+	if err != nil {
+		return "", xerrors.Errorf("createTemplate() error: %w", err)
+	}
+
 	var builder strings.Builder
-	err := writeHTML(&builder, b, false, id, elm)
+	err = writeHTML(&builder, b, tmpl, elm)
+	if err != nil {
+		return "", xerrors.Errorf("generateHTML() error: %w", err)
+	}
+	return builder.String(), nil
+}
+
+// HTMLメモリ作成
+func CreateTemplateHTML(b *fs.Binder, id string, elm string) (string, error) {
+
+	tmpl, err := createTemplate(b, true, id, elm)
+	if err != nil {
+		return "", xerrors.Errorf("createTemplate() error: %w", err)
+	}
+
+	var builder strings.Builder
+	err = writeHTML(&builder, b, tmpl, "")
 	if err != nil {
 		return "", xerrors.Errorf("generateHTML() error: %w", err)
 	}

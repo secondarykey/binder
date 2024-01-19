@@ -147,7 +147,7 @@ func (b *Binder) Add(n string) error {
 }
 
 // ディレクトリを親ごと作成
-func (b *Binder) Mkdir(n string) error {
+func (b *Binder) mkdir(n string) error {
 	err := b.fs.MkdirAll(n, 0666)
 	if err != nil {
 		return xerrors.Errorf("MkdirAll() error: %w", err)
@@ -155,7 +155,7 @@ func (b *Binder) Mkdir(n string) error {
 	return nil
 }
 
-func (b *Binder) IsExist(n string) bool {
+func (b *Binder) isExist(n string) bool {
 	_, err := b.fs.Stat(n)
 	if err != nil {
 		return false
@@ -166,16 +166,21 @@ func (b *Binder) IsExist(n string) bool {
 // ファイルを作成し、Addする
 func (b *Binder) Create(n string) (fs.File, error) {
 
-	//TODO 存在しない場合、可能ならmkdirする
-	//Mkdirをprivateにする
+	index := true
+	if b.isExist(n) {
+		index = false
+	}
+
 	fp, err := b.fs.Create(n)
 	if err != nil {
 		return nil, xerrors.Errorf("Create() error: %w", err)
 	}
 
-	err = b.Add(n)
-	if err != nil {
-		return nil, xerrors.Errorf("Add() error: %w", err)
+	if index {
+		err = b.Add(n)
+		if err != nil {
+			return nil, xerrors.Errorf("Add() error: %w", err)
+		}
 	}
 
 	var f File

@@ -72,12 +72,6 @@ func add(b *Binder, info fs.FileInfo, dir string) error {
 
 	if info.IsDir() {
 
-		err := b.Mkdir(n)
-		if err != nil {
-			return xerrors.Errorf("AddDirectory() error: %w", err)
-		}
-
-		//ディレクトリ作成
 		entries, err := fs.ReadDir(assetsFs, n)
 		if err != nil {
 			return xerrors.Errorf("ReadDir() error: %w", err)

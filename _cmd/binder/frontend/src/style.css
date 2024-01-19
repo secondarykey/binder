@@ -65,8 +65,12 @@ body {
   transform: rotate(90deg);
 }
 
-#viewer {
+#mainViewer {
     width:100%;
+}
+
+#viewer {
+    --wails-draggable:no-drag;
 }
 
 #splitScreen {

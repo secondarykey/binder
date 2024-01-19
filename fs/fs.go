@@ -19,6 +19,11 @@ func init() {
 	}
 }
 
+// 現行のBinderと同じ
+// Binderはルートに移行しておく
+type FileSystem struct {
+}
+
 // Binder File System
 // -> 空のディレクトリは作成時に無理なので気を付ける
 //   - docs/
@@ -46,7 +51,7 @@ func noteHTML(id string) string {
 }
 
 func noteImage(id string) string {
-	return filepath.Join(publishDir, "notes", fmt.Sprintf("%s", id))
+	return filepath.Join(publishDir, "assets", fmt.Sprintf("%s", id), "index")
 }
 
 func assetsPath(id string, noteId string) string {
@@ -63,7 +68,21 @@ func assetsPath(id string, noteId string) string {
 //     note.tmpl
 const templateDir = "templates"
 
-func lauoutTemplate() string {
+func TemplateFileName(id string) string {
+	switch id {
+	case "layoout":
+		return layoutTemplate()
+	case "index":
+		return indexTemplate()
+	case "list":
+		return listTemplate()
+	case "note":
+		return noteTemplate()
+	}
+	return ""
+}
+
+func layoutTemplate() string {
 	return filepath.Join(templateDir, "layout.tmpl")
 }
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import {SelectFile,CreateNote} from "../../wailsjs/go/main/App";
+import {SelectFile,CreateNote} from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
 /**
  * バインダーのメタデータを表示,編集

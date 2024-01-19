@@ -2,7 +2,7 @@ import {useState,useEffect} from "react"
 import { IconButton, Paper, Toolbar } from "@mui/material";
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
-import { OpenData,SaveData,OpenNote, SaveNote,CreateHTML } from "../../wailsjs/go/main/App.js";
+import { OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { Save } from "@mui/icons-material";
 
 /**
@@ -18,8 +18,11 @@ function Editor(props) {
     const [mode,setMode] = useState("");
 
     useEffect(() => {
+
       var m = "data";
-      if ( props.dataId === undefined ) {
+      if ( props.templateId !== undefined ) {
+        m = "template";
+      } if ( props.dataId === undefined ) {
         m = "note";
       }
 
@@ -45,9 +48,18 @@ function Editor(props) {
         }).catch( (err) => {
           console.warn(err);
         });
+
+      } else if ( m === "template" ) {
+
+        //テンプレートを開く
+
+        //index 表示
+
+
       }
+
       setMode(m);
-    },[props.noteId,props.dataId])
+    },[props.noteId,props.dataId,props.templateId])
 
     var menuWidth = 320;
     var splitterW = 10;
@@ -70,7 +82,7 @@ function Editor(props) {
     function viewHTML(txt) {
         var elm = document.querySelector('#htmlViewer');
         var embed = marked.marked(txt);
-        CreateHTML(props.noteId,embed).then( (html) => {
+        CreateNoteHTML(props.noteId,embed).then( (html) => {
           elm.srcdoc = html;
         }).catch( (err) => {
           console.warn(err);
@@ -101,22 +113,28 @@ function Editor(props) {
     }
 
     function changeText(txt) {
+
       setText(txt);
       if ( mode === "note" ) {
-        //TODO タイミングを処理
+
         viewHTML(txt)
-        SaveNote(props.noteId,text).then(() => {
+        SaveNote(props.noteId,txt).then(() => {
           console.log("ok");
         }).catch( (err) => {
           console.warn(err)
         })
+
       } else if ( mode === "data" ) {
+
         viewData(txt);
-        SaveData(props.dataId,props.noteId,text).then(() => {
+        SaveData(props.dataId,props.noteId,txt).then(() => {
           console.log("ok");
         }).catch( (err) => {
           console.warn(err)
         })
+
+      } else if ( mode === "template" ) {
+        //触っているテンプレートで処理が違うので注意
       }
     }
 

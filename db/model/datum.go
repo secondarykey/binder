@@ -3,15 +3,15 @@ package model
 import "time"
 
 type Datum struct {
-	ID       string
-	NoteId   string
-	Name     string
-	Detail   string
-	PluginId string
+	ID       string `json:"id"`
+	NoteId   string `json:"noteId"`
+	Name     string `json:"name"`
+	Detail   string `json:"detail"`
+	PluginId string `json:"pluginId"`
 
-	Publish time.Time
-	Created time.Time
-	Updated time.Time
+	Publish time.Time `json:"publish"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
 
 	// not schema
 	Note *Note `json:"-"`

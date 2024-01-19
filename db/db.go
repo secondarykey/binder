@@ -16,6 +16,18 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
+type Instance struct {
+	db *sql.DB
+}
+
+func New(p string) (*Instance, error) {
+	return nil, nil
+}
+
+func (inst *Instance) Close() error {
+	return inst.db.Close()
+}
+
 func Open(p string) error {
 	var err error
 	db, err = sql.Open("csvq", p)
