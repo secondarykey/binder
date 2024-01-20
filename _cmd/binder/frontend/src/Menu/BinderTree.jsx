@@ -109,6 +109,11 @@ function BinderTree(props) {
       e.stopPropagation();
     }
 
+    const doNothing = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     //データを設定
     var dataAssets = [];
     var dataText = [];
@@ -159,6 +164,7 @@ function BinderTree(props) {
                 <TreeItem nodeId={n.id + "Assets"} label="Assets" 
                           key={"assets/" + n.id}
                           icon={<WebAssetIcon/>}
+                          onDoubleClick={doNothing}
                           onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.id,"")}>
                   {assets.map( (d) => {
                     var key= d.noteId + "/" + d.id;
@@ -195,6 +201,7 @@ function BinderTree(props) {
           {/** Assetsの表示 */}
           <TreeItem nodeId="Assets" label="Assets"
                     icon={<WebAssetIcon/>}
+                    onDoubleClick={doNothing}
                     onContextMenu={(e) => showMenu(e,setAssetRootEl,"","")}>
             {/** Assets dataの表示 */}
             {dataAssets.map( (d) => {

@@ -81,7 +81,6 @@ func CloneBinder(dir string, url string) (*Binder, error) {
 		URL:      url,
 		Progress: os.Stdout,
 	})
-
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}

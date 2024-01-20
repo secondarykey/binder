@@ -41,7 +41,7 @@ func TestFindNotes(t *testing.T) {
 		t.Errorf("db.Open() not nil:%v", err)
 	}
 
-	notes, err := db.FindNotes()
+	notes, err := db.FindNotes(-1)
 	if err != nil {
 		t.Errorf("db.FindNotes() not nil:%v", err)
 	}

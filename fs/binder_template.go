@@ -9,10 +9,12 @@ import (
 )
 
 const (
+	//                  12345
 	TemplatePageRoot = "Pages"
-	PageTemplate     = "{{ define " + TemplatePageRoot + " }}"
-	ContentTemplate  = "{{ define Content }}"
-	EndTemplate      = "{{ end }}"
+	//                   12345678901                        2345  123456789
+	PageTemplateFrame = `{{ define "` + TemplatePageRoot + `" }}%s{{ end }}`
+	//                      1234567890123456789012  123456789
+	ContentTemplateFrame = `{{ define "Content" }}%s{{ end }}`
 )
 
 func (b *Binder) ReadTemplate(id string) ([]byte, error) {
@@ -26,7 +28,23 @@ func (b *Binder) ReadTemplate(id string) ([]byte, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)
 	}
-	return data, nil
+
+	firstIdx := 20
+	leng := len(data)
+	if id != "layout" {
+		firstIdx = 22
+	}
+	return data[firstIdx : leng-9], nil
+}
+
+func (b *Binder) AddTemplateFrame(id string, data string) string {
+	txt := ""
+	if id == "layout" {
+		txt = fmt.Sprintf(PageTemplateFrame, data)
+	} else {
+		txt = fmt.Sprintf(ContentTemplateFrame, data)
+	}
+	return txt
 }
 
 func (b *Binder) WriteTemplate(id string, data []byte) error {

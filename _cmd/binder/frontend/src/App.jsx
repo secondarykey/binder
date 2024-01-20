@@ -11,10 +11,20 @@ import { Button,Alert, Dialog, DialogActions, DialogContent, DialogContentText, 
  */
 function App() {
 
-    function createMessage(type,msg) {
+    function createMessage(type,err) {
 
       var obj = {};
       obj.type = type;
+      var msg = "";
+      if ( typeof err === 'object' ) {
+        if ( err.stack ) {
+          msg = err.stack;
+        } else {
+          msg = "unknown error";
+        }
+      } else {
+        msg = err;
+      }
 
       var idx = msg.indexOf("\n");
       if ( idx === -1 ) {
@@ -24,7 +34,6 @@ function App() {
         obj.title = msg.substring(0,idx);
         obj.message = msg.substring(idx+1);
       }
-
       obj.show = false;
       return obj;
     }
@@ -103,7 +112,9 @@ function App() {
     }
 
     function hideMessage() {
-      setMessage(createMessage("success",""));
+      if ( !msgDlg ) {
+        setMessage(createMessage("success",""));
+      }
     }
 
     function showMessage(type,msg) {
@@ -112,9 +123,11 @@ function App() {
       setMessage(obj);
     }
 
-    function closeDialog() {
-      setMessageDialog(false);
-      hideMessage();
+    function closeDialog(e,reason) {
+      if ( reason !== 'backdropClick') {
+        setMessageDialog(false);
+        hideMessage();
+      }
     }
 
     function showMessageDialog() {
@@ -139,14 +152,14 @@ function App() {
                   onMessage={showMessage}
                   onRefreshTree={refreshTree}/>
 
-      <Snackbar open={msg.show}
+      <Snackbar open={msg.show && !msgDlg}
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
                 TransitionComponent={SlideTransition}
+                onDoubleClick={showMessageDialog}
                 onClose={hideMessage}
                 autoHideDuration={msg.type === "success" ? 3000 : null}>
         <Alert severity={msg.type}
                variant="filled"
-               onClick={showMessageDialog}
                sx={{ width: '100%' }}>
           {msg.title}
         </Alert>
@@ -158,7 +171,7 @@ function App() {
               aria-describedby="alert-dialog-slide-description" >
         <DialogTitle>{msg.title}</DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-slide-description">
+          <DialogContentText id="alert-dialog-slide-description" class="messageTxt">
             {msg.message}
           </DialogContentText>
         </DialogContent>

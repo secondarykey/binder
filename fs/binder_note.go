@@ -91,7 +91,17 @@ func (b *Binder) EditNote(n *model.Note, image string) (*model.Note, error) {
 }
 
 func (b *Binder) ReadNoteText(id string) ([]byte, error) {
-	n := NoteTextFile(id)
+
+	nId := id
+	if id == "" {
+		noteId := db.GetLatestNoteId()
+		if noteId == "" {
+			return nil, fmt.Errorf("find for the latest notes,but there were none.")
+		}
+		nId = noteId
+	}
+
+	n := NoteTextFile(nId)
 	data, err := stdFs.ReadFile(b, n)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)

@@ -72,6 +72,9 @@ body {
 .MuiDialog-container {
     --wails-draggable:no-drag;
 }
+.messageTxt {
+    white-space:pre-wrap;
+}
 
 #viewer {
     --wails-draggable:no-drag;

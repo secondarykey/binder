@@ -22,9 +22,11 @@ func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 }
 
 func (a *App) GetNote(id string) (*model.Note, error) {
+
 	if a.current == nil {
 		return nil, fmt.Errorf("Not Open Binder")
 	}
+
 	n, err := db.GetNote(id)
 	if err != nil {
 		return nil, fmt.Errorf("GetNote() error\n%+v", err)

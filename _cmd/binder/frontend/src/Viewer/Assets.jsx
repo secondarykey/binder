@@ -19,6 +19,7 @@ function Assets(props) {
       data.id = props.id
       data.noteId = props.noteId
       data.name = name
+      data.pluginId = "assets";
 
       EditAssets(data,file).then((resp) => {
         //props.onChangeMode("editor",resp.ID,resp.NoteId);
@@ -50,34 +51,33 @@ function Assets(props) {
     }
 
     return (<>
-<Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
+    <Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
 {props.id !== "" &&
-  <FormControl>
-    <FormLabel>Name</FormLabel>
-    <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
-  </FormControl>
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
+      </FormControl>
 }
 
-  <FormControl>
-    <FormLabel>Assets</FormLabel>
-    <TextField value={file} onClick={selectFile}
-      InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <AttachFileIcon />
-            </InputAdornment>
-          )}}>
-      </TextField>
-  </FormControl>
+      <FormControl>
+        <FormLabel>Assets</FormLabel>
+        <TextField value={file} onClick={selectFile}
+          InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <AttachFileIcon />
+                </InputAdornment>
+              )}}>
+          </TextField>
+      </FormControl>
 
-  <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
-    <Button variant="contained" onClick={handleSave}>
+      <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
+        <Button variant="contained" onClick={handleSave}>
 {props.id !== "" && <> Save </> }
 {props.id === "" && <> Create </> }
-    </Button>
-  </FormControl>
-
-</Grid>
+        </Button>
+      </FormControl>
+    </Grid>
     </>);
 }
 export default Assets;

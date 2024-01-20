@@ -100,7 +100,7 @@ func CreateResource() (*Resource, error) {
 		return nil, xerrors.Errorf("db.FindData() error: %w", err)
 	}
 
-	notes, err := db.FindNotes()
+	notes, err := db.FindNotes(-1)
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
 	}
@@ -198,17 +198,18 @@ func CreateNoteHTML(b *fs.Binder, id string, elm string) (string, error) {
 }
 
 // HTMLメモリ作成
-func CreateTemplateHTML(b *fs.Binder, id string, elm string) (string, error) {
+func CreateTemplateHTML(b *fs.Binder, id string, temp string, elm string) (string, error) {
 
-	tmpl, err := createTemplate(b, true, id, elm)
+	tmpl, err := createTemplate(b, true, id, temp)
 	if err != nil {
 		return "", xerrors.Errorf("createTemplate() error: %w", err)
 	}
 
 	var builder strings.Builder
-	err = writeHTML(&builder, b, tmpl, "")
+	err = writeHTML(&builder, b, tmpl, elm)
 	if err != nil {
 		return "", xerrors.Errorf("generateHTML() error: %w", err)
 	}
+
 	return builder.String(), nil
 }

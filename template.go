@@ -35,6 +35,10 @@ func (w wrapper) dir() string {
 	return assets
 }
 
+func (w wrapper) assets(id string) string {
+	return w.dir() + "/" + id
+}
+
 func (w wrapper) latestNotes(n int) []*model.Note {
 	//Binderを含めておいて、Binder内の最新のn件を設定
 	return make([]*model.Note, 0)
@@ -44,6 +48,7 @@ func defineFuncMap(b *fs.Binder, local bool, id string) map[string]interface{} {
 	w := wrapper{b, local, id}
 	funcMap := map[string]interface{}{
 		"replace":     strings.ReplaceAll,
+		"assets":      w.assets,
 		"latestNotes": w.latestNotes,
 		"lf2br":       convertLF2BR,
 		"lf2sp":       convertLF2SP,
@@ -71,18 +76,25 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 	tmpl := template.New(fs.TemplatePageRoot).Funcs(template.FuncMap(defineFuncMap(b, local, id)))
 
 	if id == "layout" && text != "" {
-		tmpl, err = tmpl.Parse(text)
+		//レイアウトをテキストで代用
+		_, err = tmpl.Parse(b.AddTemplateFrame(id, text))
+		if err != nil {
+			return nil, xerrors.Errorf("layout Parse() error: %w", err)
+		}
 	} else {
 		layoutFile := fs.TemplateFileName("layout")
 		//layout と typeでパース
-		tmpl, err = tmpl.ParseFS(b, layoutFile)
-	}
-	if err != nil {
-		return nil, xerrors.Errorf("layout Parse() error: %w", err)
+		_, err = tmpl.ParseFS(b, layoutFile)
+		if err != nil {
+			return nil, xerrors.Errorf("layout ParseFS([%s]) error: %w", layoutFile, err)
+		}
 	}
 
 	if id != "layout" && text != "" {
-		tmpl, err = tmpl.Parse(text)
+		_, err = tmpl.Parse(b.AddTemplateFrame(id, text))
+		if err != nil {
+			return nil, xerrors.Errorf("Parse() error: %w", id, err)
+		}
 	} else {
 		tId := id
 		if id != "index" && id != "list" {
@@ -90,10 +102,10 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 		}
 		tmpFile := fs.TemplateFileName(tId)
 		//layout と typeでパース
-		tmpl, err = tmpl.ParseFS(b, tmpFile)
-	}
-	if err != nil {
-		return nil, xerrors.Errorf("[%s] Parse() error: %w", id, err)
+		_, err = tmpl.ParseFS(b, tmpFile)
+		if err != nil {
+			return nil, xerrors.Errorf("[%s] Parse() error: %w", id, err)
+		}
 	}
 
 	return tmpl, nil
@@ -102,8 +114,10 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 func writeHTML(w io.Writer, b *fs.Binder, tmpl *template.Template, elm string) error {
 
 	dto := struct {
-		Marked template.HTML
-	}{template.HTML(elm)}
+		Name        string
+		Description string
+		Marked      template.HTML
+	}{"Binder Name", "Binder Desctiprtion", template.HTML(elm)}
 
 	//出力
 	err := tmpl.Execute(w, dto)

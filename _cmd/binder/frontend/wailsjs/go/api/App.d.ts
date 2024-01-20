@@ -8,7 +8,7 @@ export function Close():Promise<boolean>;
 
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;
 
-export function CreateTemplateHTML(arg1:string,arg2:string):Promise<string>;
+export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function EditAssets(arg1:model.Datum,arg2:string):Promise<model.Datum>;
 

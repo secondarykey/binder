@@ -70,7 +70,7 @@ const templateDir = "templates"
 
 func TemplateFileName(id string) string {
 	switch id {
-	case "layoout":
+	case "layout":
 		return layoutTemplate()
 	case "index":
 		return indexTemplate()
@@ -83,19 +83,19 @@ func TemplateFileName(id string) string {
 }
 
 func layoutTemplate() string {
-	return filepath.Join(templateDir, "layout.tmpl")
+	return templateDir + "/layout.tmpl"
 }
 
 func indexTemplate() string {
-	return filepath.Join(templateDir, "index.tmpl")
+	return templateDir + "/index.tmpl"
 }
 
 func listTemplate() string {
-	return filepath.Join(templateDir, "list.tmpl")
+	return templateDir + "/list.tmpl"
 }
 
 func noteTemplate() string {
-	return filepath.Join(templateDir, "note.tmpl")
+	return templateDir + "/note.tmpl"
 }
 
 //   - notes/

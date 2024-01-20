@@ -2,7 +2,7 @@ import {useState,useEffect} from "react"
 import { IconButton, Paper, Toolbar } from "@mui/material";
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
-import { OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML } from "../../wailsjs/go/api/App.js";
+import { OpenTemplate,OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML,CreateTemplateHTML, SaveTemplate } from "../../wailsjs/go/api/App.js";
 import { Save } from "@mui/icons-material";
 
 /**
@@ -14,6 +14,7 @@ import { Save } from "@mui/icons-material";
 function Editor(props) {
 
     const [text,setText] = useState("");
+    const [noteElm,setNoteElm] = useState("");
     const [width,setWidth] = useState(500);
     const [mode,setMode] = useState("");
 
@@ -22,7 +23,7 @@ function Editor(props) {
       var m = "data";
       if ( props.templateId !== undefined ) {
         m = "template";
-      } if ( props.dataId === undefined ) {
+      } else if ( props.dataId === undefined ) {
         m = "note";
       }
 
@@ -51,16 +52,27 @@ function Editor(props) {
         });
 
       } else if ( m === "template" ) {
-
         //テンプレートを開く
-
-        //index 表示
-        props.onMessage("error","not implemented");
-
-
+        OpenTemplate(props.templateId).then( (resp) => {
+          setText(resp);
+          viewHTML(resp,noteElm);
+          //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
+          if ( props.templateId === "note" ) {
+            OpenNote("").then( (resp) => {
+              var embed = marked.marked(resp);
+              setNoteElm(embed);
+            }).catch ( (err) => {
+              console.warn(err);
+              props.onMessage("error",err);
+            });
+          }
+        }).catch( (err) => {
+          props.onMessage("error",err);
+        });
       }
 
       setMode(m);
+
     },[props.noteId,props.dataId,props.templateId])
 
     var menuWidth = 320;
@@ -81,15 +93,25 @@ function Editor(props) {
         elm.contentWindow.location.reload();
     }
 
-    const viewHTML = (txt) => {
+    const viewHTML = (txt,embNoteElm) => {
+
         var elm = document.querySelector('#htmlViewer');
-        var embed = marked.marked(txt);
-        CreateNoteHTML(props.noteId,embed).then( (html) => {
-          elm.srcdoc = html;
-        }).catch( (err) => {
-          console.warn(err)
-          props.onMessage("error",err);
-        })
+        if ( mode === "note" ) {
+          var embed = marked.marked(txt);
+          CreateNoteHTML(props.noteId,embed).then( (html) => {
+            elm.srcdoc = html;
+          }).catch( (err) => {
+            console.warn(err)
+            props.onMessage("error",err);
+          })
+        } else if ( mode === "template" ) {
+          CreateTemplateHTML(props.templateId,txt,embNoteElm).then( (html) => {
+            elm.srcdoc = html;
+          }).catch( (err) => {
+            console.warn(err)
+            props.onMessage("error",err);
+          })
+        }
     }
 
     const viewData = (txt) => {
@@ -139,8 +161,13 @@ function Editor(props) {
         })
 
       } else if ( mode === "template" ) {
-        //触っているテンプレートで処理が違うので注意
-        props.onMessage("error","not implemented");
+        viewHTML(txt,noteElm);
+        SaveTemplate(props.templateId,txt).then( ()=> {
+          console.log("ok");
+        }).catch( (err) => {
+          console.warn(err)
+          props.onMessage("error",err);
+        })
       }
     }
 
@@ -170,7 +197,7 @@ function Editor(props) {
 
       {/** 表示するコンポーネントを変更 */}
       <div id="dataViewer" style={viewerStyle}>
-{ mode === "note" &&
+{ (mode === "note" || mode === "template") &&
         <iframe id="htmlViewer" style={{width:"100%"}}></iframe>
 }
 { mode === "data" &&

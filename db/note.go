@@ -91,10 +91,13 @@ func createNote(row scanner) (*model.Note, error) {
 	return &n, nil
 }
 
-func FindNotes() ([]*model.Note, error) {
+func FindNotes(limit int) ([]*model.Note, error) {
 
 	ctx := context.Background()
 	s := notesSelect + " ORDER BY updated_date desc"
+	if limit > 0 {
+		s += fmt.Sprintf(" LIMIT %d", limit)
+	}
 	r, err := getRows(ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("getRows() error: %w", err)
@@ -112,4 +115,15 @@ func FindNotes() ([]*model.Note, error) {
 	}
 
 	return notes, nil
+}
+
+func GetLatestNoteId() string {
+	notes, err := FindNotes(1)
+	if err != nil {
+		return ""
+	}
+	if len(notes) == 0 {
+		return ""
+	}
+	return notes[0].ID
 }

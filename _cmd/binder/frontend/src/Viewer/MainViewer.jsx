@@ -26,7 +26,6 @@ function MainViewer(props) {
     }
 
     const mode = props.mode;
-    const [editorMode,setEditorMode] = useState("note");
 
     return (
     <>
@@ -71,7 +70,6 @@ function MainViewer(props) {
 {mode === "editor" &&
 <>
   <Editor templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
-          mode={editorMode} 
           onRefreshTree={props.onRefreshTree}
           onMessage={props.onMessage}/>
 </>
