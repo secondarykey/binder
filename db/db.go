@@ -9,7 +9,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var db *sql.DB = nil
 var DuplicateKey = fmt.Errorf("duplicate key error")
 
 type scanner interface {
@@ -17,47 +16,55 @@ type scanner interface {
 }
 
 type Instance struct {
-	db *sql.DB
+	db   *sql.DB
+	path string
 }
 
 func New(p string) (*Instance, error) {
-	return nil, nil
+	var inst Instance
+	inst.db = nil
+	inst.path = p
+	return &inst, nil
 }
 
 func (inst *Instance) Close() error {
 	return inst.db.Close()
 }
 
-func Open(p string) error {
+func (inst *Instance) Open() error {
 	var err error
-	db, err = sql.Open("csvq", p)
+	db, err := sql.Open("csvq", inst.path)
 	if err != nil {
 		return xerrors.Errorf("sql.Open() error: %w", err)
 	}
+	inst.db = db
 	return nil
 }
 
-func Close() error {
-	if db == nil {
-		return fmt.Errorf("db is nil")
+func (inst *Instance) getRow(ctx context.Context, sql string, args ...interface{}) (*sql.Row, error) {
+	if inst.db == nil {
+		return nil, fmt.Errorf("db is nil")
 	}
-	err := db.Close()
+	return inst.db.QueryRowContext(ctx, sql, args...), nil
+}
+
+func (inst *Instance) getRows(ctx context.Context, sql string, args ...interface{}) (*sql.Rows, error) {
+	if inst.db == nil {
+		return nil, fmt.Errorf("db is nil")
+	}
+	return inst.db.QueryContext(ctx, sql, args...)
+}
+
+func (inst *Instance) run(sql string, args ...interface{}) error {
+
+	stmt, err := inst.db.Prepare(sql)
 	if err != nil {
-		return xerrors.Errorf("db.Close() error: %w", err)
+		return xerrors.Errorf("db.Prepare() error: %w", err)
+	}
+
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		return xerrors.Errorf("stmt.Exec() error: %w", err)
 	}
 	return nil
-}
-
-func getRow(ctx context.Context, sql string, args ...interface{}) (*sql.Row, error) {
-	if db == nil {
-		return nil, fmt.Errorf("db is nil")
-	}
-	return db.QueryRowContext(ctx, sql, args...), nil
-}
-
-func getRows(ctx context.Context, sql string, args ...interface{}) (*sql.Rows, error) {
-	if db == nil {
-		return nil, fmt.Errorf("db is nil")
-	}
-	return db.QueryContext(ctx, sql, args...)
 }

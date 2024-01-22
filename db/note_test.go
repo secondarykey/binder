@@ -3,20 +3,16 @@ package db_test
 import (
 	"binder/db"
 	"binder/db/model"
-	"binder/test"
 	"errors"
 	"testing"
 )
 
 func TestNotes(t *testing.T) {
 
-	err := db.Open(test.Dir)
-	defer db.Close()
-	if err != nil {
-		t.Errorf("db.Open() not nil:%v", err)
-	}
+	inst := open()
+	defer inst.Close()
 
-	note, err := db.GetNote("test")
+	note, err := inst.GetNote("test")
 	if err != nil {
 		t.Errorf("db.GetNote() is not error:%v", err)
 	}
@@ -25,7 +21,7 @@ func TestNotes(t *testing.T) {
 	}
 
 	//NotFound
-	note, err = db.GetNote("NotFound")
+	note, err = inst.GetNote("NotFound")
 	if note != nil {
 		t.Errorf("GetNote() not found is nil")
 	}
@@ -35,13 +31,11 @@ func TestNotes(t *testing.T) {
 }
 
 func TestFindNotes(t *testing.T) {
-	err := db.Open(test.Dir)
-	defer db.Close()
-	if err != nil {
-		t.Errorf("db.Open() not nil:%v", err)
-	}
 
-	notes, err := db.FindNotes(-1)
+	inst := open()
+	defer inst.Close()
+
+	notes, err := inst.FindNotes(-1)
 	if err != nil {
 		t.Errorf("db.FindNotes() not nil:%v", err)
 	}
@@ -53,16 +47,14 @@ func TestFindNotes(t *testing.T) {
 
 func TestInsertNote(t *testing.T) {
 
-	err := db.Open(test.Dir)
-	defer db.Close()
-	if err != nil {
-		t.Errorf("db.Open() not nil:%v", err)
-	}
+	inst := open()
+	defer inst.Close()
 
 	var n model.Note
 	n.ID = "test2"
 	n.Title = "単純テスト"
-	err = db.InsertNote(&n)
+
+	err := inst.InsertNote(&n)
 	if err != nil {
 		t.Errorf("db.InsertNote() not nil:%v", err)
 	}
@@ -70,7 +62,7 @@ func TestInsertNote(t *testing.T) {
 	n = model.Note{}
 	n.ID = "test"
 	n.Title = "キー重複テスト"
-	err = db.InsertNote(&n)
+	err = inst.InsertNote(&n)
 	if err == nil {
 		t.Errorf("db.InsertNote() is nil:%v", err)
 	} else {
@@ -84,9 +76,8 @@ func TestInsertNote(t *testing.T) {
 	n = model.Note{}
 	n.ID = ""
 	n.Title = "キー空テスト"
-	err = db.InsertNote(&n)
+	err = inst.InsertNote(&n)
 	if err == nil {
 		t.Errorf("db.InsertNote() empty key not nil:%v", err)
 	}
-
 }

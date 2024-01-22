@@ -14,8 +14,8 @@ import (
 
 const dataSelect = "SELECT id,note_id,name,plugin_id,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM data"
 
-func ExistDatum(id string, noteId string) bool {
-	d, err := GetDatum(id, noteId)
+func (inst *Instance) ExistDatum(id string, noteId string) bool {
+	d, err := inst.GetDatum(id, noteId)
 	if d != nil && err == nil {
 		return true
 	}
@@ -45,11 +45,11 @@ func createDatum(row scanner) (*model.Datum, error) {
 	return &d, nil
 }
 
-func FindData() ([]*model.Datum, error) {
+func (inst *Instance) FindData() ([]*model.Datum, error) {
 	s := dataSelect + " ORDER BY updated_date"
 
 	ctx := context.Background()
-	r, err := getRows(ctx, s)
+	r, err := inst.getRows(ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -67,7 +67,7 @@ func FindData() ([]*model.Datum, error) {
 	return data, nil
 }
 
-func GetDatum(id string, noteId string) (*model.Datum, error) {
+func (inst *Instance) GetDatum(id string, noteId string) (*model.Datum, error) {
 
 	args := make([]interface{}, 0, 2)
 	s := dataSelect + " WHERE id = ?"
@@ -79,7 +79,7 @@ func GetDatum(id string, noteId string) (*model.Datum, error) {
 	}
 
 	ctx := context.Background()
-	r, err := getRow(ctx, s, args...)
+	r, err := inst.getRow(ctx, s, args...)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -87,41 +87,33 @@ func GetDatum(id string, noteId string) (*model.Datum, error) {
 	return createDatum(r)
 }
 
-func InsertDatum(d *model.Datum) error {
+func (inst *Instance) InsertDatum(d *model.Datum) error {
 
 	if d.ID == "" {
 		return fmt.Errorf("ID is empty")
 	}
 
-	if ExistDatum(d.ID, d.NoteId) {
+	if inst.ExistDatum(d.ID, d.NoteId) {
 		return DuplicateKey
 	}
 
 	s := "INSERT INTO data (id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?,?,?)"
-	stmt, err := db.Prepare(s)
-	if err != nil {
-		return xerrors.Errorf("db.Prepare() error: %w", err)
-	}
 
-	_, err = stmt.Exec(d.ID, d.NoteId, d.Name, d.Detail, d.PluginId, d.Publish, d.Created, d.Updated)
+	err := inst.run(s, d.ID, d.NoteId, d.Name, d.Detail, d.PluginId, d.Publish, d.Created, d.Updated)
 	if err != nil {
-		return xerrors.Errorf("stmt.Exec() error: %w", err)
+		return xerrors.Errorf("run() error: %w", err)
 	}
-
 	return nil
 }
 
-func UpdateDatum(d *model.Datum) error {
+func (inst *Instance) UpdateDatum(d *model.Datum) error {
 
 	s := "UPDATE data SET note_id = ?,name = ?,detail = ?,plugin_id = ?,publish_date = ?,created_date = ?,updated_date = ? WHERE id = ?"
-	stmt, err := db.Prepare(s)
+	err := inst.run(s,
+		d.NoteId, d.Name, d.Detail, d.PluginId, d.Publish, d.Created, d.Updated, d.ID)
 	if err != nil {
-		return xerrors.Errorf("db.Prepare() error: %w", err)
+		return xerrors.Errorf("run() error: %w", err)
 	}
 
-	_, err = stmt.Exec(d.NoteId, d.Name, d.Detail, d.PluginId, d.Publish, d.Created, d.Updated, d.ID)
-	if err != nil {
-		return xerrors.Errorf("stmt.Exec() error: %w", err)
-	}
 	return nil
 }

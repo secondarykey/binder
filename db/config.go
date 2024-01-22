@@ -10,11 +10,11 @@ import (
 
 const configSelect = "SELECT name,description,DATETIME(created_date),DATETIME(updated_date) FROM config"
 
-func GetConfig() (*model.Config, error) {
+func (inst *Instance) GetConfig() (*model.Config, error) {
 
 	ctx := context.Background()
 
-	r, err := getRow(ctx, configSelect)
+	r, err := inst.getRow(ctx, configSelect)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -28,7 +28,7 @@ func GetConfig() (*model.Config, error) {
 	return &c, nil
 }
 
-func UpdateConfig(c *model.Config) error {
+func (inst *Instance) UpdateConfig(c *model.Config) error {
 
 	now := time.Now()
 	if c.Created.IsZero() {
@@ -37,15 +37,10 @@ func UpdateConfig(c *model.Config) error {
 	c.Updated = now
 
 	s := "UPDATE config SET name = ?,description = ?,created_date = ?,updated_date = ?"
-	stmt, err := db.Prepare(s)
+	err := inst.run(s,
+		c.Name, c.Description, c.Created, c.Updated)
 	if err != nil {
-		return xerrors.Errorf("db.Prepare() error: %w", err)
+		return xerrors.Errorf("run() error: %w", err)
 	}
-
-	_, err = stmt.Exec(c.Name, c.Description, c.Created, c.Updated)
-	if err != nil {
-		return xerrors.Errorf("stmt.Exec() error: %w", err)
-	}
-
 	return nil
 }

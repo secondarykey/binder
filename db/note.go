@@ -12,59 +12,54 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func ExistNote(id string) bool {
-	n, err := GetNote(id)
+func (inst *Instance) ExistNote(id string) bool {
+	n, err := inst.GetNote(id)
 	if n != nil && err == nil {
 		return true
 	}
 	return false
 }
 
-func InsertNote(n *model.Note) error {
+func (inst *Instance) InsertNote(n *model.Note) error {
 
 	if n.ID == "" {
 		return fmt.Errorf("ID is empty")
 	}
-	if ExistNote(n.ID) {
+	if inst.ExistNote(n.ID) {
 		return DuplicateKey
 	}
 
 	s := "INSERT INTO notes (id,title,detail,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?)"
-	stmt, err := db.Prepare(s)
+
+	err := inst.run(s,
+		n.ID, n.Title, n.Detail, n.Publish, n.Created, n.Updated)
 	if err != nil {
-		return xerrors.Errorf("db.Prepare() error: %w", err)
+		return xerrors.Errorf("run() error: %w", err)
 	}
 
-	_, err = stmt.Exec(n.ID, n.Title, n.Detail, n.Publish, n.Created, n.Updated)
-	if err != nil {
-		return xerrors.Errorf("stmt.Exec() error: %w", err)
-	}
 	return nil
 }
 
-func UpdateNote(n *model.Note) error {
+func (inst *Instance) UpdateNote(n *model.Note) error {
 
 	s := "UPDATE notes SET title = ?,detail = ?,publish_date = ?,created_date = ?,updated_date = ? WHERE id = ?"
 
-	stmt, err := db.Prepare(s)
+	err := inst.run(s,
+		n.Title, n.Detail, n.Publish, n.Created, n.Updated, n.ID)
 	if err != nil {
-		return xerrors.Errorf("db.Prepare() error: %w", err)
-	}
-	_, err = stmt.Exec(n.Title, n.Detail, n.Publish, n.Created, n.Updated, n.ID)
-	if err != nil {
-		return xerrors.Errorf("stmt.Exec() error: %w", err)
+		return xerrors.Errorf("run() error: %w", err)
 	}
 	return nil
 }
 
 const notesSelect = "SELECT id,title,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM notes"
 
-func GetNote(id string) (*model.Note, error) {
+func (inst *Instance) GetNote(id string) (*model.Note, error) {
 
 	s := notesSelect + " WHERE id = ?"
 
 	ctx := context.Background()
-	r, err := getRow(ctx, s, id)
+	r, err := inst.getRow(ctx, s, id)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -91,14 +86,14 @@ func createNote(row scanner) (*model.Note, error) {
 	return &n, nil
 }
 
-func FindNotes(limit int) ([]*model.Note, error) {
+func (inst *Instance) FindNotes(limit int) ([]*model.Note, error) {
 
 	ctx := context.Background()
 	s := notesSelect + " ORDER BY updated_date desc"
 	if limit > 0 {
 		s += fmt.Sprintf(" LIMIT %d", limit)
 	}
-	r, err := getRows(ctx, s)
+	r, err := inst.getRows(ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("getRows() error: %w", err)
 	}
@@ -117,8 +112,8 @@ func FindNotes(limit int) ([]*model.Note, error) {
 	return notes, nil
 }
 
-func GetLatestNoteId() string {
-	notes, err := FindNotes(1)
+func (inst *Instance) GetLatestNoteId() string {
+	notes, err := inst.FindNotes(1)
 	if err != nil {
 		return ""
 	}

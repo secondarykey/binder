@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,6 +20,19 @@ const notesCSV = `id,title,detail,publish_date,created_date,updated_date
 
 const dataCSV = `id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date
 `
+
+func open() *db.Instance {
+	inst, err := db.New(test.Dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = inst.Open()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return inst
+}
 
 func create() error {
 	err := write("config.csv", configCSV)
@@ -52,7 +66,6 @@ func write(n string, data string) error {
 func TestMain(m *testing.M) {
 
 	test.Clean()
-
 	//DBを作成
 	err := create()
 	if err != nil {
@@ -64,19 +77,24 @@ func TestMain(m *testing.M) {
 }
 
 func TestDB(t *testing.T) {
-	err := db.Open(test.Dir)
-	defer db.Close()
+
+	inst, err := db.New(test.Dir)
 	if err != nil {
-		t.Errorf("db.Open() not nil:%v", err)
+		t.Errorf("db.New() not nil:%v", err)
+	}
+
+	err = inst.Open()
+	defer inst.Close()
+	if err != nil {
+		t.Errorf("inst.Open() not nil:%v", err)
 	}
 }
 
 func TestData(t *testing.T) {
 
-	err := db.Open(test.Dir)
-	defer db.Close()
+	inst := open()
 
-	datum, err := db.GetDatum("NotFound", "")
+	datum, err := inst.GetDatum("NotFound", "")
 	if datum != nil {
 		t.Errorf("GetDatum() not found is nil")
 	}
