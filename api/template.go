@@ -1,8 +1,6 @@
 package api
 
 import (
-	"binder"
-
 	"fmt"
 )
 
@@ -12,7 +10,7 @@ func (a *App) OpenTemplate(id string) (string, error) {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	data, err := a.current.ReadTemplate(id)
+	data, err := a.current.OpenTemplate(id)
 	if err != nil {
 		return "", fmt.Errorf("ReadTemplate() error\n%+v", err)
 	}
@@ -25,22 +23,20 @@ func (a *App) SaveTemplate(id string, data string) error {
 		return fmt.Errorf("Not Open Binder")
 	}
 
-	//枠を作成
-	txt := a.current.AddTemplateFrame(id, data)
-	err := a.current.WriteTemplate(id, []byte(txt))
+	err := a.current.SaveTemplate(id, data)
 	if err != nil {
-		return fmt.Errorf("WriteTemplate() error\n%+v", err)
+		return fmt.Errorf("Savetemplate() error\n%+v", err)
 	}
+
 	return nil
 }
 
 func (a *App) CreateTemplateHTML(id string, temp string, elm string) (string, error) {
-
 	if a.current == nil {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	html, err := binder.CreateTemplateHTML(a.current, id, temp, elm)
+	html, err := a.current.CreateTemplateHTML(id, temp, elm)
 	if err != nil {
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
 	}

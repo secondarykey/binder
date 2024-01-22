@@ -19,7 +19,7 @@ type File struct {
 
 // 存在しない場合、ファイルを作成
 // fs.FS interface
-func (b *Binder) Open(name string) (fs.File, error) {
+func (b *FileSystem) Open(name string) (fs.File, error) {
 
 	bf, err := b.fs.Open(name)
 	//bf, err := b.fs.OpenFile(name, os.O_RDWR, 0644)

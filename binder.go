@@ -6,15 +6,12 @@ import (
 	"binder/fs"
 	"net/http"
 
-	"io"
-	"strings"
-
 	"golang.org/x/xerrors"
 )
 
 type Binder struct {
 	fileSystem        *fs.FileSystem
-	instance          *db.Instance
+	db                *db.Instance
 	httpServer        *http.Server
 	httpServerAddress string
 }
@@ -74,21 +71,52 @@ func Install(dir string) error {
 	return nil
 }
 
-func Load(dir string) (*fs.Binder, error) {
-	b, err := fs.LoadBinder(dir)
+func Load(dir string) (*Binder, error) {
+
+	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, err
 	}
-	err = db.Open(dir + "/db")
+
+	inst, err := db.New(dir + "/db")
+	if err != nil {
+		return nil, xerrors.Errorf("db.New() error: %w", err)
+	}
+	err = inst.Open()
 	if err != nil {
 		return nil, xerrors.Errorf("db.Open() error: %w", err)
 	}
+
+	var b Binder
+	b.fileSystem = bfs
+	b.db = inst
+
 	err = b.Serve()
 	if err != nil {
 		return nil, xerrors.Errorf("db.Serve() error: %w", err)
 	}
 
-	return b, nil
+	return &b, nil
+}
+
+func (b *Binder) Close() error {
+
+	err := b.fileSystem.Close()
+	if err != nil {
+		return xerrors.Errorf("fs.Close() error: %w", err)
+	}
+
+	err = b.httpServer.Close()
+	if err != nil {
+		return xerrors.Errorf("http.Close() error: %w", err)
+	}
+
+	err = b.db.Close()
+	if err != nil {
+		return xerrors.Errorf("db.Close() error: %w", err)
+	}
+
+	return nil
 }
 
 type Resource struct {
@@ -96,14 +124,14 @@ type Resource struct {
 	Data  []*model.Datum `json:"data"`
 }
 
-func CreateResource() (*Resource, error) {
+func (b *Binder) CreateResource() (*Resource, error) {
 
-	data, err := db.FindData()
+	data, err := b.db.FindData()
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindData() error: %w", err)
 	}
 
-	notes, err := db.FindNotes(-1)
+	notes, err := b.db.FindNotes(-1)
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
 	}
@@ -129,90 +157,4 @@ func CreateResource() (*Resource, error) {
 	r.Notes = notes
 	r.Data = rootData
 	return &r, nil
-}
-
-// リストも一緒に出力
-func GenerateIndexHTML(b *fs.Binder) error {
-
-	err := generateHTML(b, "index")
-	if err != nil {
-		return xerrors.Errorf("generateHTML(index) error: %w", err)
-	}
-
-	err = generateHTML(b, "list")
-	if err != nil {
-		return xerrors.Errorf("generateHTML(list) error: %w", err)
-	}
-	return nil
-}
-
-func GenerateNoteHTML(b *fs.Binder, id string) error {
-	return generateHTML(b, id)
-}
-
-// HTMLファイル出力用
-func generateHTML(b *fs.Binder, id string) error {
-
-	//TODO 取得をfsから行う
-	n := "docs/" + id + ".html"
-	//List時はページャーを作る
-	if id != "index" && id != "list" {
-		dir := "docs/notes/" + id
-		n = dir + "/index.html"
-	}
-
-	//list 時にループする
-	fp, err := b.Create(n)
-	if err != nil {
-		return xerrors.Errorf("Create() error: %w", err)
-	}
-
-	tmpl, err := createTemplate(b, false, id, "")
-	if err != nil {
-		return xerrors.Errorf("writeHTML() error: %w", err)
-	}
-
-	err = writeHTML(fp.(io.Writer), b, tmpl, "")
-	if err != nil {
-		return xerrors.Errorf("writeHTML() error: %w", err)
-	}
-
-	err = b.Commit("generate:" + id)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
-}
-
-// HTMLメモリ作成
-func CreateNoteHTML(b *fs.Binder, id string, elm string) (string, error) {
-
-	tmpl, err := createTemplate(b, true, id, "")
-	if err != nil {
-		return "", xerrors.Errorf("createTemplate() error: %w", err)
-	}
-
-	var builder strings.Builder
-	err = writeHTML(&builder, b, tmpl, elm)
-	if err != nil {
-		return "", xerrors.Errorf("generateHTML() error: %w", err)
-	}
-	return builder.String(), nil
-}
-
-// HTMLメモリ作成
-func CreateTemplateHTML(b *fs.Binder, id string, temp string, elm string) (string, error) {
-
-	tmpl, err := createTemplate(b, true, id, temp)
-	if err != nil {
-		return "", xerrors.Errorf("createTemplate() error: %w", err)
-	}
-
-	var builder strings.Builder
-	err = writeHTML(&builder, b, tmpl, elm)
-	if err != nil {
-		return "", xerrors.Errorf("generateHTML() error: %w", err)
-	}
-
-	return builder.String(), nil
 }

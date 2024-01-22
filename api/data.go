@@ -1,7 +1,6 @@
 package api
 
 import (
-	"binder/db"
 	"binder/db/model"
 
 	"fmt"
@@ -25,7 +24,7 @@ func (a *App) GetData(id string, noteId string) (*model.Datum, error) {
 	if a.current == nil {
 		return nil, fmt.Errorf("Not Open Binder")
 	}
-	d, err := db.GetDatum(id, noteId)
+	d, err := a.current.GetData(id, noteId)
 	if err != nil {
 		return nil, fmt.Errorf("GetDatum() error\n%+v", err)
 	}
@@ -38,7 +37,7 @@ func (a *App) OpenData(id, noteId string) (string, error) {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	data, err := a.current.ReadDataText(id, noteId)
+	data, err := a.current.OpenData(id, noteId)
 	if err != nil {
 		return "", fmt.Errorf("ReadDataText() error\n%+v", err)
 	}
@@ -52,7 +51,7 @@ func (a *App) SaveData(id, noteId string, data string) error {
 		return fmt.Errorf("Not Open Binder")
 	}
 
-	err := a.current.WriteDataText(id, noteId, []byte(data))
+	err := a.current.SaveData(id, noteId, []byte(data))
 	if err != nil {
 		return fmt.Errorf("WriteDataText() error\n%+v", err)
 	}

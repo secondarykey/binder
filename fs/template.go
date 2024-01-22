@@ -17,7 +17,7 @@ const (
 	ContentTemplateFrame = `{{ define "Content" }}%s{{ end }}`
 )
 
-func (b *Binder) ReadTemplate(id string) ([]byte, error) {
+func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 
 	n := TemplateFileName(id)
 	if n == "" {
@@ -37,7 +37,7 @@ func (b *Binder) ReadTemplate(id string) ([]byte, error) {
 	return data[firstIdx : leng-9], nil
 }
 
-func (b *Binder) AddTemplateFrame(id string, data string) string {
+func (b *FileSystem) AddTemplateFrame(id string, data string) string {
 	txt := ""
 	if id == "layout" {
 		txt = fmt.Sprintf(PageTemplateFrame, data)
@@ -47,7 +47,7 @@ func (b *Binder) AddTemplateFrame(id string, data string) string {
 	return txt
 }
 
-func (b *Binder) WriteTemplate(id string, data []byte) error {
+func (b *FileSystem) WriteTemplate(id string, data []byte) error {
 
 	n := TemplateFileName(id)
 	if n == "" {

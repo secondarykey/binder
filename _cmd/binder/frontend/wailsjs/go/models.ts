@@ -1,5 +1,6 @@
 export namespace binder {
 	
+	
 	export class Resource {
 	    notes: model.Note[];
 	    data: model.Datum[];

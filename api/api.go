@@ -2,7 +2,6 @@ package api
 
 import (
 	"binder"
-	"binder/fs"
 
 	"context"
 	"fmt"
@@ -15,9 +14,7 @@ import (
 // App struct
 type App struct {
 	ctx     context.Context
-	current *fs.Binder
-
-	owner *binder.Binder
+	current *binder.Binder
 }
 
 // NewApp creates a new App application struct
@@ -25,7 +22,7 @@ func New() *App {
 	return &App{}
 }
 
-func (app *App) SetCurrent(c *fs.Binder) {
+func (app *App) SetCurrent(c *binder.Binder) {
 	app.current = c
 }
 
@@ -86,7 +83,7 @@ func (a *App) GetResource() (*binder.Resource, error) {
 		return nil, fmt.Errorf("Not Open Binder")
 	}
 
-	r, err := binder.CreateResource()
+	r, err := a.current.CreateResource()
 	if err != nil {
 		return nil, fmt.Errorf("GetResource() error\n%+v", err)
 	}

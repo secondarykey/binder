@@ -4,10 +4,16 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-billy/v5/memfs"
+	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+	"golang.org/x/xerrors"
 )
 
 //go:embed _assets/binder
@@ -44,29 +50,29 @@ type FileSystem struct {
 //     {data_id} (none note_id)
 //   - {note_id}/
 //     {data_id}
-var publishDir = "docs"
+var PublishDir = "docs"
 
 func indexHTML() string {
-	return filepath.Join(publishDir, "index.html")
+	return filepath.Join(PublishDir, "index.html")
 }
 
 func listHTML(idx int) string {
-	return filepath.Join(publishDir, fmt.Sprintf("list_%d.html", idx))
+	return filepath.Join(PublishDir, fmt.Sprintf("list_%d.html", idx))
 }
 
 func noteHTML(id string) string {
-	return filepath.Join(publishDir, "notes", fmt.Sprintf("%s.html", id))
+	return filepath.Join(PublishDir, "notes", fmt.Sprintf("%s.html", id))
 }
 
 func noteImage(id string) string {
-	return filepath.Join(publishDir, "assets", id, "index")
+	return filepath.Join(PublishDir, "assets", id, "index")
 }
 
 func dataPath(id string, noteId string) string {
 	if noteId == "" {
-		return filepath.Join(publishDir, "assets", id)
+		return filepath.Join(PublishDir, "assets", id)
 	}
-	return filepath.Join(publishDir, "assets", noteId, "%s")
+	return filepath.Join(PublishDir, "assets", noteId, "%s")
 }
 
 //   - templates/
@@ -110,7 +116,7 @@ func noteTemplate() string {
 //     {note_id}.md
 const noteDir = "notes"
 
-func NoteTextFile(id string) string {
+func noteTextFile(id string) string {
 	return filepath.Join(noteDir, fmt.Sprintf("%s.md", id))
 }
 
@@ -120,31 +126,123 @@ func NoteTextFile(id string) string {
 //     {data_id}.md //assets は直接docsに入れる
 const dataDir = "data"
 
-func DataTextFile(id string, noteId string) string {
+func dataTextFile(id string, noteId string) string {
 	if noteId == "" {
 		return filepath.Join(dataDir, fmt.Sprintf("%s.md", id))
 	}
 	return filepath.Join(dataDir, noteId, fmt.Sprintf("%s.md", id))
 }
 
-//  ディレクトリのみを取得
-//   - db/
-//     config.csv
-//     notes.csv
-//     data.csv
+func New(dir string) (*FileSystem, error) {
+	fs := osfs.New(dir)
+	return newFileSystem(fs)
+}
 
-func Check(dir string, create bool) error {
+// メモリ上で扱う方法
+// https://gist.github.com/rogerwelin/7b1d2718bfbd94ecdfef0b9854fff99d
+func NewMemory() (*FileSystem, error) {
+	fs := memfs.New()
+	return newFileSystem(fs)
+}
 
-	//ファイルシステムの確認
+func Load(dir string) (*FileSystem, error) {
 
-	//データベースを確認
+	r, err := git.PlainOpen(dir)
+	if err != nil {
+		return nil, xerrors.Errorf("error: %w", err)
+	}
+	var b FileSystem
+	b.repo = r
+	fs := osfs.New(dir)
+	b.fs = fs
+	return &b, nil
+}
 
-	//notesの状態
+func Clone(dir string, url string) (*FileSystem, error) {
 
-	//dataの状態
+	//TODO FileSystem
+	r, err := git.PlainClone(dir, false, &git.CloneOptions{
+		URL:      url,
+		Progress: os.Stdout,
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("error: %w", err)
+	}
 
-	//状態
+	var b FileSystem
+	b.repo = r
+	b.remote = url
+	return &b, nil
+}
 
-	//git status確認
+func newFileSystem(fs billy.Filesystem) (*FileSystem, error) {
+
+	dot, err := fs.Chroot(".git")
+	if err != nil {
+		return nil, xerrors.Errorf("error: %w", err)
+	}
+
+	//TODO デフォルトブランチ
+	s := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
+
+	rep, err := git.Init(s, fs)
+	if err != nil {
+		return nil, xerrors.Errorf("error: %w", err)
+	}
+
+	var b FileSystem
+	b.fs = fs
+	b.repo = rep
+	return &b, nil
+}
+
+func (f *FileSystem) Close() error {
+	//return f.repo.Close()
+
 	return nil
+}
+
+// ディレクトリを親ごと作成
+func (b *FileSystem) mkdir(n string) error {
+	err := b.fs.MkdirAll(n, 0666)
+	if err != nil {
+		return xerrors.Errorf("MkdirAll() error: %w", err)
+	}
+	return nil
+}
+
+func (b *FileSystem) isExist(n string) bool {
+	_, err := b.fs.Stat(n)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// ファイルを作成し、Addする
+func (b *FileSystem) Create(n string) (fs.File, error) {
+
+	index := true
+	if b.isExist(n) {
+		index = false
+	}
+
+	fp, err := b.fs.Create(n)
+	if err != nil {
+		return nil, xerrors.Errorf("Create() error: %w", err)
+	}
+
+	if index {
+		err = b.Add(n)
+		if err != nil {
+			return nil, xerrors.Errorf("Add() error: %w", err)
+		}
+	}
+
+	var f File
+	f.name = n
+	f.root = b.fs
+	f.File = fp
+
+	return &f, nil
 }

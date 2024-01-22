@@ -20,7 +20,7 @@ func isNote(id string) bool {
 }
 
 type wrapper struct {
-	owner *fs.Binder
+	owner *Binder
 	local bool
 	id    string
 }
@@ -44,7 +44,7 @@ func (w wrapper) latestNotes(n int) []*model.Note {
 	return make([]*model.Note, 0)
 }
 
-func defineFuncMap(b *fs.Binder, local bool, id string) map[string]interface{} {
+func defineFuncMap(b *Binder, local bool, id string) map[string]interface{} {
 	w := wrapper{b, local, id}
 	funcMap := map[string]interface{}{
 		"replace":     strings.ReplaceAll,
@@ -69,7 +69,7 @@ func convertLF2Comma(src string) string {
 	return strings.ReplaceAll(src, "\n", ",")
 }
 
-func createTemplate(b *fs.Binder, local bool, id string, text string) (*template.Template, error) {
+func (b *Binder) createTemplate(local bool, id string, text string) (*template.Template, error) {
 
 	var err error
 	//FuncMapを準備
@@ -77,21 +77,21 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 
 	if id == "layout" && text != "" {
 		//レイアウトをテキストで代用
-		_, err = tmpl.Parse(b.AddTemplateFrame(id, text))
+		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(id, text))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
 		}
 	} else {
 		layoutFile := fs.TemplateFileName("layout")
 		//layout と typeでパース
-		_, err = tmpl.ParseFS(b, layoutFile)
+		_, err = tmpl.ParseFS(b.fileSystem, layoutFile)
 		if err != nil {
 			return nil, xerrors.Errorf("layout ParseFS([%s]) error: %w", layoutFile, err)
 		}
 	}
 
 	if id != "layout" && text != "" {
-		_, err = tmpl.Parse(b.AddTemplateFrame(id, text))
+		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(id, text))
 		if err != nil {
 			return nil, xerrors.Errorf("Parse() error: %w", id, err)
 		}
@@ -102,7 +102,7 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 		}
 		tmpFile := fs.TemplateFileName(tId)
 		//layout と typeでパース
-		_, err = tmpl.ParseFS(b, tmpFile)
+		_, err = tmpl.ParseFS(b.fileSystem, tmpFile)
 		if err != nil {
 			return nil, xerrors.Errorf("[%s] Parse() error: %w", id, err)
 		}
@@ -111,24 +111,7 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 	return tmpl, nil
 }
 
-//Index,,,Home?
-
-//Note - 自分の場合
-//  Name
-//  Detail
-//  pageImage
-//  Link
-
-//Prev 次のページの情報
-//Next 前のページの情報
-
-//Pager
-//  PageNum 最大ページ数
-//  Now 今のページ数
-//  First
-//  Last
-
-func writeHTML(w io.Writer, b *fs.Binder, tmpl *template.Template, elm string) error {
+func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, elm string) error {
 
 	dto := struct {
 		Name        string
@@ -142,4 +125,106 @@ func writeHTML(w io.Writer, b *fs.Binder, tmpl *template.Template, elm string) e
 		return xerrors.Errorf("tmpl Execute() error: %w", err)
 	}
 	return nil
+}
+
+func (b *Binder) OpenTemplate(id string) ([]byte, error) {
+	return b.fileSystem.ReadTemplate(id)
+}
+
+func (b *Binder) SaveTemplate(id string, data string) error {
+
+	//TODO []byteにできないか考える
+	//枠を作成
+	txt := b.fileSystem.AddTemplateFrame(id, data)
+	err := b.fileSystem.WriteTemplate(id, []byte(txt))
+	if err != nil {
+		return xerrors.Errorf("WriteTemplate() error: %w", err)
+	}
+
+	return nil
+}
+
+// リストも一緒に出力
+func (b *Binder) GenerateIndexHTML() error {
+
+	err := b.generateHTML("index")
+	if err != nil {
+		return xerrors.Errorf("generateHTML(index) error: %w", err)
+	}
+
+	err = b.generateHTML("list")
+	if err != nil {
+		return xerrors.Errorf("generateHTML(list) error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) GenerateNoteHTML(id string) error {
+	return b.generateHTML(id)
+}
+
+// HTMLファイル出力用
+func (b *Binder) generateHTML(id string) error {
+
+	//TODO 取得をfsから行う
+	n := "docs/" + id + ".html"
+	//List時はページャーを作る
+	if id != "index" && id != "list" {
+		dir := "docs/notes/" + id
+		n = dir + "/index.html"
+	}
+
+	//list 時にループする
+	fp, err := b.fileSystem.Create(n)
+	if err != nil {
+		return xerrors.Errorf("Create() error: %w", err)
+	}
+
+	tmpl, err := b.createTemplate(false, id, "")
+	if err != nil {
+		return xerrors.Errorf("writeHTML() error: %w", err)
+	}
+
+	err = b.writeHTML(fp.(io.Writer), tmpl, "")
+	if err != nil {
+		return xerrors.Errorf("writeHTML() error: %w", err)
+	}
+
+	err = b.fileSystem.Commit("generate:" + id)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
+
+// HTMLメモリ作成
+func (b *Binder) CreateNoteHTML(id string, elm string) (string, error) {
+
+	tmpl, err := b.createTemplate(true, id, "")
+	if err != nil {
+		return "", xerrors.Errorf("createTemplate() error: %w", err)
+	}
+
+	var builder strings.Builder
+	err = b.writeHTML(&builder, tmpl, elm)
+	if err != nil {
+		return "", xerrors.Errorf("generateHTML() error: %w", err)
+	}
+	return builder.String(), nil
+}
+
+func (b *Binder) CreateTemplateHTML(id string, temp string, elm string) (string, error) {
+
+	tmpl, err := b.createTemplate(true, id, temp)
+	if err != nil {
+		return "", xerrors.Errorf("createTemplate() error: %w", err)
+	}
+
+	var builder strings.Builder
+	err = b.writeHTML(&builder, tmpl, elm)
+	if err != nil {
+		return "", xerrors.Errorf("generateHTML() error: %w", err)
+	}
+
+	return builder.String(), nil
 }

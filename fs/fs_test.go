@@ -23,7 +23,7 @@ func TestAdd(t *testing.T) {
 	os.Mkdir(dir, 0666)
 
 	//n, err := fs.NewBinder(dir)
-	n, err := fs.NewMemoryBinder()
+	n, err := fs.NewMemory()
 	if err != nil {
 		t.Errorf("NewBinder() error is not nil: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestClone(t *testing.T) {
 	file := "test.txt"
 	url := "https://github.com/secondarykey/secondarykey.github.com"
 
-	n, err := fs.CloneBinder(dir, url)
+	n, err := fs.Clone(dir, url)
 	if err != nil {
 		t.Errorf("LoadBinder() error is not nil: %v", err)
 	}

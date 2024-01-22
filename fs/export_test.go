@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (b *Binder) PrintStatus() {
+func (b *FileSystem) PrintStatus() {
 
 	w, err := b.repo.Worktree()
 	status, err := w.Status()

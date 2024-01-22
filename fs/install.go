@@ -10,7 +10,7 @@ import (
 )
 
 // embedからディレクトリを作成
-func Create(dir string) (*Binder, error) {
+func Create(dir string) (*FileSystem, error) {
 
 	//TODO ディレクトリは存在ではなく、中身があるかで判定する
 	_, err := os.Stat(dir)
@@ -24,9 +24,9 @@ func Create(dir string) (*Binder, error) {
 	}
 
 	//Gitを作成
-	b, err := NewBinder(dir)
+	b, err := New(dir)
 	if err != nil {
-		return nil, xerrors.Errorf("NewBinder() error: %w", err)
+		return nil, xerrors.Errorf("New() error: %w", err)
 	}
 
 	//embedから作成
@@ -63,7 +63,7 @@ func Create(dir string) (*Binder, error) {
 }
 
 // embed の構造をコピーする
-func add(b *Binder, info fs.FileInfo, dir string) error {
+func add(b *FileSystem, info fs.FileInfo, dir string) error {
 
 	n := info.Name()
 	if dir != "" {
