@@ -39,7 +39,6 @@ func remove(dir string) {
 		if i.IsDir() {
 			remove(n)
 		}
-
 		os.Remove(n)
 	}
 }

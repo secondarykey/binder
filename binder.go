@@ -4,6 +4,7 @@ import (
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
+	"net/http"
 
 	"io"
 	"strings"
@@ -12,8 +13,10 @@ import (
 )
 
 type Binder struct {
-	fileSystem *fs.FileSystem
-	instance   *db.Instance
+	fileSystem        *fs.FileSystem
+	instance          *db.Instance
+	httpServer        *http.Server
+	httpServerAddress string
 }
 
 func New(path string) (*Binder, error) {

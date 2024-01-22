@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+
+	"github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-git/v5"
 )
 
 //go:embed _assets/binder
@@ -22,6 +25,11 @@ func init() {
 // 現行のBinderと同じ
 // Binderはルートに移行しておく
 type FileSystem struct {
+	fs   billy.Filesystem
+	repo *git.Repository
+
+	branch string
+	remote string
 }
 
 // Binder File System

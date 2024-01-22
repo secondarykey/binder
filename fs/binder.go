@@ -63,14 +63,11 @@ func LoadBinder(dir string) (*Binder, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}
-
 	var b Binder
 	b.repo = r
-
 	//TODO duplicate?
 	fs := osfs.New(dir)
 	b.fs = fs
-
 	return &b, nil
 }
 

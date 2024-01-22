@@ -20,8 +20,6 @@ func (b *Binder) ExistsData(id, noteId string) bool {
 
 func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 
-	plugin := "mermaid"
-
 	regFlag := false
 	now := time.Now()
 
@@ -32,8 +30,6 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 	//プラグイン設定がなく、ファイル指定がある場合
 	// Assetsのファイルなし更新を考慮
 	if f != "" {
-		plugin = "assets"
-
 		if regFlag {
 			//ファイル名からIDを作成
 			fn := filepath.Base(f)
@@ -52,7 +48,6 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("ReadFile() error: %w", err)
 		}
-
 		_, err = fp.(io.Writer).Write(data)
 		if err != nil {
 			return nil, xerrors.Errorf("Write() error: %w", err)
@@ -64,7 +59,7 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		d.ID = uuid.New().String()
 	}
 
-	if regFlag && f == "" {
+	if regFlag && d.PluginId == "mermaid" {
 		//新規にデータを作成
 		//テキストでない場合
 		n := DataTextFile(d.ID, d.NoteId)
@@ -81,7 +76,6 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		d.Created = now
 	}
 
-	d.PluginId = plugin
 	d.Updated = now
 	if regFlag {
 		//DBに追加

@@ -4,6 +4,8 @@ import {model} from '../models';
 import {binder} from '../models';
 import {fs} from '../models';
 
+export function Address():Promise<string>;
+
 export function Close():Promise<boolean>;
 
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;

@@ -16,6 +16,8 @@ import (
 type App struct {
 	ctx     context.Context
 	current *fs.Binder
+
+	owner *binder.Binder
 }
 
 // NewApp creates a new App application struct
@@ -71,6 +73,11 @@ func (a *App) SelectFile(name string, ptn string) (string, error) {
 		return "", fmt.Errorf("SelectFile() error\n%+v", err)
 	}
 	return selection, nil
+}
+
+func (a *App) Address() (string, error) {
+	//TODO 起動してない時？
+	return a.current.ServerAddress(), nil
 }
 
 func (a *App) GetResource() (*binder.Resource, error) {

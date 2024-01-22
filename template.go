@@ -111,6 +111,23 @@ func createTemplate(b *fs.Binder, local bool, id string, text string) (*template
 	return tmpl, nil
 }
 
+//Index,,,Home?
+
+//Note - 自分の場合
+//  Name
+//  Detail
+//  pageImage
+//  Link
+
+//Prev 次のページの情報
+//Next 前のページの情報
+
+//Pager
+//  PageNum 最大ページ数
+//  Now 今のページ数
+//  First
+//  Last
+
 func writeHTML(w io.Writer, b *fs.Binder, tmpl *template.Template, elm string) error {
 
 	dto := struct {

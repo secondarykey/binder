@@ -22,7 +22,9 @@ function Assets(props) {
       data.pluginId = "assets";
 
       EditAssets(data,file).then((resp) => {
+        props.onRefreshTree();
         //props.onChangeMode("editor",resp.ID,resp.NoteId);
+        props.onMessage("success","update assets");
       }).catch( (err) => {
         console.warn(err);
         props.onMessage("error",err);
@@ -30,7 +32,12 @@ function Assets(props) {
     }
 
     useEffect( () => {
-      if ( props.id === "" ) return;
+
+      setFile("");
+      if ( props.id === "" ) {
+        return;
+      }
+
       GetData(props.id,props.noteId).then( (data) => {
         setName(data.name);
       }).catch( (err) => {

@@ -1,9 +1,11 @@
 import { useState,useEffect } from "react";
 
-import {SelectFile,EditNote} from "../../wailsjs/go/api/App";
-import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import {SelectFile,EditNote,Address} from "../../wailsjs/go/api/App";
+import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Paper, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { GetNote } from "../../wailsjs/go/api/App";
+
+import noImage from '../assets/images/noimage.png'
 /**
  * ノートのメタデータを表示,編集
  * @param {*} props 
@@ -13,6 +15,7 @@ function Note(props) {
 
   const [name, setName] = useState("");
   const [imageFile, setImageFile] = useState("");
+  const [viewImage, setViewImage] = useState("");
 
   useEffect( () => {
 
@@ -29,6 +32,13 @@ function Note(props) {
       props.onMessage("error",err);
     })
 
+    Address().then( (address) => {
+      setViewImage("http://" + address + "/assets/" + props.id + "/index")
+    }).catch ((err) => {
+      console.warn(err);
+      props.onMessage("error",err);
+    }) 
+
   },[props.id]);
 
   const handleSave = () => {
@@ -38,12 +48,14 @@ function Note(props) {
     note.title = name;
 
     EditNote(note,imageFile).then((resp) => {
+
       //新規作成時のみ切り替え
       if ( props.id === "" ) {
         props.onChangeMode("editor",resp.id);
       }
       props.onRefreshTree();
       props.onMessage("success","update note.")
+
     }).catch( (err) => {
       console.warn(err);
       props.onMessage("error",err);
@@ -59,6 +71,10 @@ function Note(props) {
       console.warn(err);
       props.onMessage("error",err);
     });
+  }
+
+  function setNoImage(e) {
+    e.target.src = noImage;
   }
 
     return (<>
@@ -87,6 +103,14 @@ function Note(props) {
                  </InputAdornment>
                )}}></TextField>
   </FormControl>
+
+{(props.id !== "" && viewImage !== "") && 
+<>
+<Container style={{marginTop:"10px",textAlign:"center"}}>
+  <img src={viewImage} onError={setNoImage} style={{height:"200px",width:"fit-content"}}></img>
+</Container>
+</>
+}
 
   <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
     <Button variant="contained" onClick={handleSave}>

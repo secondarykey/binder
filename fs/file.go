@@ -1,7 +1,9 @@
 package fs
 
 import (
+	"io"
 	"io/fs"
+	"log"
 
 	"github.com/go-git/go-billy/v5"
 	"golang.org/x/xerrors"
@@ -35,7 +37,8 @@ func (b *Binder) Open(name string) (fs.File, error) {
 
 func (f *File) Write(d []byte) (int, error) {
 
-	//TODO 一度閉じてCreateするみたいなことができるか？
+	// TODO 一旦閉じずに、書き込み側でCreateすることで
+	// 問題を解消できると思われる
 	err := f.File.Close()
 	if err != nil {
 		return 0, xerrors.Errorf("Close() error: %w", err)
@@ -53,4 +56,37 @@ func (f *File) Write(d []byte) (int, error) {
 
 func (f *File) Stat() (fs.FileInfo, error) {
 	return f.root.Stat(f.name)
+}
+
+// text file 1
+// binary file 0
+// length zero -1
+// error -2
+func IsText(r io.Reader) int {
+
+	buf := make([]byte, 1024)
+
+	rtn := -1
+	for {
+
+		n, err := r.Read(buf)
+		if n == 0 {
+			break
+		}
+		rtn = 1
+
+		if err != nil {
+			log.Println(err)
+			return -2
+		}
+
+		//null check
+		for idx := 0; idx < n; idx++ {
+			v := buf[idx]
+			if v == 0 {
+				return 0
+			}
+		}
+	}
+	return rtn
 }

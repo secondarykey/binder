@@ -33,6 +33,9 @@ function Data(props) {
       if ( props.id === "" ) {
         props.onChangeMode("editor",resp.id,resp.noteId);
       }
+      props.onRefreshTree();
+      props.onMessage("success","update data.")
+
     }).catch( (err) => {
       console.warn(err);
       props.onMessage("error",err);

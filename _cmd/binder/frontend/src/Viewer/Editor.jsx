@@ -96,6 +96,10 @@ function Editor(props) {
     const viewHTML = (txt,embNoteElm) => {
 
         var elm = document.querySelector('#htmlViewer');
+        var sc = document.querySelector('#dataViewer');
+
+        console.log(sc)
+
         if ( mode === "note" ) {
           var embed = marked.marked(txt);
           CreateNoteHTML(props.noteId,embed).then( (html) => {
