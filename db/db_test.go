@@ -10,8 +10,8 @@ import (
 	"binder/test"
 )
 
-var configCSV = `name,detail,created_date,updated_date
-"Sample Binder","Sample Description",0001-01-01T00:00:00Z,0001-01-01T00:00:00Z
+var configCSV = `name,detail,list_num,branch,auto_commit,created_date,updated_date
+"Sample Binder","Sample Description",0,main,0,0001-01-01T00:00:00Z,0001-01-01T00:00:00Z
 `
 
 const notesCSV = `id,name,detail,publish_date,created_date,updated_date

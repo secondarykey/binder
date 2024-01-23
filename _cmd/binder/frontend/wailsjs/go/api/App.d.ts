@@ -13,11 +13,15 @@ export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string):Promise<
 
 export function EditAssets(arg1:model.Datum,arg2:string):Promise<model.Datum>;
 
+export function EditConfig(arg1:model.Config):Promise<model.Config>;
+
 export function EditData(arg1:model.Datum):Promise<model.Datum>;
 
 export function EditNote(arg1:model.Note,arg2:string):Promise<model.Note>;
 
 export function Generate(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function GetConfig():Promise<model.Config>;
 
 export function GetData(arg1:string,arg2:string):Promise<model.Datum>;
 
@@ -30,6 +34,8 @@ export function OpenData(arg1:string,arg2:string):Promise<string>;
 export function OpenNote(arg1:string):Promise<string>;
 
 export function OpenTemplate(arg1:string):Promise<string>;
+
+export function ParseNote(arg1:string,arg2:boolean,arg3:string):Promise<string>;
 
 export function SaveData(arg1:string,arg2:string,arg3:string):Promise<void>;
 

@@ -89,21 +89,29 @@ function App() {
     const changeMode = (mode,id,parentId) => {
       //指定のあったIDに変更
       if ( parentId === undefined ) {
+        //指定IDでモードを設定しているのを止める
         if ( mode === "template" ) {
           mode = "editor"
           setTemplateId(id);
           setNoteId(undefined);
           setDataId(undefined)
-        } else {
+        } else if ( id !== undefined ) {
           setNoteId(id);
           setDataId(undefined)
           setTemplateId(undefined);
+        } else {
+          setNoteId(undefined);
+          setDataId(undefined)
+          setTemplateId(undefined);
         }
-      } else {
+      } else if ( id !== undefined ) {
         setNoteId(parentId);
         setDataId(id)
         setTemplateId(undefined);
+      } else {
+        showMessage("error","undefined mode:" + mode);
       }
+
       setMode(mode);
     }
 
@@ -140,10 +148,15 @@ function App() {
     <>
     <div id="App">
 
+{/** メニューを開いている場合 */}
 {isMenuOpen &&
-
-      <LeftMenu onClose={hideMenu} onChangeMode={changeMode} onMessage={showMessage}
+<>
+      <LeftMenu mode={mode} 
+                onClose={hideMenu} 
+                onChangeMode={changeMode} 
+                onMessage={showMessage}
                 onRefreshTree={refreshTree} redraw={redraw}/>
+</>
 }
 
       <MainViewer showMenu={isMenuOpen} onOpen={openMenu} 
@@ -151,6 +164,7 @@ function App() {
                   onChangeMode={changeMode} 
                   onMessage={showMessage}
                   onRefreshTree={refreshTree}/>
+
 
       <Snackbar open={msg.show && !msgDlg}
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}

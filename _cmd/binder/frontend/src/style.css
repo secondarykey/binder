@@ -5,13 +5,14 @@ html {
 }
 
 body {
+    --wails-draggable:"drag";
+
     margin: 0;
     padding:0;
     color: white;
     font-family: "Meiryo","Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
-    --wails-draggable:"drag";
     overflow: hidden;
 }
 
@@ -49,7 +50,8 @@ body {
 #lefcontent {
     background-color: #191919;
     color: #f1f1f1;
-    overflow: auto;
+    overflow: auto !important;
+    border:0;
 }
 
 .treeText {
@@ -107,6 +109,7 @@ body {
 
 #splitter {
     --wails-draggable:no-drag;
+
     position: absolute;
     top: 64px;
     bottom: 0;
@@ -116,11 +119,12 @@ body {
 }
 
 #dataViewer {
+    --wails-draggable:no-drag;
+
     position: absolute;
     top: 64px;
     right:0;
     bottom: 0px;
-    --wails-draggable:no-drag;
     display: flex;
 }
 
@@ -133,13 +137,14 @@ body {
 }
 
 #editor {
+    --wails-draggable:no-drag;
+
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
     bottom: 48px;
 
-    --wails-draggable:no-drag;
     background-color: #252525;
     caret-color: #ffffff;
 
@@ -148,4 +153,3 @@ body {
     padding: 5px;
     margin: 0px;
 }
-

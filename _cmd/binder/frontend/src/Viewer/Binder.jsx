@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import {SelectFile,CreateNote} from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
+import { GetConfig,EditConfig } from "../../wailsjs/go/api/App";
 /**
  * バインダーのメタデータを表示,編集
  * @param {*} props 
@@ -9,26 +9,50 @@ import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
  */
 function Binder(props) {
 
-  const [imageFile, setImageFile] = useState("");
   const [name, setName] = useState("");
+  const [detail, setDetail] = useState("");
+  const [listNum, setListNum] = useState(0);
+  const [branch, setBranch] = useState("main");
+  const [auto, setAuto] = useState(0);
+
+  useEffect( () => {
+    GetConfig().then( (conf) => {
+      setName(conf.name);
+      setDetail(conf.detail);
+      setListNum(conf.listNum);
+      setBranch(conf.branch);
+      setAuto(conf.autoCommit);
+    }).catch( (err) => {
+      props.onMessage("error",err);
+    });
+  },[]);
 
   const handleSave = () => {
-    CreateNote(props.id,name,imageFile).then((resp) => {
-        //TODO モードをIDで変更する？
+    var config = {};
+    config.name = name;
+    config.detail = detail;
+    config.listNum = Number(listNum);
+    config.branch = branch;
+    config.autoCommit = Number(auto);
+    EditConfig(config).then((resp) => {
+      props.onMessage("success","update binder.");
     }).catch( (err) => {
-      console.log(err);
+      console.warn(err);
+      props.onMessage("error",err);
     });
   }
 
-  const selectFile = () => {
-    SelectFile("Page Image File","*.png;*.jpg;*.jpeg;*.webp;").then((f) => {
-      setImageFile(f);
-    }).catch( (err) => {
-      console.log(err);
-    });
+  const setNumeric = (oldV,newV,caller) => {
+    var res = Number(newV)
+   
+    console.log(res)
+    if ( isNaN(res) ) {
+      res = Number(oldV)
+    }
+    caller(res);
   }
 
-    return (<>
+  return (<>
 <Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
 
   <FormControl>
@@ -36,18 +60,26 @@ function Binder(props) {
     <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
   </FormControl>
 
-{/**
-<FormControl>
-  <FormLabel>ID</FormLabel>
-  <TextField></TextField>
-</FormControl>
-*/}
+  <FormControl>
+    <FormLabel>Detail</FormLabel>
+    <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline="true"></TextField>
+  </FormControl>
 
   <FormControl>
-    <FormLabel>Note Image
-      <Button onClick={selectFile}>Select</Button>
-    </FormLabel>
-    <TextField value={imageFile}></TextField>
+    <FormLabel>{ "List Num(= 0 is no limit)" }</FormLabel>
+    <TextField value={listNum} onChange={(e) => setNumeric(listNum,e.target.value,setListNum)}>
+    </TextField>
+  </FormControl>
+
+  <FormControl>
+    <FormLabel>Branch Name(It is only used for PR Links will not be updated.)</FormLabel>
+    <TextField value={branch} onChange={(e) => setBranch(e.target.value)}></TextField>
+  </FormControl>
+
+  <FormControl>
+    <FormLabel>{ "Auto Commit(= 0 is manual)" }</FormLabel>
+    <TextField value={auto} onChange={(e) => setNumeric(auto,e.target.value,setAuto)}>
+    </TextField>
   </FormControl>
 
   <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>

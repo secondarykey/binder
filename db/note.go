@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"binder/db/model"
 
@@ -29,6 +30,10 @@ func (inst *Instance) InsertNote(n *model.Note) error {
 		return DuplicateKey
 	}
 
+	now := time.Now()
+	n.Created = now
+	n.Updated = now
+
 	s := "INSERT INTO notes (id,name,detail,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?)"
 
 	err := inst.run(s,
@@ -42,10 +47,13 @@ func (inst *Instance) InsertNote(n *model.Note) error {
 
 func (inst *Instance) UpdateNote(n *model.Note) error {
 
-	s := "UPDATE notes SET name = ?,detail = ?,publish_date = ?,created_date = ?,updated_date = ? WHERE id = ?"
+	now := time.Now()
+	n.Updated = now
+
+	s := "UPDATE notes SET name = ?,detail = ?,updated_date = ? WHERE id = ?"
 
 	err := inst.run(s,
-		n.Name, n.Detail, n.Publish, n.Created, n.Updated, n.ID)
+		n.Name, n.Detail, n.Updated, n.ID)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}

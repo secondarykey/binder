@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"fmt"
+	"log"
 	"strings"
 
 	"html/template"
@@ -21,15 +22,16 @@ func isNote(id string) bool {
 
 type wrapper struct {
 	owner *Binder
-	local bool
-	id    string
+	Local bool
+	ID    string
 }
 
 func newWrapper(o *Binder, local bool, id string) *wrapper {
 	var w wrapper
+
 	w.owner = o
-	w.local = local
-	w.id = id
+	w.Local = local
+	w.ID = id
 
 	return &w
 }
@@ -37,9 +39,9 @@ func newWrapper(o *Binder, local bool, id string) *wrapper {
 func (w wrapper) dir() string {
 
 	assets := "assets"
-	if w.local {
+	if w.Local {
 		assets = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "assets")
-	} else if isNote(w.id) {
+	} else if isNote(w.ID) {
 		assets = "../" + assets
 	}
 	return assets
@@ -54,12 +56,17 @@ func (w wrapper) latestNotes(n int) []*model.Note {
 	return make([]*model.Note, 0)
 }
 
-func defineFuncMap(b *Binder, local bool, id string) map[string]interface{} {
-	w := newWrapper(b, local, id)
+func safeTemplate(src string) string {
+	log.Println(src)
+	return src
+}
+
+func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"replace":     strings.ReplaceAll,
 		"assets":      w.assets,
 		"latestNotes": w.latestNotes,
+		"safe":        safeTemplate,
 		"lf2br":       convertLF2BR,
 		"lf2sp":       convertLF2SP,
 		"lf2comma":    convertLF2Comma,
@@ -79,15 +86,14 @@ func convertLF2Comma(src string) string {
 	return strings.ReplaceAll(src, "\n", ",")
 }
 
-func (b *Binder) createTemplate(local bool, id string, text string) (*template.Template, error) {
-
+func (b *Binder) createTemplate(w *wrapper, text string) (*template.Template, error) {
 	var err error
 	//FuncMapを準備
-	tmpl := template.New(fs.TemplatePageRoot).Funcs(template.FuncMap(defineFuncMap(b, local, id)))
+	tmpl := template.New(fs.TemplatePageRoot).Funcs(defineFuncMap(w))
 
-	if id == "layout" && text != "" {
+	if w.ID == "layout" && text != "" {
 		//レイアウトをテキストで代用
-		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(id, text))
+		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(w.ID, text))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
 		}
@@ -100,26 +106,47 @@ func (b *Binder) createTemplate(local bool, id string, text string) (*template.T
 		}
 	}
 
-	if id != "layout" && text != "" {
-		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(id, text))
+	if w.ID != "layout" && text != "" {
+		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(w.ID, text))
 		if err != nil {
-			return nil, xerrors.Errorf("Parse() error: %w", id, err)
+			return nil, xerrors.Errorf("Parse() error: %w", err)
 		}
 	} else {
-		tId := id
-		if id != "index" && id != "list" {
+		tId := w.ID
+		if w.ID != "index" && w.ID != "list" {
 			tId = "note"
 		}
 		tmpFile := fs.TemplateFileName(tId)
 		//layout と typeでパース
 		_, err = tmpl.ParseFS(b.fileSystem, tmpFile)
 		if err != nil {
-			return nil, xerrors.Errorf("[%s] Parse() error: %w", id, err)
+			return nil, xerrors.Errorf("[%s] Parse() error: %w", w.ID, err)
 		}
 	}
 
 	return tmpl, nil
 }
+
+func (b *Binder) ParseElement(id string, local bool, elm string) (string, error) {
+	wrap := newWrapper(b, local, id)
+
+	tmpl, err := template.New("").Funcs(defineFuncMap(wrap)).Parse(elm)
+	if err != nil {
+		return "", xerrors.Errorf("Element Parse() error: %w", err)
+	}
+
+	var builder strings.Builder
+	err = b.writeHTML(&builder, tmpl, elm)
+	if err != nil {
+		return "", xerrors.Errorf("elm Execute() error: %w", err)
+	}
+	return builder.String(), nil
+}
+
+/*
+	func (b *Binder) createElement(wrap *wrapper, elm string) error {
+	    }
+*/
 
 func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, elm string) error {
 
@@ -188,7 +215,8 @@ func (b *Binder) generateHTML(id string, idx int) error {
 		return xerrors.Errorf("Create() error: %w", err)
 	}
 
-	tmpl, err := b.createTemplate(false, id, "")
+	w := newWrapper(b, false, id)
+	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
 		return xerrors.Errorf("writeHTML() error: %w", err)
 	}
@@ -208,7 +236,9 @@ func (b *Binder) generateHTML(id string, idx int) error {
 // HTMLメモリ作成
 func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, error) {
 
-	tmpl, err := b.createTemplate(local, id, "")
+	w := newWrapper(b, local, id)
+
+	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
 		return "", xerrors.Errorf("createTemplate() error: %w", err)
 	}
@@ -223,7 +253,8 @@ func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, erro
 
 func (b *Binder) CreateTemplateHTML(id string, temp string, elm string) (string, error) {
 
-	tmpl, err := b.createTemplate(true, id, temp)
+	w := newWrapper(b, true, id)
+	tmpl, err := b.createTemplate(w, temp)
 	if err != nil {
 		return "", xerrors.Errorf("createTemplate() error: %w", err)
 	}

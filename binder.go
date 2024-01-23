@@ -119,6 +119,24 @@ func (b *Binder) Close() error {
 	return nil
 }
 
+func (b *Binder) EditConfig(conf *model.Config) error {
+	org, err := b.db.GetConfig()
+	if err != nil {
+		return xerrors.Errorf("db.GetConfig() error: %w", err)
+	}
+	conf.Created = org.Created
+
+	err = b.db.UpdateConfig(conf)
+	if err != nil {
+		return xerrors.Errorf("db.UpdateConfig() error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) GetConfig() (*model.Config, error) {
+	return b.db.GetConfig()
+}
+
 type Resource struct {
 	Notes []*model.Note  `json:"notes"`
 	Data  []*model.Datum `json:"data"`

@@ -22,6 +22,10 @@ export function EditAssets(arg1, arg2) {
   return window['go']['api']['App']['EditAssets'](arg1, arg2);
 }
 
+export function EditConfig(arg1) {
+  return window['go']['api']['App']['EditConfig'](arg1);
+}
+
 export function EditData(arg1) {
   return window['go']['api']['App']['EditData'](arg1);
 }
@@ -32,6 +36,10 @@ export function EditNote(arg1, arg2) {
 
 export function Generate(arg1, arg2, arg3) {
   return window['go']['api']['App']['Generate'](arg1, arg2, arg3);
+}
+
+export function GetConfig() {
+  return window['go']['api']['App']['GetConfig']();
 }
 
 export function GetData(arg1, arg2) {
@@ -56,6 +64,10 @@ export function OpenNote(arg1) {
 
 export function OpenTemplate(arg1) {
   return window['go']['api']['App']['OpenTemplate'](arg1);
+}
+
+export function ParseNote(arg1, arg2, arg3) {
+  return window['go']['api']['App']['ParseNote'](arg1, arg2, arg3);
 }
 
 export function SaveData(arg1, arg2, arg3) {

@@ -70,3 +70,15 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 	}
 	return html, nil
 }
+
+func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
+	if a.current == nil {
+		return "", fmt.Errorf("Not Open Binder")
+	}
+
+	html, err := a.current.ParseElement(id, local, elm)
+	if err != nil {
+		return "", fmt.Errorf("ParseElement() error\n%+v", err)
+	}
+	return html, nil
+}

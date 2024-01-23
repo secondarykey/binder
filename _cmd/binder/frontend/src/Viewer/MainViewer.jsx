@@ -6,9 +6,11 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import {Close} from "../../wailsjs/go/api/App";
 import Editor from "./Editor";
+import Binder from "./Binder";
 import Note from "./Note";
 import Data from "./Data";
 import Assets from "./Assets";
+
 /**
  * 表示部分
  * 左メニューとのコントロールを基本的に行い、他の処理は他のコンポーネントで行う
@@ -60,7 +62,11 @@ function MainViewer(props) {
         */}
       <Paper id="viewer">
 {mode === "binder" &&
-<></>
+<>
+  <Binder templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
+          onRefreshTree={props.onRefreshTree}
+          onMessage={props.onMessage}/>
+</>
 }
 
 {mode === "history" &&

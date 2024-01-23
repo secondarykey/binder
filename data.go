@@ -13,7 +13,6 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		return nil, xerrors.Errorf("fs.EditData() error: %w", err)
 	}
 
-	//TODO database
 	if reg {
 		err = b.db.InsertDatum(rtn)
 		if err != nil {

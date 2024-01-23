@@ -41,7 +41,6 @@ func (b *Binder) OpenNote(noteId string) ([]byte, error) {
 			return nil, fmt.Errorf("Note not found.")
 		}
 	}
-
 	return b.fileSystem.ReadNoteText(nId)
 }
 

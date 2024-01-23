@@ -2,8 +2,9 @@ import {useState,useEffect} from "react"
 import { IconButton, Paper, Toolbar } from "@mui/material";
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
-import { OpenTemplate,OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML,CreateTemplateHTML, SaveTemplate ,Generate} from "../../wailsjs/go/api/App.js";
+import { ParseNote,OpenTemplate,OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML,CreateTemplateHTML, SaveTemplate ,Generate} from "../../wailsjs/go/api/App.js";
 import { Save } from "@mui/icons-material";
+import CommitIcon from '@mui/icons-material/Commit';
 import OutputIcon from '@mui/icons-material/Output';
 
 /**
@@ -19,8 +20,12 @@ function Editor(props) {
     const [width,setWidth] = useState(500);
     const [mode,setMode] = useState("");
 
-    useEffect(() => {
+    const redrawNoteElm = async (resp) => {
+      var elm = await createMarked(resp,true);
+      setNoteElm(elm);
+    }
 
+    useEffect(() => {
       var m = "data";
       if ( props.templateId !== undefined ) {
         m = "template";
@@ -60,8 +65,7 @@ function Editor(props) {
           //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
           if ( props.templateId === "note" ) {
             OpenNote("").then( (resp) => {
-              var embed = marked.marked(resp);
-              setNoteElm(embed);
+              redrawNoteElm(resp)
             }).catch ( (err) => {
               console.warn(err);
               props.onMessage("error",err);
@@ -94,8 +98,15 @@ function Editor(props) {
         elm.contentWindow.location.reload();
     }
 
-    const createMarked = (txt) => {
-        return marked.marked(txt);
+    const createMarked = async (txt,local) => {
+        var p = ""
+        await ParseNote(props.id,local,txt).then( (resp) => {
+          p = resp;
+        }).catch( (err) => {
+            props.onMessage("error",err);
+          p = txt;
+        });
+        return marked.marked(p);
     }
 
     const createMermaid= async(txt) => {
@@ -108,10 +119,10 @@ function Editor(props) {
         return rtn;
     }
 
-    const viewHTML = (txt,embNoteElm) => {
+    const viewHTML = async (txt,embNoteElm) => {
         var elm = document.querySelector('#htmlViewer');
         if ( mode === "note" ) {
-          var embed = createMarked(txt);
+          var embed = await createMarked(txt,true);
           CreateNoteHTML(props.noteId,embed).then( (html) => {
             elm.srcdoc = html;
           }).catch( (err) => {
@@ -133,6 +144,9 @@ function Editor(props) {
         var elm = document.querySelector('#mermaidViewer');
         mermaid.render('svg', txt).then( (data) => {
           elm.innerHTML = data.svg;
+        }).catch( (err) => {
+          console.warn(err)
+          props.onMessage("error",err);
         });
       }).catch( (err) => {
         console.warn(err)
@@ -145,7 +159,6 @@ function Editor(props) {
       //824
       //400
       if ( e.type === "dragend" ) {
-        console.log(e)
         //TODO 計算が違う
         setWidth(e.clientX - 320);
       }
@@ -187,7 +200,7 @@ function Editor(props) {
     const handleOutput = async () => {
       var elm = "";
       if ( mode === "note" ) {
-        elm = createMarked(text);
+        elm = await createMarked(text,false);
       } else if ( mode === "data" ) {
         elm = await createMermaid(text);
       } 
@@ -217,7 +230,7 @@ function Editor(props) {
         <textarea id="editor" style={editorStyle} onChange={(e) =>changeText(e.target.value)} value={text}/>
         <Toolbar style={{backgroundColor:"#222222",position:"absolute",left:"0",right:"0",bottom:"0px",minHeight:"48px",border:"0"}}>
           <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }}>
-            <Save fontSize="small" style={{color:"#f1f1f1"}}/>
+            <CommitIcon fontSize="small" style={{color:"#f1f1f1"}}/>
           </IconButton>
         </Toolbar>
       </div>
