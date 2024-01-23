@@ -30,6 +30,10 @@ export function EditNote(arg1, arg2) {
   return window['go']['api']['App']['EditNote'](arg1, arg2);
 }
 
+export function Generate(arg1, arg2, arg3) {
+  return window['go']['api']['App']['Generate'](arg1, arg2, arg3);
+}
+
 export function GetData(arg1, arg2) {
   return window['go']['api']['App']['GetData'](arg1, arg2);
 }

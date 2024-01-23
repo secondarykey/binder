@@ -29,10 +29,10 @@ func (inst *Instance) InsertNote(n *model.Note) error {
 		return DuplicateKey
 	}
 
-	s := "INSERT INTO notes (id,title,detail,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?)"
+	s := "INSERT INTO notes (id,name,detail,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?)"
 
 	err := inst.run(s,
-		n.ID, n.Title, n.Detail, n.Publish, n.Created, n.Updated)
+		n.ID, n.Name, n.Detail, n.Publish, n.Created, n.Updated)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
@@ -42,17 +42,17 @@ func (inst *Instance) InsertNote(n *model.Note) error {
 
 func (inst *Instance) UpdateNote(n *model.Note) error {
 
-	s := "UPDATE notes SET title = ?,detail = ?,publish_date = ?,created_date = ?,updated_date = ? WHERE id = ?"
+	s := "UPDATE notes SET name = ?,detail = ?,publish_date = ?,created_date = ?,updated_date = ? WHERE id = ?"
 
 	err := inst.run(s,
-		n.Title, n.Detail, n.Publish, n.Created, n.Updated, n.ID)
+		n.Name, n.Detail, n.Publish, n.Created, n.Updated, n.ID)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
 	return nil
 }
 
-const notesSelect = "SELECT id,title,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM notes"
+const notesSelect = "SELECT id,name,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM notes"
 
 func (inst *Instance) GetNote(id string) (*model.Note, error) {
 
@@ -69,11 +69,11 @@ func (inst *Instance) GetNote(id string) (*model.Note, error) {
 
 func createNote(row scanner) (*model.Note, error) {
 
-	var title sql.NullString
+	var name sql.NullString
 	var detail sql.NullString
 
 	var n model.Note
-	err := row.Scan(&n.ID, &title, &detail, &n.Publish, &n.Created, &n.Updated)
+	err := row.Scan(&n.ID, &name, &detail, &n.Publish, &n.Created, &n.Updated)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -81,7 +81,7 @@ func createNote(row scanner) (*model.Note, error) {
 			return nil, xerrors.Errorf("Scan() error: %w", err)
 		}
 	}
-	n.Title = title.String
+	n.Name = name.String
 	n.Detail = detail.String
 	return &n, nil
 }

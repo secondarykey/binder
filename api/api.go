@@ -90,3 +90,7 @@ func (a *App) GetResource() (*binder.Resource, error) {
 
 	return r, nil
 }
+
+func (a *App) Generate(noteId string, dataId string, elm string) error {
+	return a.current.Generate(noteId, dataId, elm)
+}

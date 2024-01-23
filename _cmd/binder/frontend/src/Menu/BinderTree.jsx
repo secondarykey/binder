@@ -127,7 +127,6 @@ function BinderTree(props) {
     })
 
     return (<>
-
       {/** Binderの表示 */}
       <TreeView className='treeText'
                 key={"key"}
@@ -156,15 +155,15 @@ function BinderTree(props) {
             return (<>
               {/** ノートの表示 */}
               <TreeItem key={n.id}
-                        nodeId={n.id} label={n.title} 
+                        nodeId={n.id} label={n.name} 
                         icon={<NoteIcon/>}
-                        onDoubleClick={(e) => handleNoteOpen(e,n)}
+                        onClick={(e) => handleNoteOpen(e,n)}
                         onContextMenu={(e) =>showMenu(e,setNoteEl,n.id)}>
                 {/** Assetsの表示 */}
                 <TreeItem nodeId={n.id + "Assets"} label="Assets" 
                           key={"assets/" + n.id}
                           icon={<WebAssetIcon/>}
-                          onDoubleClick={doNothing}
+                          onClick={doNothing}
                           onContextMenu={(e) =>showMenu(e,setAssetRootEl,n.id,"")}>
                   {assets.map( (d) => {
                     var key= d.noteId + "/" + d.id;
@@ -184,7 +183,7 @@ function BinderTree(props) {
                       <TreeItem nodeId={key} label={d.name} 
                                 key={key}
                                 icon={<TextSnippetIcon/>}
-                                onDoubleClick={(e) => handleDataOpen(e,d)}
+                                onClick={(e) => handleDataOpen(e,d)}
                                 onContextMenu={(e) =>showMenu(e,setDataEl,d.noteId,d.id)}/>
                     </>);
                 })}
@@ -201,7 +200,7 @@ function BinderTree(props) {
           {/** Assetsの表示 */}
           <TreeItem nodeId="Assets" label="Assets"
                     icon={<WebAssetIcon/>}
-                    onDoubleClick={doNothing}
+                    onClick={doNothing}
                     onContextMenu={(e) => showMenu(e,setAssetRootEl,"","")}>
             {/** Assets dataの表示 */}
             {dataAssets.map( (d) => {
@@ -221,7 +220,7 @@ function BinderTree(props) {
               <TreeItem nodeId={key} label={d.name} 
                         key={key}
                         icon={<TextSnippetIcon/>}
-                        onDoubleClick={(e) => handleDataOpen(e,d)}
+                        onClick={(e) => handleDataOpen(e,d)}
                         onContextMenu={(e) =>showMenu(e,setDataEl,"",d.id)}/>
             </>);
           })}
@@ -231,16 +230,16 @@ function BinderTree(props) {
         <TreeItem nodeId="Templates" label="Templates"
                   icon={<HtmlIcon/>} >
           <TreeItem nodeId="layout" label="Layout" 
-                    onDoubleClick={((e) => handleTemplateOpen(e,"layout"))}
+                    onClick={((e) => handleTemplateOpen(e,"layout"))}
                     icon={<CodeIcon/>}/>
           <TreeItem nodeId="index" label="Home" 
-                    onDoubleClick={((e) => handleTemplateOpen(e,"index"))}
+                    onClick={((e) => handleTemplateOpen(e,"index"))}
                     icon={<CodeIcon/>}/>
           <TreeItem nodeId="list" label="PageList" 
-                    onDoubleClick={((e) => handleTemplateOpen(e,"list"))}
+                    onClick={((e) => handleTemplateOpen(e,"list"))}
                     icon={<CodeIcon/>}/>
           <TreeItem nodeId="note" label="Note" 
-                    onDoubleClick={((e) => handleTemplateOpen(e,"note"))}
+                    onClick={((e) => handleTemplateOpen(e,"note"))}
                     icon={<CodeIcon/>}/>
         </TreeItem>
 

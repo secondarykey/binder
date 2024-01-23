@@ -4,7 +4,7 @@ import "time"
 
 type Note struct {
 	ID      string    `json:"id"`
-	Title   string    `json:"title"`
+	Name    string    `json:"name"`
 	Detail  string    `json:"detail"`
 	Publish time.Time `json:"publish"`
 	Created time.Time `json:"created"`

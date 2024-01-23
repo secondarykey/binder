@@ -60,10 +60,15 @@ function Assets(props) {
     return (<>
     <Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
 {props.id !== "" &&
+<>
+      <FormControl>
+        <FormLabel>ID : {props.id} </FormLabel> 
+      </FormControl>
       <FormControl>
         <FormLabel>Name</FormLabel>
         <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
       </FormControl>
+</>
 }
 
       <FormControl>

@@ -52,7 +52,7 @@ func TestInsertNote(t *testing.T) {
 
 	var n model.Note
 	n.ID = "test2"
-	n.Title = "単純テスト"
+	n.Name = "単純テスト"
 
 	err := inst.InsertNote(&n)
 	if err != nil {
@@ -61,7 +61,7 @@ func TestInsertNote(t *testing.T) {
 
 	n = model.Note{}
 	n.ID = "test"
-	n.Title = "キー重複テスト"
+	n.Name = "キー重複テスト"
 	err = inst.InsertNote(&n)
 	if err == nil {
 		t.Errorf("db.InsertNote() is nil:%v", err)
@@ -75,7 +75,7 @@ func TestInsertNote(t *testing.T) {
 	//UUID 発行はあくまで上位
 	n = model.Note{}
 	n.ID = ""
-	n.Title = "キー空テスト"
+	n.Name = "キー空テスト"
 	err = inst.InsertNote(&n)
 	if err == nil {
 		t.Errorf("db.InsertNote() empty key not nil:%v", err)

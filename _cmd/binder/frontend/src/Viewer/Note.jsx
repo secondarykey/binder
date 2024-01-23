@@ -26,7 +26,7 @@ function Note(props) {
     }
 
     GetNote(props.id).then( (note) => {
-      setName(note.title);
+      setName(note.name);
     }).catch ( (err) => {
       console.warn(err);
       props.onMessage("error",err);
@@ -45,7 +45,7 @@ function Note(props) {
 
     var note = {};
     note.id = props.id;
-    note.title = name;
+    note.name = name;
 
     EditNote(note,imageFile).then((resp) => {
 
@@ -80,17 +80,17 @@ function Note(props) {
     return (<>
 <Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
 
+{props.id !== "" &&
+<>  
+  <FormControl>
+    <FormLabel>ID : {props.id} </FormLabel> 
+  </FormControl>
+</>}
+
   <FormControl>
     <FormLabel>Name</FormLabel>
     <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
   </FormControl>
-
-{/**
-<FormControl>
-  <FormLabel>ID</FormLabel>
-  <TextField></TextField>
-</FormControl>
-*/}
 
   <FormControl>
     <FormLabel>Note Image</FormLabel>

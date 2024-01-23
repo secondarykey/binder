@@ -87,7 +87,7 @@ export namespace model {
 	}
 	export class Note {
 	    id: string;
-	    title: string;
+	    name: string;
 	    detail: string;
 	    // Go type: time
 	    publish: any;
@@ -104,7 +104,7 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.title = source["title"];
+	        this.name = source["name"];
 	        this.detail = source["detail"];
 	        this.publish = this.convertValues(source["publish"], null);
 	        this.created = this.convertValues(source["created"], null);

@@ -158,3 +158,28 @@ func (b *Binder) CreateResource() (*Resource, error) {
 	r.Data = rootData
 	return &r, nil
 }
+
+func (b *Binder) Generate(noteId string, dataId string, elm string) error {
+
+	if dataId == "" {
+		//HTMLを作成
+		html, err := b.CreateNoteHTML(noteId, false, elm)
+		if err != nil {
+			return xerrors.Errorf("CreateNoteHTML() error: %w", err)
+		}
+
+		//保存
+		err = b.fileSystem.GenerateHTML(noteId, []byte(html))
+		if err != nil {
+			return xerrors.Errorf("GenerateHTML() error: %w", err)
+		}
+
+	} else {
+		//ファイルを作成
+		err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
+		if err != nil {
+			return xerrors.Errorf("GenerateData() error: %w", err)
+		}
+	}
+	return nil
+}

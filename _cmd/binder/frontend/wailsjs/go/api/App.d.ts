@@ -17,6 +17,8 @@ export function EditData(arg1:model.Datum):Promise<model.Datum>;
 
 export function EditNote(arg1:model.Note,arg2:string):Promise<model.Note>;
 
+export function Generate(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function GetData(arg1:string,arg2:string):Promise<model.Datum>;
 
 export function GetNote(arg1:string):Promise<model.Note>;

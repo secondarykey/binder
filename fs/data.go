@@ -100,3 +100,21 @@ func (b *FileSystem) WriteDataText(id, noteId string, data []byte) error {
 	}
 	return nil
 }
+
+func (b *FileSystem) GenerateData(id string, noteId string, data []byte) error {
+
+	fn := dataPath(id, noteId)
+	fp, err := b.Create(fn)
+	if err != nil {
+		return xerrors.Errorf("Create() error: %w", err)
+	}
+	defer fp.Close()
+
+	_, err = fp.(io.Writer).Write(data)
+	if err != nil {
+		return xerrors.Errorf("Create() error: %w", err)
+	}
+
+	return nil
+	return nil
+}

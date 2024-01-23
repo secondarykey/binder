@@ -64,7 +64,7 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	html, err := a.current.CreateNoteHTML(id, elm)
+	html, err := a.current.CreateNoteHTML(id, true, elm)
 	if err != nil {
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
 	}

@@ -33,6 +33,7 @@ function LeftMenu(props) {
     */}
 
     <Paper id="leftmenu">
+
       <Toolbar id="expandBar">
         {/** ノート時に表示 */}
 {mode === "binder" &&
@@ -53,6 +54,7 @@ function LeftMenu(props) {
 
       </Toolbar>
 
+      <Paper id="leftcontent">
 {/** バインダーを開いてない場合や戻ってきた場合に利用 */}
 {mode === "file" &&
 <>
@@ -62,10 +64,11 @@ function LeftMenu(props) {
 
 {/** バインダーを開いている場合に利用 */}
 {mode === "binder" &&
-    <>
-    <BinderTree onChangeMode={props.onChangeMode} onMessage={props.onMessage} redraw={props.redraw}/>
-    </>
+<>
+  <BinderTree onChangeMode={props.onChangeMode} onMessage={props.onMessage} redraw={props.redraw}/>
+</>
 }
+      </Paper>
 
 </Paper>
     </>

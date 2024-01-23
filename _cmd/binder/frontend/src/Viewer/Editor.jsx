@@ -2,8 +2,9 @@ import {useState,useEffect} from "react"
 import { IconButton, Paper, Toolbar } from "@mui/material";
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
-import { OpenTemplate,OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML,CreateTemplateHTML, SaveTemplate } from "../../wailsjs/go/api/App.js";
+import { OpenTemplate,OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML,CreateTemplateHTML, SaveTemplate ,Generate} from "../../wailsjs/go/api/App.js";
 import { Save } from "@mui/icons-material";
+import OutputIcon from '@mui/icons-material/Output';
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -93,15 +94,24 @@ function Editor(props) {
         elm.contentWindow.location.reload();
     }
 
+    const createMarked = (txt) => {
+        return marked.marked(txt);
+    }
+
+    const createMermaid= async(txt) => {
+        var rtn = {};
+        await mermaid.render('svg', txt).then((data) => {
+          rtn = data.svg
+        }).catch( (err) => {
+          rtn = err;
+        });
+        return rtn;
+    }
+
     const viewHTML = (txt,embNoteElm) => {
-
         var elm = document.querySelector('#htmlViewer');
-        var sc = document.querySelector('#dataViewer');
-
-        console.log(sc)
-
         if ( mode === "note" ) {
-          var embed = marked.marked(txt);
+          var embed = createMarked(txt);
           CreateNoteHTML(props.noteId,embed).then( (html) => {
             elm.srcdoc = html;
           }).catch( (err) => {
@@ -145,7 +155,6 @@ function Editor(props) {
 
       setText(txt);
       if ( mode === "note" ) {
-
         viewHTML(txt)
         SaveNote(props.noteId,txt).then(() => {
           console.log("ok");
@@ -173,6 +182,22 @@ function Editor(props) {
           props.onMessage("error",err);
         })
       }
+    }
+
+    const handleOutput = async () => {
+      var elm = "";
+      if ( mode === "note" ) {
+        elm = createMarked(text);
+      } else if ( mode === "data" ) {
+        elm = await createMermaid(text);
+      } 
+
+      Generate(props.noteId,props.dataId,elm).then( () => {
+      }).catch( (err) => {
+          console.warn(err)
+          props.onMessage("error",err);
+      })
+      //template時はボタンを押せなくする？
     }
 
     var editorStyle = {};
@@ -207,6 +232,13 @@ function Editor(props) {
 { mode === "data" &&
         <div id="mermaidViewer"></div>
 }
+
+        <Toolbar style={{backgroundColor:"#222222",position:"absolute",left:"0",right:"0",bottom:"0px",minHeight:"48px",border:"0"}}>
+          <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleOutput}>
+            <OutputIcon fontSize="small" style={{color:"#f1f1f1"}} />
+          </IconButton>
+        </Toolbar>
+
       </div>
 
     </Paper>

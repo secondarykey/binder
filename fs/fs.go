@@ -52,11 +52,11 @@ type FileSystem struct {
 //     {data_id}
 var PublishDir = "docs"
 
-func indexHTML() string {
+func IndexHTML() string {
 	return filepath.Join(PublishDir, "index.html")
 }
 
-func listHTML(idx int) string {
+func ListHTML(idx int) string {
 	return filepath.Join(PublishDir, fmt.Sprintf("list_%d.html", idx))
 }
 

@@ -25,7 +25,17 @@ type wrapper struct {
 	id    string
 }
 
+func newWrapper(o *Binder, local bool, id string) *wrapper {
+	var w wrapper
+	w.owner = o
+	w.local = local
+	w.id = id
+
+	return &w
+}
+
 func (w wrapper) dir() string {
+
 	assets := "assets"
 	if w.local {
 		assets = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "assets")
@@ -45,7 +55,7 @@ func (w wrapper) latestNotes(n int) []*model.Note {
 }
 
 func defineFuncMap(b *Binder, local bool, id string) map[string]interface{} {
-	w := wrapper{b, local, id}
+	w := newWrapper(b, local, id)
 	funcMap := map[string]interface{}{
 		"replace":     strings.ReplaceAll,
 		"assets":      w.assets,
@@ -147,34 +157,32 @@ func (b *Binder) SaveTemplate(id string, data string) error {
 // リストも一緒に出力
 func (b *Binder) GenerateIndexHTML() error {
 
-	err := b.generateHTML("index")
+	err := b.generateHTML("index", 0)
 	if err != nil {
 		return xerrors.Errorf("generateHTML(index) error: %w", err)
 	}
 
-	err = b.generateHTML("list")
+	//list_n.htmlをすべて削除する
+
+	//ページ数を換算する
+	idx := 0
+	err = b.generateHTML("list", idx+1)
 	if err != nil {
 		return xerrors.Errorf("generateHTML(list) error: %w", err)
 	}
 	return nil
 }
 
-func (b *Binder) GenerateNoteHTML(id string) error {
-	return b.generateHTML(id)
-}
-
 // HTMLファイル出力用
-func (b *Binder) generateHTML(id string) error {
+func (b *Binder) generateHTML(id string, idx int) error {
 
-	//TODO 取得をfsから行う
-	n := "docs/" + id + ".html"
-	//List時はページャーを作る
-	if id != "index" && id != "list" {
-		dir := "docs/notes/" + id
-		n = dir + "/index.html"
+	n := ""
+	if id == "index" {
+		n = fs.IndexHTML()
+	} else {
+		n = fs.ListHTML(idx)
 	}
 
-	//list 時にループする
 	fp, err := b.fileSystem.Create(n)
 	if err != nil {
 		return xerrors.Errorf("Create() error: %w", err)
@@ -198,9 +206,9 @@ func (b *Binder) generateHTML(id string) error {
 }
 
 // HTMLメモリ作成
-func (b *Binder) CreateNoteHTML(id string, elm string) (string, error) {
+func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, error) {
 
-	tmpl, err := b.createTemplate(true, id, "")
+	tmpl, err := b.createTemplate(local, id, "")
 	if err != nil {
 		return "", xerrors.Errorf("createTemplate() error: %w", err)
 	}

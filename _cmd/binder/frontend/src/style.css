@@ -12,6 +12,7 @@ body {
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
     --wails-draggable:"drag";
+    overflow: hidden;
 }
 
 @font-face {
@@ -34,15 +35,29 @@ body {
     background-color: #111111;
     color: #f1f1f1;
     padding-right:0;
+    overflow: auto;
 }
 
 #leftmenu {
     background-color: #191919;
     color: #f1f1f1;
-
     width: 320px;
     min-width: 320px;
     height: 100vh;
+}
+
+#lefcontent {
+    background-color: #191919;
+    color: #f1f1f1;
+    overflow: auto;
+}
+
+.treeText {
+    margin-top: 10px !important;
+    text-align:left;
+    background-color: #191919;
+    color: #f1f1f1;
+    border:0;
 }
 
 #expandBar {
@@ -104,10 +119,17 @@ body {
     position: absolute;
     top: 64px;
     right:0;
-    bottom: 48px;
+    bottom: 0px;
     --wails-draggable:no-drag;
-    overflow: auto;
     display: flex;
+}
+
+#htmlViewer {
+    bottom:48px;
+}
+
+#mermaidViewer {
+    bottom:48px;
 }
 
 #editor {
@@ -127,7 +149,3 @@ body {
     margin: 0px;
 }
 
-.treeText {
-    margin-top: 10px !important;
-    text-align:left;
-}
