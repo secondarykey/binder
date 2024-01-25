@@ -13,6 +13,7 @@
     },
     "defaultpath" : "",
     "histories" : ["","","","","",""],
+    "darkMode" : true,
     "runWithOpen": true,
     "authentication": {
         "code" : "aaaa"

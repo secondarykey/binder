@@ -6,73 +6,46 @@ import (
 	"io"
 	stdFs "io/fs"
 	"os"
-	"path/filepath"
-	"time"
 
-	uuid "github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
-func (b *FileSystem) EditData(d *model.Datum, f string) (*model.Datum, bool, error) {
-
-	regFlag := false
-	now := time.Now()
-
-	if d.ID == "" {
-		regFlag = true
-	}
-
-	//プラグイン設定がなく、ファイル指定がある場合
-	// Assetsのファイルなし更新を考慮
+// ID 指定は上位でやっておく
+func (b *FileSystem) EditData(d *model.Datum, f string) (*model.Datum, error) {
+	//ファイル指定がある場合
 	if f != "" {
-		if regFlag {
-			//ファイル名からIDを作成
-			fn := filepath.Base(f)
-			d.ID = fn
-			d.Name = fn
-		}
-
 		dataF := dataPath(d.ID, d.NoteId)
 		fp, err := b.Create(dataF)
 		if err != nil {
-			return nil, false, xerrors.Errorf("CreateFile() error: %w", err)
+			return nil, xerrors.Errorf("CreateFile() error: %w", err)
 		}
 		defer fp.Close()
-
 		data, err := os.ReadFile(f)
 		if err != nil {
-			return nil, false, xerrors.Errorf("ReadFile() error: %w", err)
+			return nil, xerrors.Errorf("ReadFile() error: %w", err)
 		}
 		_, err = fp.(io.Writer).Write(data)
 		if err != nil {
-			return nil, false, xerrors.Errorf("Write() error: %w", err)
+			return nil, xerrors.Errorf("Write() error: %w", err)
 		}
 	}
 
-	//まだ指定がない場合
-	if d.ID == "" {
-		d.ID = uuid.New().String()
-	}
-
-	if regFlag && d.PluginId == "mermaid" {
+	if d.PluginId == "mermaid" {
 		//新規にデータを作成
 		//テキストでない場合
 		n := dataTextFile(d.ID, d.NoteId)
 		//ノートファイルを作成
 		_, err := b.Create(n)
 		if err != nil {
-			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
+			return nil, xerrors.Errorf("binder Create() error: %w", err)
 		}
 
 		err = b.Commit("create: data file")
 		if err != nil {
-			return nil, false, xerrors.Errorf("Commit() error: %w", err)
+			return nil, xerrors.Errorf("Commit() error: %w", err)
 		}
-		d.Created = now
 	}
-
-	d.Updated = now
-	return d, regFlag, nil
+	return d, nil
 }
 
 func (b *FileSystem) ReadDataText(id, noteId string) ([]byte, error) {

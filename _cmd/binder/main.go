@@ -9,6 +9,7 @@ import (
 
 	"binder"
 	"binder/api"
+	"binder/settings"
 )
 
 //go:embed all:frontend/dist
@@ -19,7 +20,8 @@ func main() {
 	//config を読み込む
 	//前回の読み込みを行う設定の場合、Binderを設定しておく
 
-	// Create an instance of the app structure
+	set := settings.Get()
+
 	app := api.New()
 
 	//StartUp???
@@ -34,8 +36,8 @@ func main() {
 	// Create application with options
 	err = wails.Run(&options.App{
 		Title:  "Binder",
-		Width:  1280,
-		Height: 768,
+		Width:  set.Position.Width,
+		Height: set.Position.Height,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -50,5 +52,4 @@ func main() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
-
 }

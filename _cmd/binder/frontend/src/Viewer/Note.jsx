@@ -22,11 +22,13 @@ function Note(props) {
     setImageFile("");
     if ( props.id === "" ) {
       setName("");
+      props.onChangeTitle("Create Note");
       return;
     }
 
     GetNote(props.id).then( (note) => {
       setName(note.name);
+      props.onChangeTitle("Edit Note:" + note.name);
     }).catch ( (err) => {
       console.warn(err);
       props.onMessage("error",err);

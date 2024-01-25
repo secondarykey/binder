@@ -2,10 +2,11 @@ import {useState,useEffect} from "react"
 import { IconButton, Paper, Toolbar } from "@mui/material";
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
-import { ParseNote,OpenTemplate,OpenData,SaveData,OpenNote, SaveNote,CreateNoteHTML,CreateTemplateHTML, SaveTemplate ,Generate} from "../../wailsjs/go/api/App.js";
-import { Save } from "@mui/icons-material";
-import CommitIcon from '@mui/icons-material/Commit';
+import { GetNote,ParseNote,OpenNote,SaveNote,CreateNoteHTML} from "../../wailsjs/go/api/App.js";
+import { GetData,OpenData,SaveData} from "../../wailsjs/go/api/App.js";
+import { OpenTemplate,CreateTemplateHTML, SaveTemplate ,Generate} from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
+import CommitIcon from '@mui/icons-material/Commit';
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -24,8 +25,21 @@ function Editor(props) {
       var elm = await createMarked(resp,true);
       setNoteElm(elm);
     }
+    const changeTemplateName = (id) => {
+      var ret = "Note";
+      if ( id === "layout" ) {
+        ret = "Layout";
+      } else if ( id === "index" ) {
+        ret = "Index";
+      } else if ( id === "list" ) {
+        ret = "NoteList";
+      }
+      return ret;
+    }
 
+    //開いた時の初期処理
     useEffect(() => {
+
       var m = "data";
       if ( props.templateId !== undefined ) {
         m = "template";
@@ -34,17 +48,17 @@ function Editor(props) {
       }
 
       if ( m === "data" ) {
-
         mermaid.initialize({startOnLoad:false});
-        //default,neutral,dark,forest,base
-        //mermaidAPI.initialize({
-          //theme: 'dark',
-        //});
-
         OpenData(props.dataId,props.noteId).then( (resp)=>{
           setText(resp);
-          viewData(resp);
         }).catch( (err)=> {
+          console.warn(err);
+          props.onMessage("error",err);
+        })
+
+        GetData(props.dataId,props.noteId).then( (resp) => {
+          props.onChangeTitle(resp.name)
+        }).catch( (err) => {
           console.warn(err);
           props.onMessage("error",err);
         })
@@ -52,18 +66,23 @@ function Editor(props) {
       } else if ( m === "note" ) {
         OpenNote(props.noteId).then( (resp) => {
           setText(resp);
-          viewHTML(resp);
         }).catch( (err) => {
           props.onMessage("error",err);
         });
+
+        GetNote(props.noteId).then( (resp) => {
+          props.onChangeTitle(resp.name)
+        }).catch( (err) => {
+          console.warn(err);
+          props.onMessage("error",err);
+        })
 
       } else if ( m === "template" ) {
         //テンプレートを開く
         OpenTemplate(props.templateId).then( (resp) => {
           setText(resp);
-          viewHTML(resp,noteElm);
           //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
-          if ( props.templateId === "note" ) {
+          if ( props.templateId === "note" || props.templateId === "layout" ) {
             OpenNote("").then( (resp) => {
               redrawNoteElm(resp)
             }).catch ( (err) => {
@@ -74,11 +93,25 @@ function Editor(props) {
         }).catch( (err) => {
           props.onMessage("error",err);
         });
-      }
 
+        props.onChangeTitle("Template:" + changeTemplateName(props.templateId))
+      }
       setMode(m);
 
     },[props.noteId,props.dataId,props.templateId])
+
+    //テキスト変更時の処理
+    useEffect(() => {
+      if ( mode === "data" ) {
+        viewData(text);
+      } else if ( mode === "note") {
+        viewHTML(text);
+      } else if ( mode === "template" ) {
+        viewHTML(text,noteElm);
+      } else {
+        //初回時の実行があるか
+      }
+    },[text,noteElm]);
 
     var menuWidth = 320;
     var splitterW = 10;
@@ -168,28 +201,22 @@ function Editor(props) {
 
       setText(txt);
       if ( mode === "note" ) {
-        viewHTML(txt)
         SaveNote(props.noteId,txt).then(() => {
-          console.log("ok");
+          console.debug("ok");
         }).catch( (err) => {
           console.warn(err)
           props.onMessage("error",err);
         })
-
       } else if ( mode === "data" ) {
-
-        viewData(txt);
         SaveData(props.dataId,props.noteId,txt).then(() => {
-          console.log("ok");
+          console.debug("ok");
         }).catch( (err) => {
           console.warn(err)
           props.onMessage("error",err);
         })
-
       } else if ( mode === "template" ) {
-        viewHTML(txt,noteElm);
         SaveTemplate(props.templateId,txt).then( ()=> {
-          console.log("ok");
+          console.debug("ok");
         }).catch( (err) => {
           console.warn(err)
           props.onMessage("error",err);
@@ -230,7 +257,7 @@ function Editor(props) {
         <textarea id="editor" style={editorStyle} onChange={(e) =>changeText(e.target.value)} value={text}/>
         <Toolbar style={{backgroundColor:"#222222",position:"absolute",left:"0",right:"0",bottom:"0px",minHeight:"48px",border:"0"}}>
           <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }}>
-            <CommitIcon fontSize="small" style={{color:"#f1f1f1"}}/>
+            <CommitIcon fontSize="small" style={{color:"#f1f1f1"}} />
           </IconButton>
         </Toolbar>
       </div>

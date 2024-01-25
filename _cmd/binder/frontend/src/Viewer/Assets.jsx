@@ -13,8 +13,25 @@ function Assets(props) {
     const [name, setName] = useState("");
     const [file, setFile] = useState("");
 
-    const handleSave = () => {
+    useEffect( () => {
 
+      setFile("");
+      if ( props.id === "" ) {
+        props.onChangeTitle("Create Assets");
+        return;
+      }
+
+      GetData(props.id,props.noteId).then( (data) => {
+        setName(data.name);
+        props.onChangeTitle("Edit Assets:" + data.name);
+      }).catch( (err) => {
+        console.warn(err);
+        props.onMessage("error",err);
+      })
+    },[props.id,props.noteId]);
+
+    //保存
+    const handleSave = () => {
       var data = {};
       data.id = props.id
       data.noteId = props.noteId
@@ -30,21 +47,6 @@ function Assets(props) {
         props.onMessage("error",err);
       });
     }
-
-    useEffect( () => {
-
-      setFile("");
-      if ( props.id === "" ) {
-        return;
-      }
-
-      GetData(props.id,props.noteId).then( (data) => {
-        setName(data.name);
-      }).catch( (err) => {
-        console.warn(err);
-        props.onMessage("error",err);
-      })
-    },[props.id,props.noteId]);
 
     const selectFile = () => {
       SelectFile("Any File","*").then((f) => {

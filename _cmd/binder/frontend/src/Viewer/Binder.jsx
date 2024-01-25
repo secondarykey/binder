@@ -16,6 +16,7 @@ function Binder(props) {
   const [auto, setAuto] = useState(0);
 
   useEffect( () => {
+    props.onChangeTitle("Edit Binder");
     GetConfig().then( (conf) => {
       setName(conf.name);
       setDetail(conf.detail);

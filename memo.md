@@ -40,101 +40,6 @@ https://github.com/markedjs/marked
 Go言語のテンプレートに依存します。
 各テンプレートに利用できる変数や関数があります。
 
-### index.tmpl
-
-トップページ用のテンプレートです
-
-- Name
-- Detail
-
-### list.tmpl
-
-作成されているページのリストを作成します。
-
-- Notes
-- Num
-- Prev
-- Pages
-- Next
-
-### note.tmpl
-
-ノートを表示する為のテンプレートです。
-
-- Title
-- Detail
-- Publish
-- Created
-- Updated
-- Body Noteデータを変換したHTML
-
-### layout.tmpl
-
-すべてのページで利用するテンプレートです
-index.tmplと同じデータを利用できます。
-
-- Content 上記テンプレートで変換された値
-- Type index,list,note 処理時対象データのタイプ
-
-
-## データベース
-
-csvq を利用してデータ管理する
-大事なのはGitで共有する為、データベースもGitにしておく
-
-テンプレートを変更するかを考える
-
-    config.csv
-      -> 端末に依存する設定は保存しない
-
-    notes.csv
-      note_id,title,detail,created,updated,published
-
-      IDはURL,ファイルパスの文字列を禁止
-      //指定しない場合は、何らかのID
-
-    data.csv
-
-      data_id,plugin_id,note_id,detail,created,updated,published
-
-      IDはURL,ファイルパスの文字列を禁止
-      IDを変更できるようにする
-
-    plugin_idによって変換する
-      note_idがないものは全体公開用
-
-# コミット処理
-
-テキストをコミットした場合と、出力した場合のUIは違うので気を付ける
-
-
-# コンパイル
-
-ノートコンパイル
-
-  note_id内をコンパイル
-
-データコンパイル
-
-  data_idをコンパイル
-
-インデックスコンパイル
-
-  index.tmplとlist.tmplを行う
-
-バインダーコンパイル
-
-  構造チェック
-
-
-# samples
-
-- blog
-
-  ブログとして機能する
-
-- binder design
-
 # Git
 
 ## 下書き
@@ -156,50 +61,16 @@ pushもそのまま行ってPRで作業
 
 ## 変換、出力を利用してブログを書く
 
-変換、出力を利用してブログを作成してみましょう。
-
-テンプレートを指定
-
-テキストを追加
-
-変換対象をHTMLに変更
-
-HTMLを表示箇所に設定
-
 # Used
 
-# アプローチ
-
-
 ## Plugin設計
-
-### Input
-
-構造情報などを編集する
-ファイルを追加する時に名称などを設定する
-
-CSV 管理できるようにする
-- 文字列
-- 数値
-- 時刻
-- ファイル
 
 ### Editor
 
 vim 化
-
 https://github.com/toplan/Vim.js
-
 他は日本語がきついかも
 
-
-### Convert
-
-テキストを変換
-
-### Generate
-
-変換データを管理化におく
 
 # 検索機能
 
@@ -220,8 +91,6 @@ https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/m
 
 ## 設定画面　
 
-起動位置/config.json にでも残す
-
 - 名前
 - メールアドレス
 - 認証情報
@@ -234,13 +103,6 @@ New
 load(local)
 import(remote)
 
-## Binder設定
-
-開いているBinderの設定
-
-- メインブランチ名(master)
-- 下書きの保存時間
-
 ## Push
 
 現在のステータスを表示
@@ -252,16 +114,8 @@ import(remote)
 ...複数ファイルをコミットした場合の動作
 履歴表示？
 
-### 作業
-
-
-
 
 ### api
-
-//id,title,detail,publish_date,created_date,updated_date
-//id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date
-//日付データは後日修正
 
 OpenXxxx() -> テキストの中身
 SaveXxxx() -> テキストの保存

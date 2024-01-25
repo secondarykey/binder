@@ -35,16 +35,21 @@ function LeftMenu(props) {
     <Paper id="leftmenu">
 
       <Toolbar id="expandBar">
+
         {/** ノート時に表示 */}
 {mode === "binder" &&
         <IconButton id="homeButton" size="large" edge="start" color="inherit" aria-label="home" sx={{ mr: 2 }}>
           <HomeIcon id="homeIcon"/>
         </IconButton>
 }
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
 
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
         {/** TODO 開いているバインダーの名称 */}
-        Binder
+{props.config !== undefined &&
+<>
+        {props.config.name}
+</>
+}
         </Typography>
 
         {/** メニューを閉じる */}

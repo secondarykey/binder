@@ -12,9 +12,16 @@ function Data(props) {
   const [name, setName] = useState("");
 
   useEffect( () => {
-    if ( props.id === "" ) return;
+
+    if ( props.id === "" ) {
+      setName("");
+      props.onChangeTitle("Create Data");
+      return;
+    }
+
     GetData(props.id,props.noteId).then( (data) => {
       setName(data.name);
+      props.onChangeTitle("Edit Data:" + data.name);
     }).catch( (err) => {
       console.warn(err);
       props.onMessage("error",err);

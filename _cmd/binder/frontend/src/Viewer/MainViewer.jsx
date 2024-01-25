@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
@@ -27,6 +27,7 @@ function MainViewer(props) {
         Close();
     }
 
+    const [name,setName] = useState("");
     const mode = props.mode;
 
     return (
@@ -43,7 +44,7 @@ function MainViewer(props) {
 
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           {/** ノート選択時はノートID ＋データID */}
-          sample
+          {name}
         </Typography>
 
         <IconButton size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={exit}>
@@ -65,6 +66,7 @@ function MainViewer(props) {
 <>
   <Binder templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
           onRefreshTree={props.onRefreshTree}
+          onChangeTitle={setName}
           onMessage={props.onMessage}/>
 </>
 }
@@ -77,6 +79,7 @@ function MainViewer(props) {
 <>
   <Editor templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
           onRefreshTree={props.onRefreshTree}
+          onChangeTitle={setName}
           onMessage={props.onMessage}/>
 </>
 }
@@ -86,6 +89,7 @@ function MainViewer(props) {
   <Note id={props.noteId} 
         onChangeMode={props.onChangeMode} 
         onRefreshTree={props.onRefreshTree}
+        onChangeTitle={setName}
         onMessage={props.onMessage}/>
 </>
 }
@@ -95,6 +99,7 @@ function MainViewer(props) {
   <Data id={props.dataId} noteId={props.noteId} 
         onChangeMode={props.onChangeMode} 
         onRefreshTree={props.onRefreshTree}
+        onChangeTitle={setName}
         onMessage={props.onMessage}/>
 </>
 }
@@ -104,6 +109,7 @@ function MainViewer(props) {
   <Assets id={props.dataId} noteId={props.noteId} 
           onChangeMode={props.onChangeMode} 
           onRefreshTree={props.onRefreshTree}
+          onChangeTitle={setName}
           onMessage={props.onMessage}/>
 </>
 }

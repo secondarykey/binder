@@ -97,6 +97,7 @@ func (inst *Instance) InsertDatum(d *model.Datum) error {
 	if inst.ExistDatum(d.ID, d.NoteId) {
 		return DuplicateKey
 	}
+
 	now := time.Now()
 	d.Created = now
 	d.Updated = now

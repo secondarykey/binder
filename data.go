@@ -2,13 +2,31 @@ package binder
 
 import (
 	"binder/db/model"
+	"path/filepath"
 
+	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
 func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 
-	rtn, reg, err := b.fileSystem.EditData(d, f)
+	reg := false
+	//新規指定だった場合
+	if d.ID == "" {
+		reg = true
+		if f == "" {
+			d.ID = uuid.New().String()
+		} else {
+			fn := filepath.Base(f)
+			d.ID = fn
+			d.Name = fn
+			if b.db.ExistDatum(d.ID, d.NoteId) {
+				return nil, xerrors.Errorf("Exist Datum error")
+			}
+		}
+	}
+
+	rtn, err := b.fileSystem.EditData(d, f)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.EditData() error: %w", err)
 	}

@@ -264,7 +264,7 @@ function BinderTree(props) {
           <TreeItem nodeId="index" label="Home"
             onClick={((e) => handleTemplateOpen(e, "index"))}
             icon={<CodeIcon />} />
-          <TreeItem nodeId="list" label="PageList"
+          <TreeItem nodeId="list" label="NoteList"
             onClick={((e) => handleTemplateOpen(e, "list"))}
             icon={<CodeIcon />} />
           <TreeItem nodeId="note" label="Note"
