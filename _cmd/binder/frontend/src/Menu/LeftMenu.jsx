@@ -6,6 +6,7 @@ import HomeIcon from '@mui/icons-material/Home';
 
 import FileMenu from './FileMenu';
 import BinderTree from './BinderTree';
+import { OpenBinderSite } from '../../wailsjs/go/api/App';
 
 /**
  * 操作用のメニュー
@@ -24,6 +25,9 @@ function LeftMenu(props) {
 
   const [mode, setMode] = useState("binder");
 
+  const clickHome = () => {
+  }
+
   return (
     <>
 
@@ -38,7 +42,7 @@ function LeftMenu(props) {
 
         {/** ノート時に表示 */}
 {mode === "binder" &&
-        <IconButton id="homeButton" size="large" edge="start" color="inherit" aria-label="home" sx={{ mr: 2 }}>
+        <IconButton id="homeButton" size="large" edge="start" color="inherit" aria-label="home" sx={{ mr: 2 }} onClick={clickHome}>
           <HomeIcon id="homeIcon"/>
         </IconButton>
 }

@@ -7,6 +7,8 @@ export function Address():Promise<string>;
 
 export function Close():Promise<boolean>;
 
+export function Commit(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;
 
 export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string):Promise<string>;
@@ -28,6 +30,8 @@ export function GetData(arg1:string,arg2:string):Promise<model.Datum>;
 export function GetNote(arg1:string):Promise<model.Note>;
 
 export function GetResource():Promise<binder.Resource>;
+
+export function OpenBinderSite():Promise<void>;
 
 export function OpenData(arg1:string,arg2:string):Promise<string>;
 

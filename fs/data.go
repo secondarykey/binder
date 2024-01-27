@@ -61,7 +61,7 @@ func (b *FileSystem) ReadDataText(id, noteId string) ([]byte, error) {
 func (b *FileSystem) WriteDataText(id, noteId string, data []byte) error {
 
 	n := dataTextFile(id, noteId)
-	fp, err := b.Open(n)
+	fp, err := b.Create(n)
 	if err != nil {
 		return fmt.Errorf("Open() error\n%+v", err)
 	}

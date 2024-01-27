@@ -6,12 +6,25 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"html/template"
 	"io"
 
 	"golang.org/x/xerrors"
 )
+
+type tempNote struct {
+	ID      string
+	Name    string
+	Detail  string
+	Publish time.Time
+	Created time.Time
+	Updated time.Time
+
+	Link  string
+	Image string
+}
 
 func isNote(id string) bool {
 	if id == "index" || id == "list" || id == "layout" {
@@ -36,24 +49,79 @@ func newWrapper(o *Binder, local bool, id string) *wrapper {
 	return &w
 }
 
-func (w wrapper) dir() string {
+func (w wrapper) assetsDir() string {
 
-	assets := "assets"
+	assets := "./assets"
 	if w.Local {
 		assets = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "assets")
 	} else if isNote(w.ID) {
-		assets = "../" + assets
+		assets = "../assets"
 	}
 	return assets
 }
 
-func (w wrapper) assets(id string) string {
-	return w.dir() + "/" + id
+func (w wrapper) publicAssets(id string) string {
+	return w.assetsDir() + "/" + id
 }
 
-func (w wrapper) latestNotes(n int) []*model.Note {
-	//Binderを含めておいて、Binder内の最新のn件を設定
-	return make([]*model.Note, 0)
+func (w wrapper) assets(id string) string {
+	return w.assetsDir() + "/" + w.ID + "/" + id
+}
+
+func (w wrapper) isNote() bool {
+	return isNote(w.ID)
+}
+
+func (w wrapper) latestNotes(n int) []*tempNote {
+
+	var err error
+	var notes []*model.Note
+	if w.Local {
+		notes, err = w.owner.db.FindUpdatedNotes(n)
+	} else {
+		notes, err = w.owner.db.FindPublishNotes(n)
+	}
+
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	rtn := make([]*tempNote, len(notes))
+	for idx, n := range notes {
+		rtn[idx] = w.convertNote(n)
+	}
+	return rtn
+}
+
+func (w wrapper) convertNote(n *model.Note) *tempNote {
+
+	var t tempNote
+	t.ID = n.ID
+	t.Name = n.Name
+	t.Detail = n.Detail
+	t.Publish = n.Publish
+	t.Created = n.Created
+	t.Updated = n.Updated
+
+	parent := "./notes"
+	if w.Local {
+		parent = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "notes")
+	} else if w.isNote() {
+		parent = "."
+	}
+	t.Link = fmt.Sprintf("%s/%s.html", parent, n.ID)
+
+	parent = "./assets"
+	if w.Local {
+		parent = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "assets")
+	} else if w.isNote() {
+		parent = "../assets"
+	}
+
+	t.Image = fmt.Sprintf("%s/%s/index", parent, n.ID)
+
+	return &t
 }
 
 func safeTemplate(src string) string {
@@ -63,13 +131,15 @@ func safeTemplate(src string) string {
 
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
-		"replace":     strings.ReplaceAll,
-		"assets":      w.assets,
-		"latestNotes": w.latestNotes,
-		"safe":        safeTemplate,
-		"lf2br":       convertLF2BR,
-		"lf2sp":       convertLF2SP,
-		"lf2comma":    convertLF2Comma,
+		"replace":      strings.ReplaceAll,
+		"assets":       w.assets,
+		"publicAssets": w.publicAssets,
+		"latestNotes":  w.latestNotes,
+		"isNote":       w.isNote,
+		"safe":         safeTemplate,
+		"lf2br":        convertLF2BR,
+		"lf2sp":        convertLF2SP,
+		"lf2comma":     convertLF2Comma,
 	}
 	return funcMap
 }
@@ -135,8 +205,13 @@ func (b *Binder) ParseElement(id string, local bool, elm string) (string, error)
 		return "", xerrors.Errorf("Element Parse() error: %w", err)
 	}
 
+	dto, err := b.createDto(wrap, elm)
+	if err != nil {
+		return "", xerrors.Errorf("creteDto() error: %w", err)
+	}
+
 	var builder strings.Builder
-	err = b.writeHTML(&builder, tmpl, elm)
+	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
 		return "", xerrors.Errorf("elm Execute() error: %w", err)
 	}
@@ -148,14 +223,28 @@ func (b *Binder) ParseElement(id string, local bool, elm string) (string, error)
 	    }
 */
 
-func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, elm string) error {
+func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
+
+	config, err := b.db.GetConfig()
+	if err != nil {
+		return nil, xerrors.Errorf("GetConfig() error: %w", err)
+	}
+
+	home := struct {
+		Name   string
+		Detail string
+		Link   string
+	}{config.Name, config.Detail, "./"}
 
 	dto := struct {
-		Name        string
-		Description string
-		Marked      template.HTML
-	}{"Binder Name", "Binder Desctiprtion", template.HTML(elm)}
+		Home   interface{}
+		Marked template.HTML
+	}{home, template.HTML(elm)}
 
+	return dto, nil
+}
+
+func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}) error {
 	//出力
 	err := tmpl.Execute(w, dto)
 	if err != nil {
@@ -192,11 +281,14 @@ func (b *Binder) GenerateIndexHTML() error {
 	//list_n.htmlをすべて削除する
 
 	//ページ数を換算する
-	idx := 0
-	err = b.generateHTML("list", idx+1)
-	if err != nil {
-		return xerrors.Errorf("generateHTML(list) error: %w", err)
-	}
+	/*
+		idx := 0
+		err = b.generateHTML("list", idx+1)
+		if err != nil {
+			return xerrors.Errorf("generateHTML(list) error: %w", err)
+		}
+	*/
+
 	return nil
 }
 
@@ -214,22 +306,30 @@ func (b *Binder) generateHTML(id string, idx int) error {
 	if err != nil {
 		return xerrors.Errorf("Create() error: %w", err)
 	}
+	defer fp.Close()
 
 	w := newWrapper(b, false, id)
+
 	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
-		return xerrors.Errorf("writeHTML() error: %w", err)
+		return xerrors.Errorf("createTemplate() error: %w", err)
 	}
 
-	err = b.writeHTML(fp.(io.Writer), tmpl, "")
+	dto, err := b.createDto(w, "")
+	if err != nil {
+		return xerrors.Errorf("creteDto() error: %w", err)
+	}
+
+	err = b.writeHTML(fp.(io.Writer), tmpl, dto)
 	if err != nil {
 		return xerrors.Errorf("writeHTML() error: %w", err)
 	}
-
-	err = b.fileSystem.Commit("generate:" + id)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
+	/*
+		err = b.fileSystem.Commit("generate:" + id)
+		if err != nil {
+			return xerrors.Errorf("Commit() error: %w", err)
+		}
+	*/
 	return nil
 }
 
@@ -243,8 +343,13 @@ func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, erro
 		return "", xerrors.Errorf("createTemplate() error: %w", err)
 	}
 
+	dto, err := b.createDto(w, elm)
+	if err != nil {
+		return "", xerrors.Errorf("creteDto() error: %w", err)
+	}
+
 	var builder strings.Builder
-	err = b.writeHTML(&builder, tmpl, elm)
+	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
 		return "", xerrors.Errorf("generateHTML() error: %w", err)
 	}
@@ -259,8 +364,13 @@ func (b *Binder) CreateTemplateHTML(id string, temp string, elm string) (string,
 		return "", xerrors.Errorf("createTemplate() error: %w", err)
 	}
 
+	dto, err := b.createDto(w, elm)
+	if err != nil {
+		return "", xerrors.Errorf("creteDto() error: %w", err)
+	}
+
 	var builder strings.Builder
-	err = b.writeHTML(&builder, tmpl, elm)
+	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
 		return "", xerrors.Errorf("generateHTML() error: %w", err)
 	}

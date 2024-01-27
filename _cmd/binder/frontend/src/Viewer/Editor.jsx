@@ -1,10 +1,13 @@
 import {useState,useEffect} from "react"
 import { IconButton, Paper, Toolbar } from "@mui/material";
+
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
+import '../assets/vim.min.js';
+
 import { GetNote,ParseNote,OpenNote,SaveNote,CreateNoteHTML} from "../../wailsjs/go/api/App.js";
 import { GetData,OpenData,SaveData} from "../../wailsjs/go/api/App.js";
-import { OpenTemplate,CreateTemplateHTML, SaveTemplate ,Generate} from "../../wailsjs/go/api/App.js";
+import { OpenTemplate,CreateTemplateHTML, SaveTemplate ,Generate,Commit} from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 
@@ -39,6 +42,13 @@ function Editor(props) {
 
     //開いた時の初期処理
     useEffect(() => {
+
+      vim.open({
+        debug: false,
+        showMsg: function (msg) {
+          alert('vim.js say:' + msg);
+        }
+      });
 
       var m = "data";
       if ( props.templateId !== undefined ) {
@@ -233,11 +243,20 @@ function Editor(props) {
       } 
 
       Generate(props.noteId,props.dataId,elm).then( () => {
+        props.onMessage("success","Generate");
       }).catch( (err) => {
           console.warn(err)
           props.onMessage("error",err);
       })
-      //template時はボタンを押せなくする？
+    }
+
+    const commit = () => {
+      Commit(props.noteId,props.dataId,false).then(() => {
+        props.onMessage("success","commit");
+      }).catch ( (err) => {
+        console.warn(err)
+        props.onMessage("error",err);
+      })
     }
 
     var editorStyle = {};
@@ -256,7 +275,7 @@ function Editor(props) {
       <div id="editorWrapper" style={editWrapperStyle}>
         <textarea id="editor" style={editorStyle} onChange={(e) =>changeText(e.target.value)} value={text}/>
         <Toolbar style={{backgroundColor:"#222222",position:"absolute",left:"0",right:"0",bottom:"0px",minHeight:"48px",border:"0"}}>
-          <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }}>
+          <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={commit}>
             <CommitIcon fontSize="small" style={{color:"#f1f1f1"}} />
           </IconButton>
         </Toolbar>

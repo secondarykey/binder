@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -27,7 +28,9 @@ func (inst *Instance) GetConfig() (*model.Config, error) {
 		return nil, xerrors.Errorf("Scan() error: %w", err)
 	}
 
-	c.Detail = detail.String
+	c.Name = to(c.Name)
+	c.Detail = to(detail.String)
+	c.Branch = to(c.Branch)
 
 	return &c, nil
 }
@@ -42,9 +45,36 @@ func (inst *Instance) UpdateConfig(c *model.Config) error {
 
 	s := "UPDATE config SET name = ?,detail = ?,list_num = ?,branch = ?, auto_commit = ?,created_date = ?,updated_date = ?"
 	err := inst.run(s,
-		c.Name, c.Detail, c.ListNum, c.Branch, c.AutoCommit, c.Created, c.Updated)
+		c.Name, from(c.Detail), c.ListNum, c.Branch, c.AutoCommit, c.Created, c.Updated)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
 	return nil
+}
+
+var convertMap map[string]string = map[string]string{
+	"\n": "&#10;",
+	"\"": "&#34;",
+}
+
+func from(src string) string {
+	if src == "" {
+		return ""
+	}
+	ret := src
+	for key, val := range convertMap {
+		ret = strings.ReplaceAll(ret, key, val)
+	}
+	return ret
+}
+
+func to(src string) string {
+	if src == "" {
+		return ""
+	}
+	ret := src
+	for key, val := range convertMap {
+		ret = strings.ReplaceAll(ret, val, key)
+	}
+	return ret
 }

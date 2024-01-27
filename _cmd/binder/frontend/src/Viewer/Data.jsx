@@ -1,6 +1,6 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
-import {SelectFile,EditData,GetData} from "../../wailsjs/go/api/App";
+import { SelectFile, EditData, GetData } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
 /**
  * データのメタ情報を表示、編集
@@ -10,23 +10,26 @@ import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
 function Data(props) {
 
   const [name, setName] = useState("");
+  const [detail, setDetail] = useState("");
 
-  useEffect( () => {
+  useEffect(() => {
 
-    if ( props.id === "" ) {
+    if (props.id === "") {
       setName("");
+      setDetail("");
       props.onChangeTitle("Create Data");
       return;
     }
 
-    GetData(props.id,props.noteId).then( (data) => {
+    GetData(props.id, props.noteId).then((data) => {
       setName(data.name);
+      setDetail(data.detail);
       props.onChangeTitle("Edit Data:" + data.name);
-    }).catch( (err) => {
+    }).catch((err) => {
       console.warn(err);
-      props.onMessage("error",err);
+      props.onMessage("error", err);
     })
-  },[props.id,props.noteId]);
+  }, [props.id, props.noteId]);
 
   const handleSave = () => {
 
@@ -34,44 +37,53 @@ function Data(props) {
     data.id = props.id
     data.noteId = props.noteId
     data.name = name
+    data.detail = detail
     data.pluginId = "data";
 
     EditData(data).then((resp) => {
-      if ( props.id === "" ) {
-        props.onChangeMode("editor",resp.id,resp.noteId);
+      if (props.id === "") {
+        props.onChangeMode("editor", resp.id, resp.noteId);
       }
       props.onRefreshTree();
-      props.onMessage("success","update data.")
+      props.onMessage("success", "update data.")
 
-    }).catch( (err) => {
+    }).catch((err) => {
       console.warn(err);
-      props.onMessage("error",err);
+      props.onMessage("error", err);
     });
   }
 
   return (<>
-<Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
+    <Grid style={{ margin: "40px", marginTop: "20px", display: "flex", flexFlow: "column" }}>
 
-{props.id !== "" &&
-<>  
-  <FormControl>
-    <FormLabel>ID : {props.id} </FormLabel> 
-  </FormControl>
-</>}
+      {props.id !== "" &&
+        <>
+          <FormControl>
+            <FormLabel>ID : {props.id} </FormLabel>
+          </FormControl>
+        </>}
 
-  <FormControl>
-    <FormLabel>Name</FormLabel>
-    <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
-  </FormControl>
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
+      </FormControl>
 
-  <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
-    <Button variant="contained" onClick={handleSave}>
-{props.id !== "" && <> Save </> }
-{props.id === "" && <> Create </> }
-    </Button>
-  </FormControl>
+      {props.id !== "" &&
+        <>
+          <FormControl>
+            <FormLabel>Detail</FormLabel>
+            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline="true"></TextField>
+          </FormControl>
+        </>}
 
-</Grid>
-    </>);
+      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+        <Button variant="contained" onClick={handleSave}>
+          {props.id !== "" && <> Save </>}
+          {props.id === "" && <> Create </>}
+        </Button>
+      </FormControl>
+
+    </Grid>
+  </>);
 }
 export default Data;

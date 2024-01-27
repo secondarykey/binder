@@ -10,6 +10,10 @@ export function Close() {
   return window['go']['api']['App']['Close']();
 }
 
+export function Commit(arg1, arg2, arg3) {
+  return window['go']['api']['App']['Commit'](arg1, arg2, arg3);
+}
+
 export function CreateNoteHTML(arg1, arg2) {
   return window['go']['api']['App']['CreateNoteHTML'](arg1, arg2);
 }
@@ -52,6 +56,10 @@ export function GetNote(arg1) {
 
 export function GetResource() {
   return window['go']['api']['App']['GetResource']();
+}
+
+export function OpenBinderSite() {
+  return window['go']['api']['App']['OpenBinderSite']();
 }
 
 export function OpenData(arg1, arg2) {

@@ -14,7 +14,7 @@ import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 
 import BinderIcon from "../assets/images/binder.svg";
 
-import { GetResource } from '../../wailsjs/go/api/App';
+import { OpenBinderSite,GetResource } from '../../wailsjs/go/api/App';
 
 function BinderRootIcon() {
   return <img src={BinderIcon} width="24" height="24"/>;
@@ -133,6 +133,13 @@ function BinderTree(props) {
   const doNothing = (e) => {
     e.preventDefault();
     e.stopPropagation();
+  }
+
+  const OpenSite = () => {
+    OpenBinderSite().then(() => {
+    }).catch((err)=> {
+      console.warn(err);
+    });
   }
 
   //データを設定
@@ -280,6 +287,7 @@ function BinderTree(props) {
     <Menu anchorEl={binderEl}
       open={binderMenu}
       onClose={() => closeMenu(setBinder)}>
+      <MenuItem onClick={() => OpenSite()}>Open Browser</MenuItem>
       <MenuItem onClick={() => handleEditBinder(setBinder)}>Edit</MenuItem>
     </Menu>
     {/** ノート用のメニュー 

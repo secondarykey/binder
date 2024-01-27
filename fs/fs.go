@@ -116,6 +116,10 @@ func noteTemplate() string {
 //     {note_id}.md
 const noteDir = "notes"
 
+func NoteTextFile(id string) string {
+	return noteTextFile(id)
+}
+
 func noteTextFile(id string) string {
 	return filepath.Join(noteDir, fmt.Sprintf("%s.md", id))
 }
@@ -125,6 +129,10 @@ func noteTextFile(id string) string {
 //   - {note_id}/
 //     {data_id}.md //assets は直接docsに入れる
 const dataDir = "data"
+
+func DataTextFile(id string, noteId string) string {
+	return dataTextFile(id, noteId)
+}
 
 func dataTextFile(id string, noteId string) string {
 	if noteId == "" {

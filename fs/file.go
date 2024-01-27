@@ -17,12 +17,10 @@ type File struct {
 	billy.File
 }
 
-// 存在しない場合、ファイルを作成
 // fs.FS interface
 func (b *FileSystem) Open(name string) (fs.File, error) {
 
 	bf, err := b.fs.Open(name)
-	//bf, err := b.fs.OpenFile(name, os.O_RDWR, 0644)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Open() error: %w", err)
 	}
@@ -35,25 +33,12 @@ func (b *FileSystem) Open(name string) (fs.File, error) {
 	return &f, nil
 }
 
+// io.Writer interface
 func (f *File) Write(d []byte) (int, error) {
-
-	// TODO 一旦閉じずに、書き込み側でCreateすることで
-	// 問題を解消できると思われる
-	err := f.File.Close()
-	if err != nil {
-		return 0, xerrors.Errorf("Close() error: %w", err)
-	}
-
-	fp, err := f.root.Create(f.name)
-	if err != nil {
-		return 0, xerrors.Errorf("Create() error: %w", err)
-	}
-	//ポインタを切り替える
-	f.File = fp
-
-	return fp.Write(d)
+	return f.File.Write(d)
 }
 
+// fs.File interface
 func (f *File) Stat() (fs.FileInfo, error) {
 	return f.root.Stat(f.name)
 }

@@ -11,6 +11,8 @@ import (
 
 var DuplicateKey = fmt.Errorf("duplicate key error")
 
+const TimeZero = "0001-01-01T00:00:00Z"
+
 type scanner interface {
 	Scan(dest ...any) error
 }

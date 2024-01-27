@@ -35,6 +35,7 @@ func Create(dir string) (*FileSystem, error) {
 		return nil, fmt.Errorf("os.Mkdir() error: %w", err)
 	}
 
+	files := make([]string, 0, 50)
 	//取得した一覧を登録
 	for _, entry := range matches {
 
@@ -48,13 +49,13 @@ func Create(dir string) (*FileSystem, error) {
 			return nil, xerrors.Errorf("Stat() error: %w", err)
 		}
 
-		err = add(b, s, "")
+		err = add(b, s, "", files)
 		if err != nil {
 			return nil, xerrors.Errorf("add() error: %w", err)
 		}
 	}
 
-	err = b.Commit("Create Binder")
+	err = b.Commit("Create Binder", files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
@@ -63,7 +64,7 @@ func Create(dir string) (*FileSystem, error) {
 }
 
 // embed の構造をコピーする
-func add(b *FileSystem, info fs.FileInfo, dir string) error {
+func add(b *FileSystem, info fs.FileInfo, dir string, files []string) error {
 
 	n := info.Name()
 	if dir != "" {
@@ -83,7 +84,7 @@ func add(b *FileSystem, info fs.FileInfo, dir string) error {
 				return xerrors.Errorf("Info() error: %w", err)
 			}
 
-			err = add(b, i, n)
+			err = add(b, i, n, files)
 			if err != nil {
 				return xerrors.Errorf("add(%s) error: %w", n, err)
 			}
@@ -105,6 +106,8 @@ func add(b *FileSystem, info fs.FileInfo, dir string) error {
 		if err != nil {
 			return xerrors.Errorf("Write(%s) error: %w", n, err)
 		}
+
+		files = append(files, n)
 	}
 	return nil
 }

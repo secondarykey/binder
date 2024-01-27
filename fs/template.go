@@ -54,7 +54,7 @@ func (b *FileSystem) WriteTemplate(id string, data []byte) error {
 		return fmt.Errorf("Template id[%s] error", id)
 	}
 
-	fp, err := b.Open(n)
+	fp, err := b.Create(n)
 	if err != nil {
 		return fmt.Errorf("Open() error\n%+v", err)
 	}

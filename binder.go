@@ -4,6 +4,7 @@ import (
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
+	"fmt"
 	"net/http"
 
 	"golang.org/x/xerrors"
@@ -30,7 +31,6 @@ func New(path string) (*Binder, error) {
 func Install(dir string) error {
 
 	//あくまで作成をやって最終的にLoadすること
-
 	_, err := fs.Create(dir)
 	if err != nil {
 		return xerrors.Errorf("fs.Create() error: %w", err)
@@ -149,7 +149,7 @@ func (b *Binder) CreateResource() (*Resource, error) {
 		return nil, xerrors.Errorf("db.FindData() error: %w", err)
 	}
 
-	notes, err := b.db.FindNotes(-1)
+	notes, err := b.db.FindUpdatedNotes(-1)
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
 	}
@@ -180,24 +180,75 @@ func (b *Binder) CreateResource() (*Resource, error) {
 func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 	if dataId == "" {
-		//HTMLを作成
+
+		err := b.fileSystem.TemplatesCommit()
+		if err != nil {
+			return xerrors.Errorf("TemplatesCommit() error: %w", err)
+		}
+
+		//ノートのHTMLを作成
 		html, err := b.CreateNoteHTML(noteId, false, elm)
 		if err != nil {
 			return xerrors.Errorf("CreateNoteHTML() error: %w", err)
 		}
-
 		//保存
 		err = b.fileSystem.GenerateHTML(noteId, []byte(html))
 		if err != nil {
 			return xerrors.Errorf("GenerateHTML() error: %w", err)
 		}
 
+		err = b.GenerateIndexHTML()
+		if err != nil {
+			return xerrors.Errorf("GenerateIndexHTML() error: %w", err)
+		}
+
 	} else {
+
 		//ファイルを作成
 		err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
 		if err != nil {
 			return xerrors.Errorf("GenerateData() error: %w", err)
 		}
+
 	}
+	return nil
+}
+
+func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
+
+	var err error
+	t := ""
+	name := "nothing"
+	f := ""
+
+	if dataId == "" {
+		t = "Note"
+		f = fs.NoteTextFile(noteId)
+		n, err := b.GetNote(noteId)
+		if err != nil {
+			return xerrors.Errorf("GetNote() error: %w", err)
+		}
+		name = n.Name
+	} else {
+		t = "Data"
+		f = fs.DataTextFile(dataId, noteId)
+		d, err := b.GetData(dataId, noteId)
+		if err != nil {
+			return xerrors.Errorf("GetData() error: %w", err)
+		}
+		name = d.Name
+	}
+
+	if auto {
+		m := fmt.Sprintf("auto save : %s %s", t, name)
+		err = b.fileSystem.AutoCommit(m, f)
+	} else {
+		m := fmt.Sprintf("save      : %s %s", t, name)
+		err = b.fileSystem.Commit(m, f)
+	}
+	if err != nil {
+		return xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+
 	return nil
 }

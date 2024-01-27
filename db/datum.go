@@ -40,8 +40,10 @@ func createDatum(row scanner) (*model.Datum, error) {
 	}
 
 	d.NoteId = noteId.String
-	d.Detail = detail.String
 	d.PluginId = pluginId.String
+
+	d.Detail = to(detail.String)
+	d.Name = to(d.Name)
 
 	return &d, nil
 }
@@ -104,7 +106,7 @@ func (inst *Instance) InsertDatum(d *model.Datum) error {
 
 	s := "INSERT INTO data (id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?,?,?)"
 
-	err := inst.run(s, d.ID, d.NoteId, d.Name, d.Detail, d.PluginId, d.Publish, d.Created, d.Updated)
+	err := inst.run(s, d.ID, d.NoteId, from(d.Name), from(d.Detail), d.PluginId, d.Publish, d.Created, d.Updated)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
@@ -118,7 +120,7 @@ func (inst *Instance) UpdateDatum(d *model.Datum) error {
 
 	s := "UPDATE data SET note_id = ?,name = ?,detail = ?,plugin_id = ?,updated_date = ? WHERE id = ?"
 	err := inst.run(s,
-		d.NoteId, d.Name, d.Detail, d.PluginId, d.Updated, d.ID)
+		d.NoteId, from(d.Name), from(d.Detail), d.PluginId, d.Updated, d.ID)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}

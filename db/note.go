@@ -37,7 +37,7 @@ func (inst *Instance) InsertNote(n *model.Note) error {
 	s := "INSERT INTO notes (id,name,detail,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?)"
 
 	err := inst.run(s,
-		n.ID, n.Name, n.Detail, n.Publish, n.Created, n.Updated)
+		n.ID, from(n.Name), from(n.Detail), n.Publish, n.Created, n.Updated)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
@@ -53,7 +53,7 @@ func (inst *Instance) UpdateNote(n *model.Note) error {
 	s := "UPDATE notes SET name = ?,detail = ?,updated_date = ? WHERE id = ?"
 
 	err := inst.run(s,
-		n.Name, n.Detail, n.Updated, n.ID)
+		from(n.Name), from(n.Detail), n.Updated, n.ID)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
@@ -89,15 +89,35 @@ func createNote(row scanner) (*model.Note, error) {
 			return nil, xerrors.Errorf("Scan() error: %w", err)
 		}
 	}
-	n.Name = name.String
-	n.Detail = detail.String
+	n.Name = to(name.String)
+	n.Detail = to(detail.String)
 	return &n, nil
 }
 
-func (inst *Instance) FindNotes(limit int) ([]*model.Note, error) {
+func (inst *Instance) FindNotes() ([]*model.Note, error) {
+	return inst.findNotes(-1, "updated_date desc", "")
+}
+
+func (inst *Instance) FindUpdatedNotes(limit int) ([]*model.Note, error) {
+	return inst.findNotes(limit, "updated_date desc", "")
+}
+
+func (inst *Instance) FindPublishNotes(limit int) ([]*model.Note, error) {
+	return inst.findNotes(limit, "publish_date desc",
+		fmt.Sprintf("publish_date != '%s'", TimeZero))
+}
+
+func (inst *Instance) findNotes(limit int, order string, where string) ([]*model.Note, error) {
 
 	ctx := context.Background()
-	s := notesSelect + " ORDER BY updated_date desc"
+	s := notesSelect
+	if where != "" {
+		s += " WHRER " + where
+	}
+	if order != "" {
+		s += " ORDER BY " + order
+	}
+
 	if limit > 0 {
 		s += fmt.Sprintf(" LIMIT %d", limit)
 	}
@@ -121,7 +141,7 @@ func (inst *Instance) FindNotes(limit int) ([]*model.Note, error) {
 }
 
 func (inst *Instance) GetLatestNoteId() string {
-	notes, err := inst.FindNotes(1)
+	notes, err := inst.FindUpdatedNotes(1)
 	if err != nil {
 		return ""
 	}

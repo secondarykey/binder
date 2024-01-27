@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import './assets/vim.min.js';
 import LeftMenu from './Menu/LeftMenu.jsx';
 import MainViewer from './Viewer/MainViewer.jsx';
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Popover, Slide, Snackbar } from '@mui/material';
@@ -18,6 +17,7 @@ function App() {
     var obj = {};
     obj.type = type;
     var msg = "";
+
     if (typeof err === 'object') {
       if (err.stack) {
         msg = err.stack;
@@ -66,20 +66,15 @@ function App() {
   const [config, setConfig] = useState(undefined);
 
   useEffect(() => {
-    vim.open({
-      debug: false,
-      showMsg: function (msg) {
-        alert('vim.js say:' + msg);
-      }
-    });
-
+    console.debug("App loaded()")
     //開いているモードによる
     GetConfig().then( (conf) => {
       setConfig(conf)
     }).catch( (err) => {
-      props.onMessage("error",err);
+      showMessage("error",err);
     });
-  },[config]);
+
+  },[config !== undefined ? config.updated : undefined]);
 
   /**
    * メニューを開く

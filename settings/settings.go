@@ -116,8 +116,12 @@ func def() *Setting {
 	//最後に開いていたバインダーを開く
 
 	//表示情報
-
+	var auth Authentication
+	auth.Name = "Commit Name"
+	auth.Mail = "Commit Email"
+	auth.Code = "generate remote code"
 	//認証情報
+	set.Authentication = &auth
 
 	return &set
 }

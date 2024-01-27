@@ -1,6 +1,6 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
-import {SelectFile,EditNote,Address} from "../../wailsjs/go/api/App";
+import { SelectFile, EditNote, Address } from "../../wailsjs/go/api/App";
 import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Paper, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { GetNote } from "../../wailsjs/go/api/App";
@@ -16,62 +16,66 @@ function Note(props) {
   const [name, setName] = useState("");
   const [imageFile, setImageFile] = useState("");
   const [viewImage, setViewImage] = useState("");
+  const [detail, setDetail] = useState("");
 
-  useEffect( () => {
+  useEffect(() => {
 
+    setDetail("");
     setImageFile("");
-    if ( props.id === "" ) {
+    if (props.id === "") {
       setName("");
       props.onChangeTitle("Create Note");
       return;
     }
 
-    GetNote(props.id).then( (note) => {
+    GetNote(props.id).then((note) => {
       setName(note.name);
+      setDetail(note.detail)
       props.onChangeTitle("Edit Note:" + note.name);
-    }).catch ( (err) => {
+    }).catch((err) => {
       console.warn(err);
-      props.onMessage("error",err);
+      props.onMessage("error", err);
     })
 
-    Address().then( (address) => {
+    Address().then((address) => {
       setViewImage("http://" + address + "/assets/" + props.id + "/index")
-    }).catch ((err) => {
+    }).catch((err) => {
       console.warn(err);
-      props.onMessage("error",err);
-    }) 
+      props.onMessage("error", err);
+    })
 
-  },[props.id]);
+  }, [props.id]);
 
   const handleSave = () => {
 
     var note = {};
     note.id = props.id;
     note.name = name;
+    note.detail = detail;
 
-    EditNote(note,imageFile).then((resp) => {
+    EditNote(note, imageFile).then((resp) => {
 
       //新規作成時のみ切り替え
-      if ( props.id === "" ) {
-        props.onChangeMode("editor",resp.id);
+      if (props.id === "") {
+        props.onChangeMode("editor", resp.id);
       }
       props.onRefreshTree();
-      props.onMessage("success","update note.")
+      props.onMessage("success", "update note.")
 
-    }).catch( (err) => {
+    }).catch((err) => {
       console.warn(err);
-      props.onMessage("error",err);
+      props.onMessage("error", err);
     });
   }
 
   const selectFile = () => {
-    SelectFile("Page Image File","*.png;*.jpg;*.jpeg;*.webp;").then((f) => {
-      if ( f != "" ) {
+    SelectFile("Page Image File", "*.png;*.jpg;*.jpeg;*.webp;").then((f) => {
+      if (f != "") {
         setImageFile(f);
       }
-    }).catch( (err) => {
+    }).catch((err) => {
       console.warn(err);
-      props.onMessage("error",err);
+      props.onMessage("error", err);
     });
   }
 
@@ -79,49 +83,58 @@ function Note(props) {
     e.target.src = noImage;
   }
 
-    return (<>
-<Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
+  return (<>
+    <Grid style={{ margin: "40px", marginTop: "20px", display: "flex", flexFlow: "column" }}>
 
-{props.id !== "" &&
-<>  
-  <FormControl>
-    <FormLabel>ID : {props.id} </FormLabel> 
-  </FormControl>
-</>}
+      {props.id !== "" &&
+        <>
+          <FormControl>
+            <FormLabel>ID : {props.id} </FormLabel>
+          </FormControl>
+        </>}
 
-  <FormControl>
-    <FormLabel>Name</FormLabel>
-    <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
-  </FormControl>
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
+      </FormControl>
 
-  <FormControl>
-    <FormLabel>Note Image</FormLabel>
-    <TextField value={imageFile}
-               onClick={selectFile}
-               InputProps={{
-               startAdornment: (
-                 <InputAdornment position="start">
-                   <AttachFileIcon />
-                 </InputAdornment>
-               )}}></TextField>
-  </FormControl>
+      {props.id !== "" &&
+      <>
+          <FormControl>
+            <FormLabel>Detail</FormLabel>
+            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline="true"></TextField>
+          </FormControl>
+      </>}
 
-{(props.id !== "" && viewImage !== "") && 
-<>
-<Container style={{marginTop:"10px",textAlign:"center"}}>
-  <img src={viewImage} onError={setNoImage} style={{height:"200px",width:"fit-content"}}></img>
-</Container>
-</>
-}
+      <FormControl>
+        <FormLabel>Note Image</FormLabel>
+        <TextField value={imageFile}
+          onClick={selectFile}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <AttachFileIcon />
+              </InputAdornment>
+            )
+          }}></TextField>
+      </FormControl>
 
-  <FormControl style={{display:"flex",flexFlow:"row",margin:"10px"}}>
-    <Button variant="contained" onClick={handleSave}>
-{props.id !== "" && <> Save </> }
-{props.id === "" && <> Create </> }
-    </Button>
-  </FormControl>
+      {(props.id !== "" && viewImage !== "") &&
+        <>
+          <Container style={{ marginTop: "10px", textAlign: "center" }}>
+            <img src={viewImage} onError={setNoImage} style={{ height: "200px", width: "fit-content" }}></img>
+          </Container>
+        </>
+      }
 
-</Grid>
-    </>);
+      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+        <Button variant="contained" onClick={handleSave}>
+          {props.id !== "" && <> Save </>}
+          {props.id === "" && <> Create </>}
+        </Button>
+      </FormControl>
+
+    </Grid>
+  </>);
 }
 export default Note;

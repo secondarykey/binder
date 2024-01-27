@@ -94,3 +94,18 @@ func (a *App) GetResource() (*binder.Resource, error) {
 func (a *App) Generate(noteId string, dataId string, elm string) error {
 	return a.current.Generate(noteId, dataId, elm)
 }
+
+func (a *App) Commit(noteId string, dataId string, auto bool) error {
+	err := a.current.SaveCommit(noteId, dataId, auto)
+	if err != nil {
+		return fmt.Errorf("Commit() error\n%+v", err)
+	}
+	return nil
+}
+
+func (a *App) OpenBinderSite() error {
+	address := fmt.Sprintf("http://%s", a.current.ServerAddress())
+	log.Println(address)
+	runtime.BrowserOpenURL(a.ctx, address)
+	return nil
+}
