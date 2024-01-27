@@ -83,6 +83,8 @@ func (a *App) GetResource() (*binder.Resource, error) {
 		return nil, fmt.Errorf("Not Open Binder")
 	}
 
+	//TODO ツリーの制限数を設定から見て検索
+
 	r, err := a.current.CreateResource()
 	if err != nil {
 		return nil, fmt.Errorf("GetResource() error\n%+v", err)
@@ -96,6 +98,9 @@ func (a *App) Generate(noteId string, dataId string, elm string) error {
 }
 
 func (a *App) Commit(noteId string, dataId string, auto bool) error {
+
+	//runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{CanCreateDirectories: true})
+
 	err := a.current.SaveCommit(noteId, dataId, auto)
 	if err != nil {
 		return fmt.Errorf("Commit() error\n%+v", err)
@@ -105,7 +110,6 @@ func (a *App) Commit(noteId string, dataId string, auto bool) error {
 
 func (a *App) OpenBinderSite() error {
 	address := fmt.Sprintf("http://%s", a.current.ServerAddress())
-	log.Println(address)
 	runtime.BrowserOpenURL(a.ctx, address)
 	return nil
 }

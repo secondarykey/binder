@@ -149,7 +149,8 @@ func (b *Binder) CreateResource() (*Resource, error) {
 		return nil, xerrors.Errorf("db.FindData() error: %w", err)
 	}
 
-	notes, err := b.db.FindUpdatedNotes(-1)
+	//TODO 多い場合の表示を考える
+	notes, err := b.db.FindUpdatedNotes(-1, -1)
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
 	}

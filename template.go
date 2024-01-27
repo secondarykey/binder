@@ -26,6 +26,35 @@ type tempNote struct {
 	Image string
 }
 
+type tempPage struct {
+	Index int
+	Link  string
+}
+
+func (w *wrapper) nowPage() tempPage {
+	return w.newPage(w.now)
+}
+
+func (w *wrapper) newPage(idx int) tempPage {
+
+	var p tempPage
+	p.Index = idx
+	parent := "."
+	if w.isNote() {
+		parent = ".."
+	}
+
+	if idx >= 1 {
+		page := "list.html"
+		if idx != 1 {
+			page = fmt.Sprintf("list_%d.html", idx)
+		}
+		p.Link = parent + "/" + page
+	}
+
+	return p
+}
+
 func isNote(id string) bool {
 	if id == "index" || id == "list" || id == "layout" {
 		return false
@@ -37,19 +66,24 @@ type wrapper struct {
 	owner *Binder
 	Local bool
 	ID    string
+	now   int
+
+	maxPage int
+	listNum int
 }
 
-func newWrapper(o *Binder, local bool, id string) *wrapper {
+func newWrapper(o *Binder, local bool, id string, now int) *wrapper {
 	var w wrapper
 
 	w.owner = o
 	w.Local = local
 	w.ID = id
+	w.now = now
 
 	return &w
 }
 
-func (w wrapper) assetsDir() string {
+func (w *wrapper) assetsDir() string {
 
 	assets := "./assets"
 	if w.Local {
@@ -60,26 +94,30 @@ func (w wrapper) assetsDir() string {
 	return assets
 }
 
-func (w wrapper) publicAssets(id string) string {
+func (w *wrapper) publicAssets(id string) string {
 	return w.assetsDir() + "/" + id
 }
 
-func (w wrapper) assets(id string) string {
+func (w *wrapper) assets(id string) string {
 	return w.assetsDir() + "/" + w.ID + "/" + id
 }
 
-func (w wrapper) isNote() bool {
+func (w *wrapper) isNote() bool {
 	return isNote(w.ID)
 }
 
-func (w wrapper) latestNotes(n int) []*tempNote {
+func (w *wrapper) latestNotes(n int) []*tempNote {
+	return w.getNotes(n, -1)
+}
+
+func (w *wrapper) getNotes(limit int, offset int) []*tempNote {
 
 	var err error
 	var notes []*model.Note
 	if w.Local {
-		notes, err = w.owner.db.FindUpdatedNotes(n)
+		notes, err = w.owner.db.FindUpdatedNotes(limit, offset)
 	} else {
-		notes, err = w.owner.db.FindPublishNotes(n)
+		notes, err = w.owner.db.FindPublishNotes(limit, offset)
 	}
 
 	if err != nil {
@@ -94,7 +132,74 @@ func (w wrapper) latestNotes(n int) []*tempNote {
 	return rtn
 }
 
-func (w wrapper) convertNote(n *model.Note) *tempNote {
+// Listを出力する前にカウントなどを初期化する
+func (w *wrapper) initPaging() error {
+
+	config, err := w.owner.db.GetConfig()
+	if err != nil {
+		return xerrors.Errorf("GetConfig() error: %w", err)
+	}
+
+	w.now = 1
+	w.listNum = config.ListNum
+
+	//ページ数を取得
+	//TODO 実際にはカウントで取得したい
+	notes := w.latestNotes(-1)
+	m := len(notes)
+
+	if config.ListNum != 0 {
+		//config.ListNum
+		w.maxPage = (m / config.ListNum) + 1
+		if m%config.ListNum == 0 {
+			w.maxPage--
+		}
+	} else {
+		w.maxPage = 1
+		w.listNum = m
+	}
+
+	return nil
+}
+
+func (w *wrapper) pageNotes() []*tempNote {
+	offset := w.listNum * (w.now - 1)
+	return w.getNotes(w.listNum, offset)
+}
+
+func (w *wrapper) prevPages(n int) []*tempPage {
+
+	rtn := make([]*tempPage, 0, n)
+
+	m := w.now - n
+	if m < 1 {
+		m = 1
+	}
+
+	for idx := w.now - 1; idx >= m; idx-- {
+		p := w.newPage(idx)
+		rtn = append(rtn, &p)
+	}
+	return rtn
+}
+
+func (w *wrapper) nextPages(n int) []*tempPage {
+
+	rtn := make([]*tempPage, 0, n)
+
+	m := w.now + n
+	if m > w.maxPage {
+		m = w.maxPage
+	}
+
+	for idx := w.now + 1; idx <= m; idx++ {
+		p := w.newPage(idx)
+		rtn = append(rtn, &p)
+	}
+	return rtn
+}
+
+func (w *wrapper) convertNote(n *model.Note) *tempNote {
 
 	var t tempNote
 	t.ID = n.ID
@@ -125,7 +230,6 @@ func (w wrapper) convertNote(n *model.Note) *tempNote {
 }
 
 func safeTemplate(src string) string {
-	log.Println(src)
 	return src
 }
 
@@ -136,6 +240,9 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"publicAssets": w.publicAssets,
 		"latestNotes":  w.latestNotes,
 		"isNote":       w.isNote,
+		"pageNotes":    w.pageNotes,
+		"prevPages":    w.prevPages,
+		"nextPages":    w.nextPages,
 		"safe":         safeTemplate,
 		"lf2br":        convertLF2BR,
 		"lf2sp":        convertLF2SP,
@@ -198,7 +305,7 @@ func (b *Binder) createTemplate(w *wrapper, text string) (*template.Template, er
 }
 
 func (b *Binder) ParseElement(id string, local bool, elm string) (string, error) {
-	wrap := newWrapper(b, local, id)
+	wrap := newWrapper(b, local, id, 0)
 
 	tmpl, err := template.New("").Funcs(defineFuncMap(wrap)).Parse(elm)
 	if err != nil {
@@ -218,11 +325,6 @@ func (b *Binder) ParseElement(id string, local bool, elm string) (string, error)
 	return builder.String(), nil
 }
 
-/*
-	func (b *Binder) createElement(wrap *wrapper, elm string) error {
-	    }
-*/
-
 func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 
 	config, err := b.db.GetConfig()
@@ -236,10 +338,40 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 		Link   string
 	}{config.Name, config.Detail, "./"}
 
+	page := struct {
+		List  tempPage
+		Now   tempPage
+		Prev  tempPage
+		First tempPage
+		Next  tempPage
+		Last  tempPage
+	}{}
+
+	page.Now = w.nowPage()
+	if w.now >= 1 {
+		if w.now == 1 {
+			err := w.initPaging()
+			if err != nil {
+				return nil, xerrors.Errorf("initPaging() error: %w", err)
+			}
+		}
+
+		page.List = w.newPage(1)
+		page.First = w.newPage(1)
+		page.Last = w.newPage(w.maxPage)
+		if w.now > 1 {
+			page.Prev = w.newPage(w.now - 1)
+		}
+		if w.now < w.maxPage {
+			page.Next = w.newPage(w.now + 1)
+		}
+	}
+
 	dto := struct {
 		Home   interface{}
+		Page   interface{}
 		Marked template.HTML
-	}{home, template.HTML(elm)}
+	}{home, page, template.HTML(elm)}
 
 	return dto, nil
 }
@@ -279,8 +411,8 @@ func (b *Binder) GenerateIndexHTML() error {
 	}
 
 	//list_n.htmlをすべて削除する
-
 	//ページ数を換算する
+
 	/*
 		idx := 0
 		err = b.generateHTML("list", idx+1)
@@ -308,8 +440,7 @@ func (b *Binder) generateHTML(id string, idx int) error {
 	}
 	defer fp.Close()
 
-	w := newWrapper(b, false, id)
-
+	w := newWrapper(b, false, id, idx)
 	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
 		return xerrors.Errorf("createTemplate() error: %w", err)
@@ -336,7 +467,7 @@ func (b *Binder) generateHTML(id string, idx int) error {
 // HTMLメモリ作成
 func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, error) {
 
-	w := newWrapper(b, local, id)
+	w := newWrapper(b, local, id, 0)
 
 	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
@@ -358,7 +489,12 @@ func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, erro
 
 func (b *Binder) CreateTemplateHTML(id string, temp string, elm string) (string, error) {
 
-	w := newWrapper(b, true, id)
+	now := 0
+	if id == "list" {
+		now = 1
+	}
+
+	w := newWrapper(b, true, id, now)
 	tmpl, err := b.createTemplate(w, temp)
 	if err != nil {
 		return "", xerrors.Errorf("createTemplate() error: %w", err)

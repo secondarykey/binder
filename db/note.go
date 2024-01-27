@@ -95,19 +95,19 @@ func createNote(row scanner) (*model.Note, error) {
 }
 
 func (inst *Instance) FindNotes() ([]*model.Note, error) {
-	return inst.findNotes(-1, "updated_date desc", "")
+	return inst.findNotes(-1, -1, "updated_date desc", "")
 }
 
-func (inst *Instance) FindUpdatedNotes(limit int) ([]*model.Note, error) {
-	return inst.findNotes(limit, "updated_date desc", "")
+func (inst *Instance) FindUpdatedNotes(limit int, offset int) ([]*model.Note, error) {
+	return inst.findNotes(limit, offset, "updated_date desc", "")
 }
 
-func (inst *Instance) FindPublishNotes(limit int) ([]*model.Note, error) {
-	return inst.findNotes(limit, "publish_date desc",
+func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, error) {
+	return inst.findNotes(limit, offset, "publish_date desc",
 		fmt.Sprintf("publish_date != '%s'", TimeZero))
 }
 
-func (inst *Instance) findNotes(limit int, order string, where string) ([]*model.Note, error) {
+func (inst *Instance) findNotes(limit int, offset int, order string, where string) ([]*model.Note, error) {
 
 	ctx := context.Background()
 	s := notesSelect
@@ -121,6 +121,13 @@ func (inst *Instance) findNotes(limit int, order string, where string) ([]*model
 	if limit > 0 {
 		s += fmt.Sprintf(" LIMIT %d", limit)
 	}
+
+	if offset > 0 {
+		s += fmt.Sprintf(" OFFSET %d", offset)
+	}
+
+	fmt.Println(s)
+
 	r, err := inst.getRows(ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("getRows() error: %w", err)
@@ -141,7 +148,7 @@ func (inst *Instance) findNotes(limit int, order string, where string) ([]*model
 }
 
 func (inst *Instance) GetLatestNoteId() string {
-	notes, err := inst.FindUpdatedNotes(1)
+	notes, err := inst.FindUpdatedNotes(1, -1)
 	if err != nil {
 		return ""
 	}

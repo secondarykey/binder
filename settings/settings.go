@@ -48,9 +48,10 @@ type Authentication struct {
 }
 
 type Look struct {
-	DarkMode  bool    `json:"darkMode"`
-	WholeText *Font   `json:"whole"`
-	Editor    *Editor `json:"editor"`
+	DarkMode    bool    `json:"darkMode"`
+	WholeText   *Font   `json:"whole"`
+	TreeNoteNum int     `json:"treeNoteNum"`
+	Editor      *Editor `json:"editor"`
 }
 
 type Editor struct {

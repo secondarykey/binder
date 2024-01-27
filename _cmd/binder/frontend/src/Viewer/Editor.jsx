@@ -168,6 +168,7 @@ function Editor(props) {
           var embed = await createMarked(txt,true);
           CreateNoteHTML(props.noteId,embed).then( (html) => {
             elm.srcdoc = html;
+            //elm.scrollTo({ top: 400, behavior: "smooth" });
           }).catch( (err) => {
             console.warn(err)
             props.onMessage("error",err);

@@ -129,11 +129,16 @@ body {
 }
 
 #htmlViewer {
-    bottom:48px;
+    width:100%;
+    height:calc( 100% - 48px );
 }
 
 #mermaidViewer {
-    bottom:48px;
+    display:flex;
+    width:100%;
+    height:calc( 100% - 48px );
+    justify-content: center;
+    align-items:center;
 }
 
 #editor {
