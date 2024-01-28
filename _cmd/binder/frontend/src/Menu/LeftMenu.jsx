@@ -23,63 +23,72 @@ function LeftMenu(props) {
     props.onClose();
   }
 
-  const [mode, setMode] = useState("binder");
-
   const clickHome = () => {
   }
 
   return (
     <>
 
-  {/** バインダーを開いている場合はそのバインダーのツリー表示にする 
+      {/** バインダーを開いている場合はそのバインダーのツリー表示にする 
      ただし、戻るボタンを押した場合の事を考える
      onClose(バインダーを閉じる？) onExpand(非表示に切り替える)
     */}
 
-    <Paper id="leftmenu">
+      <Paper id="leftmenu">
 
-      <Toolbar id="expandBar">
+        <Toolbar id="expandBar">
 
-        {/** ノート時に表示 */}
-{mode === "binder" &&
-        <IconButton id="homeButton" size="large" edge="start" color="inherit" aria-label="home" sx={{ mr: 2 }} onClick={clickHome}>
-          <HomeIcon id="homeIcon"/>
-        </IconButton>
-}
+          {/** ノート時に表示 */}
+          <IconButton id="homeButton" size="large" edge="start" color="inherit" aria-label="home" sx={{ mr: 2 }} onClick={clickHome}>
+            {props.mode === "binder" &&
+              <HomeIcon id="homeIcon" />
+            }
+          </IconButton>
 
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-        {/** TODO 開いているバインダーの名称 */}
-{props.config !== undefined &&
-<>
-        {props.config.name}
-</>
-}
-        </Typography>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            {/** TODO 開いているバインダーの名称 */}
+            {props.config !== undefined &&
+              <>
 
-        {/** メニューを閉じる */}
-        <IconButton id="expandButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={close}>
-          <ExpandCircleDownIcon id="expandIcon"/>
-        </IconButton>
+                {props.mode === "binder" &&
+                  <> {props.config.name} </>
+                }
 
-      </Toolbar>
+                {props.mode !== "binder" &&
+                  <>Binder</>
+                }
 
-      <Paper id="leftcontent">
-{/** バインダーを開いてない場合や戻ってきた場合に利用 */}
-{mode === "file" &&
-<>
-  <FileMenu onMessage={props.onMessage} />
-</>
-}
+              </>
+            }
+          </Typography>
 
-{/** バインダーを開いている場合に利用 */}
-{mode === "binder" &&
-<>
-  <BinderTree onChangeMode={props.onChangeMode} onMessage={props.onMessage} redraw={props.redraw}/>
-</>
-}
+          {/** メニューを閉じる */}
+          <IconButton id="expandButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={close}>
+            <ExpandCircleDownIcon id="expandIcon" />
+          </IconButton>
+
+        </Toolbar>
+
+        <Paper id="leftContent">
+          {/** バインダーを開いてない場合や戻ってきた場合に利用 */}
+          {props.mode === "file" &&
+            <>
+              <FileMenu onMessage={props.onMessage} 
+                        onChangeMode={props.onChangeMode} />
+            </>
+          }
+
+          {/** バインダーを開いている場合に利用 */}
+          {props.mode === "binder" &&
+            <>
+              <BinderTree onChangeMode={props.onChangeMode} 
+                          onMessage={props.onMessage} 
+                          redraw={props.redraw} />
+            </>
+          }
+        </Paper>
+
       </Paper>
-
-</Paper>
     </>
   );
 }

@@ -58,6 +58,10 @@ export function GetResource() {
   return window['go']['api']['App']['GetResource']();
 }
 
+export function GetSetting() {
+  return window['go']['api']['App']['GetSetting']();
+}
+
 export function OpenBinderSite() {
   return window['go']['api']['App']['OpenBinderSite']();
 }
@@ -84,6 +88,10 @@ export function SaveData(arg1, arg2, arg3) {
 
 export function SaveNote(arg1, arg2) {
   return window['go']['api']['App']['SaveNote'](arg1, arg2);
+}
+
+export function SaveSetting(arg1) {
+  return window['go']['api']['App']['SaveSetting'](arg1);
 }
 
 export function SaveTemplate(arg1, arg2) {

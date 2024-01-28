@@ -168,7 +168,6 @@ func Load(dir string) (*FileSystem, error) {
 
 func Clone(dir string, url string) (*FileSystem, error) {
 
-	//TODO FileSystem
 	r, err := git.PlainClone(dir, false, &git.CloneOptions{
 		URL:      url,
 		Progress: os.Stdout,
@@ -180,6 +179,8 @@ func Clone(dir string, url string) (*FileSystem, error) {
 	var b FileSystem
 	b.repo = r
 	b.remote = url
+	fs := osfs.New(dir)
+	b.fs = fs
 	return &b, nil
 }
 
@@ -189,8 +190,6 @@ func newFileSystem(fs billy.Filesystem) (*FileSystem, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}
-
-	//TODO デフォルトブランチ
 	s := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
 
 	rep, err := git.Init(s, fs)

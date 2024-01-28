@@ -10,6 +10,7 @@ import Binder from "./Binder";
 import Note from "./Note";
 import Data from "./Data";
 import Assets from "./Assets";
+import Setting from "./Setting";
 
 /**
  * 表示部分
@@ -70,6 +71,15 @@ function MainViewer(props) {
           onMessage={props.onMessage}/>
 </>
 }
+
+{mode === "setting" &&
+<>
+  <Setting onRefreshTree={props.onRefreshTree}
+           onChangeTitle={setName}
+           onMessage={props.onMessage}/>
+</>
+}
+
 
 {mode === "history" &&
 <></>

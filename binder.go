@@ -4,6 +4,7 @@ import (
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
+	"binder/settings"
 	"fmt"
 	"net/http"
 
@@ -251,5 +252,29 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 		return xerrors.Errorf("fs.Commit() error: %w", err)
 	}
 
+	return nil
+}
+
+func (b *Binder) SaveSetting(s *settings.Setting) error {
+
+	org := settings.Get()
+
+	//Positionはそのまま
+
+	org.Path.Default = s.Path.Default
+	org.Path.RunWithOpen = s.Path.RunWithOpen
+	org.Path.OpenWithItem = s.Path.OpenWithItem
+
+	org.Git.Branch = s.Git.Branch
+	org.Git.Name = s.Git.Name
+	org.Git.Mail = s.Git.Mail
+	org.Git.Code = s.Git.Code
+
+	//org.Look
+
+	err := org.Save()
+	if err != nil {
+		return xerrors.Errorf("settings.Save() error: %w", err)
+	}
 	return nil
 }

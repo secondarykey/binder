@@ -2,6 +2,8 @@ package settings
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,10 +12,10 @@ import (
 )
 
 type Setting struct {
-	Position       *Position       `json:"position"`
-	Path           *Path           `json:"path"`
-	Look           *Look           `json:"lookAndFeel"`
-	Authentication *Authentication `json:"authentication"`
+	Position *Position `json:"position"`
+	Path     *Path     `json:"path"`
+	Look     *Look     `json:"lookAndFeel"`
+	Git      *Git      `json:"git"`
 }
 
 func (s Setting) IsDefault() bool {
@@ -33,18 +35,35 @@ type Position struct {
 }
 
 type Path struct {
+	Default      string   `json:"default"`
 	RunWithOpen  bool     `json:"runWithOpen"`
 	OpenWithItem bool     `json:"openWithItem"`
-	Default      string   `json:"default"`
 	Histories    []string `json:"histories"`
 	LastNoteId   string   `json:"lastNoteId"`
 	LastDataId   string   `json:"lastDataId"`
 }
 
-type Authentication struct {
-	Name string `json:"name"`
-	Mail string `json:"mail"`
-	Code string `json:"code"`
+func (p *Path) AddHistory(h string) {
+
+	p.Histories = append(p.Histories, h)
+	newHis := make([]string, 0, 10)
+	for _, v := range p.Histories {
+		if v != h {
+			newHis = append(newHis, v)
+		}
+		if len(newHis) >= 10 {
+			break
+		}
+	}
+	p.Histories = newHis
+}
+
+type Git struct {
+	Branch string `json:"branch"`
+	Name   string `json:"name"`
+	Mail   string `json:"mail"`
+	Code   string `json:"code"`
+	File   string `json;"file"`
 }
 
 type Look struct {
@@ -117,18 +136,28 @@ func def() *Setting {
 	//最後に開いていたバインダーを開く
 
 	//表示情報
-	var auth Authentication
-	auth.Name = "Commit Name"
-	auth.Mail = "Commit Email"
-	auth.Code = "generate remote code"
+	var auth Git
+	host, err := os.Hostname()
+	if err != nil {
+		log.Println(err)
+		host = "binder"
+	}
+
+	auth.Branch = host
+	auth.Name = ""
+	auth.Mail = ""
+	auth.Code = ""
+	//auth.File = "D:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt"
+	auth.File = ""
 	//認証情報
-	set.Authentication = &auth
+	set.Git = &auth
 
 	return &set
 }
 
 func (s *Setting) Save() error {
 	fn := getFilePath()
+	fmt.Println(fn)
 	fp, err := os.Create(fn)
 	if err != nil {
 		return xerrors.Errorf("os.Create() error: %w", err)
@@ -147,6 +176,7 @@ func (s *Setting) Save() error {
 }
 
 func load() (*Setting, error) {
+
 	fn := getFilePath()
 	if _, err := os.Stat(fn); err != nil {
 		return def(), nil

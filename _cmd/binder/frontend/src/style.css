@@ -44,14 +44,14 @@ body {
     color: #f1f1f1;
     width: 320px;
     min-width: 320px;
-    height: 100vh;
 }
 
-#lefcontent {
+#leftContent {
     background-color: #191919;
     color: #f1f1f1;
     overflow: auto !important;
     border:0;
+    height: 100%;
 }
 
 .treeText {
@@ -81,6 +81,21 @@ body {
 #expandIcon {
   transform: rotate(90deg);
 }
+
+#fileMenu {
+    position:relative;
+    height:calc(100% - 100px);
+}
+
+#settingMenu {
+    position: absolute;
+    width: 100%;
+    bottom:0;
+}
+
+
+
+
 
 #mainViewer {
     width:100%;
@@ -157,4 +172,16 @@ body {
 
     padding: 5px;
     margin: 0px;
+}
+
+.formGrid {
+  display: grid;
+  flex-flow: column;
+  margin: 40px;
+  margin-top: 20px;
+}
+
+.formContainer {
+  display: flex;
+  flex-flow: column;
 }

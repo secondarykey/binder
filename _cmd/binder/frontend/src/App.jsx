@@ -57,7 +57,8 @@ function App() {
   }
 
   //表示モード指定用
-  const [mode, setMode] = useState('binder');
+  const [leftMode, setLeftMode] = useState('binder');
+  const [rightMode, setRightMode] = useState('binder');
 
   //指定ID
   const [dataId, setDataId] = useState(undefined);
@@ -96,32 +97,35 @@ function App() {
    * @param {string} parentId 親ID
    */
   const changeMode = (mode, id, parentId) => {
-    //指定のあったIDに変更
-    if (parentId === undefined) {
-      //指定IDでモードを設定しているのを止める
-      if (mode === "template") {
+
+    //テンプレートモードの場合
+    if (mode === "template") {
         mode = "editor"
         setTemplateId(id);
         setNoteId(undefined);
         setDataId(undefined)
-      } else if (id !== undefined) {
+    } else if ( mode === "editor" || mode === "note" || mode === "data" || mode === "assets" ) {
+      // ID 指定系のモードの場合
+      if ( parentId === undefined) {
         setNoteId(id);
         setDataId(undefined)
         setTemplateId(undefined);
       } else {
-        setNoteId(undefined);
-        setDataId(undefined)
+        setNoteId(parentId);
+        setDataId(id)
         setTemplateId(undefined);
       }
-    } else if (id !== undefined) {
-      setNoteId(parentId);
-      setDataId(id)
-      setTemplateId(undefined);
     } else {
-      showMessage("error", "undefined mode:" + mode);
+      //IDなしへのモード切り替え　
+      setNoteId(undefined);
+      setDataId(undefined)
+      setTemplateId(undefined);
     }
 
-    setMode(mode);
+    //showMessage("error", "undefined mode:" + mode);
+
+    setLeftMode(leftMode);
+    setRightMode(mode);
   }
 
   function SlideTransition(props) {
@@ -161,7 +165,7 @@ function App() {
         {isMenuOpen &&
           <>
             <LeftMenu 
-              mode={mode}
+              mode={leftMode}
               config={config}
               onClose={hideMenu}
               onChangeMode={changeMode}
@@ -171,7 +175,7 @@ function App() {
         }
 
         <MainViewer showMenu={isMenuOpen} onOpen={openMenu}
-          mode={mode} dataId={dataId} noteId={noteId} templateId={templateId}
+          mode={rightMode} dataId={dataId} noteId={noteId} templateId={templateId}
           config={config}
           onChangeMode={changeMode}
           onMessage={showMessage}

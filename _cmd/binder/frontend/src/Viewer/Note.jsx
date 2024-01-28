@@ -84,7 +84,7 @@ function Note(props) {
   }
 
   return (<>
-    <Grid style={{ margin: "40px", marginTop: "20px", display: "flex", flexFlow: "column" }}>
+    <Grid className="formGrid">
 
       {props.id !== "" &&
         <>
@@ -99,12 +99,12 @@ function Note(props) {
       </FormControl>
 
       {props.id !== "" &&
-      <>
+        <>
           <FormControl>
             <FormLabel>Detail</FormLabel>
             <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline="true"></TextField>
           </FormControl>
-      </>}
+        </>}
 
       <FormControl>
         <FormLabel>Note Image</FormLabel>

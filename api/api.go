@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder"
+	"binder/settings"
 
 	"context"
 	"fmt"
@@ -112,4 +113,12 @@ func (a *App) OpenBinderSite() error {
 	address := fmt.Sprintf("http://%s", a.current.ServerAddress())
 	runtime.BrowserOpenURL(a.ctx, address)
 	return nil
+}
+
+func (a *App) SaveSetting(s *settings.Setting) error {
+	return a.current.SaveSetting(s)
+}
+
+func (a *App) GetSetting() *settings.Setting {
+	return settings.Get()
 }

@@ -54,7 +54,7 @@ function Binder(props) {
   }
 
   return (<>
-<Grid style={{margin:"40px",marginTop:"20px",display:"flex",flexFlow:"column"}}>
+<Grid className="formGrid">
 
   <FormControl>
     <FormLabel>Name</FormLabel>

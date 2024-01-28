@@ -64,7 +64,8 @@ function Assets(props) {
   }
 
   return (<>
-    <Grid style={{ margin: "40px", marginTop: "20px", display: "flex", flexFlow: "column" }}>
+    <Grid className="formGrid">
+
       {props.id !== "" &&
         <>
           <FormControl>
