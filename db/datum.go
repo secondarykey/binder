@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const dataColumns = "id,note_id,name,plugin_id,detail,publish_date,created_date,updated_date"
 const dataSelect = "SELECT id,note_id,name,plugin_id,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM data"
 
 func (inst *Instance) ExistDatum(id string, noteId string) bool {
@@ -51,8 +51,7 @@ func createDatum(row scanner) (*model.Datum, error) {
 func (inst *Instance) FindData() ([]*model.Datum, error) {
 	s := dataSelect + " ORDER BY updated_date"
 
-	ctx := context.Background()
-	r, err := inst.getRows(ctx, s)
+	r, err := inst.getRows(inst.ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -81,8 +80,7 @@ func (inst *Instance) GetDatum(id string, noteId string) (*model.Datum, error) {
 		args = append(args, noteId)
 	}
 
-	ctx := context.Background()
-	r, err := inst.getRow(ctx, s, args...)
+	r, err := inst.getRow(inst.ctx, s, args...)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -104,7 +102,7 @@ func (inst *Instance) InsertDatum(d *model.Datum) error {
 	d.Created = now
 	d.Updated = now
 
-	s := "INSERT INTO data (id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?,?,?)"
+	s := "INSERT INTO data(" + dataColumns + ") VALUES (?,?,?,?,?,?,?,?)"
 
 	err := inst.run(s, d.ID, d.NoteId, from(d.Name), from(d.Detail), d.PluginId, d.Publish, d.Created, d.Updated)
 	if err != nil {

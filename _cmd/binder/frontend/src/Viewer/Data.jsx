@@ -72,7 +72,7 @@ function Data(props) {
         <>
           <FormControl>
             <FormLabel>Detail</FormLabel>
-            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline="true"></TextField>
+            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
           </FormControl>
         </>}
 

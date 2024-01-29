@@ -4,7 +4,7 @@ import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
-import {Close} from "../../wailsjs/go/api/App";
+import {Terminate} from "../../wailsjs/go/api/App";
 import Editor from "./Editor";
 import Binder from "./Binder";
 import Note from "./Note";
@@ -25,7 +25,11 @@ function MainViewer(props) {
     }
 
     const exit = () => {
-        Close();
+        Terminate().then(()=> {
+          console.log("?")
+        }).catch( (err) => {
+          console.warn(err);
+        });
     }
 
     const [name,setName] = useState("");

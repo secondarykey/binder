@@ -299,9 +299,9 @@ export namespace settings {
 		}
 	}
 	export class Path {
+	    default: string;
 	    runWithOpen: boolean;
 	    openWithItem: boolean;
-	    default: string;
 	    histories: string[];
 	    lastNoteId: string;
 	    lastDataId: string;
@@ -312,9 +312,9 @@ export namespace settings {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.default = source["default"];
 	        this.runWithOpen = source["runWithOpen"];
 	        this.openWithItem = source["openWithItem"];
-	        this.default = source["default"];
 	        this.histories = source["histories"];
 	        this.lastNoteId = source["lastNoteId"];
 	        this.lastDataId = source["lastDataId"];

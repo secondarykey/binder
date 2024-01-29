@@ -6,12 +6,16 @@ export function Address() {
   return window['go']['api']['App']['Address']();
 }
 
-export function Close() {
-  return window['go']['api']['App']['Close']();
+export function CloseBinder() {
+  return window['go']['api']['App']['CloseBinder']();
 }
 
 export function Commit(arg1, arg2, arg3) {
   return window['go']['api']['App']['Commit'](arg1, arg2, arg3);
+}
+
+export function CreateBinder(arg1, arg2, arg3) {
+  return window['go']['api']['App']['CreateBinder'](arg1, arg2, arg3);
 }
 
 export function CreateNoteHTML(arg1, arg2) {
@@ -62,6 +66,10 @@ export function GetSetting() {
   return window['go']['api']['App']['GetSetting']();
 }
 
+export function LoadBinder() {
+  return window['go']['api']['App']['LoadBinder']();
+}
+
 export function OpenBinderSite() {
   return window['go']['api']['App']['OpenBinderSite']();
 }
@@ -104,4 +112,8 @@ export function SelectFile(arg1, arg2) {
 
 export function SetCurrent(arg1) {
   return window['go']['api']['App']['SetCurrent'](arg1);
+}
+
+export function Terminate() {
+  return window['go']['api']['App']['Terminate']();
 }

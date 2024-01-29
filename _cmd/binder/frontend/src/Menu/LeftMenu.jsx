@@ -6,7 +6,7 @@ import HomeIcon from '@mui/icons-material/Home';
 
 import FileMenu from './FileMenu';
 import BinderTree from './BinderTree';
-import { OpenBinderSite } from '../../wailsjs/go/api/App';
+import { CloseBinder } from '../../wailsjs/go/api/App';
 
 /**
  * 操作用のメニュー
@@ -24,6 +24,12 @@ function LeftMenu(props) {
   }
 
   const clickHome = () => {
+    CloseBinder().then( () => {
+      props.onChangeMode("file");
+    }).catch( (err) => {
+      console.warn(err);
+      props.onMessage("error", err);
+    })
   }
 
   return (

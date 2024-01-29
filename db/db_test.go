@@ -102,3 +102,12 @@ func TestData(t *testing.T) {
 		t.Errorf("db.GetDatum() not found is nil:%v", err)
 	}
 }
+
+func TestCrete(t *testing.T) {
+	dir := filepath.Join(test.Dir, "create")
+	os.Mkdir(dir, 0666)
+	err := db.Create(filepath.Join(test.Dir, "create"))
+	if err != nil {
+		t.Errorf("db.Create() is not nil:%v", err)
+	}
+}

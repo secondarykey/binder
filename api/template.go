@@ -23,7 +23,7 @@ func (a *App) SaveTemplate(id string, data string) error {
 		return fmt.Errorf("Not Open Binder")
 	}
 
-	err := a.current.SaveTemplate(id, data)
+	err := a.current.SaveTemplate(id, []byte(data))
 	if err != nil {
 		return fmt.Errorf("Savetemplate() error\n%+v", err)
 	}

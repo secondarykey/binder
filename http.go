@@ -29,7 +29,9 @@ func (b *Binder) Serve() error {
 	go func() {
 		err := b.httpServer.Serve(ln)
 		if err != nil {
-			log.Printf("local http Server Serve error: %+v", err)
+			if b.httpServer != nil {
+				log.Printf("local http Server Serve() error: %+v", err)
+			}
 		}
 	}()
 

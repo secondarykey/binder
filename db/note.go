@@ -13,6 +13,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const notesColumns = "id,name,detail,publish_date,created_date,updated_date"
+const notesSelect = "SELECT id,name,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM notes"
+
 func (inst *Instance) ExistNote(id string) bool {
 	n, err := inst.GetNote(id)
 	if n != nil && err == nil {
@@ -34,7 +37,7 @@ func (inst *Instance) InsertNote(n *model.Note) error {
 	n.Created = now
 	n.Updated = now
 
-	s := "INSERT INTO notes (id,name,detail,publish_date,created_date,updated_date) VALUES (?,?,?,?,?,?)"
+	s := "INSERT INTO notes(" + notesColumns + ") VALUES (?,?,?,?,?,?)"
 
 	err := inst.run(s,
 		n.ID, from(n.Name), from(n.Detail), n.Publish, n.Created, n.Updated)
@@ -60,14 +63,11 @@ func (inst *Instance) UpdateNote(n *model.Note) error {
 	return nil
 }
 
-const notesSelect = "SELECT id,name,detail,DATETIME(publish_date),DATETIME(created_date),DATETIME(updated_date) FROM notes"
-
 func (inst *Instance) GetNote(id string) (*model.Note, error) {
 
 	s := notesSelect + " WHERE id = ?"
 
-	ctx := context.Background()
-	r, err := inst.getRow(ctx, s, id)
+	r, err := inst.getRow(inst.ctx, s, id)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -126,14 +126,12 @@ func (inst *Instance) findNotes(limit int, offset int, order string, where strin
 		s += fmt.Sprintf(" OFFSET %d", offset)
 	}
 
-	fmt.Println(s)
-
 	r, err := inst.getRows(ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("getRows() error: %w", err)
 	}
 
-	var notes []*model.Note
+	notes := make([]*model.Note, 0)
 	for r.Next() {
 		n, err := createNote(r)
 		if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
-	"binder"
 	"binder/api"
 	"binder/settings"
 )
@@ -19,22 +18,11 @@ func main() {
 
 	//config を読み込む
 	//前回の読み込みを行う設定の場合、Binderを設定しておく
-
 	set := settings.Get()
-
 	app := api.New()
 
-	//StartUp???
-	dir := "D:\\Go\\Projects\\binder\\_cmd\\work"
-	b, err := binder.Load(dir)
-	if err != nil {
-		println("Error:", err.Error())
-		return
-	}
-	app.SetCurrent(b)
-
 	// Create application with options
-	err = wails.Run(&options.App{
+	err := wails.Run(&options.App{
 		Title:  "Binder",
 		Width:  set.Position.Width,
 		Height: set.Position.Height,

@@ -5,7 +5,9 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"binder/settings"
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"golang.org/x/xerrors"
@@ -16,60 +18,6 @@ type Binder struct {
 	db                *db.Instance
 	httpServer        *http.Server
 	httpServerAddress string
-}
-
-func New(path string) (*Binder, error) {
-
-	//ファイルシステムのインスタンス
-	//DB のインスタンス
-
-	return nil, nil
-}
-
-// 渡されたパスをBinderに設定する
-// ディレクトリが存在する場合は行えない
-// サンプルとしていくつかデータを作成する
-func Install(dir string) error {
-
-	//あくまで作成をやって最終的にLoadすること
-	_, err := fs.Create(dir)
-	if err != nil {
-		return xerrors.Errorf("fs.Create() error: %w", err)
-	}
-
-	//デフォルト用のデータ等をコピー
-
-	//コンフィグを変更
-	//err := b.UpdateConfig()
-
-	//データ作成
-	//d1,err := b.CreateDatum("sample")
-	//d1.Set()
-	//データコンパイル
-	//d.Compile()
-
-	//sample ノートを作成
-	//n,err := b.CreateNote("sample")
-
-	//ノートのデータ作成
-	//d2,err := n.CreateDatum("sample")
-	//d2.Set()
-	//データコンパイル
-	//d.Compile()
-
-	//ノートに内容を設定
-	//n.Set()
-	//ノートコンパイル
-	//n.Compile()
-
-	/*
-		err = GenerateIndexHTML(b)
-		if err != nil {
-			return xerrors.Errorf("GenerateIndexHTML() error: %w", err)
-		}
-	*/
-
-	return nil
 }
 
 func Load(dir string) (*Binder, error) {
@@ -102,40 +50,35 @@ func Load(dir string) (*Binder, error) {
 
 func (b *Binder) Close() error {
 
-	err := b.fileSystem.Close()
+	var rtnErr error
+
+	fp := b.fileSystem
+	hp := b.httpServer
+	dp := b.db
+
+	b.fileSystem = nil
+	b.httpServer = nil
+	b.db = nil
+
+	err := fp.Close()
 	if err != nil {
-		return xerrors.Errorf("fs.Close() error: %w", err)
+		log.Println(err)
+		rtnErr = xerrors.Errorf("fs.Close() error: %w", err)
 	}
 
-	err = b.httpServer.Close()
+	err = hp.Shutdown(context.Background())
 	if err != nil {
-		return xerrors.Errorf("http.Close() error: %w", err)
+		log.Println(err)
+		rtnErr = xerrors.Errorf("http.Close() error: %w", err)
 	}
 
-	err = b.db.Close()
+	err = dp.Close()
 	if err != nil {
-		return xerrors.Errorf("db.Close() error: %w", err)
+		log.Println(err)
+		rtnErr = xerrors.Errorf("db.Close() error: %w", err)
 	}
 
-	return nil
-}
-
-func (b *Binder) EditConfig(conf *model.Config) error {
-	org, err := b.db.GetConfig()
-	if err != nil {
-		return xerrors.Errorf("db.GetConfig() error: %w", err)
-	}
-	conf.Created = org.Created
-
-	err = b.db.UpdateConfig(conf)
-	if err != nil {
-		return xerrors.Errorf("db.UpdateConfig() error: %w", err)
-	}
-	return nil
-}
-
-func (b *Binder) GetConfig() (*model.Config, error) {
-	return b.db.GetConfig()
+	return rtnErr
 }
 
 type Resource struct {
@@ -162,9 +105,9 @@ func (b *Binder) CreateResource() (*Resource, error) {
 	}
 
 	var r Resource
-
 	//ノートのデータをノートに入れ込む
 	rootData := make([]*model.Datum, 0, len(data))
+
 	for _, d := range data {
 		n, ok := noteMap[d.NoteId]
 		if ok {
@@ -205,13 +148,11 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 		}
 
 	} else {
-
 		//ファイルを作成
 		err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
 		if err != nil {
 			return xerrors.Errorf("GenerateData() error: %w", err)
 		}
-
 	}
 	return nil
 }
@@ -260,7 +201,6 @@ func (b *Binder) SaveSetting(s *settings.Setting) error {
 	org := settings.Get()
 
 	//Positionはそのまま
-
 	org.Path.Default = s.Path.Default
 	org.Path.RunWithOpen = s.Path.RunWithOpen
 	org.Path.OpenWithItem = s.Path.OpenWithItem

@@ -2,7 +2,6 @@ package settings
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -45,8 +44,9 @@ type Path struct {
 
 func (p *Path) AddHistory(h string) {
 
-	p.Histories = append(p.Histories, h)
 	newHis := make([]string, 0, 10)
+	newHis = append(newHis, h)
+
 	for _, v := range p.Histories {
 		if v != h {
 			newHis = append(newHis, v)
@@ -157,7 +157,6 @@ func def() *Setting {
 
 func (s *Setting) Save() error {
 	fn := getFilePath()
-	fmt.Println(fn)
 	fp, err := os.Create(fn)
 	if err != nil {
 		return xerrors.Errorf("os.Create() error: %w", err)

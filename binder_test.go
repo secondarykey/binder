@@ -17,9 +17,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestInstall(t *testing.T) {
+
 	dir := filepath.Join(test.Dir + "/create")
-	err := binder.Install(dir)
+	err := binder.Install(dir, "simple", false)
 	if err != nil {
 		t.Fatalf("create error: %+v\n", err)
 	}
+
+	//データベース確認
+
+	//テンプレート確認
+
 }

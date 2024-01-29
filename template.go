@@ -270,7 +270,8 @@ func (b *Binder) createTemplate(w *wrapper, text string) (*template.Template, er
 
 	if w.ID == "layout" && text != "" {
 		//レイアウトをテキストで代用
-		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(w.ID, text))
+		data := b.fileSystem.AddTemplateFrame(w.ID, []byte(text))
+		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
 		}
@@ -284,7 +285,8 @@ func (b *Binder) createTemplate(w *wrapper, text string) (*template.Template, er
 	}
 
 	if w.ID != "layout" && text != "" {
-		_, err = tmpl.Parse(b.fileSystem.AddTemplateFrame(w.ID, text))
+		data := b.fileSystem.AddTemplateFrame(w.ID, []byte(text))
+		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("Parse() error: %w", err)
 		}
@@ -347,6 +349,7 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 		Last  tempPage
 	}{}
 
+	page.List = w.newPage(1)
 	page.Now = w.nowPage()
 	if w.now >= 1 {
 		if w.now == 1 {
@@ -356,7 +359,6 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 			}
 		}
 
-		page.List = w.newPage(1)
 		page.First = w.newPage(1)
 		page.Last = w.newPage(w.maxPage)
 		if w.now > 1 {
@@ -389,12 +391,9 @@ func (b *Binder) OpenTemplate(id string) ([]byte, error) {
 	return b.fileSystem.ReadTemplate(id)
 }
 
-func (b *Binder) SaveTemplate(id string, data string) error {
+func (b *Binder) SaveTemplate(id string, data []byte) error {
 
-	//TODO []byteにできないか考える
-	//枠を作成
-	txt := b.fileSystem.AddTemplateFrame(id, data)
-	err := b.fileSystem.WriteTemplate(id, []byte(txt))
+	err := b.fileSystem.WriteTemplate(id, data)
 	if err != nil {
 		return xerrors.Errorf("WriteTemplate() error: %w", err)
 	}

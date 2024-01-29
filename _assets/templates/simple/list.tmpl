@@ -1,0 +1,29 @@
+<p>List:{{ .Page.Now.Index }}</p>
+
+<div>
+{{ if .Page.Prev.Index ne 0 }}
+<a href="{{ .Link }}">Prev</a>
+{{ end }}
+
+{{ if .Page.Next.Index ne 0 }}
+<a href="{{ .Link }}">Next</a>
+{{ end }}
+</div>
+
+<ul>
+{{ range pageNotes }}
+  <li><a href="{{.Link}}">{{ .Name }}</a></li>
+{{ end }}
+</ul>
+
+<div>
+{{ range prevPages 2 }}
+<a href="{{ .Link }}">{{ .Index }}</a>
+{{ end }}
+
+{{ .Page.Now.Index }}
+
+{{ range nextPages 2 }}
+<a href="{{ .Link }}">{{ .Index }}</a>
+{{ end }}
+</div>

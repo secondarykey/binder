@@ -4,6 +4,7 @@ import LeftMenu from './Menu/LeftMenu.jsx';
 import MainViewer from './Viewer/MainViewer.jsx';
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Popover, Slide, Snackbar } from '@mui/material';
 import { GetConfig } from '../wailsjs/go/api/App.js';
+import { GetSetting } from '../wailsjs/go/api/App.js';
 
 /**
  * アプリケーション全体
@@ -57,8 +58,8 @@ function App() {
   }
 
   //表示モード指定用
-  const [leftMode, setLeftMode] = useState('binder');
-  const [rightMode, setRightMode] = useState('binder');
+  const [leftMode, setLeftMode] = useState('file');
+  const [rightMode, setRightMode] = useState('selectFile');
 
   //指定ID
   const [dataId, setDataId] = useState(undefined);
@@ -67,14 +68,25 @@ function App() {
   const [config, setConfig] = useState(undefined);
 
   useEffect(() => {
-    console.debug("App loaded()")
+    console.info("App loaded()")
+    GetSetting().then( (s) => {
+      console.log(s)
+      if ( s.path.runWithOpen ) {
+        setLeftMode("binder");
+        setRightMode("binder");
+      }
+    }).catch( (err) => {
+      showMessage("error",err);
+    });
+  },[]);
+
+  useEffect(() => {
     //開いているモードによる
     GetConfig().then( (conf) => {
       setConfig(conf)
     }).catch( (err) => {
       showMessage("error",err);
     });
-
   },[config !== undefined ? config.updated : undefined]);
 
   /**
@@ -98,13 +110,18 @@ function App() {
    */
   const changeMode = (mode, id, parentId) => {
 
+    var leftM = leftMode;
+    var rightM = rightMode;
     //テンプレートモードの場合
     if (mode === "template") {
-        mode = "editor"
+        rightM = "editor"
         setTemplateId(id);
         setNoteId(undefined);
         setDataId(undefined)
     } else if ( mode === "editor" || mode === "note" || mode === "data" || mode === "assets" ) {
+
+      leftM = "binder";
+      rightM = mode;
       // ID 指定系のモードの場合
       if ( parentId === undefined) {
         setNoteId(id);
@@ -115,17 +132,22 @@ function App() {
         setDataId(id)
         setTemplateId(undefined);
       }
+    } else if ( mode === "loadBinder" ) {
+        leftM = "binder";
+        rightM = "binder";
+    } else if ( mode === "file" ) {
+        leftM = mode;
+        rightM = "selectBinder";
+    } else if ( mode === "setting" ) {
+        rightM = "setting"
     } else {
       //IDなしへのモード切り替え　
       setNoteId(undefined);
       setDataId(undefined)
       setTemplateId(undefined);
     }
-
-    //showMessage("error", "undefined mode:" + mode);
-
-    setLeftMode(leftMode);
-    setRightMode(mode);
+    setLeftMode(leftM);
+    setRightMode(rightM);
   }
 
   function SlideTransition(props) {
@@ -200,7 +222,7 @@ function App() {
           aria-describedby="alert-dialog-slide-description" >
           <DialogTitle>{msg.title}</DialogTitle>
           <DialogContent>
-            <DialogContentText id="alert-dialog-slide-description" class="messageTxt">
+            <DialogContentText id="alert-dialog-slide-description" className="messageTxt">
               {msg.message}
             </DialogContentText>
           </DialogContent>

@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	stdFs "io/fs"
@@ -11,11 +12,35 @@ import (
 const (
 	//                  12345
 	TemplatePageRoot = "Pages"
-	//                   12345678901                        2345  123456789
-	PageTemplateFrame = `{{ define "` + TemplatePageRoot + `" }}%s{{ end }}`
-	//                      1234567890123456789012  123456789
-	ContentTemplateFrame = `{{ define "Content" }}%s{{ end }}`
+	//                   12345678901                        2345
+	layoutTemplateFrame = `{{ define "` + TemplatePageRoot + `" }}`
+	//                      1234567890123456789012
+	contentTemplateFrame = `{{ define "Content" }}`
+	//
+	endTemplateFrame = `{{ end }}`
 )
+
+func (b *FileSystem) CreateTemplateFiles() error {
+
+	err := b.WriteTemplate("layout", []byte(""))
+	if err != nil {
+		return xerrors.Errorf("WriteTemplate(layout) error: %w", err)
+	}
+	err = b.WriteTemplate("index", []byte(""))
+	if err != nil {
+		return xerrors.Errorf("WriteTemplate(index) error: %w", err)
+	}
+	err = b.WriteTemplate("list", []byte(""))
+	if err != nil {
+		return xerrors.Errorf("WriteTemplate(list) error: %w", err)
+	}
+	err = b.WriteTemplate("note", []byte(""))
+	if err != nil {
+		return xerrors.Errorf("WriteTemplate(note) error: %w", err)
+	}
+
+	return nil
+}
 
 func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 
@@ -29,6 +54,7 @@ func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)
 	}
 
+	//レイアウト用のフレームを削除して返す
 	firstIdx := 20
 	leng := len(data)
 	if id != "layout" {
@@ -37,16 +63,25 @@ func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 	return data[firstIdx : leng-9], nil
 }
 
-func (b *FileSystem) AddTemplateFrame(id string, data string) string {
-	txt := ""
+func (b *FileSystem) AddTemplateFrame(id string, data []byte) []byte {
+
+	var buf bytes.Buffer
+	buf.Grow(len(data) + 50)
+
 	if id == "layout" {
-		txt = fmt.Sprintf(PageTemplateFrame, data)
+		buf.Write([]byte(layoutTemplateFrame))
 	} else {
-		txt = fmt.Sprintf(ContentTemplateFrame, data)
+		buf.Write([]byte(contentTemplateFrame))
 	}
-	return txt
+
+	buf.Write(data)
+	buf.Write([]byte(endTemplateFrame))
+
+	//Len() とって削除しておかないとoxooが入る？
+	return buf.Bytes()
 }
 
+// テンプレート用のフレームを作成して処理
 func (b *FileSystem) WriteTemplate(id string, data []byte) error {
 
 	n := TemplateFileName(id)
@@ -60,7 +95,9 @@ func (b *FileSystem) WriteTemplate(id string, data []byte) error {
 	}
 	defer fp.Close()
 
-	_, err = fp.(io.Writer).Write(data)
+	//枠を作成
+	txt := b.AddTemplateFrame(id, data)
+	_, err = fp.(io.Writer).Write(txt)
 	if err != nil {
 		return fmt.Errorf("Write() error\n%+v", err)
 	}

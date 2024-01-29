@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"embed"
 	"fmt"
 	"io/fs"
 	"os"
@@ -15,18 +14,6 @@ import (
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"golang.org/x/xerrors"
 )
-
-//go:embed _assets/binder
-var embFs embed.FS
-var assetsFs fs.FS
-
-func init() {
-	var err error
-	assetsFs, err = fs.Sub(embFs, "_assets/binder")
-	if err != nil {
-		panic(err)
-	}
-}
 
 // 現行のBinderと同じ
 // Binderはルートに移行しておく
@@ -200,12 +187,12 @@ func newFileSystem(fs billy.Filesystem) (*FileSystem, error) {
 	var b FileSystem
 	b.fs = fs
 	b.repo = rep
+
 	return &b, nil
 }
 
 func (f *FileSystem) Close() error {
 	//return f.repo.Close()
-
 	return nil
 }
 

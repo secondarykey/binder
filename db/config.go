@@ -2,7 +2,6 @@ package db
 
 import (
 	"binder/db/model"
-	"context"
 	"database/sql"
 	"strings"
 	"time"
@@ -10,13 +9,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const configColumns = "name,detail,list_num,branch,auto_commit,created_date,updated_date"
 const configSelect = "SELECT name,detail,list_num,branch,auto_commit,DATETIME(created_date),DATETIME(updated_date) FROM config"
 
 func (inst *Instance) GetConfig() (*model.Config, error) {
 
-	ctx := context.Background()
-
-	r, err := inst.getRow(ctx, configSelect)
+	r, err := inst.getRow(inst.ctx, configSelect)
 	if err != nil {
 		return nil, xerrors.Errorf("getRow() error: %w", err)
 	}
@@ -33,6 +31,17 @@ func (inst *Instance) GetConfig() (*model.Config, error) {
 	c.Branch = to(c.Branch)
 
 	return &c, nil
+}
+
+func (inst *Instance) insertDefaultConfig() error {
+	s := "INSERT INTO config(" + configColumns + ") VALUES (?,?,?,?,?,?,?)"
+	var zero time.Time
+	err := inst.run(s,
+		"Binder", "Detail", 0, "main", 0, zero, zero)
+	if err != nil {
+		return xerrors.Errorf("run() error: %w", err)
+	}
+	return nil
 }
 
 func (inst *Instance) UpdateConfig(c *model.Config) error {

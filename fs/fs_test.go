@@ -76,14 +76,3 @@ func TestClone(t *testing.T) {
 		}
 	*/
 }
-
-func TestCreate(t *testing.T) {
-
-	dir := filepath.Join(test.Dir, "create")
-
-	b, err := fs.Create(dir)
-	if err != nil {
-		t.Errorf("Create() error is not nil: %v", err)
-	}
-	b.PrintStatus()
-}

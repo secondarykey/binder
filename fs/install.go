@@ -1,34 +1,8 @@
 package fs
 
-import (
-	"fmt"
-	"io"
-	"io/fs"
-	"os"
-
-	"golang.org/x/xerrors"
-)
-
 // embedからディレクトリを作成
-func Create(dir string) (*FileSystem, error) {
-
-	//TODO ディレクトリは存在ではなく、中身があるかで判定する
-	_, err := os.Stat(dir)
-	if err == nil {
-		return nil, xerrors.Errorf("already directory [%s]", dir)
-	}
-
-	err = os.Mkdir(dir, 0666)
-	if err != nil {
-		return nil, fmt.Errorf("os.Mkdir() error: %w", err)
-	}
-
-	//Gitを作成
-	b, err := New(dir)
-	if err != nil {
-		return nil, xerrors.Errorf("New() error: %w", err)
-	}
-
+// deprecated:
+/*
 	//embedから作成
 	matches, err := fs.Glob(assetsFs, "*")
 	if err != nil {
@@ -59,11 +33,10 @@ func Create(dir string) (*FileSystem, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
-
-	return b, nil
-}
+*/
 
 // embed の構造をコピーする
+/*
 func add(b *FileSystem, info fs.FileInfo, dir string, files []string) error {
 
 	n := info.Name()
@@ -111,3 +84,4 @@ func add(b *FileSystem, info fs.FileInfo, dir string, files []string) error {
 	}
 	return nil
 }
+*/
