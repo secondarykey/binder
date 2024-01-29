@@ -90,7 +90,7 @@ function BinderTree(props) {
 
   //ノート作成
   const handleEditBinder = (call) => {
-    props.onChangeMode("binder");
+    props.onChangeMode("config");
     closeMenu(call);
   }
 

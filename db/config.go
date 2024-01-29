@@ -37,7 +37,7 @@ func (inst *Instance) insertDefaultConfig() error {
 	s := "INSERT INTO config(" + configColumns + ") VALUES (?,?,?,?,?,?,?)"
 	var zero time.Time
 	err := inst.run(s,
-		"Binder", "Detail", 0, "main", 0, zero, zero)
+		"Binder", "Detail", 5, "main", 0, zero, zero)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}

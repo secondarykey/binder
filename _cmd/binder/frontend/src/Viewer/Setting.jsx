@@ -67,7 +67,7 @@ function Setting(props) {
     <Grid className="formGrid">
 
       {/** ファイル処理全般 */}
-      <Accordion defaultExpanded="true">
+      <Accordion defaultExpanded={true}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}
           aria-controls="panel1-content" id="panel1-header"> Files </AccordionSummary>
         <AccordionDetails className="formContainer">

@@ -19,6 +19,11 @@ var embFs embed.FS
 // サンプルとしていくつかデータを作成する
 func Install(dir string, name string, sample bool) error {
 
+	err := checkDirectory(dir)
+	if err != nil {
+		return xerrors.Errorf("checkDirectory() error: %w", err)
+	}
+
 	//指定位置ににGitを作成
 	b, err := fs.New(dir)
 	if err != nil {
@@ -66,5 +71,18 @@ func Install(dir string, name string, sample bool) error {
 		//assets登録を行う
 	}
 
+	return nil
+}
+
+func checkDirectory(dir string) error {
+
+	dirs := []string{"db", "docs", "templates", "data", "notes"}
+	for _, n := range dirs {
+		target := filepath.Join(dir, n)
+		_, err := os.Stat(target)
+		if err == nil {
+			return xerrors.Errorf("already exists[%s]", target)
+		}
+	}
 	return nil
 }

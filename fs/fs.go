@@ -44,6 +44,9 @@ func IndexHTML() string {
 }
 
 func ListHTML(idx int) string {
+	if idx == 1 {
+		return filepath.Join(PublishDir, "list.html")
+	}
 	return filepath.Join(PublishDir, fmt.Sprintf("list_%d.html", idx))
 }
 

@@ -38,7 +38,7 @@ function Data(props) {
     data.noteId = props.noteId
     data.name = name
     data.detail = detail
-    data.pluginId = "data";
+    data.pluginId = "mermaid";
 
     EditData(data).then((resp) => {
       if (props.id === "") {

@@ -1,7 +1,12 @@
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
-import { CreateBinder,LoadBinder } from '../../wailsjs/go/api/App';
+import { SelectDirectory,LoadBinder } from '../../wailsjs/go/api/App';
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import DownloadIcon from '@mui/icons-material/Download';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { Download } from '@mui/icons-material';
 function FileMenu(props) {
 
   const viewSetting = () => {
@@ -9,20 +14,23 @@ function FileMenu(props) {
   }
 
   const createBinder = () => {
-    //TODO 実際は画面変更
-    CreateBinder("","simple",true).then(() => {
-
-    }).catch( (err)=> {
-      console.warn(err);
-      props.onMessage("error",err);
-    })
-
+    props.onChangeMode("registerBinder")
   }
 
   const importLocal = () => {
-    LoadBinder().then(() => {
-      props.onChangeMode("loadBinder")
-    }).catch( (err) => {
+
+    SelectDirectory(false).then( (p) => {
+
+      if ( p == "" ) return;
+
+      LoadBinder(p).then(() => {
+        props.onChangeMode("loadBinder")
+      }).catch( (err) => {
+        console.warn(err);
+        props.onMessage("error",err);
+      })
+
+    }).catch( (err)=> {
       console.warn(err);
       props.onMessage("error",err);
     })
@@ -32,22 +40,30 @@ function FileMenu(props) {
     <MenuList id="fileMenu">
 
       <MenuItem onClick={createBinder}>
-        <ListItemIcon> </ListItemIcon>
+        <ListItemIcon>
+          <CreateNewFolderIcon />
+        </ListItemIcon>
         <ListItemText>New</ListItemText>
       </MenuItem>
 
       <MenuItem onClick={importLocal}>
-        <ListItemIcon> </ListItemIcon>
-        <ListItemText>Local Import</ListItemText>
+        <ListItemIcon>
+          <FolderOpenIcon />
+        </ListItemIcon>
+        <ListItemText>Open</ListItemText>
       </MenuItem>
 
       <MenuItem>
-        <ListItemIcon> </ListItemIcon>
+        <ListItemIcon>
+          <DownloadIcon />
+        </ListItemIcon>
         <ListItemText>Remote Import</ListItemText>
       </MenuItem>
 
       <MenuItem id="settingMenu" onClick={viewSetting}>
-        <ListItemIcon> </ListItemIcon>
+        <ListItemIcon>
+          <SettingsIcon />
+        </ListItemIcon>
         <ListItemText>Setting</ListItemText>
       </MenuItem>
 

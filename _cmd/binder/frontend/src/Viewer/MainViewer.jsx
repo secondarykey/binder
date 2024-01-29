@@ -11,6 +11,8 @@ import Note from "./Note";
 import Data from "./Data";
 import Assets from "./Assets";
 import Setting from "./Setting";
+import BinderHistory from "./BinderHistory";
+import BinderRegister from "./BinderRegister";
 
 /**
  * 表示部分
@@ -84,9 +86,20 @@ function MainViewer(props) {
 </>
 }
 
+{mode === "registerBinder" &&
+<>
+  <BinderRegister onChangeMode={props.onChangeMode} 
+                  onChangeTitle={setName}
+                  onMessage={props.onMessage}/>
+</>
+}
 
-{mode === "history" &&
-<></>
+{mode === "openHistory" &&
+<>
+  <BinderHistory onChangeMode={props.onChangeMode} 
+                 onChangeTitle={setName}
+                 onMessage={props.onMessage}/>
+</>
 }
 
 {mode === "editor" &&

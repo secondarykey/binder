@@ -94,8 +94,9 @@ body {
 }
 
 
-
-
+.MuiSvgIcon-root {
+    color:#f9f9f9;
+}
 
 #mainViewer {
     width:100%;

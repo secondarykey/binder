@@ -72,7 +72,7 @@ type wrapper struct {
 	listNum int
 }
 
-func newWrapper(o *Binder, local bool, id string, now int) *wrapper {
+func newWrapper(o *Binder, local bool, id string, now int) (*wrapper, error) {
 	var w wrapper
 
 	w.owner = o
@@ -80,7 +80,14 @@ func newWrapper(o *Binder, local bool, id string, now int) *wrapper {
 	w.ID = id
 	w.now = now
 
-	return &w
+	if w.now == 1 {
+		err := w.initPaging()
+		if err != nil {
+			return nil, xerrors.Errorf("initPaging() error: %w", err)
+		}
+	}
+
+	return &w, nil
 }
 
 func (w *wrapper) assetsDir() string {
@@ -306,8 +313,13 @@ func (b *Binder) createTemplate(w *wrapper, text string) (*template.Template, er
 	return tmpl, nil
 }
 
+// ノートの要素を一度テンプレート処理を行う
 func (b *Binder) ParseElement(id string, local bool, elm string) (string, error) {
-	wrap := newWrapper(b, local, id, 0)
+
+	wrap, err := newWrapper(b, local, id, 0)
+	if err != nil {
+		return "", xerrors.Errorf("newWrapper() error: %w", err)
+	}
 
 	tmpl, err := template.New("").Funcs(defineFuncMap(wrap)).Parse(elm)
 	if err != nil {
@@ -352,13 +364,6 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 	page.List = w.newPage(1)
 	page.Now = w.nowPage()
 	if w.now >= 1 {
-		if w.now == 1 {
-			err := w.initPaging()
-			if err != nil {
-				return nil, xerrors.Errorf("initPaging() error: %w", err)
-			}
-		}
-
 		page.First = w.newPage(1)
 		page.Last = w.newPage(w.maxPage)
 		if w.now > 1 {
@@ -404,33 +409,42 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 // リストも一緒に出力
 func (b *Binder) GenerateIndexHTML() error {
 
-	err := b.generateHTML("index", 0)
+	w, err := newWrapper(b, false, "index", 0)
+	if err != nil {
+		return xerrors.Errorf("newWrapper(index) error: %w", err)
+	}
+
+	err = b.generateHTML(w)
 	if err != nil {
 		return xerrors.Errorf("generateHTML(index) error: %w", err)
 	}
 
 	//list_n.htmlをすべて削除する
 	//ページ数を換算する
+	w, err = newWrapper(b, false, "list", 1)
+	if err != nil {
+		return xerrors.Errorf("newWrapper(list) error: %w", err)
+	}
 
-	/*
-		idx := 0
-		err = b.generateHTML("list", idx+1)
+	for i := 1; i <= w.maxPage; i++ {
+		w.now = i
+		err = b.generateHTML(w)
 		if err != nil {
 			return xerrors.Errorf("generateHTML(list) error: %w", err)
 		}
-	*/
+	}
 
 	return nil
 }
 
 // HTMLファイル出力用
-func (b *Binder) generateHTML(id string, idx int) error {
+func (b *Binder) generateHTML(w *wrapper) error {
 
 	n := ""
-	if id == "index" {
+	if w.ID == "index" {
 		n = fs.IndexHTML()
 	} else {
-		n = fs.ListHTML(idx)
+		n = fs.ListHTML(w.now)
 	}
 
 	fp, err := b.fileSystem.Create(n)
@@ -439,7 +453,6 @@ func (b *Binder) generateHTML(id string, idx int) error {
 	}
 	defer fp.Close()
 
-	w := newWrapper(b, false, id, idx)
 	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
 		return xerrors.Errorf("createTemplate() error: %w", err)
@@ -466,7 +479,10 @@ func (b *Binder) generateHTML(id string, idx int) error {
 // HTMLメモリ作成
 func (b *Binder) CreateNoteHTML(id string, local bool, elm string) (string, error) {
 
-	w := newWrapper(b, local, id, 0)
+	w, err := newWrapper(b, local, id, 0)
+	if err != nil {
+		return "", xerrors.Errorf("newWrapper() error: %w", err)
+	}
 
 	tmpl, err := b.createTemplate(w, "")
 	if err != nil {
@@ -493,7 +509,11 @@ func (b *Binder) CreateTemplateHTML(id string, temp string, elm string) (string,
 		now = 1
 	}
 
-	w := newWrapper(b, true, id, now)
+	w, err := newWrapper(b, true, id, now)
+	if err != nil {
+		return "", xerrors.Errorf("newWrapper() error: %w", err)
+	}
+
 	tmpl, err := b.createTemplate(w, temp)
 	if err != nil {
 		return "", xerrors.Errorf("createTemplate() error: %w", err)

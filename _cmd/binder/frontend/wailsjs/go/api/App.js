@@ -66,8 +66,8 @@ export function GetSetting() {
   return window['go']['api']['App']['GetSetting']();
 }
 
-export function LoadBinder() {
-  return window['go']['api']['App']['LoadBinder']();
+export function LoadBinder(arg1) {
+  return window['go']['api']['App']['LoadBinder'](arg1);
 }
 
 export function OpenBinderSite() {
@@ -104,6 +104,10 @@ export function SaveSetting(arg1) {
 
 export function SaveTemplate(arg1, arg2) {
   return window['go']['api']['App']['SaveTemplate'](arg1, arg2);
+}
+
+export function SelectDirectory(arg1) {
+  return window['go']['api']['App']['SelectDirectory'](arg1);
 }
 
 export function SelectFile(arg1, arg2) {

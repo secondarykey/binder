@@ -10,14 +10,10 @@ import (
 )
 
 const (
-	//                  12345
-	TemplatePageRoot = "Pages"
-	//                   12345678901                        2345
-	layoutTemplateFrame = `{{ define "` + TemplatePageRoot + `" }}`
-	//                      1234567890123456789012
+	TemplatePageRoot     = "Pages"
+	layoutTemplateFrame  = `{{ define "` + TemplatePageRoot + `" }}`
 	contentTemplateFrame = `{{ define "Content" }}`
-	//
-	endTemplateFrame = `{{ end }}`
+	endTemplateFrame     = `{{ end }}`
 )
 
 func (b *FileSystem) CreateTemplateFiles() error {
@@ -55,12 +51,12 @@ func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 	}
 
 	//レイアウト用のフレームを削除して返す
-	firstIdx := 20
-	leng := len(data)
+	firstIdx := len(contentTemplateFrame)
+	leng := len(data) - len(endTemplateFrame)
 	if id != "layout" {
-		firstIdx = 22
+		firstIdx = len(layoutTemplateFrame)
 	}
-	return data[firstIdx : leng-9], nil
+	return data[firstIdx:leng], nil
 }
 
 func (b *FileSystem) AddTemplateFrame(id string, data []byte) []byte {

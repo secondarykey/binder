@@ -1,12 +1,12 @@
 <p>List:{{ .Page.Now.Index }}</p>
 
 <div>
-{{ if .Page.Prev.Index ne 0 }}
-<a href="{{ .Link }}">Prev</a>
+{{ if ne .Page.Prev.Index 0 }}
+<a href="{{ .Page.Prev.Link }}">Prev</a>
 {{ end }}
 
-{{ if .Page.Next.Index ne 0 }}
-<a href="{{ .Link }}">Next</a>
+{{ if ne .Page.Next.Index 0 }}
+<a href="{{ .Page.Next.Link }}">Next</a>
 {{ end }}
 </div>
 

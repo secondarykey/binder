@@ -36,7 +36,7 @@ export function GetResource():Promise<binder.Resource>;
 
 export function GetSetting():Promise<settings.Setting>;
 
-export function LoadBinder():Promise<void>;
+export function LoadBinder(arg1:string):Promise<void>;
 
 export function OpenBinderSite():Promise<void>;
 
@@ -55,6 +55,8 @@ export function SaveNote(arg1:string,arg2:string):Promise<void>;
 export function SaveSetting(arg1:settings.Setting):Promise<void>;
 
 export function SaveTemplate(arg1:string,arg2:string):Promise<void>;
+
+export function SelectDirectory(arg1:boolean):Promise<string>;
 
 export function SelectFile(arg1:string,arg2:string):Promise<string>;
 

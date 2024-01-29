@@ -74,24 +74,7 @@ func (a *App) Terminate() bool {
 
 func (a *App) CreateBinder(dir string, name string, sample bool) error {
 
-	s := settings.Get()
-	//TODO 画面できてからだよ
-	todoDir, err := runtime.OpenDirectoryDialog(a.ctx,
-		runtime.OpenDialogOptions{
-			DefaultDirectory:     s.Path.Default,
-			CanCreateDirectories: true,
-			Title:                "Select Binder Directory",
-		})
-	if err != nil {
-		return fmt.Errorf("SelectDiretory() error\n%+v", err)
-	}
-	if todoDir == "" {
-		return nil
-	}
-
-	dir = todoDir
-
-	err = binder.Install(dir, name, sample)
+	err := binder.Install(dir, name, sample)
 	if err != nil {
 		return fmt.Errorf("binder Install error\n%+v", err)
 	}
@@ -103,23 +86,23 @@ func (a *App) CreateBinder(dir string, name string, sample bool) error {
 	return nil
 }
 
-func (a *App) LoadBinder() error {
-
+func (a *App) SelectDirectory(create bool) (string, error) {
 	s := settings.Get()
 	dir, err := runtime.OpenDirectoryDialog(a.ctx,
 		runtime.OpenDialogOptions{
-			DefaultDirectory: s.Path.Default,
-			Title:            "Select Binder Directory",
+			DefaultDirectory:     s.Path.Default,
+			CanCreateDirectories: create,
+			Title:                "Select Binder Directory",
 		})
 	if err != nil {
-		return fmt.Errorf("SelectDiretory() error\n%+v", err)
+		return "", fmt.Errorf("SelectDiretory() error\n%+v", err)
 	}
+	return dir, nil
+}
 
-	if dir == "" {
-		return fmt.Errorf("Cancel")
-	}
+func (a *App) LoadBinder(dir string) error {
 
-	err = a.load(dir)
+	err := a.load(dir)
 	if err != nil {
 		return fmt.Errorf("load() error\n%+v", err)
 	}
@@ -127,6 +110,10 @@ func (a *App) LoadBinder() error {
 }
 
 func (a *App) load(dir string) error {
+
+	if dir == "" {
+		return xerrors.Errorf("empty directory error")
+	}
 
 	s := settings.Get()
 	b, err := binder.Load(dir)

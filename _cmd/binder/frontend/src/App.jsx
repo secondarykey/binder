@@ -132,12 +132,17 @@ function App() {
         setDataId(id)
         setTemplateId(undefined);
       }
+    } else if ( mode === "config" ) {
+        rightM = "binder";
     } else if ( mode === "loadBinder" ) {
         leftM = "binder";
         rightM = "binder";
     } else if ( mode === "file" ) {
         leftM = mode;
-        rightM = "selectBinder";
+        rightM = "openHistory";
+    } else if ( mode === "registerBinder" ) {
+        leftM = "file";
+        rightM = "registerBinder";
     } else if ( mode === "setting" ) {
         rightM = "setting"
     } else {
