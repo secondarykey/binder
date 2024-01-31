@@ -15,6 +15,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func M(prefix string, name string) string {
+	return fmt.Sprintf("%-10s : %s", prefix, name)
+}
+
 func (b *FileSystem) Push(name string) error {
 
 	set := settings.Get()
@@ -57,31 +61,24 @@ func (b *FileSystem) Branch(name string) error {
 		return xerrors.Errorf("repository Head() error: %w", err)
 	}
 
-	//TODO 存在した場合の処理
 	branch := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", name))
+	refName := head.Name()
+	if string(branch) == string(refName) {
+		return nil
+	}
+
 	ref := plumbing.NewHashReference(branch, head.Hash())
 	err = b.repo.Storer.SetReference(ref)
 	if err != nil {
 		return xerrors.Errorf("repository SetReference() error: %w", err)
 	}
 
-	/*
-		refName := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", name))
-		branch := &config.Branch{
-			Name:  name,
-			Merge: refName,
-		}
-
-		err := b.repo.CreateBranch(branch)
-		if err != nil {
-			return xerrors.Errorf("CreateBranch() error: %w", err)
-		}
-	*/
-
 	w, err := b.repo.Worktree()
 	if err != nil {
-		return xerrors.Errorf("Checkout() error: %w", err)
+		return xerrors.Errorf("Worktree() error: %w", err)
 	}
+
+	//TODO すでに存在して処理する場合
 
 	err = w.Checkout(&git.CheckoutOptions{Branch: branch})
 	if err != nil {
@@ -109,19 +106,27 @@ func (b *FileSystem) Commit(m string, files ...string) error {
 	sig := &object.Signature{
 		Name: auth.Name, Email: auth.Mail,
 	}
-	return b.commit(m, sig, files...)
+	return b.commit(m, sig, false, files...)
+}
+
+func (b *FileSystem) AutoCommit(m string, files ...string) error {
+	return b.autoCommit(m, false, files...)
 }
 
 // 自動コミット
-func (b *FileSystem) AutoCommit(m string, files ...string) error {
+func (b *FileSystem) autoCommit(m string, all bool, files ...string) error {
 	sig := &object.Signature{
 		Name:  "Binder System",
 		Email: "-",
 	}
-	return b.commit(m, sig, files...)
+	return b.commit(m, sig, all, files...)
 }
 
-func (b *FileSystem) commit(m string, sig *object.Signature, files ...string) error {
+func (b *FileSystem) CommitAll(m string) error {
+	return b.autoCommit(m, true)
+}
+
+func (b *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
 
 	w, err := b.repo.Worktree()
 	if err != nil {
@@ -134,19 +139,22 @@ func (b *FileSystem) commit(m string, sig *object.Signature, files ...string) er
 	}
 
 	commitOk := false
-	sig.When = time.Now()
-	for _, f := range files {
+	if all {
+		commitOk = true
+	} else {
+		for _, f := range files {
 
-		s, ok := status[f]
-		if !ok {
-			continue
-		}
+			s, ok := status[f]
+			if !ok {
+				continue
+			}
 
-		if s.Worktree == git.Modified {
-			w.Add(f)
-			commitOk = true
-		} else if s.Staging == git.Added {
-			commitOk = true
+			if s.Worktree == git.Modified {
+				w.Add(f)
+				commitOk = true
+			} else if s.Staging == git.Added {
+				commitOk = true
+			}
 		}
 	}
 
@@ -156,7 +164,12 @@ func (b *FileSystem) commit(m string, sig *object.Signature, files ...string) er
 		return nil
 	}
 
-	_, err = w.Commit(m, &git.CommitOptions{Author: sig})
+	sig.When = time.Now()
+	_, err = w.Commit(m,
+		&git.CommitOptions{
+			All:    all,
+			Author: sig,
+		})
 	if err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
@@ -164,16 +177,18 @@ func (b *FileSystem) commit(m string, sig *object.Signature, files ...string) er
 }
 
 // 存在するファイルをadd()する
-func (b *FileSystem) Add(n string) error {
+func (b *FileSystem) Add(files ...string) error {
 
 	w, err := b.repo.Worktree()
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
 	}
 
-	_, err = w.Add(n)
-	if err != nil {
-		return xerrors.Errorf("Add() error: %w", err)
+	for _, n := range files {
+		_, err = w.Add(n)
+		if err != nil {
+			return xerrors.Errorf("Add() error: %w", err)
+		}
 	}
 	return nil
 }

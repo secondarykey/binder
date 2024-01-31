@@ -93,24 +93,35 @@ body {
     bottom:0;
 }
 
-
 .MuiSvgIcon-root {
     color:#f9f9f9;
 }
 
-#mainViewer {
-    width:100%;
+.MuiFormLabel-root {
+  color: #f1f1f1 !important;
+}
+
+.MuiInputBase-input {
+  color: #f1f1f1 !important;
 }
 
 .MuiDialog-container {
     --wails-draggable:no-drag;
 }
+
+#mainViewer {
+  width:100%;
+  background-color: #252525;
+  color: #f1f1f1;
+}
+
 .messageTxt {
     white-space:pre-wrap;
 }
 
 #viewer {
-    --wails-draggable:no-drag;
+  --wails-draggable:no-drag;
+  background-color: #252525;
 }
 
 #splitScreen {
@@ -180,9 +191,19 @@ body {
   flex-flow: column;
   margin: 40px;
   margin-top: 20px;
+
+  background-color: #252525;
+  color: #f1f1f1;
+}
+
+.MuiAccordion-root {
+  background-color: #202020 !important;
+  color: #f1f1f1 !important;
 }
 
 .formContainer {
   display: flex;
   flex-flow: column;
+  background-color: #292929;
+  color: #f1f1f1;
 }

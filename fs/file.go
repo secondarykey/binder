@@ -33,6 +33,10 @@ func (b *FileSystem) Open(name string) (fs.File, error) {
 	return &f, nil
 }
 
+func (b *FileSystem) Stat(name string) (fs.FileInfo, error) {
+	return b.fs.Stat(name)
+}
+
 // io.Writer interface
 func (f *File) Write(d []byte) (int, error) {
 	return f.File.Write(d)

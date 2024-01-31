@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -23,6 +24,8 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 			if b.db.ExistDatum(d.ID, d.NoteId) {
 				return nil, xerrors.Errorf("Exist Datum error")
 			}
+			//Asset時は公開日を設定しておく
+			d.Publish = time.Now()
 		}
 	}
 
@@ -36,14 +39,12 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("fs.InsertData() error: %w", err)
 		}
-
 	} else {
 		b.db.UpdateDatum(rtn)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateData() error: %w", err)
 		}
 	}
-
 	return rtn, nil
 }
 

@@ -63,6 +63,17 @@ func (inst *Instance) UpdateNote(n *model.Note) error {
 	return nil
 }
 
+func (inst *Instance) PublishNote(id string) error {
+	now := time.Now()
+
+	s := "UPDATE notes SET publish_date = ? WHERE id = ?"
+	err := inst.run(s, now, id)
+	if err != nil {
+		return xerrors.Errorf("run() error: %w", err)
+	}
+	return nil
+}
+
 func (inst *Instance) GetNote(id string) (*model.Note, error) {
 
 	s := notesSelect + " WHERE id = ?"
@@ -89,8 +100,10 @@ func createNote(row scanner) (*model.Note, error) {
 			return nil, xerrors.Errorf("Scan() error: %w", err)
 		}
 	}
+
 	n.Name = to(name.String)
 	n.Detail = to(detail.String)
+
 	return &n, nil
 }
 
@@ -104,7 +117,7 @@ func (inst *Instance) FindUpdatedNotes(limit int, offset int) ([]*model.Note, er
 
 func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, error) {
 	return inst.findNotes(limit, offset, "publish_date desc",
-		fmt.Sprintf("publish_date != '%s'", TimeZero))
+		fmt.Sprintf("!publish_date = '%s'", TimeZero))
 }
 
 func (inst *Instance) findNotes(limit int, offset int, order string, where string) ([]*model.Note, error) {
@@ -112,7 +125,7 @@ func (inst *Instance) findNotes(limit int, offset int, order string, where strin
 	ctx := context.Background()
 	s := notesSelect
 	if where != "" {
-		s += " WHRER " + where
+		s += " WHERE " + where
 	}
 	if order != "" {
 		s += " ORDER BY " + order
@@ -145,13 +158,13 @@ func (inst *Instance) findNotes(limit int, offset int, order string, where strin
 	return notes, nil
 }
 
-func (inst *Instance) GetLatestNoteId() string {
+func (inst *Instance) GetLatestNoteId() (string, error) {
 	notes, err := inst.FindUpdatedNotes(1, -1)
 	if err != nil {
-		return ""
+		return "", xerrors.Errorf("FindUpdateNotes() error: %w", err)
 	}
 	if len(notes) == 0 {
-		return ""
+		return "", fmt.Errorf("Note is Nothing")
 	}
-	return notes[0].ID
+	return notes[0].ID, nil
 }

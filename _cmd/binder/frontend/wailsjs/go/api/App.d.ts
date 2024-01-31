@@ -14,7 +14,7 @@ export function CreateBinder(arg1:string,arg2:string,arg3:boolean):Promise<void>
 
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;
 
-export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string):Promise<string>;
+export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
 
 export function EditAssets(arg1:model.Datum,arg2:string):Promise<model.Datum>;
 
@@ -29,6 +29,8 @@ export function Generate(arg1:string,arg2:string,arg3:string):Promise<void>;
 export function GetConfig():Promise<model.Config>;
 
 export function GetData(arg1:string,arg2:string):Promise<model.Datum>;
+
+export function GetLatestNoteId():Promise<string>;
 
 export function GetNote(arg1:string):Promise<model.Note>;
 

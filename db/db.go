@@ -32,7 +32,6 @@ func Create(dir string) error {
 	if err != nil {
 		return xerrors.Errorf("inst.Open() error: %w", err)
 	}
-
 	defer inst.Close()
 
 	err = inst.insertDefaultConfig()

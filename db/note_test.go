@@ -81,3 +81,14 @@ func TestInsertNote(t *testing.T) {
 		t.Errorf("db.InsertNote() empty key not nil:%v", err)
 	}
 }
+
+func TestFindPublish(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	_, err := inst.FindPublishNotes(10, 0)
+	if err != nil {
+		t.Errorf("inst.FindPublishNotes() error not nil:%v", err)
+	}
+
+}

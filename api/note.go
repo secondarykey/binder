@@ -20,6 +20,7 @@ func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 }
 
 func (a *App) GetNote(id string) (*model.Note, error) {
+
 	if a.current == nil {
 		return nil, fmt.Errorf("Not Open Binder")
 	}
@@ -28,6 +29,19 @@ func (a *App) GetNote(id string) (*model.Note, error) {
 		return nil, fmt.Errorf("GetNote() error\n%+v", err)
 	}
 	return n, nil
+}
+
+func (a *App) GetLatestNoteId() (string, error) {
+
+	if a.current == nil {
+		return "", fmt.Errorf("Not Open Binder")
+	}
+
+	id, err := a.current.GetLatestNoteId()
+	if err != nil {
+		return "", fmt.Errorf("GetLatestNoteId() error\n%+v", err)
+	}
+	return id, nil
 }
 
 func (a *App) OpenNote(noteId string) (string, error) {
@@ -70,6 +84,7 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 }
 
 func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
+
 	if a.current == nil {
 		return "", fmt.Errorf("Not Open Binder")
 	}

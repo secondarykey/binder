@@ -51,11 +51,11 @@ func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 	}
 
 	//レイアウト用のフレームを削除して返す
-	firstIdx := len(contentTemplateFrame)
-	leng := len(data) - len(endTemplateFrame)
+	firstIdx := len(layoutTemplateFrame)
 	if id != "layout" {
-		firstIdx = len(layoutTemplateFrame)
+		firstIdx = len(contentTemplateFrame)
 	}
+	leng := len(data) - len(endTemplateFrame)
 	return data[firstIdx:leng], nil
 }
 
@@ -78,11 +78,11 @@ func (b *FileSystem) AddTemplateFrame(id string, data []byte) []byte {
 }
 
 // テンプレート用のフレームを作成して処理
-func (b *FileSystem) WriteTemplate(id string, data []byte) error {
+func (b *FileSystem) WriteTemplate(t string, data []byte) error {
 
-	n := TemplateFileName(id)
+	n := TemplateFileName(t)
 	if n == "" {
-		return fmt.Errorf("Template id[%s] error", id)
+		return fmt.Errorf("Template id[%s] error", t)
 	}
 
 	fp, err := b.Create(n)
@@ -92,7 +92,7 @@ func (b *FileSystem) WriteTemplate(id string, data []byte) error {
 	defer fp.Close()
 
 	//枠を作成
-	txt := b.AddTemplateFrame(id, data)
+	txt := b.AddTemplateFrame(t, data)
 	_, err = fp.(io.Writer).Write(txt)
 	if err != nil {
 		return fmt.Errorf("Write() error\n%+v", err)

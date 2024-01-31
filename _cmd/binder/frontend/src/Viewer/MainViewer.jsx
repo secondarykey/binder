@@ -48,27 +48,23 @@ function MainViewer(props) {
           <MenuIcon />
         </IconButton>
 }
-
+        {/** 表示名称 */}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {/** ノート選択時はノートID ＋データID */}
           {name}
         </Typography>
 
+        {/** メニューを閉じる */}
         <IconButton size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={exit}>
           <CloseIcon />
         </IconButton>
 
       </Toolbar>
 
-      {/** ここが分岐点になります 
-        *  選んでいるファイルによって編集可能かどうかを判定
-        *  基本的にノート、データ設定のあるもののみを編集対象にする
-        *
-        * History(最初に表示？)
-        * Editor
-        * Config 
+      {/** 
+       * ここが分岐点になります 
         */}
       <Paper id="viewer">
+
 {mode === "binder" &&
 <>
   <Binder templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 

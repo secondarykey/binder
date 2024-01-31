@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db"
 	"binder/fs"
+	"binder/settings"
 	"embed"
 	stdFs "io/fs"
 	"os"
@@ -19,7 +20,7 @@ var embFs embed.FS
 // サンプルとしていくつかデータを作成する
 func Install(dir string, name string, sample bool) error {
 
-	err := checkDirectory(dir)
+	err := checkDirectory(dir, true)
 	if err != nil {
 		return xerrors.Errorf("checkDirectory() error: %w", err)
 	}
@@ -31,21 +32,30 @@ func Install(dir string, name string, sample bool) error {
 	}
 
 	dbdir := filepath.Join(dir, "db")
-	os.Mkdir(dbdir, 0666)
-
+	err = os.MkdirAll(dbdir, 0666)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir() error: %w", err)
+	}
 	//データベースを作成
 	err = db.Create(dbdir)
 	if err != nil {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
+	err = b.Add("db/config.csv", "db/notes.csv", "db/data.csv")
+	if err != nil {
+		return xerrors.Errorf("Add() error: %w", err)
+	}
+
+	err = b.CommitAll(fs.M("install", "Database"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll() error: %w", err)
+	}
 	//空のテンプレートファイルを作成
 	err = b.CreateTemplateFiles()
 	if err != nil {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
-
-	//TODO ここでコミット
 
 	tempFs, err := stdFs.Sub(embFs, "_assets/templates/"+name)
 	if err != nil {
@@ -64,25 +74,39 @@ func Install(dir string, name string, sample bool) error {
 		}
 	}
 
-	//コミット
+	err = b.CommitAll(fs.M("install", "Templates"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll() error: %w", err)
+	}
+
 	if sample {
 		//sample内から作成を行う
 		//ノートとデータを作成する
 		//assets登録を行う
 	}
 
+	s := settings.Get()
+	err = b.Branch(s.Git.Branch)
+	if err != nil {
+		return xerrors.Errorf("fs.Branch() error: %w", err)
+	}
+
 	return nil
 }
 
-func checkDirectory(dir string) error {
+func checkDirectory(dir string, install bool) error {
 
 	dirs := []string{"db", "docs", "templates", "data", "notes"}
+
 	for _, n := range dirs {
 		target := filepath.Join(dir, n)
 		_, err := os.Stat(target)
-		if err == nil {
+		if install && err == nil {
 			return xerrors.Errorf("already exists[%s]", target)
+		} else if !install && err != nil {
+			return xerrors.Errorf("nothing [%s]", target)
 		}
 	}
+
 	return nil
 }

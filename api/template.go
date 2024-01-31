@@ -1,6 +1,7 @@
 package api
 
 import (
+	"binder"
 	"fmt"
 )
 
@@ -31,14 +32,16 @@ func (a *App) SaveTemplate(id string, data string) error {
 	return nil
 }
 
-func (a *App) CreateTemplateHTML(id string, temp string, elm string) (string, error) {
+func (a *App) CreateTemplateHTML(t string, id string, temp string, elm string) (string, error) {
+
 	if a.current == nil {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	html, err := a.current.CreateTemplateHTML(id, temp, elm)
+	typ := binder.TemplateType(t)
+	html, err := a.current.CreateTemplateHTML(typ, id, temp, elm)
 	if err != nil {
-		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
+		return "", fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
 	}
 	return html, nil
 }

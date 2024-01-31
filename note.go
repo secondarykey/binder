@@ -2,7 +2,6 @@ package binder
 
 import (
 	"binder/db/model"
-	"fmt"
 
 	"golang.org/x/xerrors"
 )
@@ -32,16 +31,16 @@ func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) 
 	return rtn, nil
 }
 
-func (b *Binder) OpenNote(noteId string) ([]byte, error) {
-
-	nId := noteId
-	if noteId == "" {
-		nId = b.db.GetLatestNoteId()
-		if nId == "" {
-			return nil, fmt.Errorf("Note not found.")
-		}
+func (b *Binder) GetLatestNoteId() (string, error) {
+	id, err := b.db.GetLatestNoteId()
+	if err != nil {
+		return "", xerrors.Errorf("db.GetLatestNoteId() error: %w", err)
 	}
-	return b.fileSystem.ReadNoteText(nId)
+	return id, nil
+}
+
+func (b *Binder) OpenNote(noteId string) ([]byte, error) {
+	return b.fileSystem.ReadNoteText(noteId)
 }
 
 func (b *Binder) SaveNote(noteId string, data []byte) error {

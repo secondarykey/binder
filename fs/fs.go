@@ -50,6 +50,10 @@ func ListHTML(idx int) string {
 	return filepath.Join(PublishDir, fmt.Sprintf("list_%d.html", idx))
 }
 
+func NoteHTML(id string) string {
+	return noteHTML(id)
+}
+
 func noteHTML(id string) string {
 	return filepath.Join(PublishDir, "notes", fmt.Sprintf("%s.html", id))
 }
@@ -216,8 +220,17 @@ func (b *FileSystem) isExist(n string) bool {
 	return true
 }
 
-// ファイルを作成し、Addする
+func (b *FileSystem) CreateWithFlag(n string) (fs.File, bool, error) {
+	return b.create(n)
+}
+
 func (b *FileSystem) Create(n string) (fs.File, error) {
+	fp, _, err := b.create(n)
+	return fp, err
+}
+
+// ファイルを作成し、Addする
+func (b *FileSystem) create(n string) (fs.File, bool, error) {
 
 	index := true
 	if b.isExist(n) {
@@ -226,13 +239,13 @@ func (b *FileSystem) Create(n string) (fs.File, error) {
 
 	fp, err := b.fs.Create(n)
 	if err != nil {
-		return nil, xerrors.Errorf("Create() error: %w", err)
+		return nil, index, xerrors.Errorf("Create() error: %w", err)
 	}
 
 	if index {
 		err = b.Add(n)
 		if err != nil {
-			return nil, xerrors.Errorf("Add() error: %w", err)
+			return nil, index, xerrors.Errorf("Add() error: %w", err)
 		}
 	}
 
@@ -241,5 +254,5 @@ func (b *FileSystem) Create(n string) (fs.File, error) {
 	f.root = b.fs
 	f.File = fp
 
-	return &f, nil
+	return &f, index, nil
 }

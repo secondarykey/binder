@@ -116,12 +116,23 @@ func (inst *Instance) UpdateDatum(d *model.Datum) error {
 	now := time.Now()
 	d.Updated = now
 
-	s := "UPDATE data SET note_id = ?,name = ?,detail = ?,plugin_id = ?,updated_date = ? WHERE id = ?"
+	s := "UPDATE data SET note_id = ?,name = ?,detail = ?,plugin_id = ?,updated_date = ? WHERE id = ? AND note_id = ?"
 	err := inst.run(s,
-		d.NoteId, from(d.Name), from(d.Detail), d.PluginId, d.Updated, d.ID)
+		d.NoteId, from(d.Name), from(d.Detail), d.PluginId, d.Updated, d.ID, d.NoteId)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}
 
+	return nil
+}
+
+func (inst *Instance) PublishDatum(id, noteId string) error {
+	now := time.Now()
+	s := "UPDATE data SET publish_date = ? WHERE id = ? AND note_id = ?"
+	err := inst.run(s,
+		now, id, noteId)
+	if err != nil {
+		return xerrors.Errorf("run() error: %w", err)
+	}
 	return nil
 }

@@ -22,8 +22,8 @@ export function CreateNoteHTML(arg1, arg2) {
   return window['go']['api']['App']['CreateNoteHTML'](arg1, arg2);
 }
 
-export function CreateTemplateHTML(arg1, arg2, arg3) {
-  return window['go']['api']['App']['CreateTemplateHTML'](arg1, arg2, arg3);
+export function CreateTemplateHTML(arg1, arg2, arg3, arg4) {
+  return window['go']['api']['App']['CreateTemplateHTML'](arg1, arg2, arg3, arg4);
 }
 
 export function EditAssets(arg1, arg2) {
@@ -52,6 +52,10 @@ export function GetConfig() {
 
 export function GetData(arg1, arg2) {
   return window['go']['api']['App']['GetData'](arg1, arg2);
+}
+
+export function GetLatestNoteId() {
+  return window['go']['api']['App']['GetLatestNoteId']();
 }
 
 export function GetNote(arg1) {

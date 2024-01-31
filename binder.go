@@ -24,7 +24,19 @@ func Load(dir string) (*Binder, error) {
 
 	bfs, err := fs.Load(dir)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("fs.Load() error: %w", err)
+	}
+
+	s := settings.Get()
+	//ブランチを切り替え
+	err = bfs.Branch(s.Git.Branch)
+	if err != nil {
+		return nil, xerrors.Errorf("Branch -> %s error: %w", s.Git.Branch, err)
+	}
+
+	err = checkDirectory(dir, false)
+	if err != nil {
+		return nil, xerrors.Errorf("checkDirectory() error: %w", err)
 	}
 
 	inst, err := db.New(dir + "/db")
@@ -136,12 +148,23 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 		if err != nil {
 			return xerrors.Errorf("CreateNoteHTML() error: %w", err)
 		}
-		//保存
-		err = b.fileSystem.GenerateHTML(noteId, []byte(html))
+
+		//ファイルの作成
+		flag, err := b.fileSystem.GenerateHTML(noteId, []byte(html))
 		if err != nil {
 			return xerrors.Errorf("GenerateHTML() error: %w", err)
 		}
 
+		//新規登録の場合
+		if flag {
+			//DBの作成日を更新
+			err = b.db.PublishNote(noteId)
+			if err != nil {
+				return xerrors.Errorf("PublishNote() error: %w", err)
+			}
+		}
+
+		//index,listの作成
 		err = b.GenerateIndexHTML()
 		if err != nil {
 			return xerrors.Errorf("GenerateIndexHTML() error: %w", err)
@@ -149,9 +172,16 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 	} else {
 		//ファイルを作成
-		err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
+		index, err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
 		if err != nil {
 			return xerrors.Errorf("GenerateData() error: %w", err)
+		}
+
+		if index {
+			err = b.db.PublishDatum(dataId, noteId)
+			if err != nil {
+				return xerrors.Errorf("PublishData() error: %w", err)
+			}
 		}
 	}
 	return nil

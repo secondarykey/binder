@@ -70,7 +70,6 @@ function App() {
   useEffect(() => {
     console.info("App loaded()")
     GetSetting().then( (s) => {
-      console.log(s)
       if ( s.path.runWithOpen ) {
         setLeftMode("binder");
         setRightMode("binder");

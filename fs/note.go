@@ -91,19 +91,20 @@ func (b *FileSystem) WriteNoteText(id string, data []byte) error {
 	return nil
 }
 
-func (b *FileSystem) GenerateHTML(id string, data []byte) error {
+func (b *FileSystem) GenerateHTML(id string, data []byte) (bool, error) {
 
 	fn := noteHTML(id)
-	fp, err := b.Create(fn)
+
+	fp, index, err := b.CreateWithFlag(fn)
 	if err != nil {
-		return xerrors.Errorf("Create() error: %w", err)
+		return index, xerrors.Errorf("Create() error: %w", err)
 	}
 	defer fp.Close()
 
 	_, err = fp.(io.Writer).Write(data)
 	if err != nil {
-		return xerrors.Errorf("Create() error: %w", err)
+		return index, xerrors.Errorf("Create() error: %w", err)
 	}
 
-	return nil
+	return index, nil
 }
