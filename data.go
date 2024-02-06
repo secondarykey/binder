@@ -29,9 +29,13 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		}
 	}
 
-	rtn, err := b.fileSystem.EditData(d, f)
+	rtn, err := b.fileSystem.EditData(d, f, reg)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.EditData() error: %w", err)
+	}
+
+	//TODO asset の新規作成時は公開日付を設定
+	if reg && f != "" {
 	}
 
 	if reg {
@@ -45,6 +49,9 @@ func (b *Binder) EditData(d *model.Datum, f string) (*model.Datum, error) {
 			return nil, xerrors.Errorf("db.UpdateData() error: %w", err)
 		}
 	}
+
+	//TODO データベースをコミット
+
 	return rtn, nil
 }
 

@@ -11,7 +11,8 @@ import (
 )
 
 // ID 指定は上位でやっておく
-func (b *FileSystem) EditData(d *model.Datum, f string) (*model.Datum, error) {
+func (b *FileSystem) EditData(d *model.Datum, f string, reg bool) (*model.Datum, error) {
+
 	//ファイル指定がある場合
 	if f != "" {
 		dataF := dataPath(d.ID, d.NoteId)
@@ -28,23 +29,30 @@ func (b *FileSystem) EditData(d *model.Datum, f string) (*model.Datum, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("Write() error: %w", err)
 		}
+
+		//TODO データのコミットを行う
+
 	}
 
-	if d.PluginId == "mermaid" {
-		//新規にデータを作成
-		//テキストでない場合
-		n := dataTextFile(d.ID, d.NoteId)
-		//ノートファイルを作成
-		_, err := b.Create(n)
-		if err != nil {
-			return nil, xerrors.Errorf("binder Create() error: %w", err)
-		}
-
-		err = b.Commit("create: data file")
-		if err != nil {
-			return nil, xerrors.Errorf("Commit() error: %w", err)
-		}
+	//新規作成時にファイル登録だけやっておく
+	if d.PluginId != "mermaid" || !reg {
+		return d, nil
 	}
+
+	//テキストでない場合
+	n := dataTextFile(d.ID, d.NoteId)
+	//ノートファイルを作成
+	fp, err := b.Create(n)
+	if err != nil {
+		return nil, xerrors.Errorf("binder Create() error: %w", err)
+	}
+	defer fp.Close()
+
+	err = b.Commit(M("create", d.Name), n)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
+
 	return d, nil
 }
 

@@ -2,6 +2,8 @@ package binder
 
 import (
 	"binder/fs"
+	"fmt"
+	"strings"
 
 	stdFs "io/fs"
 	"log"
@@ -11,6 +13,93 @@ import (
 	"golang.org/x/xerrors"
 )
 
+type BinderHandler struct {
+	URL         string
+	fileHandler http.Handler
+	//debugHandler http.FileSystem
+}
+
+func NewBinderHandler() *BinderHandler {
+	var h BinderHandler
+	return &h
+}
+
+func (h *BinderHandler) ClearFS() {
+	h.fileHandler = nil
+}
+
+func (h *BinderHandler) SetFS(b *Binder, pub string) error {
+
+	docs, err := stdFs.Sub(b.fileSystem, pub)
+	if err != nil {
+		return xerrors.Errorf("[%s] error: %w", pub, err)
+	}
+	h.fileHandler = http.StripPrefix("/binder", http.FileServer(http.FS(docs)))
+	return nil
+}
+
+func (h *BinderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	if h.fileHandler == nil {
+		//NotFound
+		return
+	}
+
+	if h.URL == "" {
+		h.URL = parseAddress(r.URL.String())
+	}
+
+	url := r.URL.Path
+
+	fmt.Printf("Address:[%s]\n", url)
+
+	switch url {
+	case "/search":
+		return
+	default:
+	}
+
+	h.fileHandler.ServeHTTP(w, r)
+}
+
+func parseAddress(url string) string {
+	if strings.Index(url, "http://") == -1 {
+		return ""
+	}
+	// "http://" 以降を取得
+	work := url[7:]
+	idx := strings.Index(work, "/")
+	if idx == -1 {
+		return url
+	}
+
+	return url[:7+idx]
+}
+
+type handler struct {
+	fileServer http.Handler
+}
+
+func (b *Binder) newHTTPServer(pub string) (*http.Server, error) {
+
+	docs, err := stdFs.Sub(b.fileSystem, pub)
+	if err != nil {
+		return nil, xerrors.Errorf("docs error: %w", err)
+	}
+	var h handler
+	h.fileServer = http.FileServer(http.FS(docs))
+	return &http.Server{Handler: &h}, nil
+}
+
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.String()
+	switch url {
+	case "/search":
+	default:
+		h.fileServer.ServeHTTP(w, r)
+	}
+}
+
 func (b *Binder) Serve() error {
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -18,13 +107,11 @@ func (b *Binder) Serve() error {
 		return xerrors.Errorf("net.Listen() error: %w", err)
 	}
 
-	docs, err := stdFs.Sub(b.fileSystem, fs.PublishDir)
-	if err != nil {
-		return xerrors.Errorf("docs error: %w", err)
-	}
-
 	b.httpServerAddress = ln.Addr().String()
-	b.httpServer = &http.Server{Handler: http.FileServer(http.FS(docs))}
+	b.httpServer, err = b.newHTTPServer(fs.PublishDir)
+	if err != nil {
+		return xerrors.Errorf("newHTTPServer() error: %w", err)
+	}
 
 	go func() {
 		err := b.httpServer.Serve(ln)

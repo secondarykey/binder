@@ -42,9 +42,9 @@ function App() {
   }
 
   //現在の設定を取得(最初に画面表示を選ぶ)
-
+  var initMsg = createMessage("success", "");
   //メニューの開閉管理
-  const [msg, setMessage] = useState(createMessage("success", ""));
+  const [msg, setMessage] = useState(initMsg);
   const [msgDlg, setMessageDialog] = useState(false);
 
   //メニューの開閉管理
@@ -107,7 +107,7 @@ function App() {
    * @param {string} id 指定ID
    * @param {string} parentId 親ID
    */
-  const changeMode = (mode, id, parentId) => {
+  const changeMode = async (mode, id, parentId) => {
 
     var leftM = leftMode;
     var rightM = rightMode;
@@ -142,6 +142,9 @@ function App() {
     } else if ( mode === "registerBinder" ) {
         leftM = "file";
         rightM = "registerBinder";
+    } else if ( mode === "remoteBinder" ) {
+        leftM = "file";
+        rightM = "remoteBinder";
     } else if ( mode === "setting" ) {
         rightM = "setting"
     } else {
@@ -165,6 +168,10 @@ function App() {
   }
 
   function showMessage(type, msg) {
+    if ( type === "clear" ) {
+      hideMessage();
+      return;
+    }
     var obj = createMessage(type, msg);
     obj.show = true;
     setMessage(obj);

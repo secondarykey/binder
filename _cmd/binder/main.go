@@ -16,10 +16,13 @@ var assets embed.FS
 
 func main() {
 
-	//config を読み込む
-	//前回の読み込みを行う設定の場合、Binderを設定しておく
-	set := settings.Get()
+	//開いているBinderに対するProxy
+	//handler := binder.NewBinderHandler()
+	//app := api.New(handler)
 	app := api.New()
+
+	//config を読み込む
+	set := settings.Get()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -34,6 +37,9 @@ func main() {
 		OnStartup:        app.Startup,
 		Bind: []interface{}{
 			app,
+		},
+		Debug: options.Debug{
+			OpenInspectorOnStartup: true,
 		},
 	})
 

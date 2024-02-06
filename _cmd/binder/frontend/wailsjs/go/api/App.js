@@ -22,6 +22,10 @@ export function CreateNoteHTML(arg1, arg2) {
   return window['go']['api']['App']['CreateNoteHTML'](arg1, arg2);
 }
 
+export function CreateRemoteBinder(arg1, arg2) {
+  return window['go']['api']['App']['CreateRemoteBinder'](arg1, arg2);
+}
+
 export function CreateTemplateHTML(arg1, arg2, arg3, arg4) {
   return window['go']['api']['App']['CreateTemplateHTML'](arg1, arg2, arg3, arg4);
 }

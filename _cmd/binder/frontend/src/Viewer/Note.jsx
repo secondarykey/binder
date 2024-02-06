@@ -38,7 +38,7 @@ function Note(props) {
     })
 
     Address().then((address) => {
-      setViewImage("http://" + address + "/assets/" + props.id + "/index")
+      setViewImage(address + "/assets/" + props.id + "/index")
     }).catch((err) => {
       console.warn(err);
       props.onMessage("error", err);

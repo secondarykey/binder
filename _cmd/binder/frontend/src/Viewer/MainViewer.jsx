@@ -13,6 +13,7 @@ import Assets from "./Assets";
 import Setting from "./Setting";
 import BinderHistory from "./BinderHistory";
 import BinderRegister from "./BinderRegister";
+import BinderRemote from "./BinderRemote";
 
 /**
  * 表示部分
@@ -87,6 +88,14 @@ function MainViewer(props) {
   <BinderRegister onChangeMode={props.onChangeMode} 
                   onChangeTitle={setName}
                   onMessage={props.onMessage}/>
+</>
+}
+
+{mode === "remoteBinder" &&
+<>
+  <BinderRemote onChangeMode={props.onChangeMode} 
+                onChangeTitle={setName}
+                onMessage={props.onMessage}/>
 </>
 }
 

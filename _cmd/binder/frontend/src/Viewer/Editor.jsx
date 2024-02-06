@@ -68,6 +68,8 @@ function Editor(props) {
   //開いた時の初期処理
   useEffect(() => {
 
+    props.onMessage("clear");
+
     vim.open({
       debug: false,
       showMsg: function (msg) {

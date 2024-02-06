@@ -107,11 +107,15 @@ func newWrapper(o *Binder, local bool, t TemplateType, id string, now int) (*wra
 	return &w, nil
 }
 
+func (w *wrapper) localAddr() string {
+	return fmt.Sprintf("http://%s", w.owner.ServerAddress())
+}
+
 func (w *wrapper) assetsDir() string {
 
 	assets := "./assets"
 	if w.Local {
-		assets = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "assets")
+		assets = w.localAddr() + "/assets"
 	} else if w.isNote() {
 		assets = "../assets"
 	}
@@ -236,7 +240,7 @@ func (w *wrapper) convertNote(n *model.Note) *tempNote {
 
 	parent := "./notes"
 	if w.Local {
-		parent = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "notes")
+		parent = w.localAddr() + "/notes"
 	} else if w.isNote() {
 		parent = "."
 	}
@@ -244,7 +248,7 @@ func (w *wrapper) convertNote(n *model.Note) *tempNote {
 
 	parent = "./assets"
 	if w.Local {
-		parent = fmt.Sprintf("http://%s/%s", w.owner.ServerAddress(), "assets")
+		parent = w.localAddr() + "/assets"
 	} else if w.isNote() {
 		parent = "../assets"
 	}
@@ -478,6 +482,8 @@ func (b *Binder) GenerateIndexHTML() error {
 		return xerrors.Errorf("generateHTML(index) error: %w", err)
 	}
 
+	//TODO 一度削除する
+
 	//list_n.htmlをすべて削除する
 	//ページ数を換算する
 	w, err = newWrapper(b, false, ListTemplateType, "", 1)
@@ -526,12 +532,6 @@ func (b *Binder) generateHTML(w *wrapper) error {
 	if err != nil {
 		return xerrors.Errorf("writeHTML() error: %w", err)
 	}
-	/*
-		err = b.fileSystem.Commit("generate:" + id)
-		if err != nil {
-			return xerrors.Errorf("Commit() error: %w", err)
-		}
-	*/
 	return nil
 }
 

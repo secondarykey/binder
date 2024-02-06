@@ -31,12 +31,37 @@ func Install(dir string, name string, sample bool) error {
 		return xerrors.Errorf("fs.New() error: %w", err)
 	}
 
+	return install(b, dir, name, sample)
+}
+
+func install(b *fs.FileSystem, dir string, name string, sample bool) error {
+
+	//空でもディレクトリは作っておく
+	docsdir := filepath.Join(dir, "docs")
+	err := os.MkdirAll(docsdir, 0666)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
+	}
+
+	datadir := filepath.Join(dir, "data")
+	err = os.MkdirAll(datadir, 0666)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir(data) error: %w", err)
+	}
+
+	notesdir := filepath.Join(dir, "notes")
+	err = os.MkdirAll(notesdir, 0666)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir(notes) error: %w", err)
+	}
+
+	//データベースを作成
 	dbdir := filepath.Join(dir, "db")
 	err = os.MkdirAll(dbdir, 0666)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir() error: %w", err)
 	}
-	//データベースを作成
+
 	err = db.Create(dbdir)
 	if err != nil {
 		return xerrors.Errorf("db.Create() error: %w", err)
@@ -51,6 +76,7 @@ func Install(dir string, name string, sample bool) error {
 	if err != nil {
 		return xerrors.Errorf("CommitAll() error: %w", err)
 	}
+
 	//空のテンプレートファイルを作成
 	err = b.CreateTemplateFiles()
 	if err != nil {
@@ -94,6 +120,8 @@ func Install(dir string, name string, sample bool) error {
 	return nil
 }
 
+// install true 時すでに存在する場合、エラー
+// install false 時存在しない場合エラー
 func checkDirectory(dir string, install bool) error {
 
 	dirs := []string{"db", "docs", "templates", "data", "notes"}

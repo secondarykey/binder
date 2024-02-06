@@ -17,6 +17,10 @@ function FileMenu(props) {
     props.onChangeMode("registerBinder")
   }
 
+  const remoteBinder = () => {
+    props.onChangeMode("remoteBinder")
+  }
+
   const importLocal = () => {
 
     SelectDirectory(false).then( (p) => {
@@ -53,7 +57,7 @@ function FileMenu(props) {
         <ListItemText>Open</ListItemText>
       </MenuItem>
 
-      <MenuItem>
+      <MenuItem onClick={remoteBinder}>
         <ListItemIcon>
           <DownloadIcon />
         </ListItemIcon>

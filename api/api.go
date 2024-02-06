@@ -17,15 +17,20 @@ import (
 type App struct {
 	ctx     context.Context
 	current *binder.Binder
+	//handler *binder.BinderHandler
 }
 
 // NewApp creates a new App application struct
+// func New(h *binder.BinderHandler) *App {
 func New() *App {
-	return &App{}
+	var app App
+	//app.handler = h
+	return &app
 }
 
 func (app *App) SetCurrent(c *binder.Binder) {
 	app.current = c
+	//app.handler.SetFS(c, fs.PublishDir)
 }
 
 // startup is called when the app starts. The context is saved
@@ -100,6 +105,21 @@ func (a *App) SelectDirectory(create bool) (string, error) {
 	return dir, nil
 }
 
+func (a *App) CreateRemoteBinder(url string, dir string) error {
+
+	err := binder.CreateRemote(url, dir)
+	if err != nil {
+		return fmt.Errorf("CreateRemote() error\n%+v", err)
+	}
+
+	err = a.load(dir)
+	if err != nil {
+		return fmt.Errorf("load() error\n%+v", err)
+	}
+
+	return nil
+}
+
 func (a *App) LoadBinder(dir string) error {
 
 	err := a.load(dir)
@@ -149,8 +169,10 @@ func (a *App) SelectFile(name string, ptn string) (string, error) {
 }
 
 func (a *App) Address() (string, error) {
-	//TODO 起動してない時？
-	return a.current.ServerAddress(), nil
+	if a.current == nil {
+		return "", fmt.Errorf("Not Open Binder")
+	}
+	return fmt.Sprintf("http://%s", a.current.ServerAddress()), nil
 }
 
 func (a *App) GetResource() (*binder.Resource, error) {
@@ -183,7 +205,7 @@ func (a *App) Commit(noteId string, dataId string, auto bool) error {
 }
 
 func (a *App) OpenBinderSite() error {
-	address := fmt.Sprintf("http://%s", a.current.ServerAddress())
+	address, _ := a.Address()
 	runtime.BrowserOpenURL(a.ctx, address)
 	return nil
 }

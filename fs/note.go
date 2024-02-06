@@ -24,11 +24,12 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 
 	//ノートファイルを作成
 	if regFlag {
-		_, err := b.Create(noteTextFile(n.ID))
+		name := noteTextFile(n.ID)
+		_, err := b.Create(name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
 		}
-		err = b.Commit("create: note file")
+		err = b.Commit(M("create", "Note "+n.Name), name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("Commit() error: %w", err)
 		}
@@ -38,7 +39,8 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 	//画像指定がある場合画像を作成
 	if image != "" {
 
-		fp, err := b.Create(noteImage(n.ID))
+		name := noteImage(n.ID)
+		fp, err := b.Create(name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
 		}
@@ -56,7 +58,7 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 			return nil, false, xerrors.Errorf("writer Write() error: %w", err)
 		}
 
-		err = b.Commit("create: note image")
+		err = b.Commit(M("create", "Note Image "+n.Name), name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("Commit() error: %w", err)
 		}

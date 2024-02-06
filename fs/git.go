@@ -89,12 +89,9 @@ func (b *FileSystem) Branch(name string) error {
 
 // テンプレートファイルをコミットする
 func (b *FileSystem) TemplatesCommit() error {
-
 	files := []string{TemplateFileName("layout"), TemplateFileName("index"),
 		TemplateFileName("list"), TemplateFileName("note")}
-
-	m := "auto save  : Templates"
-	return b.Commit(m, files...)
+	return b.Commit(M("auto save", "Templates"), files...)
 }
 
 // ファイルをコミットする

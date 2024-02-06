@@ -17,6 +17,8 @@ func (b *Binder) EditConfig(conf *model.Config) error {
 	if err != nil {
 		return xerrors.Errorf("db.UpdateConfig() error: %w", err)
 	}
+
+	//TODO Binder コミット
 	return nil
 }
 

@@ -14,6 +14,8 @@ export function CreateBinder(arg1:string,arg2:string,arg3:boolean):Promise<void>
 
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;
 
+export function CreateRemoteBinder(arg1:string,arg2:string):Promise<void>;
+
 export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
 
 export function EditAssets(arg1:model.Datum,arg2:string):Promise<model.Datum>;

@@ -20,6 +20,35 @@ type Binder struct {
 	httpServerAddress string
 }
 
+func CreateRemote(url, dir string) error {
+
+	f, err := fs.Clone(dir, url)
+	if err != nil {
+		return xerrors.Errorf("fs.Clone() error: %w", err)
+	}
+
+	//TODO ブランチがリモートに存在する場合の確認方法
+
+	//ファイルシステムをチェック
+	err = checkDirectory(dir, false)
+	if err != nil {
+		//インストール処理を行う
+		err := install(f, dir, "simple", false)
+		if err != nil {
+			return xerrors.Errorf("binder.install() error: %w", err)
+		}
+	} else {
+		//ブランチの切替(install時は切り替わっている)
+		s := settings.Get()
+		err = f.Branch(s.Git.Branch)
+		if err != nil {
+			return xerrors.Errorf("fs.Branch() error: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func Load(dir string) (*Binder, error) {
 
 	bfs, err := fs.Load(dir)
@@ -143,6 +172,8 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 			return xerrors.Errorf("TemplatesCommit() error: %w", err)
 		}
 
+		//TODO 一旦ノートの更新があるかを確認
+
 		//ノートのHTMLを作成
 		html, err := b.CreateNoteHTML(noteId, false, elm)
 		if err != nil {
@@ -164,6 +195,8 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 			}
 		}
 
+		//TODO 出力ノートのコミット
+
 		//index,listの作成
 		err = b.GenerateIndexHTML()
 		if err != nil {
@@ -171,6 +204,9 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 		}
 
 	} else {
+
+		//TODO データファイルの変更がある場合、コミット
+
 		//ファイルを作成
 		index, err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
 		if err != nil {
@@ -183,6 +219,9 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 				return xerrors.Errorf("PublishData() error: %w", err)
 			}
 		}
+
+		//TODO 出力データのコミット
+
 	}
 	return nil
 }
@@ -195,16 +234,21 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 	f := ""
 
 	if dataId == "" {
+
 		t = "Note"
 		f = fs.NoteTextFile(noteId)
+
 		n, err := b.GetNote(noteId)
 		if err != nil {
 			return xerrors.Errorf("GetNote() error: %w", err)
 		}
+
 		name = n.Name
 	} else {
+
 		t = "Data"
 		f = fs.DataTextFile(dataId, noteId)
+
 		d, err := b.GetData(dataId, noteId)
 		if err != nil {
 			return xerrors.Errorf("GetData() error: %w", err)
@@ -213,12 +257,13 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 	}
 
 	if auto {
-		m := fmt.Sprintf("auto save : %s %s", t, name)
+		m := fs.M("auto save", fmt.Sprintf("%s %s", t, name))
 		err = b.fileSystem.AutoCommit(m, f)
 	} else {
-		m := fmt.Sprintf("save      : %s %s", t, name)
+		m := fs.M("save", fmt.Sprintf("%s %s", t, name))
 		err = b.fileSystem.Commit(m, f)
 	}
+
 	if err != nil {
 		return xerrors.Errorf("fs.Commit() error: %w", err)
 	}

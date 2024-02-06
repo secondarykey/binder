@@ -11,6 +11,7 @@ func (b *Binder) GetNote(id string) (*model.Note, error) {
 }
 
 func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) {
+
 	rtn, reg, err := b.fileSystem.EditNote(n, imageName)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.EditNote() error: %w", err)
@@ -27,6 +28,8 @@ func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) 
 			return nil, xerrors.Errorf("db.UpdateNote() error: %w", err)
 		}
 	}
+
+	//TODO データベースのコミット
 
 	return rtn, nil
 }

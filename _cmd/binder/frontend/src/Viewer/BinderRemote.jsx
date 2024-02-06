@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { SelectDirectory, CreateBinder } from "../../wailsjs/go/api/App";
+import { SelectDirectory, CreateRemoteBinder } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
 
@@ -9,19 +9,22 @@ import FolderIcon from '@mui/icons-material/Folder';
  * @param {*} props 
  * @returns 
  */
-function BinderRegister(props) {
+function BinderRemote(props) {
 
+  const [remote, setRemote] = useState("");
   const [dir, setDir] = useState("");
 
-  props.onChangeTitle("Create Binder");
+  props.onChangeTitle("Remote Import");
 
   //保存
   const handleSave = () => {
+
     if ( dir == "" ) {
       props.onMessage("error","reqired select directory");
       return;
     }
-    CreateBinder(dir,"simple",true).then(() => {
+
+    CreateRemoteBinder(remote,dir).then(() => {
       //開く
       props.onChangeMode("loadBinder");
     }).catch( (err)=> {
@@ -45,6 +48,11 @@ function BinderRegister(props) {
     <Grid className="formGrid">
 
       <FormControl>
+        <FormLabel>Repository(URL)</FormLabel>
+        <TextField value={remote} onChange={(e) => setRemote(e.target.value)}></TextField>
+      </FormControl>
+
+      <FormControl>
         <FormLabel>Binder Directory</FormLabel>
         <TextField value={dir} onClick={selectDir}
           InputProps={{
@@ -65,4 +73,4 @@ function BinderRegister(props) {
     </Grid>
   </>);
 }
-export default BinderRegister;
+export default BinderRemote;
