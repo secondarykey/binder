@@ -293,3 +293,25 @@ func (b *Binder) SaveSetting(s *settings.Setting) error {
 	}
 	return nil
 }
+
+func (b *Binder) GetRemotes() ([]string, error) {
+
+	configs, err := b.fileSystem.GetRemotes()
+	if err != nil {
+		return nil, xerrors.Errorf("fs.GetRemotes() error: %w", err)
+	}
+
+	names := make([]string, len(configs))
+	for idx, c := range configs {
+		names[idx] = c.Name
+	}
+	return names, nil
+}
+
+func (b *Binder) CreateRemote(name, url string) error {
+	err := b.fileSystem.CreateRemote(name, url)
+	if err != nil {
+		return xerrors.Errorf("CreateRemote() error: %w", err)
+	}
+	return nil
+}

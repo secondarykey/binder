@@ -9,8 +9,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const configColumns = "name,detail,list_num,branch,auto_commit,created_date,updated_date"
-const configSelect = "SELECT name,detail,list_num,branch,auto_commit,DATETIME(created_date),DATETIME(updated_date) FROM config"
+const configColumns = "name,detail,list_num,remote,branch,auto_commit,created_date,updated_date"
+const configSelect = "SELECT name,detail,list_num,remote,branch,auto_commit,DATETIME(created_date),DATETIME(updated_date) FROM config"
 
 func (inst *Instance) GetConfig() (*model.Config, error) {
 
@@ -21,7 +21,7 @@ func (inst *Instance) GetConfig() (*model.Config, error) {
 
 	var c model.Config
 	var detail sql.NullString
-	err = r.Scan(&c.Name, &detail, &c.ListNum, &c.Branch, &c.AutoCommit, &c.Created, &c.Updated)
+	err = r.Scan(&c.Name, &detail, &c.ListNum, &c.Remote, &c.Branch, &c.AutoCommit, &c.Created, &c.Updated)
 	if err != nil {
 		return nil, xerrors.Errorf("Scan() error: %w", err)
 	}
@@ -52,9 +52,9 @@ func (inst *Instance) UpdateConfig(c *model.Config) error {
 	}
 	c.Updated = now
 
-	s := "UPDATE config SET name = ?,detail = ?,list_num = ?,branch = ?, auto_commit = ?,created_date = ?,updated_date = ?"
+	s := "UPDATE config SET name = ?,detail = ?,list_num = ?,remote = ?,branch = ?, auto_commit = ?,created_date = ?,updated_date = ?"
 	err := inst.run(s,
-		c.Name, from(c.Detail), c.ListNum, c.Branch, c.AutoCommit, c.Created, c.Updated)
+		c.Name, from(c.Detail), c.ListNum, c.Remote, c.Branch, c.AutoCommit, c.Created, c.Updated)
 	if err != nil {
 		return xerrors.Errorf("run() error: %w", err)
 	}

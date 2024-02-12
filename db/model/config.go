@@ -6,6 +6,7 @@ type Config struct {
 	Name       string `json:"name"`
 	Detail     string `json:"detail"`
 	ListNum    int    `json:"listNum"`
+	Remote     string `json:"remote"`
 	Branch     string `json:"branch"`
 	AutoCommit int    `json:"autoCommit"`
 

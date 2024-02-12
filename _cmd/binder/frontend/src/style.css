@@ -180,7 +180,7 @@ body {
     background-color: #252525;
     caret-color: #ffffff;
 
-    border:1 solid #000000;
+    border:0 solid #000000;
 
     padding: 5px;
     margin: 0px;
@@ -206,4 +206,32 @@ body {
   flex-flow: column;
   background-color: #292929;
   color: #f1f1f1;
+}
+
+.buttonBar {
+   display: flex;
+   justify-content: space-between;
+   background-color: #222222;
+   position: absolute !important;
+   border: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   min-height: 48px;
+}
+
+.buttonBarLeft {
+  margin: 0;
+  padding-left:0px !important;
+}
+
+.buttonBarRight {
+  margin: 0;
+  text-align:right;
+  padding-right:0px !important;
+}
+
+.buttonBarRightButton {
+  margin: 0;
+  padding: 0;
 }

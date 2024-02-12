@@ -191,6 +191,29 @@ func (a *App) GetResource() (*binder.Resource, error) {
 	return r, nil
 }
 
+func (a *App) Remotes() ([]string, error) {
+	if a.current == nil {
+		return nil, fmt.Errorf("Not Open Binder")
+	}
+	remotes, err := a.current.GetRemotes()
+	if err != nil {
+		return nil, fmt.Errorf("GetRemotes() error: %+v", err)
+	}
+	return remotes, nil
+}
+
+func (a *App) AddRemote(name string, url string) error {
+	if a.current == nil {
+		return fmt.Errorf("Not Open Binder")
+	}
+
+	err := a.current.CreateRemote(name, url)
+	if err != nil {
+		return fmt.Errorf("CreateRemote() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) Generate(noteId string, dataId string, elm string) error {
 	return a.current.Generate(noteId, dataId, elm)
 }

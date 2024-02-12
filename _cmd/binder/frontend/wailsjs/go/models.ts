@@ -42,6 +42,7 @@ export namespace model {
 	    name: string;
 	    detail: string;
 	    listNum: number;
+	    remote: string;
 	    branch: string;
 	    autoCommit: number;
 	    // Go type: time
@@ -58,6 +59,7 @@ export namespace model {
 	        this.name = source["name"];
 	        this.detail = source["detail"];
 	        this.listNum = source["listNum"];
+	        this.remote = source["remote"];
 	        this.branch = source["branch"];
 	        this.autoCommit = source["autoCommit"];
 	        this.created = this.convertValues(source["created"], null);

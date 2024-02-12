@@ -19,7 +19,34 @@ func M(prefix string, name string) string {
 	return fmt.Sprintf("%-10s : %s", prefix, name)
 }
 
-func (b *FileSystem) Push(name string) error {
+func (b *FileSystem) CreateRemote(name, url string) error {
+
+	_, err := b.repo.CreateRemote(&config.RemoteConfig{
+		Name: name,
+		URLs: []string{url},
+	})
+
+	if err != nil {
+		return xerrors.Errorf("CreateRemote() error: %w", err)
+	}
+
+	return nil
+}
+
+func (b *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
+	r, err := b.repo.Remotes()
+	if err != nil {
+		return nil, xerrors.Errorf("repository.Remotes() error: %w", err)
+	}
+
+	rtn := make([]*config.RemoteConfig, len(r))
+	for idx, remote := range r {
+		rtn[idx] = remote.Config()
+	}
+	return rtn, nil
+}
+
+func (b *FileSystem) Push(r, name string) error {
 
 	set := settings.Get()
 	auth := set.Git
@@ -33,7 +60,7 @@ func (b *FileSystem) Push(name string) error {
 		Password: auth.Code,
 	}
 
-	remote, err := b.repo.Remote("origin")
+	remote, err := b.repo.Remote(r)
 	if err != nil {
 		return xerrors.Errorf("Remote() error: %w", err)
 	}

@@ -12,12 +12,31 @@ import CodeIcon from '@mui/icons-material/Code';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 
-import BinderIcon from "../assets/images/binder.svg";
-
 import { OpenBinderSite,GetResource } from '../../wailsjs/go/api/App';
 
+function BinderSVG(props) {
+  return (<>
+<svg viewBox="0 0 320 320" width={props.width} height={props.height}>
+  <defs>
+    <g id="binder">
+      <rect width="100" height="320" rx="5" xy="5" fill={props.fill}/>
+
+      <rect x="10" y="30" width="80" height="35" rx="2" xy="2" fill={props.contents}/>
+      <rect x="10" y="90" width="80" height="35" rx="2" xy="2" fill={props.contents}/>
+      <circle cx="50" cy="250" r="20" fill={props.contents}/>
+    </g>
+  </defs>
+
+  <use href="#binder" transform="translate(0,0)"></use>
+  <use href="#binder" transform="translate(110,0)"></use>
+  <use href="#binder" transform="translate(220,0)"></use>
+</svg>
+  </>);
+}
+
 function BinderRootIcon() {
-  return <img src={BinderIcon} width="24" height="24"/>;
+  return <BinderSVG width="24" height="24" fill="white" contents="black"/>
+  //return <img src={BinderIcon} width="24" height="24"/>;
 }
 
 function BinderTree(props) {

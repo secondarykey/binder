@@ -4,6 +4,8 @@ import {model} from '../models';
 import {binder} from '../models';
 import {settings} from '../models';
 
+export function AddRemote(arg1:string,arg2:string):Promise<void>;
+
 export function Address():Promise<string>;
 
 export function CloseBinder():Promise<void>;
@@ -51,6 +53,8 @@ export function OpenNote(arg1:string):Promise<string>;
 export function OpenTemplate(arg1:string):Promise<string>;
 
 export function ParseNote(arg1:string,arg2:boolean,arg3:string):Promise<string>;
+
+export function Remotes():Promise<Array<string>>;
 
 export function SaveData(arg1:string,arg2:string,arg3:string):Promise<void>;
 

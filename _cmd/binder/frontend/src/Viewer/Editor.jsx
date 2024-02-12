@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { IconButton, Paper, Toolbar } from "@mui/material";
+import { Container, IconButton, Paper, Toolbar } from "@mui/material";
 
 import "../assets/mermaid.min.js";
 import "../assets/marked.min.js";
@@ -10,6 +10,7 @@ import { GetData, OpenData, SaveData } from "../../wailsjs/go/api/App.js";
 import { OpenTemplate, CreateTemplateHTML, SaveTemplate, Generate, Commit, GetLatestNoteId } from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
+import DownloadIcon from '@mui/icons-material/Download';
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -18,6 +19,8 @@ import CommitIcon from '@mui/icons-material/Commit';
  * 
  */
 function Editor(props) {
+
+  var downloadName = "";
 
   const [text, setText] = useState("");
   const [noteElm, setNoteElm] = useState("");
@@ -95,6 +98,7 @@ function Editor(props) {
 
       GetData(props.dataId, props.noteId).then((resp) => {
         props.onChangeTitle(resp.name)
+        downloadName = resp.name;
       }).catch((err) => {
         console.warn(err);
         props.onMessage("error", err);
@@ -285,6 +289,18 @@ function Editor(props) {
     })
   }
 
+  const handleDownload = async () => {
+      var elm = document.querySelector('#mermaidViewer');
+      console.log(elm.innerHTML)
+
+      var data = new Blob([elm.innerHTML], {type: 'image/svg+xml'});
+      var dataURL = window.URL.createObjectURL(data);
+      var tempLink = document.createElement('a');
+      tempLink.href = dataURL;
+      tempLink.setAttribute('download', downloadName + '.svg');
+      tempLink.click();
+  }
+
   var editorStyle = {};
   editorStyle.fontSize = "20px";
   editorStyle.color = "#eeeeee";
@@ -299,11 +315,24 @@ function Editor(props) {
 
         {/** 基本的にテキストだからこれでもOKだけどイベント周り */}
         <div id="editorWrapper" style={editWrapperStyle}>
+
           <textarea id="editor" style={editorStyle} onChange={(e) => changeText(e.target.value)} value={text} />
-          <Toolbar style={{ backgroundColor: "#222222", position: "absolute", left: "0", right: "0", bottom: "0px", minHeight: "48px", border: "0" }}>
-            <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={commit}>
-              <CommitIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-            </IconButton>
+
+          {/** 左側の操作用位置 */}
+          <Toolbar className="buttonBar">
+            <Container className="buttonBarLeft">
+{/** テンプレート時はコミットはなし */}
+{mode !== "template" &&
+<>
+              {/** コミット */}
+              <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={commit}>
+                <CommitIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+              </IconButton>
+</>
+}
+            </Container>
+            <Container className="buttonBarRight">
+            </Container>
           </Toolbar>
         </div>
 
@@ -318,10 +347,26 @@ function Editor(props) {
             <div id="mermaidViewer"></div>
           }
 
-          <Toolbar style={{ backgroundColor: "#222222", position: "absolute", left: "0", right: "0", bottom: "0px", minHeight: "48px", border: "0" }}>
-            <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleOutput}>
-              <OutputIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-            </IconButton>
+          {/** 右側の操作用位置 */}
+          <Toolbar className="buttonBar">
+
+            <Container className="buttonBarLeft">
+              {/** 公開位置への転送 */}
+              <IconButton size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handleOutput}>
+                <OutputIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+              </IconButton>
+            </Container>
+
+            <Container className="buttonBarRight">
+{mode === "data" &&
+<>
+              {/** 表示しているSVGのダウンロード */}
+              <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="download" sx={{ mr: 2 }} onClick={handleDownload}>
+                <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+              </IconButton>
+</>
+}
+            </Container>
           </Toolbar>
 
         </div>
