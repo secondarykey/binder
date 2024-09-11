@@ -17,7 +17,6 @@ const (
 )
 
 func (b *FileSystem) CreateTemplateFiles() error {
-
 	err := b.WriteTemplate("layout", []byte(""))
 	if err != nil {
 		return xerrors.Errorf("WriteTemplate(layout) error: %w", err)
@@ -34,7 +33,6 @@ func (b *FileSystem) CreateTemplateFiles() error {
 	if err != nil {
 		return xerrors.Errorf("WriteTemplate(note) error: %w", err)
 	}
-
 	return nil
 }
 
@@ -75,6 +73,22 @@ func (b *FileSystem) AddTemplateFrame(id string, data []byte) []byte {
 
 	//Len() とって削除しておかないとoxooが入る？
 	return buf.Bytes()
+}
+
+func (sys *FileSystem) DeleteListHTMLs() error {
+
+	htmls, err := stdFs.Glob(sys, "docs/list*html")
+	if err != nil {
+		return xerrors.Errorf("Glob() error: %w", err)
+	}
+
+	for _, html := range htmls {
+		err := sys.fs.Remove(html)
+		if err != nil {
+			return fmt.Errorf("filesystem.Remove() error\n%+v", err)
+		}
+	}
+	return nil
 }
 
 // テンプレート用のフレームを作成して処理

@@ -6,7 +6,6 @@ import (
 	"io"
 	stdFs "io/fs"
 	"os"
-	"time"
 
 	uuid "github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -14,17 +13,19 @@ import (
 
 func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, error) {
 
-	regFlag := false
-	now := time.Now()
-
-	if n.ID == "" {
-		n.ID = uuid.New().String()
-		regFlag = true
+	if n.Id == "" {
+		id, err := uuid.NewV7()
+		if err != nil {
+			return nil, false, xerrors.Errorf("uuid.NewV7() error: %w", err)
+		}
+		n.Id = id.String()
 	}
 
-	//ノートファイルを作成
-	if regFlag {
-		name := noteTextFile(n.ID)
+	regFlag := false
+	name := noteTextFile(n.Id)
+
+	if !b.isExist(name) {
+		regFlag = true
 		_, err := b.Create(name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
@@ -33,13 +34,12 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 		if err != nil {
 			return nil, false, xerrors.Errorf("Commit() error: %w", err)
 		}
-		n.Created = now
 	}
 
 	//画像指定がある場合画像を作成
 	if image != "" {
 
-		name := noteImage(n.ID)
+		name := noteImage(n.Id)
 		fp, err := b.Create(name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
@@ -63,9 +63,11 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 			return nil, false, xerrors.Errorf("Commit() error: %w", err)
 		}
 	}
-	n.Updated = now
-
 	return n, regFlag, nil
+}
+
+func (b *FileSystem) DeleteNote(id string) error {
+	return nil
 }
 
 func (b *FileSystem) ReadNoteText(id string) ([]byte, error) {

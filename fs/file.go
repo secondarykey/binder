@@ -9,7 +9,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// fs.File interface
+// fs.File implemented
 type File struct {
 	name string
 	root billy.Filesystem
@@ -17,20 +17,48 @@ type File struct {
 	billy.File
 }
 
-// fs.FS interface
-func (b *FileSystem) Open(name string) (fs.File, error) {
+// fs.DirEntry implemented
+type dirEntry struct {
+	fs.FileInfo
+}
 
-	bf, err := b.fs.Open(name)
+func (de *dirEntry) Type() fs.FileMode {
+	return de.FileInfo.Mode()
+}
+
+func (de *dirEntry) Info() (fs.FileInfo, error) {
+	return de.FileInfo, nil
+}
+
+// fs.FS interface
+func (sys *FileSystem) Open(name string) (fs.File, error) {
+
+	bf, err := sys.fs.Open(name)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Open() error: %w", err)
 	}
 
 	var f File
 	f.name = name
-	f.root = b.fs
+	f.root = sys.fs
 	f.File = bf
 
 	return &f, nil
+}
+
+// fs.ReadDirFS implemented
+func (sys *FileSystem) ReadDir(name string) ([]fs.DirEntry, error) {
+	infos, err := sys.fs.ReadDir(name)
+	if err != nil {
+		return nil, err
+	}
+
+	dirs := make([]fs.DirEntry, len(infos))
+	for idx, info := range infos {
+		de := dirEntry{info}
+		dirs[idx] = &de
+	}
+	return dirs, nil
 }
 
 func (b *FileSystem) Stat(name string) (fs.FileInfo, error) {

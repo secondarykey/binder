@@ -62,11 +62,12 @@ func noteImage(id string) string {
 	return filepath.Join(PublishDir, "assets", id, "index")
 }
 
-func dataPath(id string, noteId string) string {
-	if noteId == "" {
-		return filepath.Join(PublishDir, "assets", id)
-	}
-	return filepath.Join(PublishDir, "assets", noteId, "%s")
+func diagramPath(id string) string {
+	return filepath.Join(PublishDir, "assets", id)
+}
+
+func assetPath(id string) string {
+	return filepath.Join(PublishDir, "assets", id)
 }
 
 //   - templates/
@@ -118,21 +119,14 @@ func noteTextFile(id string) string {
 	return filepath.Join(noteDir, fmt.Sprintf("%s.md", id))
 }
 
-//   - data/
-//     {data_id}.md
-//   - {note_id}/
-//     {data_id}.md //assets は直接docsに入れる
-const dataDir = "data"
+const dataDir = "diagrams"
 
-func DataTextFile(id string, noteId string) string {
-	return dataTextFile(id, noteId)
+func DiagramTextFile(id string) string {
+	return diagramTextFile(id)
 }
 
-func dataTextFile(id string, noteId string) string {
-	if noteId == "" {
-		return filepath.Join(dataDir, fmt.Sprintf("%s.md", id))
-	}
-	return filepath.Join(dataDir, noteId, fmt.Sprintf("%s.md", id))
+func diagramTextFile(id string) string {
+	return filepath.Join(dataDir, fmt.Sprintf("%s.md", id))
 }
 
 func New(dir string) (*FileSystem, error) {
