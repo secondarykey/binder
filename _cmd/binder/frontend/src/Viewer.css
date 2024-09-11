@@ -1,0 +1,21 @@
+
+#viewer {
+    width:100%;
+    background-color: #252525;
+    color: #f1f1f1;
+}
+
+#mainTitle {
+    background-color: #191919;
+    color: #f1f1f1;
+}
+
+#content {
+  --wails-draggable:no-drag;
+  background-color: #252525;
+}
+
+#closeButton {
+  margin-left:0px !important;
+  margin-right:0px !important;
+}

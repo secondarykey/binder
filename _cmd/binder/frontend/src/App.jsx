@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import './App.css';
-import LeftMenu from './Menu/LeftMenu.jsx';
-import MainViewer from './Viewer/MainViewer.jsx';
-import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,  Slide, Snackbar } from '@mui/material';
+import Menu from './Menu.jsx';
+import Viewer from './Viewer.jsx';
+import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
-import { HashRouter,Routes,Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { GetSetting } from '../wailsjs/go/api/App.js';
 
+import './App.css';
 /**
  * クリップボードのコピー
  * @param {*} val 
@@ -67,7 +67,6 @@ function App() {
   const [msgDlg, setMessageDialog] = useState(false);
 
   //メニューの開閉管理
-  const [isMenuOpen, showMenu] = useState(true);
   const [redraw, setRedraw] = useState(new Date());
 
   //ツリー更新用
@@ -80,9 +79,9 @@ function App() {
   const [rightMode, setRightMode] = useState('selectFile');
 
   //指定ID
-  const [ids, setCurrentId] = useState({id:"index",parentId:""});
-  function setIds(id,parentId) {
-    setCurrentId({id : id, parentId : parentId});
+  const [ids, setCurrentId] = useState({ id: "index", parentId: "" });
+  function setIds(id, parentId) {
+    setCurrentId({ id: id, parentId: parentId });
   }
 
   useEffect(() => {
@@ -98,18 +97,6 @@ function App() {
     });
   }, []);
 
-  /**
-   * メニューを開く
-   */
-  const openMenu = () => {
-    showMenu(true)
-  }
-  /**
-   * メニューを閉じる
-   */
-  const hideMenu = () => {
-    showMenu(false)
-  }
 
   /**
    * モードの変更
@@ -124,7 +111,7 @@ function App() {
     if (mode === "template") {
 
       rightM = "templateEditor"
-      setIds(id,parentId);
+      setIds(id, parentId);
 
     } else if (mode === "noteEditor" || mode === "diagramEditor" ||
       mode === "note" || mode === "diagram" || mode === "assets") {
@@ -132,7 +119,7 @@ function App() {
 
       rightM = mode;
       // ID 指定系のモードの場合
-      setIds(id,parentId);
+      setIds(id, parentId);
 
     } else if (mode === "config") {
       rightM = "binder";
@@ -158,6 +145,7 @@ function App() {
     setRightMode(rightM);
   }
 
+  //ポップアップ処理
   function SlideTransition(props) {
     return <Slide {...props} direction="left" />;
   }
@@ -193,57 +181,58 @@ function App() {
   }
 
   return (
-      <div id="App">
-        {/** メニューを開いている場合 */}
-        {isMenuOpen &&
-          <>
-            <LeftMenu
-              id={ids.id}
-              parentId={ids.parentId}
-              mode={leftMode}
-              onClose={hideMenu}
-              onChangeMode={changeMode}
-              onMessage={showMessage}
-              onRefreshTree={refreshTree} redraw={redraw} />
-          </>
-        }
+    <div id="App">
 
-        <MainViewer showMenu={isMenuOpen} onOpen={openMenu}
-          mode={rightMode} id={ids.id} parentId={ids.parentId}
-          onChangeMode={changeMode}
-          onMessage={showMessage}
-          onRefreshTree={refreshTree} />
+      <Routes>
+        <Route path="/" element={
+          <Menu
+            id={ids.id}
+            parentId={ids.parentId}
+            mode={leftMode}
+            onChangeMode={changeMode}
+            onMessage={showMessage}
+            onRefreshTree={refreshTree} redraw={redraw} />
+        } />
+      </Routes>
 
-        <Snackbar open={msgObj.show && !msgDlg}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          TransitionComponent={SlideTransition}
-          onDoubleClick={showMessageDialog}
-          onClose={hideMessage}
-          autoHideDuration={msgObj.type === "success" ? 2000 : null}>
-          <Alert severity={msgObj.type}
-            variant="filled"
-            sx={{ width: '100%' }}>
-            {msgObj.title}
-          </Alert>
-        </Snackbar>
+      <Viewer
+        mode={rightMode} id={ids.id} parentId={ids.parentId}
+        onChangeMode={changeMode}
+        onMessage={showMessage}
+        onRefreshTree={refreshTree} />
 
-        <Dialog open={msgDlg}
-          keepMounted
-          onClose={closeDialog}
-          aria-describedby="alert-dialog-slide-description" >
-          <DialogTitle>{msgObj.title}</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-slide-description" className="messageTxt">
-              {msgObj.message}
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeDialog}>Close</Button>
-          </DialogActions>
-        </Dialog>
+      {/*  ポップアップ表示 */}
+      <Snackbar open={msgObj.show && !msgDlg}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        TransitionComponent={SlideTransition}
+        onDoubleClick={showMessageDialog}
+        onClose={hideMessage}
+        autoHideDuration={msgObj.type === "success" ? 2000 : null}>
+        <Alert severity={msgObj.type}
+          variant="filled"
+          sx={{ width: '100%' }}>
+          {msgObj.title}
+        </Alert>
+      </Snackbar>
 
-      </div>
-    );
+      {/*  全体のダイアログ */}
+      <Dialog open={msgDlg}
+        keepMounted
+        onClose={closeDialog}
+        aria-describedby="alert-dialog-slide-description" >
+        <DialogTitle>{msgObj.title}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-slide-description" className="messageTxt">
+            {msgObj.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+    </div>
+  );
 }
 
 export default App

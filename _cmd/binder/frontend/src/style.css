@@ -32,19 +32,12 @@ body {
     height: 100vh;
 }
 
-#mainmenu {
-    background-color: #111111;
-    color: #f1f1f1;
-    padding-right:0;
-    overflow: auto;
+.title {
+    background-color: #080808 !important;
+    min-height: 52px !important;
+    color: #f1f1f1 !important;
 }
 
-#leftmenu {
-    background-color: #191919;
-    color: #f1f1f1;
-    width: 320px;
-    min-width: 320px;
-}
 
 #leftContent {
     background-color: #191919;
@@ -63,25 +56,7 @@ body {
     border:0;
 }
 
-#expandBar {
-    padding-left:0px;
-    padding-right:0px;
-    background-color: #050505;
-    color: #f1f1f1;
-}
 
-#homeButton {
-  margin-left:0px !important;
-  margin-right:0px !important;
-}
-
-#expandButton {
-  margin-right:0px !important;
-}
-
-#expandIcon {
-  transform: rotate(90deg);
-}
 
 #fileMenu {
     position:relative;
@@ -93,6 +68,7 @@ body {
     width: 100%;
     bottom:0;
 }
+
 
 .MuiSvgIcon-root {
     color:#f9f9f9;
@@ -110,20 +86,11 @@ body {
     --wails-draggable:no-drag;
 }
 
-#mainViewer {
-  width:100%;
-  background-color: #252525;
-  color: #f1f1f1;
-}
 
 .messageTxt {
     white-space:pre-wrap;
 }
 
-#viewer {
-  --wails-draggable:no-drag;
-  background-color: #252525;
-}
 
 #splitScreen {
   display: flex;
@@ -247,4 +214,42 @@ iframe.htmlViewer {
 .buttonBarRightButton {
   margin: 0;
   padding: 0;
+}
+
+
+.input-box .btn {
+    width: 60px;
+    height: 30px;
+    line-height: 30px;
+    border-radius: 3px;
+    border: none;
+    margin: 0 0 0 20px;
+    padding: 0 8px;
+    cursor: pointer;
+}
+
+.input-box .btn:hover {
+    background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+    color: #333333;
+}
+
+.input-box .input {
+    border: none;
+    border-radius: 3px;
+    outline: none;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 10px;
+    background-color: rgba(240, 240, 240, 1);
+    -webkit-font-smoothing: antialiased;
+}
+
+.input-box .input:hover {
+    border: none;
+    background-color: rgba(255, 255, 255, 1);
+}
+
+.input-box .input:focus {
+    border: none;
+    background-color: rgba(255, 255, 255, 1);
 }
