@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,19 +11,22 @@ import (
 	"binder/test"
 )
 
-var configCSV = `name,detail,list_num,branch,auto_commit,created_date,updated_date
-"Sample Binder","Sample Description",0,main,0,0001-01-01T00:00:00Z,0001-01-01T00:00:00Z
-`
+type tOp struct{}
 
-const notesCSV = `id,name,detail,publish_date,created_date,updated_date
-"test","日本語","詳細",2018-02-17T07:01:05.0Z,2018-02-17T07:01:05.0Z,2018-02-17T07:01:05.0Z
-`
+func (op tOp) GetOperationId() string {
+	return "Test"
+}
 
-const dataCSV = `id,note_id,name,detail,plugin_id,publish_date,created_date,updated_date
-`
+func testOp() db.Op {
+	var op tOp
+	return &op
+}
+
+// DBを作成
+var testPath = filepath.Join(test.Dir, "work")
 
 func open() *db.Instance {
-	inst, err := db.New(test.Dir)
+	inst, err := db.New(testPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,41 +39,17 @@ func open() *db.Instance {
 }
 
 func create() error {
-	err := write("config.csv", configCSV)
-	if err != nil {
-		return err
-	}
-	err = write("notes.csv", notesCSV)
-	if err != nil {
-		return err
-	}
-	err = write("data.csv", dataCSV)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func write(n string, data string) error {
-	fp, err := os.Create(filepath.Join(test.Dir, n))
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-	_, err = fp.Write([]byte(data))
-	if err != nil {
-		return err
-	}
-	return nil
+	os.Mkdir(testPath, 0666)
+	return db.Create(testPath)
 }
 
 func TestMain(m *testing.M) {
 
 	test.Clean()
-	//DBを作成
 	err := create()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "create() error: %+v", err)
+		os.Exit(1)
 	}
 
 	code := m.Run()
@@ -87,19 +67,6 @@ func TestDB(t *testing.T) {
 	defer inst.Close()
 	if err != nil {
 		t.Errorf("inst.Open() not nil:%v", err)
-	}
-}
-
-func TestData(t *testing.T) {
-
-	inst := open()
-
-	datum, err := inst.GetDatum("NotFound", "")
-	if datum != nil {
-		t.Errorf("GetDatum() not found is nil")
-	}
-	if err != nil {
-		t.Errorf("db.GetDatum() not found is nil:%v", err)
 	}
 }
 

@@ -5,6 +5,8 @@ import (
 	"binder/db/model"
 	"errors"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestNotes(t *testing.T) {
@@ -12,7 +14,17 @@ func TestNotes(t *testing.T) {
 	inst := open()
 	defer inst.Close()
 
-	note, err := inst.GetNote("test")
+	var n model.Note
+	id, _ := uuid.NewV7()
+	n.Id = id.String()
+	n.Name = "単純テスト"
+
+	err := inst.InsertNote(&n, testOp())
+	if err != nil {
+		t.Errorf("db.InsertNote() not nil:%v", err)
+	}
+
+	note, err := inst.GetNote(n.Id)
 	if err != nil {
 		t.Errorf("db.GetNote() is not error:%v", err)
 	}
@@ -22,11 +34,11 @@ func TestNotes(t *testing.T) {
 
 	//NotFound
 	note, err = inst.GetNote("NotFound")
-	if note != nil {
-		t.Errorf("GetNote() not found is nil")
-	}
 	if err != nil {
 		t.Errorf("db.GetNote() not found is nil:%v", err)
+	}
+	if note != nil {
+		t.Errorf("GetNote() not found is nil")
 	}
 }
 
@@ -51,34 +63,24 @@ func TestInsertNote(t *testing.T) {
 	defer inst.Close()
 
 	var n model.Note
-	n.ID = "test2"
+	n.Id = "test2"
 	n.Name = "単純テスト"
 
-	err := inst.InsertNote(&n)
+	err := inst.InsertNote(&n, testOp())
 	if err != nil {
 		t.Errorf("db.InsertNote() not nil:%v", err)
 	}
 
 	n = model.Note{}
-	n.ID = "test"
+	n.Id = "test2"
 	n.Name = "キー重複テスト"
-	err = inst.InsertNote(&n)
+	err = inst.InsertNote(&n, testOp())
 	if err == nil {
 		t.Errorf("db.InsertNote() is nil:%v", err)
 	} else {
 		if !errors.Is(err, db.DuplicateKey) {
 			t.Errorf("duplicate key error not DuplicateKey:%v", err)
 		}
-	}
-
-	//空のIDで登録が行えない
-	//UUID 発行はあくまで上位
-	n = model.Note{}
-	n.ID = ""
-	n.Name = "キー空テスト"
-	err = inst.InsertNote(&n)
-	if err == nil {
-		t.Errorf("db.InsertNote() empty key not nil:%v", err)
 	}
 }
 

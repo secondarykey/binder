@@ -5,11 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"path/filepath"
+	"strings"
 
 	_ "github.com/mithrandie/csvq-driver"
 	"golang.org/x/xerrors"
 )
+
+func init() {
+}
 
 var DuplicateKey = fmt.Errorf("duplicate key error")
 
@@ -17,17 +20,18 @@ const TimeZero = "0001-01-01T00:00:00Z"
 
 func Create(dir string) error {
 
+	//ファイルチェック
+	//すでに存在する場合
+
 	err := createTableFiles(dir)
 	if err != nil {
 		return xerrors.Errorf("createTableFiles() error: %w", err)
 	}
 
-	//すでに存在する場合
 	inst, err := New(dir)
 	if err != nil {
 		return xerrors.Errorf("db.New() error: %w", err)
 	}
-
 	err = inst.Open()
 	if err != nil {
 		return xerrors.Errorf("inst.Open() error: %w", err)
@@ -43,17 +47,22 @@ func Create(dir string) error {
 }
 
 func createTableFiles(dir string) error {
-	err := createTableFile(filepath.Join(dir, "config.csv"), configColumns)
+	var err error
+	err = createConfigTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createTableFile(config) error: %w", err)
+		return xerrors.Errorf("createConfigTable() error: %w", err)
 	}
-	err = createTableFile(filepath.Join(dir, "notes.csv"), notesColumns)
+	err = createNoteTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createTableFile(note) error: %w", err)
+		return xerrors.Errorf("createNoteTable() error: %w", err)
 	}
-	err = createTableFile(filepath.Join(dir, "data.csv"), dataColumns)
+	err = createDiagramTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createTableFile(data) error: %w", err)
+		return xerrors.Errorf("createDiagramTable() error: %w", err)
+	}
+	err = createAssetTable(dir)
+	if err != nil {
+		return xerrors.Errorf("createAssetTable() error: %w", err)
 	}
 	return nil
 }
@@ -75,6 +84,21 @@ func createTableFile(file string, clm string) error {
 
 type scanner interface {
 	Scan(dest ...any) error
+}
+
+type Op interface {
+	GetOperationId() string
+}
+
+type sysOp struct{}
+
+func (op sysOp) GetOperationId() string {
+	return "App"
+}
+
+func createSystemOperation() Op {
+	var op sysOp
+	return &op
 }
 
 type Instance struct {
@@ -139,16 +163,45 @@ func (inst *Instance) getRows(ctx context.Context, sql string, args ...interface
 	return inst.db.QueryContext(ctx, sql, args...)
 }
 
-func (inst *Instance) run(sql string, args ...interface{}) error {
+func (inst *Instance) run(sql string, args ...interface{}) (int64, error) {
 
 	stmt, err := inst.db.Prepare(sql)
 	if err != nil {
-		return xerrors.Errorf("db.Prepare() error: %w", err)
+		return -1, xerrors.Errorf("db.Prepare() error: %w", err)
 	}
 
-	_, err = stmt.Exec(args...)
+	ret, err := stmt.ExecContext(inst.ctx, args...)
 	if err != nil {
-		return xerrors.Errorf("stmt.Exec() error: %w", err)
+		return -1, xerrors.Errorf("stmt.Exec() error: %w", err)
 	}
-	return nil
+	return ret.RowsAffected()
+}
+
+var convertMap map[string]string = map[string]string{
+	"\n": "&#10;",
+	" ":  "&#32;",
+	"\"": "&#34;",
+	",":  "&#44;",
+}
+
+func from(src string) string {
+	if src == "" {
+		return ""
+	}
+	ret := src
+	for key, val := range convertMap {
+		ret = strings.ReplaceAll(ret, key, val)
+	}
+	return ret
+}
+
+func to(src string) string {
+	if src == "" {
+		return ""
+	}
+	ret := src
+	for key, val := range convertMap {
+		ret = strings.ReplaceAll(ret, val, key)
+	}
+	return ret
 }

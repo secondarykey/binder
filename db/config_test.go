@@ -7,6 +7,7 @@ import (
 )
 
 func TestConfigGet(t *testing.T) {
+
 	inst := open()
 	defer inst.Close()
 
@@ -19,8 +20,8 @@ func TestConfigGet(t *testing.T) {
 		t.Errorf("GetConfig() is nil")
 	}
 
-	if conf.Name != "Sample Binder" {
-		t.Errorf("Config.Name note sampleu = %v", conf.Name)
+	if conf.Name != "Binder" {
+		t.Errorf("Config.Name note sample = %v", conf.Name)
 	}
 }
 
@@ -38,7 +39,7 @@ func TestConfigUpdate(t *testing.T) {
 	create := conf.Created
 	update := conf.Updated
 
-	err = inst.UpdateConfig(conf)
+	err = inst.UpdateConfig(conf, testOp())
 	if err != nil {
 		t.Errorf("UpdateConfig() is error: %v", err)
 	}
@@ -54,7 +55,7 @@ func TestConfigUpdate(t *testing.T) {
 
 	if conf.Created != create {
 		// 最初の更新なのでテストしたいなら再度更新
-		//t.Errorf("Update Config created error: %v", conf.Created)
+		t.Errorf("Update Config created error: %v", conf.Created)
 	}
 	if conf.Updated == update {
 		t.Errorf("Update Config updated error: %v", conf.Created)

@@ -3,13 +3,15 @@ package model
 import "time"
 
 type Config struct {
-	Name       string `json:"name"`
-	Detail     string `json:"detail"`
-	ListNum    int    `json:"listNum"`
-	Remote     string `json:"remote"`
-	Branch     string `json:"branch"`
-	AutoCommit int    `json:"autoCommit"`
+	Name   string `db:"name" json:"name"`
+	Detail string `db:"detail" json:"detail"`
+	Remote string `db:"remote" json:"remote"`
 
-	Created time.Time `json:"created"`
-	Updated time.Time `json:"updated"`
+	MarkedURL  string `db:"marked_url" json:"markedUrl"`
+	MermaidURL string `db:"mermaid_url" json:"mermaidUrl"`
+
+	Created     time.Time `db:"created_date:insert" json:"created"`
+	CreatedUser string    `db:"created_user:insert" json:"createdUser"`
+	Updated     time.Time `db:"updated_date" json:"updated"`
+	UpdatedUser string    `db:"updated_user" json:"updatedUser"`
 }
