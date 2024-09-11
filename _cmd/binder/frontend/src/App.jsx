@@ -2,9 +2,29 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import LeftMenu from './Menu/LeftMenu.jsx';
 import MainViewer from './Viewer/MainViewer.jsx';
-import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Popover, Slide, Snackbar } from '@mui/material';
-import { GetConfig } from '../wailsjs/go/api/App.js';
+import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,  Slide, Snackbar } from '@mui/material';
+
+import { HashRouter,Routes,Route } from "react-router-dom";
 import { GetSetting } from '../wailsjs/go/api/App.js';
+
+/**
+ * クリップボードのコピー
+ * @param {*} val 
+ */
+export async function copyClipboard(val) {
+
+  var clip = navigator.clipboard;
+  if (clip === undefined) {
+    if (global !== undefined) {
+      clip = global.navigator.clipboard;
+    }
+  }
+  if (clip !== undefined) {
+    await clip.writeText(val);
+  } else {
+    console.warn("clip board error")
+  }
+}
 
 /**
  * アプリケーション全体
@@ -14,7 +34,6 @@ function App() {
 
   //メッセージ作成
   const createMessage = (type, err) => {
-
     var obj = {};
     obj.type = type;
     var msg = "";
@@ -44,12 +63,11 @@ function App() {
   //現在の設定を取得(最初に画面表示を選ぶ)
   var initMsg = createMessage("success", "");
   //メニューの開閉管理
-  const [msg, setMessage] = useState(initMsg);
+  const [msgObj, setMessage] = useState(initMsg);
   const [msgDlg, setMessageDialog] = useState(false);
 
   //メニューの開閉管理
   const [isMenuOpen, showMenu] = useState(true);
-
   const [redraw, setRedraw] = useState(new Date());
 
   //ツリー更新用
@@ -62,31 +80,23 @@ function App() {
   const [rightMode, setRightMode] = useState('selectFile');
 
   //指定ID
-  const [dataId, setDataId] = useState(undefined);
-  const [noteId, setNoteId] = useState(undefined);
-  const [templateId, setTemplateId] = useState(undefined);
-  const [config, setConfig] = useState(undefined);
+  const [ids, setCurrentId] = useState({id:"index",parentId:""});
+  function setIds(id,parentId) {
+    setCurrentId({id : id, parentId : parentId});
+  }
 
   useEffect(() => {
-    console.info("App loaded()")
-    GetSetting().then( (s) => {
-      if ( s.path.runWithOpen ) {
+    console.debug("App loaded()")
+    console.log(location.href);
+    GetSetting().then((s) => {
+      if (s.path.runWithOpen) {
         setLeftMode("binder");
         setRightMode("binder");
       }
-    }).catch( (err) => {
-      showMessage("error",err);
+    }).catch((err) => {
+      showMessage("error", err);
     });
-  },[]);
-
-  useEffect(() => {
-    //開いているモードによる
-    GetConfig().then( (conf) => {
-      setConfig(conf)
-    }).catch( (err) => {
-      showMessage("error",err);
-    });
-  },[config !== undefined ? config.updated : undefined]);
+  }, []);
 
   /**
    * メニューを開く
@@ -105,7 +115,6 @@ function App() {
    * モードの変更
    * @param {string} mode 変更モード
    * @param {string} id 指定ID
-   * @param {string} parentId 親ID
    */
   const changeMode = async (mode, id, parentId) => {
 
@@ -113,45 +122,37 @@ function App() {
     var rightM = rightMode;
     //テンプレートモードの場合
     if (mode === "template") {
-        rightM = "editor"
-        setTemplateId(id);
-        setNoteId(undefined);
-        setDataId(undefined)
-    } else if ( mode === "editor" || mode === "note" || mode === "data" || mode === "assets" ) {
 
+      rightM = "templateEditor"
+      setIds(id,parentId);
+
+    } else if (mode === "noteEditor" || mode === "diagramEditor" ||
+      mode === "note" || mode === "diagram" || mode === "assets") {
       leftM = "binder";
+
       rightM = mode;
       // ID 指定系のモードの場合
-      if ( parentId === undefined) {
-        setNoteId(id);
-        setDataId(undefined)
-        setTemplateId(undefined);
-      } else {
-        setNoteId(parentId);
-        setDataId(id)
-        setTemplateId(undefined);
-      }
-    } else if ( mode === "config" ) {
-        rightM = "binder";
-    } else if ( mode === "loadBinder" ) {
-        leftM = "binder";
-        rightM = "binder";
-    } else if ( mode === "file" ) {
-        leftM = mode;
-        rightM = "openHistory";
-    } else if ( mode === "registerBinder" ) {
-        leftM = "file";
-        rightM = "registerBinder";
-    } else if ( mode === "remoteBinder" ) {
-        leftM = "file";
-        rightM = "remoteBinder";
-    } else if ( mode === "setting" ) {
-        rightM = "setting"
+      setIds(id,parentId);
+
+    } else if (mode === "config") {
+      rightM = "binder";
+    } else if (mode === "loadBinder") {
+      leftM = "binder";
+      rightM = "binder";
+    } else if (mode === "file") {
+      leftM = mode;
+      rightM = "openHistory";
+    } else if (mode === "registerBinder") {
+      leftM = "file";
+      rightM = "registerBinder";
+    } else if (mode === "remoteBinder") {
+      leftM = "file";
+      rightM = "remoteBinder";
+    } else if (mode === "setting") {
+      rightM = "setting"
     } else {
       //IDなしへのモード切り替え　
-      setNoteId(undefined);
-      setDataId(undefined)
-      setTemplateId(undefined);
+      setIds();
     }
     setLeftMode(leftM);
     setRightMode(rightM);
@@ -168,10 +169,11 @@ function App() {
   }
 
   function showMessage(type, msg) {
-    if ( type === "clear" ) {
+    if (type === "clear") {
       hideMessage();
       return;
     }
+
     var obj = createMessage(type, msg);
     obj.show = true;
     setMessage(obj);
@@ -185,21 +187,20 @@ function App() {
   }
 
   function showMessageDialog() {
-    if (msg.message !== "") {
+    if (msgObj.message !== "") {
       setMessageDialog(true);
     }
   }
 
   return (
-    <>
       <div id="App">
-
         {/** メニューを開いている場合 */}
         {isMenuOpen &&
           <>
-            <LeftMenu 
+            <LeftMenu
+              id={ids.id}
+              parentId={ids.parentId}
               mode={leftMode}
-              config={config}
               onClose={hideMenu}
               onChangeMode={changeMode}
               onMessage={showMessage}
@@ -208,22 +209,21 @@ function App() {
         }
 
         <MainViewer showMenu={isMenuOpen} onOpen={openMenu}
-          mode={rightMode} dataId={dataId} noteId={noteId} templateId={templateId}
-          config={config}
+          mode={rightMode} id={ids.id} parentId={ids.parentId}
           onChangeMode={changeMode}
           onMessage={showMessage}
           onRefreshTree={refreshTree} />
 
-        <Snackbar open={msg.show && !msgDlg}
+        <Snackbar open={msgObj.show && !msgDlg}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           TransitionComponent={SlideTransition}
           onDoubleClick={showMessageDialog}
           onClose={hideMessage}
-          autoHideDuration={msg.type === "success" ? 3000 : null}>
-          <Alert severity={msg.type}
+          autoHideDuration={msgObj.type === "success" ? 2000 : null}>
+          <Alert severity={msgObj.type}
             variant="filled"
             sx={{ width: '100%' }}>
-            {msg.title}
+            {msgObj.title}
           </Alert>
         </Snackbar>
 
@@ -231,10 +231,10 @@ function App() {
           keepMounted
           onClose={closeDialog}
           aria-describedby="alert-dialog-slide-description" >
-          <DialogTitle>{msg.title}</DialogTitle>
+          <DialogTitle>{msgObj.title}</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-slide-description" className="messageTxt">
-              {msg.message}
+              {msgObj.message}
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -243,7 +243,7 @@ function App() {
         </Dialog>
 
       </div>
-    </>);
+    );
 }
 
 export default App

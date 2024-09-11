@@ -51,7 +51,8 @@ body {
     color: #f1f1f1;
     overflow: auto !important;
     border:0;
-    height: 100%;
+    height:calc(100% - 100px);
+    max-height:calc(100% - 100px);
 }
 
 .treeText {
@@ -145,6 +146,10 @@ body {
     cursor: ew-resize;
 }
 
+#splitter:hover {
+    border:5px solid #666666;
+}
+
 #dataViewer {
     --wails-draggable:no-drag;
 
@@ -155,9 +160,14 @@ body {
     display: flex;
 }
 
-#htmlViewer {
+iframe.htmlViewer {
+    position: absolute;
+    left:0;
+    top:0;
     width:100%;
     height:calc( 100% - 48px );
+
+    transition: opacity 1;
 }
 
 #mermaidViewer {
@@ -213,11 +223,14 @@ body {
    justify-content: space-between;
    background-color: #222222;
    position: absolute !important;
+   padding: 0;
+   margin:0;
    border: 0;
    left: 0;
    right: 0;
    bottom: 0;
-   min-height: 48px;
+   min-height: 40px !important;
+   max-height: 40px !important;
 }
 
 .buttonBarLeft {

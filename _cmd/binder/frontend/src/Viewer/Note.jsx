@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 
-import { SelectFile, EditNote, Address } from "../../wailsjs/go/api/App";
-import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Paper, TextField } from "@mui/material";
-import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
+import { copyClipboard } from "../App";
 import { GetNote } from "../../wailsjs/go/api/App";
-
 import noImage from '../assets/images/noimage.png'
+
+import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { ContentCopy } from "@mui/icons-material";
 /**
  * ノートのメタデータを表示,編集
  * @param {*} props 
@@ -50,6 +52,7 @@ function Note(props) {
 
     var note = {};
     note.id = props.id;
+    note.parentId = props.parentId
     note.name = name;
     note.detail = detail;
 
@@ -57,10 +60,11 @@ function Note(props) {
 
       //新規作成時のみ切り替え
       if (props.id === "") {
-        props.onChangeMode("editor", resp.id);
+        console.log(resp);
+        props.onChangeMode("noteEditor", resp.id,resp.parentId);
       }
       props.onRefreshTree();
-      props.onMessage("success", "update note.")
+      props.onMessage("success", "Update note.")
 
     }).catch((err) => {
       console.warn(err);
@@ -68,6 +72,22 @@ function Note(props) {
     });
   }
 
+  //削除
+  const handleDelete = () => {
+    var note = {};
+    note.id = props.id;
+    RemoveNote(props.id).then((resp) => {
+      props.onRefreshTree();
+      props.onMessage("success", "Remove note.")
+    }).catch( (err) => {
+      console.warn(err);
+      props.onMessage("error", err);
+    });
+  };
+
+  /**
+   * ファイル選択
+   */
   const selectFile = () => {
     SelectFile("Page Image File", "*.png;*.jpg;*.jpeg;*.webp;").then((f) => {
       if (f != "") {
@@ -79,8 +99,13 @@ function Note(props) {
     });
   }
 
-  function setNoImage(e) {
+  const setNoImage = (e) => {
     e.target.src = noImage;
+  }
+
+  const copyId = (e) => {
+    copyClipboard(props.id);
+    props.onMessage("success","Copied.");
   }
 
   return (<>
@@ -89,9 +114,18 @@ function Note(props) {
       {props.id !== "" &&
         <>
           <FormControl>
-            <FormLabel>ID : {props.id} </FormLabel>
+            <FormLabel>ID</FormLabel>
+            <TextField value={props.id}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ContentCopy onClick={copyId}/>
+                  </InputAdornment>
+                )
+              }}></TextField>
           </FormControl>
-        </>}
+        </>
+      }
 
       <FormControl>
         <FormLabel>Name</FormLabel>
@@ -132,6 +166,10 @@ function Note(props) {
           {props.id !== "" && <> Save </>}
           {props.id === "" && <> Create </>}
         </Button>
+        {props.id !== "" && 
+          <Button style={{marginLeft:"auto"}}
+                  variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+        }
       </FormControl>
 
     </Grid>

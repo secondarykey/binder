@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 
 import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
@@ -6,9 +6,9 @@ import HomeIcon from '@mui/icons-material/Home';
 
 import FileMenu from './FileMenu';
 import BinderTree from './BinderTree';
-import { CloseBinder } from '../../wailsjs/go/api/App';
+import { GetConfig,CloseBinder } from '../../wailsjs/go/api/App';
 
-/**
+/*
  * 操作用のメニュー
  * 
  * 上位メニューは非表示、ホームに戻るを有する
@@ -19,9 +19,23 @@ import { CloseBinder } from '../../wailsjs/go/api/App';
  */
 function LeftMenu(props) {
 
+  const [title, setTitle] = useState("");
   const close = () => {
     props.onClose();
   }
+
+  useEffect(() => {
+    if ( props.mode == "binder" ) {
+      //開いているモードによる
+      GetConfig().then( (conf) => {
+        setTitle(conf.name);
+      }).catch( (err) => {
+        showMessage("error",err);
+      });
+    } else {
+      setTitle("Binder");
+    }
+  },[props.mode]);
 
   const clickHome = () => {
     CloseBinder().then( () => {
@@ -32,9 +46,10 @@ function LeftMenu(props) {
     })
   }
 
-  return (
-    <>
 
+  return (
+
+    <>
       {/** バインダーを開いている場合はそのバインダーのツリー表示にする 
      ただし、戻るボタンを押した場合の事を考える
      onClose(バインダーを閉じる？) onExpand(非表示に切り替える)
@@ -53,19 +68,14 @@ function LeftMenu(props) {
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {/** TODO 開いているバインダーの名称 */}
-            {props.config !== undefined &&
-              <>
-
-                {props.mode === "binder" &&
-                  <> {props.config.name} </>
-                }
-
-                {props.mode !== "binder" &&
-                  <>Binder</>
-                }
-
+            <>
+              {props.mode === "binder" &&
+                <>{title}</>
+              }
+              {props.mode !== "binder" &&
+                <>Binder</>
+              }
               </>
-            }
           </Typography>
 
           {/** メニューを閉じる */}
@@ -87,7 +97,8 @@ function LeftMenu(props) {
           {/** バインダーを開いている場合に利用 */}
           {props.mode === "binder" &&
             <>
-              <BinderTree onChangeMode={props.onChangeMode} 
+              <BinderTree id={props.id} parentId={props.parentId}
+                          onChangeMode={props.onChangeMode} 
                           onMessage={props.onMessage} 
                           redraw={props.redraw} />
             </>

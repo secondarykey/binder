@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { SelectFile, EditAssets, GetData, LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
-import { Button, FormControl, FormLabel, Grid, InputAdornment, List, ListItemButton, ListItemText, MenuItem, MenuList, TextField } from "@mui/material";
-import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
+import { List, ListItemButton, ListItemText } from "@mui/material";
 /**
  * バインダーの選択を行う
  * @param {*} props 
@@ -30,13 +29,13 @@ function BinderHistory(props) {
 
   return (<>
 
-<h3 style={{margin:"10px"}}>History</h3>
+<h3 style={{margin:"10px",color:"#f1f1f1"}}>History</h3>
 <List>
 {
 histories.map((p) => {
   return (<>
         <ListItemButton onClick={() => handleSelect(p)} >
-          <ListItemText primary={p} />
+          <ListItemText style={{color:"#f1f1f1"}} primary={p} />
         </ListItemButton>
   </>)
 })

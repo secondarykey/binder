@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { SelectDirectory, CreateBinder } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";

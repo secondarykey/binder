@@ -17,6 +17,7 @@
     "@mui/x-tree-view": "^6.17.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.26.2",
     "react-split": "^2.0.14",
     "styled-components": "^6.1.6",
     "vim.js": "^0.1.2"

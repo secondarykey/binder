@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { SelectFile, EditAssets, GetData } from "../../wailsjs/go/api/App";
+import { SelectFile, EditAsset, GetAsset } from "../../wailsjs/go/api/App";
+import { copyClipboard } from "../App";
+
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import ContentCopy from '@mui/icons-material/ContentCopy';
 /**
  * データのメタ情報を表示、編集
  * @param {*} props 
@@ -23,7 +26,7 @@ function Assets(props) {
       return;
     }
 
-    GetData(props.id, props.noteId).then((data) => {
+    GetAsset(props.id, props.noteId).then((data) => {
       setName(data.name);
       setDetail(data.detail)
       props.onChangeTitle("Edit Assets:" + data.name);
@@ -42,7 +45,7 @@ function Assets(props) {
     data.detail = detail
     data.pluginId = "assets";
 
-    EditAssets(data, file).then((resp) => {
+    EditAsset(data, file).then((resp) => {
       props.onRefreshTree();
       //props.onChangeMode("editor",resp.ID,resp.NoteId);
       props.onMessage("success", "update assets");
@@ -63,13 +66,25 @@ function Assets(props) {
     });
   }
 
+  const copyId = (e) => {
+    copyClipboard(props.id);
+    props.onMessage("success","Copied.");
+  }
   return (<>
     <Grid className="formGrid">
 
       {props.id !== "" &&
         <>
           <FormControl>
-            <FormLabel>ID : {props.id} </FormLabel>
+            <FormLabel>ID</FormLabel>
+            <TextField value={props.id}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ContentCopy onClick={copyId}/>
+                  </InputAdornment>
+                )
+              }}></TextField>
           </FormControl>
           <FormControl>
             <FormLabel>Name</FormLabel>

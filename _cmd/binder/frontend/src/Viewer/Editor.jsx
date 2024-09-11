@@ -6,17 +6,17 @@ import "../assets/marked.min.js";
 import '../assets/vim.min.js';
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
-import { GetData, OpenData, SaveData } from "../../wailsjs/go/api/App.js";
+import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
 import { OpenTemplate, CreateTemplateHTML, SaveTemplate, Generate, Commit, GetLatestNoteId } from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
+import HTMLFrame from "../HTMLFrame.jsx";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
  * スプリッターでコントロールを可能にする
  * TODO : 表示ビューをフローティングにすることを可能にする？
- * 
  */
 function Editor(props) {
 
@@ -27,6 +27,7 @@ function Editor(props) {
   const [width, setWidth] = useState(500);
   const [mode, setMode] = useState("");
   const [templateNoteId, setTemplateNoteId] = useState("");
+  const [html, setHTML] = useState("");
 
   const redrawNoteElm = async (id,resp) => {
     var elm = await createMarked(id,resp, true);
@@ -68,6 +69,48 @@ function Editor(props) {
     return id;
   }
 
+  //センタリング用のタグを埋め込む
+  const insertCenterTag = (txt) => {
+    if ( txt === "" ) {
+      return txt;
+    }
+
+    var len = txt.length;
+    var e = document.querySelector("#editor");
+    var pos = e.selectionStart;
+
+    const lines = txt.split(/\n/,-1);
+
+    var now = 0;
+    var start = false;
+    var b = false;
+    for ( const line of lines ) {
+      now += line.length + 1;
+
+      if ( line.indexOf("```") === 0 ) {
+        if ( start ) {
+          start = false;
+        } else {
+          start = true;
+        }
+      }
+
+      if ( now > pos ) {
+        b = true;
+      }
+
+      if ( b && !start && line === "" ) {
+        pos = now;
+        break;
+      }
+    }
+
+    var before   = txt.substr(0, pos);
+    var after    = txt.substr(pos, len);
+    var val = '\n<div id="binder_focus_id"></div>\n';
+    return before + val + after;
+  }
+
   //開いた時の初期処理
   useEffect(() => {
 
@@ -80,23 +123,27 @@ function Editor(props) {
       }
     });
 
-    var m = "data";
-    if (props.templateId !== undefined) {
+    var m = "diagram";
+    if ( props.mode === "templateEditor" ) {
       m = "template";
-    } else if (props.dataId === undefined) {
+    } else if ( props.mode === "noteEditor" ) {
       m = "note";
     }
 
-    if (m === "data") {
+    console.debug(props.mode);
+    console.debug(m);
+    console.debug(props.id);
+
+    if ( m === "diagram" ) {
       mermaid.initialize({ startOnLoad: false });
-      OpenData(props.dataId, props.noteId).then((resp) => {
+      OpenDiagram(props.id).then((resp) => {
         setText(resp);
       }).catch((err) => {
         console.warn(err);
         props.onMessage("error", err);
       })
 
-      GetData(props.dataId, props.noteId).then((resp) => {
+      GetDiagram(props.id).then((resp) => {
         props.onChangeTitle(resp.name)
         downloadName = resp.name;
       }).catch((err) => {
@@ -106,13 +153,13 @@ function Editor(props) {
 
     } else if (m === "note") {
 
-      OpenNote(props.noteId).then((resp) => {
+      OpenNote(props.id).then((resp) => {
         setText(resp);
       }).catch((err) => {
         props.onMessage("error", err);
       });
 
-      GetNote(props.noteId).then((resp) => {
+      GetNote(props.id).then((resp) => {
         props.onChangeTitle(resp.name)
       }).catch((err) => {
         console.warn(err);
@@ -122,28 +169,27 @@ function Editor(props) {
     } else if (m === "template") {
 
       //テンプレートを開く
-      OpenTemplate(props.templateId).then((resp) => {
+      OpenTemplate(props.id).then((resp) => {
         setText(resp);
         //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
-        if (props.templateId === "note" || props.templateId === "layout") {
-          createNoteElement();
-        }
+        //TODO: HTML をどのように作成するかを考える 
+        //createNoteElement();
       }).catch((err) => {
         props.onMessage("error", err);
       });
 
-      props.onChangeTitle("Template:" + changeTemplateName(props.templateId))
+      props.onChangeTitle("Template:" + changeTemplateName(props.id))
     }
     setMode(m);
 
-  }, [props.noteId, props.dataId, props.templateId])
+  }, [props.id])
 
   //テキスト変更時の処理
   useEffect(() => {
-    if (mode === "data") {
-      viewData(text);
+    if (mode === "diagram") {
+      viewDiagram(text);
     } else if (mode === "note") {
-      viewHTML(text);
+      viewHTML(insertCenterTag(text));
     } else if (mode === "template") {
       viewHTML(text, noteElm);
     } else {
@@ -151,24 +197,15 @@ function Editor(props) {
     }
   }, [text, noteElm]);
 
-  var menuWidth = 320;
-  var splitterW = 10;
 
-  {/** スプリッター部分をコンポーネント化するか？ */ }
-  var editWrapperStyle = {};
-  editWrapperStyle.width = width + "px";
-
-  var splitterStyle = {};
-  splitterStyle.left = (menuWidth + width) + "px";
-  var viewerStyle = {};
-  viewerStyle.left = (menuWidth + width + splitterW) + "px";
-
+  /*
   function reloadIFrame() {
-    //TODO UIで行う
     var elm = document.querySelector('#htmlViewer');
     elm.contentWindow.location.reload();
   }
+  */
 
+  //データをマークダウンからHTMLに変換
   const createMarked = async (id, txt, local) => {
     var p = ""
     await ParseNote(id,local, txt).then((resp) => {
@@ -191,27 +228,28 @@ function Editor(props) {
   }
 
   const viewHTML = async (txt, embNoteElm) => {
+
     var elm = document.querySelector('#htmlViewer');
     if (mode === "note") {
       var embed = await createMarked(props.id,txt, true);
-      CreateNoteHTML(props.noteId, embed).then((html) => {
-        elm.srcdoc = html;
-        //elm.scrollTo({ top: 400, behavior: "smooth" });
+      CreateNoteHTML(props.id, embed).then((resp) => {
+        setHTML(resp);
       }).catch((err) => {
         console.warn(err)
         props.onMessage("error", err);
       })
     } else if (mode === "template") {
-      CreateTemplateHTML(props.templateId, templateNoteId, txt, embNoteElm).then((html) => {
-        elm.srcdoc = html;
+      CreateTemplateHTML(props.id, templateNoteId, txt, embNoteElm).then((resp) => {
+        setHTML(resp);
       }).catch((err) => {
         console.warn(err)
         props.onMessage("error", err);
       })
+
     }
   }
 
-  const viewData = (txt) => {
+  const viewDiagram = (txt) => {
     mermaid.parse(txt).then((flag) => {
       var elm = document.querySelector('#mermaidViewer');
       mermaid.render('svg', txt).then((data) => {
@@ -226,35 +264,35 @@ function Editor(props) {
     });
   }
 
+  var startX;
   const dragSplitter = (e) => {
-    //typeでやる？
-    //824
-    //400
-    if (e.type === "dragend") {
-      //TODO 計算が違う
-      setWidth(e.clientX - 320);
+    var t = e.type;
+    if (t === "dragstart") {
+      startX = e.screenX;
+    } else if (t === "dragend") {
+      var w = width - (startX - e.screenX);
+      setWidth(w);
     }
   }
 
   const changeText = (txt) => {
-
     setText(txt);
     if (mode === "note") {
-      SaveNote(props.noteId, txt).then(() => {
+      SaveNote(props.id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
         console.warn(err)
         props.onMessage("error", err);
       })
-    } else if (mode === "data") {
-      SaveData(props.dataId, props.noteId, txt).then(() => {
+    } else if (mode === "diagram") {
+      SaveDiagram(props.id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
         console.warn(err)
         props.onMessage("error", err);
       })
     } else if (mode === "template") {
-      SaveTemplate(props.templateId, txt).then(() => {
+      SaveTemplate(props.id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
         console.warn(err)
@@ -263,16 +301,17 @@ function Editor(props) {
     }
   }
 
+  //出力処理
   const handleOutput = async () => {
 
     var elm = "";
     if (mode === "note") {
       elm = await createMarked(props.id,text, false);
-    } else if (mode === "data") {
+    } else if (mode === "diagram") {
       elm = await createMermaid(text);
     }
-
-    Generate(props.noteId, props.dataId, elm).then(() => {
+    //出力処理を行う
+    Generate(mode,props.id,elm).then(() => {
       props.onMessage("success", "Generate");
     }).catch((err) => {
       console.warn(err)
@@ -280,8 +319,9 @@ function Editor(props) {
     })
   }
 
+  //コミットを行う
   const commit = () => {
-    Commit(props.noteId, props.dataId, false).then(() => {
+    Commit(mode,props.id,false).then(() => {
       props.onMessage("success", "commit");
     }).catch((err) => {
       console.warn(err)
@@ -289,6 +329,7 @@ function Editor(props) {
     })
   }
 
+  //SVG のダウンロードを行う
   const handleDownload = async () => {
       var elm = document.querySelector('#mermaidViewer');
       console.log(elm.innerHTML)
@@ -305,6 +346,21 @@ function Editor(props) {
   editorStyle.fontSize = "20px";
   editorStyle.color = "#eeeeee";
   editorStyle.fontFamily = "Calex Code JP Regular";
+
+  var menuWidth = 0;
+  if ( props.showMenu ) {
+    menuWidth = 320;
+  }
+
+  var splitterW = 10;
+  {/** スプリッター部分をコンポーネント化するか？ */ }
+  var editWrapperStyle = {};
+  editWrapperStyle.width = width + "px";
+
+  var splitterStyle = {};
+  splitterStyle.left = (menuWidth + width) + "px";
+  var viewerStyle = {};
+  viewerStyle.left = (menuWidth + width + splitterW) + "px";
 
   {/** 表示するものをビュワーに渡す段階で、表示用のものに変更する 
       * 表示処理を行わないっていう選択肢
@@ -331,6 +387,7 @@ function Editor(props) {
 </>
 }
             </Container>
+
             <Container className="buttonBarRight">
             </Container>
           </Toolbar>
@@ -341,9 +398,11 @@ function Editor(props) {
         {/** 表示するコンポーネントを変更 */}
         <div id="dataViewer" style={viewerStyle}>
           {(mode === "note" || mode === "template") &&
-            <iframe id="htmlViewer" style={{ width: "100%" }}></iframe>
+          <>
+            <HTMLFrame html={html}/>
+          </>
           }
-          {mode === "data" &&
+          {mode === "diagram" &&
             <div id="mermaidViewer"></div>
           }
 
@@ -351,14 +410,16 @@ function Editor(props) {
           <Toolbar className="buttonBar">
 
             <Container className="buttonBarLeft">
+
               {/** 公開位置への転送 */}
               <IconButton size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handleOutput}>
                 <OutputIcon fontSize="small" style={{ color: "#f1f1f1" }} />
               </IconButton>
+
             </Container>
 
             <Container className="buttonBarRight">
-{mode === "data" &&
+{mode === "diagram" &&
 <>
               {/** 表示しているSVGのダウンロード */}
               <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="download" sx={{ mr: 2 }} onClick={handleDownload}>

@@ -8,7 +8,7 @@ import {Terminate} from "../../wailsjs/go/api/App";
 import Editor from "./Editor";
 import Binder from "./Binder";
 import Note from "./Note";
-import Data from "./Data";
+import Diagram from "./Diagram";
 import Assets from "./Assets";
 import Setting from "./Setting";
 import BinderHistory from "./BinderHistory";
@@ -38,10 +38,15 @@ function MainViewer(props) {
     const [name,setName] = useState("");
     const mode = props.mode;
 
+    console.debug("Mode    :" + mode);
+    console.debug("Id      :" + props.id);
+    console.debug("ParentId:" + props.parentId);
+
     return (
     <>
     {/** タイトルと他を表示 */}
     <Paper id="mainViewer">
+
       <Toolbar id="mainmenu">
 {/**    メニューを開いてない時だけ表示する */}
 {!props.showMenu &&
@@ -68,8 +73,7 @@ function MainViewer(props) {
 
 {mode === "binder" &&
 <>
-  <Binder templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
-          onRefreshTree={props.onRefreshTree}
+  <Binder onRefreshTree={props.onRefreshTree}
           onChangeTitle={setName}
           onMessage={props.onMessage}/>
 </>
@@ -107,9 +111,10 @@ function MainViewer(props) {
 </>
 }
 
-{mode === "editor" &&
+{ (mode === "noteEditor" || mode === "diagramEditor") &&
 <>
-  <Editor templateId={props.templateId} noteId={props.noteId} dataId={props.dataId} 
+  <Editor id={props.id} mode={mode}
+          showMenu={props.showMenu}
           onRefreshTree={props.onRefreshTree}
           onChangeTitle={setName}
           onMessage={props.onMessage}/>
@@ -118,7 +123,7 @@ function MainViewer(props) {
 
 {mode === "note" &&
 <>
-  <Note id={props.noteId} 
+  <Note id={props.id} parentId={props.parentId}
         onChangeMode={props.onChangeMode} 
         onRefreshTree={props.onRefreshTree}
         onChangeTitle={setName}
@@ -126,9 +131,9 @@ function MainViewer(props) {
 </>
 }
 
-{mode === "data" &&
+{mode === "diagram" &&
 <>
-  <Data id={props.dataId} noteId={props.noteId} 
+  <Diagram id={props.id} parentId={props.parentId}
         onChangeMode={props.onChangeMode} 
         onRefreshTree={props.onRefreshTree}
         onChangeTitle={setName}
@@ -138,7 +143,7 @@ function MainViewer(props) {
 
 {mode === "assets" &&
 <>
-  <Assets id={props.dataId} noteId={props.noteId} 
+  <Assets id={props.id} parentId={props.parentId}
           onChangeMode={props.onChangeMode} 
           onRefreshTree={props.onRefreshTree}
           onChangeTitle={setName}

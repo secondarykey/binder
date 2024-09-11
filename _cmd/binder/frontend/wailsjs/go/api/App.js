@@ -34,16 +34,16 @@ export function CreateTemplateHTML(arg1, arg2, arg3, arg4) {
   return window['go']['api']['App']['CreateTemplateHTML'](arg1, arg2, arg3, arg4);
 }
 
-export function EditAssets(arg1, arg2) {
-  return window['go']['api']['App']['EditAssets'](arg1, arg2);
+export function EditAsset(arg1, arg2) {
+  return window['go']['api']['App']['EditAsset'](arg1, arg2);
 }
 
 export function EditConfig(arg1) {
   return window['go']['api']['App']['EditConfig'](arg1);
 }
 
-export function EditData(arg1) {
-  return window['go']['api']['App']['EditData'](arg1);
+export function EditDiagram(arg1) {
+  return window['go']['api']['App']['EditDiagram'](arg1);
 }
 
 export function EditNote(arg1, arg2) {
@@ -54,12 +54,16 @@ export function Generate(arg1, arg2, arg3) {
   return window['go']['api']['App']['Generate'](arg1, arg2, arg3);
 }
 
+export function GetAsset(arg1) {
+  return window['go']['api']['App']['GetAsset'](arg1);
+}
+
 export function GetConfig() {
   return window['go']['api']['App']['GetConfig']();
 }
 
-export function GetData(arg1, arg2) {
-  return window['go']['api']['App']['GetData'](arg1, arg2);
+export function GetDiagram(arg1) {
+  return window['go']['api']['App']['GetDiagram'](arg1);
 }
 
 export function GetLatestNoteId() {
@@ -70,12 +74,12 @@ export function GetNote(arg1) {
   return window['go']['api']['App']['GetNote'](arg1);
 }
 
-export function GetResource() {
-  return window['go']['api']['App']['GetResource']();
-}
-
 export function GetSetting() {
   return window['go']['api']['App']['GetSetting']();
+}
+
+export function GetTree() {
+  return window['go']['api']['App']['GetTree']();
 }
 
 export function LoadBinder(arg1) {
@@ -86,8 +90,8 @@ export function OpenBinderSite() {
   return window['go']['api']['App']['OpenBinderSite']();
 }
 
-export function OpenData(arg1, arg2) {
-  return window['go']['api']['App']['OpenData'](arg1, arg2);
+export function OpenDiagram(arg1) {
+  return window['go']['api']['App']['OpenDiagram'](arg1);
 }
 
 export function OpenNote(arg1) {
@@ -106,8 +110,12 @@ export function Remotes() {
   return window['go']['api']['App']['Remotes']();
 }
 
-export function SaveData(arg1, arg2, arg3) {
-  return window['go']['api']['App']['SaveData'](arg1, arg2, arg3);
+export function RemoveNote(arg1) {
+  return window['go']['api']['App']['RemoveNote'](arg1);
+}
+
+export function SaveDiagram(arg1, arg2) {
+  return window['go']['api']['App']['SaveDiagram'](arg1, arg2);
 }
 
 export function SaveNote(arg1, arg2) {

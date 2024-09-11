@@ -1,0 +1,17 @@
+{
+    "code" : "ja",
+    "name" : "日本語",
+    "values" : {
+        "function.v.name" : "機能名.v(value).名称"
+    },
+    "messages":{
+        "function.type.num" : "機能名.{種別,q,i,w,e}.番号(0000)"
+    },
+    "labels":{
+        "binder.menu.l.create"       : "Create",
+        "binder.menu.l.open"         : "Open",
+        "binder.menu.l.import"       : "Remote Import",
+        "binder.display.l.history"   : "History",
+        "function.type.num" : "機能名.l(label).番号(0000)"
+    }
+}

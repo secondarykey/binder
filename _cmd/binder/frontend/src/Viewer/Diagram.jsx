@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 
-import { SelectFile, EditData, GetData } from "../../wailsjs/go/api/App";
-import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
+import { EditDiagram, GetDiagram } from "../../wailsjs/go/api/App";
+import { copyClipboard } from "../App";
+
+import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import { ContentCopy } from "@mui/icons-material";
 /**
  * データのメタ情報を表示、編集
  * @param {*} props 
  * @returns 
  */
-function Data(props) {
+function Diagram(props) {
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
@@ -21,7 +24,7 @@ function Data(props) {
       return;
     }
 
-    GetData(props.id, props.noteId).then((data) => {
+    GetDiagram(props.id).then((data) => {
       setName(data.name);
       setDetail(data.detail);
       props.onChangeTitle("Edit Data:" + data.name);
@@ -29,20 +32,19 @@ function Data(props) {
       console.warn(err);
       props.onMessage("error", err);
     })
-  }, [props.id, props.noteId]);
+  }, [props.id]);
 
   const handleSave = () => {
 
     var data = {};
     data.id = props.id
-    data.noteId = props.noteId
+    data.parentId = props.parentId
     data.name = name
     data.detail = detail
-    data.pluginId = "mermaid";
 
-    EditData(data).then((resp) => {
+    EditDiagram(data).then((resp) => {
       if (props.id === "") {
-        props.onChangeMode("editor", resp.id, resp.noteId);
+        props.onChangeMode("diagramEditor", resp.id);
       }
       props.onRefreshTree();
       props.onMessage("success", "update data.")
@@ -53,15 +55,28 @@ function Data(props) {
     });
   }
 
+  const copyId = (e) => {
+    copyClipboard(props.id);
+    props.onMessage("success","Copied.");
+  }
   return (<>
     <Grid className="formGrid">
 
       {props.id !== "" &&
         <>
           <FormControl>
-            <FormLabel>ID : {props.id} </FormLabel>
+            <FormLabel>ID</FormLabel>
+            <TextField value={props.id}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ContentCopy onClick={copyId}/>
+                  </InputAdornment>
+                )
+              }}></TextField>
           </FormControl>
-        </>}
+        </>
+      }
 
       <FormControl>
         <FormLabel>Name</FormLabel>
@@ -86,4 +101,4 @@ function Data(props) {
     </Grid>
   </>);
 }
-export default Data;
+export default Diagram;

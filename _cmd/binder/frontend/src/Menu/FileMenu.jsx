@@ -6,7 +6,6 @@ import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import DownloadIcon from '@mui/icons-material/Download';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Download } from '@mui/icons-material';
 function FileMenu(props) {
 
   const viewSetting = () => {

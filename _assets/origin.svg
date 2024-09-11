@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 320 320" width="128" height="128">
+  <defs>
+    <g id="binder">
+      <rect width="80" height="260" rx="5" xy="5" fill="black"/>
+      <rect x="10" y="30" width="60" height="25" rx="2" xy="2" fill="white"/>
+      <rect x="10" y="70" width="60" height="25" rx="2" xy="2" fill="white"/>
+      <circle cx="40" cy="210" r="20" fill="white"/>
+    </g>
+  </defs>
+
+  <use xlink:href="#binder" transform="translate(20,30)"></use>
+  <use xlink:href="#binder" transform="translate(105,30)"></use>
+  <use xlink:href="#binder" transform="translate(205,25) rotate(-10 50 100)"></use>
+</svg>

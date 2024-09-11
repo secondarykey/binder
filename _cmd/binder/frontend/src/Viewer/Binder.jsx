@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormLabel, Grid, InputAdornment, MenuItem, Select, TextField } from "@mui/material";
 import { GetConfig, EditConfig, Remotes, AddRemote } from "../../wailsjs/go/api/App";
 
+import {useLocation, useNavigate} from "react-router-dom";
 import CloudIcon from '@mui/icons-material/Cloud';
 /**
  * バインダーのメタデータを表示,編集
@@ -10,6 +11,7 @@ import CloudIcon from '@mui/icons-material/Cloud';
  * @returns 
  */
 function Binder(props) {
+
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
@@ -95,6 +97,12 @@ function Binder(props) {
     setRemote(val);
   }
 
+  const nav = useNavigate();
+  const handleLink = () => {
+    nav("/note/edit/aaa");
+    console.log("link")
+  }
+
   return (<>
     <Grid className="formGrid">
 
@@ -130,7 +138,7 @@ function Binder(props) {
                 value={remote}
                 onChange={(e) => handleChangeRemote(e)}>
 {remoteList.map((v) => {
-          return ( <MenuItem value={v}>{v}</MenuItem>)
+          return ( <MenuItem key={"Select" + v}value={v}>{v}</MenuItem>)
 })}
         </Select>
       </FormControl>
@@ -142,6 +150,7 @@ function Binder(props) {
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>Save</Button>
+        <Button variant="contained" onClick={() => handleLink()}>LinkTest</Button>
       </FormControl>
 
     </Grid>
