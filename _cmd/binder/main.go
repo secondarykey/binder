@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"log/slog"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,13 +15,27 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+func attrFunc(groups []string, a slog.Attr) slog.Attr {
+	if a.Key == slog.TimeKey {
+		return slog.Any("", a.Value)
+	} else if a.Key == "msg" {
+		return slog.Any("message", a.Value)
+	}
+	return a
+}
+
 func main() {
+	/*
+		opts := &slog.HandlerOptions{}
+		opts.Level = slog.LevelInfo
+		opts.ReplaceAttr = attrFunc
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
+	*/
 
 	//開いているBinderに対するProxy
 	//handler := binder.NewBinderHandler()
 	//app := api.New(handler)
 	app := api.New()
-
 	//config を読み込む
 	set := settings.Get()
 
@@ -39,7 +54,7 @@ func main() {
 			app,
 		},
 		Debug: options.Debug{
-			OpenInspectorOnStartup: false,
+			OpenInspectorOnStartup: true,
 		},
 	})
 
