@@ -163,23 +163,16 @@ func (w *wrapper) getNotes(limit int, offset int) []*tempNote {
 // Listを出力する前にカウントなどを初期化する
 func (w *wrapper) initPaging() error {
 
-	config, err := w.owner.db.GetConfig()
-	if err != nil {
-		return xerrors.Errorf("GetConfig() error: %w", err)
-	}
-
-	w.now = 1
-	w.listNum = config.ListNum
+	//TODO ページの表示数
+	w.listNum = 20
 
 	//ページ数を取得
-	//TODO 実際にはカウントで取得したい
 	notes := w.latestNotes(-1)
 	m := len(notes)
-
-	if config.ListNum > 0 {
+	if w.listNum > 0 {
 		//config.ListNum
-		w.maxPage = (m / config.ListNum) + 1
-		if m%config.ListNum == 0 {
+		w.maxPage = (m / w.listNum) + 1
+		if m%w.listNum == 0 {
 			w.maxPage--
 		}
 	} else {
@@ -231,12 +224,12 @@ func (w *wrapper) convertNote(n *model.Note) *tempNote {
 
 	var t tempNote
 
-	t.ID = n.ID
+	t.ID = n.Id
 	t.Name = n.Name
 	t.Detail = n.Detail
 	t.Publish = formatTime(n.Publish)
 	t.Created = formatTime(n.Created)
-	t.Updated = formatTime(w.getUpdatedNoteFile(n.ID))
+	t.Updated = formatTime(w.getUpdatedNoteFile(n.Id))
 
 	parent := "./notes"
 	if w.Local {
@@ -244,7 +237,7 @@ func (w *wrapper) convertNote(n *model.Note) *tempNote {
 	} else if w.isNote() {
 		parent = "."
 	}
-	t.Link = fmt.Sprintf("%s/%s.html", parent, n.ID)
+	t.Link = fmt.Sprintf("%s/%s.html", parent, n.Id)
 
 	parent = "./assets"
 	if w.Local {
@@ -253,7 +246,7 @@ func (w *wrapper) convertNote(n *model.Note) *tempNote {
 		parent = "../assets"
 	}
 
-	t.Image = fmt.Sprintf("%s/%s/index", parent, n.ID)
+	t.Image = fmt.Sprintf("%s/%s/index", parent, n.Id)
 
 	return &t
 }
@@ -291,7 +284,7 @@ func safeTemplate(src string) string {
 }
 
 func localeDateScript(src string) template.HTML {
-	return template.HTML(fmt.Sprintf(`<script>const d = new Date("%s");document.write(d.toLocaleString());</script>`, src))
+	return template.HTML(fmt.Sprintf(`<script>var d = new Date("%s");document.write(d.toLocaleString());</script>`, src))
 }
 
 func defineFuncMap(w *wrapper) map[string]interface{} {
@@ -482,9 +475,12 @@ func (b *Binder) GenerateIndexHTML() error {
 		return xerrors.Errorf("generateHTML(index) error: %w", err)
 	}
 
-	//TODO 一度削除する
+	//list*.htmlをすべて削除する
+	err = b.fileSystem.DeleteListHTMLs()
+	if err != nil {
+		return xerrors.Errorf("DeleteListHTMLs() error: %w", err)
+	}
 
-	//list_n.htmlをすべて削除する
 	//ページ数を換算する
 	w, err = newWrapper(b, false, ListTemplateType, "", 1)
 	if err != nil {

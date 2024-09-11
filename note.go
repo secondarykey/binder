@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/db/model"
+	"log/slog"
 
 	"golang.org/x/xerrors"
 )
@@ -10,7 +11,24 @@ func (b *Binder) GetNote(id string) (*model.Note, error) {
 	return b.db.GetNote(id)
 }
 
+func (b *Binder) RemoveNote(id string) (*model.Note, error) {
+
+	//ファイルを削除
+	err := b.fileSystem.DeleteNote(id)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.DeleteNote() error: %w", err)
+	}
+	//TODO 現状は削除しているが、ID自体はゴミ箱に入れておいていいかも
+	err = b.db.DeleteNote(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
+	}
+	return nil, nil
+}
+
 func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) {
+
+	slog.Info("Call EditNote()")
 
 	rtn, reg, err := b.fileSystem.EditNote(n, imageName)
 	if err != nil {
@@ -18,12 +36,12 @@ func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) 
 	}
 
 	if reg {
-		err = b.db.InsertNote(n)
+		err = b.db.InsertNote(n, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.InsertNote() error: %w", err)
 		}
 	} else {
-		err = b.db.UpdateNote(n)
+		err = b.db.UpdateNote(n, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateNote() error: %w", err)
 		}

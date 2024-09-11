@@ -2,7 +2,6 @@ package binder
 
 import (
 	"binder/db"
-	"binder/db/model"
 	"binder/fs"
 	"binder/settings"
 	"context"
@@ -18,6 +17,21 @@ type Binder struct {
 	db                *db.Instance
 	httpServer        *http.Server
 	httpServerAddress string
+	op                db.Op
+}
+
+type userOp struct {
+	id string
+}
+
+func (op userOp) GetOperationId() string {
+	return op.id
+}
+
+func createUserOp(userId string) db.Op {
+	var op userOp
+	op.id = userId
+	return op
 }
 
 func CreateRemote(url, dir string) error {
@@ -80,6 +94,7 @@ func Load(dir string) (*Binder, error) {
 	var b Binder
 	b.fileSystem = bfs
 	b.db = inst
+	b.op = createUserOp("user")
 
 	err = b.Serve()
 	if err != nil {
@@ -100,6 +115,7 @@ func (b *Binder) Close() error {
 	b.fileSystem = nil
 	b.httpServer = nil
 	b.db = nil
+	b.op = nil
 
 	err := fp.Close()
 	if err != nil {
@@ -122,47 +138,6 @@ func (b *Binder) Close() error {
 	return rtnErr
 }
 
-type Resource struct {
-	Notes []*model.Note  `json:"notes"`
-	Data  []*model.Datum `json:"data"`
-}
-
-func (b *Binder) CreateResource() (*Resource, error) {
-
-	data, err := b.db.FindData()
-	if err != nil {
-		return nil, xerrors.Errorf("db.FindData() error: %w", err)
-	}
-
-	//TODO 多い場合の表示を考える
-	notes, err := b.db.FindUpdatedNotes(-1, -1)
-	if err != nil {
-		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
-	}
-
-	noteMap := make(map[string]*model.Note)
-	for _, n := range notes {
-		noteMap[n.ID] = n
-	}
-
-	var r Resource
-	//ノートのデータをノートに入れ込む
-	rootData := make([]*model.Datum, 0, len(data))
-
-	for _, d := range data {
-		n, ok := noteMap[d.NoteId]
-		if ok {
-			d.SetParent(n)
-		} else {
-			rootData = append(rootData, d)
-		}
-	}
-
-	r.Notes = notes
-	r.Data = rootData
-	return &r, nil
-}
-
 func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 	if dataId == "" {
@@ -171,8 +146,6 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 		if err != nil {
 			return xerrors.Errorf("TemplatesCommit() error: %w", err)
 		}
-
-		//TODO 一旦ノートの更新があるかを確認
 
 		//ノートのHTMLを作成
 		html, err := b.CreateNoteHTML(noteId, false, elm)
@@ -188,14 +161,12 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 		//新規登録の場合
 		if flag {
-			//DBの作成日を更新
-			err = b.db.PublishNote(noteId)
+			//DBの公開日を更新
+			err = b.db.PublishNote(noteId, b.op)
 			if err != nil {
 				return xerrors.Errorf("PublishNote() error: %w", err)
 			}
 		}
-
-		//TODO 出力ノートのコミット
 
 		//index,listの作成
 		err = b.GenerateIndexHTML()
@@ -205,16 +176,14 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 	} else {
 
-		//TODO データファイルの変更がある場合、コミット
-
 		//ファイルを作成
-		index, err := b.fileSystem.GenerateData(dataId, noteId, []byte(elm))
+		index, err := b.fileSystem.GenerateDiagram(dataId, []byte(elm))
 		if err != nil {
 			return xerrors.Errorf("GenerateData() error: %w", err)
 		}
 
 		if index {
-			err = b.db.PublishDatum(dataId, noteId)
+			err = b.db.PublishDiagram(dataId, b.op)
 			if err != nil {
 				return xerrors.Errorf("PublishData() error: %w", err)
 			}
@@ -247,11 +216,11 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 	} else {
 
 		t = "Data"
-		f = fs.DataTextFile(dataId, noteId)
+		f = fs.DiagramTextFile(dataId)
 
-		d, err := b.GetData(dataId, noteId)
+		d, err := b.GetDiagram(dataId)
 		if err != nil {
-			return xerrors.Errorf("GetData() error: %w", err)
+			return xerrors.Errorf("GetDiagram() error: %w", err)
 		}
 		name = d.Name
 	}

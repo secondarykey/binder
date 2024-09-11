@@ -13,7 +13,7 @@ func (b *Binder) EditConfig(conf *model.Config) error {
 	}
 	conf.Created = org.Created
 
-	err = b.db.UpdateConfig(conf)
+	err = b.db.UpdateConfig(conf, b.op)
 	if err != nil {
 		return xerrors.Errorf("db.UpdateConfig() error: %w", err)
 	}
