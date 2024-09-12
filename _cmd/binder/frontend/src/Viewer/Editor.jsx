@@ -11,7 +11,10 @@ import { OpenTemplate, CreateTemplateHTML, SaveTemplate, Generate, Commit, GetLa
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
-import HTMLFrame from "../HTMLFrame.jsx";
+import HTMLFrame from "../components/HTMLFrame.jsx";
+
+import Event from "../Event.jsx";
+import { useParams } from "react-router-dom";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -20,13 +23,13 @@ import HTMLFrame from "../HTMLFrame.jsx";
  */
 function Editor(props) {
 
+  var {mode,id} = useParams();
+
   var downloadName = "";
 
   const [text, setText] = useState("");
   const [noteElm, setNoteElm] = useState("");
   const [width, setWidth] = useState(500);
-  const [mode, setMode] = useState("");
-  const [templateNoteId, setTemplateNoteId] = useState("");
   const [html, setHTML] = useState("");
 
   const redrawNoteElm = async (id,resp) => {
@@ -53,8 +56,8 @@ function Editor(props) {
     OpenNote(id).then((resp) => {
       redrawNoteElm(id,resp)
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      console.error(err);
+      Event.showErrorMessage(err);
     });
   }
 
@@ -63,8 +66,8 @@ function Editor(props) {
     await GetLatestNoteId().then((resp) => {
       id = resp;
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      console.error(err);
+      Event.showErrorMessage(err);
     })
     return id;
   }
@@ -114,8 +117,7 @@ function Editor(props) {
   //開いた時の初期処理
   useEffect(() => {
 
-    props.onMessage("clear");
-
+    Event.clearMessage();
     vim.open({
       debug: false,
       showMsg: function (msg) {
@@ -123,66 +125,57 @@ function Editor(props) {
       }
     });
 
-    var m = "diagram";
-    if ( props.mode === "templateEditor" ) {
-      m = "template";
-    } else if ( props.mode === "noteEditor" ) {
-      m = "note";
-    }
-
-    console.debug(props.mode);
-    console.debug(m);
-    console.debug(props.id);
-
-    if ( m === "diagram" ) {
+    if ( mode === "diagram" ) {
       mermaid.initialize({ startOnLoad: false });
-      OpenDiagram(props.id).then((resp) => {
+      OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        console.warn(err);
-        props.onMessage("error", err);
+        console.error(err);
+        Event.showErrorMessage(err);
       })
 
-      GetDiagram(props.id).then((resp) => {
-        props.onChangeTitle(resp.name)
+      GetDiagram(id).then((resp) => {
+        Event.changeTitle(resp.name)
         downloadName = resp.name;
       }).catch((err) => {
-        console.warn(err);
-        props.onMessage("error", err);
+        console.error(err);
+        Event.showErrorMessage(err);
       })
 
-    } else if (m === "note") {
+    } else if (mode === "note") {
 
-      OpenNote(props.id).then((resp) => {
+      OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        props.onMessage("error", err);
+        console.error(err);
+        Event.showErrorMessage(err);
       });
 
-      GetNote(props.id).then((resp) => {
-        props.onChangeTitle(resp.name)
+      GetNote(id).then((resp) => {
+        Event.changeTitle(resp.name)
       }).catch((err) => {
-        console.warn(err);
-        props.onMessage("error", err);
+        console.error(err);
+        Event.showErrorMessage(err);
       })
 
     } else if (m === "template") {
 
       //テンプレートを開く
-      OpenTemplate(props.id).then((resp) => {
+      OpenTemplate(id).then((resp) => {
         setText(resp);
         //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
         //TODO: HTML をどのように作成するかを考える 
         //createNoteElement();
       }).catch((err) => {
-        props.onMessage("error", err);
+        console.error(err);
+        Event.showErrorMessage(err);
       });
 
-      props.onChangeTitle("Template:" + changeTemplateName(props.id))
+      //TODO テンプレートに名称が入るか？
+      Event.changeTitle(resp.name)
     }
-    setMode(m);
 
-  }, [props.id])
+  }, [id]);
 
   //テキスト変更時の処理
   useEffect(() => {
@@ -211,7 +204,7 @@ function Editor(props) {
     await ParseNote(id,local, txt).then((resp) => {
       p = resp;
     }).catch((err) => {
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
       p = txt;
     });
     return marked.marked(p);
@@ -231,19 +224,19 @@ function Editor(props) {
 
     var elm = document.querySelector('#htmlViewer');
     if (mode === "note") {
-      var embed = await createMarked(props.id,txt, true);
-      CreateNoteHTML(props.id, embed).then((resp) => {
+      var embed = await createMarked(id,txt, true);
+      CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
-        console.warn(err)
-        props.onMessage("error", err);
+        console.error(err)
+        Event.showErrorMessage(err);
       })
     } else if (mode === "template") {
-      CreateTemplateHTML(props.id, templateNoteId, txt, embNoteElm).then((resp) => {
+      CreateTemplateHTML(id, templateNoteId, txt, embNoteElm).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
-        console.warn(err)
-        props.onMessage("error", err);
+        console.error(err)
+        Event.showErrorMessage(err);
       })
 
     }
@@ -255,12 +248,12 @@ function Editor(props) {
       mermaid.render('svg', txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
-        console.warn(err)
-        props.onMessage("error", err);
+        console.error(err)
+        Event.showErrorMessage(err);
       });
     }).catch((err) => {
-      console.warn(err)
-      props.onMessage("error", err);
+      console.error(err)
+      Event.showErrorMessage(err);
     });
   }
 
@@ -278,25 +271,25 @@ function Editor(props) {
   const changeText = (txt) => {
     setText(txt);
     if (mode === "note") {
-      SaveNote(props.id, txt).then(() => {
+      SaveNote(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        console.warn(err)
-        props.onMessage("error", err);
+        console.error(err)
+        Event.showErrorMessage(err);
       })
     } else if (mode === "diagram") {
-      SaveDiagram(props.id, txt).then(() => {
+      SaveDiagram(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        console.warn(err)
-        props.onMessage("error", err);
+        console.error(err)
+        Event.showErrorMessage(err);
       })
     } else if (mode === "template") {
-      SaveTemplate(props.id, txt).then(() => {
+      SaveTemplate(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        console.warn(err)
-        props.onMessage("error", err);
+        console.error(err)
+        Event.showErrorMessage(err);
       })
     }
   }
@@ -306,26 +299,24 @@ function Editor(props) {
 
     var elm = "";
     if (mode === "note") {
-      elm = await createMarked(props.id,text, false);
+      elm = await createMarked(id,text, false);
     } else if (mode === "diagram") {
       elm = await createMermaid(text);
     }
     //出力処理を行う
-    Generate(mode,props.id,elm).then(() => {
-      props.onMessage("success", "Generate");
+    Generate(mode,id,elm).then(() => {
+      Event.showSuccess("Generate.")
     }).catch((err) => {
-      console.warn(err)
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     })
   }
 
   //コミットを行う
   const commit = () => {
-    Commit(mode,props.id,false).then(() => {
-      props.onMessage("success", "commit");
+    Commit(mode,id,false).then(() => {
+      Event.showSuccess("Commit.")
     }).catch((err) => {
-      console.warn(err)
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     })
   }
 
@@ -348,9 +339,7 @@ function Editor(props) {
   editorStyle.fontFamily = "Calex Code JP Regular";
 
   var menuWidth = 0;
-  if ( props.showMenu ) {
-    menuWidth = 320;
-  }
+  menuWidth = 320;
 
   var splitterW = 10;
   {/** スプリッター部分をコンポーネント化するか？ */ }

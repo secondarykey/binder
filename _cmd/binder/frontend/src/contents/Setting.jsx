@@ -4,6 +4,8 @@ import { Accordion, AccordionDetails, AccordionSummary, Button, FormControl, For
 import { GetSetting, SaveSetting } from "../../wailsjs/go/api/App";
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+import Event from "../Event";
 /**
  * アプリ設定
  * @param {*} props 
@@ -20,9 +22,8 @@ function Setting(props) {
   const [gitMail, setGitMail] = useState("");
   const [gitCode, setGitCode] = useState("");
 
-
   useEffect(() => {
-    props.onChangeTitle("Setting Binder");
+    Event.changeTitle("Setting")
     GetSetting().then((set) => {
       setPathDefault(set.path.default);
       setPathRunWith(set.path.runWithOpen);
@@ -32,7 +33,7 @@ function Setting(props) {
       setGitMail(set.git.mail);
       setGitCode(set.git.code);
     }).catch((err) => {
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }, []);
 
@@ -52,10 +53,9 @@ function Setting(props) {
     setting.git = git;
 
     SaveSetting(setting).then((resp) => {
-      props.onMessage("success", "update setting.");
+      Event.showSuccess("Updated");
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }
 

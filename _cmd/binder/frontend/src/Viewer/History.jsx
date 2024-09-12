@@ -2,17 +2,16 @@ import { useState } from "react";
 
 import { LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
 import { List, ListItemButton, ListItemText } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 /**
  * バインダーの選択を行う
  * @param {*} props 
  * @returns 
  */
-function BinderHistory(props) {
+function History(props) {
 
+  const nav = useNavigate();
   const [histories,setHistories] = useState([]);
-
-  props.onChangeTitle("Select Binder");
-
   GetSetting().then((s) => {
     setHistories(s.path.histories);
   });
@@ -20,7 +19,7 @@ function BinderHistory(props) {
   //保存
   const handleSelect = (val) => {
     LoadBinder(val).then(() => {
-      props.onChangeMode("loadBinder");
+      nav("/note/index");
     }).catch( (err) => {
       console.warn(err);
       props.onMessage("error", err);
@@ -28,20 +27,17 @@ function BinderHistory(props) {
   }
 
   return (<>
-
 <h3 style={{margin:"10px",color:"#f1f1f1"}}>History</h3>
-<List>
-{
-histories.map((p) => {
-  return (<>
-        <ListItemButton onClick={() => handleSelect(p)} >
+<List key="historyList">
+{histories.map((p) => {
+  return (
+        <ListItemButton key={p} onClick={() => handleSelect(p)} >
           <ListItemText style={{color:"#f1f1f1"}} primary={p} />
         </ListItemButton>
-  </>)
-})
-}
+  )
+})}
 </List>
 
   </>);
 }
-export default BinderHistory;
+export default History;

@@ -26,7 +26,6 @@ function Note(props) {
     setImageFile("");
     if (props.id === "") {
       setName("");
-      props.onChangeTitle("Create Note");
       return;
     }
 

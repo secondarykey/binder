@@ -5,13 +5,14 @@ import { GetConfig, EditConfig, Remotes, AddRemote } from "../../wailsjs/go/api/
 
 import {useLocation, useNavigate} from "react-router-dom";
 import CloudIcon from '@mui/icons-material/Cloud';
+
+import Event from "../Event";
 /**
  * バインダーのメタデータを表示,編集
  * @param {*} props 
  * @returns 
  */
 function Binder(props) {
-
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
@@ -31,12 +32,14 @@ function Binder(props) {
     Remotes().then((res) => {
       setRemoteList(res);
     }).catch((err) => {
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }
 
   useEffect(() => {
-    props.onChangeTitle("Edit Binder");
+    Event.changeTitle("Edit Binder");
+
+
     GetConfig().then((conf) => {
       setName(conf.name);
       setDetail(conf.detail);
@@ -45,7 +48,7 @@ function Binder(props) {
       setBranch(conf.branch);
       setAuto(conf.autoCommit);
     }).catch((err) => {
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
     getRemoteList();
   }, []);
@@ -59,10 +62,9 @@ function Binder(props) {
     config.branch = branch;
     config.autoCommit = Number(auto);
     EditConfig(config).then((resp) => {
-      props.onMessage("success", "update binder.");
+      Event.showSuccess("update binder.");
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }
 
@@ -89,18 +91,11 @@ function Binder(props) {
   }
 
   const handleChangeRemote = (e,name) => {
-
     var val = name;
     if ( name === undefined ) {
       val = e.target.value;
     }
     setRemote(val);
-  }
-
-  const nav = useNavigate();
-  const handleLink = () => {
-    nav("/note/edit/aaa");
-    console.log("link")
   }
 
   return (<>
@@ -150,7 +145,6 @@ function Binder(props) {
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>Save</Button>
-        <Button variant="contained" onClick={() => handleLink()}>LinkTest</Button>
       </FormControl>
 
     </Grid>
@@ -166,8 +160,7 @@ function Binder(props) {
             handleChangeRemote(undefined,remoteName);
             handleDialogClose();
           }).catch((err) => {
-            console.warn(err);
-            props.onMessage("error", err);
+            Event.showErrorMessage(err);
           });
         },
         style: {

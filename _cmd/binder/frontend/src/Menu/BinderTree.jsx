@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Menu, MenuItem } from '@mui/material';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
@@ -15,27 +16,13 @@ import { copyClipboard } from '../App';
 
 import { OpenBinderSite, GetTree } from '../../wailsjs/go/api/App';
 
-{/** Binderのアイコン */ }
-function BinderSVGIcon(props) {
-  return (<>
-    <svg viewBox="0 0 320 320" width={props.width} height={props.height}>
-      <defs>
-        <g id="binder">
-          <rect width="100" height="320" rx="5" xy="5" fill={props.fill} />
+import Event from '../Event';
 
-          <rect x="10" y="30" width="80" height="35" rx="2" xy="2" fill={props.contents} />
-          <rect x="10" y="90" width="80" height="35" rx="2" xy="2" fill={props.contents} />
-          <circle cx="50" cy="250" r="20" fill={props.contents} />
-        </g>
-      </defs>
-
-      <use href="#binder" transform="translate(0,0)"></use>
-      <use href="#binder" transform="translate(110,0)"></use>
-      <use href="#binder" transform="translate(220,0)"></use>
-    </svg>
-  </>);
-}
-
+/**
+ * Mermaid アイコン
+ * @param {*} props 
+ * @returns 
+ */
 function MermaidSVG(props) {
   return (<>
   <svg width={props.width} height={props.height} viewBox="0 0 491 491">
@@ -51,13 +38,10 @@ function MermaidIcon() {
   return <MermaidSVG width="24" height="24" fill="white" contents="black" />
 }
 
-function BinderRootIcon() {
-  return <BinderSVGIcon width="24" height="24" fill="white" contents="black" />
-  //return <img src={BinderIcon} width="24" height="24"/>;
-}
-
 {/** バインダーのツリー */ }
 function BinderTree(props) {
+
+  const nav = useNavigate();
 
   //ツリーデータ
   const [tree, setTree] = useState([]);
@@ -71,8 +55,7 @@ function BinderTree(props) {
     GetTree().then((resp) => {
       setTree(resp.data);
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }
 
@@ -125,6 +108,13 @@ function BinderTree(props) {
     }
   }
 
+  const setCurrentId = (id,parentId) => {
+    setId(id);
+    setParentId(parentId);
+    setSelected([id]);
+  }
+
+
   //ノート作成
   const handleRegisterNote = (e,call) => {
     e.preventDefault();
@@ -139,18 +129,12 @@ function BinderTree(props) {
     closeMenu(call);
   }
 
-  const setCurrentId = (id,parentId) => {
-    setId(id);
-    setParentId(parentId);
-    setSelected([id]);
-  }
-
   //ノートを開く処理
   const handleNoteOpen = (e, id, parentId) => {
-    setCurrentId(id,parentId);
     e.preventDefault();
-    props.onChangeMode("noteEditor",id);
     e.stopPropagation();
+    setCurrentId(id,parentId);
+    nav("/editor/note/" + id);
   }
 
   //ダイアグラム作成
@@ -169,10 +153,10 @@ function BinderTree(props) {
 
   //ダイアグラム開く
   const handleDiagramOpen = (e, id, parentId) => {
-    setCurrentId(id,parentId);
     e.preventDefault();
-    props.onChangeMode("diagramEditor",id);
     e.stopPropagation();
+    setCurrentId(id,parentId);
+    nav("/editor/diagram/" + id);
   }
 
   const OpenSite = () => {

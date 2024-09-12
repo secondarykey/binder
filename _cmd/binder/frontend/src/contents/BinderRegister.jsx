@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { SelectDirectory, CreateBinder } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
+
+import Event from "../Event";
 
 /**
  * Binder新規作成
@@ -11,22 +14,21 @@ import FolderIcon from '@mui/icons-material/Folder';
  */
 function BinderRegister(props) {
 
+  const nav = useNavigate();
   const [dir, setDir] = useState("");
-
-  props.onChangeTitle("Create Binder");
 
   //保存
   const handleSave = () => {
     if ( dir == "" ) {
-      props.onMessage("error","reqired select directory");
+      Event.showWarning("reqired select directory");
       return;
     }
+
     CreateBinder(dir,"simple",true).then(() => {
-      //開く
-      props.onChangeMode("loadBinder");
+      nav("/note/index");
     }).catch( (err)=> {
-      console.warn(err);
-      props.onMessage("error",err);
+      console.error(err);
+      Event.showErrorMessage(err);
     })
   }
 
@@ -36,8 +38,8 @@ function BinderRegister(props) {
         setDir(f);
       }
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      console.error(err);
+      Event.showErrorMessage(err);
     });
   }
 

@@ -1,15 +1,39 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from "react-router-dom";
+
+import { GetConfig, CloseBinder } from '../wailsjs/go/api/App';
 
 import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HomeIcon from '@mui/icons-material/Home';
 
+import Event from './Event';
 import FileMenu from './Menu/FileMenu';
 import BinderTree from './Menu/BinderTree';
-import { GetConfig, CloseBinder } from '../wailsjs/go/api/App';
 
-import "./Menu.css";
+import "./assets/Menu.css";
+
+{/** Binderのアイコン */ }
+function BinderSVGIcon(props) {
+  return (<>
+    <svg viewBox="0 0 320 320" width={props.width} height={props.height}>
+      <defs>
+        <g id="binder">
+          <rect width="100" height="320" rx="5" xy="5" fill={props.fill} />
+
+          <rect x="10" y="30" width="80" height="35" rx="2" xy="2" fill={props.contents} />
+          <rect x="10" y="90" width="80" height="35" rx="2" xy="2" fill={props.contents} />
+          <circle cx="50" cy="250" r="20" fill={props.contents} />
+        </g>
+      </defs>
+
+      <use href="#binder" transform="translate(0,0)"></use>
+      <use href="#binder" transform="translate(110,0)"></use>
+      <use href="#binder" transform="translate(220,0)"></use>
+    </svg>
+  </>);
+}
 /*
  * 操作用のメニュー
  * 
@@ -21,48 +45,54 @@ import "./Menu.css";
  */
 function Menu(props) {
 
+  const nav = useNavigate();
   const [title, setTitle] = useState("");
   const [menuClasses, setMenuClasses] = useState("");
 
   const handleMenuOpen = () => {
     setMenuClasses("")
   }
-
   const handleMenuClose = () => {
     setMenuClasses("hideMenu")
   }
 
   useEffect(() => {
-    if (props.mode == "binder") {
-      //開いているモードによる
-      GetConfig().then((conf) => {
-        setTitle(conf.name);
-      }).catch((err) => {
-        showMessage("error", err);
-      });
-    } else {
-      setTitle("Binder");
-    }
-  }, [props.mode]);
-
-  const clickHome = () => {
-    CloseBinder().then(() => {
-      props.onChangeMode("file");
+    //開いているモードによる
+    GetConfig().then((conf) => {
+      setTitle(conf.name);
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
+    });
+    setTitle("Binder");
+  },[]);
+
+  const handleClickHome = () => {
+    CloseBinder().then(() => {
+      nav("/");
+    }).catch((err) => {
+      Event.showErrorMessage(err);
     })
   }
-  const handleSettingClick = () => {
-    props.onChangeMode("setting");
+
+  const handleClickBinder = () => {
+    nav("/binder/edit");
   }
+
+  const handleSettingClick = () => {
+    nav("/setting");
+  }
+
   return (
     <>
       {/** 固定メニューの箇所 */}
       <Paper id="binderMenu">
         {/** ホーム */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={clickHome}>
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickHome}>
           <HomeIcon className="leftIcon" />
+        </IconButton>
+
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickBinder}>
+          <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
         </IconButton>
 
         {/** メニューを閉じてる場合 */}
@@ -80,12 +110,12 @@ function Menu(props) {
       </Paper>
 
       <Paper id="menu" className={menuClasses}>
-
+        {/** メニュークラスが設定されている(hide)場合、非表示*/}
         {menuClasses === "" &&
           <Toolbar id="titleBar" className="title">
             {/** TODO 開いているバインダーの名称 */}
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              <>Title</>
+              <>{title}</>
             </Typography>
 
             {/** メニューを閉じる */}
@@ -98,23 +128,17 @@ function Menu(props) {
 
         <Paper id="leftContent">
 
-          {/** バインダーを開いてない場合や戻ってきた場合に利用 */}
-          {props.mode === "file" &&
-            <>
-              <FileMenu onMessage={props.onMessage}
-                onChangeMode={props.onChangeMode} />
-            </>
-          }
+          <Routes>
+            {/** 複数指定のコンポーネントを作成 */}
+            <Route path={"/"} element={<> <FileMenu /> </>} />
+            <Route path={"/file/*"} element={<> <FileMenu /> </>} />
 
-          {/** バインダーを開いている場合に利用 */}
-          {props.mode === "binder" &&
-            <>
-              <BinderTree id={props.id} parentId={props.parentId}
-                onChangeMode={props.onChangeMode}
-                onMessage={props.onMessage}
-                redraw={props.redraw} />
-            </>
-          }
+            <Route path="*" element={<>
+              <BinderTree />
+            </>} />
+
+          </Routes>
+
         </Paper>
 
       </Paper>

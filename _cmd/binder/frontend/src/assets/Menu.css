@@ -13,8 +13,9 @@
     background-color: #191919;
     color: #f1f1f1;
     width: 320px;
-    transition: width 0.5s,min-width 0.5s;
     min-width: 200px;
+    transition: width 0.5s,min-width 0.5s;
+    overflow: auto;
 }
 
 #menu.hideMenu {
