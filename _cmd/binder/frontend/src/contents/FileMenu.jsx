@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
@@ -5,7 +6,6 @@ import { SelectDirectory,LoadBinder } from '../../wailsjs/go/api/App';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import DownloadIcon from '@mui/icons-material/Download';
-import { useNavigate } from 'react-router-dom';
 
 import Event from '../Event';
 

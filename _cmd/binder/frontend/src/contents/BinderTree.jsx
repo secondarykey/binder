@@ -45,10 +45,11 @@ function BinderTree(props) {
 
   //ツリーデータ
   const [tree, setTree] = useState([]);
+
   //選択しているID
-  const [id, setId] = useState(props.id);
+  const [id, setId] = useState("index");
   //選択しているオブジェクトの親ID
-  const [parentId, setParentId] = useState(props.parentId);
+  const [parentId, setParentId] = useState("");
 
   //リソースを作成
   const viewTree = () => {
@@ -61,10 +62,10 @@ function BinderTree(props) {
 
   useEffect(() => {
     viewTree();
-  }, [props.redraw])
+  }, [])
 
-  const [selected,setSelected] = useState([props.id]);
-  const [expand,setExpand] = useState([props.id]);
+  const [selected,setSelected] = useState([id]);
+  const [expand,setExpand] = useState([id]);
 
   const [noteEl, setNoteEl] = useState(null);
   const noteMenu = Boolean(noteEl);
@@ -108,54 +109,54 @@ function BinderTree(props) {
     }
   }
 
-  const setCurrentId = (id,parentId) => {
+  const setCurrentId = (id) => {
     setId(id);
-    setParentId(parentId);
     setSelected([id]);
   }
-
 
   //ノート作成
   const handleRegisterNote = (e,call) => {
     e.preventDefault();
-    props.onChangeMode("note","",id);
     closeMenu(call);
+
+    console.log(id)
+    nav("/note/register/" + id);
   }
 
   //ノート編集
   const handleEditNote = (e,call) => {
     e.preventDefault();
-    props.onChangeMode("note",id,parentId);
     closeMenu(call);
+    nav("/note/edit/" + id);
   }
 
   //ノートを開く処理
-  const handleNoteOpen = (e, id, parentId) => {
+  const handleNoteOpen = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentId(id,parentId);
+    setCurrentId(id);
     nav("/editor/note/" + id);
   }
 
   //ダイアグラム作成
   const handleRegisterDiagram = (e,call) => {
     e.preventDefault();
-    props.onChangeMode("diagram", "", id);
     closeMenu(call);
+    nav("/diagram/register/" + id);
   }
 
   //ダイアグラム編集
   const handleEditDiagram = (e,call) => {
     e.preventDefault();
-    props.onChangeMode("diagram",id,parentId);
     closeMenu(call);
+    nav("/diagram/edit/" + id);
   }
 
   //ダイアグラム開く
-  const handleDiagramOpen = (e, id, parentId) => {
+  const handleDiagramOpen = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentId(id,parentId);
+    setCurrentId(id);
     nav("/editor/diagram/" + id);
   }
 
@@ -212,7 +213,7 @@ function BinderTree(props) {
                   label={leaf.name} icon={icon}
                   selected={selected}
                   onDoubleClick={(e) => expanded(leaf.id)}
-                  onClick={(e) => evFunc(e,leaf.id,leaf.parentId)}
+                  onClick={(e) => evFunc(e,leaf.id)}
                   onContextMenu={(e) => showMenu(e,caller)}
                   children={children} />
       );

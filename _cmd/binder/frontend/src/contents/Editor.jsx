@@ -357,10 +357,8 @@ function Editor(props) {
   return (
     <>
       <Paper id="splitScreen">
-
         {/** 基本的にテキストだからこれでもOKだけどイベント周り */}
         <div id="editorWrapper" style={editWrapperStyle}>
-
           <textarea id="editor" style={editorStyle} onChange={(e) => changeText(e.target.value)} value={text} />
 
           {/** 左側の操作用位置 */}

@@ -38,6 +38,10 @@ class Event {
         this.eventMap.set(key,e);
     }
 
+    static refreshTree() {
+        this.raise(Event.ReloadTree);
+    }
+
     static changeTitle(title) {
         this.raise(Event.ReloadTitle,title);
     }
@@ -53,18 +57,19 @@ class Event {
     }
 
     static showSuccess(msg) {
-        return createMessage("success",msg);
+        return this.createMessage("success",msg);
     }
 
     static showWarning(msg) {
-        return createMessage("warning",msg);
+        return this.createMessage("warning",msg);
     }
 
     static showInfoMessage(msg) {
-        return createMessage("info",msg);
+        return this.createMessage("info",msg);
     }
 
     static showErrorMessage(err) {
+        console.warn(err)
         var obj = {};
         obj.type = "error";
         var msg = "";

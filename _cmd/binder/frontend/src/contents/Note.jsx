@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
 import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
 import { copyClipboard } from "../App";
@@ -8,12 +9,19 @@ import noImage from '../assets/images/noimage.png'
 import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
+
+import Event from "../Event";
 /**
  * ノートのメタデータを表示,編集
  * @param {*} props 
  * @returns 
  */
 function Note(props) {
+
+  var {mode,currentId} = useParams();
+
+  const [id, setId] = useState("");
+  const [parentId, setParentId] = useState("");
 
   const [name, setName] = useState("");
   const [imageFile, setImageFile] = useState("");
@@ -22,65 +30,73 @@ function Note(props) {
 
   useEffect(() => {
 
-    setDetail("");
-    setImageFile("");
-    if (props.id === "") {
-      setName("");
+    if ( !currentId ) {
       return;
     }
 
-    GetNote(props.id).then((note) => {
+    setName("");
+    setDetail("");
+    setImageFile("");
+
+    if ( mode === "register" ) {
+      setId("");
+      setParentId(currentId)
+
+      Event.changeTitle("Register Note");
+      return;
+    } else {
+      setId(currentId);
+    }
+
+    GetNote(currentId).then((note) => {
+
       setName(note.name);
       setDetail(note.detail)
-      props.onChangeTitle("Edit Note:" + note.name);
+      setParentId(note.parentId)
+
+      Event.changeTitle("Edit Note:" + note.name);
+
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     })
 
     Address().then((address) => {
-      setViewImage(address + "/assets/" + props.id + "/index")
+      setViewImage(address + "/assets/" + id + "/index")
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     })
 
-  }, [props.id]);
+  }, [currentId]);
 
   const handleSave = () => {
 
     var note = {};
-    note.id = props.id;
-    note.parentId = props.parentId
+    note.id = id;
+    note.parentId = parentId;
     note.name = name;
     note.detail = detail;
 
     EditNote(note, imageFile).then((resp) => {
-
       //新規作成時のみ切り替え
-      if (props.id === "") {
-        console.log(resp);
-        props.onChangeMode("noteEditor", resp.id,resp.parentId);
+      if (mode === "register") {
+        nav("/note/edit/" + id);
+        return;
       }
-      props.onRefreshTree();
-      props.onMessage("success", "Update note.")
 
+      Event.refreshTree();
+      Event.showSuccess("Update Note.")
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }
 
   //削除
   const handleDelete = () => {
-    var note = {};
-    note.id = props.id;
-    RemoveNote(props.id).then((resp) => {
-      props.onRefreshTree();
-      props.onMessage("success", "Remove note.")
+    RemoveNote(id).then((resp) => {
+      // 遷移する
+      Event.showSuccess("Remove Note.")
     }).catch( (err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   };
 
@@ -93,8 +109,7 @@ function Note(props) {
         setImageFile(f);
       }
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }
 
@@ -103,18 +118,18 @@ function Note(props) {
   }
 
   const copyId = (e) => {
-    copyClipboard(props.id);
-    props.onMessage("success","Copied.");
+    copyClipboard(id);
+    Event.showSuccess("Copied.");
   }
 
   return (<>
     <Grid className="formGrid">
 
-      {props.id !== "" &&
+      {mode === "edit" &&
         <>
           <FormControl>
             <FormLabel>ID</FormLabel>
-            <TextField value={props.id}
+            <TextField value={id}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -131,7 +146,7 @@ function Note(props) {
         <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
       </FormControl>
 
-      {props.id !== "" &&
+      {mode === "edit" &&
         <>
           <FormControl>
             <FormLabel>Detail</FormLabel>
@@ -152,7 +167,7 @@ function Note(props) {
           }}></TextField>
       </FormControl>
 
-      {(props.id !== "" && viewImage !== "") &&
+      {(mode === "edit" && viewImage !== "") &&
         <>
           <Container style={{ marginTop: "10px", textAlign: "center" }}>
             <img src={viewImage} onError={setNoImage} style={{ height: "200px", width: "fit-content" }}></img>
@@ -162,10 +177,10 @@ function Note(props) {
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>
-          {props.id !== "" && <> Save </>}
-          {props.id === "" && <> Create </>}
+          {mode === "edit" && <> Save </>}
+          {mode === "register" && <> Create </>}
         </Button>
-        {props.id !== "" && 
+        {mode === "edit" && 
           <Button style={{marginLeft:"auto"}}
                   variant="contained" color="error" onClick={handleDelete}>Delete</Button>
         }

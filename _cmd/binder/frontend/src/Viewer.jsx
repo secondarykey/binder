@@ -11,11 +11,11 @@ import Binder from "./contents/Binder";
 import Setting from "./contents/Setting";
 import BinderRegister from "./contents/BinderRegister";
 
-import Editor from "./Viewer/Editor";
-import Note from "./Viewer/Note";
+import Editor from "./contents/Editor";
+import Note from "./contents/Note";
 import Diagram from "./Viewer/Diagram";
 import Assets from "./Viewer/Assets";
-import History from "./Viewer/History";
+import History from "./contents/History";
 import BinderRemote from "./Viewer/BinderRemote";
 
 import { Routes, Route } from "react-router-dom";
@@ -74,9 +74,9 @@ function Viewer(props) {
             <Route path="/binder/edit" element={<Binder />} />
             <Route path="/setting" element={<Setting />} />
 
-            <Route path="/note/:mode/:id" element={<Note />} />
-            <Route path="/diagram/:mode/:id" element={<Diagram />} />
-            <Route path="/assets/:mode/:id" element={<Assets />} />
+            <Route path="/note/:mode/:currentId" element={<Note />} />
+            <Route path="/diagram/:mode/:currentId" element={<Diagram />} />
+            <Route path="/assets/:mode/:currentId" element={<Assets />} />
 
             <Route path="/editor/:mode/:id" element={<Editor />} />
           </Routes>

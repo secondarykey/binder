@@ -32,8 +32,12 @@ export async function copyClipboard(val) {
  */
 function App() {
 
-  //メッセージ作成
-  const createMessage = (obj) => {
+  /**
+   * SnackBarに表示するオブジェクトに編集
+   * @param {*} obj 
+   * @returns 
+   */
+  const createSlideMessage = (obj) => {
     var msg = obj.message;
     var idx = msg.indexOf("\n");
     if (idx === -1) {
@@ -48,7 +52,7 @@ function App() {
   }
 
   //現在の設定を取得(最初に画面表示を選ぶ)
-  var initMsg = createMessage({type:"success",message:""});
+  var initMsg = createSlideMessage({type:"success",message:""});
   //メニューの開閉管理
   const [msgObj, setMessage] = useState(initMsg);
   const [msgDlg, setMessageDialog] = useState(false);
@@ -61,19 +65,19 @@ function App() {
   }
 
   useEffect(() => {
-
+    /**
+     * イベント登録
+     */
     Event.register(Event.ShowMessage,(obj) => {
-      showMessage(obj);
+      showSlideMessage(obj);
     })
-
-    console.log(location.href);
-
+    //設定を取得
     GetSetting().then((s) => {
       if (s.path.runWithOpen) {
       } else {
       }
     }).catch((err) => {
-      showMessage("error", err);
+      Event.showErrorMessage(err);
     });
   }, []);
 
@@ -82,18 +86,21 @@ function App() {
     return <Slide {...props} direction="left" />;
   }
 
-  function hideMessage() {
-    if (!msgDlg) {
-      setMessage(createMessage("success", ""));
+  /**
+   * メッセージを消去する
+   */
+  function hideSlideMessage() {
+    if ( !msgDlg ) {
+      setMessage({show:false});
     }
   }
 
-  function showMessage(obj) {
+  function showSlideMessage(obj) {
     if (obj.type === "clear") {
-      hideMessage();
+      hideSlideMessage();
       return;
     }
-    var obj = createMessage(obj);
+    var obj = createSlideMessage(obj);
     obj.show = true;
     setMessage(obj);
   }
@@ -101,7 +108,7 @@ function App() {
   function closeDialog(e, reason) {
     if (reason !== 'backdropClick') {
       setMessageDialog(false);
-      hideMessage();
+      hideSlideMessage();
     }
   }
 
@@ -124,7 +131,7 @@ function App() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         TransitionComponent={SlideTransition}
         onDoubleClick={showMessageDialog}
-        onClose={hideMessage}
+        onClose={hideSlideMessage}
         autoHideDuration={msgObj.type === "success" ? 2000 : null}>
         <Alert severity={msgObj.type}
           variant="filled"
@@ -151,6 +158,14 @@ function App() {
 
     </div>
   );
+}
+
+/**
+ * コンポーネント非表示
+ * @returns 
+ */
+export function Hidden() {
+  return <></>;
 }
 
 export default App
