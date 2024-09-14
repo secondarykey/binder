@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
-
-import { EditDiagram, GetDiagram } from "../../wailsjs/go/api/App";
-import { copyClipboard } from "../App";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+
 import { ContentCopy } from "@mui/icons-material";
+import { EditDiagram, GetDiagram ,RemoveDiagram} from "../../wailsjs/go/api/App";
+import { copyClipboard } from "../App";
+
+import Event from "../Event";
 /**
  * データのメタ情報を表示、編集
  * @param {*} props 
@@ -12,61 +16,92 @@ import { ContentCopy } from "@mui/icons-material";
  */
 function Diagram(props) {
 
+  const nav = useNavigate();
+  const {mode,currentId} = useParams();
+
+  const [id, setId] = useState("");
+  const [parentId, setParentId] = useState("");
+
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
 
   useEffect(() => {
 
-    if (props.id === "") {
-      setName("");
-      setDetail("");
-      props.onChangeTitle("Create Data");
+    if ( !currentId ) {
       return;
     }
 
-    GetDiagram(props.id).then((data) => {
+    setName("");
+    setDetail("");
+
+    if ( mode === "register" ) {
+      setId("");
+      setParentId(currentId);
+      Event.changeTitle("Register Diagram");
+      return;
+    } else {
+      setId(currentId);
+    }
+
+    GetDiagram(currentId).then((data) => {
       setName(data.name);
       setDetail(data.detail);
-      props.onChangeTitle("Edit Data:" + data.name);
+      setParentId(data.parentId);
+      Event.changeTitle("Edit Diagram:" + data.name);
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err);
     })
-  }, [props.id]);
+
+  }, [currentId]);
 
   const handleSave = () => {
 
     var data = {};
-    data.id = props.id
-    data.parentId = props.parentId
+    data.id = id
+    data.parentId = parentId
     data.name = name
     data.detail = detail
 
     EditDiagram(data).then((resp) => {
-      if (props.id === "") {
-        props.onChangeMode("diagramEditor", resp.id);
+
+      Event.refreshTree();
+
+      //新規作成時は移動
+      if ( mode === "register" ) {
+        nav("/diagram/edit/" + resp.id);
+        return;
       }
-      props.onRefreshTree();
-      props.onMessage("success", "update data.")
+      Event.showSuccess("update Diagram.");
 
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Event.showErrorMessage(err)
+    });
+  }
+
+  const handleDelete = () => {
+
+    RemoveDiagram(id).then((resp) => {
+      Event.refreshTree();
+      // 遷移する
+      Event.showSuccess("Remove Diagram.")
+      nav("/note/edit/" + parentId);
+    }).catch( (err) => {
+      Event.showErrorMessage(err);
     });
   }
 
   const copyId = (e) => {
     copyClipboard(props.id);
-    props.onMessage("success","Copied.");
+    Event.showSuccess("Copied.");Z
   }
   return (<>
     <Grid className="formGrid">
 
-      {props.id !== "" &&
+      {mode === "edit" &&
         <>
           <FormControl>
             <FormLabel>ID</FormLabel>
-            <TextField value={props.id}
+            <TextField value={id}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -83,7 +118,7 @@ function Diagram(props) {
         <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
       </FormControl>
 
-      {props.id !== "" &&
+      {mode === "edit" &&
         <>
           <FormControl>
             <FormLabel>Detail</FormLabel>
@@ -92,10 +127,16 @@ function Diagram(props) {
         </>}
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+
         <Button variant="contained" onClick={handleSave}>
-          {props.id !== "" && <> Save </>}
-          {props.id === "" && <> Create </>}
+          {mode === "register" && <> Create </>}
+          {mode === "edit" && <> Save </>}
         </Button>
+
+        {mode === "edit" && 
+          <Button style={{marginLeft:"auto"}}
+                  variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+        }
       </FormControl>
 
     </Grid>

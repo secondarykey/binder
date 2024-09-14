@@ -13,6 +13,7 @@ import FileMenu from './contents/FileMenu';
 import BinderTree from './contents/BinderTree';
 
 import "./assets/Menu.css";
+import { SettingsApplications } from '@mui/icons-material';
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -74,7 +75,11 @@ function Menu(props) {
     })
   }
 
-  const handleClickBinder = () => {
+  const handleClickTree = () => {
+    nav("/note/edit/index");
+  }
+
+  const handleClickBinderSetting = () => {
     nav("/binder/edit");
   }
 
@@ -91,8 +96,12 @@ function Menu(props) {
           <HomeIcon className="leftIcon" />
         </IconButton>
 
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickBinder}>
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickTree}>
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
+        </IconButton>
+
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickBinderSetting}>
+          <SettingsApplications contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
         </IconButton>
 
         {/** メニューを閉じてる場合 */}

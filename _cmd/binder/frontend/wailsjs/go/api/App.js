@@ -110,6 +110,10 @@ export function Remotes() {
   return window['go']['api']['App']['Remotes']();
 }
 
+export function RemoveDiagram(arg1) {
+  return window['go']['api']['App']['RemoveDiagram'](arg1);
+}
+
 export function RemoveNote(arg1) {
   return window['go']['api']['App']['RemoveNote'](arg1);
 }

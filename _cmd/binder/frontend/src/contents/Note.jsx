@@ -18,7 +18,7 @@ import Event from "../Event";
  */
 function Note(props) {
 
-  var {mode,currentId} = useParams();
+  const {mode,currentId} = useParams();
 
   const [id, setId] = useState("");
   const [parentId, setParentId] = useState("");
@@ -77,9 +77,10 @@ function Note(props) {
     note.detail = detail;
 
     EditNote(note, imageFile).then((resp) => {
+
       //新規作成時のみ切り替え
       if (mode === "register") {
-        nav("/note/edit/" + id);
+        nav("/note/edit/" + resp.id);
         return;
       }
 
@@ -93,8 +94,10 @@ function Note(props) {
   //削除
   const handleDelete = () => {
     RemoveNote(id).then((resp) => {
+      Event.refreshTree();
       // 遷移する
       Event.showSuccess("Remove Note.")
+      nav("/note/edit/" + parentId);
     }).catch( (err) => {
       Event.showErrorMessage(err);
     });
@@ -177,9 +180,10 @@ function Note(props) {
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>
-          {mode === "edit" && <> Save </>}
           {mode === "register" && <> Create </>}
+          {mode === "edit" && <> Save </>}
         </Button>
+
         {mode === "edit" && 
           <Button style={{marginLeft:"auto"}}
                   variant="contained" color="error" onClick={handleDelete}>Delete</Button>

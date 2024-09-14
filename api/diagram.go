@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder/db/model"
+	"log/slog"
 
 	"fmt"
 )
@@ -29,6 +30,20 @@ func (a *App) GetDiagram(id string) (*model.Diagram, error) {
 		return nil, fmt.Errorf("GetDiagram() error\n%+v", err)
 	}
 	return d, nil
+}
+
+func (a *App) RemoveDiagram(id string) error {
+
+	if a.current == nil {
+		return fmt.Errorf("Not Open Binder")
+	}
+
+	slog.Info("RemoveDiagram()", "Id", id)
+	_, err := a.current.RemoveDiagram(id)
+	if err != nil {
+		return fmt.Errorf("RemoveDiagram() error\n%+v", err)
+	}
+	return nil
 }
 
 func (a *App) OpenDiagram(id string) (string, error) {

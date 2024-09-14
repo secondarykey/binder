@@ -17,9 +17,8 @@ func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 	//ノートを追加
 	n, err := a.current.EditNote(n, imageName)
 	if err != nil {
-		e := fmt.Errorf("EditNote() error\n%+v", err)
 		slog.Error("EditNote()", "Error", err)
-		return nil, e
+		return nil, fmt.Errorf("EditNote() error\n%+v", err)
 	}
 	return n, nil
 }

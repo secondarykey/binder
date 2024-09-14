@@ -61,6 +61,7 @@ class Event {
     }
 
     static showWarning(msg) {
+        console.warn(msg)
         return this.createMessage("warning",msg);
     }
 

@@ -40,6 +40,20 @@ func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 	return d, nil
 }
 
+func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
+
+	//ファイルを削除
+	err := b.fileSystem.DeleteDiagram(id)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.DeleteDiagram() error: %w", err)
+	}
+	err = b.db.DeleteDiagram(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
+	}
+	return nil, nil
+}
+
 func (b *Binder) GetDiagram(id string) (*model.Diagram, error) {
 	return b.db.GetDiagram(id)
 }

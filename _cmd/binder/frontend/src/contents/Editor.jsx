@@ -56,7 +56,6 @@ function Editor(props) {
     OpenNote(id).then((resp) => {
       redrawNoteElm(id,resp)
     }).catch((err) => {
-      console.error(err);
       Event.showErrorMessage(err);
     });
   }
@@ -66,7 +65,6 @@ function Editor(props) {
     await GetLatestNoteId().then((resp) => {
       id = resp;
     }).catch((err) => {
-      console.error(err);
       Event.showErrorMessage(err);
     })
     return id;
@@ -126,11 +124,11 @@ function Editor(props) {
     });
 
     if ( mode === "diagram" ) {
+
       mermaid.initialize({ startOnLoad: false });
       OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        console.error(err);
         Event.showErrorMessage(err);
       })
 
@@ -138,7 +136,6 @@ function Editor(props) {
         Event.changeTitle(resp.name)
         downloadName = resp.name;
       }).catch((err) => {
-        console.error(err);
         Event.showErrorMessage(err);
       })
 
@@ -147,14 +144,12 @@ function Editor(props) {
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        console.error(err);
         Event.showErrorMessage(err);
       });
 
       GetNote(id).then((resp) => {
         Event.changeTitle(resp.name)
       }).catch((err) => {
-        console.error(err);
         Event.showErrorMessage(err);
       })
 
@@ -167,7 +162,6 @@ function Editor(props) {
         //TODO: HTML をどのように作成するかを考える 
         //createNoteElement();
       }).catch((err) => {
-        console.error(err);
         Event.showErrorMessage(err);
       });
 
@@ -228,14 +222,12 @@ function Editor(props) {
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
-        console.error(err)
         Event.showErrorMessage(err);
       })
     } else if (mode === "template") {
       CreateTemplateHTML(id, templateNoteId, txt, embNoteElm).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
-        console.error(err)
         Event.showErrorMessage(err);
       })
 
@@ -248,12 +240,10 @@ function Editor(props) {
       mermaid.render('svg', txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
-        console.error(err)
-        Event.showErrorMessage(err);
+        Event.showWarning("Diagram render error:" + err);
       });
     }).catch((err) => {
-      console.error(err)
-      Event.showErrorMessage(err);
+      Event.showWarning("Diagram parse error:" + err);
     });
   }
 
@@ -268,27 +258,29 @@ function Editor(props) {
     }
   }
 
+  /**
+   * テキストの変更
+   * @param {*} txt 
+   */
   const changeText = (txt) => {
+
     setText(txt);
     if (mode === "note") {
       SaveNote(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        console.error(err)
         Event.showErrorMessage(err);
       })
     } else if (mode === "diagram") {
       SaveDiagram(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        console.error(err)
         Event.showErrorMessage(err);
       })
     } else if (mode === "template") {
       SaveTemplate(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        console.error(err)
         Event.showErrorMessage(err);
       })
     }

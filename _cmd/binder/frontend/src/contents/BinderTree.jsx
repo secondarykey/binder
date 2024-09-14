@@ -61,6 +61,10 @@ function BinderTree(props) {
   }
 
   useEffect(() => {
+    //再描画を追加しておく
+    Event.register(Event.ReloadTree,() => {
+      viewTree();
+    })
     viewTree();
   }, [])
 

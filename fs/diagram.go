@@ -28,6 +28,15 @@ func (b *FileSystem) CreateDiagramFile(d *model.Diagram) error {
 	return nil
 }
 
+func (b *FileSystem) DeleteDiagram(id string) error {
+	//TODO 削除
+	n := diagramTextFile(id)
+
+	fmt.Println(n)
+
+	return nil
+}
+
 func (b *FileSystem) ReadDiagram(id string) ([]byte, error) {
 
 	n := diagramTextFile(id)

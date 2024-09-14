@@ -67,6 +67,9 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 }
 
 func (b *FileSystem) DeleteNote(id string) error {
+	n := noteTextFile(id)
+	//TODO 削除
+	fmt.Println(n)
 	return nil
 }
 
