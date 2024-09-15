@@ -32,6 +32,11 @@ function Editor(props) {
   const [width, setWidth] = useState(500);
   const [html, setHTML] = useState("");
 
+  /**
+   * コンテンツの
+   * @param {*} id 
+   * @param {*} resp 
+   */
   const redrawNoteElm = async (id,resp) => {
     var elm = await createMarked(id,resp, true);
     setNoteElm(elm);
@@ -52,6 +57,7 @@ function Editor(props) {
   const createNoteElement = async () => {
     var id = await getLatestNoteId();
     setTemplateNoteId(id);
+
     //最新のノートを取得
     OpenNote(id).then((resp) => {
       redrawNoteElm(id,resp)
@@ -60,7 +66,7 @@ function Editor(props) {
     });
   }
 
-  const getLatestNoteId = async () => {
+  const getTemplateNoteId = async () => {
     var id = "";
     await GetLatestNoteId().then((resp) => {
       id = resp;
@@ -68,6 +74,7 @@ function Editor(props) {
       Event.showErrorMessage(err);
     })
     return id;
+
   }
 
   //センタリング用のタグを埋め込む
@@ -195,7 +202,7 @@ function Editor(props) {
   //データをマークダウンからHTMLに変換
   const createMarked = async (id, txt, local) => {
     var p = ""
-    await ParseNote(id,local, txt).then((resp) => {
+    await ParseNote(id,local,txt).then((resp) => {
       p = resp;
     }).catch((err) => {
       Event.showErrorMessage(err);
@@ -218,19 +225,20 @@ function Editor(props) {
 
     var elm = document.querySelector('#htmlViewer');
     if (mode === "note") {
-      var embed = await createMarked(id,txt, true);
+
+      var embed = await createMarked(id,txt,true);
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
         Event.showErrorMessage(err);
       })
+
     } else if (mode === "template") {
-      CreateTemplateHTML(id, templateNoteId, txt, embNoteElm).then((resp) => {
+      CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
         Event.showErrorMessage(err);
       })
-
     }
   }
 

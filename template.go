@@ -26,11 +26,11 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 func (b *Binder) GetHTMLTemplates() ([]*model.Template, []*model.Template, error) {
 	layouts, err := b.db.FindLayoutTemplates()
 	if err != nil {
-		return xerrors.Errorf("FindLayoutTemplates() error: %w", err)
+		return nil, nil, xerrors.Errorf("FindLayoutTemplates() error: %w", err)
 	}
 	contents, err := b.db.FindContentTemplates()
 	if err != nil {
-		return xerrors.Errorf("FindContentTemplates() error: %w", err)
+		return nil, nil, xerrors.Errorf("FindContentTemplates() error: %w", err)
 	}
 	return layouts, contents, nil
 }

@@ -173,12 +173,6 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 			}
 		}
 
-		//index,listの作成
-		err = b.GenerateIndexHTML()
-		if err != nil {
-			return xerrors.Errorf("GenerateIndexHTML() error: %w", err)
-		}
-
 	} else {
 
 		d, err := b.db.GetDiagram(dataId)

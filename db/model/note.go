@@ -43,6 +43,6 @@ func (n *Note) addAsset(a *Asset) {
 }
 
 func (n *Note) SetTemplates(l, c []*Template) {
-	n.LayoutTemplates = l
-	n.ContentTemplates = c
+	n.Layouts = l
+	n.Contents = c
 }

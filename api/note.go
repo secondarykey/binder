@@ -57,7 +57,8 @@ func (a *App) GetNoteWithTemplates(id string) (*model.Note, error) {
 
 	n, err := a.current.GetNoteWithTemplates(id)
 	if err != nil {
-		return nil, fmt.Errorf("GetNote() error\n%+v", err)
+		slog.Error("GetNoteWithTemplates()", n)
+		return nil, fmt.Errorf("GetNoteWithTemplates() error\n%+v", err)
 	}
 
 	return n, nil

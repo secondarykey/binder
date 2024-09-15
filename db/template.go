@@ -1,5 +1,7 @@
 package db
 
+import "binder/db/model"
+
 type TemplateType string
 
 const (
@@ -10,14 +12,14 @@ const (
 	Template TemplateType = "template"
 )
 
-func (inst *Instance) GetLayoutTemplates() ([]*Template, error) {
+func (inst *Instance) FindLayoutTemplates() ([]*model.Template, error) {
 	return inst.findTypeTemplates(Layout)
 }
 
-func (inst *Instance) GetContentTemplates() ([]*Template, error) {
+func (inst *Instance) FindContentTemplates() ([]*model.Template, error) {
 	return inst.findTypeTemplates(Content)
 }
 
-func (inst *Instance) findTypeTemplates(t TemplateType) ([]*Template, error) {
-	return inst.findTemplate("type = ?", "update_date desc", -1, -1, t)
+func (inst *Instance) findTypeTemplates(t TemplateType) ([]*model.Template, error) {
+	return inst.findTemplate("type = ?", "updated_date desc", -1, -1, string(t))
 }

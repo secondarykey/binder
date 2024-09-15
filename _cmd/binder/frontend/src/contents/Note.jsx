@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
-import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
-import { copyClipboard } from "../App";
-import { GetNote } from "../../wailsjs/go/api/App";
-import noImage from '../assets/images/noimage.png'
-
-import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
+
+import { copyClipboard } from "../App";
+import { GetNoteWithTemplates } from "../../wailsjs/go/api/App";
+import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
+import noImage from '../assets/images/noimage.png'
 
 import Event from "../Event";
 /**
@@ -18,7 +18,7 @@ import Event from "../Event";
  */
 function Note(props) {
 
-  const {mode,currentId} = useParams();
+  const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
   const [parentId, setParentId] = useState("");
@@ -28,9 +28,14 @@ function Note(props) {
   const [viewImage, setViewImage] = useState("");
   const [detail, setDetail] = useState("");
 
+  const [layout, setLayout] = useState("");
+  const [content, setContent] = useState("");
+  const [layouts, setLayouts] = useState([]);
+  const [contents, setContents] = useState([]);
+
   useEffect(() => {
 
-    if ( !currentId ) {
+    if (!currentId) {
       return;
     }
 
@@ -38,7 +43,7 @@ function Note(props) {
     setDetail("");
     setImageFile("");
 
-    if ( mode === "register" ) {
+    if (mode === "register") {
       setId("");
       setParentId(currentId)
 
@@ -48,11 +53,17 @@ function Note(props) {
       setId(currentId);
     }
 
-    GetNote(currentId).then((note) => {
+    GetNoteWithTemplates(currentId).then((note) => {
 
       setName(note.name);
       setDetail(note.detail)
       setParentId(note.parentId)
+
+      setLayout(note.layoutTemplate)
+      setContent(note.contentTemplate)
+
+      setLayouts(note.layouts)
+      setContents(note.contents)
 
       Event.changeTitle("Edit Note:" + note.name);
 
@@ -75,6 +86,8 @@ function Note(props) {
     note.parentId = parentId;
     note.name = name;
     note.detail = detail;
+    note.layoutTemplate = layout;
+    note.contentTemplate = content;
 
     EditNote(note, imageFile).then((resp) => {
 
@@ -98,7 +111,7 @@ function Note(props) {
       // 遷移する
       Event.showSuccess("Remove Note.")
       nav("/note/edit/" + parentId);
-    }).catch( (err) => {
+    }).catch((err) => {
       Event.showErrorMessage(err);
     });
   };
@@ -125,6 +138,13 @@ function Note(props) {
     Event.showSuccess("Copied.");
   }
 
+  const handleChangeLayout = (e) => {
+    setLayout(e.target.value);
+  }
+  const handleChangeContent = (e) => {
+    setContent(e.target.value);
+  }
+
   return (<>
     <Grid className="formGrid">
 
@@ -134,7 +154,7 @@ function Note(props) {
             <FormLabel>ID</FormLabel>
             <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
-                startAdornment: ( <InputAdornment position="start"><ContentCopy/></InputAdornment>)
+                startAdornment: (<InputAdornment position="start"><ContentCopy /></InputAdornment>)
               }}>
             </TextField>
           </FormControl>
@@ -155,10 +175,29 @@ function Note(props) {
         </>}
 
       <FormControl>
+        <FormLabel> Layout Template </FormLabel>
+
+        <Select value={layout} onChange={(e) => handleChangeLayout(e)}>
+          {layouts.map((v) => {
+            return (<MenuItem key={"Layout-" + v.id} value={v.id}>{v.name}</MenuItem>)
+          })}
+        </Select>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel> Content Template </FormLabel>
+        <Select value={content} onChange={(e) => handleChangeContent(e)}>
+          {contents.map((v) => {
+            return (<MenuItem key={"Content-" + v.id} value={v.id}>{v.name}</MenuItem>)
+          })}
+        </Select>
+      </FormControl>
+
+      <FormControl>
         <FormLabel>Note Image</FormLabel>
         <TextField value={imageFile} className="linkBtn" onClick={selectFile}
           InputProps={{
-            startAdornment: ( <InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
+            startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
           }}>
         </TextField>
       </FormControl>
@@ -177,9 +216,9 @@ function Note(props) {
           {mode === "edit" && <> Save </>}
         </Button>
 
-        {mode === "edit" && 
-          <Button style={{marginLeft:"auto"}}
-                  variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+        {mode === "edit" &&
+          <Button style={{ marginLeft: "auto" }}
+            variant="contained" color="error" onClick={handleDelete}>Delete</Button>
         }
       </FormControl>
 

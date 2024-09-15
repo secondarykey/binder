@@ -12,16 +12,19 @@ func (b *Binder) GetNote(id string) (*model.Note, error) {
 }
 
 func (b *Binder) GetNoteWithTemplates(id string) (*model.Note, error) {
+
 	n, err := b.db.GetNote(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 	}
 
-	layouts, contents, err := b.db.GetHTMLTemplates()
+	layouts, contents, err := b.GetHTMLTemplates()
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+		return nil, xerrors.Errorf("db.GetHTMLTemplates() error: %w", err)
 	}
 
+	n.SetTemplates(layouts, contents)
+	return n, nil
 }
 
 func (b *Binder) RemoveNote(id string) (*model.Note, error) {
