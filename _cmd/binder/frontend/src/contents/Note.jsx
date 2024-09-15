@@ -120,7 +120,7 @@ function Note(props) {
     e.target.src = noImage;
   }
 
-  const copyId = (e) => {
+  const handleCopyId = (e) => {
     copyClipboard(id);
     Event.showSuccess("Copied.");
   }
@@ -132,14 +132,11 @@ function Note(props) {
         <>
           <FormControl>
             <FormLabel>ID</FormLabel>
-            <TextField value={id}
+            <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <ContentCopy onClick={copyId}/>
-                  </InputAdornment>
-                )
-              }}></TextField>
+                startAdornment: ( <InputAdornment position="start"><ContentCopy/></InputAdornment>)
+              }}>
+            </TextField>
           </FormControl>
         </>
       }
@@ -159,15 +156,11 @@ function Note(props) {
 
       <FormControl>
         <FormLabel>Note Image</FormLabel>
-        <TextField value={imageFile}
-          onClick={selectFile}
+        <TextField value={imageFile} className="linkBtn" onClick={selectFile}
           InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <AttachFileIcon />
-              </InputAdornment>
-            )
-          }}></TextField>
+            startAdornment: ( <InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
+          }}>
+        </TextField>
       </FormControl>
 
       {(mode === "edit" && viewImage !== "") &&

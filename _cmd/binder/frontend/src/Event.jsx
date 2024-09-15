@@ -54,19 +54,24 @@ class Event {
     }
 
     static clearMessage() {
+        var obj = this.createMessage("clear","");
+        this.raise(this.ShowMessage,obj);
     }
 
     static showSuccess(msg) {
-        return this.createMessage("success",msg);
+        var obj = this.createMessage("success",msg);
+        this.raise(this.ShowMessage,obj);
     }
 
     static showWarning(msg) {
         console.warn(msg)
-        return this.createMessage("warning",msg);
+        var obj = this.createMessage("warning",msg);
+        this.raise(this.ShowMessage,obj);
     }
 
     static showInfoMessage(msg) {
-        return this.createMessage("info",msg);
+        var obj = this.createMessage("info",msg);
+        this.raise(this.ShowMessage,obj);
     }
 
     static showErrorMessage(err) {

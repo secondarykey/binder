@@ -11,7 +11,7 @@ import (
 // ID 指定は上位でやっておく
 func (b *FileSystem) CreateAsset(d *model.Asset, f string) error {
 
-	dataF := assetPath(d.Id)
+	dataF := AssetFile(d)
 
 	fp, err := b.Create(dataF)
 	if err != nil {
@@ -30,4 +30,9 @@ func (b *FileSystem) CreateAsset(d *model.Asset, f string) error {
 	//TODO データのコミットを行う
 
 	return nil
+}
+
+func (b *FileSystem) DeleteAsset(a *model.Asset) error {
+	n := AssetFile(a)
+	return b.Remove(n)
 }

@@ -13,8 +13,8 @@ import BinderRegister from "./contents/BinderRegister";
 
 import Editor from "./contents/Editor";
 import Note from "./contents/Note";
-import Diagram from "./Viewer/Diagram";
-import Assets from "./Viewer/Assets";
+import Diagram from "./contents/Diagram";
+import Assets from "./contents/Assets";
 import History from "./contents/History";
 import BinderRemote from "./Viewer/BinderRemote";
 
@@ -23,14 +23,19 @@ import { Routes, Route } from "react-router-dom";
 import "./assets/Viewer.css"
 /**
  * コンテンツ表示部分
+ * <pre>
+ * タイトル部分だけ共通化し、残りはURLによりコンポーネントを切り替える
+ * </pre>
  * @param {*} props 
  * @returns 
  */
 function Viewer(props) {
 
+  //タイトルの文字列
   const [title,setTitle] = useState("");
 
-  const exit = () => {
+  //終了処理
+  const handleExit = () => {
     Terminate().then(() => {
       console.log("?")
     }).catch((err) => {
@@ -38,8 +43,11 @@ function Viewer(props) {
     });
   }
 
-  var mode = "";
+  /**
+   * 初期処理
+   */
   useEffect( ()=> {
+    //タイトル変更のイベントを設定
     Event.register(Event.ReloadTitle,function(obj) {
       setTitle(obj);
     });
@@ -55,9 +63,8 @@ function Viewer(props) {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
-
-          {/** メニューを閉じる */}
-          <IconButton id="closeButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={exit}>
+          {/** アプリ終了 */}
+          <IconButton id="closeButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
             <CloseIcon />
           </IconButton>
         </Toolbar>
@@ -81,7 +88,8 @@ function Viewer(props) {
             <Route path="/editor/:mode/:id" element={<Editor />} />
           </Routes>
 
-          {mode === "remoteBinder" &&
+{/** 移行がまだなコンポーネント*/}
+          {false &&
             <>
               <BinderRemote onMessage={props.onMessage} />
             </>

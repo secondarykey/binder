@@ -1,7 +1,6 @@
 package binder
 
 import (
-	"binder/fs"
 	"fmt"
 	"strings"
 
@@ -80,8 +79,9 @@ type handler struct {
 	fileServer http.Handler
 }
 
-func (b *Binder) newHTTPServer(pub string) (*http.Server, error) {
+func (b *Binder) newHTTPServer() (*http.Server, error) {
 
+	pub := b.fileSystem.GetPublic()
 	docs, err := stdFs.Sub(b.fileSystem, pub)
 	if err != nil {
 		return nil, xerrors.Errorf("docs error: %w", err)
@@ -108,7 +108,7 @@ func (b *Binder) Serve() error {
 	}
 
 	b.httpServerAddress = ln.Addr().String()
-	b.httpServer, err = b.newHTTPServer(fs.PublishDir)
+	b.httpServer, err = b.newHTTPServer()
 	if err != nil {
 		return xerrors.Errorf("newHTTPServer() error: %w", err)
 	}

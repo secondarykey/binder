@@ -11,6 +11,19 @@ func (b *Binder) GetNote(id string) (*model.Note, error) {
 	return b.db.GetNote(id)
 }
 
+func (b *Binder) GetNoteWithTemplates(id string) (*model.Note, error) {
+	n, err := b.db.GetNote(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+
+	layouts, contents, err := b.db.GetHTMLTemplates()
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+
+}
+
 func (b *Binder) RemoveNote(id string) (*model.Note, error) {
 
 	//ファイルを削除

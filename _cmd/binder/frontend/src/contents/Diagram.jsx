@@ -71,7 +71,7 @@ function Diagram(props) {
         nav("/diagram/edit/" + resp.id);
         return;
       }
-      Event.showSuccess("update Diagram.");
+      Event.showSuccess("Update Diagram.");
 
     }).catch((err) => {
       Event.showErrorMessage(err)
@@ -90,10 +90,11 @@ function Diagram(props) {
     });
   }
 
-  const copyId = (e) => {
-    copyClipboard(props.id);
-    Event.showSuccess("Copied.");Z
+  const handleCopyId = (e) => {
+    copyClipboard(id);
+    Event.showSuccess("Copied.");
   }
+
   return (<>
     <Grid className="formGrid">
 
@@ -101,14 +102,11 @@ function Diagram(props) {
         <>
           <FormControl>
             <FormLabel>ID</FormLabel>
-            <TextField value={id}
+            <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <ContentCopy onClick={copyId}/>
-                  </InputAdornment>
-                )
-              }}></TextField>
+                startAdornment: ( <InputAdornment position="start"> <ContentCopy/> </InputAdornment>)
+              }}>
+            </TextField>
           </FormControl>
         </>
       }

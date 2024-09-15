@@ -5,6 +5,7 @@ import "time"
 type Note struct {
 	Id              string `db:"id:key" json:"id"`
 	ParentId        string `db:"parent_id" json:"parentId"`
+	Alias           string `db:"alias" json:"alias"`
 	Name            string `db:"name" json:"name"`
 	Detail          string `db:"detail" json:"detail"`
 	LayoutTemplate  string `db:"layout_template" json:"layoutTemplate"`
@@ -21,6 +22,9 @@ type Note struct {
 	Children []*Note    `db:"-" json:"children"`
 	Diagrams []*Diagram `db:"-" json:"diagrams"`
 	Assets   []*Asset   `db:"-" json:"assets"`
+
+	Layouts  []*Template `db:"-" json:"layouts"`
+	Contents []*Template `db:"-" json:"contents"`
 }
 
 func (n *Note) addDiagram(d *Diagram) {
@@ -36,4 +40,9 @@ func (n *Note) addChild(c *Note) {
 func (n *Note) addAsset(a *Asset) {
 	n.Assets = append(n.Assets, a)
 	a.Parent = n
+}
+
+func (n *Note) SetTemplates(l, c []*Template) {
+	n.LayoutTemplates = l
+	n.ContentTemplates = c
 }

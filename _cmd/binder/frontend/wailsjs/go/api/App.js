@@ -30,8 +30,8 @@ export function CreateRemoteBinder(arg1, arg2) {
   return window['go']['api']['App']['CreateRemoteBinder'](arg1, arg2);
 }
 
-export function CreateTemplateHTML(arg1, arg2, arg3, arg4) {
-  return window['go']['api']['App']['CreateTemplateHTML'](arg1, arg2, arg3, arg4);
+export function CreateTemplateHTML(arg1, arg2, arg3) {
+  return window['go']['api']['App']['CreateTemplateHTML'](arg1, arg2, arg3);
 }
 
 export function EditAsset(arg1, arg2) {
@@ -72,6 +72,10 @@ export function GetLatestNoteId() {
 
 export function GetNote(arg1) {
   return window['go']['api']['App']['GetNote'](arg1);
+}
+
+export function GetNoteWithTemplates(arg1) {
+  return window['go']['api']['App']['GetNoteWithTemplates'](arg1);
 }
 
 export function GetSetting() {

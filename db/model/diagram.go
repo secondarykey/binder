@@ -5,6 +5,7 @@ import "time"
 type Diagram struct {
 	Id       string `db:"id:key" json:"id"`
 	ParentId string `db:"parent_id" json:"parentId"`
+	Alias    string `db:"alias" json:"alias"`
 	Name     string `db:"name" json:"name"`
 	Detail   string `db:"detail" json:"detail"`
 

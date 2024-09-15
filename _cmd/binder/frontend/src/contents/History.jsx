@@ -19,7 +19,7 @@ function History(props) {
   //保存
   const handleSelect = (val) => {
     LoadBinder(val).then(() => {
-      nav("/note/index");
+      nav("/note/edit/index");
     }).catch( (err) => {
       console.warn(err);
       props.onMessage("error", err);

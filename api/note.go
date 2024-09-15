@@ -49,6 +49,20 @@ func (a *App) GetNote(id string) (*model.Note, error) {
 	return n, nil
 }
 
+func (a *App) GetNoteWithTemplates(id string) (*model.Note, error) {
+
+	if a.current == nil {
+		return nil, fmt.Errorf("Not Open Binder")
+	}
+
+	n, err := a.current.GetNoteWithTemplates(id)
+	if err != nil {
+		return nil, fmt.Errorf("GetNote() error\n%+v", err)
+	}
+
+	return n, nil
+}
+
 func (a *App) GetLatestNoteId() (string, error) {
 
 	if a.current == nil {
@@ -94,8 +108,15 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	html, err := a.current.CreateNoteHTML(id, true, elm)
+	n, err := a.current.GetNote(id)
 	if err != nil {
+		slog.Error("Error", err)
+		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
+	}
+
+	html, err := a.current.CreateNoteHTML(n, true, elm)
+	if err != nil {
+		slog.Error("Error", err)
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
 	}
 	return html, nil
@@ -107,7 +128,13 @@ func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
 		return "", fmt.Errorf("Not Open Binder")
 	}
 
-	html, err := a.current.ParseElement(id, local, elm)
+	n, err := a.current.GetNote(id)
+	if err != nil {
+		slog.Error("Error", err)
+		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
+	}
+
+	html, err := a.current.ParseElement(n, local, elm)
 	if err != nil {
 		return "", fmt.Errorf("ParseElement() error\n%+v", err)
 	}

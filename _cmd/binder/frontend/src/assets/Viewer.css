@@ -19,3 +19,7 @@
   margin-left:0px !important;
   margin-right:0px !important;
 }
+
+div.linkBtn input , div.linkBtn svg {
+  cursor: pointer !important; 
+}

@@ -18,7 +18,7 @@ export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;
 
 export function CreateRemoteBinder(arg1:string,arg2:string):Promise<void>;
 
-export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
+export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function EditAsset(arg1:model.Asset,arg2:string):Promise<model.Asset>;
 
@@ -39,6 +39,8 @@ export function GetDiagram(arg1:string):Promise<model.Diagram>;
 export function GetLatestNoteId():Promise<string>;
 
 export function GetNote(arg1:string):Promise<model.Note>;
+
+export function GetNoteWithTemplates(arg1:string):Promise<model.Note>;
 
 export function GetSetting():Promise<settings.Setting>;
 

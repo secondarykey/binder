@@ -63,6 +63,7 @@ func main() {
 		{model.Note{}, "notes", "model/note.go", "../../note_dao.go"},
 		{model.Diagram{}, "diagrams", "model/diagram.go", "../../diagram_dao.go"},
 		{model.Asset{}, "assets", "model/asset.go", "../../asset_dao.go"},
+		{model.Template{}, "templates", "model/template.go", "../../template_dao.go"},
 	}
 
 	err := run(in)

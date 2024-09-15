@@ -88,6 +88,7 @@ export namespace model {
 	export class Asset {
 	    id: string;
 	    noteId: string;
+	    alias: string;
 	    name: string;
 	    detail: string;
 	    // Go type: time
@@ -105,6 +106,7 @@ export namespace model {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.noteId = source["noteId"];
+	        this.alias = source["alias"];
 	        this.name = source["name"];
 	        this.detail = source["detail"];
 	        this.created = this.convertValues(source["created"], null);
@@ -182,6 +184,7 @@ export namespace model {
 	export class Diagram {
 	    id: string;
 	    parentId: string;
+	    alias: string;
 	    name: string;
 	    detail: string;
 	    // Go type: time
@@ -201,6 +204,7 @@ export namespace model {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.parentId = source["parentId"];
+	        this.alias = source["alias"];
 	        this.name = source["name"];
 	        this.detail = source["detail"];
 	        this.publish = this.convertValues(source["publish"], null);
@@ -231,6 +235,7 @@ export namespace model {
 	export class Note {
 	    id: string;
 	    parentId: string;
+	    alias: string;
 	    name: string;
 	    detail: string;
 	    layoutTemplate: string;
@@ -255,6 +260,7 @@ export namespace model {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.parentId = source["parentId"];
+	        this.alias = source["alias"];
 	        this.name = source["name"];
 	        this.detail = source["detail"];
 	        this.layoutTemplate = source["layoutTemplate"];

@@ -64,6 +64,10 @@ func createTableFiles(dir string) error {
 	if err != nil {
 		return xerrors.Errorf("createAssetTable() error: %w", err)
 	}
+	err = createTemplateTable(dir)
+	if err != nil {
+		return xerrors.Errorf("createTemplateTable() error: %w", err)
+	}
 	return nil
 }
 

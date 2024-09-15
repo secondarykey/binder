@@ -23,115 +23,21 @@ type FileSystem struct {
 
 	branch string
 	remote string
+	base   string
 }
 
-// Binder File System
-// -> 空のディレクトリは作成時に無理なので気を付ける
-//   - docs/
-//     index.html
-//     list_{%num}.html
-//   - notes/
-//     {note_id}.html
-//     {note_id} -> 指定した画像データ
-//   - assets/
-//     {data_id} (none note_id)
-//   - {note_id}/
-//     {data_id}
-var PublishDir = "docs"
-
-func IndexHTML() string {
-	return filepath.Join(PublishDir, "index.html")
-}
-
-func ListHTML(idx int) string {
-	if idx == 1 {
-		return filepath.Join(PublishDir, "list.html")
-	}
-	return filepath.Join(PublishDir, fmt.Sprintf("list_%d.html", idx))
-}
-
-func NoteHTML(id string) string {
-	return noteHTML(id)
-}
-
-func noteHTML(id string) string {
-	return filepath.Join(PublishDir, "notes", fmt.Sprintf("%s.html", id))
-}
-
-func noteImage(id string) string {
-	return filepath.Join(PublishDir, "assets", id, "index")
-}
-
-func diagramPath(id string) string {
-	return filepath.Join(PublishDir, "assets", id)
-}
-
-func assetPath(id string) string {
-	return filepath.Join(PublishDir, "assets", id)
-}
-
-//   - templates/
-//     layout.tmpl (指定できるようにすべきかなぁ、、、)
-//     index.tmpl
-//     list.tmpl
-//     note.tmpl
-const templateDir = "templates"
-
-func TemplateFileName(id string) string {
-	switch id {
-	case "layout":
-		return layoutTemplate()
-	case "index":
-		return indexTemplate()
-	case "list":
-		return listTemplate()
-	case "note":
-		return noteTemplate()
-	}
-	return ""
-}
-
-func layoutTemplate() string {
-	return templateDir + "/layout.tmpl"
-}
-
-func indexTemplate() string {
-	return templateDir + "/index.tmpl"
-}
-
-func listTemplate() string {
-	return templateDir + "/list.tmpl"
-}
-
-func noteTemplate() string {
-	return templateDir + "/note.tmpl"
-}
-
-//   - notes/
-//     {note_id}.md
-const noteDir = "notes"
-
-func NoteTextFile(id string) string {
-	return noteTextFile(id)
-}
-
-func noteTextFile(id string) string {
-	return filepath.Join(noteDir, fmt.Sprintf("%s.md", id))
-}
-
-const dataDir = "diagrams"
-
-func DiagramTextFile(id string) string {
-	return diagramTextFile(id)
-}
-
-func diagramTextFile(id string) string {
-	return filepath.Join(dataDir, fmt.Sprintf("%s.md", id))
+func (f *FileSystem) GetPublic() string {
+	return publishDir
 }
 
 func New(dir string) (*FileSystem, error) {
 	fs := osfs.New(dir)
-	return newFileSystem(fs)
+	rtn, err := newFileSystem(fs)
+	if err != nil {
+		return nil, xerrors.Errorf("newFileSystem() error: %w", err)
+	}
+	rtn.base = dir
+	return rtn, nil
 }
 
 // メモリ上で扱う方法
@@ -249,4 +155,12 @@ func (b *FileSystem) create(n string) (fs.File, bool, error) {
 	f.File = fp
 
 	return &f, index, nil
+}
+
+func (f *FileSystem) Remove(n string) error {
+	if f.base == "" {
+		return fmt.Errorf("do not delete filesystem(base is empty):[%s]", n)
+	}
+	fn := filepath.Join(f.base, n)
+	return os.Remove(fn)
 }

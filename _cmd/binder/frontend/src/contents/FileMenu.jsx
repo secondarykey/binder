@@ -29,20 +29,17 @@ function FileMenu(props) {
   const handleOpen = () => {
 
     SelectDirectory(false).then( (p) => {
-
       if ( p == "" ) return;
-
       LoadBinder(p).then(() => {
-        nav("/note/index");
+        nav("/note/edit/index");
       }).catch( (err) => {
-        console.error(err);
         Event.showErrorMessage(error);
       })
 
     }).catch( (err)=> {
-      console.error(err);
       Event.showErrorMessage(error);
     })
+
   }
 
   return (<>

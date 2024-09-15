@@ -38,7 +38,7 @@ func (b *FileSystem) CreateTemplateFiles() error {
 
 func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 
-	n := TemplateFileName(id)
+	n := TemplateFile(id)
 	if n == "" {
 		return nil, fmt.Errorf("Template id[%s] error", id)
 	}
@@ -57,12 +57,12 @@ func (b *FileSystem) ReadTemplate(id string) ([]byte, error) {
 	return data[firstIdx:leng], nil
 }
 
-func (b *FileSystem) AddTemplateFrame(id string, data []byte) []byte {
+func (b *FileSystem) AddTemplateFrame(typ string, data []byte) []byte {
 
 	var buf bytes.Buffer
 	buf.Grow(len(data) + 50)
 
-	if id == "layout" {
+	if typ == "layout" {
 		buf.Write([]byte(layoutTemplateFrame))
 	} else {
 		buf.Write([]byte(contentTemplateFrame))
@@ -75,26 +75,10 @@ func (b *FileSystem) AddTemplateFrame(id string, data []byte) []byte {
 	return buf.Bytes()
 }
 
-func (sys *FileSystem) DeleteListHTMLs() error {
-
-	htmls, err := stdFs.Glob(sys, "docs/list*html")
-	if err != nil {
-		return xerrors.Errorf("Glob() error: %w", err)
-	}
-
-	for _, html := range htmls {
-		err := sys.fs.Remove(html)
-		if err != nil {
-			return fmt.Errorf("filesystem.Remove() error\n%+v", err)
-		}
-	}
-	return nil
-}
-
 // テンプレート用のフレームを作成して処理
 func (b *FileSystem) WriteTemplate(t string, data []byte) error {
 
-	n := TemplateFileName(t)
+	n := TemplateFile(t)
 	if n == "" {
 		return fmt.Errorf("Template id[%s] error", t)
 	}

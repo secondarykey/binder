@@ -32,3 +32,18 @@ func (inst *Instance) PublishAsset(id string, op Op) error {
 	}
 	return nil
 }
+
+func (inst *Instance) GetAssetWithParent(id string) (*model.Asset, error) {
+
+	a, err := inst.GetAsset(id)
+	if err != nil {
+		return nil, xerrors.Errorf("GetAsset() error: %w", err)
+	}
+
+	n, err := inst.GetNote(a.ParentId)
+	if err != nil {
+		return nil, xerrors.Errorf("GetNote() error: %w", err)
+	}
+	a.SetParent(n)
+	return a, nil
+}

@@ -147,14 +147,19 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 			return xerrors.Errorf("TemplatesCommit() error: %w", err)
 		}
 
+		note, err := b.db.GetNote(noteId)
+		if err != nil {
+			return xerrors.Errorf("GetNote() error: %w", err)
+		}
+
 		//ノートのHTMLを作成
-		html, err := b.CreateNoteHTML(noteId, false, elm)
+		html, err := b.CreateNoteHTML(note, false, elm)
 		if err != nil {
 			return xerrors.Errorf("CreateNoteHTML() error: %w", err)
 		}
 
 		//ファイルの作成
-		flag, err := b.fileSystem.GenerateHTML(noteId, []byte(html))
+		flag, err := b.fileSystem.GenerateHTML(note, []byte(html))
 		if err != nil {
 			return xerrors.Errorf("GenerateHTML() error: %w", err)
 		}
@@ -176,8 +181,13 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 	} else {
 
+		d, err := b.db.GetDiagram(dataId)
+		if err != nil {
+			return xerrors.Errorf("GetDiagram() error: %w", err)
+		}
+
 		//ファイルを作成
-		index, err := b.fileSystem.GenerateDiagram(dataId, []byte(elm))
+		index, err := b.fileSystem.GenerateDiagram(d, []byte(elm))
 		if err != nil {
 			return xerrors.Errorf("GenerateData() error: %w", err)
 		}
@@ -205,7 +215,7 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 	if dataId == "" {
 
 		t = "Note"
-		f = fs.NoteTextFile(noteId)
+		f = fs.NoteFile(noteId)
 
 		n, err := b.GetNote(noteId)
 		if err != nil {
@@ -216,7 +226,7 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 	} else {
 
 		t = "Data"
-		f = fs.DiagramTextFile(dataId)
+		f = fs.DiagramFile(dataId)
 
 		d, err := b.GetDiagram(dataId)
 		if err != nil {

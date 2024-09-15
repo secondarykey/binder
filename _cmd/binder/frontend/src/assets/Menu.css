@@ -47,7 +47,9 @@ svg.leftIcon {
   height:44px;
 }
 
-
+#tree {
+    --wails-draggable:no-drag;
+}
 
 
 #expandButton {

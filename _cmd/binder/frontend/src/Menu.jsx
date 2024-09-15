@@ -35,10 +35,13 @@ function BinderSVGIcon(props) {
     </svg>
   </>);
 }
+
 /*
  * 操作用のメニュー
- * 
- * 上位メニューは非表示、ホームに戻るを有する
+ * <pre>
+ * 基本操作のアイコンを左側に表示、
+ * 他ツリーやメニューを他のコンポーネントで行う
+ * </pre>
  * @param {*} props  
  * onClose=>閉じる際に呼び出される
  * onChangeMode=> モード変更時に呼び出される
@@ -47,19 +50,32 @@ function BinderSVGIcon(props) {
 function Menu(props) {
 
   const nav = useNavigate();
+
+  //上部タイトル表示
   const [title, setTitle] = useState("");
+  //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
 
+  /**
+   * メニューを開く
+   */
   const handleMenuOpen = () => {
     setMenuClasses("")
   }
+  /**
+   * メニューを閉じる
+   */
   const handleMenuClose = () => {
     setMenuClasses("hideMenu")
   }
 
+  /**
+   * 初期処理
+   */
   useEffect(() => {
-    //開いているモードによる
+    //設定を取得
     GetConfig().then((conf) => {
+      //名称を設定
       setTitle(conf.name);
     }).catch((err) => {
       Event.showErrorMessage(err);
@@ -67,8 +83,13 @@ function Menu(props) {
     setTitle("Binder");
   },[]);
 
+  /**
+   * ホームボタンクリック
+   */
   const handleClickHome = () => {
+    //バインダーを閉じる
     CloseBinder().then(() => {
+      //トップメニューに移動
       nav("/");
     }).catch((err) => {
       Event.showErrorMessage(err);
@@ -76,13 +97,19 @@ function Menu(props) {
   }
 
   const handleClickTree = () => {
-    nav("/note/edit/index");
+    nav("/editor/note/index");
   }
 
+  /**
+   * バインダー設定を開く
+   */
   const handleClickBinderSetting = () => {
     nav("/binder/edit");
   }
 
+  /**
+   * 全体の設定を開く
+   */
   const handleSettingClick = () => {
     nav("/setting");
   }

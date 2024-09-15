@@ -105,7 +105,7 @@ function BinderTree(props) {
     return list;
   }
 
-  const expanded = (selectId) => {
+  const expanded = (e,selectId) => {
     //すでに選択していた場合
     if ( id === selectId ) {
       var wk = toggleList(expand,selectId);
@@ -120,46 +120,42 @@ function BinderTree(props) {
 
   //ノート作成
   const handleRegisterNote = (e,call) => {
-    e.preventDefault();
     closeMenu(call);
-
-    console.log(id)
     nav("/note/register/" + id);
   }
 
   //ノート編集
   const handleEditNote = (e,call) => {
-    e.preventDefault();
     closeMenu(call);
     nav("/note/edit/" + id);
   }
 
   //ノートを開く処理
   const handleNoteOpen = (e, id) => {
-    e.preventDefault();
-    e.stopPropagation();
     setCurrentId(id);
     nav("/editor/note/" + id);
   }
 
   //ダイアグラム作成
   const handleRegisterDiagram = (e,call) => {
-    e.preventDefault();
     closeMenu(call);
     nav("/diagram/register/" + id);
   }
 
+  //ダイアグラム作成
+  const handleRegisterAssets = (e,call) => {
+    closeMenu(call);
+    nav("/assets/register/" + id);
+  }
+
   //ダイアグラム編集
   const handleEditDiagram = (e,call) => {
-    e.preventDefault();
     closeMenu(call);
     nav("/diagram/edit/" + id);
   }
 
   //ダイアグラム開く
   const handleDiagramOpen = (e, id) => {
-    e.preventDefault();
-    e.stopPropagation();
     setCurrentId(id);
     nav("/editor/diagram/" + id);
   }
@@ -216,7 +212,7 @@ function BinderTree(props) {
         <TreeItem key={leaf.id} nodeId={leaf.id}
                   label={leaf.name} icon={icon}
                   selected={selected}
-                  onDoubleClick={(e) => expanded(leaf.id)}
+                  onDoubleClick={(e) => expanded(e,leaf.id)}
                   onClick={(e) => evFunc(e,leaf.id)}
                   onContextMenu={(e) => showMenu(e,caller)}
                   children={children} />
@@ -227,7 +223,7 @@ function BinderTree(props) {
   return (<>
 
     {/** ツリーの表示 */}
-    <TreeView className='treeText'
+    <TreeView id="tree" className='treeText'
               defaultSelected={""}
               expanded={expand}
               aria-label="binder system navigator">
@@ -246,6 +242,7 @@ function BinderTree(props) {
       <MenuItem onClick={(e) => handleEditNote(e,setNoteEl)}>Edit</MenuItem>
       <MenuItem onClick={(e) => handleRegisterNote(e,setNoteEl)}>Add Note</MenuItem>
       <MenuItem onClick={(e) => handleRegisterDiagram(e,setNoteEl)}>Add Diagram</MenuItem>
+      <MenuItem onClick={(e) => handleRegisterAssets(e,setNoteEl)}>Add Assets</MenuItem>
     </Menu>
 
     {/** ダイアグラムメニュー 

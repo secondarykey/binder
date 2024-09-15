@@ -12,7 +12,7 @@ import (
 // ID 指定は上位でやっておく
 func (b *FileSystem) CreateDiagramFile(d *model.Diagram) error {
 
-	n := diagramTextFile(d.Id)
+	n := DiagramFile(d.Id)
 	//ノートファイルを作成
 	fp, err := b.Create(n)
 	if err != nil {
@@ -30,16 +30,13 @@ func (b *FileSystem) CreateDiagramFile(d *model.Diagram) error {
 
 func (b *FileSystem) DeleteDiagram(id string) error {
 	//TODO 削除
-	n := diagramTextFile(id)
-
-	fmt.Println(n)
-
-	return nil
+	n := DiagramFile(id)
+	return b.Remove(n)
 }
 
 func (b *FileSystem) ReadDiagram(id string) ([]byte, error) {
 
-	n := diagramTextFile(id)
+	n := DiagramFile(id)
 	data, err := stdFs.ReadFile(b, n)
 	if err != nil {
 		return nil, fmt.Errorf("diagramTextFile() error\n%+v", err)
@@ -49,7 +46,7 @@ func (b *FileSystem) ReadDiagram(id string) ([]byte, error) {
 
 func (b *FileSystem) WriteDiagram(id string, data []byte) error {
 
-	n := diagramTextFile(id)
+	n := DiagramFile(id)
 	fp, err := b.Create(n)
 	if err != nil {
 		return fmt.Errorf("Open() error\n%+v", err)
@@ -63,9 +60,9 @@ func (b *FileSystem) WriteDiagram(id string, data []byte) error {
 	return nil
 }
 
-func (b *FileSystem) GenerateDiagram(id string, data []byte) (bool, error) {
+func (b *FileSystem) GenerateDiagram(d *model.Diagram, data []byte) (bool, error) {
 
-	fn := diagramPath(id)
+	fn := SVGFile(d)
 	fp, index, err := b.CreateWithFlag(fn)
 	if err != nil {
 		return index, xerrors.Errorf("Create() error: %w", err)

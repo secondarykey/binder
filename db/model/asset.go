@@ -5,6 +5,7 @@ import "time"
 type Asset struct {
 	Id       string `db:"id:key" json:"id"`
 	ParentId string `db:"parent_id" json:"noteId"`
+	Alias    string `db:"alias" json:"alias"`
 	Name     string `db:"name" json:"name"`
 	Detail   string `db:"detail" json:"detail"`
 
@@ -19,5 +20,7 @@ type Asset struct {
 
 func (a *Asset) SetParent(n *Note) {
 	a.Parent = n
-	n.addAsset(a)
+	if n != nil {
+		n.addAsset(a)
+	}
 }

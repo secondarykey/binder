@@ -22,7 +22,7 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 	}
 
 	regFlag := false
-	name := noteTextFile(n.Id)
+	name := NoteFile(n.Id)
 
 	if !b.isExist(name) {
 		regFlag = true
@@ -39,7 +39,7 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 	//画像指定がある場合画像を作成
 	if image != "" {
 
-		name := noteImage(n.Id)
+		name := MetaFile(n)
 		fp, err := b.Create(name)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
@@ -67,14 +67,12 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 }
 
 func (b *FileSystem) DeleteNote(id string) error {
-	n := noteTextFile(id)
-	//TODO 削除
-	fmt.Println(n)
-	return nil
+	n := NoteFile(id)
+	return b.Remove(n)
 }
 
 func (b *FileSystem) ReadNoteText(id string) ([]byte, error) {
-	n := noteTextFile(id)
+	n := NoteFile(id)
 	data, err := stdFs.ReadFile(b, n)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)
@@ -84,7 +82,7 @@ func (b *FileSystem) ReadNoteText(id string) ([]byte, error) {
 
 func (b *FileSystem) WriteNoteText(id string, data []byte) error {
 
-	n := noteTextFile(id)
+	n := NoteFile(id)
 	fp, err := b.Create(n)
 	if err != nil {
 		return fmt.Errorf("Open() error\n%+v", err)
@@ -98,9 +96,9 @@ func (b *FileSystem) WriteNoteText(id string, data []byte) error {
 	return nil
 }
 
-func (b *FileSystem) GenerateHTML(id string, data []byte) (bool, error) {
+func (b *FileSystem) GenerateHTML(n *model.Note, data []byte) (bool, error) {
 
-	fn := noteHTML(id)
+	fn := HTMLFile(n)
 
 	fp, index, err := b.CreateWithFlag(fn)
 	if err != nil {
