@@ -1,0 +1,179 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { Menu, MenuItem } from '@mui/material';
+import { TreeView, TreeItem } from '@mui/x-tree-view';
+
+import WebAssetIcon from '@mui/icons-material/WebAsset';
+import NoteIcon from '@mui/icons-material/Note';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import FolderIcon from '@mui/icons-material/Folder';
+import HtmlIcon from '@mui/icons-material/Html';
+import CodeIcon from '@mui/icons-material/Code';
+import AttachmentIcon from '@mui/icons-material/Attachment';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import { copyClipboard } from '../App';
+
+import { OpenBinderSite, GetTemplateTree } from '../../wailsjs/go/api/App';
+
+import Event from '../Event';
+
+{/** バインダーのツリー */ }
+function TemplateTree(props) {
+
+  const nav = useNavigate();
+  //ツリーデータ
+  const [tree, setTree] = useState([]);
+
+  //リソースを作成
+  const viewTree = () => {
+    GetTemplateTree().then((resp) => {
+      setTree(resp.data);
+    }).catch((err) => {
+      Event.showErrorMessage(err);
+    });
+  }
+
+  useEffect(() => {
+    //再描画を追加しておく
+    Event.register(Event.ReloadTree,() => {
+      viewTree();
+    })
+    viewTree();
+  }, [])
+
+  const [id,setId] = useState(undefined);
+
+  const [selected,setSelected] = useState(["DIR_HTML"]);
+  const [expand,setExpand] = useState(["DIR_HTML"]);
+
+  const [dirEl, setDirEl] = useState(null);
+  const dirMenu = Boolean(dirEl);
+  const [templateEl, setTemplateEl] = useState(null);
+  const templateMenu = Boolean(templateEl);
+
+  //メニュー表示
+  const showMenu = (e,call) => {
+    e.preventDefault();
+    call(e.target);
+    e.stopPropagation();
+  }
+
+  //メニューを閉じる
+  const closeMenu = (call) => {
+    setId(undefined);
+    call(null);
+  };
+
+  const toggleList = (src,id) => {
+    var ex = false;
+    var list = [];
+    src.map( (v) => {
+      if ( v !== id ) {
+        list.push(v);
+      } else {
+        ex = true;
+      }
+    });
+    if ( !ex ) {
+      list.push(id);
+    }
+    return list;
+  }
+
+  const expanded = (e,selectId) => {
+    //すでに選択していた場合
+    if ( id === selectId ) {
+      var wk = toggleList(expand,selectId);
+      setExpand(wk);
+    }
+  }
+
+  const setCurrentId = (id) => {
+    setId(id);
+    setSelected([id]);
+  }
+
+  //テンプレート作成
+  const handleRegisterTemplate = (e,call) => {
+    closeMenu(call);
+    nav("/template/register/" + typ);
+  }
+
+  //テンプレート編集
+  const handleEditTemplate = (e,call) => {
+    closeMenu(call);
+    nav("/template/edit/" + id);
+  }
+
+  //テンプレートを開く
+  const handleTemplateOpen = (e, id) => {
+    setCurrentId(id);
+    nav("/editor/template/" + id);
+  }
+
+  //ツリー描画　
+  const getTreeItemsFromData = leafs => {
+
+    if ( leafs === null ) {
+      //return <></>;
+    }
+
+    return leafs.map(leaf => {
+
+      let children = [];
+      if ( leaf.children && leaf.children.length > 0) {
+        children = getTreeItemsFromData(leaf.children);
+      }
+
+      var icon = <TextSnippetIcon />;
+      var caller = setTemplateEl;
+      var evFunc = handleTemplateOpen;
+
+      if ( leaf.id.indexOf("DIR_") === 0 ) {
+        icon = <FolderIcon/>
+        caller = setDirEl;
+        evFunc = function(e,id) {setCurrentId(id)};
+      }
+
+      console.debug(leaf);
+      return (
+        <TreeItem key={leaf.id} nodeId={leaf.id}
+                  label={leaf.name} icon={icon}
+                  selected={selected}
+                  onDoubleClick={(e) => expanded(e,leaf.id)}
+                  onClick={(e) => evFunc(e,leaf.id)}
+                  onContextMenu={(e) => showMenu(e,caller)}
+                  children={children} />
+      );
+    });
+  };
+
+  return (<>
+
+    {/** ツリーの表示 */}
+    <TreeView id="tree" className='treeText'
+              defaultSelected={""}
+              expanded={expand}
+              aria-label="binder system navigator">
+      {getTreeItemsFromData(tree)}
+    </TreeView>
+
+    {/** テンプレートメニュー */}
+    <Menu anchorEl={templateEl}
+      open={templateMenu}
+      onClose={() => closeMenu(setTemplateEl)}>
+      <MenuItem onClick={(e) => handleEditTemplate(e,setTemplateEl)}>Edit</MenuItem>
+    </Menu>
+
+    {/** ディレクトリメニュー */}
+    <Menu anchorEl={dirEl}
+      open={dirMenu}
+      onClose={() => closeMenu(setDirEl)}>
+      <MenuItem onClick={(e) => handleRegisterTemplate(e,setDirEl)}>Add Template</MenuItem>
+    </Menu>
+
+
+  </>);
+}
+export default TemplateTree;

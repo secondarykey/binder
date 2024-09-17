@@ -36,7 +36,6 @@ func New(dir string) (*FileSystem, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("newFileSystem() error: %w", err)
 	}
-	rtn.base = dir
 	return rtn, nil
 }
 
@@ -57,6 +56,8 @@ func Load(dir string) (*FileSystem, error) {
 	b.repo = r
 	fs := osfs.New(dir)
 	b.fs = fs
+	b.base = dir
+
 	return &b, nil
 }
 

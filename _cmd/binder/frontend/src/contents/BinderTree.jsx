@@ -4,17 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Menu, MenuItem } from '@mui/material';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
 
-import WebAssetIcon from '@mui/icons-material/WebAsset';
-import NoteIcon from '@mui/icons-material/Note';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
-import HtmlIcon from '@mui/icons-material/Html';
 import FolderIcon from '@mui/icons-material/Folder';
-import CodeIcon from '@mui/icons-material/Code';
-import AttachmentIcon from '@mui/icons-material/Attachment';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
-import { copyClipboard } from '../App';
 
-import { OpenBinderSite, GetTree } from '../../wailsjs/go/api/App';
+import { OpenBinderSite, GetBinderTree } from '../../wailsjs/go/api/App';
 
 import Event from '../Event';
 
@@ -53,7 +47,7 @@ function BinderTree(props) {
 
   //リソースを作成
   const viewTree = () => {
-    GetTree().then((resp) => {
+    GetBinderTree().then((resp) => {
       setTree(resp.data);
     }).catch((err) => {
       Event.showErrorMessage(err);

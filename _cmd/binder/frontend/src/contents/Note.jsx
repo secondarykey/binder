@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
-import { GetNoteWithTemplates } from "../../wailsjs/go/api/App";
+import { GetNote,GetHTMLTemplates } from "../../wailsjs/go/api/App";
 import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
 import noImage from '../assets/images/noimage.png'
 
@@ -18,6 +18,7 @@ import Event from "../Event";
  */
 function Note(props) {
 
+  const nav = useNavigate();
   const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
@@ -33,6 +34,10 @@ function Note(props) {
   const [layouts, setLayouts] = useState([]);
   const [contents, setContents] = useState([]);
 
+
+  /**
+   * ID変更時操作
+   */
   useEffect(() => {
 
     if (!currentId) {
@@ -53,7 +58,7 @@ function Note(props) {
       setId(currentId);
     }
 
-    GetNoteWithTemplates(currentId).then((note) => {
+    GetNote(currentId).then((note) => {
 
       setName(note.name);
       setDetail(note.detail)
@@ -62,11 +67,27 @@ function Note(props) {
       setLayout(note.layoutTemplate)
       setContent(note.contentTemplate)
 
-      setLayouts(note.layouts)
-      setContents(note.contents)
-
       Event.changeTitle("Edit Note:" + note.name);
 
+    }).catch((err) => {
+      Event.showErrorMessage(err);
+    })
+
+  }, [currentId]);
+
+  /**
+   * 初期処理
+   */
+  useEffect(() => {
+
+    GetHTMLTemplates().then( (tmpls)=> {
+      setLayouts(tmpls.layouts)
+      setContents(tmpls.contents)
+
+      if ( mode === "register" ) {
+        setLayout(tmpls.layouts[0].id)
+        setContent(tmpls.contents[0].id)
+      }
     }).catch((err) => {
       Event.showErrorMessage(err);
     })
@@ -77,8 +98,11 @@ function Note(props) {
       Event.showErrorMessage(err);
     })
 
-  }, [currentId]);
+  }, []);
 
+  /**
+   * 保存処理
+   */
   const handleSave = () => {
 
     var note = {};
@@ -91,20 +115,22 @@ function Note(props) {
 
     EditNote(note, imageFile).then((resp) => {
 
+      Event.refreshTree();
       //新規作成時のみ切り替え
       if (mode === "register") {
         nav("/note/edit/" + resp.id);
         return;
       }
 
-      Event.refreshTree();
       Event.showSuccess("Update Note.")
     }).catch((err) => {
       Event.showErrorMessage(err);
     });
   }
 
-  //削除
+  /**
+   * 削除処理
+   */
   const handleDelete = () => {
     RemoveNote(id).then((resp) => {
       Event.refreshTree();
@@ -133,14 +159,26 @@ function Note(props) {
     e.target.src = noImage;
   }
 
+  /**
+   * IDコピー処理
+   * @param {*} e 
+   */
   const handleCopyId = (e) => {
     copyClipboard(id);
     Event.showSuccess("Copied.");
   }
 
+  /**
+   * レイアウトテンプレート変更
+   * @param {*} e 
+   */
   const handleChangeLayout = (e) => {
     setLayout(e.target.value);
   }
+  /**
+   * コンテンツテンプレート変更
+   * @param {*} e 
+   */
   const handleChangeContent = (e) => {
     setContent(e.target.value);
   }

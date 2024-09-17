@@ -7,7 +7,7 @@ import '../assets/vim.min.js';
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
-import { OpenTemplate, CreateTemplateHTML, SaveTemplate, Generate, Commit, GetLatestNoteId } from "../../wailsjs/go/api/App.js";
+import { OpenTemplate, CreateTemplateHTML, SaveTemplate, Generate, Commit} from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -40,41 +40,6 @@ function Editor(props) {
   const redrawNoteElm = async (id,resp) => {
     var elm = await createMarked(id,resp, true);
     setNoteElm(elm);
-  }
-
-  const changeTemplateName = (id) => {
-    var ret = "Note";
-    if (id === "layout") {
-      ret = "Layout";
-    } else if (id === "index") {
-      ret = "Index";
-    } else if (id === "list") {
-      ret = "NoteList";
-    }
-    return ret;
-  }
-
-  const createNoteElement = async () => {
-    var id = await getLatestNoteId();
-    setTemplateNoteId(id);
-
-    //最新のノートを取得
-    OpenNote(id).then((resp) => {
-      redrawNoteElm(id,resp)
-    }).catch((err) => {
-      Event.showErrorMessage(err);
-    });
-  }
-
-  const getTemplateNoteId = async () => {
-    var id = "";
-    await GetLatestNoteId().then((resp) => {
-      id = resp;
-    }).catch((err) => {
-      Event.showErrorMessage(err);
-    })
-    return id;
-
   }
 
   //センタリング用のタグを埋め込む
@@ -160,7 +125,7 @@ function Editor(props) {
         Event.showErrorMessage(err);
       })
 
-    } else if (m === "template") {
+    } else if (mode === "template") {
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
@@ -168,12 +133,11 @@ function Editor(props) {
         //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
         //TODO: HTML をどのように作成するかを考える 
         //createNoteElement();
+        Event.changeTitle(resp.name)
       }).catch((err) => {
         Event.showErrorMessage(err);
       });
 
-      //TODO テンプレートに名称が入るか？
-      Event.changeTitle(resp.name)
     }
 
   }, [id]);
@@ -185,7 +149,7 @@ function Editor(props) {
     } else if (mode === "note") {
       viewHTML(insertCenterTag(text));
     } else if (mode === "template") {
-      viewHTML(text, noteElm);
+      //viewHTML(text, noteElm);
     } else {
       //初回時の実行があるか
     }
@@ -234,11 +198,11 @@ function Editor(props) {
       })
 
     } else if (mode === "template") {
-      CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
-        setHTML(resp);
-      }).catch((err) => {
-        Event.showErrorMessage(err);
-      })
+      //CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
+        //setHTML(resp);
+      //}).catch((err) => {
+        //Event.showErrorMessage(err);
+      //})
     }
   }
 
@@ -261,7 +225,7 @@ function Editor(props) {
     if (t === "dragstart") {
       startX = e.screenX;
     } else if (t === "dragend") {
-      var w = width - (startX - e.screenX);
+      var w = width - (startX - e.screenX );
       setWidth(w);
     }
   }
@@ -303,6 +267,7 @@ function Editor(props) {
     } else if (mode === "diagram") {
       elm = await createMermaid(text);
     }
+
     //出力処理を行う
     Generate(mode,id,elm).then(() => {
       Event.showSuccess("Generate.")
@@ -338,16 +303,15 @@ function Editor(props) {
   editorStyle.color = "#eeeeee";
   editorStyle.fontFamily = "Calex Code JP Regular";
 
-  var menuWidth = 0;
-  menuWidth = 320;
-
+  var menuWidth = 310;
   var splitterW = 10;
+
   {/** スプリッター部分をコンポーネント化するか？ */ }
   var editWrapperStyle = {};
   editWrapperStyle.width = width + "px";
 
   var splitterStyle = {};
-  splitterStyle.left = (menuWidth + width) + "px";
+  splitterStyle.left = (menuWidth + width - 3) + "px";
   var viewerStyle = {};
   viewerStyle.left = (menuWidth + width + splitterW) + "px";
 
@@ -384,7 +348,7 @@ function Editor(props) {
 
         {/** 表示するコンポーネントを変更 */}
         <div id="dataViewer" style={viewerStyle}>
-          {(mode === "note" || mode === "template") &&
+          {(mode === "note" ) &&
           <>
             <HTMLFrame html={html}/>
           </>

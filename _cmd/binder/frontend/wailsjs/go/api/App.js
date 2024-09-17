@@ -58,6 +58,10 @@ export function GetAsset(arg1) {
   return window['go']['api']['App']['GetAsset'](arg1);
 }
 
+export function GetBinderTree() {
+  return window['go']['api']['App']['GetBinderTree']();
+}
+
 export function GetConfig() {
   return window['go']['api']['App']['GetConfig']();
 }
@@ -66,24 +70,20 @@ export function GetDiagram(arg1) {
   return window['go']['api']['App']['GetDiagram'](arg1);
 }
 
-export function GetLatestNoteId() {
-  return window['go']['api']['App']['GetLatestNoteId']();
+export function GetHTMLTemplates() {
+  return window['go']['api']['App']['GetHTMLTemplates']();
 }
 
 export function GetNote(arg1) {
   return window['go']['api']['App']['GetNote'](arg1);
 }
 
-export function GetNoteWithTemplates(arg1) {
-  return window['go']['api']['App']['GetNoteWithTemplates'](arg1);
-}
-
 export function GetSetting() {
   return window['go']['api']['App']['GetSetting']();
 }
 
-export function GetTree() {
-  return window['go']['api']['App']['GetTree']();
+export function GetTemplateTree() {
+  return window['go']['api']['App']['GetTemplateTree']();
 }
 
 export function LoadBinder(arg1) {

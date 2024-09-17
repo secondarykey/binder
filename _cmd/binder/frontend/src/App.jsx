@@ -57,23 +57,18 @@ function App() {
   const [msgObj, setMessage] = useState(initMsg);
   const [msgDlg, setMessageDialog] = useState(false);
 
-  //メニューの開閉管理
-  const [redraw, setRedraw] = useState(new Date());
-  //ツリー更新用
-  const refreshTree = () => {
-    setRedraw(new Date());
-  }
-
   useEffect(() => {
-    /**
-     * イベント登録
-     */
+
+    console.log(location.href)
+    //イベント登録
     Event.register(Event.ShowMessage,(obj) => {
       showSlideMessage(obj);
     })
+
     //設定を取得
     GetSetting().then((s) => {
       if (s.path.runWithOpen) {
+        //TODO バインダーを選択する
       } else {
       }
     }).catch((err) => {

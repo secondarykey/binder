@@ -7,6 +7,7 @@ import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HomeIcon from '@mui/icons-material/Home';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 
 import Event from './Event';
 import FileMenu from './contents/FileMenu';
@@ -14,6 +15,7 @@ import BinderTree from './contents/BinderTree';
 
 import "./assets/Menu.css";
 import { SettingsApplications } from '@mui/icons-material';
+import TemplateTree from './contents/TemplateTree';
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -108,6 +110,13 @@ function Menu(props) {
   }
 
   /**
+   * テンプレート設定
+   */
+  const handleClickTemplate = () => {
+    nav("/template/view");
+  }
+
+  /**
    * 全体の設定を開く
    */
   const handleSettingClick = () => {
@@ -123,12 +132,16 @@ function Menu(props) {
           <HomeIcon className="leftIcon" />
         </IconButton>
 
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickTree}>
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
         </IconButton>
 
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickBinderSetting}>
-          <SettingsApplications contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+          <ContentPasteIcon fill="white" className="leftIcon"  />
+        </IconButton>
+
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+          <SettingsApplications fill="white" className="leftIcon" />
         </IconButton>
 
         {/** メニューを閉じてる場合 */}
@@ -165,9 +178,12 @@ function Menu(props) {
         <Paper id="leftContent">
 
           <Routes>
+
             {/** 複数指定のコンポーネントを作成 */}
             <Route path={"/"} element={<> <FileMenu /> </>} />
             <Route path={"/file/*"} element={<> <FileMenu /> </>} />
+            <Route path={"/template/*"} element={<> <TemplateTree /> </>} />
+            <Route path={"/editor/template/:id"} element={<TemplateTree />} />
 
             <Route path="*" element={<>
               <BinderTree />

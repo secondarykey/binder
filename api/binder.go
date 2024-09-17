@@ -102,3 +102,30 @@ func (a *App) SaveSetting(s *settings.Setting) error {
 func (a *App) GetSetting() *settings.Setting {
 	return settings.Get()
 }
+
+func (a *App) GetBinderTree() (*binder.Tree, error) {
+
+	if a.current == nil {
+		return nil, fmt.Errorf("Not Open Binder")
+	}
+
+	tree, err := a.current.GetBinderTree()
+	if err != nil {
+		return nil, fmt.Errorf("GetBinderTree() error\n%+v", err)
+	}
+	return tree, nil
+}
+
+func (a *App) GetTemplateTree() (*binder.Tree, error) {
+
+	if a.current == nil {
+		return nil, fmt.Errorf("Not Open Binder")
+	}
+
+	tree, err := a.current.GetTemplateTree()
+	if err != nil {
+		return nil, fmt.Errorf("GetTemplateTree() error\n%+v", err)
+	}
+
+	return tree, nil
+}

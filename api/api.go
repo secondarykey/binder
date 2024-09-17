@@ -97,19 +97,6 @@ func (a *App) SelectFile(name string, ptn string) (string, error) {
 	return selection, nil
 }
 
-func (a *App) GetTree() (*binder.Tree, error) {
-
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
-
-	r, err := a.current.GetTree()
-	if err != nil {
-		return nil, fmt.Errorf("GetTree() error\n%+v", err)
-	}
-	return r, nil
-}
-
 func (a *App) Generate(noteId string, dataId string, elm string) error {
 	return a.current.Generate(noteId, dataId, elm)
 }

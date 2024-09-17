@@ -42,6 +42,10 @@ class HTMLFrame extends React.Component {
         //表示箇所を真ん中にする
         setTimeout(function() {
           var doc = c.contentDocument || c.contentWindow.document;
+          //クリック禁止を行う
+          doc.addEventListener("click",function(e) {
+            e.preventDefault();
+          });
           var f = doc.querySelector("#binder_focus_id");
           if ( f !== undefined && f !== null ) {
             f.scrollIntoView({  behavior: 'instant', block:"center" })

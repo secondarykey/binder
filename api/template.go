@@ -52,3 +52,21 @@ func (a *App) CreateTemplateHTML(id string, data string, elm string) (string, er
 	}
 	return html, nil
 }
+
+type Templates struct {
+	Layouts  []*model.Template `json:"layouts"`
+	Contents []*model.Template `json:"contents"`
+}
+
+func (a *App) GetHTMLTemplates() (*Templates, error) {
+
+	l, c, err := a.current.GetHTMLTemplates()
+	if err != nil {
+		return nil, fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
+	}
+
+	var tmpls Templates
+	tmpls.Layouts = l
+	tmpls.Contents = c
+	return &tmpls, nil
+}

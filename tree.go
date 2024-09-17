@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"binder/db"
 	"binder/db/model"
 	"fmt"
 	"log/slog"
@@ -20,13 +21,25 @@ type Leaf struct {
 	Children []*Leaf `json:"children"`
 }
 
+func newLeaf(id, name string) *Leaf {
+	var l Leaf
+	l.Id = id
+	l.Name = name
+	return &l
+}
+
+func (l *Leaf) AddChild(c *Leaf) {
+	l.Children = append(l.Children, c)
+	c.ParentId = l.Id
+}
+
 func (l *Leaf) String() string {
 	return fmt.Sprintf("%s(%s) %s", l.Name, l.Id, l.Type)
 }
 
-func (b *Binder) GetTree() (*Tree, error) {
+func (b *Binder) GetBinderTree() (*Tree, error) {
 
-	slog.Info("GetTree() Call")
+	slog.Info("GetBinderTree() Call")
 
 	//TODO 多い場合の表示を考える
 	notes, err := b.db.FindUpdatedNotes(-1, -1)
@@ -92,5 +105,53 @@ func convertDiagram2Leaf(d *model.Diagram) *Leaf {
 	l.ParentId = d.ParentId
 	l.Name = d.Name
 	l.Type = "diagram"
+	return &l
+}
+
+func (b *Binder) GetTemplateTree() (*Tree, error) {
+
+	slog.Info("GetTemplateTree() Call")
+
+	htmlLeaf := newLeaf("DIR_HTML", "HTML")
+
+	tempMap := make(map[db.TemplateType]*Leaf)
+	tempMap[db.LayoutTemplateType] = newLeaf("DIR_HTML_Layout", "Layout")
+	tempMap[db.ContentTemplateType] = newLeaf("DIR_HTML_Content", "Content")
+	tempMap[db.NoteTemplateType] = newLeaf("DIR_Note", "Note")
+	tempMap[db.DiagramTemplateType] = newLeaf("DIR_Diagram", "Diagram")
+	tempMap[db.TemplateTemplateType] = newLeaf("DIR_Template", "Template")
+
+	//大枠のツリーを作成
+	root := make([]*Leaf, 4)
+	root[0] = htmlLeaf
+	root[1] = tempMap[db.NoteTemplateType]
+	root[2] = tempMap[db.DiagramTemplateType]
+	root[3] = tempMap[db.TemplateTemplateType]
+
+	htmlLeaf.AddChild(tempMap[db.LayoutTemplateType])
+	htmlLeaf.AddChild(tempMap[db.ContentTemplateType])
+
+	templates, err := b.db.FindTemplates()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
+	}
+
+	for _, temp := range templates {
+		t := db.TemplateType(temp.Typ)
+		current := tempMap[t]
+		current.AddChild(convertTemplateLeaf(temp))
+	}
+
+	var tree Tree
+	tree.Data = root
+
+	return &tree, nil
+}
+
+func convertTemplateLeaf(d *model.Template) *Leaf {
+	var l Leaf
+	l.Id = d.Id
+	l.Name = d.Name
+	l.Type = string(d.Typ)
 	return &l
 }

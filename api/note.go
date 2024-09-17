@@ -49,34 +49,6 @@ func (a *App) GetNote(id string) (*model.Note, error) {
 	return n, nil
 }
 
-func (a *App) GetNoteWithTemplates(id string) (*model.Note, error) {
-
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
-
-	n, err := a.current.GetNoteWithTemplates(id)
-	if err != nil {
-		slog.Error("GetNoteWithTemplates()", n)
-		return nil, fmt.Errorf("GetNoteWithTemplates() error\n%+v", err)
-	}
-
-	return n, nil
-}
-
-func (a *App) GetLatestNoteId() (string, error) {
-
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
-
-	id, err := a.current.GetLatestNoteId()
-	if err != nil {
-		return "", fmt.Errorf("GetLatestNoteId() error\n%+v", err)
-	}
-	return id, nil
-}
-
 func (a *App) OpenNote(noteId string) (string, error) {
 
 	if a.current == nil {
