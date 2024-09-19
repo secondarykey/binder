@@ -123,6 +123,7 @@ function Menu(props) {
     nav("/setting");
   }
 
+  var tempTree = <TemplateTree/>
   return (
     <>
       {/** 固定メニューの箇所 */}
@@ -182,8 +183,8 @@ function Menu(props) {
             {/** 複数指定のコンポーネントを作成 */}
             <Route path={"/"} element={<> <FileMenu /> </>} />
             <Route path={"/file/*"} element={<> <FileMenu /> </>} />
-            <Route path={"/template/*"} element={<> <TemplateTree /> </>} />
-            <Route path={"/editor/template/:id"} element={<TemplateTree />} />
+            <Route path={"/template/*"} element={tempTree} />
+            <Route path={"/editor/template/:id"} element={tempTree} />
 
             <Route path="*" element={<>
               <BinderTree />

@@ -205,7 +205,6 @@ function BinderTree(props) {
       return (
         <TreeItem key={leaf.id} nodeId={leaf.id}
                   label={leaf.name} icon={icon}
-                  selected={selected}
                   onDoubleClick={(e) => expanded(e,leaf.id)}
                   onClick={(e) => evFunc(e,leaf.id)}
                   onContextMenu={(e) => showMenu(e,caller)}
@@ -218,7 +217,7 @@ function BinderTree(props) {
 
     {/** ツリーの表示 */}
     <TreeView id="tree" className='treeText'
-              defaultSelected={""}
+              selected={selected}
               expanded={expand}
               aria-label="binder system navigator">
       {getTreeItemsFromData(tree)}

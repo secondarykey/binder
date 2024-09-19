@@ -50,6 +50,10 @@ export function EditNote(arg1, arg2) {
   return window['go']['api']['App']['EditNote'](arg1, arg2);
 }
 
+export function EditTemplate(arg1) {
+  return window['go']['api']['App']['EditTemplate'](arg1);
+}
+
 export function Generate(arg1, arg2, arg3) {
   return window['go']['api']['App']['Generate'](arg1, arg2, arg3);
 }
@@ -80,6 +84,10 @@ export function GetNote(arg1) {
 
 export function GetSetting() {
   return window['go']['api']['App']['GetSetting']();
+}
+
+export function GetTemplate(arg1) {
+  return window['go']['api']['App']['GetTemplate'](arg1);
 }
 
 export function GetTemplateTree() {

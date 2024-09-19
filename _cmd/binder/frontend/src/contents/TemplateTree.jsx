@@ -24,6 +24,10 @@ function TemplateTree(props) {
   const nav = useNavigate();
   //ツリーデータ
   const [tree, setTree] = useState([]);
+  const [id,setId] = useState(undefined);
+
+  const [selected,setSelected] = useState(["DIR_HTML"]);
+  const [expand,setExpand] = useState(["DIR_HTML"]);
 
   //リソースを作成
   const viewTree = () => {
@@ -41,11 +45,6 @@ function TemplateTree(props) {
     })
     viewTree();
   }, [])
-
-  const [id,setId] = useState(undefined);
-
-  const [selected,setSelected] = useState(["DIR_HTML"]);
-  const [expand,setExpand] = useState(["DIR_HTML"]);
 
   const [dirEl, setDirEl] = useState(null);
   const dirMenu = Boolean(dirEl);
@@ -82,9 +81,12 @@ function TemplateTree(props) {
   }
 
   const expanded = (e,selectId) => {
+    e.preventDefault();
     //すでに選択していた場合
     if ( id === selectId ) {
       var wk = toggleList(expand,selectId);
+      console.log("selectId:" + selectId)
+      console.log("Extended:" + wk)
       setExpand(wk);
     }
   }
@@ -112,6 +114,12 @@ function TemplateTree(props) {
     nav("/editor/template/" + id);
   }
 
+  //テンプレートを開く
+  const handleSelectDir = (e, id) => {
+    setCurrentId(id);
+    nav("/template/view");
+  }
+
   //ツリー描画　
   const getTreeItemsFromData = leafs => {
 
@@ -130,17 +138,17 @@ function TemplateTree(props) {
       var caller = setTemplateEl;
       var evFunc = handleTemplateOpen;
 
+      //DIR指定は固定
       if ( leaf.id.indexOf("DIR_") === 0 ) {
         icon = <FolderIcon/>
         caller = setDirEl;
-        evFunc = function(e,id) {setCurrentId(id)};
+        evFunc = handleSelectDir;
       }
 
       console.debug(leaf);
       return (
         <TreeItem key={leaf.id} nodeId={leaf.id}
                   label={leaf.name} icon={icon}
-                  selected={selected}
                   onDoubleClick={(e) => expanded(e,leaf.id)}
                   onClick={(e) => evFunc(e,leaf.id)}
                   onContextMenu={(e) => showMenu(e,caller)}
@@ -153,7 +161,7 @@ function TemplateTree(props) {
 
     {/** ツリーの表示 */}
     <TreeView id="tree" className='treeText'
-              defaultSelected={""}
+              selected={selected}
               expanded={expand}
               aria-label="binder system navigator">
       {getTreeItemsFromData(tree)}

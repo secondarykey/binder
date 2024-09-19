@@ -29,6 +29,8 @@ export function EditDiagram(arg1:model.Diagram):Promise<model.Diagram>;
 
 export function EditNote(arg1:model.Note,arg2:string):Promise<model.Note>;
 
+export function EditTemplate(arg1:model.Template):Promise<model.Template>;
+
 export function Generate(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function GetAsset(arg1:string):Promise<model.Asset>;
@@ -44,6 +46,8 @@ export function GetHTMLTemplates():Promise<api.Templates>;
 export function GetNote(arg1:string):Promise<model.Note>;
 
 export function GetSetting():Promise<settings.Setting>;
+
+export function GetTemplate(arg1:string):Promise<model.Template>;
 
 export function GetTemplateTree():Promise<binder.Tree>;
 

@@ -22,6 +22,7 @@ import { Routes, Route } from "react-router-dom";
 
 import "./assets/Viewer.css"
 import Empty from "./components/Empty";
+import Template from "./contents/Template";
 /**
  * コンテンツ表示部分
  * <pre>
@@ -85,10 +86,9 @@ function Viewer(props) {
             <Route path="/note/:mode/:currentId" element={<Note />} />
             <Route path="/diagram/:mode/:currentId" element={<Diagram />} />
             <Route path="/assets/:mode/:currentId" element={<Assets />} />
+            <Route path="/template/:mode/:currentId" element={<Template />} />
 
             <Route path="/template/view" element={<Empty />} />
-            <Route path="/template/register/:type" element={<Empty />} />
-            <Route path="/template/edit/:id" element={<Empty />} />
 
             <Route path="/editor/:mode/:id" element={<Editor />} />
           </Routes>
