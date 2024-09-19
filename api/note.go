@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder/db/model"
+	"binder/log"
 	"log/slog"
 
 	"fmt"
@@ -9,9 +10,7 @@ import (
 
 func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("EditNote()"))
 
 	slog.Info("EditNote()", slog.Any("Note", n), "image", imageName)
 	//ノートを追加
@@ -25,9 +24,7 @@ func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 
 func (a *App) RemoveNote(id string) error {
 
-	if a.current == nil {
-		return fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("RemoveNote()"))
 
 	slog.Info("RemoveNote()", "Id", id)
 	_, err := a.current.RemoveNote(id)
@@ -39,9 +36,8 @@ func (a *App) RemoveNote(id string) error {
 
 func (a *App) GetNote(id string) (*model.Note, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("GetNote()"))
+
 	n, err := a.current.GetNote(id)
 	if err != nil {
 		return nil, fmt.Errorf("GetNote() error\n%+v", err)
@@ -51,9 +47,7 @@ func (a *App) GetNote(id string) (*model.Note, error) {
 
 func (a *App) OpenNote(noteId string) (string, error) {
 
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("OpenNote()"))
 
 	data, err := a.current.OpenNote(noteId)
 	if err != nil {
@@ -64,9 +58,7 @@ func (a *App) OpenNote(noteId string) (string, error) {
 
 func (a *App) SaveNote(noteId string, data string) error {
 
-	if a.current == nil {
-		return fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("SaveNote()"))
 
 	err := a.current.SaveNote(noteId, []byte(data))
 	if err != nil {
@@ -77,9 +69,7 @@ func (a *App) SaveNote(noteId string, data string) error {
 
 func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("CreateNoteHTML()"))
 
 	n, err := a.current.GetNote(id)
 	if err != nil {
@@ -97,9 +87,7 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 
 func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
 
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("ParseNote()"))
 
 	n, err := a.current.GetNote(id)
 	if err != nil {

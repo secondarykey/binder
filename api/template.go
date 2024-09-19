@@ -2,17 +2,41 @@ package api
 
 import (
 	"binder/db/model"
+	"binder/log"
 	"fmt"
 )
 
+func (a *App) EditTemplate(t *model.Template) (*model.Template, error) {
+
+	defer log.PrintTrace(log.Func("EditTemplate()"))
+
+	tmp, err := a.current.EditTemplate(t)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("binder.EditTemplate() error\n%+v", err)
+	}
+	return tmp, nil
+}
+
+func (a *App) GetTemplate(id string) (*model.Template, error) {
+
+	defer log.PrintTrace(log.Func("GetTemplate()"))
+
+	t, err := a.current.GetTemplate(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetTemplate() error\n%+v", err)
+	}
+	return t, nil
+}
+
 func (a *App) OpenTemplate(id string) (string, error) {
 
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("OpenTemplate()"))
 
 	data, err := a.current.OpenTemplate(id)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return "", fmt.Errorf("ReadTemplate() error\n%+v", err)
 	}
 	return string(data), nil
@@ -20,12 +44,11 @@ func (a *App) OpenTemplate(id string) (string, error) {
 
 func (a *App) SaveTemplate(id string, data string) error {
 
-	if a.current == nil {
-		return fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("SaveTemplate()"))
 
 	err := a.current.SaveTemplate(id, []byte(data))
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("Savetemplate() error\n%+v", err)
 	}
 
@@ -34,20 +57,19 @@ func (a *App) SaveTemplate(id string, data string) error {
 
 func (a *App) CreateTemplateHTML(id string, data string, elm string) (string, error) {
 
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("CreateTemplateHTML()"))
 
 	temp, err := a.current.GetTemplate(id)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return "", fmt.Errorf("GetTemplate() error: %w", err)
 	}
 
 	//TODO ノートを指定
 	var note model.Note
-
 	html, err := a.current.CreateTemplateHTML(temp, &note, data, elm)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
 	}
 	return html, nil
@@ -60,8 +82,11 @@ type Templates struct {
 
 func (a *App) GetHTMLTemplates() (*Templates, error) {
 
+	defer log.PrintTrace(log.Func("GetHTMLTemplates()"))
+
 	l, c, err := a.current.GetHTMLTemplates()
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
 	}
 

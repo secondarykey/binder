@@ -1,9 +1,13 @@
 package api
 
-import "fmt"
+import (
+	"binder/log"
+	"fmt"
+)
 
 func (a *App) Commit(noteId string, dataId string, auto bool) error {
 
+	defer log.PrintTrace(log.Func("Commit()"))
 	err := a.current.SaveCommit(noteId, dataId, auto)
 	if err != nil {
 		return fmt.Errorf("Commit() error\n%+v", err)
@@ -13,9 +17,7 @@ func (a *App) Commit(noteId string, dataId string, auto bool) error {
 
 func (a *App) Remotes() ([]string, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("Remotes()"))
 
 	remotes, err := a.current.GetRemotes()
 	if err != nil {
@@ -26,9 +28,7 @@ func (a *App) Remotes() ([]string, error) {
 
 func (a *App) AddRemote(name string, url string) error {
 
-	if a.current == nil {
-		return fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("AddRemote()"))
 
 	err := a.current.CreateRemote(name, url)
 	if err != nil {

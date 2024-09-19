@@ -2,15 +2,14 @@ package api
 
 import (
 	"binder/db/model"
+	"binder/log"
 
 	"fmt"
 )
 
 func (a *App) EditAsset(d *model.Asset, file string) (*model.Asset, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("EditAsset()"))
 
 	//データを追加
 	rtn, err := a.current.EditAsset(d, file)
@@ -23,9 +22,7 @@ func (a *App) EditAsset(d *model.Asset, file string) (*model.Asset, error) {
 
 func (a *App) GetAsset(id string) (*model.Asset, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("GetAsset()"))
 
 	//データを追加
 	rtn, err := a.current.GetAsset(id)

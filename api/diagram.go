@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder/db/model"
+	"binder/log"
 	"log/slog"
 
 	"fmt"
@@ -9,9 +10,7 @@ import (
 
 func (a *App) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("EditDiagram()"))
 
 	//データを追加
 	rtn, err := a.current.EditDiagram(d)
@@ -22,9 +21,9 @@ func (a *App) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 }
 
 func (a *App) GetDiagram(id string) (*model.Diagram, error) {
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+
+	defer log.PrintTrace(log.Func("GetDiagram()"))
+
 	d, err := a.current.GetDiagram(id)
 	if err != nil {
 		return nil, fmt.Errorf("GetDiagram() error\n%+v", err)
@@ -34,9 +33,7 @@ func (a *App) GetDiagram(id string) (*model.Diagram, error) {
 
 func (a *App) RemoveDiagram(id string) error {
 
-	if a.current == nil {
-		return fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("RemoveDiagram()"))
 
 	slog.Info("RemoveDiagram()", "Id", id)
 	_, err := a.current.RemoveDiagram(id)
@@ -48,9 +45,7 @@ func (a *App) RemoveDiagram(id string) error {
 
 func (a *App) OpenDiagram(id string) (string, error) {
 
-	if a.current == nil {
-		return "", fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("OpenDiagram()"))
 
 	data, err := a.current.OpenDiagram(id)
 	if err != nil {
@@ -62,9 +57,7 @@ func (a *App) OpenDiagram(id string) (string, error) {
 
 func (a *App) SaveDiagram(id string, data string) error {
 
-	if a.current == nil {
-		return fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("SaveDiagram()"))
 
 	err := a.current.SaveDiagram(id, []byte(data))
 	if err != nil {

@@ -2,18 +2,20 @@ package api
 
 import (
 	"binder"
+	"binder/log"
 	"binder/settings"
 	"fmt"
-	"log"
-	"log/slog"
 
 	"golang.org/x/xerrors"
 )
 
 func (a *App) LoadBinder(dir string) error {
 
+	defer log.PrintTrace(log.Func("LoadBinder()"))
+
 	err := a.load(dir)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("load() error\n%+v", err)
 	}
 	return nil
@@ -36,18 +38,21 @@ func (a *App) load(dir string) error {
 	s.Path.AddHistory(dir)
 	err = s.Save()
 	if err != nil {
-		log.Println(err)
+		log.PrintStackTrace(err)
 	}
 	return nil
 }
 
 func (a *App) CloseBinder() error {
 
+	defer log.PrintTrace(log.Func("CloseBinder()"))
+
 	if a.current != nil {
 		err := a.current.Close()
 		a.current = nil
 
 		if err != nil {
+			log.PrintStackTrace(err)
 			return fmt.Errorf("binder Close() error\n%+v", err)
 		}
 	}
@@ -56,25 +61,24 @@ func (a *App) CloseBinder() error {
 
 func (a *App) CreateBinder(dir string, name string, sample bool) error {
 
-	err := binder.Install(dir, name, sample)
+	defer log.PrintTrace(log.Func("CreateBinder()"))
+
+	err := binder.Install(dir)
 	if err != nil {
-		rtn := fmt.Errorf("binder Install error\n%+v", err)
-		slog.Error(err.Error())
-		return rtn
+		log.PrintStackTrace(err)
+		return fmt.Errorf("binder Install error\n%+v", err)
 	}
 
 	err = a.load(dir)
 	if err != nil {
-		rtn := fmt.Errorf("binder load error\n%+v", err)
-		slog.Error(err.Error())
-		return rtn
+		log.PrintStackTrace(err)
+		return fmt.Errorf("binder load error\n%+v", err)
 	}
 
-	err = a.current.Initialize()
+	err = a.current.Initialize(name, sample)
 	if err != nil {
-		rtn := fmt.Errorf("binder Initialize() error\n%+v", err)
-		slog.Error(err.Error())
-		return rtn
+		log.PrintStackTrace(err)
+		return fmt.Errorf("binder Initialize() error\n%+v", err)
 	}
 
 	return nil
@@ -82,13 +86,17 @@ func (a *App) CreateBinder(dir string, name string, sample bool) error {
 
 func (a *App) CreateRemoteBinder(url string, dir string) error {
 
+	defer log.PrintTrace(log.Func("CreateRemoteBinder()"))
+
 	err := binder.CreateRemote(url, dir)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("CreateRemote() error\n%+v", err)
 	}
 
 	err = a.load(dir)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("load() error\n%+v", err)
 	}
 
@@ -96,18 +104,30 @@ func (a *App) CreateRemoteBinder(url string, dir string) error {
 }
 
 func (a *App) SaveSetting(s *settings.Setting) error {
-	return a.current.SaveSetting(s)
+	defer log.PrintTrace(log.Func("SaveSettings()"))
+
+	err := a.current.SaveSetting(s)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("SaveSetting() error:\n%+v", err)
+	}
+	return nil
 }
 
 func (a *App) GetSetting() *settings.Setting {
-	return settings.Get()
+
+	defer log.PrintTrace(log.Func("GetSetting()"))
+
+	obj := settings.Get()
+	if obj == nil {
+		log.PrintStackTrace(fmt.Errorf("setting is nil"))
+	}
+	return obj
 }
 
 func (a *App) GetBinderTree() (*binder.Tree, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("GetBinderTree()"))
 
 	tree, err := a.current.GetBinderTree()
 	if err != nil {
@@ -118,12 +138,11 @@ func (a *App) GetBinderTree() (*binder.Tree, error) {
 
 func (a *App) GetTemplateTree() (*binder.Tree, error) {
 
-	if a.current == nil {
-		return nil, fmt.Errorf("Not Open Binder")
-	}
+	defer log.PrintTrace(log.Func("GetTemplateTree()"))
 
 	tree, err := a.current.GetTemplateTree()
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetTemplateTree() error\n%+v", err)
 	}
 
