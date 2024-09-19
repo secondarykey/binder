@@ -20,7 +20,7 @@ var embFs embed.FS
 // 渡されたパスをBinderに設定する
 // ディレクトリが存在する場合は行えない
 // サンプルとしていくつかデータを作成する
-func Install(dir string, name string, sample bool) error {
+func Install(dir string) error {
 
 	err := checkDirectory(dir, true)
 	if err != nil {
@@ -33,10 +33,10 @@ func Install(dir string, name string, sample bool) error {
 		return xerrors.Errorf("fs.New() error: %w", err)
 	}
 
-	return install(f, dir, name, sample)
+	return install(f, dir)
 }
 
-func install(fsObj *fs.FileSystem, dir string, name string, sample bool) error {
+func install(fsObj *fs.FileSystem, dir string) error {
 
 	//空でもディレクトリは作っておく
 	docsdir := filepath.Join(dir, "docs")
@@ -57,6 +57,12 @@ func install(fsObj *fs.FileSystem, dir string, name string, sample bool) error {
 		return xerrors.Errorf("os.Mkdir(notes) error: %w", err)
 	}
 
+	tempDir := filepath.Join(dir, "templates")
+	err = os.MkdirAll(tempDir, 0666)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir(templates) error: %w", err)
+	}
+
 	//データベースを作成
 	dbdir := filepath.Join(dir, "db")
 	err = os.MkdirAll(dbdir, 0666)
@@ -69,7 +75,7 @@ func install(fsObj *fs.FileSystem, dir string, name string, sample bool) error {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
-	err = fsObj.Add("db/config.csv", "db/notes.csv", "db/diagrams.csv", "db/assets.csv")
+	err = fsObj.Add("db/config.csv", "db/notes.csv", "db/diagrams.csv", "db/assets.csv", "db/templates.csv")
 	if err != nil {
 		return xerrors.Errorf("Add() error: %w", err)
 	}
@@ -77,40 +83,6 @@ func install(fsObj *fs.FileSystem, dir string, name string, sample bool) error {
 	err = fsObj.CommitAll(fs.M("install", "Database"))
 	if err != nil {
 		return xerrors.Errorf("CommitAll() error: %w", err)
-	}
-
-	//空のテンプレートファイルを作成
-	err = fsObj.CreateTemplateFiles()
-	if err != nil {
-		return xerrors.Errorf("db.Create() error: %w", err)
-	}
-
-	tempFs, err := stdFs.Sub(embFs, "_assets/templates/"+name)
-	if err != nil {
-		return xerrors.Errorf("template fs Sub() error: %w", err)
-	}
-
-	//全テンプレートを設定
-	for _, f := range []string{"layout", "index", "list", "note"} {
-		data, err := stdFs.ReadFile(tempFs, f+".tmpl")
-		if err != nil {
-			return xerrors.Errorf("fs ReadFile() error: %w", err)
-		}
-		err = fsObj.WriteTemplate(f, data)
-		if err != nil {
-			return xerrors.Errorf("WriteTemplate(%s) error: %w", f, err)
-		}
-	}
-
-	err = fsObj.CommitAll(fs.M("install", "Templates"))
-	if err != nil {
-		return xerrors.Errorf("CommitAll() error: %w", err)
-	}
-
-	if sample {
-		//sample内から作成を行う
-		//ノートとデータを作成する
-		//assets登録を行う
 	}
 
 	s := settings.Get()
@@ -141,14 +113,17 @@ func checkDirectory(dir string, install bool) error {
 	return nil
 }
 
-func (b *Binder) Initialize() error {
+func (b *Binder) Initialize(name string, sample bool) error {
+	if b == nil {
+		return EmptyError
+	}
 
 	var index model.Note
 	index.Id = "index"
 	index.ParentId = ""
 	index.Name = "Index"
-	index.LayoutTemplate = "Layout"
-	index.ContentTemplate = "Content"
+	index.LayoutTemplate = "layout"
+	index.ContentTemplate = "content"
 
 	_, err := b.EditNote(&index, "")
 	if err != nil {
@@ -159,8 +134,8 @@ func (b *Binder) Initialize() error {
 	child.Id = ""
 	child.ParentId = "index"
 	child.Name = "Content"
-	child.LayoutTemplate = "Layout"
-	child.ContentTemplate = "Content"
+	child.LayoutTemplate = "layout"
+	child.ContentTemplate = "content"
 	_, err = b.EditNote(&child, "")
 	if err != nil {
 		return fmt.Errorf("content register error\n%+v", err)
@@ -175,5 +150,36 @@ func (b *Binder) Initialize() error {
 		return fmt.Errorf("diagram register error\n%+v", err)
 	}
 
+	return nil
+}
+
+func (b *Binder) initializeTemplate(name string, sample bool) error {
+
+	if b == nil {
+		return EmptyError
+	}
+	//var indexTmpl model.Template
+
+	tempFs, err := stdFs.Sub(embFs, "_assets/templates/"+name)
+	if err != nil {
+		return xerrors.Errorf("template fs Sub() error: %w", err)
+	}
+
+	//全テンプレートを設定
+	for _, f := range []string{"layout", "index", "list", "note"} {
+		data, err := stdFs.ReadFile(tempFs, f+".tmpl")
+		if err != nil {
+			return xerrors.Errorf("fs ReadFile() error: %w", err)
+		}
+		err = b.fileSystem.WriteTemplate(f, data)
+		if err != nil {
+			return xerrors.Errorf("WriteTemplate(%s) error: %w", f, err)
+		}
+	}
+
+	err = b.fileSystem.CommitAll(fs.M("install", "Templates"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll() error: %w", err)
+	}
 	return nil
 }

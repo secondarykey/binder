@@ -2,16 +2,26 @@ package binder
 
 import (
 	"binder/db/model"
-	"log/slog"
 
 	"golang.org/x/xerrors"
 )
 
 func (b *Binder) GetNote(id string) (*model.Note, error) {
-	return b.db.GetNote(id)
+	if b == nil {
+		return nil, EmptyError
+	}
+	n, err := b.db.GetNote(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+	return n, nil
 }
 
 func (b *Binder) GetNoteWithTemplates(id string) (*model.Note, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
 
 	n, err := b.db.GetNote(id)
 	if err != nil {
@@ -29,22 +39,33 @@ func (b *Binder) GetNoteWithTemplates(id string) (*model.Note, error) {
 
 func (b *Binder) RemoveNote(id string) (*model.Note, error) {
 
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	n, err := b.db.GetNote(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+
 	//ファイルを削除
-	err := b.fileSystem.DeleteNote(id)
+	err = b.fileSystem.DeleteNote(id)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.DeleteNote() error: %w", err)
 	}
-	//TODO 現状は削除しているが、ID自体はゴミ箱に入れておいていいかも
+
 	err = b.db.DeleteNote(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
 	}
-	return nil, nil
+	return n, nil
 }
 
 func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 
-	slog.Info("Call EditNote()")
+	if b == nil {
+		return nil, EmptyError
+	}
 
 	rtn, reg, err := b.fileSystem.EditNote(n, imageName)
 	if err != nil {
@@ -68,18 +89,25 @@ func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) 
 	return rtn, nil
 }
 
-func (b *Binder) GetLatestNoteId() (string, error) {
-	id, err := b.db.GetLatestNoteId()
-	if err != nil {
-		return "", xerrors.Errorf("db.GetLatestNoteId() error: %w", err)
-	}
-	return id, nil
-}
-
 func (b *Binder) OpenNote(noteId string) ([]byte, error) {
-	return b.fileSystem.ReadNoteText(noteId)
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	data, err := b.fileSystem.ReadNoteText(noteId)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.ReadNoteText() error: %w", err)
+	}
+	return data, nil
 }
 
 func (b *Binder) SaveNote(noteId string, data []byte) error {
-	return b.fileSystem.WriteNoteText(noteId, data)
+	if b == nil {
+		return EmptyError
+	}
+	err := b.fileSystem.WriteNoteText(noteId, data)
+	if err != nil {
+		return xerrors.Errorf("fs.WriteNoteText() error: %w", err)
+	}
+	return nil
 }

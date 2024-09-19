@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 func TestInstall(t *testing.T) {
 
 	dir := filepath.Join(test.Dir, "create")
-	err := binder.Install(dir, "simple", false)
+	err := binder.Install(dir)
 	if err != nil {
 		t.Fatalf("create error: %+v\n", err)
 	}

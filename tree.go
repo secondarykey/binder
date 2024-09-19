@@ -39,7 +39,9 @@ func (l *Leaf) String() string {
 
 func (b *Binder) GetBinderTree() (*Tree, error) {
 
-	slog.Info("GetBinderTree() Call")
+	if b == nil {
+		return nil, EmptyError
+	}
 
 	//TODO 多い場合の表示を考える
 	notes, err := b.db.FindUpdatedNotes(-1, -1)
@@ -110,7 +112,9 @@ func convertDiagram2Leaf(d *model.Diagram) *Leaf {
 
 func (b *Binder) GetTemplateTree() (*Tree, error) {
 
-	slog.Info("GetTemplateTree() Call")
+	if b == nil {
+		return nil, EmptyError
+	}
 
 	htmlLeaf := newLeaf("DIR_HTML", "HTML")
 

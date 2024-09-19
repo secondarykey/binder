@@ -7,6 +7,9 @@ import (
 )
 
 func (b *Binder) EditConfig(conf *model.Config) error {
+	if b == nil {
+		return EmptyError
+	}
 	org, err := b.db.GetConfig()
 	if err != nil {
 		return xerrors.Errorf("db.GetConfig() error: %w", err)
@@ -23,5 +26,12 @@ func (b *Binder) EditConfig(conf *model.Config) error {
 }
 
 func (b *Binder) GetConfig() (*model.Config, error) {
-	return b.db.GetConfig()
+	if b == nil {
+		return nil, EmptyError
+	}
+	c, err := b.db.GetConfig()
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetConfig() error: %w", err)
+	}
+	return c, nil
 }

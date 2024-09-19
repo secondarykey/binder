@@ -12,6 +12,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var EmptyError = fmt.Errorf("Binder is empty")
+
 type Binder struct {
 	fileSystem        *fs.FileSystem
 	db                *db.Instance
@@ -47,7 +49,7 @@ func CreateRemote(url, dir string) error {
 	err = checkDirectory(dir, false)
 	if err != nil {
 		//インストール処理を行う
-		err := install(f, dir, "simple", false)
+		err := install(f, dir)
 		if err != nil {
 			return xerrors.Errorf("binder.install() error: %w", err)
 		}
@@ -106,6 +108,10 @@ func Load(dir string) (*Binder, error) {
 
 func (b *Binder) Close() error {
 
+	if b == nil {
+		return EmptyError
+	}
+
 	var rtnErr error
 
 	fp := b.fileSystem
@@ -140,12 +146,13 @@ func (b *Binder) Close() error {
 
 func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
+	if b == nil {
+		return EmptyError
+	}
+
 	if dataId == "" {
 
-		err := b.fileSystem.TemplatesCommit()
-		if err != nil {
-			return xerrors.Errorf("TemplatesCommit() error: %w", err)
-		}
+		//TODO テンプレートのコミット
 
 		note, err := b.db.GetNote(noteId)
 		if err != nil {
@@ -201,6 +208,10 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 
+	if b == nil {
+		return EmptyError
+	}
+
 	var err error
 	t := ""
 	name := "nothing"
@@ -246,6 +257,10 @@ func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
 
 func (b *Binder) SaveSetting(s *settings.Setting) error {
 
+	if b == nil {
+		return EmptyError
+	}
+
 	org := settings.Get()
 
 	//Positionはそのまま
@@ -269,6 +284,10 @@ func (b *Binder) SaveSetting(s *settings.Setting) error {
 
 func (b *Binder) GetRemotes() ([]string, error) {
 
+	if b == nil {
+		return nil, EmptyError
+	}
+
 	configs, err := b.fileSystem.GetRemotes()
 	if err != nil {
 		return nil, xerrors.Errorf("fs.GetRemotes() error: %w", err)
@@ -282,6 +301,11 @@ func (b *Binder) GetRemotes() ([]string, error) {
 }
 
 func (b *Binder) CreateRemote(name, url string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
 	err := b.fileSystem.CreateRemote(name, url)
 	if err != nil {
 		return xerrors.Errorf("CreateRemote() error: %w", err)

@@ -81,6 +81,10 @@ type handler struct {
 
 func (b *Binder) newHTTPServer() (*http.Server, error) {
 
+	if b == nil {
+		return nil, EmptyError
+	}
+
 	pub := b.fileSystem.GetPublic()
 	docs, err := stdFs.Sub(b.fileSystem, pub)
 	if err != nil {
@@ -102,6 +106,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (b *Binder) Serve() error {
 
+	if b == nil {
+		return EmptyError
+	}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return xerrors.Errorf("net.Listen() error: %w", err)
@@ -126,5 +133,8 @@ func (b *Binder) Serve() error {
 }
 
 func (b *Binder) ServerAddress() string {
+	if b == nil {
+		return ""
+	}
 	return b.httpServerAddress
 }

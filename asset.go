@@ -8,42 +8,46 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (b *Binder) EditAsset(d *model.Asset, f string) (*model.Asset, error) {
+func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
 
 	//新規指定だった場合
-	if d.Id == "" {
+	if a.Id == "" {
 		//TODO ID の使用を考える
 		id, err := uuid.NewV7()
 		if err != nil {
 			return nil, xerrors.Errorf("uuid.NewV7() error: %w", err)
 		}
 
-		d.Id = id.String()
+		a.Id = id.String()
 		fn := filepath.Base(f)
-		d.Name = fn
-		d.Alias = fn
+		a.Name = fn
+		a.Alias = fn
 
-		if b.db.ExistAsset(d.Id) {
+		if b.db.ExistAsset(a.Id) {
 			return nil, xerrors.Errorf("Exist Asset error")
 		}
 
-		n, err := b.db.GetNote(d.ParentId)
+		n, err := b.db.GetNote(a.ParentId)
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 		}
-		d.SetParent(n)
+		a.SetParent(n)
 
-		err = b.db.InsertAsset(d, b.op)
+		err = b.db.InsertAsset(a, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.InsertAsset() error: %w", err)
 		}
 
-		err = b.fileSystem.CreateAsset(d, f)
+		err = b.fileSystem.CreateAsset(a, f)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
 		}
 	} else {
-		err := b.db.UpdateAsset(d, b.op)
+		err := b.db.UpdateAsset(a, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}
@@ -51,26 +55,40 @@ func (b *Binder) EditAsset(d *model.Asset, f string) (*model.Asset, error) {
 
 	//TODO データベースをコミット
 
-	return d, nil
+	return a, nil
 }
 
 func (b *Binder) GetAsset(id string) (*model.Asset, error) {
-	return b.db.GetAsset(id)
-}
-
-func (b *Binder) GetAssetWithParent(id string) (*model.Asset, error) {
-	return b.db.GetAssetWithParent(id)
-}
-
-func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
-
+	if b == nil {
+		return nil, EmptyError
+	}
 	a, err := b.db.GetAsset(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
-	n, err := b.db.GetNote(a.ParentId)
+	return a, nil
+}
+
+func (b *Binder) GetAssetWithParent(id string) (*model.Asset, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+	a, err := b.db.GetAssetWithParent(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+		return nil, xerrors.Errorf("db.GetAssetWithParent() error: %w", err)
+	}
+	return a, nil
+}
+
+func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	a, err := b.db.GetAssetWithParent(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
 	//DBを削除
@@ -79,7 +97,6 @@ func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
 		return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
 	}
 
-	a.SetParent(n)
 	//ファイルを削除
 	err = b.fileSystem.DeleteAsset(a)
 	if err != nil {

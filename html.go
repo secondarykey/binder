@@ -161,6 +161,10 @@ func convertLF2Comma(src string) string {
 
 func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.Template, error) {
 
+	if b == nil {
+		return nil, EmptyError
+	}
+
 	var err error
 	//FuncMapを準備
 	tmpl := template.New(fs.TemplatePageRoot).Funcs(defineFuncMap(w))
@@ -175,7 +179,7 @@ func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.
 
 	if typ == "layout" && text != "" {
 		//レイアウトをテキストで代用
-		data := b.fileSystem.AddTemplateFrame("layouot", []byte(text))
+		data := fs.AddTemplateFrame("layouot", []byte(text))
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
@@ -191,7 +195,7 @@ func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.
 
 	if typ == "content" && text != "" {
 
-		data := b.fileSystem.AddTemplateFrame("content", []byte(text))
+		data := fs.AddTemplateFrame("content", []byte(text))
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("Parse() error: %w", err)
@@ -212,6 +216,10 @@ func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.
 
 // ノートの要素を一度テンプレート処理を行う
 func (b *Binder) ParseElement(note *model.Note, local bool, elm string) (string, error) {
+
+	if b == nil {
+		return "", EmptyError
+	}
 
 	wrap, err := newWrapper(b, local, note)
 	if err != nil {
@@ -237,6 +245,9 @@ func (b *Binder) ParseElement(note *model.Note, local bool, elm string) (string,
 }
 
 func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
 
 	config, err := b.db.GetConfig()
 	if err != nil {
@@ -260,6 +271,11 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 	return dto, nil
 }
 func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
 	//出力
 	err := tmpl.Execute(w, dto)
 	if err != nil {
@@ -270,6 +286,10 @@ func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}
 
 // HTMLファイル出力用
 func (b *Binder) generateHTML(w *wrapper) error {
+
+	if b == nil {
+		return EmptyError
+	}
 
 	n := fs.HTMLFile(w.note)
 
@@ -289,7 +309,7 @@ func (b *Binder) generateHTML(w *wrapper) error {
 		return xerrors.Errorf("creteDto() error: %w", err)
 	}
 
-	err = b.writeHTML(fp.(io.Writer), tmpl, dto)
+	err = b.writeHTML(fp, tmpl, dto)
 	if err != nil {
 		return xerrors.Errorf("writeHTML() error: %w", err)
 	}
@@ -298,6 +318,10 @@ func (b *Binder) generateHTML(w *wrapper) error {
 
 // HTMLメモリ作成
 func (b *Binder) CreateNoteHTML(note *model.Note, local bool, elm string) (string, error) {
+
+	if b == nil {
+		return "", EmptyError
+	}
 
 	w, err := newWrapper(b, local, note)
 	if err != nil {
@@ -324,6 +348,9 @@ func (b *Binder) CreateNoteHTML(note *model.Note, local bool, elm string) (strin
 
 func (b *Binder) CreateTemplateHTML(temp *model.Template, note *model.Note, data string, elm string) (string, error) {
 
+	if b == nil {
+		return "", EmptyError
+	}
 	w, err := newWrapper(b, true, note)
 	if err != nil {
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
