@@ -2,7 +2,6 @@ package fs
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -121,17 +120,13 @@ func (b *FileSystem) isExist(n string) bool {
 	return true
 }
 
-func (b *FileSystem) CreateWithFlag(n string) (fs.File, bool, error) {
-	return b.create(n)
-}
-
-func (b *FileSystem) Create(n string) (fs.File, error) {
+func (b *FileSystem) Create(n string) (*File, error) {
 	fp, _, err := b.create(n)
 	return fp, err
 }
 
 // ファイルを作成し、Addする
-func (b *FileSystem) create(n string) (fs.File, bool, error) {
+func (b *FileSystem) create(n string) (*File, bool, error) {
 
 	index := true
 	if b.isExist(n) {

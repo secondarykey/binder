@@ -65,11 +65,6 @@ func (b *FileSystem) Stat(name string) (fs.FileInfo, error) {
 	return b.fs.Stat(name)
 }
 
-// io.Writer interface
-func (f *File) Write(d []byte) (int, error) {
-	return f.File.Write(d)
-}
-
 // fs.File interface
 func (f *File) Stat() (fs.FileInfo, error) {
 	return f.root.Stat(f.name)

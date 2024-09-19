@@ -19,9 +19,9 @@ func M(prefix string, name string) string {
 	return fmt.Sprintf("%-10s : %s", prefix, name)
 }
 
-func (b *FileSystem) CreateRemote(name, url string) error {
+func (f *FileSystem) CreateRemote(name, url string) error {
 
-	_, err := b.repo.CreateRemote(&config.RemoteConfig{
+	_, err := f.repo.CreateRemote(&config.RemoteConfig{
 		Name: name,
 		URLs: []string{url},
 	})
@@ -33,8 +33,8 @@ func (b *FileSystem) CreateRemote(name, url string) error {
 	return nil
 }
 
-func (b *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
-	r, err := b.repo.Remotes()
+func (f *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
+	r, err := f.repo.Remotes()
 	if err != nil {
 		return nil, xerrors.Errorf("repository.Remotes() error: %w", err)
 	}
@@ -46,7 +46,7 @@ func (b *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
 	return rtn, nil
 }
 
-func (b *FileSystem) Push(r, name string) error {
+func (f *FileSystem) Push(r, name string) error {
 
 	set := settings.Get()
 	auth := set.Git
@@ -60,7 +60,7 @@ func (b *FileSystem) Push(r, name string) error {
 		Password: auth.Code,
 	}
 
-	remote, err := b.repo.Remote(r)
+	remote, err := f.repo.Remote(r)
 	if err != nil {
 		return xerrors.Errorf("Remote() error: %w", err)
 	}
@@ -81,9 +81,9 @@ func (b *FileSystem) Push(r, name string) error {
 	return nil
 }
 
-func (b *FileSystem) Branch(name string) error {
+func (f *FileSystem) Branch(name string) error {
 
-	head, err := b.repo.Head()
+	head, err := f.repo.Head()
 	if err != nil {
 		return xerrors.Errorf("repository Head() error: %w", err)
 	}
@@ -95,12 +95,12 @@ func (b *FileSystem) Branch(name string) error {
 	}
 
 	ref := plumbing.NewHashReference(branch, head.Hash())
-	err = b.repo.Storer.SetReference(ref)
+	err = f.repo.Storer.SetReference(ref)
 	if err != nil {
 		return xerrors.Errorf("repository SetReference() error: %w", err)
 	}
 
-	w, err := b.repo.Worktree()
+	w, err := f.repo.Worktree()
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
 	}
@@ -114,15 +114,8 @@ func (b *FileSystem) Branch(name string) error {
 	return nil
 }
 
-// テンプレートファイルをコミットする
-func (b *FileSystem) TemplatesCommit() error {
-	files := []string{TemplateFile("layout"), TemplateFile("index"),
-		TemplateFile("list"), TemplateFile("note")}
-	return b.Commit(M("auto save", "Templates"), files...)
-}
-
 // ファイルをコミットする
-func (b *FileSystem) Commit(m string, files ...string) error {
+func (f *FileSystem) Commit(m string, files ...string) error {
 
 	set := settings.Get()
 	auth := set.Git
@@ -130,29 +123,29 @@ func (b *FileSystem) Commit(m string, files ...string) error {
 	sig := &object.Signature{
 		Name: auth.Name, Email: auth.Mail,
 	}
-	return b.commit(m, sig, false, files...)
+	return f.commit(m, sig, false, files...)
 }
 
-func (b *FileSystem) AutoCommit(m string, files ...string) error {
-	return b.autoCommit(m, false, files...)
+func (f *FileSystem) AutoCommit(m string, files ...string) error {
+	return f.autoCommit(m, false, files...)
 }
 
 // 自動コミット
-func (b *FileSystem) autoCommit(m string, all bool, files ...string) error {
+func (f *FileSystem) autoCommit(m string, all bool, files ...string) error {
 	sig := &object.Signature{
 		Name:  "Binder System",
 		Email: "-",
 	}
-	return b.commit(m, sig, all, files...)
+	return f.commit(m, sig, all, files...)
 }
 
-func (b *FileSystem) CommitAll(m string) error {
-	return b.autoCommit(m, true)
+func (f *FileSystem) CommitAll(m string) error {
+	return f.autoCommit(m, true)
 }
 
-func (b *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
+func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
 
-	w, err := b.repo.Worktree()
+	w, err := f.repo.Worktree()
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
 	}
@@ -201,9 +194,9 @@ func (b *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 }
 
 // 存在するファイルをadd()する
-func (b *FileSystem) Add(files ...string) error {
+func (f *FileSystem) Add(files ...string) error {
 
-	w, err := b.repo.Worktree()
+	w, err := f.repo.Worktree()
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
 	}

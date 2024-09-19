@@ -3,7 +3,6 @@ package fs
 import (
 	"binder/db/model"
 	"fmt"
-	"io"
 	stdFs "io/fs"
 	"os"
 
@@ -11,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, error) {
+func (f *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, error) {
 
 	if n.Id == "" {
 		id, err := uuid.NewV7()
@@ -22,15 +21,17 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 	}
 
 	regFlag := false
-	name := NoteFile(n.Id)
+	fn := NoteFile(n.Id)
 
-	if !b.isExist(name) {
+	//TODO これ要らない
+	if !f.isExist(fn) {
 		regFlag = true
-		_, err := b.Create(name)
+		_, err := f.Create(fn)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
 		}
-		err = b.Commit(M("create", "Note "+n.Name), name)
+
+		err = f.Commit(M("create", "Note "+n.Name), fn)
 		if err != nil {
 			return nil, false, xerrors.Errorf("Commit() error: %w", err)
 		}
@@ -39,8 +40,8 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 	//画像指定がある場合画像を作成
 	if image != "" {
 
-		name := MetaFile(n)
-		fp, err := b.Create(name)
+		mf := MetaFile(n)
+		fp, err := f.Create(mf)
 		if err != nil {
 			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
 		}
@@ -53,12 +54,12 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 		}
 
 		//それを書き込む
-		_, err = fp.(io.Writer).Write(data)
+		_, err = fp.Write(data)
 		if err != nil {
 			return nil, false, xerrors.Errorf("writer Write() error: %w", err)
 		}
 
-		err = b.Commit(M("create", "Note Image "+n.Name), name)
+		err = f.Commit(M("create", "Note Image "+n.Name), mf)
 		if err != nil {
 			return nil, false, xerrors.Errorf("Commit() error: %w", err)
 		}
@@ -66,47 +67,53 @@ func (b *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, e
 	return n, regFlag, nil
 }
 
-func (b *FileSystem) DeleteNote(id string) error {
-	n := NoteFile(id)
-	return b.Remove(n)
+func (f *FileSystem) DeleteNote(id string) error {
+	fn := NoteFile(id)
+	err := f.Remove(fn)
+	if err != nil {
+		return xerrors.Errorf("fs.Remove() error: %w", err)
+	}
+	return nil
 }
 
-func (b *FileSystem) ReadNoteText(id string) ([]byte, error) {
+func (f *FileSystem) ReadNoteText(id string) ([]byte, error) {
+
 	n := NoteFile(id)
-	data, err := stdFs.ReadFile(b, n)
+	//TODO stdFs必要？
+	data, err := stdFs.ReadFile(f, n)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)
 	}
 	return data, nil
 }
 
-func (b *FileSystem) WriteNoteText(id string, data []byte) error {
+func (f *FileSystem) WriteNoteText(id string, data []byte) error {
 
 	n := NoteFile(id)
-	fp, err := b.Create(n)
+	fp, err := f.Create(n)
 	if err != nil {
 		return fmt.Errorf("Open() error\n%+v", err)
 	}
 	defer fp.Close()
 
-	_, err = fp.(io.Writer).Write(data)
+	_, err = fp.Write(data)
 	if err != nil {
 		return fmt.Errorf("Write() error\n%+v", err)
 	}
 	return nil
 }
 
-func (b *FileSystem) GenerateHTML(n *model.Note, data []byte) (bool, error) {
+func (f *FileSystem) GenerateHTML(n *model.Note, data []byte) (bool, error) {
 
 	fn := HTMLFile(n)
 
-	fp, index, err := b.CreateWithFlag(fn)
+	fp, index, err := f.create(fn)
 	if err != nil {
 		return index, xerrors.Errorf("Create() error: %w", err)
 	}
 	defer fp.Close()
 
-	_, err = fp.(io.Writer).Write(data)
+	_, err = fp.Write(data)
 	if err != nil {
 		return index, xerrors.Errorf("Create() error: %w", err)
 	}
