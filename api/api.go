@@ -108,18 +108,6 @@ func (a *App) SelectFile(name string, ptn string) (string, error) {
 	return selection, nil
 }
 
-func (a *App) Generate(noteId string, dataId string, elm string) error {
-
-	defer log.PrintTrace(log.Func("Generate()"))
-
-	err := a.current.Generate(noteId, dataId, elm)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return err
-	}
-	return nil
-}
-
 func (a *App) OpenBinderSite() error {
 
 	defer log.PrintTrace(log.Func("OpenBinderSite()"))

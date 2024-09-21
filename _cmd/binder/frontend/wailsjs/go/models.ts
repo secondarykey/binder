@@ -124,7 +124,7 @@ export namespace model {
 	
 	export class Asset {
 	    id: string;
-	    noteId: string;
+	    parentId: string;
 	    alias: string;
 	    name: string;
 	    detail: string;
@@ -142,7 +142,7 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.noteId = source["noteId"];
+	        this.parentId = source["parentId"];
 	        this.alias = source["alias"];
 	        this.name = source["name"];
 	        this.detail = source["detail"];

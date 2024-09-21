@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Note struct {
 	Id              string `db:"id:key" json:"id"`
@@ -25,6 +28,10 @@ type Note struct {
 
 	Layouts  []*Template `db:"-" json:"layouts"`
 	Contents []*Template `db:"-" json:"contents"`
+}
+
+func (n *Note) String() string {
+	return fmt.Sprintf("%s,%s,%s", n.Id, n.ParentId, n.Name)
 }
 
 func (n *Note) addDiagram(d *Diagram) {

@@ -6,65 +6,54 @@ import (
 	stdFs "io/fs"
 	"os"
 
-	uuid "github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) EditNote(n *model.Note, image string) (*model.Note, bool, error) {
+func (f *FileSystem) CreateNoteFile(n *model.Note) error {
 
-	if n.Id == "" {
-		id, err := uuid.NewV7()
-		if err != nil {
-			return nil, false, xerrors.Errorf("uuid.NewV7() error: %w", err)
-		}
-		n.Id = id.String()
-	}
-
-	regFlag := false
 	fn := NoteFile(n.Id)
-
-	//TODO これ要らない
-	if !f.isExist(fn) {
-		regFlag = true
-		_, err := f.Create(fn)
-		if err != nil {
-			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
-		}
-
-		err = f.Commit(M("create", "Note "+n.Name), fn)
-		if err != nil {
-			return nil, false, xerrors.Errorf("Commit() error: %w", err)
-		}
+	fp, err := f.Create(fn)
+	if err != nil {
+		return xerrors.Errorf("binder Create() error: %w", err)
 	}
+	defer fp.Close()
+
+	err = f.Commit(M("create", "Note "+n.Name), fn)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return nil
+}
+
+func (f *FileSystem) EditMetadata(n *model.Note, fn string) error {
 
 	//画像指定がある場合画像を作成
-	if image != "" {
 
-		mf := MetaFile(n)
-		fp, err := f.Create(mf)
-		if err != nil {
-			return nil, false, xerrors.Errorf("binder Create() error: %w", err)
-		}
-		defer fp.Close()
-
-		//ローカルファイルを取得
-		data, err := os.ReadFile(image)
-		if err != nil {
-			return nil, false, xerrors.Errorf("image file ReadFile() error: %w", err)
-		}
-
-		//それを書き込む
-		_, err = fp.Write(data)
-		if err != nil {
-			return nil, false, xerrors.Errorf("writer Write() error: %w", err)
-		}
-
-		err = f.Commit(M("create", "Note Image "+n.Name), mf)
-		if err != nil {
-			return nil, false, xerrors.Errorf("Commit() error: %w", err)
-		}
+	mf := MetaFile(n)
+	fp, err := f.Create(mf)
+	if err != nil {
+		return xerrors.Errorf("binder Create() error: %w", err)
 	}
-	return n, regFlag, nil
+	defer fp.Close()
+
+	//ローカルファイルを取得
+	data, err := os.ReadFile(fn)
+	if err != nil {
+		return xerrors.Errorf("image file ReadFile() error: %w", err)
+	}
+
+	//それを書き込む
+	_, err = fp.Write(data)
+	if err != nil {
+		return xerrors.Errorf("writer Write() error: %w", err)
+	}
+
+	err = f.Commit(M("create", "Note Image "+n.Name), mf)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
 }
 
 func (f *FileSystem) DeleteNote(id string) error {
@@ -101,22 +90,4 @@ func (f *FileSystem) WriteNoteText(id string, data []byte) error {
 		return fmt.Errorf("Write() error\n%+v", err)
 	}
 	return nil
-}
-
-func (f *FileSystem) GenerateHTML(n *model.Note, data []byte) (bool, error) {
-
-	fn := HTMLFile(n)
-
-	fp, index, err := f.create(fn)
-	if err != nil {
-		return index, xerrors.Errorf("Create() error: %w", err)
-	}
-	defer fp.Close()
-
-	_, err = fp.Write(data)
-	if err != nil {
-		return index, xerrors.Errorf("Create() error: %w", err)
-	}
-
-	return index, nil
 }

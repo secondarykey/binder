@@ -8,6 +8,9 @@ import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import UpdateIcon from '@mui/icons-material/Update';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import PublishIcon from '@mui/icons-material/Publish';
 
 import Event from './Event';
 import FileMenu from './contents/FileMenu';
@@ -123,7 +126,9 @@ function Menu(props) {
     nav("/setting");
   }
 
+  //router の定義用に書いておく
   var tempTree = <TemplateTree/>
+
   return (
     <>
       {/** 固定メニューの箇所 */}
@@ -133,14 +138,26 @@ function Menu(props) {
           <HomeIcon className="leftIcon" />
         </IconButton>
 
+        {/** BinderTree */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
         </IconButton>
 
+        {/** Update History */}
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+          <UpdateIcon fill="white" className="leftIcon" />
+        </IconButton>
+
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+          <PublishIcon fill="white" className="leftIcon" />
+        </IconButton>
+
+        {/** Template */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
           <ContentPasteIcon fill="white" className="leftIcon"  />
         </IconButton>
 
+        {/** Binder Setting */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
           <SettingsApplications fill="white" className="leftIcon" />
         </IconButton>

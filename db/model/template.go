@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Template struct {
 	Id     string `db:"id:key" json:"id"`
@@ -12,4 +15,8 @@ type Template struct {
 	CreatedUser string    `db:"created_user:insert" json:"createdUser"`
 	Updated     time.Time `db:"updated_date" json:"updated"`
 	UpdatedUser string    `db:"updated_user" json:"updatedUser"`
+}
+
+func (t *Template) String() string {
+	return fmt.Sprintf("%s,%s,%s", t.Id, t.Name, t.Typ)
 }

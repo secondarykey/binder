@@ -65,6 +65,8 @@ export function ParseNote(arg1:string,arg2:boolean,arg3:string):Promise<string>;
 
 export function Remotes():Promise<Array<string>>;
 
+export function RemoveAsset(arg1:string):Promise<void>;
+
 export function RemoveDiagram(arg1:string):Promise<void>;
 
 export function RemoveNote(arg1:string):Promise<void>;
@@ -72,6 +74,8 @@ export function RemoveNote(arg1:string):Promise<void>;
 export function SaveDiagram(arg1:string,arg2:string):Promise<void>;
 
 export function SaveNote(arg1:string,arg2:string):Promise<void>;
+
+export function SavePosition():Promise<void>;
 
 export function SaveSetting(arg1:settings.Setting):Promise<void>;
 

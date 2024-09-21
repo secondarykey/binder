@@ -12,6 +12,7 @@ func (a *App) EditConfig(conf *model.Config) (*model.Config, error) {
 
 	err := a.current.EditConfig(conf)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("EditConfig() error\n%+v", err)
 	}
 	return conf, nil
@@ -23,6 +24,7 @@ func (a *App) GetConfig() (*model.Config, error) {
 
 	conf, err := a.current.GetConfig()
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetConfig() error\n%+v", err)
 	}
 	return conf, nil

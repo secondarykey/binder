@@ -53,7 +53,7 @@ func (b *Binder) RemoveNote(id string) (*model.Note, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("fs.DeleteNote() error: %w", err)
 	}
-
+	//DBを削除
 	err = b.db.DeleteNote(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
@@ -61,32 +61,50 @@ func (b *Binder) RemoveNote(id string) (*model.Note, error) {
 	return n, nil
 }
 
-func (b *Binder) EditNote(n *model.Note, imageName string) (*model.Note, error) {
+func (b *Binder) EditNote(n *model.Note, metaName string) (*model.Note, error) {
 
 	if b == nil {
 		return nil, EmptyError
 	}
 
-	rtn, reg, err := b.fileSystem.EditNote(n, imageName)
-	if err != nil {
-		return nil, xerrors.Errorf("fs.EditNote() error: %w", err)
-	}
+	if n.Id == "" {
 
-	if reg {
+		n.Id = b.generateId()
+
+		err := b.fileSystem.CreateNoteFile(n)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.CreateNoteFile() error: %w", err)
+		}
+
 		err = b.db.InsertNote(n, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.InsertNote() error: %w", err)
 		}
+
 	} else {
-		err = b.db.UpdateNote(n, b.op)
+
+		//TODO
+		// Noteを取得して、Aliasを確認
+		// すでにAliasが存在した場合、移動を行う
+		//
+		err := b.db.UpdateNote(n, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateNote() error: %w", err)
 		}
 	}
 
-	//TODO データベースのコミット
+	//メタデータ指定がある場合
+	if metaName != "" {
 
-	return rtn, nil
+		//TODO すでに存在する場合
+
+		err := b.fileSystem.EditMetadata(n, metaName)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.EditMetadata() error: %w", err)
+		}
+	}
+
+	return n, nil
 }
 
 func (b *Binder) OpenNote(noteId string) ([]byte, error) {

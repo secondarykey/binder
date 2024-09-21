@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime"
+	"strings"
 )
 
 // debug = -4 ,info = 0 warn = 4,error = 8
@@ -45,9 +46,21 @@ func Func(caller string, args ...interface{}) string {
 		//pc,file,line,ok  := runtime.Caller(1)
 		Trace(caller + " Start")
 		if len(args) > 0 {
+			Trace("Arguments:" + arguments(args...))
 		}
 	}
 	return caller
+}
+
+func arguments(args ...interface{}) string {
+	var buf strings.Builder
+	for idx, a := range args {
+		if idx != 0 {
+			buf.WriteString(",")
+		}
+		buf.WriteString(fmt.Sprintf("%v", a))
+	}
+	return buf.String()
 }
 
 func PrintStackTrace(err error) {

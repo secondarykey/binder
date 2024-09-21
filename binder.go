@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
@@ -311,4 +313,14 @@ func (b *Binder) CreateRemote(name, url string) error {
 		return xerrors.Errorf("CreateRemote() error: %w", err)
 	}
 	return nil
+}
+
+func (b *Binder) generateId() string {
+
+	id, err := uuid.NewV7()
+	if err != nil {
+		slog.Error("UUID v7 generate error: " + err.Error())
+		return ""
+	}
+	return id.String()
 }

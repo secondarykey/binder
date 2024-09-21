@@ -7,13 +7,14 @@ import (
 	"fmt"
 )
 
-func (a *App) EditAsset(d *model.Asset, file string) (*model.Asset, error) {
+func (a *App) EditAsset(as *model.Asset, file string) (*model.Asset, error) {
 
-	defer log.PrintTrace(log.Func("EditAsset()"))
+	defer log.PrintTrace(log.Func("EditAsset()", as, file))
 
 	//データを追加
-	rtn, err := a.current.EditAsset(d, file)
+	rtn, err := a.current.EditAsset(as, file)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("EditData() error\n%+v", err)
 	}
 
@@ -27,8 +28,19 @@ func (a *App) GetAsset(id string) (*model.Asset, error) {
 	//データを追加
 	rtn, err := a.current.GetAsset(id)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetAsset() error\n%+v", err)
 	}
 
 	return rtn, nil
+}
+
+func (a *App) RemoveAsset(id string) error {
+	defer log.PrintTrace(log.Func("RemoveAsset()"))
+	_, err := a.current.RemoveAsset(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("RemoveAsset() error\n%+v", err)
+	}
+	return nil
 }

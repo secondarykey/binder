@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Diagram struct {
 	Id       string `db:"id:key" json:"id"`
@@ -17,6 +20,10 @@ type Diagram struct {
 
 	// not schema
 	Parent *Note `db:"-" json:"-"`
+}
+
+func (d *Diagram) String() string {
+	return fmt.Sprintf("%s,%s,%s", d.Id, d.ParentId, d.Name)
 }
 
 func (d *Diagram) SetParent(n *Note) {

@@ -54,7 +54,12 @@ func (b *Binder) GetBinderTree() (*Tree, error) {
 		return nil, xerrors.Errorf("db.FindDiagrams() error: %w", err)
 	}
 
-	slog.Info("Tree Length", "Notes", len(notes), "Diagrams", len(diagrams))
+	assets, err := b.db.FindAssets()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
+	}
+
+	slog.Info("Tree Length", "Notes", len(notes), "Diagrams", len(diagrams), "Assets", len(assets))
 
 	treeMap := make(map[string][]*Leaf)
 	for _, n := range notes {
@@ -67,6 +72,12 @@ func (b *Binder) GetBinderTree() (*Tree, error) {
 		slog.Debug("GetTree()", "Diagram", d)
 		list := treeMap[d.ParentId]
 		treeMap[d.ParentId] = append(list, convertDiagram2Leaf(d))
+	}
+
+	for _, a := range assets {
+		slog.Debug("GetTree()", "Asset", a)
+		list := treeMap[a.ParentId]
+		treeMap[a.ParentId] = append(list, convertAsset2Leaf(a))
 	}
 
 	var root []*Leaf
@@ -107,6 +118,15 @@ func convertDiagram2Leaf(d *model.Diagram) *Leaf {
 	l.ParentId = d.ParentId
 	l.Name = d.Name
 	l.Type = "diagram"
+	return &l
+}
+
+func convertAsset2Leaf(a *model.Asset) *Leaf {
+	var l Leaf
+	l.Id = a.Id
+	l.ParentId = a.ParentId
+	l.Name = a.Name
+	l.Type = "asset"
 	return &l
 }
 

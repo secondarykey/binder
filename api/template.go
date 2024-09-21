@@ -55,26 +55,6 @@ func (a *App) SaveTemplate(id string, data string) error {
 	return nil
 }
 
-func (a *App) CreateTemplateHTML(id string, data string, elm string) (string, error) {
-
-	defer log.PrintTrace(log.Func("CreateTemplateHTML()"))
-
-	temp, err := a.current.GetTemplate(id)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return "", fmt.Errorf("GetTemplate() error: %w", err)
-	}
-
-	//TODO ノートを指定
-	var note model.Note
-	html, err := a.current.CreateTemplateHTML(temp, &note, data, elm)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return "", fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
-	}
-	return html, nil
-}
-
 type Templates struct {
 	Layouts  []*model.Template `json:"layouts"`
 	Contents []*model.Template `json:"contents"`

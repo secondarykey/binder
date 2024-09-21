@@ -14,6 +14,14 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 		return nil, EmptyError
 	}
 
+	//ファイル指定がある場合
+	if f != "" {
+		err := b.fileSystem.CreateAsset(a, f)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
+		}
+	}
+
 	//新規指定だった場合
 	if a.Id == "" {
 		//TODO ID の使用を考える
@@ -23,6 +31,7 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 		}
 
 		a.Id = id.String()
+
 		fn := filepath.Base(f)
 		a.Name = fn
 		a.Alias = fn
@@ -42,10 +51,6 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 			return nil, xerrors.Errorf("fs.InsertAsset() error: %w", err)
 		}
 
-		err = b.fileSystem.CreateAsset(a, f)
-		if err != nil {
-			return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
-		}
 	} else {
 		err := b.db.UpdateAsset(a, b.op)
 		if err != nil {

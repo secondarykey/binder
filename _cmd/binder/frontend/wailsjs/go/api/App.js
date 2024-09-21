@@ -122,6 +122,10 @@ export function Remotes() {
   return window['go']['api']['App']['Remotes']();
 }
 
+export function RemoveAsset(arg1) {
+  return window['go']['api']['App']['RemoveAsset'](arg1);
+}
+
 export function RemoveDiagram(arg1) {
   return window['go']['api']['App']['RemoveDiagram'](arg1);
 }
@@ -136,6 +140,10 @@ export function SaveDiagram(arg1, arg2) {
 
 export function SaveNote(arg1, arg2) {
   return window['go']['api']['App']['SaveNote'](arg1, arg2);
+}
+
+export function SavePosition() {
+  return window['go']['api']['App']['SavePosition']();
 }
 
 export function SaveSetting(arg1) {

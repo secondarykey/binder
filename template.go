@@ -3,7 +3,6 @@ package binder
 import (
 	"binder/db/model"
 
-	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
@@ -15,13 +14,9 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 
 	if t.Id == "" {
 
-		id, err := uuid.NewV7()
-		if err != nil {
-			return nil, xerrors.Errorf("uuid.NewV7() error: %w", err)
-		}
-		t.Id = id.String()
+		t.Id = b.generateId()
 
-		err = b.fileSystem.CreateTemplateFile(t)
+		err := b.fileSystem.CreateTemplateFile(t)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.CreteTemplateFile() error: %w", err)
 		}
@@ -30,6 +25,7 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("db.InsertTemplate() error: %w", err)
 		}
+
 	} else {
 		err := b.db.UpdateTemplate(t, b.op)
 		if err != nil {

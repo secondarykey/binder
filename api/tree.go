@@ -1,0 +1,32 @@
+package api
+
+import (
+	"binder"
+	"binder/log"
+	"fmt"
+)
+
+func (a *App) GetBinderTree() (*binder.Tree, error) {
+
+	defer log.PrintTrace(log.Func("GetBinderTree()"))
+
+	tree, err := a.current.GetBinderTree()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetBinderTree() error\n%+v", err)
+	}
+	return tree, nil
+}
+
+func (a *App) GetTemplateTree() (*binder.Tree, error) {
+
+	defer log.PrintTrace(log.Func("GetTemplateTree()"))
+
+	tree, err := a.current.GetTemplateTree()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetTemplateTree() error\n%+v", err)
+	}
+
+	return tree, nil
+}

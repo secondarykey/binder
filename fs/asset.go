@@ -15,6 +15,10 @@ func (f *FileSystem) CreateAsset(a *model.Asset, fn string) error {
 	}
 
 	dataFn := AssetFile(a)
+	if dataFn == "" {
+		return xerrors.Errorf("ReadFile() error: %w", err)
+	}
+
 	fp, err := f.Create(dataFn)
 	if err != nil {
 		return xerrors.Errorf("CreateFile() error: %w", err)

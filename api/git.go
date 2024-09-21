@@ -10,6 +10,7 @@ func (a *App) Commit(noteId string, dataId string, auto bool) error {
 	defer log.PrintTrace(log.Func("Commit()"))
 	err := a.current.SaveCommit(noteId, dataId, auto)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("Commit() error\n%+v", err)
 	}
 	return nil
@@ -21,6 +22,7 @@ func (a *App) Remotes() ([]string, error) {
 
 	remotes, err := a.current.GetRemotes()
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetRemotes() error: %+v", err)
 	}
 	return remotes, nil
@@ -32,6 +34,7 @@ func (a *App) AddRemote(name string, url string) error {
 
 	err := a.current.CreateRemote(name, url)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("CreateRemote() error: %+v", err)
 	}
 	return nil

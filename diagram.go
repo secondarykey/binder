@@ -3,7 +3,6 @@ package binder
 import (
 	"binder/db/model"
 
-	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
@@ -15,21 +14,26 @@ func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 
 	//新規指定だった場合
 	if d.Id == "" {
-		id, err := uuid.NewV7()
-		if err != nil {
-			return nil, xerrors.Errorf("uuid.NewV7() error: %w", err)
-		}
-		d.Id = id.String()
 
-		err = b.fileSystem.CreateDiagramFile(d)
+		d.Id = b.generateId()
+
+		err := b.fileSystem.CreateDiagramFile(d)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.CreateDiagramFile() error: %w", err)
 		}
+
+		//DB設定
 		err = b.db.InsertDiagram(d, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.InsertDiagram() error: %w", err)
 		}
 	} else {
+
+		//TODO
+		// Diagramを取得して、Aliasを確認
+		// すでにAliasが存在した場合、移動を行う
+		//
+
 		err := b.db.UpdateDiagram(d, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateDiagram() error: %w", err)

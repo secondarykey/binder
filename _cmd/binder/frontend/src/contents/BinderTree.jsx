@@ -7,6 +7,7 @@ import { TreeView, TreeItem } from '@mui/x-tree-view';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { OpenBinderSite, GetBinderTree } from '../../wailsjs/go/api/App';
 
@@ -67,8 +68,12 @@ function BinderTree(props) {
 
   const [noteEl, setNoteEl] = useState(null);
   const noteMenu = Boolean(noteEl);
+
   const [diagramEl, setDiagramEl] = useState(null);
   const diagramMenu = Boolean(diagramEl);
+
+  const [assetEl, setAssetEl] = useState(null);
+  const assetMenu = Boolean(assetEl);
 
   //メニュー表示
   const showMenu = (e,call) => {
@@ -154,6 +159,16 @@ function BinderTree(props) {
     nav("/editor/diagram/" + id);
   }
 
+  //ダイアグラム編集
+  const handleEditAsset = (e,call) => {
+    closeMenu(call);
+    nav("/assets/edit/" + id);
+  }
+  const handleAssetOpen = (e, id) => {
+    setCurrentId(id);
+    nav("/editor/assets/" + id);
+  }
+
   const OpenSite = () => {
     OpenBinderSite().then(() => {
     }).catch((err) => {
@@ -193,6 +208,10 @@ function BinderTree(props) {
         caller = setDiagramEl;
         evFunc = handleDiagramOpen;
         icon = <MermaidIcon />
+      } else if ( leaf.type === "asset" ) {
+        caller = setAssetEl;
+        evFunc = handleAssetOpen;
+        icon = < AttachFileIcon/>
       } else if ( children && children.length > 0 ) {
         if ( onlyDiagram(leaf.children) ) {
           icon = <LibraryBooksIcon />
@@ -239,7 +258,7 @@ function BinderTree(props) {
     </Menu>
 
     {/** ダイアグラムメニュー 
-      編集 -> IDの変更 削除 (アセットの場合、変更？)
+      編集 -> 変更 削除
       */}
     <Menu anchorEl={diagramEl}
       open={diagramMenu}
@@ -247,7 +266,15 @@ function BinderTree(props) {
       <MenuItem onClick={(e) => handleEditDiagram(e,setDiagramEl)}>Edit</MenuItem>
     </Menu>
 
-    {/** テンプレートのメニューはなし？ */}
+    {/** アセットメニュー 
+      編集 -> 変更 削除 
+      */}
+    <Menu anchorEl={assetEl}
+      open={assetMenu}
+      onClose={() => closeMenu(setAssetEl)}>
+      <MenuItem onClick={(e) => handleEditAsset(e,setAssetEl)}>Edit</MenuItem>
+    </Menu>
+
   </>);
 }
 export default BinderTree;

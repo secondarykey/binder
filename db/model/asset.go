@@ -1,10 +1,13 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Asset struct {
 	Id       string `db:"id:key" json:"id"`
-	ParentId string `db:"parent_id" json:"noteId"`
+	ParentId string `db:"parent_id" json:"parentId"`
 	Alias    string `db:"alias" json:"alias"`
 	Name     string `db:"name" json:"name"`
 	Detail   string `db:"detail" json:"detail"`
@@ -23,4 +26,8 @@ func (a *Asset) SetParent(n *Note) {
 	if n != nil {
 		n.addAsset(a)
 	}
+}
+
+func (a *Asset) String() string {
+	return fmt.Sprintf("%s,%s,%s", a.Id, a.ParentId, a.Name)
 }

@@ -16,7 +16,7 @@ func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 	//ノートを追加
 	n, err := a.current.EditNote(n, imageName)
 	if err != nil {
-		slog.Error("EditNote()", "Error", err)
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("EditNote() error\n%+v", err)
 	}
 	return n, nil
@@ -26,9 +26,9 @@ func (a *App) RemoveNote(id string) error {
 
 	defer log.PrintTrace(log.Func("RemoveNote()"))
 
-	slog.Info("RemoveNote()", "Id", id)
 	_, err := a.current.RemoveNote(id)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("RemoveNote() error\n%+v", err)
 	}
 	return nil
@@ -40,6 +40,7 @@ func (a *App) GetNote(id string) (*model.Note, error) {
 
 	n, err := a.current.GetNote(id)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetNote() error\n%+v", err)
 	}
 	return n, nil
@@ -51,6 +52,7 @@ func (a *App) OpenNote(noteId string) (string, error) {
 
 	data, err := a.current.OpenNote(noteId)
 	if err != nil {
+		log.PrintStackTrace(err)
 		return "", fmt.Errorf("OpenNote() error\n%+v", err)
 	}
 	return string(data), nil
@@ -62,42 +64,8 @@ func (a *App) SaveNote(noteId string, data string) error {
 
 	err := a.current.SaveNote(noteId, []byte(data))
 	if err != nil {
+		log.PrintStackTrace(err)
 		return fmt.Errorf("ReadNote() error\n%+v", err)
 	}
 	return nil
-}
-
-func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
-
-	defer log.PrintTrace(log.Func("CreateNoteHTML()"))
-
-	n, err := a.current.GetNote(id)
-	if err != nil {
-		slog.Error("Error", err)
-		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
-	}
-
-	html, err := a.current.CreateNoteHTML(n, true, elm)
-	if err != nil {
-		slog.Error("Error", err)
-		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
-	}
-	return html, nil
-}
-
-func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
-
-	defer log.PrintTrace(log.Func("ParseNote()"))
-
-	n, err := a.current.GetNote(id)
-	if err != nil {
-		slog.Error("Error", err)
-		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
-	}
-
-	html, err := a.current.ParseElement(n, local, elm)
-	if err != nil {
-		return "", fmt.Errorf("ParseElement() error\n%+v", err)
-	}
-	return html, nil
 }

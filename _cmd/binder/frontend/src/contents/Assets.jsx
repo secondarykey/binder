@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { SelectFile, EditAsset, GetAsset } from "../../wailsjs/go/api/App";
+import { SelectFile, EditAsset, GetAsset,RemoveAsset } from "../../wailsjs/go/api/App";
 import { copyClipboard } from "../App";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
@@ -65,6 +65,9 @@ function Assets(props) {
     data.name = name
     data.detail = detail
 
+    console.log(data);
+    console.log("file:" + file)
+
     EditAsset(data, file).then((resp) => {
       Event.refreshTree();
       if ( mode === "register" ) {
@@ -77,6 +80,9 @@ function Assets(props) {
     });
   }
 
+  /**
+   * ファイル設定
+   */
   const selectFile = () => {
     SelectFile("Any File", "*").then((f) => {
       if (f != "") {
@@ -87,8 +93,11 @@ function Assets(props) {
     });
   }
 
+  /**
+   * 削除
+   */
   const handleDelete = () => {
-    RemoveAssets(id).then((resp) => {
+    RemoveAsset(id).then((resp) => {
       Event.refreshTree();
       // 遷移する
       Event.showSuccess("Remove Assets.")

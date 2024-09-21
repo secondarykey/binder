@@ -3,10 +3,11 @@ import Menu from './Menu.jsx';
 import Viewer from './Viewer.jsx';
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
-import { GetSetting } from '../wailsjs/go/api/App.js';
+import { SavePosition,GetSetting } from '../wailsjs/go/api/App.js';
 
 import Event from "./Event";
 import './assets/App.css';
+
 /**
  * クリップボードのコピー
  * @param {*} val 
@@ -19,12 +20,15 @@ export async function copyClipboard(val) {
       clip = global.navigator.clipboard;
     }
   }
+
   if (clip !== undefined) {
     await clip.writeText(val);
   } else {
     console.warn("clip board error")
   }
 }
+
+var intervalId = undefined;
 
 /**
  * アプリケーション全体
@@ -65,6 +69,14 @@ function App() {
       showSlideMessage(obj);
     })
 
+    if ( intervalId !== undefined) {
+      clearInterval(intervalId);
+    }
+    //定期処理を実行
+    intervalId = setInterval( function() {
+      SavePosition();
+    },60 * 1000);
+
     //設定を取得
     GetSetting().then((s) => {
       if (s.path.runWithOpen) {
@@ -74,6 +86,7 @@ function App() {
     }).catch((err) => {
       Event.showErrorMessage(err);
     });
+
   }, []);
 
   //ポップアップ処理

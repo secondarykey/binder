@@ -39,6 +39,13 @@ func main() {
 	//config を読み込む
 	set := settings.Get()
 
+	if !set.IsDefault() {
+
+		//起動引数候補を作成
+		// -p -> 位置をリセット
+
+	}
+
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "Binder",
@@ -54,7 +61,7 @@ func main() {
 			app,
 		},
 		Debug: options.Debug{
-			OpenInspectorOnStartup: true,
+			OpenInspectorOnStartup: false,
 		},
 	})
 
