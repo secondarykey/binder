@@ -7,7 +7,7 @@ import '../assets/vim.min.js';
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
-import { OpenTemplate, CreateTemplateHTML, SaveTemplate, Generate, Commit} from "../../wailsjs/go/api/App.js";
+import { OpenTemplate, SaveTemplate, Generate} from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -278,11 +278,13 @@ function Editor(props) {
 
   //コミットを行う
   const commit = () => {
+    /*
     Commit(mode,id,false).then(() => {
       Event.showSuccess("Commit.")
     }).catch((err) => {
       Event.showErrorMessage(err);
     })
+      */
   }
 
   //SVG のダウンロードを行う

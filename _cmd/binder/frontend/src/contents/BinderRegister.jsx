@@ -24,7 +24,8 @@ function BinderRegister(props) {
       return;
     }
 
-    CreateBinder(dir,"simple",true).then(() => {
+    //インストールを別にする
+    CreateBinder(dir,"simple").then(() => {
       nav("/note/index");
     }).catch( (err)=> {
       console.error(err);
