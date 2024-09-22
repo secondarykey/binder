@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
@@ -58,12 +59,14 @@ func init() {
 }
 
 func main() {
+	//outputは物理位置だが
+	//baseはヘッダに書くだけなので相対のパッケージ位置でよい
 	in := []input{
-		{model.Config{}, "config", "model/config.go", "../../config_dao.go"},
-		{model.Note{}, "notes", "model/note.go", "../../note_dao.go"},
-		{model.Diagram{}, "diagrams", "model/diagram.go", "../../diagram_dao.go"},
-		{model.Asset{}, "assets", "model/asset.go", "../../asset_dao.go"},
-		{model.Template{}, "templates", "model/template.go", "../../template_dao.go"},
+		{model.Config{}, "config", "db/model/config.go", "db/config_dao.go"},
+		{model.Note{}, "notes", "db/model/note.go", "db/note_dao.go"},
+		{model.Diagram{}, "diagrams", "db/model/diagram.go", "db/diagram_dao.go"},
+		{model.Asset{}, "assets", "db/model/asset.go", "db/asset_dao.go"},
+		{model.Template{}, "templates", "db/model/template.go", "db/template_dao.go"},
 	}
 
 	err := run(in)
@@ -75,7 +78,17 @@ func main() {
 }
 
 func run(ins []input) error {
+
+	//ワーク位置から、binderディレクトリを算出
+	wd, err := os.Getwd()
+	if err != nil {
+		return xerrors.Errorf("os.Getwd() error: %w", err)
+	}
+	root := getRoot(wd)
+
 	for _, in := range ins {
+		fn := filepath.Join(root, in.output)
+		in.output = fn
 		err := generate(in)
 		if err != nil {
 			return xerrors.Errorf("generate(%s) error: %w", in.output, err)
@@ -83,6 +96,17 @@ func run(ins []input) error {
 		fmt.Println("generate:", in.output)
 	}
 	return nil
+}
+
+func getRoot(p string) string {
+	b := filepath.Base(p)
+	if b == "binder" {
+		//TODO binderではなく、go.modのある位置がいいかも
+		return p
+	}
+
+	dir := filepath.Dir(p)
+	return getRoot(dir)
 }
 
 type Table struct {
@@ -109,6 +133,7 @@ type Column struct {
 	TypeName string
 }
 
+// 出力処理
 func generate(in input) error {
 
 	t, err := createTable(in)

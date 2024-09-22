@@ -41,7 +41,7 @@ func (inst *Instance) Get{{.Name}}({{keyArgs .}}) (*model.{{.Name}}, error) {
         return nil,xerrors.Errorf("inst.find{{.Name}}() error: %w",err)
     }
     if len(models) == 0 {
-        return nil,nil
+        return nil,newNotExistError({{keyVariables . false}},"{{.Name}}")
     }
     return models[0],nil
 }
