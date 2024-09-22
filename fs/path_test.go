@@ -1,10 +1,28 @@
 package fs_test
 
 import (
-	"binder/db/model"
 	"binder/fs"
 	"testing"
+
+	"binder/db/model"
 )
+
+func TestToGitBash(t *testing.T) {
+	var vals = []struct {
+		path string
+		want string
+	}{
+		{"C:\\test\\test", "/C/test/test"},
+		{"C:\\test\\test.test", "/C/test/test.test"},
+	}
+	for _, v := range vals {
+		got := fs.ToGitBash(v.path)
+		if v.want != got {
+			t.Errorf("ToGitBash(): want %s ,got %s", v.want, got)
+		}
+	}
+
+}
 
 func TestHTMLFile(t *testing.T) {
 	var n model.Note

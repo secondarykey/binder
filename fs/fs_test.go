@@ -1,8 +1,10 @@
 package fs_test
 
 import (
+	"binder/fs"
 	"binder/test"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -11,6 +13,16 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 	os.Exit(code)
+}
+
+func createFileSystem(t *testing.T, dir string) *fs.FileSystem {
+
+	work := filepath.Join(test.Dir, dir)
+	f, err := fs.New(work)
+	if err != nil {
+		t.Fatalf("createFileSystem() error: %v", err)
+	}
+	return f
 }
 
 func TestNew(t *testing.T) {
