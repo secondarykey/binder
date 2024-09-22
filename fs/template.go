@@ -71,6 +71,7 @@ func (f *FileSystem) WriteTemplate(t string, data []byte) error {
 	return nil
 }
 
+// テンプレート用のフレームを作成して処理
 func AddTemplateFrame(typ string, data []byte) []byte {
 
 	var buf bytes.Buffer
@@ -88,5 +89,3 @@ func AddTemplateFrame(typ string, data []byte) []byte {
 	//Len() とって削除しておかないとoxooが入る？
 	return buf.Bytes()
 }
-
-// テンプレート用のフレームを作成して処理

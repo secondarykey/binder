@@ -28,8 +28,6 @@ func (f *FileSystem) CreateNoteFile(n *model.Note) error {
 
 func (f *FileSystem) EditMetadata(n *model.Note, fn string) error {
 
-	//画像指定がある場合画像を作成
-
 	mf := MetaFile(n)
 	fp, err := f.Create(mf)
 	if err != nil {

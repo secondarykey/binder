@@ -2,22 +2,17 @@ package fs
 
 import (
 	"binder/db/model"
-	"os"
+	"path/filepath"
 
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateAsset(a *model.Asset, fn string) error {
-
-	data, err := os.ReadFile(fn)
-	if err != nil {
-		return xerrors.Errorf("ReadFile() error: %w", err)
-	}
+func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) error {
 
 	dataFn := AssetFile(a)
-	if dataFn == "" {
-		return xerrors.Errorf("ReadFile() error: %w", err)
-	}
+
+	parentDir := filepath.Dir(dataFn)
+	f.mkdir(parentDir)
 
 	fp, err := f.Create(dataFn)
 	if err != nil {

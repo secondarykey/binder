@@ -25,6 +25,7 @@ type FileSystem struct {
 	base   string
 }
 
+// TODO 早めに設定しておく必要あり
 func (f *FileSystem) GetPublic() string {
 	return publishDir
 }
@@ -104,53 +105,53 @@ func (f *FileSystem) Close() error {
 }
 
 // ディレクトリを親ごと作成
-func (b *FileSystem) mkdir(n string) error {
-	err := b.fs.MkdirAll(n, 0666)
+func (f *FileSystem) mkdir(n string) error {
+	err := f.fs.MkdirAll(n, 0666)
 	if err != nil {
 		return xerrors.Errorf("MkdirAll() error: %w", err)
 	}
 	return nil
 }
 
-func (b *FileSystem) isExist(n string) bool {
-	_, err := b.fs.Stat(n)
+func (f *FileSystem) isExist(n string) bool {
+	_, err := f.fs.Stat(n)
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func (b *FileSystem) Create(n string) (*File, error) {
-	fp, _, err := b.create(n)
+func (f *FileSystem) Create(n string) (*File, error) {
+	fp, _, err := f.create(n)
 	return fp, err
 }
 
 // ファイルを作成し、Addする
-func (b *FileSystem) create(n string) (*File, bool, error) {
+func (f *FileSystem) create(n string) (*File, bool, error) {
 
 	index := true
-	if b.isExist(n) {
+	if f.isExist(n) {
 		index = false
 	}
 
-	fp, err := b.fs.Create(n)
+	fp, err := f.fs.Create(n)
 	if err != nil {
 		return nil, index, xerrors.Errorf("Create() error: %w", err)
 	}
 
 	if index {
-		err = b.Add(n)
+		err = f.add(n)
 		if err != nil {
 			return nil, index, xerrors.Errorf("Add() error: %w", err)
 		}
 	}
 
-	var f File
-	f.name = n
-	f.root = b.fs
-	f.File = fp
+	var file File
+	file.name = n
+	file.root = f.fs
+	file.File = fp
 
-	return &f, index, nil
+	return &file, index, nil
 }
 
 func (f *FileSystem) Remove(n string) error {
@@ -158,5 +159,12 @@ func (f *FileSystem) Remove(n string) error {
 		return fmt.Errorf("do not delete filesystem(base is empty):[%s]", n)
 	}
 	fn := filepath.Join(f.base, n)
-	return os.Remove(fn)
+	err := os.Remove(fn)
+	if err != nil {
+		return xerrors.Errorf("os.Remove() error: %w", err)
+	}
+
+	//インデックスを削除
+
+	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 func TestMain(m *testing.M) {
 	test.Clean()
+
 	code := m.Run()
 	os.Exit(code)
 }

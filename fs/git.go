@@ -194,7 +194,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 }
 
 // 存在するファイルをadd()する
-func (f *FileSystem) Add(files ...string) error {
+func (f *FileSystem) add(files ...string) error {
 
 	w, err := f.repo.Worktree()
 	if err != nil {

@@ -181,8 +181,10 @@ func TestAssetFile(t *testing.T) {
 	for _, v := range vals {
 		n.Id = v.id
 		if n.Id == "" {
+			a.ParentId = n.Id
 			a.SetParent(nil)
 		} else {
+			a.ParentId = n.Id
 			a.SetParent(&n)
 		}
 		a.Id = v.alias

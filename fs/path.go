@@ -3,13 +3,21 @@ package fs
 import (
 	"binder/db/model"
 	"fmt"
-	"log/slog"
 	"path/filepath"
 	"strings"
 )
 
-func ConvertPath(p string) string {
-	return strings.ReplaceAll(p, "\\", "/")
+func ConvertHTTPPath(path string) string {
+	rtn := convertPaths(path)
+	return rtn[0]
+}
+
+func convertPaths(paths ...string) []string {
+	rtn := make([]string, len(paths))
+	for idx, p := range paths {
+		rtn[idx] = strings.ReplaceAll(p, "\\", "/")
+	}
+	return rtn
 }
 
 // TODO changed ...
@@ -100,47 +108,47 @@ func NoteFile(id string) string {
 	return noteFile(id)
 }
 
-const noteDir = "notes"
+const NoteDir = "notes"
 
 func noteFile(id string) string {
-	return filepath.Join(noteDir, fmt.Sprintf("%s.md", id))
+	return filepath.Join(NoteDir, fmt.Sprintf("%s.md", id))
 }
 
 func DiagramFile(id string) string {
 	return diagramFile(id)
 }
 
-const diagramDir = "diagrams"
+const DiagramDir = "diagrams"
 
 func diagramFile(id string) string {
-	return filepath.Join(diagramDir, fmt.Sprintf("%s.md", id))
+	return filepath.Join(DiagramDir, fmt.Sprintf("%s.md", id))
 }
 
-const assetsDir = "assets"
+const AssetDir = "assets"
 
 func MetaFile(n *model.Note) string {
 	return assetFile(n.Id, "meta")
 }
 
 func AssetFile(a *model.Asset) string {
-	if a.Parent == nil {
-		slog.Warn("asset parent data is nil.")
+	if a.ParentId == "" {
 		return ""
 	}
-	n := a.Parent
-	return assetFile(n.Id, a.Id)
+	return assetFile(a.ParentId, a.Id)
 }
 
 func assetFile(p string, id string) string {
-	return filepath.Join(assetsDir, p, id)
+	return filepath.Join(AssetDir, p, id)
 }
 
-const templateDir = "templates"
+const TemplateDir = "templates"
 
 func TemplateFile(id string) string {
 	return templateFile(id)
 }
 
 func templateFile(id string) string {
-	return filepath.Join(templateDir, fmt.Sprintf("%s.tmpl", id))
+	return filepath.Join(TemplateDir, fmt.Sprintf("%s.tmpl", id))
 }
+
+const DBDir = "db"

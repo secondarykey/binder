@@ -27,7 +27,7 @@ func TestAdd(t *testing.T) {
 	p := filepath.Join(dir, file)
 	os.WriteFile(p, []byte("test"), 0644)
 
-	n.Add(file)
+	//n.Add(file)
 	n.PrintStatus()
 
 }
@@ -55,7 +55,7 @@ func TestClone(t *testing.T) {
 	p := filepath.Join(dir, file)
 	os.WriteFile(p, []byte(id.String()), 0644)
 
-	n.Add(file)
+	//n.Add(file)
 
 	err = n.Commit("test : Commit", file)
 	if err != nil {
