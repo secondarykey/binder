@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -15,6 +16,29 @@ func init() {
 }
 
 var DuplicateKey = fmt.Errorf("duplicate key error")
+
+type NotExistError struct {
+	id   string
+	name string
+}
+
+func IsNotExist(err error) bool {
+	if errors.As(err, &NotExistError{}) {
+		return true
+	}
+	return false
+}
+
+func newNotExistError(id, name string) error {
+	var err NotExistError
+	err.id = id
+	err.name = name
+	return err
+}
+
+func (e NotExistError) Error() string {
+	return fmt.Sprintf("%s with this id(%s) does not exist", e.name, e.id)
+}
 
 const TimeZero = "0001-01-01T00:00:00Z"
 
