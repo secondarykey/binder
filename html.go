@@ -159,7 +159,7 @@ func convertLF2Comma(src string) string {
 	return strings.ReplaceAll(src, "\n", ",")
 }
 
-func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.Template, error) {
+func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*template.Template, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -185,7 +185,7 @@ func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
 		}
 	} else {
-		layoutFile := fs.ConvertPath(fs.TemplateFile(layId))
+		layoutFile := fs.ConvertHTTPPath(fs.TemplateFile(layId))
 		//layout と typeでパース
 		_, err = tmpl.ParseFS(b.fileSystem, layoutFile)
 		if err != nil {
@@ -203,7 +203,7 @@ func (b *Binder) createTemplate(w *wrapper, typ string, text string) (*template.
 
 	} else {
 
-		tmpFile := fs.ConvertPath(fs.TemplateFile(conId))
+		tmpFile := fs.ConvertHTTPPath(fs.TemplateFile(conId))
 		//layout と typeでパース
 		_, err = tmpl.ParseFS(b.fileSystem, tmpFile)
 		if err != nil {
@@ -299,9 +299,9 @@ func (b *Binder) generateHTML(w *wrapper) error {
 	}
 	defer fp.Close()
 
-	tmpl, err := b.createTemplate(w, "", "")
+	tmpl, err := b.createHTMLTemplate(w, "", "")
 	if err != nil {
-		return xerrors.Errorf("createTemplate() error: %w", err)
+		return xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}
 
 	dto, err := b.createDto(w, "")
@@ -328,9 +328,9 @@ func (b *Binder) CreateNoteHTML(note *model.Note, local bool, elm string) (strin
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
-	tmpl, err := b.createTemplate(w, "", "")
+	tmpl, err := b.createHTMLTemplate(w, "", "")
 	if err != nil {
-		return "", xerrors.Errorf("createTemplate() error: %w", err)
+		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}
 
 	dto, err := b.createDto(w, elm)
@@ -356,9 +356,9 @@ func (b *Binder) CreateTemplateHTML(temp *model.Template, note *model.Note, data
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
-	tmpl, err := b.createTemplate(w, temp.Typ, data)
+	tmpl, err := b.createHTMLTemplate(w, temp.Typ, data)
 	if err != nil {
-		return "", xerrors.Errorf("createTemplate() error: %w", err)
+		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}
 
 	dto, err := b.createDto(w, elm)
