@@ -35,6 +35,10 @@ func Trace(caller string, args ...interface{}) {
 	slog.Log(gCtx, TraceLevel, caller, args...)
 }
 
+func Noticef(msg string, args ...interface{}) {
+	slog.Log(gCtx, NoticeLevel, msg, args...)
+}
+
 func PrintTrace(caller string) {
 	if def.Enabled(gCtx, TraceLevel) {
 		Trace(caller + " End")
