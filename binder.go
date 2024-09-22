@@ -3,10 +3,10 @@ package binder
 import (
 	"binder/db"
 	"binder/fs"
+	"binder/log"
 	"binder/settings"
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 
@@ -100,11 +100,6 @@ func Load(dir string) (*Binder, error) {
 	b.db = inst
 	b.op = createUserOp("user")
 
-	err = b.Serve()
-	if err != nil {
-		return nil, xerrors.Errorf("db.Serve() error: %w", err)
-	}
-
 	return &b, nil
 }
 
@@ -125,22 +120,31 @@ func (b *Binder) Close() error {
 	b.db = nil
 	b.op = nil
 
-	err := fp.Close()
-	if err != nil {
-		log.Println(err)
-		rtnErr = xerrors.Errorf("fs.Close() error: %w", err)
+	if fp != nil {
+		log.Noticef("FileSystem Close()")
+		err := fp.Close()
+		if err != nil {
+			log.PrintStackTrace(err)
+			rtnErr = xerrors.Errorf("fs.Close() error: %w", err)
+		}
 	}
 
-	err = hp.Shutdown(context.Background())
-	if err != nil {
-		log.Println(err)
-		rtnErr = xerrors.Errorf("http.Close() error: %w", err)
+	if hp != nil {
+		log.Noticef("HTTP Shutdown()")
+		err := hp.Shutdown(context.Background())
+		if err != nil {
+			log.PrintStackTrace(err)
+			rtnErr = xerrors.Errorf("http.Shutdown() error: %w", err)
+		}
 	}
 
-	err = dp.Close()
-	if err != nil {
-		log.Println(err)
-		rtnErr = xerrors.Errorf("db.Close() error: %w", err)
+	if dp != nil {
+		log.Noticef("DB Close()")
+		err := dp.Close()
+		if err != nil {
+			log.PrintStackTrace(err)
+			rtnErr = xerrors.Errorf("db.Close() error: %w", err)
+		}
 	}
 
 	return rtnErr
@@ -153,8 +157,6 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 	}
 
 	if dataId == "" {
-
-		//TODO テンプレートのコミット
 
 		note, err := b.db.GetNote(noteId)
 		if err != nil {
@@ -205,55 +207,6 @@ func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 		//TODO 出力データのコミット
 
 	}
-	return nil
-}
-
-func (b *Binder) SaveCommit(noteId string, dataId string, auto bool) error {
-
-	if b == nil {
-		return EmptyError
-	}
-
-	var err error
-	t := ""
-	name := "nothing"
-	f := ""
-
-	if dataId == "" {
-
-		t = "Note"
-		f = fs.NoteFile(noteId)
-
-		n, err := b.GetNote(noteId)
-		if err != nil {
-			return xerrors.Errorf("GetNote() error: %w", err)
-		}
-
-		name = n.Name
-	} else {
-
-		t = "Data"
-		f = fs.DiagramFile(dataId)
-
-		d, err := b.GetDiagram(dataId)
-		if err != nil {
-			return xerrors.Errorf("GetDiagram() error: %w", err)
-		}
-		name = d.Name
-	}
-
-	if auto {
-		m := fs.M("auto save", fmt.Sprintf("%s %s", t, name))
-		err = b.fileSystem.AutoCommit(m, f)
-	} else {
-		m := fs.M("save", fmt.Sprintf("%s %s", t, name))
-		err = b.fileSystem.Commit(m, f)
-	}
-
-	if err != nil {
-		return xerrors.Errorf("fs.Commit() error: %w", err)
-	}
-
 	return nil
 }
 

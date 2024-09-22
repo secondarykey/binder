@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	stdFs "io/fs"
-	"log"
 	"net"
 	"net/http"
+
+	"binder/log"
 
 	"golang.org/x/xerrors"
 )
@@ -99,6 +100,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
 	switch url {
 	case "/search":
+		//検索系
+	case "/private":
+		//公開前の表示
 	default:
 		h.fileServer.ServeHTTP(w, r)
 	}
@@ -109,6 +113,7 @@ func (b *Binder) Serve() error {
 	if b == nil {
 		return EmptyError
 	}
+
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return xerrors.Errorf("net.Listen() error: %w", err)
@@ -121,10 +126,12 @@ func (b *Binder) Serve() error {
 	}
 
 	go func() {
+		log.Noticef("HTTPServer Listen: %s", b.httpServerAddress)
 		err := b.httpServer.Serve(ln)
 		if err != nil {
+			//nilになってない場合、Shutdownの流れではない
 			if b.httpServer != nil {
-				log.Printf("local http Server Serve() error: %+v", err)
+				log.PrintStackTrace(err)
 			}
 		}
 	}()
