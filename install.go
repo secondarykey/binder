@@ -14,6 +14,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	NoteRootId        = "index"
+	TemplateLayoutId  = "layout"
+	TemplateIndexId   = "index"
+	TemplateContentId = "content"
+)
+
 //go:embed _assets
 var embFs embed.FS
 
@@ -39,43 +46,50 @@ func Install(dir string) error {
 func install(fsObj *fs.FileSystem, dir string) error {
 
 	//空でもディレクトリは作っておく
-	docsdir := filepath.Join(dir, "docs")
+	docsdir := filepath.Join(dir, fsObj.GetPublic())
 	err := os.MkdirAll(docsdir, 0666)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
 	}
 
-	datadir := filepath.Join(dir, "diagrams")
+	datadir := filepath.Join(dir, fs.DiagramDir)
 	err = os.MkdirAll(datadir, 0666)
 	if err != nil {
-		return xerrors.Errorf("os.Mkdir(data) error: %w", err)
+		return xerrors.Errorf("os.Mkdir(diagrams) error: %w", err)
 	}
 
-	notesdir := filepath.Join(dir, "notes")
+	notesdir := filepath.Join(dir, fs.NoteDir)
 	err = os.MkdirAll(notesdir, 0666)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(notes) error: %w", err)
 	}
 
-	tempDir := filepath.Join(dir, "templates")
+	tempDir := filepath.Join(dir, fs.TemplateDir)
 	err = os.MkdirAll(tempDir, 0666)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(templates) error: %w", err)
 	}
 
+	assetdir := filepath.Join(dir, fs.AssetDir)
+	err = os.MkdirAll(assetdir, 0666)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
+	}
+
 	//データベースを作成
-	dbdir := filepath.Join(dir, "db")
+	dbdir := filepath.Join(dir, fs.DBDir)
 	err = os.MkdirAll(dbdir, 0666)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir() error: %w", err)
 	}
 
-	err = db.Create(dbdir)
+	files, err := db.Create(dbdir)
 	if err != nil {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
-	err = fsObj.Add("db/config.csv", "db/notes.csv", "db/diagrams.csv", "db/assets.csv", "db/templates.csv")
+	//追加を行う
+	err = fsObj.AddDBFiles(files)
 	if err != nil {
 		return xerrors.Errorf("Add() error: %w", err)
 	}
@@ -98,6 +112,7 @@ func install(fsObj *fs.FileSystem, dir string) error {
 // install false 時存在しない場合エラー
 func checkDirectory(dir string, install bool) error {
 
+	//TODO ちょっと違うかも
 	dirs := []string{"db", "docs", "templates", "diagrams", "notes"}
 
 	for _, n := range dirs {
@@ -113,60 +128,161 @@ func checkDirectory(dir string, install bool) error {
 	return nil
 }
 
-func (b *Binder) Initialize(name string, sample bool) error {
+func (b *Binder) Initialize(name string) error {
+
 	if b == nil {
 		return EmptyError
 	}
 
+	//TODO テンプレートを作成
+	err := b.initializeTemplate()
+	if err != nil {
+		return xerrors.Errorf("initializeTemplate() error: %w", err)
+	}
+	//データベースをコミット
+	err = b.fileSystem.CommitAll(fs.M("Initialize", "Templates"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll(templates) error: %w", err)
+	}
+
+	err = b.initializeNote()
+	if err != nil {
+		return xerrors.Errorf("initializeNote() error: %w", err)
+	}
+	//データベースをコミット
+	err = b.fileSystem.CommitAll(fs.M("Initialize", "Notes"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll(notes) error: %w", err)
+	}
+
+	err = b.initializeDiagram()
+	if err != nil {
+		return xerrors.Errorf("initializeNote() error: %w", err)
+	}
+	err = b.fileSystem.CommitAll(fs.M("Initialize", "Diagrams"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll(diagrams) error: %w", err)
+	}
+
+	err = b.initializeAsset()
+	if err != nil {
+		return xerrors.Errorf("initializeNote() error: %w", err)
+	}
+	err = b.fileSystem.CommitAll(fs.M("Initialize", "Assets"))
+	if err != nil {
+		return xerrors.Errorf("CommitAll(assets) error: %w", err)
+	}
+
+	if name == "" {
+		return nil
+	}
+
+	//名称のデータをコピー
+
+	return nil
+}
+
+func (b *Binder) initializeNote() error {
+	//新規作成の為、EditNoteは利用できないので注意
 	var index model.Note
-	index.Id = "index"
+	index.Id = NoteRootId
 	index.ParentId = ""
 	index.Name = "Index"
-	index.LayoutTemplate = "layout"
-	index.ContentTemplate = "content"
+	index.LayoutTemplate = TemplateLayoutId
+	index.ContentTemplate = TemplateIndexId
 
-	_, err := b.EditNote(&index, "")
+	err := b.createNote(&index)
 	if err != nil {
-		return fmt.Errorf("index register error\n%+v", err)
+		return fmt.Errorf("createNote(index) error\n%+v", err)
 	}
 
 	var child model.Note
 	child.Id = ""
-	child.ParentId = "index"
+	child.ParentId = NoteRootId
 	child.Name = "Content"
-	child.LayoutTemplate = "layout"
-	child.ContentTemplate = "content"
+	child.LayoutTemplate = TemplateLayoutId
+	child.ContentTemplate = TemplateContentId
 	_, err = b.EditNote(&child, "")
 	if err != nil {
 		return fmt.Errorf("content register error\n%+v", err)
 	}
+	return nil
+}
 
+func (b *Binder) initializeDiagram() error {
+	//ダイアグラム
 	var diagram model.Diagram
 	diagram.Id = ""
-	diagram.ParentId = "index"
+	diagram.ParentId = NoteRootId
 	diagram.Name = "Diagram"
-	_, err = b.EditDiagram(&diagram)
+	_, err := b.EditDiagram(&diagram)
 	if err != nil {
 		return fmt.Errorf("diagram register error\n%+v", err)
+	}
+	return nil
+}
+
+func (b *Binder) initializeAsset() error {
+	//アセット作成
+	//ダイアグラム
+	var asset model.Asset
+	asset.Id = ""
+	asset.ParentId = NoteRootId
+	asset.Name = "Asset"
+	asset.Alias = "DataAsset"
+
+	_, err := b.editAsset(&asset, []byte("add a logo or something"))
+	if err != nil {
+		return fmt.Errorf("diagram register error\n%+v", err)
+	}
+	return nil
+}
+
+func (b *Binder) initializeTemplate() error {
+	var layout model.Template
+	layout.Id = TemplateLayoutId
+	layout.Typ = string(db.LayoutTemplateType)
+	layout.Name = "Layout"
+	err := b.createTemplate(&layout)
+	if err != nil {
+		return fmt.Errorf("layout register error\n%+v", err)
+	}
+
+	var index model.Template
+	index.Id = TemplateIndexId
+	index.Typ = string(db.ContentTemplateType)
+	index.Name = "Index"
+	err = b.createTemplate(&index)
+	if err != nil {
+		return fmt.Errorf("index register error\n%+v", err)
+	}
+
+	var content model.Template
+	content.Id = TemplateContentId
+	content.Typ = string(db.ContentTemplateType)
+	content.Name = "Content"
+	err = b.createTemplate(&content)
+	if err != nil {
+		return fmt.Errorf("content register error\n%+v", err)
 	}
 
 	return nil
 }
 
-func (b *Binder) initializeTemplate(name string, sample bool) error {
+func (b *Binder) copyTemplate(name string) error {
 
 	if b == nil {
 		return EmptyError
 	}
-	//var indexTmpl model.Template
 
+	//var indexTmpl model.Template
 	tempFs, err := stdFs.Sub(embFs, "_assets/templates/"+name)
 	if err != nil {
 		return xerrors.Errorf("template fs Sub() error: %w", err)
 	}
 
 	//全テンプレートを設定
-	for _, f := range []string{"layout", "index", "list", "note"} {
+	for _, f := range []string{"layout", "index", "content"} {
 		data, err := stdFs.ReadFile(tempFs, f+".tmpl")
 		if err != nil {
 			return xerrors.Errorf("fs ReadFile() error: %w", err)
@@ -177,9 +293,7 @@ func (b *Binder) initializeTemplate(name string, sample bool) error {
 		}
 	}
 
-	err = b.fileSystem.CommitAll(fs.M("install", "Templates"))
-	if err != nil {
-		return xerrors.Errorf("CommitAll() error: %w", err)
-	}
+	//ノート、テンプレート、ダイアグラムも処理を行う
+
 	return nil
 }
