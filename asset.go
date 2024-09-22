@@ -2,9 +2,9 @@ package binder
 
 import (
 	"binder/db/model"
+	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
 
@@ -14,32 +14,38 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 		return nil, EmptyError
 	}
 
+	var data []byte
+	var err error
 	//ファイル指定がある場合
 	if f != "" {
-		err := b.fileSystem.CreateAsset(a, f)
+
+		data, err = os.ReadFile(f)
 		if err != nil {
-			return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
+			return nil, xerrors.Errorf("os.ReadFile() error: %w", err)
+		}
+
+		fn := filepath.Base(f)
+		//指定がない状態だった場合、ファイル名で設定しておく
+		if a.Id == "" {
+			a.Name = fn
+			a.Alias = fn
 		}
 	}
 
+	_, err = b.editAsset(a, data)
+	if err != nil {
+		return nil, xerrors.Errorf("editAsset() error: %w", err)
+	}
+
+	return a, nil
+}
+
+func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
+
 	//新規指定だった場合
 	if a.Id == "" {
-		//TODO ID の使用を考える
-		id, err := uuid.NewV7()
-		if err != nil {
-			return nil, xerrors.Errorf("uuid.NewV7() error: %w", err)
-		}
 
-		a.Id = id.String()
-
-		fn := filepath.Base(f)
-		a.Name = fn
-		a.Alias = fn
-
-		if b.db.ExistAsset(a.Id) {
-			return nil, xerrors.Errorf("Exist Asset error")
-		}
-
+		a.Id = b.generateId()
 		n, err := b.db.GetNote(a.ParentId)
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetNote() error: %w", err)
@@ -52,13 +58,22 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 		}
 
 	} else {
+
+		//TODO Alias変更時に影響あり
+
 		err := b.db.UpdateAsset(a, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}
 	}
 
-	//TODO データベースをコミット
+	// データ指定がある場合
+	if data != nil {
+		err := b.fileSystem.CreateAsset(a, data)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
+		}
+	}
 
 	return a, nil
 }
