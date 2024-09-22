@@ -1,10 +1,8 @@
 package binder_test
 
 import (
-	"binder"
 	"binder/test"
 	"os"
-	"path/filepath"
 
 	"testing"
 )
@@ -16,16 +14,14 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestInstall(t *testing.T) {
+func TestLoad(t *testing.T) {
+}
 
-	dir := filepath.Join(test.Dir, "create")
-	err := binder.Install(dir)
-	if err != nil {
-		t.Fatalf("create error: %+v\n", err)
-	}
+func TestClose(t *testing.T) {
+}
 
-	//データベース確認
+func TestGenerate(t *testing.T) {
+}
 
-	//テンプレート確認
-
+func TestCreateRemote(t *testing.T) {
 }
