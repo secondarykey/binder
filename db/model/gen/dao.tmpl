@@ -16,8 +16,13 @@ import (
 )
 
 // create table
-func create{{.Name}}Table(dir string) error {
-    return createTableFile(filepath.Join(dir,"{{.TableName}}.csv"),"{{columns .}}")
+func create{{.Name}}Table(dir string) (string,error) {
+    fn := filepath.Join(dir,"{{.TableName}}.csv")
+    err := createTableFile(fn,"{{columns .}}")
+    if err != nil {
+      return "",xerrors.Errorf("createTableFile() error: %w",err)
+    }
+    return fn,nil
 }
 
 // exists check key
