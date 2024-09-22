@@ -7,6 +7,16 @@ import (
 	"strings"
 )
 
+// GitBash用のパス変換
+func ToGitBash(p string) string {
+	// "C:\test" to /C/test
+	cp := convertPaths(p)
+	//C:/test
+	ccp := strings.Replace(cp[0], ":", "", 1)
+	//C/test
+	return "/" + ccp
+}
+
 func ConvertHTTPPath(path string) string {
 	rtn := convertPaths(path)
 	return rtn[0]
