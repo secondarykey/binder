@@ -17,26 +17,6 @@ func (b *Binder) GetNote(id string) (*model.Note, error) {
 	return n, nil
 }
 
-func (b *Binder) GetNoteWithTemplates(id string) (*model.Note, error) {
-
-	if b == nil {
-		return nil, EmptyError
-	}
-
-	n, err := b.db.GetNote(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
-	}
-
-	layouts, contents, err := b.GetHTMLTemplates()
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetHTMLTemplates() error: %w", err)
-	}
-
-	n.SetTemplates(layouts, contents)
-	return n, nil
-}
-
 func (b *Binder) RemoveNote(id string) (*model.Note, error) {
 
 	if b == nil {
@@ -67,27 +47,28 @@ func (b *Binder) EditNote(n *model.Note, metaName string) (*model.Note, error) {
 		return nil, EmptyError
 	}
 
+	var on *model.Note
+
 	if n.Id == "" {
 
 		n.Id = b.generateId()
-
-		err := b.fileSystem.CreateNoteFile(n)
+		err := b.createNote(n)
 		if err != nil {
-			return nil, xerrors.Errorf("fs.CreateNoteFile() error: %w", err)
-		}
-
-		err = b.db.InsertNote(n, b.op)
-		if err != nil {
-			return nil, xerrors.Errorf("db.InsertNote() error: %w", err)
+			return nil, xerrors.Errorf("createNote() error: %w", err)
 		}
 
 	} else {
 
-		//TODO
-		// Noteを取得して、Aliasを確認
-		// すでにAliasが存在した場合、移動を行う
-		//
-		err := b.db.UpdateNote(n, b.op)
+		var err error
+		on, err = b.db.GetNote(n.Id)
+		if on.Alias != n.Alias {
+			//TODO
+			//旧データが公開されてないか確認
+
+			//Metaデータが公開されてないかも確認
+		}
+
+		err = b.db.UpdateNote(n, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateNote() error: %w", err)
 		}
@@ -95,9 +76,6 @@ func (b *Binder) EditNote(n *model.Note, metaName string) (*model.Note, error) {
 
 	//メタデータ指定がある場合
 	if metaName != "" {
-
-		//TODO すでに存在する場合
-
 		err := b.fileSystem.EditMetadata(n, metaName)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.EditMetadata() error: %w", err)
@@ -105,6 +83,19 @@ func (b *Binder) EditNote(n *model.Note, metaName string) (*model.Note, error) {
 	}
 
 	return n, nil
+}
+
+func (b *Binder) createNote(n *model.Note) error {
+	err := b.fileSystem.CreateNoteFile(n)
+	if err != nil {
+		return xerrors.Errorf("fs.CreateNoteFile() error: %w", err)
+	}
+
+	err = b.db.InsertNote(n, b.op)
+	if err != nil {
+		return xerrors.Errorf("db.InsertNote() error: %w", err)
+	}
+	return nil
 }
 
 func (b *Binder) OpenNote(noteId string) ([]byte, error) {
@@ -127,5 +118,23 @@ func (b *Binder) SaveNote(noteId string, data []byte) error {
 	if err != nil {
 		return xerrors.Errorf("fs.WriteNoteText() error: %w", err)
 	}
+	return nil
+}
+
+func (b *Binder) diffrenceNotes() error {
+
+	//DBからノートを取得
+
+	//ファイルシステムから一覧を取得
+
+	//DBにあって、ファイルシステムにない
+	//ファイルを追加
+
+	//ファイルシステムにあって、DBにない
+	//削除する
+
+	//公開状況を取得
+	//他のものがないか？
+
 	return nil
 }
