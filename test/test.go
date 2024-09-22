@@ -1,8 +1,11 @@
 package test
 
 import (
+	"binder"
 	"log"
 	"os"
+	"path/filepath"
+	"testing"
 )
 
 const (
@@ -41,4 +44,26 @@ func remove(dir string) {
 		}
 		os.Remove(n)
 	}
+}
+
+func CreateBinder(t *testing.T, dir string) *binder.Binder {
+
+	work := filepath.Join(Dir, dir)
+
+	err := binder.Install(work)
+	if err != nil {
+		t.Fatalf("binder.Install error: %v", err)
+	}
+
+	b, err := binder.Load(work)
+	if err != nil {
+		t.Fatalf("binder.Load() error: %v", err)
+	}
+
+	err = b.Initialize("simple")
+	if err != nil {
+		t.Fatalf("binder.Initialize() error: %v", err)
+	}
+
+	return b
 }
