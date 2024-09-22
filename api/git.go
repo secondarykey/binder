@@ -5,17 +5,6 @@ import (
 	"fmt"
 )
 
-func (a *App) Commit(noteId string, dataId string, auto bool) error {
-
-	defer log.PrintTrace(log.Func("Commit()"))
-	err := a.current.SaveCommit(noteId, dataId, auto)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return fmt.Errorf("Commit() error\n%+v", err)
-	}
-	return nil
-}
-
 func (a *App) Remotes() ([]string, error) {
 
 	defer log.PrintTrace(log.Func("Remotes()"))

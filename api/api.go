@@ -49,6 +49,10 @@ func (a *App) Startup(ctx context.Context) {
 				log.PrintStackTrace(err)
 			} else {
 				a.SetCurrent(b)
+				err = b.Serve()
+				if err != nil {
+					log.PrintStackTrace(err)
+				}
 			}
 		}
 	}

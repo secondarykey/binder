@@ -32,6 +32,10 @@ func (a *App) load(dir string) error {
 	if err != nil {
 		return xerrors.Errorf("Binder Load() error: %w", err)
 	}
+	err = b.Serve()
+	if err != nil {
+		return xerrors.Errorf("Binder Serve() error: %w", err)
+	}
 	a.SetCurrent(b)
 
 	//履歴に追加
@@ -59,7 +63,7 @@ func (a *App) CloseBinder() error {
 	return nil
 }
 
-func (a *App) CreateBinder(dir string, name string, sample bool) error {
+func (a *App) CreateBinder(dir string, name string) error {
 
 	defer log.PrintTrace(log.Func("CreateBinder()"))
 
@@ -75,7 +79,7 @@ func (a *App) CreateBinder(dir string, name string, sample bool) error {
 		return fmt.Errorf("binder load error\n%+v", err)
 	}
 
-	err = a.current.Initialize(name, sample)
+	err = a.current.Initialize(name)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("binder Initialize() error\n%+v", err)
