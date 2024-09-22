@@ -1,15 +1,17 @@
 package db_test
 
-import "testing"
+import (
+	"binder/db"
+	"testing"
+)
 
 func TestDiagrams(t *testing.T) {
 
 	inst := open()
-	d, err := inst.GetDiagram("NotFound")
-	if d != nil {
-		t.Errorf("GetDiagram() not found is nil")
-	}
+	_, err := inst.GetDiagram("NotFound")
 	if err != nil {
-		t.Errorf("db.GetDiagram() not found is nil:%v", err)
+		if !db.IsNotExist(err) {
+			t.Errorf("GetDiagram() is not error: %v", err)
+		}
 	}
 }

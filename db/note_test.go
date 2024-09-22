@@ -35,10 +35,9 @@ func TestNotes(t *testing.T) {
 	//NotFound
 	note, err = inst.GetNote("NotFound")
 	if err != nil {
-		t.Errorf("db.GetNote() not found is nil:%v", err)
-	}
-	if note != nil {
-		t.Errorf("GetNote() not found is nil")
+		if !db.IsNotExist(err) {
+			t.Errorf("db.GetNote() not found is nil:%v", err)
+		}
 	}
 }
 
