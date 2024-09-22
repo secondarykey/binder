@@ -15,15 +15,9 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 	if t.Id == "" {
 
 		t.Id = b.generateId()
-
-		err := b.fileSystem.CreateTemplateFile(t)
+		err := b.createTemplate(t)
 		if err != nil {
-			return nil, xerrors.Errorf("fs.CreteTemplateFile() error: %w", err)
-		}
-
-		err = b.db.InsertTemplate(t, b.op)
-		if err != nil {
-			return nil, xerrors.Errorf("db.InsertTemplate() error: %w", err)
+			return nil, xerrors.Errorf("db.UpdateTemplate() error: %w", err)
 		}
 
 	} else {
@@ -35,6 +29,18 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 
 	//TODO データベースコミット
 	return t, nil
+}
+
+func (b *Binder) createTemplate(t *model.Template) error {
+	err := b.fileSystem.CreateTemplateFile(t)
+	if err != nil {
+		return xerrors.Errorf("fs.CreteTemplateFile() error: %w", err)
+	}
+	err = b.db.InsertTemplate(t, b.op)
+	if err != nil {
+		return xerrors.Errorf("db.InsertTemplate() error: %w", err)
+	}
+	return nil
 }
 
 func (b *Binder) GetTemplate(id string) (*model.Template, error) {
