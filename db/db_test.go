@@ -40,7 +40,8 @@ func open() *db.Instance {
 
 func create() error {
 	os.Mkdir(testPath, 0666)
-	return db.Create(testPath)
+	_, err := db.Create(testPath)
+	return err
 }
 
 func TestMain(m *testing.M) {
@@ -73,7 +74,7 @@ func TestDB(t *testing.T) {
 func TestCrete(t *testing.T) {
 	dir := filepath.Join(test.Dir, "create")
 	os.Mkdir(dir, 0666)
-	err := db.Create(filepath.Join(test.Dir, "create"))
+	_, err := db.Create(filepath.Join(test.Dir, "create"))
 	if err != nil {
 		t.Errorf("db.Create() is not nil:%v", err)
 	}

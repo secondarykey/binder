@@ -18,57 +18,64 @@ var DuplicateKey = fmt.Errorf("duplicate key error")
 
 const TimeZero = "0001-01-01T00:00:00Z"
 
-func Create(dir string) error {
+func Create(dir string) ([]string, error) {
 
 	//ファイルチェック
 	//すでに存在する場合
-
-	err := createTableFiles(dir)
+	files, err := createTableFiles(dir)
 	if err != nil {
-		return xerrors.Errorf("createTableFiles() error: %w", err)
+		return nil, xerrors.Errorf("createTableFiles() error: %w", err)
 	}
 
 	inst, err := New(dir)
 	if err != nil {
-		return xerrors.Errorf("db.New() error: %w", err)
+		return nil, xerrors.Errorf("db.New() error: %w", err)
 	}
 	err = inst.Open()
 	if err != nil {
-		return xerrors.Errorf("inst.Open() error: %w", err)
+		return nil, xerrors.Errorf("inst.Open() error: %w", err)
 	}
 	defer inst.Close()
 
 	err = inst.insertDefaultConfig()
 	if err != nil {
-		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
+		return nil, xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
 	}
 
-	return nil
+	return files, nil
 }
 
-func createTableFiles(dir string) error {
+func createTableFiles(dir string) ([]string, error) {
 	var err error
-	err = createConfigTable(dir)
+	var fn string
+	var files []string
+
+	fn, err = createConfigTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createConfigTable() error: %w", err)
+		return nil, xerrors.Errorf("createConfigTable() error: %w", err)
 	}
-	err = createNoteTable(dir)
+	files = append(files, fn)
+	fn, err = createNoteTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createNoteTable() error: %w", err)
+		return nil, xerrors.Errorf("createNoteTable() error: %w", err)
 	}
-	err = createDiagramTable(dir)
+	files = append(files, fn)
+	fn, err = createDiagramTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createDiagramTable() error: %w", err)
+		return nil, xerrors.Errorf("createDiagramTable() error: %w", err)
 	}
-	err = createAssetTable(dir)
+	files = append(files, fn)
+	fn, err = createAssetTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createAssetTable() error: %w", err)
+		return nil, xerrors.Errorf("createAssetTable() error: %w", err)
 	}
-	err = createTemplateTable(dir)
+	files = append(files, fn)
+	fn, err = createTemplateTable(dir)
 	if err != nil {
-		return xerrors.Errorf("createTemplateTable() error: %w", err)
+		return nil, xerrors.Errorf("createTemplateTable() error: %w", err)
 	}
-	return nil
+	files = append(files, fn)
+	return files, nil
 }
 
 func createTableFile(file string, clm string) error {
