@@ -14,12 +14,8 @@ export function CloseBinder() {
   return window['go']['api']['App']['CloseBinder']();
 }
 
-export function Commit(arg1, arg2, arg3) {
-  return window['go']['api']['App']['Commit'](arg1, arg2, arg3);
-}
-
-export function CreateBinder(arg1, arg2, arg3) {
-  return window['go']['api']['App']['CreateBinder'](arg1, arg2, arg3);
+export function CreateBinder(arg1, arg2) {
+  return window['go']['api']['App']['CreateBinder'](arg1, arg2);
 }
 
 export function CreateNoteHTML(arg1, arg2) {
