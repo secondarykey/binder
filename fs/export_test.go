@@ -13,8 +13,8 @@ func (b *FileSystem) PrintStatus() {
 	}
 
 	// Statusがある場合pushできない
-	fmt.Printf("%-30s| %-10s | %-10s | %s\n", "FileName", "Staging", "Worktree", "Extra")
+	fmt.Printf("%-60s| %-10s | %-10s | %s\n", "FileName", "Staging", "Worktree", "Extra")
 	for key, s := range status {
-		fmt.Printf("%-30s| %10c | %10c | %s\n", key, s.Staging, s.Worktree, s.Extra)
+		fmt.Printf("%-60s| %10c | %10c | %s\n", key, s.Staging, s.Worktree, s.Extra)
 	}
 }
