@@ -9,6 +9,9 @@ import (
 	"binder/db/model"
 	_ "embed"
 	"fmt"
+	"go/parser"
+	"go/printer"
+	"go/token"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -89,10 +92,18 @@ func run(ins []input) error {
 	for _, in := range ins {
 		fn := filepath.Join(root, in.output)
 		in.output = fn
-		err := generate(in)
+
+		buf, err := createFileData(in)
+		if err != nil {
+			return xerrors.Errorf("createFileData(%s) error: %w", in.output, err)
+		}
+
+		//FMT
+		err = generate(in.output, buf)
 		if err != nil {
 			return xerrors.Errorf("generate(%s) error: %w", in.output, err)
 		}
+
 		fmt.Println("generate:", in.output)
 	}
 	return nil
@@ -134,22 +145,49 @@ type Column struct {
 }
 
 // 出力処理
-func generate(in input) error {
+func createFileData(in input) (*strings.Builder, error) {
+
+	var buf strings.Builder
 
 	t, err := createTable(in)
 	if err != nil {
-		return xerrors.Errorf("createTable(): %w", err)
+		return nil, xerrors.Errorf("createTable(): %w", err)
 	}
 
-	fp, err := os.Create(in.output)
+	err = tmpl.Execute(&buf, t)
+	if err != nil {
+		return nil, xerrors.Errorf("template Execute(): %w", err)
+	}
+
+	return &buf, nil
+}
+
+func generate(fn string, buf *strings.Builder) error {
+
+	fp, err := os.Create(fn)
 	if err != nil {
 		return xerrors.Errorf("os.Create(): %w", err)
 	}
 	defer fp.Close()
 
-	err = tmpl.Execute(fp, t)
+	source := buf.String()
+
+	fset := token.NewFileSet()
+	node, err := parser.ParseFile(fset, "", buf.String(), parser.ParseComments)
 	if err != nil {
-		return xerrors.Errorf("template Execute(): %w", err)
+
+		fmt.Printf("parser.ParseFile() error: %v\n", err)
+
+		_, err = fp.Write([]byte(source))
+		if err != nil {
+			return xerrors.Errorf("Write() error: %w", err)
+		}
+		return nil
+	}
+
+	err = printer.Fprint(fp, fset, node)
+	if err != nil {
+		return xerrors.Errorf("printer.Fprint() error: %w", err)
 	}
 
 	return nil
@@ -423,8 +461,12 @@ func keyArgs(t *Table) string {
 	return buf.String()
 }
 
-func keyVariables(t *Table, comma bool) string {
+func keyVariables(t *Table, comma bool, empty bool) string {
+
 	if !t.HasKey {
+		if empty {
+			return "\"\""
+		}
 		return ""
 	}
 
@@ -439,6 +481,7 @@ func keyVariables(t *Table, comma bool) string {
 		}
 		buf.WriteString(fmt.Sprintf("%s", col.VariableName))
 	}
+
 	return buf.String()
 }
 

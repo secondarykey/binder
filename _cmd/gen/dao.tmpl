@@ -27,7 +27,7 @@ func create{{.Name}}Table(dir string) (string,error) {
 
 // exists check key
 func (inst *Instance) exist{{.Name}}({{keyArgs .}}) bool {
-    m,err := inst.Get{{.Name}}({{keyVariables . false}})
+    m,err := inst.Get{{.Name}}({{keyVariables . false false}})
     if err != nil || m == nil {
         return false
     }
@@ -36,12 +36,12 @@ func (inst *Instance) exist{{.Name}}({{keyArgs .}}) bool {
 
 // get row 
 func (inst *Instance) Get{{.Name}}({{keyArgs .}}) (*model.{{.Name}}, error) {
-    models,err := inst.find{{.Name}}("{{selectWhere .}}","",1,0{{keyVariables . true}})
+    models,err := inst.find{{.Name}}("{{selectWhere .}}","",1,0{{keyVariables . true false}})
     if err != nil {
         return nil,xerrors.Errorf("inst.find{{.Name}}() error: %w",err)
     }
     if len(models) == 0 {
-        return nil,newNotExistError({{keyVariables . false}},"{{.Name}}")
+        return nil,newNotExistError({{keyVariables . false true}},"{{.Name}}")
     }
     return models[0],nil
 }
@@ -99,9 +99,10 @@ func (inst *Instance) find{{.Name}}(where string,order string,limit int,offset i
         base.WriteString(fmt.Sprintf(" OFFSET %d", offset))
     }
 
-    rows, err := inst.getRows(inst.ctx, base.String(),args...)
+    sql := base.String()
+    rows, err := inst.getRows(inst.ctx, sql, args...)
     if err != nil {
-        return nil, xerrors.Errorf("getRows({{.Name}}) error: %w", err)
+        return nil, xerrors.Errorf("getRows({{.Name}}) \n%s\n error: %w", sql,err)
     }
 
     models := make([]*model.{{.Name}}, 0)
