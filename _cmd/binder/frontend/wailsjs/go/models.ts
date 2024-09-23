@@ -134,6 +134,7 @@ export namespace model {
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
+	    status: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Asset(source);
@@ -150,6 +151,7 @@ export namespace model {
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
+	        this.status = source["status"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -232,6 +234,7 @@ export namespace model {
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
+	    status: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Diagram(source);
@@ -249,6 +252,7 @@ export namespace model {
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
+	        this.status = source["status"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -334,6 +338,7 @@ export namespace model {
 	    children: Note[];
 	    diagrams: Diagram[];
 	    assets: Asset[];
+	    status: number;
 	    layouts: Template[];
 	    contents: Template[];
 	
@@ -358,6 +363,7 @@ export namespace model {
 	        this.children = this.convertValues(source["children"], Note);
 	        this.diagrams = this.convertValues(source["diagrams"], Diagram);
 	        this.assets = this.convertValues(source["assets"], Asset);
+	        this.status = source["status"];
 	        this.layouts = this.convertValues(source["layouts"], Template);
 	        this.contents = this.convertValues(source["contents"], Template);
 	    }

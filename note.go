@@ -2,6 +2,9 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
+	"fmt"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -121,20 +124,50 @@ func (b *Binder) SaveNote(noteId string, data []byte) error {
 	return nil
 }
 
-func (b *Binder) diffrenceNotes() error {
+func (b *Binder) GetPublishNotes() ([]*model.Note, error) {
 
-	//DBからノートを取得
+	all, err := b.db.FindNotes()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
+	}
 
-	//ファイルシステムから一覧を取得
+	pr := make([]*model.Note, 0, len(all))
 
-	//DBにあって、ファイルシステムにない
-	//ファイルを追加
+	for _, n := range all {
 
-	//ファイルシステムにあって、DBにない
-	//削除する
+		//元ファイルを作成
+		base := fs.NoteFile(n.Id)
+		//公開ファイルを取得
+		pub := fs.HTMLFile(n)
+		p := fs.ConvertPaths(base, pub)
 
-	//公開状況を取得
-	//他のものがないか？
+		bi, err := b.fileSystem.Stat(p[0])
+		bt := time.Now()
+		if err == nil {
+			bt = bi.ModTime()
+		} else {
+			//存在しないはエラー
+			return nil, fmt.Errorf("diagram file Nothing[%s]", n.Id)
+		}
 
-	return nil
+		pi, err := b.fileSystem.Stat(p[1])
+		pt := time.Time{}
+		if err == nil {
+			pt = pi.ModTime()
+
+			if bt.After(pt) {
+				n.Status = model.UpdatedStatus
+			} else {
+				n.Status = model.LatestStatus
+			}
+		} else {
+			n.Status = model.PrivateStatus
+		}
+
+		//最新じゃない場合は追加
+		if n.Status != model.LatestStatus {
+			pr = append(pr, n)
+		}
+	}
+	return pr, nil
 }

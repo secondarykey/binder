@@ -2,6 +2,9 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
+	"fmt"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -106,4 +109,52 @@ func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
 	//TODO コミット
 
 	return d, nil
+}
+
+func (b *Binder) GetPublishDiagrams() ([]*model.Diagram, error) {
+
+	all, err := b.db.FindDiagrams()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindDiagrams() error: %w", err)
+	}
+
+	pr := make([]*model.Diagram, 0, len(all))
+
+	for _, d := range all {
+
+		//元ファイルを作成
+		base := fs.DiagramFile(d.Id)
+		//公開ファイルを取得
+		pub := fs.SVGFile(d)
+		p := fs.ConvertPaths(base, pub)
+
+		bi, err := b.fileSystem.Stat(p[0])
+		bt := time.Now()
+		if err == nil {
+			bt = bi.ModTime()
+		} else {
+			//存在しないはエラー
+			return nil, fmt.Errorf("diagram file Nothing[%s]", d.Id)
+		}
+
+		pi, err := b.fileSystem.Stat(p[1])
+		pt := time.Time{}
+		if err == nil {
+			pt = pi.ModTime()
+
+			if bt.After(pt) {
+				d.Status = model.UpdatedStatus
+			} else {
+				d.Status = model.LatestStatus
+			}
+		} else {
+			d.Status = model.PrivateStatus
+		}
+
+		//最新じゃない場合は追加
+		if d.Status != model.LatestStatus {
+			pr = append(pr, d)
+		}
+	}
+	return pr, nil
 }

@@ -2,6 +2,7 @@ package test
 
 import (
 	"binder"
+	"binder/settings"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,6 +21,11 @@ func Clean() {
 	}
 
 	remove(Dir)
+
+	set := settings.Get()
+	auth := set.Git
+	auth.Name = "Binder test"
+	auth.Mail = "binder_test@localhost"
 }
 
 func remove(dir string) {
