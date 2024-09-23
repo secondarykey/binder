@@ -2,6 +2,7 @@ package fs
 
 import (
 	"binder/db/model"
+	"fmt"
 	"path/filepath"
 
 	"golang.org/x/xerrors"
@@ -10,6 +11,9 @@ import (
 func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) error {
 
 	dataFn := AssetFile(a)
+	if dataFn == "" {
+		return fmt.Errorf("AssetFile() error: id is empty(%s,%s)", a.ParentId, a.Id)
+	}
 
 	parentDir := filepath.Dir(dataFn)
 	f.mkdir(parentDir)
@@ -38,7 +42,7 @@ func (f *FileSystem) DeleteAsset(a *model.Asset) error {
 	fn := AssetFile(a)
 	err := f.Remove(fn)
 	if err != nil {
-		return xerrors.Errorf("fs.Remove() error: %w", err)
+		return xerrors.Errorf("fs.Remove(%s) error: %w", fn, err)
 	}
 
 	err = f.Commit(M("Remove", a.Name), fn)

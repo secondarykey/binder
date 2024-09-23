@@ -22,6 +22,10 @@ func ConvertHTTPPath(path string) string {
 	return rtn[0]
 }
 
+func ConvertPaths(paths ...string) []string {
+	return convertPaths(paths...)
+}
+
 func convertPaths(paths ...string) []string {
 	rtn := make([]string, len(paths))
 	for idx, p := range paths {

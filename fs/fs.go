@@ -36,6 +36,7 @@ func New(dir string) (*FileSystem, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("newFileSystem() error: %w", err)
 	}
+	rtn.base = dir
 	return rtn, nil
 }
 
@@ -76,6 +77,7 @@ func Clone(dir string, url string) (*FileSystem, error) {
 	b.remote = url
 	fs := osfs.New(dir)
 	b.fs = fs
+	b.base = dir
 	return &b, nil
 }
 

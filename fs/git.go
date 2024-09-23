@@ -3,7 +3,7 @@ package fs
 import (
 	"binder/settings"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -15,8 +15,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func M(prefix string, name string) string {
-	return fmt.Sprintf("%-10s : %s", prefix, name)
+func M(header string, name string) string {
+	return fmt.Sprintf("%-10s : %s", header, name)
 }
 
 func (f *FileSystem) CreateRemote(name, url string) error {
@@ -159,25 +159,38 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 	if all {
 		commitOk = true
 	} else {
-		for _, f := range files {
+
+		gp := convertPaths(files...)
+		for _, f := range gp {
 
 			s, ok := status[f]
 			if !ok {
 				continue
 			}
 
+			//fmt.Printf("%c %c\n", s.Worktree, s.Staging)
 			if s.Worktree == git.Modified {
-				w.Add(f)
+				_, err := w.Add(f)
+				if err != nil {
+					return xerrors.Errorf("Modified Add(%s) error: %w", f, err)
+				}
+				commitOk = true
+			} else if s.Worktree == git.Deleted {
+				//w.Remove(f)
+				//w.Add(f)
+				//w.Clean(&git.CleanOptions{})
 				commitOk = true
 			} else if s.Staging == git.Added {
 				commitOk = true
+			} else if s.Staging == git.Untracked {
+				//commitOk = true
 			}
 		}
 	}
 
 	if !commitOk {
 		// update file nothing
-		log.Println("update file nothing")
+		slog.Warn("update file nothing")
 		return nil
 	}
 
@@ -190,6 +203,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 	if err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
+
 	return nil
 }
 
