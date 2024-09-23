@@ -26,6 +26,8 @@ type Note struct {
 	Diagrams []*Diagram `db:"-" json:"diagrams"`
 	Assets   []*Asset   `db:"-" json:"assets"`
 
+	Status Status `db:"-" json:"status"`
+
 	Layouts  []*Template `db:"-" json:"layouts"`
 	Contents []*Template `db:"-" json:"contents"`
 }

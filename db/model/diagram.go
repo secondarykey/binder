@@ -19,7 +19,8 @@ type Diagram struct {
 	UpdatedUser string    `db:"updated_user" json:"updatedUser"`
 
 	// not schema
-	Parent *Note `db:"-" json:"-"`
+	Parent *Note  `db:"-" json:"-"`
+	Status Status `db:"-" json:"status"`
 }
 
 func (d *Diagram) String() string {
