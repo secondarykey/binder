@@ -45,13 +45,6 @@ func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, er
 	return inst.findNote(fmt.Sprintf("!(publish_date = '%s')", TimeZero), "publish_date desc", limit, offset)
 }
 
-func (inst *Instance) GetLatestNoteId() (string, error) {
-	notes, err := inst.FindUpdatedNotes(1, -1)
-	if err != nil {
-		return "", xerrors.Errorf("FindUpdateNotes() error: %w", err)
-	}
-	if len(notes) == 0 {
-		return "", fmt.Errorf("Note is Nothing")
-	}
-	return notes[0].Id, nil
+func (inst *Instance) FindInNoteId(ids ...interface{}) ([]*model.Note, error) {
+	return inst.findNote("id in ("+csvQ(ids)+")", "", -1, -1, ids...)
 }

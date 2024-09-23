@@ -93,3 +93,17 @@ func TestFindPublish(t *testing.T) {
 	}
 
 }
+
+func TestFindInNoteId(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	notes, err := inst.FindInNoteId("aaa", "bbb")
+	if err != nil {
+		t.Errorf("inst.FindInNoteId() error not nil:%v", err)
+	}
+
+	if len(notes) != 0 {
+		t.Errorf("inst.FindInNoteId() not zero[%d]", len(notes))
+	}
+}

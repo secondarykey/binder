@@ -240,3 +240,11 @@ func to(src string) string {
 	}
 	return ret
 }
+
+func csvQ(data []interface{}) string {
+	q := make([]string, len(data))
+	for idx := range data {
+		q[idx] = "?"
+	}
+	return strings.Join(q, ",")
+}
