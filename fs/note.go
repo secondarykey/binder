@@ -89,3 +89,27 @@ func (f *FileSystem) WriteNoteText(id string, data []byte) error {
 	}
 	return nil
 }
+
+func (f *FileSystem) SetNoteStatus(n *model.Note) error {
+
+	//元ファイルを作成
+	base := NoteFile(n.Id)
+	//公開ファイルを取得
+	pub := HTMLFile(n)
+
+	status, err := f.getPublishStatus(base, pub)
+	if err != nil {
+		return xerrors.Errorf("getPublishStatus() error: %w", err)
+	}
+	n.Status = status
+
+	return nil
+}
+
+func (f *FileSystem) PublishNote(n *model.Note) error {
+	return nil
+}
+
+func (f *FileSystem) UnpublishNote(n *model.Note) error {
+	return nil
+}

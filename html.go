@@ -32,7 +32,6 @@ func formatTime(t time.Time) string {
 type wrapper struct {
 	owner *Binder
 	note  *model.Note
-
 	Local bool
 }
 
@@ -125,16 +124,35 @@ func (w *wrapper) convertURL(p string) string {
 	return strings.Replace(np, cp, "", 1)
 }
 
+func (w *wrapper) drawSVG(id string) template.HTML {
+
+	txt, err := w.owner.OpenDiagram(id)
+	if err != nil {
+		return template.HTML(err.Error())
+	}
+
+	return template.HTML(fmt.Sprintf(`
+<div class="%s" id="%s">
+%s
+</div>`, "binderSVG", id, string(txt)))
+
+}
+
 func safeTemplate(src string) string {
 	return src
 }
 
 func localeDateScript(src string) template.HTML {
-	return template.HTML(fmt.Sprintf(`<script>var d = new Date("%s");document.write(d.toLocaleString());</script>`, src))
+	return template.HTML(fmt.Sprintf(`
+<script>
+var d = new Date("%s");
+document.write(d.toLocaleString());
+</script>`, src))
 }
 
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
+		"drawDiagram": w.drawSVG,
 		"replace":     strings.ReplaceAll,
 		"assets":      w.assets,
 		"latestNotes": w.latestNotes,
@@ -291,6 +309,7 @@ func (b *Binder) generateHTML(w *wrapper) error {
 		return EmptyError
 	}
 
+	//HTMLファイルの設定
 	n := fs.HTMLFile(w.note)
 
 	fp, err := b.fileSystem.Create(n)
@@ -341,7 +360,7 @@ func (b *Binder) CreateNoteHTML(note *model.Note, local bool, elm string) (strin
 	var builder strings.Builder
 	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
-		return "", xerrors.Errorf("generateHTML() error: %w", err)
+		return "", xerrors.Errorf("writeHTML() error: %w", err)
 	}
 	return builder.String(), nil
 }
@@ -369,7 +388,7 @@ func (b *Binder) CreateTemplateHTML(temp *model.Template, note *model.Note, data
 	var builder strings.Builder
 	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
-		return "", xerrors.Errorf("generateHTML() error: %w", err)
+		return "", xerrors.Errorf("writeHTML() error: %w", err)
 	}
 
 	return builder.String(), nil

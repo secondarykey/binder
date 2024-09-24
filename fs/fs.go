@@ -1,9 +1,12 @@
 package fs
 
 import (
+	"binder/db/model"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
@@ -169,4 +172,69 @@ func (f *FileSystem) Remove(n string) error {
 	//インデックスを削除
 
 	return nil
+}
+
+func (f *FileSystem) copyFile(out string, in string) error {
+
+	fp, err := f.Open(in)
+	if err != nil {
+		return xerrors.Errorf("Open() error: %w", err)
+	}
+	defer fp.Close()
+
+	err = f.copyReader(out, fp)
+	if err != nil {
+		return xerrors.Errorf("copyReader() error: %w", err)
+	}
+
+	return nil
+}
+
+func (f *FileSystem) copyReader(out string, r io.Reader) error {
+
+	p := filepath.Dir(out)
+	f.mkdir(p)
+
+	fp, err := f.Create(out)
+	if err != nil {
+		return xerrors.Errorf("Create() error: %w", err)
+	}
+	defer fp.Close()
+
+	_, err = io.Copy(fp, r)
+	if err != nil {
+		return xerrors.Errorf("io.Copy() error: %w", err)
+	}
+
+	return nil
+}
+
+func (f *FileSystem) getPublishStatus(source, pub string) (model.Status, error) {
+
+	p := ConvertPaths(source, pub)
+
+	bi, err := f.Stat(p[0])
+	bt := time.Now()
+	if err == nil {
+		bt = bi.ModTime()
+	} else {
+		//存在しないはエラー
+		return model.ErrorStatus, fmt.Errorf("source file Nothing[%s]", p[0])
+	}
+
+	var status model.Status
+	pi, err := f.Stat(p[1])
+	pt := time.Time{}
+	if err == nil {
+		pt = pi.ModTime()
+		if bt.After(pt) {
+			status = model.UpdatedStatus
+		} else {
+			status = model.LatestStatus
+		}
+	} else {
+		status = model.PrivateStatus
+	}
+
+	return status, nil
 }

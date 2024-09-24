@@ -4,9 +4,9 @@ import (
 	"fmt"
 )
 
-func (b *FileSystem) PrintStatus() {
+func (f *FileSystem) PrintStatus() {
 
-	w, err := b.repo.Worktree()
+	w, err := f.repo.Worktree()
 	status, err := w.Status()
 	if err != nil {
 		return
@@ -17,4 +17,8 @@ func (b *FileSystem) PrintStatus() {
 	for key, s := range status {
 		fmt.Printf("%-60s| %10c | %10c | %s\n", key, s.Staging, s.Worktree, s.Extra)
 	}
+}
+
+func (f *FileSystem) IsExist(fn string) bool {
+	return f.isExist(fn)
 }

@@ -39,16 +39,90 @@ func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) error {
 
 func (f *FileSystem) DeleteAsset(a *model.Asset) error {
 
-	fn := AssetFile(a)
+	var files []string
+	fn := PublicAssetFile(a)
+	if f.isExist(fn) {
+		err := f.Remove(fn)
+		if err != nil {
+			return xerrors.Errorf("fs.Remove(%s) error: %w", fn, err)
+		}
+		files = append(files, fn)
+	}
+
+	fn = AssetFile(a)
 	err := f.Remove(fn)
 	if err != nil {
 		return xerrors.Errorf("fs.Remove(%s) error: %w", fn, err)
 	}
+	files = append(files, fn)
 
-	err = f.Commit(M("Remove", a.Name), fn)
+	err = f.Commit(M("Remove", a.Name), files...)
 	if err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
+
+	return nil
+}
+
+func (f *FileSystem) UnpublishAsset(a *model.Asset) error {
+
+	//公開ファイルを取得
+	pub := PublicAssetFile(a)
+
+	if f.isExist(pub) {
+		err := f.Remove(pub)
+		if err != nil {
+			return xerrors.Errorf("fs.Remove(%s) error: %w", pub, err)
+		}
+	} else {
+		return fmt.Errorf("not exist: %s", pub)
+	}
+
+	err := f.Commit(M("Unpublish", a.Name), pub)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
+
+func (f *FileSystem) PublishAsset(a *model.Asset) error {
+
+	//元ファイルを作成
+	base := AssetFile(a)
+	//公開ファイルを取得
+	pub := PublicAssetFile(a)
+
+	err := f.copyFile(pub, base)
+	//err := f.copyFile(s[1], s[0])
+	if err != nil {
+		return xerrors.Errorf("copyFile() error: %w", err)
+	}
+
+	//コミット
+	err = f.Commit(M("Publish", a.Name), pub)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return nil
+}
+
+func (f *FileSystem) SetAssetStatus(a *model.Asset) error {
+
+	//元ファイルを作成
+	base := AssetFile(a)
+	//公開ファイルを取得
+	pub := PublicAssetFile(a)
+	if pub == "" {
+		return fmt.Errorf("public asset file error:[%s]", a.Id)
+	}
+
+	status, err := f.getPublishStatus(base, pub)
+	if err != nil {
+		//存在しないはエラー
+		return xerrors.Errorf("getPublishStats() error: %w", err)
+	}
+	a.Status = status
 
 	return nil
 }

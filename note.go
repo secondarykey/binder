@@ -2,9 +2,6 @@ package binder
 
 import (
 	"binder/db/model"
-	"binder/fs"
-	"fmt"
-	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -135,33 +132,9 @@ func (b *Binder) GetPublishNotes() ([]*model.Note, error) {
 
 	for _, n := range all {
 
-		//元ファイルを作成
-		base := fs.NoteFile(n.Id)
-		//公開ファイルを取得
-		pub := fs.HTMLFile(n)
-		p := fs.ConvertPaths(base, pub)
-
-		bi, err := b.fileSystem.Stat(p[0])
-		bt := time.Now()
-		if err == nil {
-			bt = bi.ModTime()
-		} else {
-			//存在しないはエラー
-			return nil, fmt.Errorf("diagram file Nothing[%s]", n.Id)
-		}
-
-		pi, err := b.fileSystem.Stat(p[1])
-		pt := time.Time{}
-		if err == nil {
-			pt = pi.ModTime()
-
-			if bt.After(pt) {
-				n.Status = model.UpdatedStatus
-			} else {
-				n.Status = model.LatestStatus
-			}
-		} else {
-			n.Status = model.PrivateStatus
+		err = b.fileSystem.SetNoteStatus(n)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.SetNoteStatus() error: %w", err)
 		}
 
 		//最新じゃない場合は追加

@@ -150,6 +150,7 @@ func (b *Binder) Close() error {
 	return rtnErr
 }
 
+// TODO おかしい
 func (b *Binder) Generate(noteId string, dataId string, elm string) error {
 
 	if b == nil {

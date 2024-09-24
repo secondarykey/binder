@@ -73,3 +73,27 @@ func (f *FileSystem) WriteDiagram(id string, data []byte) error {
 	}
 	return nil
 }
+
+func (f *FileSystem) SetDiagramStatus(d *model.Diagram) error {
+
+	//元ファイルを作成
+	base := DiagramFile(d.Id)
+	//公開ファイルを取得
+	pub := SVGFile(d)
+
+	status, err := f.getPublishStatus(base, pub)
+	if err != nil {
+		return xerrors.Errorf("getPublishStatus() error: %w", err)
+	}
+
+	d.Status = status
+	return nil
+}
+
+func (f *FileSystem) PublishDiagram(d *model.Diagram) error {
+	return nil
+}
+
+func (f *FileSystem) UnpublishDiagram(d *model.Diagram) error {
+	return nil
+}

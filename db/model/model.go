@@ -6,4 +6,5 @@ const (
 	LatestStatus Status = iota
 	PrivateStatus
 	UpdatedStatus
+	ErrorStatus
 )

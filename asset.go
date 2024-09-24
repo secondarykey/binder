@@ -2,11 +2,8 @@ package binder
 
 import (
 	"binder/db/model"
-	"binder/fs"
-	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -131,46 +128,36 @@ func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
 	return a, nil
 }
 
+func (b *Binder) PublishAsset(id string) (*model.Asset, error) {
+
+	a, err := b.db.GetAssetWithParent(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
+	}
+
+	err = b.fileSystem.PublishAsset(a)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.PublishAsset() error: %w", err)
+	}
+
+	return a, nil
+}
+
 func (b *Binder) GetPublishAssets() ([]*model.Asset, error) {
 
 	all, err := b.db.FindAssetWithParent()
 	if err != nil {
-		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
+		return nil, xerrors.Errorf("db.FindAssetWithParent() error: %w", err)
 	}
 
 	pr := make([]*model.Asset, 0, len(all))
 
 	for _, a := range all {
 
-		//元ファイルを作成
-		base := fs.AssetFile(a)
-		//公開ファイルを取得
-		pub := fs.PublicAssetFile(a)
-		p := fs.ConvertPaths(base, pub)
-
-		bi, err := b.fileSystem.Stat(p[0])
-		bt := time.Now()
-		if err == nil {
-			bt = bi.ModTime()
-		} else {
-			//存在しないはエラー
-			return nil, fmt.Errorf("asset file Nothing[%s]", a.Id)
+		err = b.fileSystem.SetAssetStatus(a)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
 		}
-
-		pi, err := b.fileSystem.Stat(p[1])
-		pt := time.Time{}
-		if err == nil {
-			pt = pi.ModTime()
-
-			if bt.After(pt) {
-				a.Status = model.UpdatedStatus
-			} else {
-				a.Status = model.LatestStatus
-			}
-		} else {
-			a.Status = model.PrivateStatus
-		}
-
 		//最新じゃない場合は追加
 		if a.Status != model.LatestStatus {
 			pr = append(pr, a)
