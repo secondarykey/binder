@@ -62,7 +62,7 @@ iframe.htmlViewer {
     width:calc( 100% - 5px );
     height:calc( 100% - 48px );
 
-    transition: opacity 1;
+    transition: opacity 0.1s;
 }
 
 #mermaidViewer {

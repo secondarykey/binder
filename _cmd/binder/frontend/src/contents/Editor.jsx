@@ -80,7 +80,7 @@ function Editor(props) {
 
     var before   = txt.substr(0, pos);
     var after    = txt.substr(pos, len);
-    var val = '\n<div id="binder_focus_id"></div>\n';
+    var val = '\n\n<div id="binder_focus_id"></div>\n\n';
     return before + val + after;
   }
 
@@ -207,7 +207,7 @@ function Editor(props) {
   }
 
   const viewDiagram = (txt) => {
-    mermaid.parse(txt).then((flag) => {
+    mermaid.parse(txt).then(() => {
       var elm = document.querySelector('#mermaidViewer');
       mermaid.render('svg', txt).then((data) => {
         elm.innerHTML = data.svg;

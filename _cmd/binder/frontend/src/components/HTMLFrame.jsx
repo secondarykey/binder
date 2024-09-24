@@ -28,6 +28,7 @@ class HTMLFrame extends React.Component {
 
         var current = this.components[0];
         var hide = this.components[1];
+
         if ( current === this.current ) {
             current = this.components[1];
             hide = this.components[0];
@@ -41,15 +42,37 @@ class HTMLFrame extends React.Component {
 
         //表示箇所を真ん中にする
         setTimeout(function() {
+
           var doc = c.contentDocument || c.contentWindow.document;
+    
           //クリック禁止を行う
           doc.addEventListener("click",function(e) {
             e.preventDefault();
           });
+
           var f = doc.querySelector("#binder_focus_id");
+          var diagrams = doc.querySelectorAll("div.binderSVG");
+
+          if ( diagrams !== null  ) {
+            //ノート内の描画について
+            diagrams.forEach( (elm) => {
+                var txt = elm.textContent;
+                mermaid.parse(txt).then( () => {
+                  mermaid.render("svg",txt).then( (data) => {
+                    elm.innerHTML = data.svg;
+                  }).catch( (err) => {
+                    Event.showWarning("Diagram render error:" + err);
+                  });
+                }).catch ( (err) => {
+                  Event.showWarning("Diagram parse error:" + err);
+                });
+            })
+          }
+
           if ( f !== undefined && f !== null ) {
             f.scrollIntoView({  behavior: 'instant', block:"center" })
           }
+
           h.style.opacity = 0.0;
           c.style.opacity = 1.0;
         } , 10);

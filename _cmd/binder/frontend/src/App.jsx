@@ -69,23 +69,27 @@ function App() {
       showSlideMessage(obj);
     })
 
+
+    //設定を取得
+    GetSetting().then((s) => {
+
+      if (s.path.runWithOpen) {
+        //TODO バインダーを選択する
+      } else {
+      }
+
+    }).catch((err) => {
+      Event.showErrorMessage(err);
+    });
+
     if ( intervalId !== undefined) {
       clearInterval(intervalId);
     }
     //定期処理を実行
     intervalId = setInterval( function() {
+      //メニュー表示、メニュー位置、スプリット位置
       SavePosition();
     },60 * 1000);
-
-    //設定を取得
-    GetSetting().then((s) => {
-      if (s.path.runWithOpen) {
-        //TODO バインダーを選択する
-      } else {
-      }
-    }).catch((err) => {
-      Event.showErrorMessage(err);
-    });
 
   }, []);
 
