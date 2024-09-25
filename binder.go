@@ -150,67 +150,6 @@ func (b *Binder) Close() error {
 	return rtnErr
 }
 
-// TODO おかしい
-func (b *Binder) Generate(noteId string, dataId string, elm string) error {
-
-	if b == nil {
-		return EmptyError
-	}
-
-	if dataId == "" {
-
-		note, err := b.db.GetNote(noteId)
-		if err != nil {
-			return xerrors.Errorf("GetNote() error: %w", err)
-		}
-
-		//ノートのHTMLを作成
-		html, err := b.CreateNoteHTML(note, false, elm)
-		if err != nil {
-			return xerrors.Errorf("CreateNoteHTML() error: %w", err)
-		}
-
-		//ファイルの作成
-		flag, err := b.fileSystem.GenerateHTML(note, []byte(html))
-		if err != nil {
-			return xerrors.Errorf("GenerateHTML() error: %w", err)
-		}
-
-		//新規登録の場合
-		if flag {
-			//DBの公開日を更新
-			err = b.db.PublishNote(noteId, b.op)
-			if err != nil {
-				return xerrors.Errorf("PublishNote() error: %w", err)
-			}
-		}
-
-	} else {
-
-		d, err := b.db.GetDiagram(dataId)
-		if err != nil {
-			return xerrors.Errorf("GetDiagram() error: %w", err)
-		}
-
-		//ファイルを作成
-		index, err := b.fileSystem.GenerateDiagram(d, []byte(elm))
-		if err != nil {
-			return xerrors.Errorf("GenerateData() error: %w", err)
-		}
-
-		if index {
-			err = b.db.PublishDiagram(dataId, b.op)
-			if err != nil {
-				return xerrors.Errorf("PublishData() error: %w", err)
-			}
-		}
-
-		//TODO 出力データのコミット
-
-	}
-	return nil
-}
-
 func (b *Binder) SaveSetting(s *settings.Setting) error {
 
 	if b == nil {

@@ -108,7 +108,7 @@ func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
 	return d, nil
 }
 
-func (b *Binder) GetPublishDiagrams() ([]*model.Diagram, error) {
+func (b *Binder) GetUnpublishedDiagrams() ([]*model.Diagram, error) {
 
 	all, err := b.db.FindDiagrams()
 	if err != nil {

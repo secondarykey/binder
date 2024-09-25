@@ -160,16 +160,22 @@ func (f *FileSystem) create(n string) (*File, bool, error) {
 }
 
 func (f *FileSystem) Remove(n string) error {
+
+	if !f.isExist(n) {
+		return fmt.Errorf("%s not exist", n)
+	}
+
 	if f.base == "" {
 		return fmt.Errorf("do not delete filesystem(base is empty):[%s]", n)
 	}
+
 	fn := filepath.Join(f.base, n)
 	err := os.Remove(fn)
 	if err != nil {
 		return xerrors.Errorf("os.Remove() error: %w", err)
 	}
 
-	//インデックスを削除
+	//TODO インデックスを削除
 
 	return nil
 }

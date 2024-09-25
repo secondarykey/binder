@@ -2,6 +2,7 @@ package fs
 
 import (
 	"binder/db/model"
+	"bytes"
 	"fmt"
 	stdFs "io/fs"
 
@@ -90,10 +91,36 @@ func (f *FileSystem) SetDiagramStatus(d *model.Diagram) error {
 	return nil
 }
 
-func (f *FileSystem) PublishDiagram(d *model.Diagram) error {
+func (f *FileSystem) PublishDiagram(data []byte, d *model.Diagram) error {
+
+	//公開ファイルを取得
+	pub := SVGFile(d)
+	r := bytes.NewReader(data)
+
+	err := f.copyReader(pub, r)
+	if err != nil {
+		return xerrors.Errorf("copyReader() error: %w", err)
+	}
+
+	err = f.Commit(M("Publish", d.Name), pub)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
 	return nil
 }
 
 func (f *FileSystem) UnpublishDiagram(d *model.Diagram) error {
+
+	//公開ファイルを取得
+	pub := SVGFile(d)
+	err := f.Remove(pub)
+	if err != nil {
+		return xerrors.Errorf("fs.Remove() error: %w", err)
+	}
+
+	err = f.Commit(M("Unpublish", d.Name), pub)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
 	return nil
 }

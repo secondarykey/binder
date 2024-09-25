@@ -143,7 +143,7 @@ func (b *Binder) PublishAsset(id string) (*model.Asset, error) {
 	return a, nil
 }
 
-func (b *Binder) GetPublishAssets() ([]*model.Asset, error) {
+func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
 
 	all, err := b.db.FindAssetWithParent()
 	if err != nil {

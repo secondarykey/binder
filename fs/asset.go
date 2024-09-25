@@ -69,16 +69,12 @@ func (f *FileSystem) UnpublishAsset(a *model.Asset) error {
 	//公開ファイルを取得
 	pub := PublicAssetFile(a)
 
-	if f.isExist(pub) {
-		err := f.Remove(pub)
-		if err != nil {
-			return xerrors.Errorf("fs.Remove(%s) error: %w", pub, err)
-		}
-	} else {
-		return fmt.Errorf("not exist: %s", pub)
+	err := f.Remove(pub)
+	if err != nil {
+		return xerrors.Errorf("fs.Remove(%s) error: %w", pub, err)
 	}
 
-	err := f.Commit(M("Unpublish", a.Name), pub)
+	err = f.Commit(M("Unpublish", a.Name), pub)
 	if err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}

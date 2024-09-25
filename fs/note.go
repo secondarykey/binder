@@ -2,6 +2,7 @@ package fs
 
 import (
 	"binder/db/model"
+	"bytes"
 	"fmt"
 	stdFs "io/fs"
 	"os"
@@ -106,10 +107,34 @@ func (f *FileSystem) SetNoteStatus(n *model.Note) error {
 	return nil
 }
 
-func (f *FileSystem) PublishNote(n *model.Note) error {
+func (f *FileSystem) PublishNote(data []byte, n *model.Note) error {
+	//公開ファイルを取得
+	pub := HTMLFile(n)
+	r := bytes.NewReader(data)
+
+	err := f.copyReader(pub, r)
+	if err != nil {
+		return xerrors.Errorf("copyReader() error: %w", err)
+	}
+
+	err = f.Commit(M("Publish", n.Name), pub)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
 	return nil
 }
 
 func (f *FileSystem) UnpublishNote(n *model.Note) error {
+	//公開ファイルを取得
+	pub := HTMLFile(n)
+	err := f.Remove(pub)
+	if err != nil {
+		return xerrors.Errorf("fs.Remove() error: %w", err)
+	}
+
+	err = f.Commit(M("Unpublish", n.Name), pub)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
 	return nil
 }

@@ -6,18 +6,6 @@ import (
 	"fmt"
 )
 
-func (a *App) Generate(noteId string, dataId string, elm string) error {
-
-	defer log.PrintTrace(log.Func("Generate()"))
-
-	err := a.current.Generate(noteId, dataId, elm)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return err
-	}
-	return nil
-}
-
 func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateNoteHTML()"))

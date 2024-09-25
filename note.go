@@ -121,7 +121,7 @@ func (b *Binder) SaveNote(noteId string, data []byte) error {
 	return nil
 }
 
-func (b *Binder) GetPublishNotes() ([]*model.Note, error) {
+func (b *Binder) GetUnpublishedNotes() ([]*model.Note, error) {
 
 	all, err := b.db.FindNotes()
 	if err != nil {
@@ -136,7 +136,6 @@ func (b *Binder) GetPublishNotes() ([]*model.Note, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("fs.SetNoteStatus() error: %w", err)
 		}
-
 		//最新じゃない場合は追加
 		if n.Status != model.LatestStatus {
 			pr = append(pr, n)

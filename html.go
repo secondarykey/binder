@@ -126,16 +126,30 @@ func (w *wrapper) convertURL(p string) string {
 
 func (w *wrapper) drawSVG(id string) template.HTML {
 
-	txt, err := w.owner.OpenDiagram(id)
-	if err != nil {
-		return template.HTML(err.Error())
+	code := ""
+	if w.Local {
+		txt, err := w.owner.OpenDiagram(id)
+		if err != nil {
+			return template.HTML(err.Error())
+		}
+		code = string(txt)
+	} else {
+		f := w.getSVGFile(id)
+		code = fmt.Sprintf(`<img src="%s">`, f)
 	}
 
 	return template.HTML(fmt.Sprintf(`
 <div class="%s" id="%s">
 %s
-</div>`, "binderSVG", id, string(txt)))
+</div>`, "binderSVG", id, code))
+}
 
+func (w *wrapper) getSVGFile(id string) string {
+	//TODO
+	d, _ := w.owner.GetDiagram(id)
+	f := fs.SVGFile(d)
+	buf := strings.Replace(f, w.owner.fileSystem.GetPublic(), "", 1)
+	return fs.ConvertHTTPPath(buf)
 }
 
 func safeTemplate(src string) string {

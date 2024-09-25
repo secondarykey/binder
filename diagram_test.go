@@ -20,14 +20,14 @@ func TestOpenDiagram(t *testing.T) {
 func TestSaveDiagram(t *testing.T) {
 }
 
-func TestGetPublishDiagrams(t *testing.T) {
+func TestGetUnpublishedDiagrams(t *testing.T) {
 	b := test.CreateBinder(t, "publish_diagrams")
 
-	all, err := b.GetPublishDiagrams()
+	all, err := b.GetUnpublishedDiagrams()
 	if err != nil {
-		t.Errorf("GetPublishDiagram() error: %v", err)
+		t.Errorf("GetUnpublishedDiagrams() error: %v", err)
 	} else if len(all) != 1 {
-		t.Errorf("GetPublishDiagram() length want 1 got %d", len(all))
+		t.Errorf("GetUnpublishedDiagrams() length want 1 got %d", len(all))
 	}
 
 	//公開する

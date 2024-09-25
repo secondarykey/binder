@@ -62,15 +62,15 @@ func TestRemoveAsset(t *testing.T) {
 	}
 }
 
-func TestGetPublishAssets(t *testing.T) {
+func TestGetUnpublishedAssets(t *testing.T) {
 	b := test.CreateBinder(t, "get_publishasset")
 	defer b.Close()
 
-	all, err := b.GetPublishAssets()
+	all, err := b.GetUnpublishedAssets()
 	if err != nil {
-		t.Errorf("GetPublishAssets() error: %v", err)
+		t.Errorf("GetUnpublishedAssets() error: %v", err)
 	} else if len(all) != 1 {
-		t.Errorf("GetPublishAssets() length want 1 got %d", len(all))
+		t.Errorf("GetUnpublishedAssets() length want 1 got %d", len(all))
 	}
 
 }

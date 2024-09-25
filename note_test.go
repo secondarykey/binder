@@ -20,15 +20,15 @@ func TestOpenNote(t *testing.T) {
 func TestSaveNote(t *testing.T) {
 }
 
-func TestGetPublishNotes(t *testing.T) {
+func TestGetUnpublishedNotes(t *testing.T) {
 	b := test.CreateBinder(t, "publish_notes")
 	defer b.Close()
 
-	all, err := b.GetPublishNotes()
+	all, err := b.GetUnpublishedNotes()
 	if err != nil {
-		t.Errorf("GetPublishNotes() error: %v", err)
+		t.Errorf("GetUnpublishedNotes() error: %v", err)
 	} else if len(all) != 2 {
-		t.Errorf("GetPublishNotes() length want 2 got %d", len(all))
+		t.Errorf("GetUnpublishedNotes() length want 2 got %d", len(all))
 	}
 
 }
