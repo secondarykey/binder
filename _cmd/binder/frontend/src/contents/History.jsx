@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
 import { List, ListItemButton, ListItemText } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+
+import Message from '../Message';
 /**
  * 履歴からバインダーの選択を行う
  * @param {*} props 
@@ -24,8 +26,7 @@ function History(props) {
     LoadBinder(val).then(() => {
       nav("/note/edit/index");
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Message.showError(err)
     })
   }
 

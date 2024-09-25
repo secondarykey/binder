@@ -12,6 +12,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { OpenBinderSite, GetBinderTree } from '../../wailsjs/go/api/App';
 
 import Event from '../Event';
+import Message from '../Message';
 
 /**
  * Mermaid アイコン
@@ -51,7 +52,7 @@ function BinderTree(props) {
     GetBinderTree().then((resp) => {
       setTree(resp.data);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 

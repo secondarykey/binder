@@ -8,6 +8,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import DownloadIcon from '@mui/icons-material/Download';
 
 import Event from '../Event';
+import Message from '../Message';
 
 /**
  * Binderを開く画面
@@ -33,11 +34,11 @@ function FileMenu(props) {
       LoadBinder(p).then(() => {
         nav("/note/edit/index");
       }).catch( (err) => {
-        Event.showErrorMessage(error);
+        Message.showError(err);
       })
 
     }).catch( (err)=> {
-      Event.showErrorMessage(error);
+      Message.showError(err);
     })
 
   }

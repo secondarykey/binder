@@ -7,6 +7,8 @@ import {useLocation, useNavigate} from "react-router-dom";
 import CloudIcon from '@mui/icons-material/Cloud';
 
 import Event from "../Event";
+import Message from '../Message';
+
 /**
  * バインダーのメタデータを表示,編集
  * @param {*} props 
@@ -32,13 +34,12 @@ function Binder(props) {
     Remotes().then((res) => {
       setRemoteList(res);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
   useEffect(() => {
     Event.changeTitle("Edit Binder");
-
 
     GetConfig().then((conf) => {
       setName(conf.name);
@@ -48,7 +49,7 @@ function Binder(props) {
       setBranch(conf.branch);
       setAuto(conf.autoCommit);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
     getRemoteList();
   }, []);
@@ -62,9 +63,9 @@ function Binder(props) {
     config.branch = branch;
     config.autoCommit = Number(auto);
     EditConfig(config).then((resp) => {
-      Event.showSuccess("update binder.");
+      Message.showSuccess("update binder.");
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
@@ -160,7 +161,7 @@ function Binder(props) {
             handleChangeRemote(undefined,remoteName);
             handleDialogClose();
           }).catch((err) => {
-            Event.showErrorMessage(err);
+            Message.showError(err);
           });
         },
         style: {

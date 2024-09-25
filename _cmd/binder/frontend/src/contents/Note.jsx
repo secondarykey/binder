@@ -11,6 +11,8 @@ import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/
 import noImage from '../assets/images/noimage.png'
 
 import Event from "../Event";
+import Message from '../Message';
+
 /**
  * ノートのメタデータを表示,編集
  * @param {*} props 
@@ -70,7 +72,7 @@ function Note(props) {
       Event.changeTitle("Edit Note:" + note.name);
 
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
 
   }, [currentId]);
@@ -89,13 +91,13 @@ function Note(props) {
         setContent(tmpls.contents[0].id)
       }
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
 
     Address().then((address) => {
       setViewImage(address + "/assets/" + id + "/index")
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
 
   }, []);
@@ -124,7 +126,7 @@ function Note(props) {
 
       Event.showSuccess("Update Note.")
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
@@ -135,10 +137,10 @@ function Note(props) {
     RemoveNote(id).then((resp) => {
       Event.refreshTree();
       // 遷移する
-      Event.showSuccess("Remove Note.")
+      Message.showSuccess("Remove Note.")
       nav("/note/edit/" + parentId);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   };
 
@@ -151,7 +153,7 @@ function Note(props) {
         setImageFile(f);
       }
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
@@ -165,7 +167,7 @@ function Note(props) {
    */
   const handleCopyId = (e) => {
     copyClipboard(id);
-    Event.showSuccess("Copied.");
+    Message.showSuccess("Copied.");
   }
 
   /**

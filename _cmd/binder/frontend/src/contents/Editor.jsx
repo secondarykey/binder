@@ -13,6 +13,8 @@ import HTMLFrame from "../components/HTMLFrame.jsx";
 
 import Marked from "../components/Marked";
 import Event from "../Event.jsx";
+import Message from '../Message';
+
 import { useParams } from "react-router-dom";
 import Mermaid from "../components/Mermaid";
 
@@ -89,7 +91,7 @@ function Editor(props) {
   //開いた時の初期処理
   useEffect(() => {
 
-    Event.clearMessage();
+    Message.clear();
     vim.open({
       debug: false,
       showMsg: function (msg) {
@@ -102,13 +104,13 @@ function Editor(props) {
       OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
 
       GetDiagram(id).then((resp) => {
         setName(resp.name);
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
 
     } else if (mode === "note") {
@@ -116,13 +118,13 @@ function Editor(props) {
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       });
 
       GetNote(id).then((resp) => {
         setName(resp.name);
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
 
     } else if (mode === "template") {
@@ -134,13 +136,13 @@ function Editor(props) {
         //TODO: HTML をどのように作成するかを考える 
         //createNoteElement();
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       });
 
       GetTemplate(id).then((resp) => {
         setName(resp.name);
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
     }
 
@@ -174,7 +176,7 @@ function Editor(props) {
     await ParseNote(id,local,txt).then((resp) => {
       p = resp;
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
       p = txt;
     });
 
@@ -193,14 +195,14 @@ function Editor(props) {
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
 
     } else if (mode === "template") {
       //CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
         //setHTML(resp);
       //}).catch((err) => {
-        //Event.showErrorMessage(err);
+        //Event.showError(err);
       //})
     }
   }
@@ -212,7 +214,7 @@ function Editor(props) {
       elm.innerHTML = data.svg;
     }).catch((err) => {
       console.log(txt)
-      Event.showWarning("Diagram parse error:" + err);
+      Message.showWarning("Diagram parse error:" + err);
     });
 
   }
@@ -239,19 +241,19 @@ function Editor(props) {
       SaveNote(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
     } else if (mode === "diagram") {
       SaveDiagram(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
     } else if (mode === "template") {
       SaveTemplate(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        Event.showErrorMessage(err);
+        Message.showError(err);
       })
     }
   }
@@ -279,9 +281,9 @@ function Editor(props) {
 
     console.log(comment)
     Commit(mode,id,comment).then(() => {
-      Event.showSuccess("Commit.")
+      Message.showSuccess("Commit.")
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
   }
 

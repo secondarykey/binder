@@ -6,6 +6,7 @@ import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from 
 import FolderIcon from '@mui/icons-material/Folder';
 
 import Event from "../Event";
+import Message from '../Message';
 
 /**
  * Binder新規作成
@@ -20,7 +21,7 @@ function BinderRegister(props) {
   //保存
   const handleSave = () => {
     if ( dir == "" ) {
-      Event.showWarning("reqired select directory");
+      Message.showWarning("reqired select directory");
       return;
     }
 
@@ -28,8 +29,7 @@ function BinderRegister(props) {
     CreateBinder(dir,"simple").then(() => {
       nav("/note/index");
     }).catch( (err)=> {
-      console.error(err);
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
   }
 
@@ -39,8 +39,7 @@ function BinderRegister(props) {
         setDir(f);
       }
     }).catch((err) => {
-      console.error(err);
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 

@@ -9,6 +9,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 
 import Event from "../Event";
+import Message from '../Message';
+
 /**
  * ノートのアッセット情報を表示、編集
  * @param {*} props 
@@ -51,7 +53,7 @@ function Assets(props) {
       setParentId(data.parentId);
       Event.changeTitle("Edit Assets:" + data.name);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
   }, [currentId]);
 
@@ -74,9 +76,9 @@ function Assets(props) {
         nav("/assets/edit/" + resp.id);
         return;
       }
-      Event.showSuccess("Update Assets.");
+      Message.showSuccess("Update Assets.");
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
@@ -89,7 +91,7 @@ function Assets(props) {
         setFile(f);
       }
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
@@ -103,13 +105,13 @@ function Assets(props) {
       Event.showSuccess("Remove Assets.")
       nav("/note/edit/" + parentId);
     }).catch( (err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
   const handleCopyId = (e) => {
     copyClipboard(props.id);
-    Event.showSuccess("Copied.");
+    Message.showSuccess("Copied.");
   }
 
   return (<>

@@ -6,6 +6,8 @@ import { GetSetting, SaveSetting } from "../../wailsjs/go/api/App";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import Event from "../Event";
+import Message from '../Message';
+
 /**
  * アプリ設定
  * @param {*} props 
@@ -33,7 +35,7 @@ function Setting(props) {
       setGitMail(set.git.mail);
       setGitCode(set.git.code);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }, []);
 
@@ -53,9 +55,9 @@ function Setting(props) {
     setting.git = git;
 
     SaveSetting(setting).then((resp) => {
-      Event.showSuccess("Updated");
+      Message.showSuccess("Updated");
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 

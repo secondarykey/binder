@@ -9,6 +9,7 @@ import { EditDiagram, GetDiagram ,RemoveDiagram} from "../../wailsjs/go/api/App"
 import { copyClipboard } from "../App";
 
 import Event from "../Event";
+import Message from '../Message';
 /**
  * データのメタ情報を表示、編集
  * @param {*} props 
@@ -49,7 +50,7 @@ function Diagram(props) {
       setParentId(data.parentId);
       Event.changeTitle("Edit Diagram:" + data.name);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
 
   }, [currentId]);
@@ -71,10 +72,10 @@ function Diagram(props) {
         nav("/diagram/edit/" + resp.id);
         return;
       }
-      Event.showSuccess("Update Diagram.");
+      Message.showSuccess("Update Diagram.");
 
     }).catch((err) => {
-      Event.showErrorMessage(err)
+      Message.showError(err)
     });
   }
 
@@ -86,13 +87,13 @@ function Diagram(props) {
       Event.showSuccess("Remove Diagram.")
       nav("/note/edit/" + parentId);
     }).catch( (err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
   const handleCopyId = (e) => {
     copyClipboard(id);
-    Event.showSuccess("Copied.");
+    Message.showSuccess("Copied.");
   }
 
   return (<>

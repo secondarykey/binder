@@ -8,6 +8,8 @@ import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from 
 import ContentCopy from '@mui/icons-material/ContentCopy';
 
 import Event from "../Event";
+import Message from '../Message';
+
 /**
  * テンプレートの作成、編集を行う
  * @param {*} props 
@@ -51,7 +53,7 @@ function Template(props) {
       setType(data.type)
       Event.changeTitle("Edit Template:" + data.name);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
   }, [currentId]);
 
@@ -70,9 +72,9 @@ function Template(props) {
         nav("/assets/edit/" + resp.id);
         return;
       }
-      Event.showSuccess("Update Template.");
+      Message.showSuccess("Update Template.");
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
@@ -80,16 +82,16 @@ function Template(props) {
     RemoveTemplate(id).then((resp) => {
       Event.refreshTree();
       // 遷移する
-      Event.showSuccess("Remove Template.")
+      Message.showSuccess("Remove Template.")
       nav("/note/edit/" + parentId);
     }).catch( (err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 
   const handleCopyId = (e) => {
     copyClipboard(props.id);
-    Event.showSuccess("Copied.");
+    Message.showSuccess("Copied.");
   }
 
   return (<>

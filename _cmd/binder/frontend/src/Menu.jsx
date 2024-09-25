@@ -12,7 +12,8 @@ import UpdateIcon from '@mui/icons-material/Update';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import PublishIcon from '@mui/icons-material/Publish';
 
-import Event from './Event';
+import Message from './Message';
+
 import FileMenu from './contents/FileMenu';
 import BinderTree from './contents/BinderTree';
 
@@ -83,7 +84,7 @@ function Menu(props) {
       //名称を設定
       setTitle(conf.name);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
     setTitle("Binder");
   },[]);
@@ -97,7 +98,7 @@ function Menu(props) {
       //トップメニューに移動
       nav("/");
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     })
   }
 

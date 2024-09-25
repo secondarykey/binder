@@ -17,6 +17,7 @@ import { copyClipboard } from '../App';
 import { OpenBinderSite, GetTemplateTree } from '../../wailsjs/go/api/App';
 
 import Event from '../Event';
+import Message from '../Message';
 
 {/** バインダーのツリー */ }
 function TemplateTree(props) {
@@ -34,7 +35,7 @@ function TemplateTree(props) {
     GetTemplateTree().then((resp) => {
       setTree(resp.data);
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
   }
 

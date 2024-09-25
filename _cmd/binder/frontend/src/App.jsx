@@ -6,6 +6,8 @@ import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText,
 import { SavePosition,GetSetting } from '../wailsjs/go/api/App.js';
 
 import Event from "./Event";
+import Message from './Message';
+
 import './assets/App.css';
 
 /**
@@ -87,7 +89,7 @@ function App() {
       }
 
     }).catch((err) => {
-      Event.showErrorMessage(err);
+      Message.showError(err);
     });
 
     if ( intervalId !== undefined) {
