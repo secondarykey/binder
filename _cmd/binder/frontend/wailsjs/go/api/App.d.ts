@@ -29,8 +29,6 @@ export function EditNote(arg1:model.Note,arg2:string):Promise<model.Note>;
 
 export function EditTemplate(arg1:model.Template):Promise<model.Template>;
 
-export function Generate(arg1:string,arg2:string,arg3:string):Promise<void>;
-
 export function GetAsset(arg1:string):Promise<model.Asset>;
 
 export function GetBinderTree():Promise<binder.Tree>;
