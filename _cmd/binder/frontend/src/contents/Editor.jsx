@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react"
 import { Container, IconButton, Paper, Toolbar } from "@mui/material";
 
-import "../assets/mermaid.min.js";
-import "../assets/marked.min.js";
 import '../assets/vim.min.js';
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
-import { OpenTemplate, SaveTemplate, Generate} from "../../wailsjs/go/api/App.js";
+import { OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import HTMLFrame from "../components/HTMLFrame.jsx";
 
+import Marked from "../components/Marked";
 import Event from "../Event.jsx";
 import { useParams } from "react-router-dom";
+import Mermaid from "../components/Mermaid";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -57,6 +57,7 @@ function Editor(props) {
     var now = 0;
     var start = false;
     var b = false;
+
     for ( const line of lines ) {
       now += line.length + 1;
 
@@ -80,8 +81,8 @@ function Editor(props) {
 
     var before   = txt.substr(0, pos);
     var after    = txt.substr(pos, len);
-    var val = '\n\n<div id="binder_focus_id"></div>\n\n';
-    return before + val + after;
+    var tag = '\n\n<div id="binder_focus_id"></div>\n\n';
+    return before + tag + after;
   }
 
   //開いた時の初期処理
@@ -97,7 +98,6 @@ function Editor(props) {
 
     if ( mode === "diagram" ) {
 
-      mermaid.initialize({ startOnLoad: false });
       OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -145,8 +145,11 @@ function Editor(props) {
   //テキスト変更時の処理
   useEffect(() => {
     if (mode === "diagram") {
-      viewDiagram(text);
+      if ( text !== "" ) {
+        viewDiagram(text);
+      }
     } else if (mode === "note") {
+      //公開時にここが入らないようにする
       viewHTML(insertCenterTag(text));
     } else if (mode === "template") {
       //viewHTML(text, noteElm);
@@ -154,14 +157,6 @@ function Editor(props) {
       //初回時の実行があるか
     }
   }, [text, noteElm]);
-
-
-  /*
-  function reloadIFrame() {
-    var elm = document.querySelector('#htmlViewer');
-    elm.contentWindow.location.reload();
-  }
-  */
 
   //データをマークダウンからHTMLに変換
   const createMarked = async (id, txt, local) => {
@@ -172,17 +167,12 @@ function Editor(props) {
       Event.showErrorMessage(err);
       p = txt;
     });
-    return marked.marked(p);
-  }
 
-  const createMermaid = async (txt) => {
-    var rtn = {};
-    await mermaid.render('svg', txt).then((data) => {
-      rtn = data.svg
-    }).catch((err) => {
-      rtn = err;
-    });
-    return rtn;
+    var val = await Marked.parse(p);
+    if ( val ) {
+      return val;
+    }
+    //return marked.marked(p);
   }
 
   const viewHTML = async (txt, embNoteElm) => {
@@ -207,13 +197,9 @@ function Editor(props) {
   }
 
   const viewDiagram = (txt) => {
-    mermaid.parse(txt).then(() => {
+    Mermaid.parse(txt).then( (data) => {
       var elm = document.querySelector('#mermaidViewer');
-      mermaid.render('svg', txt).then((data) => {
-        elm.innerHTML = data.svg;
-      }).catch((err) => {
-        Event.showWarning("Diagram render error:" + err);
-      });
+      elm.innerHTML = data.svg;
     }).catch((err) => {
       Event.showWarning("Diagram parse error:" + err);
     });
@@ -263,17 +249,17 @@ function Editor(props) {
 
     var elm = "";
     if (mode === "note") {
-      elm = await createMarked(id,text, false);
+      elm = await Marked.parse(id,text,false);
     } else if (mode === "diagram") {
-      elm = await createMermaid(text);
+      elm = await Mermaid.parse(text);
     }
 
     //出力処理を行う
-    Generate(mode,id,elm).then(() => {
-      Event.showSuccess("Generate.")
-    }).catch((err) => {
-      Event.showErrorMessage(err);
-    })
+    //Generate(mode,id,elm).then(() => {
+      //Event.showSuccess("Generate.")
+    //}).catch((err) => {
+      //Event.showErrorMessage(err);
+    //})
   }
 
   //コミットを行う
@@ -330,17 +316,11 @@ function Editor(props) {
           {/** 左側の操作用位置 */}
           <Toolbar className="buttonBar">
             <Container className="buttonBarLeft">
-{/** テンプレート時はコミットはなし */}
-{mode !== "template" &&
-<>
               {/** コミット */}
               <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={commit}>
                 <CommitIcon fontSize="small" style={{ color: "#f1f1f1" }} />
               </IconButton>
-</>
-}
             </Container>
-
             <Container className="buttonBarRight">
             </Container>
           </Toolbar>

@@ -1,5 +1,6 @@
 import React from "react";
 
+import Mermaid from "../components/Mermaid";
 /**
  * IFrame更新のちらつきを抑えるコンポーネント
  * あくまでIframeのちらつきを抑える為の切り替え処理に集中して
@@ -57,12 +58,8 @@ class HTMLFrame extends React.Component {
             //ノート内の描画について
             diagrams.forEach( (elm) => {
                 var txt = elm.textContent;
-                mermaid.parse(txt).then( () => {
-                  mermaid.render("svg",txt).then( (data) => {
+                Mermaid.parse(txt).then( (data) => {
                     elm.innerHTML = data.svg;
-                  }).catch( (err) => {
-                    Event.showWarning("Diagram render error:" + err);
-                  });
                 }).catch ( (err) => {
                   Event.showWarning("Diagram parse error:" + err);
                 });
