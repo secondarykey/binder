@@ -46,50 +46,6 @@ class Event {
         this.raise(Event.ReloadTitle,title);
     }
 
-    static createMessage(type,msg) {
-        var wk = "";
-        if (typeof msg === 'object') {
-          if (msg.stack) {
-            wk = msg.stack;
-          } else {
-            wk = "unknown error:" + msg;
-          }
-        } else {
-          wk = msg;
-        }
-        return {
-            type : type,
-            message : wk,
-        }
-    }
-
-    static clearMessage() {
-        var obj = this.createMessage("clear","");
-        this.raise(this.ShowMessage,obj);
-    }
-
-    static showSuccess(msg) {
-        var obj = this.createMessage("success",msg);
-        this.raise(this.ShowMessage,obj);
-    }
-
-    static showWarning(msg) {
-        console.warn(msg)
-        var obj = this.createMessage("warning",msg);
-        this.raise(this.ShowMessage,obj);
-    }
-
-    static showInfoMessage(msg) {
-        var obj = this.createMessage("info",msg);
-        this.raise(this.ShowMessage,obj);
-    }
-
-    static showErrorMessage(err) {
-        console.error(err)
-        var obj = this.createMessage("error",err);
-        this.raise(this.ShowMessage,obj);
-    }
-
     /**
      * 登録されている関数を呼び出す
      * @param {*} key 
