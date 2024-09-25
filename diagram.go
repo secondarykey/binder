@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
 
 	"golang.org/x/xerrors"
 )
@@ -130,4 +131,13 @@ func (b *Binder) GetUnpublishedDiagrams() ([]*model.Diagram, error) {
 		}
 	}
 	return pr, nil
+}
+
+func (b *Binder) CommitDiagram(id string, m string) error {
+	f := fs.DiagramFile(id)
+	err := b.fileSystem.Commit(m, f)
+	if err != nil {
+		return xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+	return nil
 }

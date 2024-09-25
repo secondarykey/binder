@@ -47,9 +47,19 @@ class Event {
     }
 
     static createMessage(type,msg) {
+        var wk = "";
+        if (typeof msg === 'object') {
+          if (msg.stack) {
+            wk = msg.stack;
+          } else {
+            wk = "unknown error:" + msg;
+          }
+        } else {
+          wk = msg;
+        }
         return {
             type : type,
-            message : msg,
+            message : wk,
         }
     }
 
@@ -75,20 +85,8 @@ class Event {
     }
 
     static showErrorMessage(err) {
-        console.warn(err)
-        var obj = {};
-        obj.type = "error";
-        var msg = "";
-        if (typeof err === 'object') {
-          if (err.stack) {
-            msg = err.stack;
-          } else {
-            msg = "unknown error:" + err;
-          }
-        } else {
-          msg = err;
-        }
-        obj.message = msg;
+        console.error(err)
+        var obj = this.createMessage("error",err);
         this.raise(this.ShowMessage,obj);
     }
 

@@ -1,6 +1,7 @@
 package fs_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -59,7 +60,9 @@ func TestClone(t *testing.T) {
 
 	err = n.Commit("test : Commit", file)
 	if err != nil {
-		t.Errorf("Commit() error is not nil: %v", err)
+		if !errors.Is(err, fs.UpdatedFilesError) {
+			t.Errorf("Commit() error is not nil: %v", err)
+		}
 	}
 	n.PrintStatus()
 

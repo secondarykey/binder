@@ -1,7 +1,11 @@
 import Scripter from "./Scripter";
 
 const Name = "mermaid";
-const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+const URL = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+
+/**
+ * mermaid を利用してパースするクラス
+ */
 class MermaidScript {
 
     static isExists() {
@@ -13,7 +17,6 @@ class MermaidScript {
           Scripter.getScript(URL).then( (s) => {
             var objFunc = new Function(s);
             objFunc();
-
             mermaid.initialize({ startOnLoad: false });
             res();
           }).catch( (err) => {

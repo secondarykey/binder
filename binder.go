@@ -121,7 +121,7 @@ func (b *Binder) Close() error {
 	b.op = nil
 
 	if fp != nil {
-		log.Noticef("FileSystem Close()")
+		log.Notice("FileSystem Close()")
 		err := fp.Close()
 		if err != nil {
 			log.PrintStackTrace(err)
@@ -130,7 +130,7 @@ func (b *Binder) Close() error {
 	}
 
 	if hp != nil {
-		log.Noticef("HTTP Shutdown()")
+		log.Notice("HTTP Shutdown()")
 		err := hp.Shutdown(context.Background())
 		if err != nil {
 			log.PrintStackTrace(err)
@@ -139,7 +139,7 @@ func (b *Binder) Close() error {
 	}
 
 	if dp != nil {
-		log.Noticef("DB Close()")
+		log.Notice("DB Close()")
 		err := dp.Close()
 		if err != nil {
 			log.PrintStackTrace(err)

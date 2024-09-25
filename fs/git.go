@@ -15,6 +15,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var UpdatedFilesError = fmt.Errorf("No updated files")
+
 func M(header string, name string) string {
 	return fmt.Sprintf("%-10s : %s", header, name)
 }
@@ -191,7 +193,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 	if !commitOk {
 		// update file nothing
 		slog.Warn("update file nothing")
-		return nil
+		return UpdatedFilesError
 	}
 
 	sig.When = time.Now()

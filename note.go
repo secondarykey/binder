@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
 
 	"golang.org/x/xerrors"
 )
@@ -142,4 +143,13 @@ func (b *Binder) GetUnpublishedNotes() ([]*model.Note, error) {
 		}
 	}
 	return pr, nil
+}
+
+func (b *Binder) CommitNote(id string, m string) error {
+	f := fs.NoteFile(id)
+	err := b.fileSystem.Commit(m, f)
+	if err != nil {
+		return xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+	return nil
 }

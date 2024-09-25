@@ -126,7 +126,7 @@ func (b *Binder) Serve() error {
 	}
 
 	go func() {
-		log.Noticef("HTTPServer Listen: %s", b.httpServerAddress)
+		log.Notice(fmt.Sprintf("HTTPServer Listen: %s", b.httpServerAddress))
 		err := b.httpServer.Serve(ln)
 		if err != nil {
 			//nilになってない場合、Shutdownの流れではない

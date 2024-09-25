@@ -29,14 +29,14 @@ func SetContext(ctx context.Context) {
 	gCtx = ctx
 }
 
-func Trace(caller string, args ...interface{}) {
+func Trace(msg string) {
 	//Handler.Enabled(ctx,Level)
 	//defer binder.Trace(binder.Start("Trace"))
-	slog.Log(gCtx, TraceLevel, caller, args...)
+	slog.Log(gCtx, TraceLevel, msg)
 }
 
-func Noticef(msg string, args ...interface{}) {
-	slog.Log(gCtx, NoticeLevel, msg, args...)
+func Notice(msg string) {
+	slog.Log(gCtx, NoticeLevel, msg)
 }
 
 func PrintTrace(caller string) {

@@ -44,9 +44,17 @@ function App() {
   const createSlideMessage = (obj) => {
     var msg = obj.message;
     var idx = msg.indexOf("\n");
+
     if (idx === -1) {
-      obj.title = msg;
-      obj.message = "";
+
+      var idx = msg.indexOf(":");
+      if ( idx === -1 ) {
+        obj.title = msg;
+        obj.message = "";
+      } else {
+        obj.title = msg.substring(0, idx);
+        obj.message = msg.substring(idx + 1);
+      }
     } else {
       obj.title = msg.substring(0, idx);
       obj.message = msg.substring(idx + 1);

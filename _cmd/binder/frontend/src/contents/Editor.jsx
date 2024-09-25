@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react"
-import { Container, IconButton, Paper, Toolbar } from "@mui/material";
+import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
 import '../assets/vim.min.js';
 
-import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
+import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML,Commit } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
-import { OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
+import { GetTemplate,OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
 import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -25,9 +25,10 @@ function Editor(props) {
 
   var {mode,id} = useParams();
 
-  var downloadName = "";
-
   const [text, setText] = useState("");
+  const [name, setName] = useState("");
+  const [comment, setComment] = useState("");
+
   const [noteElm, setNoteElm] = useState("");
   const [width, setWidth] = useState(500);
   const [html, setHTML] = useState("");
@@ -105,8 +106,7 @@ function Editor(props) {
       })
 
       GetDiagram(id).then((resp) => {
-        Event.changeTitle(resp.name)
-        downloadName = resp.name;
+        setName(resp.name);
       }).catch((err) => {
         Event.showErrorMessage(err);
       })
@@ -120,7 +120,7 @@ function Editor(props) {
       });
 
       GetNote(id).then((resp) => {
-        Event.changeTitle(resp.name)
+        setName(resp.name);
       }).catch((err) => {
         Event.showErrorMessage(err);
       })
@@ -133,14 +133,24 @@ function Editor(props) {
         //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
         //TODO: HTML をどのように作成するかを考える 
         //createNoteElement();
-        Event.changeTitle(resp.name)
       }).catch((err) => {
         Event.showErrorMessage(err);
       });
 
+      GetTemplate(id).then((resp) => {
+        setName(resp.name);
+      }).catch((err) => {
+        Event.showErrorMessage(err);
+      })
     }
 
   }, [id]);
+
+  //名称が変更になった場合の処理
+  useEffect(() => {
+    Event.changeTitle(name)
+    setComment("Updated: " + name);
+  }, [name]);
 
   //テキスト変更時の処理
   useEffect(() => {
@@ -177,7 +187,6 @@ function Editor(props) {
 
   const viewHTML = async (txt, embNoteElm) => {
 
-    var elm = document.querySelector('#htmlViewer');
     if (mode === "note") {
 
       var embed = await createMarked(id,txt,true);
@@ -197,12 +206,15 @@ function Editor(props) {
   }
 
   const viewDiagram = (txt) => {
+
     Mermaid.parse(txt).then( (data) => {
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
     }).catch((err) => {
+      console.log(txt)
       Event.showWarning("Diagram parse error:" + err);
     });
+
   }
 
   var startX;
@@ -263,14 +275,14 @@ function Editor(props) {
   }
 
   //コミットを行う
-  const commit = () => {
-    /*
-    Commit(mode,id,false).then(() => {
+  const handleCommit = () => {
+
+    console.log(comment)
+    Commit(mode,id,comment).then(() => {
       Event.showSuccess("Commit.")
     }).catch((err) => {
       Event.showErrorMessage(err);
     })
-      */
   }
 
   //SVG のダウンロードを行う
@@ -282,7 +294,7 @@ function Editor(props) {
       var dataURL = window.URL.createObjectURL(data);
       var tempLink = document.createElement('a');
       tempLink.href = dataURL;
-      tempLink.setAttribute('download', downloadName + '.svg');
+      tempLink.setAttribute('download', name + '.svg');
       tempLink.click();
   }
 
@@ -316,11 +328,21 @@ function Editor(props) {
           {/** 左側の操作用位置 */}
           <Toolbar className="buttonBar">
             <Container className="buttonBarLeft">
+              {/** コメント */}
+              <TextField value={comment} onChange={(e) => setComment(e.target.value)}
+                         size="small"
+                         variant="outlined"
+                         inputProps={{ style:{fontSize:"12px",padding:"10px",width:"200px"}}}
+                         InputProps={{
+                           endAdornment: ( 
+                             <InputAdornment position="end" className="linkBtn"> 
+                               <CommitIcon fontSize="small" style={{ color: "#f1f1f1" }}  onClick={handleCommit}> </CommitIcon> </InputAdornment>),
+                         }}
+
+                ></TextField>
               {/** コミット */}
-              <IconButton size="small" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={commit}>
-                <CommitIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-              </IconButton>
             </Container>
+
             <Container className="buttonBarRight">
             </Container>
           </Toolbar>
@@ -352,6 +374,7 @@ function Editor(props) {
             </Container>
 
             <Container className="buttonBarRight">
+
 {mode === "diagram" &&
 <>
               {/** 表示しているSVGのダウンロード */}

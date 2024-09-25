@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
 	"os"
 	"path/filepath"
 
@@ -164,4 +165,19 @@ func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
 		}
 	}
 	return pr, nil
+}
+
+func (b *Binder) CommitAsset(id string, m string) error {
+
+	a, err := b.db.GetAssetWithParent(id)
+	if err != nil {
+		return xerrors.Errorf("db.GetAssetWithParent() error: %w", err)
+	}
+
+	f := fs.AssetFile(a)
+	err = b.fileSystem.Commit(m, f)
+	if err != nil {
+		return xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+	return nil
 }

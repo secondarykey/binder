@@ -11,6 +11,8 @@ export function Address():Promise<string>;
 
 export function CloseBinder():Promise<void>;
 
+export function Commit(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function CreateBinder(arg1:string,arg2:string):Promise<void>;
 
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;

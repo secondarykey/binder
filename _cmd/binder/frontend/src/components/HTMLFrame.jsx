@@ -1,6 +1,8 @@
 import React from "react";
 
 import Mermaid from "../components/Mermaid";
+import Event from "../Event";
+
 /**
  * IFrame更新のちらつきを抑えるコンポーネント
  * あくまでIframeのちらつきを抑える為の切り替え処理に集中して

@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
 
 	"golang.org/x/xerrors"
 )
@@ -94,4 +95,13 @@ func (b *Binder) GetHTMLTemplates() ([]*model.Template, []*model.Template, error
 		return nil, nil, xerrors.Errorf("FindContentTemplates() error: %w", err)
 	}
 	return layouts, contents, nil
+}
+
+func (b *Binder) CommitTemplate(id string, m string) error {
+	f := fs.TemplateFile(id)
+	err := b.fileSystem.Commit(m, f)
+	if err != nil {
+		return xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+	return nil
 }

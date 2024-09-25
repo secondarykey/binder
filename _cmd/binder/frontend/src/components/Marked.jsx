@@ -25,7 +25,7 @@ class MarkedScript {
     static async parse(txt) {
 
         var rtn = new Promise( (res,rej) => {
-
+          //変換処理を関数化
           var func = function() {
             try {
               var rtn = marked.marked(txt);
