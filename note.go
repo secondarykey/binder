@@ -15,6 +15,11 @@ func (b *Binder) GetNote(id string) (*model.Note, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 	}
+
+	err = b.fileSystem.SetNoteStatus(n)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.SetNoteStatus() error: %w", err)
+	}
 	return n, nil
 }
 
@@ -138,7 +143,7 @@ func (b *Binder) GetUnpublishedNotes() ([]*model.Note, error) {
 			return nil, xerrors.Errorf("fs.SetNoteStatus() error: %w", err)
 		}
 		//最新じゃない場合は追加
-		if n.Status != model.LatestStatus {
+		if n.PublishStatus != model.LatestStatus {
 			pr = append(pr, n)
 		}
 	}

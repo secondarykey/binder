@@ -98,11 +98,12 @@ func (f *FileSystem) SetNoteStatus(n *model.Note) error {
 	//公開ファイルを取得
 	pub := HTMLFile(n)
 
-	status, err := f.getPublishStatus(base, pub)
+	us, ps, err := f.getStatus(base, pub)
 	if err != nil {
 		return xerrors.Errorf("getPublishStatus() error: %w", err)
 	}
-	n.Status = status
+	n.UpdatedStatus = us
+	n.PublishStatus = ps
 
 	return nil
 }

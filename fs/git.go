@@ -145,6 +145,33 @@ func (f *FileSystem) CommitAll(m string) error {
 	return f.autoCommit(m, true)
 }
 
+func (f *FileSystem) modified(files ...string) ([]string, error) {
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return nil, xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return nil, xerrors.Errorf("Status() error: %w", err)
+	}
+
+	names := make([]string, 0, len(files))
+	gp := convertPaths(files...)
+	for idx, f := range gp {
+		s, ok := status[f]
+		if ok {
+			if s.Worktree == git.Modified {
+				names = append(names, files[idx])
+			}
+		} else {
+			return nil, fmt.Errorf("Nothing Status error: %s", f)
+		}
+	}
+	return names, nil
+}
+
 func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
 
 	w, err := f.repo.Worktree()

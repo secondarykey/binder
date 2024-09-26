@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react"
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
-import '../assets/vim.min.js';
-
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML,Commit } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
@@ -10,6 +8,7 @@ import OutputIcon from '@mui/icons-material/Output';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import HTMLFrame from "../components/HTMLFrame.jsx";
+import PublishIcon from '@mui/icons-material/Publish';
 
 import Marked from "../components/Marked";
 import Event from "../Event.jsx";
@@ -18,6 +17,8 @@ import Message from '../Message';
 import { useParams } from "react-router-dom";
 import Mermaid from "../components/Mermaid";
 
+import '../assets/vim.min.js';
+import '../assets/Editor.css'
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
  * スプリッターでコントロールを可能にする
@@ -34,6 +35,8 @@ function Editor(props) {
   const [noteElm, setNoteElm] = useState("");
   const [width, setWidth] = useState(500);
   const [html, setHTML] = useState("");
+
+  const [updated, setUpdated] = useState(false);
 
   /**
    * コンテンツの
@@ -108,6 +111,11 @@ function Editor(props) {
       })
 
       GetDiagram(id).then((resp) => {
+        if ( resp.updatedStatus > 0 ) {
+          setUpdated(true);
+        }
+        //console.log(resp.publishStatus);
+
         setName(resp.name);
       }).catch((err) => {
         Message.showError(err);
@@ -122,6 +130,10 @@ function Editor(props) {
       });
 
       GetNote(id).then((resp) => {
+        if ( resp.updatedStatus > 0 ) {
+          setUpdated(true);
+        }
+        console.log(resp.publishStatus);
         setName(resp.name);
       }).catch((err) => {
         Message.showError(err);
@@ -140,6 +152,11 @@ function Editor(props) {
       });
 
       GetTemplate(id).then((resp) => {
+        if ( resp.updatedStatus > 0 ) {
+          setUpdated(true);
+        }
+        console.log(resp.publishStatus);
+
         setName(resp.name);
       }).catch((err) => {
         Message.showError(err);
@@ -235,6 +252,7 @@ function Editor(props) {
    * @param {*} txt 
    */
   const changeText = (txt) => {
+    setUpdated(true);
 
     setText(txt);
     if (mode === "note") {
@@ -259,7 +277,7 @@ function Editor(props) {
   }
 
   //出力処理
-  const handleOutput = async () => {
+  const handlePublish = async () => {
 
     var elm = "";
     if (mode === "note") {
@@ -281,6 +299,7 @@ function Editor(props) {
 
     console.log(comment)
     Commit(mode,id,comment).then(() => {
+      setUpdated(false);
       Message.showSuccess("Commit.")
     }).catch((err) => {
       Message.showError(err);
@@ -290,8 +309,6 @@ function Editor(props) {
   //SVG のダウンロードを行う
   const handleDownload = async () => {
       var elm = document.querySelector('#mermaidViewer');
-      console.log(elm.innerHTML)
-
       var data = new Blob([elm.innerHTML], {type: 'image/svg+xml'});
       var dataURL = window.URL.createObjectURL(data);
       var tempLink = document.createElement('a');
@@ -317,35 +334,44 @@ function Editor(props) {
   var viewerStyle = {};
   viewerStyle.left = (menuWidth + width + splitterW) + "px";
 
+  var commentStyle = {};
+  commentStyle.fontSize = "12px";
+  commentStyle.paddingTop = "12px";
+  commentStyle.width = (width - 98) + "px";
+
+  var color = "#f1f1f1";
+  if ( updated ) {
+    color = "#cf540c";
+  }
+
+  var commitIcon = (
+    <InputAdornment position="end" className="linkBtn"> 
+      <CommitIcon fontSize="small" style={{ color: color }}  onClick={handleCommit}> </CommitIcon> 
+    </InputAdornment>
+  )
+
   {/** 表示するものをビュワーに渡す段階で、表示用のものに変更する 
       * 表示処理を行わないっていう選択肢
       */}
   return (
     <>
       <Paper id="splitScreen">
-        {/** 基本的にテキストだからこれでもOKだけどイベント周り */}
         <div id="editorWrapper" style={editWrapperStyle}>
+          {/** テキスト編集 */}
           <textarea id="editor" style={editorStyle} onChange={(e) => changeText(e.target.value)} value={text} />
 
           {/** 左側の操作用位置 */}
           <Toolbar className="buttonBar">
             <Container className="buttonBarLeft">
-              {/** コメント */}
+              {/** コミットコメント */}
               <TextField value={comment} onChange={(e) => setComment(e.target.value)}
                          size="small"
                          variant="outlined"
-                         inputProps={{ style:{fontSize:"12px",padding:"10px",width:"200px"}}}
-                         InputProps={{
-                           endAdornment: ( 
-                             <InputAdornment position="end" className="linkBtn"> 
-                               <CommitIcon fontSize="small" style={{ color: "#f1f1f1" }}  onClick={handleCommit}> </CommitIcon> </InputAdornment>),
-                         }}
+                         style={{marginLeft:"0px",paddingLeft:"0px"}}
+                         inputProps={{style:commentStyle}}
+                         InputProps={{endAdornment:commitIcon}}
 
                 ></TextField>
-              {/** コミット */}
-            </Container>
-
-            <Container className="buttonBarRight">
             </Container>
           </Toolbar>
         </div>
@@ -354,10 +380,9 @@ function Editor(props) {
 
         {/** 表示するコンポーネントを変更 */}
         <div id="dataViewer" style={viewerStyle}>
+
           {(mode === "note" ) &&
-          <>
             <HTMLFrame html={html}/>
-          </>
           }
           {mode === "diagram" &&
             <div id="mermaidViewer"></div>
@@ -365,18 +390,20 @@ function Editor(props) {
 
           {/** 右側の操作用位置 */}
           <Toolbar className="buttonBar">
-
             <Container className="buttonBarLeft">
 
+{mode !== "template" &&
+<>
               {/** 公開位置への転送 */}
-              <IconButton size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handleOutput}>
-                <OutputIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+              <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handlePublish}>
+                <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
               </IconButton>
+</>
+}
 
             </Container>
 
             <Container className="buttonBarRight">
-
 {mode === "diagram" &&
 <>
               {/** 表示しているSVGのダウンロード */}

@@ -22,11 +22,12 @@ type Note struct {
 
 	//non schema
 	Parent   *Note      `db:"-" json:"-"`
-	Children []*Note    `db:"-" json:"children"`
-	Diagrams []*Diagram `db:"-" json:"diagrams"`
-	Assets   []*Asset   `db:"-" json:"assets"`
+	Children []*Note    `db:"-" json:"-"`
+	Diagrams []*Diagram `db:"-" json:"-"`
+	Assets   []*Asset   `db:"-" json:"-"`
 
-	Status Status `db:"-" json:"status"`
+	PublishStatus Status `db:"-" json:"publishStatus"`
+	UpdatedStatus Status `db:"-" json:"updatedStatus"`
 
 	Layouts  []*Template `db:"-" json:"layouts"`
 	Contents []*Template `db:"-" json:"contents"`

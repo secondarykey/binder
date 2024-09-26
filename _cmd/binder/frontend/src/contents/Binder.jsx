@@ -42,6 +42,7 @@ function Binder(props) {
     Event.changeTitle("Edit Binder");
 
     GetConfig().then((conf) => {
+
       setName(conf.name);
       setDetail(conf.detail);
       setListNum(conf.listNum);
@@ -63,6 +64,7 @@ function Binder(props) {
     config.branch = branch;
     config.autoCommit = Number(auto);
     EditConfig(config).then((resp) => {
+      Event.changeBinderTitle(name);
       Message.showSuccess("update binder.");
     }).catch((err) => {
       Message.showError(err);

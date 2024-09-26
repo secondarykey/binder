@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -215,32 +216,46 @@ func (f *FileSystem) copyReader(out string, r io.Reader) error {
 	return nil
 }
 
-func (f *FileSystem) getPublishStatus(source, pub string) (model.Status, error) {
+func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, error) {
+
+	us := model.ErrorStatus
+	ps := model.ErrorStatus
 
 	p := ConvertPaths(source, pub)
 
-	bi, err := f.Stat(p[0])
+	sfn := p[0]
+	m, err := f.modified(sfn)
+	if err == nil {
+		if len(m) > 0 {
+			us = model.UpdatedStatus
+		} else {
+			us = model.NothingStatus
+		}
+	} else {
+		slog.Warn("modified error " + sfn + ":" + err.Error())
+	}
+
+	bi, err := f.Stat(sfn)
 	bt := time.Now()
 	if err == nil {
 		bt = bi.ModTime()
 	} else {
 		//存在しないはエラー
-		return model.ErrorStatus, fmt.Errorf("source file Nothing[%s]", p[0])
+		return us, ps, fmt.Errorf("source file Nothing[%s]", sfn)
 	}
 
-	var status model.Status
 	pi, err := f.Stat(p[1])
 	pt := time.Time{}
 	if err == nil {
 		pt = pi.ModTime()
 		if bt.After(pt) {
-			status = model.UpdatedStatus
+			ps = model.UpdatedStatus
 		} else {
-			status = model.LatestStatus
+			ps = model.LatestStatus
 		}
 	} else {
-		status = model.PrivateStatus
+		ps = model.PrivateStatus
 	}
 
-	return status, nil
+	return us, ps, nil
 }

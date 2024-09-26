@@ -51,6 +51,7 @@ func TestCreateAsset(t *testing.T) {
 	if f.IsExist("assets/note/asset") {
 		t.Errorf("file status is error(exists)")
 	}
+
 	if f.IsExist("docs/assets/noteAlias/pub") {
 		t.Errorf("CreateAsset() asset file(publish) is exist")
 	}

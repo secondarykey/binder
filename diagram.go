@@ -54,6 +54,11 @@ func (b *Binder) GetDiagram(id string) (*model.Diagram, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 	}
+	err = b.fileSystem.SetDiagramStatus(d)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.SetDiagramStatus() error: %w", err)
+	}
+
 	return d, nil
 }
 
@@ -126,7 +131,7 @@ func (b *Binder) GetUnpublishedDiagrams() ([]*model.Diagram, error) {
 		}
 
 		//最新じゃない場合は追加
-		if d.Status != model.LatestStatus {
+		if d.PublishStatus != model.LatestStatus {
 			pr = append(pr, d)
 		}
 	}

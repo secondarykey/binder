@@ -26,7 +26,7 @@ func (a *App) GetAsset(id string) (*model.Asset, error) {
 	defer log.PrintTrace(log.Func("GetAsset()"))
 
 	//データを追加
-	rtn, err := a.current.GetAsset(id)
+	rtn, err := a.current.GetAssetWithParent(id)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetAsset() error\n%+v", err)

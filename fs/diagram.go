@@ -82,12 +82,13 @@ func (f *FileSystem) SetDiagramStatus(d *model.Diagram) error {
 	//公開ファイルを取得
 	pub := SVGFile(d)
 
-	status, err := f.getPublishStatus(base, pub)
+	us, ps, err := f.getStatus(base, pub)
 	if err != nil {
 		return xerrors.Errorf("getPublishStatus() error: %w", err)
 	}
+	d.UpdatedStatus = us
+	d.PublishStatus = ps
 
-	d.Status = status
 	return nil
 }
 

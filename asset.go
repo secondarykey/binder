@@ -83,10 +83,17 @@ func (b *Binder) GetAsset(id string) (*model.Asset, error) {
 	if b == nil {
 		return nil, EmptyError
 	}
+
 	a, err := b.db.GetAsset(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
+
+	err = b.fileSystem.SetAssetStatus(a)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
+	}
+
 	return a, nil
 }
 
@@ -160,7 +167,7 @@ func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
 			return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
 		}
 		//最新じゃない場合は追加
-		if a.Status != model.LatestStatus {
+		if a.PublishStatus != model.LatestStatus {
 			pr = append(pr, a)
 		}
 	}

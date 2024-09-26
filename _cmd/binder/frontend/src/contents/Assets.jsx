@@ -25,6 +25,7 @@ function Assets(props) {
   const [parentId,setParentId] = useState("");
 
   const [name, setName] = useState("");
+  const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
   const [file, setFile] = useState("");
 
@@ -36,6 +37,7 @@ function Assets(props) {
 
     setName("");
     setDetail("")
+    setAlias("")
     setFile("")
 
     if ( mode === "register") {
@@ -49,6 +51,7 @@ function Assets(props) {
 
     GetAsset(currentId).then((data) => {
       setName(data.name);
+      setAlias(data.alias);
       setDetail(data.detail)
       setParentId(data.parentId);
       Event.changeTitle("Edit Assets:" + data.name);
@@ -65,10 +68,8 @@ function Assets(props) {
     data.parentId = parentId
 
     data.name = name
+    data.alias = alias
     data.detail = detail
-
-    console.log(data);
-    console.log("file:" + file)
 
     EditAsset(data, file).then((resp) => {
       Event.refreshTree();
@@ -102,7 +103,7 @@ function Assets(props) {
     RemoveAsset(id).then((resp) => {
       Event.refreshTree();
       // 遷移する
-      Event.showSuccess("Remove Assets.")
+      Message.showSuccess("Remove Assets.")
       nav("/note/edit/" + parentId);
     }).catch( (err) => {
       Message.showError(err);
@@ -114,6 +115,8 @@ function Assets(props) {
     Message.showSuccess("Copied.");
   }
 
+  var start = "/assets/{noteAlias}/";
+
   return (<>
     <Grid className="formGrid">
 
@@ -124,6 +127,19 @@ function Assets(props) {
             <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
                 startAdornment: ( <InputAdornment position="start" className="linkBtn"> <ContentCopy /> </InputAdornment>)
+              }}>
+            </TextField>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Alias</FormLabel>
+            <TextField
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">
+                  <FormLabel>{start}</FormLabel>
+                </InputAdornment>,
               }}>
             </TextField>
           </FormControl>

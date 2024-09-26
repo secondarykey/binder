@@ -12,7 +12,6 @@ import UpdateIcon from '@mui/icons-material/Update';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import PublishIcon from '@mui/icons-material/Publish';
 
-import Message from './Message';
 
 import FileMenu from './contents/FileMenu';
 import BinderTree from './contents/BinderTree';
@@ -20,6 +19,9 @@ import BinderTree from './contents/BinderTree';
 import "./assets/Menu.css";
 import { SettingsApplications } from '@mui/icons-material';
 import TemplateTree from './contents/TemplateTree';
+
+import Event from './Event';
+import Message from './Message';
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -79,6 +81,11 @@ function Menu(props) {
    * 初期処理
    */
   useEffect(() => {
+
+    Event.register(Event.ReloadBinderTitle,function(t) {
+      setTitle(t);
+    });
+
     //設定を取得
     GetConfig().then((conf) => {
       //名称を設定

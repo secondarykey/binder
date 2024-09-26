@@ -1,0 +1,103 @@
+#editorWrapper {
+    position: absolute;
+    top:48px;
+    bottom: 0;
+}
+
+#splitter {
+    --wails-draggable:no-drag;
+
+    position: absolute;
+    top: 48px;
+    bottom: 0;
+
+    border:5px solid #444444;
+    cursor: ew-resize;
+}
+
+#splitter:hover {
+    border:5px solid #666666;
+}
+
+#dataViewer {
+    --wails-draggable:no-drag;
+
+    position: absolute;
+    top: 48px;
+    right:0;
+    bottom: 0px;
+    display: flex;
+}
+
+iframe.htmlViewer {
+    position: absolute;
+    left:0;
+    top:0;
+    width:calc( 100% - 5px );
+    height:calc( 100% - 48px );
+
+    transition: opacity 0.1s;
+}
+
+#mermaidViewer {
+    display:flex;
+    width:calc( 100% - 5px );
+    height:calc( 100% - 48px);
+    justify-content: center;
+    align-items:center;
+}
+
+#editor {
+    --wails-draggable:no-drag;
+
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 48px;
+
+    background-color: #252525;
+    caret-color: #ffffff;
+
+    border:0 solid #000000;
+
+    padding: 5px;
+    margin: 0px;
+}
+
+.buttonBar {
+    display: flex !important;
+    justify-content:left !important;
+    align-items:baseline !important;
+    background-color: #222222;
+    position: absolute !important;
+    padding-left:10px !important;
+    margin-left:5px !important;
+    padding-right:5px !important;
+    margin-right:5px !important;
+
+    border: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 40px !important;
+    max-height: 40px !important;
+ }
+ 
+ .buttonBarLeft {
+   min-width: 300px;
+   margin-top: 0;
+   padding-left:0px !important;
+ }
+ 
+ .buttonBarRight {
+   width: 100px;
+   text-align:right;
+   padding-right:0px !important;
+ }
+ 
+ .buttonBarRightButton {
+   margin-top: 5px !important;
+   margin-right: 10px !important;
+   padding: 0;
+ }

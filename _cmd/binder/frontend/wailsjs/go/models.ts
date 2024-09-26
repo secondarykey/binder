@@ -122,6 +122,115 @@ export namespace binder {
 
 export namespace model {
 	
+	export class Template {
+	    id: string;
+	    type: string;
+	    name: string;
+	    detail: string;
+	    // Go type: time
+	    created: any;
+	    createdUser: string;
+	    // Go type: time
+	    updated: any;
+	    updatedUser: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Template(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.name = source["name"];
+	        this.detail = source["detail"];
+	        this.created = this.convertValues(source["created"], null);
+	        this.createdUser = source["createdUser"];
+	        this.updated = this.convertValues(source["updated"], null);
+	        this.updatedUser = source["updatedUser"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Note {
+	    id: string;
+	    parentId: string;
+	    alias: string;
+	    name: string;
+	    detail: string;
+	    layoutTemplate: string;
+	    contentTemplate: string;
+	    // Go type: time
+	    publish: any;
+	    // Go type: time
+	    created: any;
+	    createdUser: string;
+	    // Go type: time
+	    updated: any;
+	    updatedUser: string;
+	    publishStatus: number;
+	    updatedStatus: number;
+	    layouts: Template[];
+	    contents: Template[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Note(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.parentId = source["parentId"];
+	        this.alias = source["alias"];
+	        this.name = source["name"];
+	        this.detail = source["detail"];
+	        this.layoutTemplate = source["layoutTemplate"];
+	        this.contentTemplate = source["contentTemplate"];
+	        this.publish = this.convertValues(source["publish"], null);
+	        this.created = this.convertValues(source["created"], null);
+	        this.createdUser = source["createdUser"];
+	        this.updated = this.convertValues(source["updated"], null);
+	        this.updatedUser = source["updatedUser"];
+	        this.publishStatus = source["publishStatus"];
+	        this.updatedStatus = source["updatedStatus"];
+	        this.layouts = this.convertValues(source["layouts"], Template);
+	        this.contents = this.convertValues(source["contents"], Template);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Asset {
 	    id: string;
 	    parentId: string;
@@ -134,7 +243,9 @@ export namespace model {
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
-	    status: number;
+	    note?: Note;
+	    publishStatus: number;
+	    updatedStatus: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Asset(source);
@@ -151,7 +262,9 @@ export namespace model {
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
-	        this.status = source["status"];
+	        this.note = this.convertValues(source["note"], Note);
+	        this.publishStatus = source["publishStatus"];
+	        this.updatedStatus = source["updatedStatus"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -234,7 +347,9 @@ export namespace model {
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
-	    status: number;
+	    note?: Note;
+	    publishStatus: number;
+	    updatedStatus: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Diagram(source);
@@ -252,7 +367,9 @@ export namespace model {
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
-	        this.status = source["status"];
+	        this.note = this.convertValues(source["note"], Note);
+	        this.publishStatus = source["publishStatus"];
+	        this.updatedStatus = source["updatedStatus"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -273,119 +390,7 @@ export namespace model {
 		    return a;
 		}
 	}
-	export class Template {
-	    id: string;
-	    type: string;
-	    name: string;
-	    detail: string;
-	    // Go type: time
-	    created: any;
-	    createdUser: string;
-	    // Go type: time
-	    updated: any;
-	    updatedUser: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new Template(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.type = source["type"];
-	        this.name = source["name"];
-	        this.detail = source["detail"];
-	        this.created = this.convertValues(source["created"], null);
-	        this.createdUser = source["createdUser"];
-	        this.updated = this.convertValues(source["updated"], null);
-	        this.updatedUser = source["updatedUser"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class Note {
-	    id: string;
-	    parentId: string;
-	    alias: string;
-	    name: string;
-	    detail: string;
-	    layoutTemplate: string;
-	    contentTemplate: string;
-	    // Go type: time
-	    publish: any;
-	    // Go type: time
-	    created: any;
-	    createdUser: string;
-	    // Go type: time
-	    updated: any;
-	    updatedUser: string;
-	    children: Note[];
-	    diagrams: Diagram[];
-	    assets: Asset[];
-	    status: number;
-	    layouts: Template[];
-	    contents: Template[];
-	
-	    static createFrom(source: any = {}) {
-	        return new Note(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.parentId = source["parentId"];
-	        this.alias = source["alias"];
-	        this.name = source["name"];
-	        this.detail = source["detail"];
-	        this.layoutTemplate = source["layoutTemplate"];
-	        this.contentTemplate = source["contentTemplate"];
-	        this.publish = this.convertValues(source["publish"], null);
-	        this.created = this.convertValues(source["created"], null);
-	        this.createdUser = source["createdUser"];
-	        this.updated = this.convertValues(source["updated"], null);
-	        this.updatedUser = source["updatedUser"];
-	        this.children = this.convertValues(source["children"], Note);
-	        this.diagrams = this.convertValues(source["diagrams"], Diagram);
-	        this.assets = this.convertValues(source["assets"], Asset);
-	        this.status = source["status"];
-	        this.layouts = this.convertValues(source["layouts"], Template);
-	        this.contents = this.convertValues(source["contents"], Template);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 
 }
 

@@ -24,6 +24,7 @@ function Diagram(props) {
   const [parentId, setParentId] = useState("");
 
   const [name, setName] = useState("");
+  const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
 
   useEffect(() => {
@@ -34,6 +35,7 @@ function Diagram(props) {
 
     setName("");
     setDetail("");
+    setAlias("");
 
     if ( mode === "register" ) {
       setId("");
@@ -46,6 +48,7 @@ function Diagram(props) {
 
     GetDiagram(currentId).then((data) => {
       setName(data.name);
+      setAlias(data.alias);
       setDetail(data.detail);
       setParentId(data.parentId);
       Event.changeTitle("Edit Diagram:" + data.name);
@@ -62,11 +65,11 @@ function Diagram(props) {
     data.parentId = parentId
     data.name = name
     data.detail = detail
+    data.alias = alias;
 
     EditDiagram(data).then((resp) => {
 
       Event.refreshTree();
-
       //新規作成時は移動
       if ( mode === "register" ) {
         nav("/diagram/edit/" + resp.id);
@@ -84,7 +87,7 @@ function Diagram(props) {
     RemoveDiagram(id).then((resp) => {
       Event.refreshTree();
       // 遷移する
-      Event.showSuccess("Remove Diagram.")
+      Message.showSuccess("Remove Diagram.")
       nav("/note/edit/" + parentId);
     }).catch( (err) => {
       Message.showError(err);
@@ -96,6 +99,8 @@ function Diagram(props) {
     Message.showSuccess("Copied.");
   }
 
+  var start = "/images/"
+  var end = ".svg";
   return (<>
     <Grid className="formGrid">
 
@@ -106,6 +111,22 @@ function Diagram(props) {
             <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
                 startAdornment: ( <InputAdornment position="start"> <ContentCopy/> </InputAdornment>)
+              }}>
+            </TextField>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Alias</FormLabel>
+            <TextField
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">
+                  <FormLabel>{start}</FormLabel>
+                </InputAdornment>,
+                endAdornment: <InputAdornment position="end">
+                  <FormLabel>{end}</FormLabel>
+                </InputAdornment>,
               }}>
             </TextField>
           </FormControl>

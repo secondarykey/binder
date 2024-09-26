@@ -15,6 +15,11 @@ class Event {
      * タイトル変更時
      */
     static ReloadTitle = "title.reload"
+
+    /**
+     * バインダー部分のタイトル変更
+     */
+    static ReloadBinderTitle = "binder.title.reload"
     /**
      * ツリーの再描画
      */
@@ -44,6 +49,10 @@ class Event {
 
     static changeTitle(title) {
         this.raise(Event.ReloadTitle,title);
+    }
+
+    static changeBinderTitle(title) {
+        this.raise(Event.ReloadBinderTitle,title);
     }
 
     /**

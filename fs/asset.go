@@ -113,12 +113,13 @@ func (f *FileSystem) SetAssetStatus(a *model.Asset) error {
 		return fmt.Errorf("public asset file error:[%s]", a.Id)
 	}
 
-	status, err := f.getPublishStatus(base, pub)
+	us, ps, err := f.getStatus(base, pub)
 	if err != nil {
 		//存在しないはエラー
 		return xerrors.Errorf("getPublishStats() error: %w", err)
 	}
-	a.Status = status
+	a.UpdatedStatus = us
+	a.PublishStatus = ps
 
 	return nil
 }

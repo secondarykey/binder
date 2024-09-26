@@ -6,7 +6,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
-import { GetNote,GetHTMLTemplates } from "../../wailsjs/go/api/App";
+import { GetNote, GetHTMLTemplates } from "../../wailsjs/go/api/App";
 import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
 import noImage from '../assets/images/noimage.png'
 
@@ -27,6 +27,7 @@ function Note(props) {
   const [parentId, setParentId] = useState("");
 
   const [name, setName] = useState("");
+  const [alias, setAlias] = useState("");
   const [imageFile, setImageFile] = useState("");
   const [viewImage, setViewImage] = useState("");
   const [detail, setDetail] = useState("");
@@ -47,13 +48,13 @@ function Note(props) {
     }
 
     setName("");
+    setAlias("");
     setDetail("");
     setImageFile("");
 
     if (mode === "register") {
       setId("");
       setParentId(currentId)
-
       Event.changeTitle("Register Note");
       return;
     } else {
@@ -63,6 +64,7 @@ function Note(props) {
     GetNote(currentId).then((note) => {
 
       setName(note.name);
+      setAlias(note.alias);
       setDetail(note.detail)
       setParentId(note.parentId)
 
@@ -82,11 +84,11 @@ function Note(props) {
    */
   useEffect(() => {
 
-    GetHTMLTemplates().then( (tmpls)=> {
+    GetHTMLTemplates().then((tmpls) => {
       setLayouts(tmpls.layouts)
       setContents(tmpls.contents)
 
-      if ( mode === "register" ) {
+      if (mode === "register") {
         setLayout(tmpls.layouts[0].id)
         setContent(tmpls.contents[0].id)
       }
@@ -95,7 +97,7 @@ function Note(props) {
     })
 
     Address().then((address) => {
-      setViewImage(address + "/assets/" + id + "/index")
+      setViewImage(address + "/assets/" + id + "/meta")
     }).catch((err) => {
       Message.showError(err);
     })
@@ -111,6 +113,7 @@ function Note(props) {
     note.id = id;
     note.parentId = parentId;
     note.name = name;
+    note.alias = alias;
     note.detail = detail;
     note.layoutTemplate = layout;
     note.contentTemplate = content;
@@ -124,7 +127,7 @@ function Note(props) {
         return;
       }
 
-      Event.showSuccess("Update Note.")
+      Message.showSuccess("Update Note.")
     }).catch((err) => {
       Message.showError(err);
     });
@@ -185,6 +188,15 @@ function Note(props) {
     setContent(e.target.value);
   }
 
+  var start = "/pages/"
+  var index = false;
+  var changeFunc = setAlias;
+  if (id == "index") {
+    start = "/";
+    index = true;
+    changeFunc = function(v){};
+  }
+  var end = ".html";
   return (<>
     <Grid className="formGrid">
 
@@ -195,6 +207,22 @@ function Note(props) {
             <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
                 startAdornment: (<InputAdornment position="start"><ContentCopy /></InputAdornment>)
+              }}>
+            </TextField>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Alias</FormLabel>
+            <TextField
+              value={alias}
+              onChange={(e) => changeFunc(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">
+                  <FormLabel>{start}</FormLabel>
+                </InputAdornment>,
+                endAdornment: <InputAdornment position="end">
+                  <FormLabel>{end}</FormLabel>
+                </InputAdornment>,
               }}>
             </TextField>
           </FormControl>
@@ -258,7 +286,7 @@ function Note(props) {
 
         {mode === "edit" &&
           <Button style={{ marginLeft: "auto" }}
-            variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+            variant="contained" color="error" onClick={handleDelete} disabled={index}>Delete</Button>
         }
       </FormControl>
 
