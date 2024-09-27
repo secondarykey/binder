@@ -63,6 +63,12 @@ function Assets(props) {
   //保存
   const handleSave = () => {
 
+    if ( mode === "register" ) {
+      if ( file == "" ) {
+        Message.showWarning("Input Select File")
+        return;
+      }
+    }
     var data = {};
     data.id = id
     data.parentId = parentId
