@@ -40,7 +40,7 @@ func open() *db.Instance {
 
 func create() error {
 	os.Mkdir(testPath, 0666)
-	_, err := db.Create(testPath)
+	err := db.Create(testPath)
 	return err
 }
 
@@ -55,6 +55,25 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 	os.Exit(code)
+}
+
+func TestTables(t *testing.T) {
+
+	tables := db.Tables()
+	if len(tables) != 5 {
+		t.Fatalf("too many(5) = %d", len(tables))
+	}
+
+	keys := []string{db.ConfigTableName, db.NoteTableName,
+		db.DiagramTableName, db.AssetTableName, db.TemplateTableName}
+	for _, v := range keys {
+		want := v + ".csv"
+		got := tables[v]
+		if got != want {
+			t.Errorf("tables value want %s got %s", want, got)
+		}
+	}
+
 }
 
 func TestDB(t *testing.T) {
@@ -74,7 +93,7 @@ func TestDB(t *testing.T) {
 func TestCrete(t *testing.T) {
 	dir := filepath.Join(test.Dir, "create")
 	os.Mkdir(dir, 0666)
-	_, err := db.Create(filepath.Join(test.Dir, "create"))
+	err := db.Create(filepath.Join(test.Dir, "create"))
 	if err != nil {
 		t.Errorf("db.Create() is not nil:%v", err)
 	}
