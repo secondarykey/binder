@@ -26,11 +26,6 @@ func (f *FileSystem) CreateTemplateFile(t *model.Template) error {
 	}
 	defer fp.Close()
 
-	err = f.Commit(M("create", t.Name), n)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-
 	return nil
 }
 

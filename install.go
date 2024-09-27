@@ -43,10 +43,10 @@ func Install(dir string) error {
 	return install(f, dir)
 }
 
-func install(fsObj *fs.FileSystem, dir string) error {
+func install(f *fs.FileSystem, dir string) error {
 
 	//空でもディレクトリは作っておく
-	docsdir := filepath.Join(dir, fsObj.GetPublic())
+	docsdir := filepath.Join(dir, f.GetPublic())
 	err := os.MkdirAll(docsdir, 0666)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
@@ -83,24 +83,24 @@ func install(fsObj *fs.FileSystem, dir string) error {
 		return xerrors.Errorf("os.Mkdir() error: %w", err)
 	}
 
-	files, err := db.Create(dbdir)
+	err = db.Create(dbdir)
 	if err != nil {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
 	//追加を行う
-	err = fsObj.AddDBFiles(files)
+	err = f.AddDBFiles()
 	if err != nil {
 		return xerrors.Errorf("Add() error: %w", err)
 	}
 
-	err = fsObj.CommitAll(fs.M("install", "Database"))
+	err = f.CommitAll(fs.M("Install", "Database"))
 	if err != nil {
 		return xerrors.Errorf("CommitAll() error: %w", err)
 	}
 
 	s := settings.Get()
-	err = fsObj.Branch(s.Git.Branch)
+	err = f.Branch(s.Git.Branch)
 	if err != nil {
 		return xerrors.Errorf("fs.Branch() error: %w", err)
 	}
@@ -191,7 +191,7 @@ func (b *Binder) initializeNote() error {
 	index.LayoutTemplate = TemplateLayoutId
 	index.ContentTemplate = TemplateIndexId
 
-	err := b.createNote(&index)
+	_, err := b.createNote(&index)
 	if err != nil {
 		return fmt.Errorf("createNote(index) error\n%+v", err)
 	}

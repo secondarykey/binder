@@ -13,35 +13,53 @@ func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 		return nil, EmptyError
 	}
 
+	var prefix string
+	var files []string
+
 	//新規指定だった場合
 	if d.Id == "" {
 
 		d.Id = b.generateId()
 
-		err := b.fileSystem.CreateDiagramFile(d)
+		f, err := b.fileSystem.CreateDiagramFile(d)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.CreateDiagramFile() error: %w", err)
 		}
+		files = append(files, f)
 
 		//DB設定
 		err = b.db.InsertDiagram(d, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.InsertDiagram() error: %w", err)
 		}
+
+		prefix = "Create Diagram"
 	} else {
 
-		//TODO
-		// Diagramを取得して、Aliasを確認
-		// すでにAliasが存在した場合、移動を行う
-		//
+		old, err := b.db.GetDiagram(d.Id)
+		if err != nil {
+			return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
+		}
 
-		err := b.db.UpdateDiagram(d, b.op)
+		if old.Alias != d.Alias {
+			// TODO Alias変更の処理を行う
+			// 現在公開中のものを新規の場所にコピー
+		}
+
+		err = b.db.UpdateDiagram(d, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateDiagram() error: %w", err)
 		}
+
+		prefix = "Edit Diagram"
 	}
 
-	//TODO データベースをコミット
+	files = append(files, fs.DiagramTableFile())
+	//コミット
+	err := b.fileSystem.Commit(fs.M(prefix, d.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
 
 	return d, nil
 }
@@ -98,7 +116,7 @@ func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
 	}
 
 	//ファイルを削除
-	err = b.fileSystem.DeleteDiagram(id)
+	files, err := b.fileSystem.DeleteDiagram(d)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.DeleteDiagram() error: %w", err)
 	}
@@ -109,7 +127,14 @@ func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
 		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
 	}
 
-	//TODO コミット
+	fn := fs.DiagramTableFile()
+	files = append(files, fn)
+
+	//コミット
+	err = b.fileSystem.Commit(fs.M("Remove Diagram", d.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
 
 	return d, nil
 }

@@ -8,11 +8,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) error {
+func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) (string, error) {
 
 	dataFn := AssetFile(a)
 	if dataFn == "" {
-		return fmt.Errorf("AssetFile() error: id is empty(%s,%s)", a.ParentId, a.Id)
+		return "", fmt.Errorf("AssetFile() error: id is empty(%s,%s)", a.ParentId, a.Id)
 	}
 
 	parentDir := filepath.Dir(dataFn)
@@ -20,68 +20,55 @@ func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) error {
 
 	fp, err := f.Create(dataFn)
 	if err != nil {
-		return xerrors.Errorf("CreateFile() error: %w", err)
+		return "", xerrors.Errorf("CreateFile() error: %w", err)
 	}
 	defer fp.Close()
 
 	_, err = fp.Write(data)
 	if err != nil {
-		return xerrors.Errorf("Write() error: %w", err)
+		return "", xerrors.Errorf("Write() error: %w", err)
 	}
 
-	err = f.Commit(M("Create", a.Name), dataFn)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-
-	return nil
+	return dataFn, nil
 }
 
-func (f *FileSystem) DeleteAsset(a *model.Asset) error {
+func (f *FileSystem) DeleteAsset(a *model.Asset) ([]string, error) {
 
 	var files []string
 	fn := PublicAssetFile(a)
+
 	if f.isExist(fn) {
-		err := f.Remove(fn)
-		if err != nil {
-			return xerrors.Errorf("fs.Remove(%s) error: %w", fn, err)
-		}
 		files = append(files, fn)
 	}
 
 	fn = AssetFile(a)
-	err := f.Remove(fn)
-	if err != nil {
-		return xerrors.Errorf("fs.Remove(%s) error: %w", fn, err)
-	}
-	files = append(files, fn)
-
-	err = f.Commit(M("Remove", a.Name), files...)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
+	if f.isExist(fn) {
+		files = append(files, fn)
+	} else {
+		return nil, xerrors.Errorf("NotExist: %s", fn)
 	}
 
-	return nil
+	err := f.remove(files...)
+	if err != nil {
+		return nil, xerrors.Errorf("remove() error: %w", err)
+	}
+
+	return files, nil
 }
 
-func (f *FileSystem) UnpublishAsset(a *model.Asset) error {
+func (f *FileSystem) UnpublishAsset(a *model.Asset) (string, error) {
 
 	//公開ファイルを取得
 	pub := PublicAssetFile(a)
-
-	err := f.Remove(pub)
+	err := f.remove(pub)
 	if err != nil {
-		return xerrors.Errorf("fs.Remove(%s) error: %w", pub, err)
+		return "", xerrors.Errorf("remove(%s) error: %w", pub, err)
 	}
 
-	err = f.Commit(M("Unpublish", a.Name), pub)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
+	return pub, nil
 }
 
-func (f *FileSystem) PublishAsset(a *model.Asset) error {
+func (f *FileSystem) PublishAsset(a *model.Asset) (string, error) {
 
 	//元ファイルを作成
 	base := AssetFile(a)
@@ -89,18 +76,11 @@ func (f *FileSystem) PublishAsset(a *model.Asset) error {
 	pub := PublicAssetFile(a)
 
 	err := f.copyFile(pub, base)
-	//err := f.copyFile(s[1], s[0])
 	if err != nil {
-		return xerrors.Errorf("copyFile() error: %w", err)
+		return "", xerrors.Errorf("copyFile() error: %w", err)
 	}
 
-	//コミット
-	err = f.Commit(M("Publish", a.Name), pub)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-
-	return nil
+	return pub, nil
 }
 
 func (f *FileSystem) SetAssetStatus(a *model.Asset) error {

@@ -18,7 +18,7 @@ import (
 var UpdatedFilesError = fmt.Errorf("No updated files")
 
 func M(header string, name string) string {
-	return fmt.Sprintf("%-10s : %s", header, name)
+	return fmt.Sprintf("%s : %s", header, name)
 }
 
 func (f *FileSystem) CreateRemote(name, url string) error {
@@ -116,16 +116,29 @@ func (f *FileSystem) Branch(name string) error {
 	return nil
 }
 
-// ファイルをコミットする
-func (f *FileSystem) Commit(m string, files ...string) error {
-
+func UserSig() *object.Signature {
 	set := settings.Get()
 	auth := set.Git
-
 	sig := &object.Signature{
-		Name: auth.Name, Email: auth.Mail,
+		Name:  auth.Name,
+		Email: auth.Mail,
+		When:  time.Now(),
 	}
-	return f.commit(m, sig, false, files...)
+	return sig
+}
+
+func SystemSig() *object.Signature {
+	sig := &object.Signature{
+		Name:  "Binder System",
+		Email: "binder@localhost",
+		When:  time.Now(),
+	}
+	return sig
+}
+
+// ファイルをコミットする
+func (f *FileSystem) Commit(m string, files ...string) error {
+	return f.commit(m, UserSig(), false, files...)
 }
 
 func (f *FileSystem) AutoCommit(m string, files ...string) error {
@@ -134,11 +147,7 @@ func (f *FileSystem) AutoCommit(m string, files ...string) error {
 
 // 自動コミット
 func (f *FileSystem) autoCommit(m string, all bool, files ...string) error {
-	sig := &object.Signature{
-		Name:  "Binder System",
-		Email: "-",
-	}
-	return f.commit(m, sig, all, files...)
+	return f.commit(m, SystemSig(), all, files...)
 }
 
 func (f *FileSystem) CommitAll(m string) error {
@@ -223,7 +232,6 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 		return UpdatedFilesError
 	}
 
-	sig.When = time.Now()
 	_, err = w.Commit(m,
 		&git.CommitOptions{
 			All:    all,
@@ -233,6 +241,19 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
 
+	return nil
+}
+
+func (f *FileSystem) remove(files ...string) error {
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	for _, f := range files {
+		w.Remove(f)
+	}
 	return nil
 }
 

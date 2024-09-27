@@ -10,40 +10,41 @@ import (
 )
 
 // ID 指定は上位でやっておく
-func (f *FileSystem) CreateDiagramFile(d *model.Diagram) error {
+func (f *FileSystem) CreateDiagramFile(d *model.Diagram) (string, error) {
 
 	fn := DiagramFile(d.Id)
 	//ノートファイルを作成
 	fp, err := f.Create(fn)
 	if err != nil {
-		return xerrors.Errorf("binder Create() error: %w", err)
+		return "", xerrors.Errorf("binder Create() error: %w", err)
 	}
 	defer fp.Close()
 
-	err = f.Commit(M("Create", d.Name), fn)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-
-	return nil
+	return fn, nil
 }
 
-func (f *FileSystem) DeleteDiagram(id string) error {
+func (f *FileSystem) DeleteDiagram(d *model.Diagram) ([]string, error) {
 
-	fn := DiagramFile(id)
+	var files []string
 
-	err := f.Remove(fn)
-	if err != nil {
-		return xerrors.Errorf("fs.Remove() error: %w", err)
+	fn := SVGFile(d)
+	if f.isExist(fn) {
+		files = append(files, fn)
 	}
 
-	//TODO 名称
-	err = f.Commit(M("Remove", ""), fn)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
+	fn = DiagramFile(d.Id)
+	if f.isExist(fn) {
+		files = append(files, fn)
+	} else {
+		return nil, xerrors.Errorf("diagram file not exist: %s", fn)
 	}
 
-	return nil
+	err := f.remove(files...)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.remove() error: %w", err)
+	}
+
+	return files, nil
 }
 
 func (f *FileSystem) ReadDiagram(id string) ([]byte, error) {
@@ -92,7 +93,7 @@ func (f *FileSystem) SetDiagramStatus(d *model.Diagram) error {
 	return nil
 }
 
-func (f *FileSystem) PublishDiagram(data []byte, d *model.Diagram) error {
+func (f *FileSystem) PublishDiagram(data []byte, d *model.Diagram) (string, error) {
 
 	//公開ファイルを取得
 	pub := SVGFile(d)
@@ -100,28 +101,20 @@ func (f *FileSystem) PublishDiagram(data []byte, d *model.Diagram) error {
 
 	err := f.copyReader(pub, r)
 	if err != nil {
-		return xerrors.Errorf("copyReader() error: %w", err)
+		return "", xerrors.Errorf("copyReader() error: %w", err)
 	}
 
-	err = f.Commit(M("Publish", d.Name), pub)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
+	return pub, nil
 }
 
-func (f *FileSystem) UnpublishDiagram(d *model.Diagram) error {
+func (f *FileSystem) UnpublishDiagram(d *model.Diagram) (string, error) {
 
 	//公開ファイルを取得
 	pub := SVGFile(d)
-	err := f.Remove(pub)
+	err := f.remove(pub)
 	if err != nil {
-		return xerrors.Errorf("fs.Remove() error: %w", err)
+		return "", xerrors.Errorf("fs.remove() error: %w", err)
 	}
 
-	err = f.Commit(M("Unpublish", d.Name), pub)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
+	return pub, nil
 }

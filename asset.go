@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -43,6 +44,9 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 
 func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
 
+	var prefix string
+	var files []string
+
 	//新規指定だった場合
 	if a.Id == "" {
 
@@ -58,22 +62,29 @@ func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
 			return nil, xerrors.Errorf("fs.InsertAsset() error: %w", err)
 		}
 
+		prefix = "Created Asset"
 	} else {
-
-		//TODO Alias変更時に影響あり
-
 		err := b.db.UpdateAsset(a, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}
+		prefix = "Updated Asset"
 	}
 
 	// データ指定がある場合
 	if data != nil {
-		err := b.fileSystem.CreateAsset(a, data)
+		fn, err := b.fileSystem.CreateAsset(a, data)
 		if err != nil {
 			return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
 		}
+		files = append(files, fn)
+	}
+
+	//データベースコミット
+	files = append(files, fs.AssetTableFile())
+	err := b.fileSystem.Commit(fs.M(prefix, a.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.Commit() error: %w", err)
 	}
 
 	return a, nil
@@ -114,23 +125,28 @@ func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
 		return nil, EmptyError
 	}
 
-	//TODO 公開されている状態だったら？
-
 	a, err := b.db.GetAssetWithParent(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
-	//DBを削除
+	//DBから削除
 	err = b.db.DeleteAsset(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
 	}
 
 	//ファイルを削除
-	err = b.fileSystem.DeleteAsset(a)
+	files, err := b.fileSystem.DeleteAsset(a)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.RemoveAsset() error: %w", err)
+	}
+
+	files = append(files, fs.AssetTableFile())
+
+	err = b.fileSystem.Commit(fs.M("Remove Asset", a.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
 
 	return a, nil
@@ -143,13 +159,18 @@ func (b *Binder) PublishAsset(id string) (*model.Asset, error) {
 		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
-	err = b.fileSystem.PublishAsset(a)
+	fn, err := b.fileSystem.PublishAsset(a)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.PublishAsset() error: %w", err)
 	}
 
+	//TODO コミット
+	fmt.Println(fn)
+
 	return a, nil
 }
+
+//TODO 個別非公開
 
 func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
 
@@ -174,6 +195,7 @@ func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
 	return pr, nil
 }
 
+// TODO Assetを編集する機能の時に利用
 func (b *Binder) CommitAsset(id string, m string) error {
 
 	a, err := b.db.GetAssetWithParent(id)

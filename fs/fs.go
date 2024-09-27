@@ -160,7 +160,7 @@ func (f *FileSystem) create(n string) (*File, bool, error) {
 	return &file, index, nil
 }
 
-func (f *FileSystem) Remove(n string) error {
+func (f *FileSystem) DeprecatedRemove(n string) error {
 
 	if !f.isExist(n) {
 		return fmt.Errorf("%s not exist", n)

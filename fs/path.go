@@ -17,6 +17,11 @@ func ToGitBash(p string) string {
 	return "/" + ccp
 }
 
+func convertPath(path string) string {
+	rtn := convertPaths(path)
+	return rtn[0]
+}
+
 func ConvertHTTPPath(path string) string {
 	rtn := convertPaths(path)
 	return rtn[0]

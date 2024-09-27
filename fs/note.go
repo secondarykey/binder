@@ -10,58 +10,68 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateNoteFile(n *model.Note) error {
+func (f *FileSystem) CreateNoteFile(n *model.Note) (string, error) {
 
 	fn := NoteFile(n.Id)
 	fp, err := f.Create(fn)
 	if err != nil {
-		return xerrors.Errorf("binder Create() error: %w", err)
+		return "", xerrors.Errorf("Note Create() error: %w", err)
 	}
 	defer fp.Close()
 
-	err = f.Commit(M("create", "Note "+n.Name), fn)
+	_, err = fp.Write([]byte("# " + n.Name))
 	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
+		return "", xerrors.Errorf("Note Write() error: %w", err)
 	}
 
-	return nil
+	return fn, nil
 }
 
-func (f *FileSystem) EditMetadata(n *model.Note, fn string) error {
+func (f *FileSystem) EditMetadata(n *model.Note, fn string) (string, error) {
 
 	mf := MetaFile(n)
 	fp, err := f.Create(mf)
 	if err != nil {
-		return xerrors.Errorf("binder Create() error: %w", err)
+		return "", xerrors.Errorf("binder Create() error: %w", err)
 	}
 	defer fp.Close()
 
 	//ローカルファイルを取得
 	data, err := os.ReadFile(fn)
 	if err != nil {
-		return xerrors.Errorf("image file ReadFile() error: %w", err)
+		return "", xerrors.Errorf("image file ReadFile() error: %w", err)
 	}
 
 	//それを書き込む
 	_, err = fp.Write(data)
 	if err != nil {
-		return xerrors.Errorf("writer Write() error: %w", err)
+		return "", xerrors.Errorf("writer Write() error: %w", err)
 	}
 
-	err = f.Commit(M("create", "Note Image "+n.Name), mf)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
+	return mf, nil
 }
 
-func (f *FileSystem) DeleteNote(id string) error {
-	fn := NoteFile(id)
-	err := f.Remove(fn)
-	if err != nil {
-		return xerrors.Errorf("fs.Remove() error: %w", err)
+func (f *FileSystem) DeleteNote(n *model.Note) ([]string, error) {
+
+	var files []string
+
+	fn := HTMLFile(n)
+	if f.isExist(fn) {
+		files = append(files, fn)
 	}
-	return nil
+
+	fn = NoteFile(n.Id)
+	if f.isExist(fn) {
+		files = append(files, fn)
+	} else {
+		return nil, xerrors.Errorf("note file not exist : %s", fn)
+	}
+
+	err := f.remove(files...)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.remove(%s) error: %w", fn, err)
+	}
+	return files, nil
 }
 
 func (f *FileSystem) ReadNoteText(id string) ([]byte, error) {
@@ -108,34 +118,27 @@ func (f *FileSystem) SetNoteStatus(n *model.Note) error {
 	return nil
 }
 
-func (f *FileSystem) PublishNote(data []byte, n *model.Note) error {
+func (f *FileSystem) PublishNote(data []byte, n *model.Note) (string, error) {
 	//公開ファイルを取得
 	pub := HTMLFile(n)
 	r := bytes.NewReader(data)
 
 	err := f.copyReader(pub, r)
 	if err != nil {
-		return xerrors.Errorf("copyReader() error: %w", err)
+		return "", xerrors.Errorf("copyReader() error: %w", err)
 	}
 
-	err = f.Commit(M("Publish", n.Name), pub)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
+	return pub, nil
 }
 
-func (f *FileSystem) UnpublishNote(n *model.Note) error {
+func (f *FileSystem) UnpublishNote(n *model.Note) (string, error) {
+
 	//公開ファイルを取得
 	pub := HTMLFile(n)
-	err := f.Remove(pub)
+	err := f.remove(pub)
 	if err != nil {
-		return xerrors.Errorf("fs.Remove() error: %w", err)
+		return "", xerrors.Errorf("fs.remove() error: %w", err)
 	}
 
-	err = f.Commit(M("Unpublish", n.Name), pub)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
+	return pub, nil
 }
