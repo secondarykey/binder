@@ -15,14 +15,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const {{.Name}}TableName = "{{.TableName}}"
+
 // create table
-func create{{.Name}}Table(dir string) (string,error) {
-    fn := filepath.Join(dir,"{{.TableName}}.csv")
+func create{{.Name}}Table(dir string) error {
+    fn := filepath.Join(dir,tables["{{.TableName}}"])
     err := createTableFile(fn,"{{columns .}}")
     if err != nil {
-      return "",xerrors.Errorf("createTableFile() error: %w",err)
+      return xerrors.Errorf("createTableFile() error: %w",err)
     }
-    return fn,nil
+    return nil
 }
 
 // exists check key
