@@ -72,8 +72,8 @@ function Viewer(props) {
         </Toolbar>
 
         {/** 
-       * ここが分岐点になります 
-        */}
+          * ここが分岐点になります 
+          */}
         <Paper id="content">
 
           <Routes>

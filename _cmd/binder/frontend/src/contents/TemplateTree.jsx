@@ -100,7 +100,7 @@ function TemplateTree(props) {
   //テンプレート作成
   const handleRegisterTemplate = (e,call) => {
     closeMenu(call);
-    nav("/template/register/" + typ);
+    nav("/template/register/" + id);
   }
 
   //テンプレート編集
@@ -142,8 +142,13 @@ function TemplateTree(props) {
       //DIR指定は固定
       if ( leaf.id.indexOf("DIR_") === 0 ) {
         icon = <FolderIcon/>
-        caller = setDirEl;
-        evFunc = handleSelectDir;
+        if ( leaf.id === "DIR_HTML") {
+          caller = function(e){};
+          evFunc = function(e,id){};
+        } else {
+          caller = setDirEl;
+          evFunc = handleSelectDir;
+        }
       }
 
       console.debug(leaf);

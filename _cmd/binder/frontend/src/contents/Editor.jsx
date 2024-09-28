@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react"
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
-import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML,Commit } from "../../wailsjs/go/api/App.js";
+import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
-import OutputIcon from '@mui/icons-material/Output';
+import { Generate,Commit } from "../../wailsjs/go/api/App.js";
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import HTMLFrame from "../components/HTMLFrame.jsx";
@@ -37,16 +37,6 @@ function Editor(props) {
   const [html, setHTML] = useState("");
 
   const [updated, setUpdated] = useState(false);
-
-  /**
-   * コンテンツの
-   * @param {*} id 
-   * @param {*} resp 
-   */
-  const redrawNoteElm = async (id,resp) => {
-    var elm = await createMarked(id,resp, true);
-    setNoteElm(elm);
-  }
 
   //センタリング用のタグを埋め込む
   const insertCenterTag = (txt) => {
@@ -95,6 +85,7 @@ function Editor(props) {
   useEffect(() => {
 
     Message.clear();
+
     vim.open({
       debug: false,
       showMsg: function (msg) {
@@ -113,6 +104,8 @@ function Editor(props) {
       GetDiagram(id).then((resp) => {
         if ( resp.updatedStatus > 0 ) {
           setUpdated(true);
+        } else {
+          setUpdated(false);
         }
         //console.log(resp.publishStatus);
 
@@ -132,6 +125,8 @@ function Editor(props) {
       GetNote(id).then((resp) => {
         if ( resp.updatedStatus > 0 ) {
           setUpdated(true);
+        } else {
+          setUpdated(false);
         }
         console.log(resp.publishStatus);
         setName(resp.name);
@@ -154,8 +149,9 @@ function Editor(props) {
       GetTemplate(id).then((resp) => {
         if ( resp.updatedStatus > 0 ) {
           setUpdated(true);
+        } else {
+          setUpdated(false);
         }
-        console.log(resp.publishStatus);
 
         setName(resp.name);
       }).catch((err) => {
@@ -252,6 +248,7 @@ function Editor(props) {
    * @param {*} txt 
    */
   const changeText = (txt) => {
+
     setUpdated(true);
 
     setText(txt);
@@ -284,14 +281,18 @@ function Editor(props) {
       elm = await Marked.parse(id,text,false);
     } else if (mode === "diagram") {
       elm = await Mermaid.parse(text);
+    } else if (mode === "template") {
+      elm = text;
+    } else if (mode === "asset") {
+      elm = text;
     }
 
     //出力処理を行う
-    //Generate(mode,id,elm).then(() => {
-      //Event.showSuccess("Generate.")
-    //}).catch((err) => {
-      //Event.showErrorMessage(err);
-    //})
+    Generate(mode,id,elm).then(() => {
+      Message.showSuccess("Generate.")
+    }).catch((err) => {
+      Message.showError(err);
+    })
   }
 
   //コミットを行う
