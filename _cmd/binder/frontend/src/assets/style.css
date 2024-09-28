@@ -83,21 +83,6 @@ body {
 }
 
 
-#splitScreen {
-  display: flex;
-}
-
-
-.formGrid {
-  display: grid;
-  flex-flow: column;
-  margin: 40px;
-  margin-top: 20px;
-
-  background-color: #252525;
-  color: #f1f1f1;
-}
-
 .MuiAccordion-root {
   background-color: #202020 !important;
   color: #f1f1f1 !important;

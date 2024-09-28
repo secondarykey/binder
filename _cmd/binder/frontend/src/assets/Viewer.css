@@ -13,6 +13,8 @@
 #content {
   --wails-draggable:no-drag;
   background-color: #252525;
+  height: calc(100% - 48px);
+  overflow-y: auto;
 }
 
 #closeButton {
@@ -24,3 +26,16 @@ div.linkBtn input , div.linkBtn svg {
   cursor: pointer !important; 
 }
 
+#splitScreen {
+  display: flex;
+}
+
+.formGrid {
+  display: grid;
+  flex-flow: column;
+  margin: 40px;
+  margin-top: 20px;
+
+  background-color: #252525;
+  color: #f1f1f1;
+}
