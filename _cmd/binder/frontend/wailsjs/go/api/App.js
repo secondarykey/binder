@@ -54,6 +54,10 @@ export function EditTemplate(arg1) {
   return window['go']['api']['App']['EditTemplate'](arg1);
 }
 
+export function Generate(arg1, arg2, arg3) {
+  return window['go']['api']['App']['Generate'](arg1, arg2, arg3);
+}
+
 export function GetAsset(arg1) {
   return window['go']['api']['App']['GetAsset'](arg1);
 }

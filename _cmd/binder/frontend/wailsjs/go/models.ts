@@ -133,6 +133,7 @@ export namespace model {
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
+	    updatedStatus: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Template(source);
@@ -148,6 +149,7 @@ export namespace model {
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
+	        this.updatedStatus = source["updatedStatus"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -466,6 +468,7 @@ export namespace settings {
 	    name: string;
 	    mail: string;
 	    code: string;
+	    File: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Git(source);
@@ -477,6 +480,7 @@ export namespace settings {
 	        this.name = source["name"];
 	        this.mail = source["mail"];
 	        this.code = source["code"];
+	        this.File = source["File"];
 	    }
 	}
 	export class Look {
