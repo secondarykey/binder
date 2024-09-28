@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"fmt"
 
 	"golang.org/x/xerrors"
 )
@@ -188,4 +189,24 @@ func (b *Binder) CommitNote(id string, m string) error {
 		return xerrors.Errorf("fs.Commit() error: %w", err)
 	}
 	return nil
+}
+
+func (b *Binder) PublishNote(id string, data []byte) (*model.Note, error) {
+
+	n, err := b.db.GetNote(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+
+	//TODO Publish dateがない場合
+
+	fn, err := b.fileSystem.PublishNote(data, n)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.PublishNote() error: %w", err)
+	}
+
+	//TODO コミット
+	fmt.Println(fn)
+
+	return n, nil
 }

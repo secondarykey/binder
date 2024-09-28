@@ -5,6 +5,7 @@ import (
 	"binder/log"
 	"binder/settings"
 	"fmt"
+	"log/slog"
 
 	"golang.org/x/xerrors"
 )
@@ -104,5 +105,26 @@ func (a *App) CreateRemoteBinder(url string, dir string) error {
 		return fmt.Errorf("load() error\n%+v", err)
 	}
 
+	return nil
+}
+
+func (a *App) Generate(mode string, id string, data string) error {
+	var err error
+	switch mode {
+	case "note":
+		_, err = a.current.PublishNote(id, []byte(data))
+	case "diagram":
+		_, err = a.current.PublishDiagram(id, []byte(data))
+	case "assets":
+		_, err = a.current.PublishAsset(id)
+
+	default:
+		//templateはないはず
+		slog.Warn("Unknown Mode:" + mode)
+	}
+
+	if err != nil {
+		return xerrors.Errorf("Publish() error: %+v", err)
+	}
 	return nil
 }

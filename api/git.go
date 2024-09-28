@@ -23,7 +23,7 @@ func (a *App) Commit(mode string, id string, m string) error {
 		err = a.current.CommitDiagram(id, m)
 	case "template":
 		err = a.current.CommitTemplate(id, m)
-	case "asset":
+	case "assets":
 		err = a.current.CommitAsset(id, m)
 	default:
 		slog.Warn("Unknown Mode:" + mode)

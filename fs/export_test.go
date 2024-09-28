@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (f *FileSystem) PrintStatus() {
+func (f *FileSystem) PrintDebugStatus() {
 
 	w, err := f.repo.Worktree()
 	status, err := w.Status()

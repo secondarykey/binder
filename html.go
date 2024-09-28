@@ -1,14 +1,16 @@
 package binder
 
 import (
-	"binder/db/model"
-	"binder/fs"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"strings"
 	"time"
+
+	"binder/db"
+	"binder/db/model"
+	"binder/fs"
 
 	"golang.org/x/xerrors"
 )
@@ -210,8 +212,10 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*templ
 	}
 
 	if typ == "layout" && text != "" {
+
 		//レイアウトをテキストで代用
-		data := fs.AddTemplateFrame("layouot", []byte(text))
+		data := fs.AddTemplateFrame(db.LayoutTemplateType, []byte(text))
+
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
@@ -227,7 +231,7 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*templ
 
 	if typ == "content" && text != "" {
 
-		data := fs.AddTemplateFrame("content", []byte(text))
+		data := fs.AddTemplateFrame(db.ContentTemplateType, []byte(text))
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("Parse() error: %w", err)
