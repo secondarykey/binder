@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 )
@@ -29,10 +31,17 @@ func run(args []string) error {
 	sub := args[0]
 	rep := args[1]
 
+	f := ""
+	if len(args) >= 3 {
+		f = args[2]
+	}
+
 	var err error
 	switch sub {
 	case "status":
 		err = printStatus(rep)
+	case "log":
+		err = printLog(rep, f)
 	}
 
 	if err != nil {
@@ -116,4 +125,103 @@ func lessFileName(f1, f2 string) bool {
 		}
 	}
 	return false
+}
+
+var ItrDone = fmt.Errorf("Iterator done.")
+
+func printLog(p string, f string) error {
+
+	r, err := git.PlainOpen(p)
+	if err != nil {
+		return xerrors.Errorf("git.PlainOpen() error: %w", err)
+	}
+
+	/*
+		w, err := r.Worktree()
+		if err != nil {
+			return xerrors.Errorf("rep.Worktree() error: %w", err)
+		}
+
+		//ブランチ切り替え
+		 w.Checkout(&git.CheckoutOptions{
+		     Branch: plumbing.NewBranchReferenceName("name")
+		 })
+	*/
+	ref, err := r.Head()
+	if err != nil {
+		return xerrors.Errorf("repo.Head() error: %w", err)
+	}
+
+	itr, err := r.Log(&git.LogOptions{
+		PathFilter: func(path string) bool {
+			//指定時はここ
+			if f == "" {
+				return true
+			}
+			return path == f
+		},
+		From: ref.Hash()})
+	if err != nil {
+		return xerrors.Errorf("repo.Log() error: %w", err)
+	}
+
+	commit, err := r.CommitObject(ref.Hash())
+	if err != nil {
+		return xerrors.Errorf("repo.CommitObject() error: %w", err)
+	}
+	parent, err := commit.Parents().Next()
+	if err != nil {
+		return xerrors.Errorf("commit.Parents() error: %w", err)
+	}
+
+	idx := 0
+	err = itr.ForEach(func(c *object.Commit) error {
+		fmt.Printf("---------------------------------------\n")
+		fmt.Printf("Commit: %s\n  Date:%s\n%s\n", c.Hash, c.Author.When, c.Message)
+		idx++
+
+		patch, err := parent.Patch(c)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(patch)
+
+		//for _, fp := range patch.FilePatches() {
+
+		/*
+			//fp.IsBinary
+			from, to := fp.Files()
+			//create new file is nil
+			if from != nil {
+				fmt.Printf("FROM:%s\n", from.Path())
+			}
+			//delete is nil
+			if to != nil {
+				fmt.Printf("To  :%s\n", to.Path())
+			}
+
+			for _, chunk := range fp.Chunks() {
+				fmt.Printf(chunk.Content())
+			}
+			fmt.Println()
+
+			//if fp.FileName() == f {
+			//fmt.Printf("%s\n", fp.String())
+			//}
+		*/
+		//}
+
+		if idx >= 5 {
+			return ItrDone
+		}
+		return nil
+	})
+
+	if err != nil {
+		if !errors.Is(err, ItrDone) {
+			return xerrors.Errorf("itr.ForEach() error: %w", err)
+		}
+	}
+	return nil
 }
