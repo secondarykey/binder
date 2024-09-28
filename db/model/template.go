@@ -15,6 +15,8 @@ type Template struct {
 	CreatedUser string    `db:"created_user:insert" json:"createdUser"`
 	Updated     time.Time `db:"updated_date" json:"updated"`
 	UpdatedUser string    `db:"updated_user" json:"updatedUser"`
+
+	UpdatedStatus Status `db:"-" json:"updatedStatus"`
 }
 
 func (t *Template) String() string {

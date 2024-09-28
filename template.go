@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"fmt"
 
 	"golang.org/x/xerrors"
 )
@@ -13,35 +14,50 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 		return nil, EmptyError
 	}
 
+	var prefix = ""
+	var files []string
+
 	if t.Id == "" {
 
 		t.Id = b.generateId()
-		err := b.createTemplate(t)
+		fn, err := b.createTemplate(t)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateTemplate() error: %w", err)
 		}
+
+		files = append(files, fn)
+		prefix = "Create Template"
 
 	} else {
 		err := b.db.UpdateTemplate(t, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateTemplate() error: %w", err)
 		}
+		prefix = "Update Template"
 	}
 
-	//TODO データベースコミット
+	fn := fs.TemplateTableFile()
+	files = append(files, fn)
+
+	err := b.fileSystem.Commit(fs.M(prefix, t.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
+
 	return t, nil
 }
 
-func (b *Binder) createTemplate(t *model.Template) error {
-	err := b.fileSystem.CreateTemplateFile(t)
+func (b *Binder) createTemplate(t *model.Template) (string, error) {
+
+	fn, err := b.fileSystem.CreateTemplateFile(t)
 	if err != nil {
-		return xerrors.Errorf("fs.CreteTemplateFile() error: %w", err)
+		return "", xerrors.Errorf("fs.CreteTemplateFile() error: %w", err)
 	}
 	err = b.db.InsertTemplate(t, b.op)
 	if err != nil {
-		return xerrors.Errorf("db.InsertTemplate() error: %w", err)
+		return "", xerrors.Errorf("db.InsertTemplate() error: %w", err)
 	}
-	return nil
+	return fn, nil
 }
 
 func (b *Binder) GetTemplate(id string) (*model.Template, error) {
@@ -52,15 +68,25 @@ func (b *Binder) GetTemplate(id string) (*model.Template, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("fs.GetTemplate() error: %w", err)
 	}
+	err = b.fileSystem.SetTemplateStatus(t)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.SetTemplateStatus() error: %w", err)
+	}
 	return t, nil
 }
 
 func (b *Binder) OpenTemplate(id string) ([]byte, error) {
+
 	if b == nil {
 		return nil, EmptyError
 	}
 
-	data, err := b.fileSystem.ReadTemplate(id)
+	t, err := b.db.GetTemplate(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetTemplate() error: %w", err)
+	}
+
+	data, err := b.fileSystem.ReadTemplate(t)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.ReadTemplate() error: %w", err)
 	}
@@ -73,10 +99,19 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 		return EmptyError
 	}
 
-	err := b.fileSystem.WriteTemplate(id, data)
+	t, err := b.db.GetTemplate(id)
 	if err != nil {
-		return xerrors.Errorf("WriteTemplate() error: %w", err)
+		return xerrors.Errorf("db.GetTemplate() error: %w", err)
 	}
+
+	fn, err := b.fileSystem.WriteTemplate(t, data)
+	if err != nil {
+		return xerrors.Errorf("fs.WriteTemplate() error: %w", err)
+	}
+
+	//TODO コミット
+	fmt.Println(fn)
+
 	return nil
 }
 

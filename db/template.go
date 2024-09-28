@@ -12,6 +12,19 @@ const (
 	TemplateTemplateType TemplateType = "template"
 )
 
+func (t TemplateType) IsHTML() bool {
+	if t == LayoutTemplateType || t == ContentTemplateType {
+		return true
+	}
+	return false
+}
+func (t TemplateType) IsContent() bool {
+	if t == ContentTemplateType {
+		return true
+	}
+	return false
+}
+
 func (inst *Instance) FindLayoutTemplates() ([]*model.Template, error) {
 	return inst.findTypeTemplates(LayoutTemplateType)
 }

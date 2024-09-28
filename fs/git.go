@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -178,7 +179,60 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 			return nil, fmt.Errorf("Nothing Status error: %s", f)
 		}
 	}
+	if len(names) == 0 {
+		slog.Warn("names is zero")
+	}
 	return names, nil
+}
+
+func (f *FileSystem) PrintStatus() error {
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return xerrors.Errorf("Status() error: %w", err)
+	}
+
+	//notes,diagrams,templates 以外ないはず
+	for f, s := range status {
+		fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
+		typ, id, err := getModelType(f)
+		if err != nil {
+			slog.Warn(err.Error())
+			//return xerrors.Errorf("getModelType() error: %w", err)
+		} else {
+			fmt.Printf("%s[%s]\n", id, typ)
+		}
+	}
+
+	return nil
+}
+
+func getModelType(f string) (string, string, error) {
+	data := strings.Split(f, "/")
+	if len(data) < 2 {
+		slog.Warn("Top Directory")
+		return "", "", fmt.Errorf("Path error")
+	}
+
+	fn := data[1]
+	if strings.Index(f, NoteDir) == 0 {
+		//".md"
+		return "note", fn[:len(fn)-3], nil
+	} else if strings.Index(f, DiagramDir) == 0 {
+		//".md"
+		return "diagram", fn[:len(fn)-3], nil
+	} else if strings.Index(f, AssetDir) == 0 {
+		return "assets", data[2], nil
+	} else if strings.Index(f, TemplateDir) == 0 {
+		//".tmpl"
+		return "template", fn[:len(fn)-5], nil
+	}
+	return "", "", fmt.Errorf("ModelType not found.[%s]", f)
 }
 
 func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
@@ -219,8 +273,10 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 				//w.Clean(&git.CleanOptions{})
 				commitOk = true
 			} else if s.Staging == git.Added {
+				slog.Warn("s.Staging is added")
 				commitOk = true
 			} else if s.Staging == git.Untracked {
+				slog.Warn("s.Staging is untracked?")
 				//commitOk = true
 			}
 		}

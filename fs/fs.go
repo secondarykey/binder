@@ -224,6 +224,7 @@ func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, 
 	p := ConvertPaths(source, pub)
 
 	sfn := p[0]
+
 	m, err := f.modified(sfn)
 	if err == nil {
 		if len(m) > 0 {
@@ -233,6 +234,10 @@ func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, 
 		}
 	} else {
 		slog.Warn("modified error " + sfn + ":" + err.Error())
+	}
+
+	if pub == "" {
+		return us, ps, nil
 	}
 
 	bi, err := f.Stat(sfn)

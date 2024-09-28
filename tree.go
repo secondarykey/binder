@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db"
 	"binder/db/model"
+	"binder/log"
 	"fmt"
 	"log/slog"
 
@@ -41,6 +42,11 @@ func (b *Binder) GetBinderTree() (*Tree, error) {
 
 	if b == nil {
 		return nil, EmptyError
+	}
+
+	err := b.fileSystem.PrintStatus()
+	if err != nil {
+		log.PrintStackTrace(err)
 	}
 
 	//TODO 多い場合の表示を考える

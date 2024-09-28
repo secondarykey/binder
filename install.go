@@ -7,7 +7,6 @@ import (
 	"binder/settings"
 	"embed"
 	"fmt"
-	stdFs "io/fs"
 	"os"
 	"path/filepath"
 
@@ -243,7 +242,7 @@ func (b *Binder) initializeTemplate() error {
 	layout.Id = TemplateLayoutId
 	layout.Typ = string(db.LayoutTemplateType)
 	layout.Name = "Layout"
-	err := b.createTemplate(&layout)
+	_, err := b.createTemplate(&layout)
 	if err != nil {
 		return fmt.Errorf("layout register error\n%+v", err)
 	}
@@ -252,7 +251,7 @@ func (b *Binder) initializeTemplate() error {
 	index.Id = TemplateIndexId
 	index.Typ = string(db.ContentTemplateType)
 	index.Name = "Index"
-	err = b.createTemplate(&index)
+	_, err = b.createTemplate(&index)
 	if err != nil {
 		return fmt.Errorf("index register error\n%+v", err)
 	}
@@ -261,7 +260,7 @@ func (b *Binder) initializeTemplate() error {
 	content.Id = TemplateContentId
 	content.Typ = string(db.ContentTemplateType)
 	content.Name = "Content"
-	err = b.createTemplate(&content)
+	_, err = b.createTemplate(&content)
 	if err != nil {
 		return fmt.Errorf("content register error\n%+v", err)
 	}
@@ -276,21 +275,30 @@ func (b *Binder) copyTemplate(name string) error {
 	}
 
 	//var indexTmpl model.Template
-	tempFs, err := stdFs.Sub(embFs, "_assets/templates/"+name)
-	if err != nil {
-		return xerrors.Errorf("template fs Sub() error: %w", err)
-	}
+	/*
+		tempFs, err := stdFs.Sub(embFs, "_assets/templates/"+name)
+		if err != nil {
+			return xerrors.Errorf("template fs Sub() error: %w", err)
+		}
+	*/
 
+	//TODO 作り方を考える
 	//全テンプレートを設定
 	for _, f := range []string{"layout", "index", "content"} {
-		data, err := stdFs.ReadFile(tempFs, f+".tmpl")
-		if err != nil {
-			return xerrors.Errorf("fs ReadFile() error: %w", err)
-		}
-		err = b.fileSystem.WriteTemplate(f, data)
-		if err != nil {
-			return xerrors.Errorf("WriteTemplate(%s) error: %w", f, err)
-		}
+
+		//TODO
+		fmt.Println(f)
+
+		//TODO FSで行う
+		//data, err := stdFs.ReadFile(tempFs, f+".tmpl")
+		//if err != nil {
+		//return xerrors.Errorf("fs ReadFile() error: %w", err)
+		//}
+
+		//err = b.fileSystem.WriteTemplate(f, data)
+		//if err != nil {
+		//return xerrors.Errorf("WriteTemplate(%s) error: %w", f, err)
+		//}
 	}
 
 	//ノート、テンプレート、ダイアグラムも処理を行う
