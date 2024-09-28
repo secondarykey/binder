@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { SelectFile, EditAsset, GetAsset,RemoveAsset } from "../../wailsjs/go/api/App";
+import { SelectFile, EditAsset, GetAsset, RemoveAsset } from "../../wailsjs/go/api/App";
 import { copyClipboard } from "../App";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
@@ -19,10 +19,10 @@ import Message from '../Message';
 function Assets(props) {
 
   const nav = useNavigate();
-  const {mode,currentId} = useParams();
+  const { mode, currentId } = useParams();
 
-  const [id,setId] = useState("");
-  const [parentId,setParentId] = useState("");
+  const [id, setId] = useState("");
+  const [parentId, setParentId] = useState("");
 
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
@@ -31,7 +31,7 @@ function Assets(props) {
 
   useEffect(() => {
 
-    if ( !currentId ) {
+    if (!currentId) {
       return;
     }
 
@@ -40,7 +40,7 @@ function Assets(props) {
     setAlias("")
     setFile("")
 
-    if ( mode === "register") {
+    if (mode === "register") {
       setId("");
       setParentId(currentId);
       Event.changeTitle("Register Assets");
@@ -63,9 +63,9 @@ function Assets(props) {
   //保存
   const handleSave = () => {
 
-    if ( mode === "register" ) {
-      if ( file == "" ) {
-        Message.showWarning("Input Select File")
+    if (mode === "register") {
+      if (file == "") {
+        Message.showWarning("Choose a File")
         return;
       }
     }
@@ -79,7 +79,7 @@ function Assets(props) {
 
     EditAsset(data, file).then((resp) => {
       Event.refreshTree();
-      if ( mode === "register" ) {
+      if (mode === "register") {
         nav("/assets/edit/" + resp.id);
         return;
       }
@@ -111,7 +111,7 @@ function Assets(props) {
       // 遷移する
       Message.showSuccess("Remove Assets.")
       nav("/note/edit/" + parentId);
-    }).catch( (err) => {
+    }).catch((err) => {
       Message.showError(err);
     });
   }
@@ -132,7 +132,7 @@ function Assets(props) {
             <FormLabel>ID</FormLabel>
             <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
-                startAdornment: ( <InputAdornment position="start" className="linkBtn"> <ContentCopy /> </InputAdornment>)
+                startAdornment: (<InputAdornment position="start" className="linkBtn"> <ContentCopy /> </InputAdornment>)
               }}>
             </TextField>
           </FormControl>
@@ -161,18 +161,15 @@ function Assets(props) {
         <FormLabel>Assets</FormLabel>
         <TextField value={file} onClick={selectFile} className="linkBtn"
           InputProps={{
-            startAdornment: ( <InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
+            startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
           }}>
         </TextField>
       </FormControl>
 
-      {mode === "edit" &&
-        <>
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
-          </FormControl>
-        </>}
+      <FormControl>
+        <FormLabel>Detail</FormLabel>
+        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
+      </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>
@@ -180,9 +177,9 @@ function Assets(props) {
           {mode === "edit" && <> Save </>}
         </Button>
 
-        {mode === "edit" && 
-          <Button style={{marginLeft:"auto"}}
-                  variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+        {mode === "edit" &&
+          <Button style={{ marginLeft: "auto" }}
+            variant="contained" color="error" onClick={handleDelete}>Delete</Button>
         }
       </FormControl>
     </Grid>

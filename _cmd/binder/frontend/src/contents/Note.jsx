@@ -118,6 +118,19 @@ function Note(props) {
     note.layoutTemplate = layout;
     note.contentTemplate = content;
 
+    if ( name === "" ) {
+      Message.showWarning("name is required.");
+      return;
+    }
+    if ( alias === "" ) {
+      Message.showWarning("alias is required.");
+      return;
+    }
+    if ( layout === "" || content === "" ) {
+      Message.showWarning("Choose a Template.");
+      return;
+    }
+
     EditNote(note, imageFile).then((resp) => {
 
       Event.refreshTree();
@@ -194,7 +207,7 @@ function Note(props) {
   if (id == "index") {
     start = "/";
     index = true;
-    changeFunc = function(v){};
+    changeFunc = function (v) { };
   }
   var end = ".html";
   return (<>
@@ -234,13 +247,10 @@ function Note(props) {
         <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
       </FormControl>
 
-      {mode === "edit" &&
-        <>
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
-          </FormControl>
-        </>}
+      <FormControl>
+        <FormLabel>Detail</FormLabel>
+        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
+      </FormControl>
 
       <FormControl>
         <FormLabel> Layout Template </FormLabel>

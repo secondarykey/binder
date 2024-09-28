@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 
 import { ContentCopy } from "@mui/icons-material";
-import { EditDiagram, GetDiagram ,RemoveDiagram} from "../../wailsjs/go/api/App";
+import { EditDiagram, GetDiagram, RemoveDiagram } from "../../wailsjs/go/api/App";
 import { copyClipboard } from "../App";
 
 import Event from "../Event";
@@ -18,7 +18,7 @@ import Message from '../Message';
 function Diagram(props) {
 
   const nav = useNavigate();
-  const {mode,currentId} = useParams();
+  const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
   const [parentId, setParentId] = useState("");
@@ -29,7 +29,7 @@ function Diagram(props) {
 
   useEffect(() => {
 
-    if ( !currentId ) {
+    if (!currentId) {
       return;
     }
 
@@ -37,7 +37,7 @@ function Diagram(props) {
     setDetail("");
     setAlias("");
 
-    if ( mode === "register" ) {
+    if (mode === "register") {
       setId("");
       setParentId(currentId);
       Event.changeTitle("Register Diagram");
@@ -67,11 +67,21 @@ function Diagram(props) {
     data.detail = detail
     data.alias = alias;
 
+    if ( name === "" ) {
+      Message.showWarning("name is required")
+      return;
+    }
+
+    if ( alias === "" ) {
+      Message.showWarning("alias is required")
+      return;
+    }
+
     EditDiagram(data).then((resp) => {
 
       Event.refreshTree();
       //新規作成時は移動
-      if ( mode === "register" ) {
+      if (mode === "register") {
         nav("/diagram/edit/" + resp.id);
         return;
       }
@@ -89,7 +99,7 @@ function Diagram(props) {
       // 遷移する
       Message.showSuccess("Remove Diagram.")
       nav("/note/edit/" + parentId);
-    }).catch( (err) => {
+    }).catch((err) => {
       Message.showError(err);
     });
   }
@@ -110,7 +120,7 @@ function Diagram(props) {
             <FormLabel>ID</FormLabel>
             <TextField value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
-                startAdornment: ( <InputAdornment position="start"> <ContentCopy/> </InputAdornment>)
+                startAdornment: (<InputAdornment position="start"> <ContentCopy /> </InputAdornment>)
               }}>
             </TextField>
           </FormControl>
@@ -138,13 +148,10 @@ function Diagram(props) {
         <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
       </FormControl>
 
-      {mode === "edit" &&
-        <>
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
-          </FormControl>
-        </>}
+      <FormControl>
+        <FormLabel>Detail</FormLabel>
+        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
+      </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
 
@@ -153,9 +160,9 @@ function Diagram(props) {
           {mode === "edit" && <> Save </>}
         </Button>
 
-        {mode === "edit" && 
-          <Button style={{marginLeft:"auto"}}
-                  variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+        {mode === "edit" &&
+          <Button style={{ marginLeft: "auto" }}
+            variant="contained" color="error" onClick={handleDelete}>Delete</Button>
         }
       </FormControl>
 
