@@ -3,7 +3,6 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
-	"fmt"
 
 	"golang.org/x/xerrors"
 )
@@ -73,6 +72,7 @@ func (b *Binder) EditNote(n *model.Note, metaName string) (*model.Note, error) {
 	if n.Id == "" {
 
 		n.Id = b.generateId()
+		n.Alias = n.Id
 		fn, err := b.createNote(n)
 
 		if err != nil {
@@ -193,20 +193,28 @@ func (b *Binder) CommitNote(id string, m string) error {
 
 func (b *Binder) PublishNote(id string, data []byte) (*model.Note, error) {
 
+	var files []string
 	n, err := b.db.GetNote(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 	}
 
-	//TODO Publish dateがない場合
+	if n.Publish.IsZero() {
+		//TODO Publish dateがない場合
+		// filesにも追加
+	}
 
 	fn, err := b.fileSystem.PublishNote(data, n)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.PublishNote() error: %w", err)
 	}
 
-	//TODO コミット
-	fmt.Println(fn)
+	files = append(files, fn)
+
+	err = b.fileSystem.Commit(fs.M("Publish Note", n.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
 
 	return n, nil
 }
