@@ -31,7 +31,10 @@ function FileMenu(props) {
 
     SelectDirectory(false).then( (p) => {
       if ( p == "" ) return;
-      LoadBinder(p).then(() => {
+      LoadBinder(p).then((href) => {
+
+        Event.changeAddress(href);
+
         nav("/note/edit/index");
       }).catch( (err) => {
         Message.showError(err);

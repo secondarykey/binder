@@ -128,7 +128,6 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
-        console.log(resp.publishStatus);
         setName(resp.name);
       }).catch((err) => {
         Message.showError(err);
@@ -278,7 +277,7 @@ function Editor(props) {
 
     var elm = "";
     if (mode === "note") {
-      elm = await Marked.parse(id,text,false);
+      elm = await createMarked(id,text,false);
     } else if (mode === "diagram") {
       elm = await Mermaid.parse(text);
     } else if (mode === "template") {
@@ -295,10 +294,8 @@ function Editor(props) {
     })
   }
 
-  //コミットを行う
+  //個別コミットを行う
   const handleCommit = () => {
-
-    console.log(comment)
     Commit(mode,id,comment).then(() => {
       setUpdated(false);
       Message.showSuccess("Commit.")

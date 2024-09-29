@@ -24,30 +24,29 @@ class Message {
     }
 
     static clear() {
-        var obj = this.createMessage("clear", "");
-        Event.raise(Event.ShowMessage, obj);
+        var mo = this.createMessage("clear", "");
+        Event.raise(Event.ShowMessage, mo);
     }
 
     static showSuccess(msg) {
-        var obj = this.createMessage("success", msg);
-        Event.raise(Event.ShowMessage, obj);
+        var mo = this.createMessage("success", msg);
+        Event.raise(Event.ShowMessage, mo);
     }
 
     static showWarning(msg) {
         console.warn(msg)
-        var obj = this.createMessage("warning", msg);
-        Event.raise(Event.ShowMessage, obj);
+        var mo = this.createMessage("warning", msg);
+        Event.raise(Event.ShowMessage, mo);
     }
 
     static showInfo(msg) {
-        var obj = this.createMessage("info", msg);
-        Event.raise(Event.ShowMessage, obj);
+        var mo = this.createMessage("info", msg);
+        Event.raise(Event.ShowMessage, mo);
     }
 
     static showError(err) {
-        console.error(err)
-        var obj = this.createMessage("error", err);
-        Event.raise(Event.ShowMessage, obj);
+        var mo = this.createMessage("error", err);
+        Event.raise(Event.ShowMessage, mo);
     }
 }
 
@@ -77,8 +76,8 @@ const createSlideMessage = (obj) => {
     obj.show = false;
     return obj;
 }
-export function SystemMessage(props) {
 
+export function SystemMessage(props) {
 
     //現在の設定を取得(最初に画面表示を選ぶ)
     var initMsg = createSlideMessage({ type: "success", message: "" });
@@ -107,6 +106,7 @@ export function SystemMessage(props) {
     }
 
     function showSlideMessage(obj) {
+
         if (obj.type === "clear") {
             hideSlideMessage();
             return;

@@ -20,6 +20,7 @@ class Event {
      * バインダー部分のタイトル変更
      */
     static ReloadBinderTitle = "binder.title.reload"
+
     /**
      * ツリーの再描画
      */
@@ -30,15 +31,21 @@ class Event {
     static ShowMessage = "message.show"
 
     /**
+     * Binder の変更
+     */
+    static ChangeAddress = "change.address"
+
+    /**
      * イベント登録
      * @param {*} key 
      * @param {*} func 
      */
     static register(key,func) {
-        var e = this.eventMap[key];
+        var e = this.eventMap.get(key);
         if ( e === undefined || e === null ) {
             e = [];
         }
+
         e.push(func);
         this.eventMap.set(key,e);
     }
@@ -54,6 +61,11 @@ class Event {
     static changeBinderTitle(title) {
         this.raise(Event.ReloadBinderTitle,title);
     }
+
+    static changeAddress(address) {
+        this.raise(Event.ChangeAddress,address);
+    }
+ 
 
     /**
      * 登録されている関数を呼び出す

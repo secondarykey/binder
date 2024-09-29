@@ -4,7 +4,9 @@ import { LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
 import { List, ListItemButton, ListItemText } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
+import Event from '../Event';
 import Message from '../Message';
+
 /**
  * 履歴からバインダーの選択を行う
  * @param {*} props 
@@ -23,8 +25,13 @@ function History(props) {
 
   //保存
   const handleSelect = (val) => {
-    LoadBinder(val).then(() => {
+    LoadBinder(val).then((href) => {
+     
+      console.log(href)
+      Event.changeAddress(href);
+
       nav("/note/edit/index");
+
     }).catch((err) => {
       Message.showError(err)
     })

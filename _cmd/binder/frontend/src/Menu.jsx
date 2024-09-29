@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from "react-router-dom";
 
-import { GetConfig, CloseBinder } from '../wailsjs/go/api/App';
+import { GetConfig, CloseBinder,Address } from '../wailsjs/go/api/App';
 
 import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
@@ -9,19 +9,19 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import UpdateIcon from '@mui/icons-material/Update';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 import PublishIcon from '@mui/icons-material/Publish';
-
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
 import FileMenu from './contents/FileMenu';
 import BinderTree from './contents/BinderTree';
 
-import "./assets/Menu.css";
 import { SettingsApplications } from '@mui/icons-material';
 import TemplateTree from './contents/TemplateTree';
 
 import Event from './Event';
 import Message from './Message';
+
+import "./assets/Menu.css";
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -64,6 +64,8 @@ function Menu(props) {
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
 
+  const [url, setURL] = useState("");
+
   /**
    * メニューを開く
    */
@@ -85,6 +87,7 @@ function Menu(props) {
     Event.register(Event.ReloadBinderTitle,function(t) {
       setTitle(t);
     });
+    setTitle("Binder");
 
     //設定を取得
     GetConfig().then((conf) => {
@@ -93,13 +96,25 @@ function Menu(props) {
     }).catch((err) => {
       Message.showError(err);
     });
-    setTitle("Binder");
+
+    //アドレス変更時の処理
+    Event.register(Event.ChangeAddress,function(arg) {
+      setURL(arg);
+    });
+
+    Address().then((arg) => {
+      setURL(arg);
+    }).catch((err) => {
+      Message.showError(err);
+    })
+
   },[]);
 
   /**
    * ホームボタンクリック
    */
   const handleClickHome = () => {
+
     //バインダーを閉じる
     CloseBinder().then(() => {
       //トップメニューに移動
@@ -107,6 +122,7 @@ function Menu(props) {
     }).catch((err) => {
       Message.showError(err);
     })
+
   }
 
   const handleClickTree = () => {
@@ -134,18 +150,20 @@ function Menu(props) {
     nav("/setting");
   }
 
+  /**
+   * ブラウザで開く
+   */
+  const handleClickBrowser = () => {
+    window.runtime.BrowserOpenURL(url);
+  }
+
   //router の定義用に書いておく
   var tempTree = <TemplateTree/>
 
-  return (
-    <>
-      {/** 固定メニューの箇所 */}
-      <Paper id="binderMenu">
-        {/** ホーム */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickHome}>
-          <HomeIcon className="leftIcon" />
-        </IconButton>
-
+  //バインダーが開いている時のみ表示するコンポーネント
+  const OpenBinderComponent = () => {
+    return (
+  <>
         {/** BinderTree */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
@@ -165,10 +183,35 @@ function Menu(props) {
           <ContentPasteIcon fill="white" className="leftIcon"  />
         </IconButton>
 
+        {/** Browser */}
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="browser" onClick={handleClickBrowser}>
+          <OpenInBrowserIcon fill="white" className="leftIcon" />
+        </IconButton>
+
         {/** Binder Setting */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
           <SettingsApplications fill="white" className="leftIcon" />
         </IconButton>
+  </>);
+  }
+
+  return (
+    <>
+      {/** 固定メニューの箇所 */}
+      <Paper id="binderMenu">
+        {/** ホーム */}
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickHome}>
+          <HomeIcon className="leftIcon" />
+        </IconButton>
+
+        {/** Binderが開いている時のみ処理できないか？ */}
+
+        <Routes>
+            <Route path={"/"} element={<></>} />
+            <Route path={"/file/*"} element={<></>} />
+            <Route path="*" element={<OpenBinderComponent/>} />
+        </Routes>
+
 
         {/** メニューを閉じてる場合 */}
         {/** メニューを開く */}
