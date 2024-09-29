@@ -21,17 +21,13 @@ I wanted to write technical texts in text format, so I wanted to create an edito
 
 - 技術的
   - intlを利用する
-  - スクリプトの読み込みを外部化する
 
 - ノート 
-  - ルートをindexとして初期化
-    - Binderの設定とブラウザを開くをちゃんと移行
+  - Binderの設定とブラウザを開くをちゃんと移行
 
 - ダイアグラム
-  - テンプレートを容易する
   - 表示側にパンなどを作成
 
-- Assets をツリー表示(ただし非表示にする)
+- Assets (非表示機能を的教)
 
-- テンプレートを簡易にする
-  - テンプレート編集(ツリー)を別画面にする
+- テンプレートを入力できるようにする

@@ -25,8 +25,12 @@ function BinderRemote(props) {
     }
 
     CreateRemoteBinder(remote,dir).then(() => {
+
+      //TODO アドレス変更通知
+
       //開く
       props.onChangeMode("loadBinder");
+
     }).catch( (err)=> {
       console.warn(err);
       props.onMessage("error",err);

@@ -13,11 +13,11 @@ export function CloseBinder():Promise<void>;
 
 export function Commit(arg1:string,arg2:string,arg3:string):Promise<void>;
 
-export function CreateBinder(arg1:string,arg2:string):Promise<void>;
+export function CreateBinder(arg1:string,arg2:string):Promise<string>;
 
 export function CreateNoteHTML(arg1:string,arg2:string):Promise<string>;
 
-export function CreateRemoteBinder(arg1:string,arg2:string):Promise<void>;
+export function CreateRemoteBinder(arg1:string,arg2:string):Promise<string>;
 
 export function CreateTemplateHTML(arg1:string,arg2:string,arg3:string):Promise<string>;
 
@@ -51,7 +51,7 @@ export function GetTemplate(arg1:string):Promise<model.Template>;
 
 export function GetTemplateTree():Promise<binder.Tree>;
 
-export function LoadBinder(arg1:string):Promise<void>;
+export function LoadBinder(arg1:string):Promise<string>;
 
 export function OpenBinderSite():Promise<void>;
 

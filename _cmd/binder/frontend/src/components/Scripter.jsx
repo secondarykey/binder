@@ -17,9 +17,6 @@ class Scripter {
         var rtn = new Promise((resolve, reject) => {
             fetch(url).then(resp => resp.text()).then(script => {
                 //オブジェクトとして扱いたい場合はreturnで取得できる
-                //var objFunc = new Function(script + "return mermaid;");
-                //var objFunc = new Function(script);
-                //objFunc();
                 resolve(script);
             }).catch((err) => {
                 reject(err);
