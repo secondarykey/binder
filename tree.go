@@ -1,9 +1,7 @@
 package binder
 
 import (
-	"binder/db"
 	"binder/db/model"
-	"binder/log"
 	"fmt"
 	"log/slog"
 
@@ -44,10 +42,10 @@ func (b *Binder) GetBinderTree() (*Tree, error) {
 		return nil, EmptyError
 	}
 
-	err := b.fileSystem.PrintStatus()
-	if err != nil {
-		log.PrintStackTrace(err)
-	}
+	//err := b.fileSystem.PrintStatus()
+	//if err != nil {
+	//log.PrintStackTrace(err)
+	//}
 
 	//TODO 多い場合の表示を考える
 	notes, err := b.db.FindUpdatedNotes(-1, -1)
@@ -144,22 +142,22 @@ func (b *Binder) GetTemplateTree() (*Tree, error) {
 
 	htmlLeaf := newLeaf("DIR_HTML", "HTML")
 
-	tempMap := make(map[db.TemplateType]*Leaf)
-	tempMap[db.LayoutTemplateType] = newLeaf("DIR_HTML_Layout", "Layout")
-	tempMap[db.ContentTemplateType] = newLeaf("DIR_HTML_Content", "Content")
-	tempMap[db.NoteTemplateType] = newLeaf("DIR_Note", "Note")
-	tempMap[db.DiagramTemplateType] = newLeaf("DIR_Diagram", "Diagram")
-	tempMap[db.TemplateTemplateType] = newLeaf("DIR_Template", "Template")
+	tempMap := make(map[model.TemplateType]*Leaf)
+	tempMap[model.LayoutTemplateType] = newLeaf("DIR_HTML_Layout", "Layout")
+	tempMap[model.ContentTemplateType] = newLeaf("DIR_HTML_Content", "Content")
+	tempMap[model.NoteTemplateType] = newLeaf("DIR_Note", "Note")
+	tempMap[model.DiagramTemplateType] = newLeaf("DIR_Diagram", "Diagram")
+	tempMap[model.TemplateTemplateType] = newLeaf("DIR_Template", "Template")
 
 	//大枠のツリーを作成
 	root := make([]*Leaf, 4)
 	root[0] = htmlLeaf
-	root[1] = tempMap[db.NoteTemplateType]
-	root[2] = tempMap[db.DiagramTemplateType]
-	root[3] = tempMap[db.TemplateTemplateType]
+	root[1] = tempMap[model.NoteTemplateType]
+	root[2] = tempMap[model.DiagramTemplateType]
+	root[3] = tempMap[model.TemplateTemplateType]
 
-	htmlLeaf.AddChild(tempMap[db.LayoutTemplateType])
-	htmlLeaf.AddChild(tempMap[db.ContentTemplateType])
+	htmlLeaf.AddChild(tempMap[model.LayoutTemplateType])
+	htmlLeaf.AddChild(tempMap[model.ContentTemplateType])
 
 	templates, err := b.db.FindTemplates()
 	if err != nil {
@@ -167,7 +165,7 @@ func (b *Binder) GetTemplateTree() (*Tree, error) {
 	}
 
 	for _, temp := range templates {
-		t := db.TemplateType(temp.Typ)
+		t := model.TemplateType(temp.Typ)
 		current := tempMap[t]
 		current.AddChild(convertTemplateLeaf(temp))
 	}

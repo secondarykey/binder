@@ -22,3 +22,26 @@ type Template struct {
 func (t *Template) String() string {
 	return fmt.Sprintf("%s,%s,%s", t.Id, t.Name, t.Typ)
 }
+
+type TemplateType string
+
+const (
+	LayoutTemplateType   TemplateType = "html_layout"
+	ContentTemplateType  TemplateType = "html_content"
+	DiagramTemplateType  TemplateType = "diagram"
+	NoteTemplateType     TemplateType = "note"
+	TemplateTemplateType TemplateType = "template"
+)
+
+func (t TemplateType) IsHTML() bool {
+	if t == LayoutTemplateType || t == ContentTemplateType {
+		return true
+	}
+	return false
+}
+func (t TemplateType) IsContent() bool {
+	if t == ContentTemplateType {
+		return true
+	}
+	return false
+}

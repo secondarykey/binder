@@ -2,38 +2,15 @@ package db
 
 import "binder/db/model"
 
-type TemplateType string
-
-const (
-	LayoutTemplateType   TemplateType = "html_layout"
-	ContentTemplateType  TemplateType = "html_content"
-	DiagramTemplateType  TemplateType = "diagram"
-	NoteTemplateType     TemplateType = "note"
-	TemplateTemplateType TemplateType = "template"
-)
-
-func (t TemplateType) IsHTML() bool {
-	if t == LayoutTemplateType || t == ContentTemplateType {
-		return true
-	}
-	return false
-}
-func (t TemplateType) IsContent() bool {
-	if t == ContentTemplateType {
-		return true
-	}
-	return false
-}
-
 func (inst *Instance) FindLayoutTemplates() ([]*model.Template, error) {
-	return inst.findTypeTemplates(LayoutTemplateType)
+	return inst.findTypeTemplates(model.LayoutTemplateType)
 }
 
 func (inst *Instance) FindContentTemplates() ([]*model.Template, error) {
-	return inst.findTypeTemplates(ContentTemplateType)
+	return inst.findTypeTemplates(model.ContentTemplateType)
 }
 
-func (inst *Instance) findTypeTemplates(t TemplateType) ([]*model.Template, error) {
+func (inst *Instance) findTypeTemplates(t model.TemplateType) ([]*model.Template, error) {
 	return inst.findTemplate("type = ?", "updated_date desc", -1, -1, string(t))
 }
 
