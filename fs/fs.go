@@ -226,6 +226,7 @@ func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, 
 	sfn := p[0]
 
 	m, err := f.modified(sfn)
+
 	if err == nil {
 		if len(m) > 0 {
 			us = model.UpdatedStatus
@@ -236,6 +237,7 @@ func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, 
 		slog.Warn("modified error " + sfn + ":" + err.Error())
 	}
 
+	//公開側に指定がない場合、エラー
 	if pub == "" {
 		return us, ps, nil
 	}

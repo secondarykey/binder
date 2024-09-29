@@ -16,6 +16,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var NoUpdated = fmt.Errorf("updates to the file")
 var UpdatedFilesError = fmt.Errorf("No updated files")
 
 func M(header string, name string) string {
@@ -169,23 +170,24 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 
 	names := make([]string, 0, len(files))
 	gp := convertPaths(files...)
+
 	for idx, f := range gp {
-		s, ok := status[f]
+		_, ok := status[f]
 		if ok {
-			if s.Worktree == git.Modified {
-				names = append(names, files[idx])
-			}
-		} else {
-			return nil, fmt.Errorf("Nothing Status error: %s", f)
+			//存在する為、変更あり
+			//if s.Worktree == git.Modified {
+			//}
+			names = append(names, files[idx])
 		}
 	}
+
 	if len(names) == 0 {
-		slog.Warn("names is zero")
+		slog.Info("names is zero")
 	}
 	return names, nil
 }
 
-func (f *FileSystem) PrintStatus() error {
+func (f *FileSystem) Status() error {
 
 	w, err := f.repo.Worktree()
 	if err != nil {
@@ -199,7 +201,9 @@ func (f *FileSystem) PrintStatus() error {
 
 	//notes,diagrams,templates 以外ないはず
 	for f, s := range status {
-		fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
+		slog.Debug("Status", "File", f, "Staging", s.Staging, "Worktree", s.Worktree, "Extra", s.Extra)
+
+		//fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
 		typ, id, err := getModelType(f)
 		if err != nil {
 			slog.Warn(err.Error())

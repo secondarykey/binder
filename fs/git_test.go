@@ -20,7 +20,7 @@ func TestAdd(t *testing.T) {
 	os.Mkdir(dir, 0666)
 
 	//n, err := fs.NewBinder(dir)
-	n, err := fs.NewMemory()
+	_, err := fs.NewMemory()
 	if err != nil {
 		t.Errorf("NewBinder() error is not nil: %v", err)
 	}
@@ -28,8 +28,8 @@ func TestAdd(t *testing.T) {
 	p := filepath.Join(dir, file)
 	os.WriteFile(p, []byte("test"), 0644)
 
-	//n.Add(file)
-	n.PrintStatus()
+	//n.add(file)
+	//n.PrintStatus()
 
 }
 
@@ -64,7 +64,8 @@ func TestClone(t *testing.T) {
 			t.Errorf("Commit() error is not nil: %v", err)
 		}
 	}
-	n.PrintStatus()
+
+	//n.PrintStatus()
 
 	/*
 		err = n.Push(branch)
