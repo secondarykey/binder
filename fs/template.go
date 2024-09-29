@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"binder/db"
 	"binder/db/model"
 	"bytes"
 	"fmt"
@@ -18,9 +17,9 @@ const (
 )
 
 // テンプレート用のフレームを作成して処理
-func AddTemplateFrame(t db.TemplateType, data []byte) []byte {
+func AddTemplateFrame(t model.TemplateType, data []byte) []byte {
 
-	typ := db.TemplateType(t)
+	typ := model.TemplateType(t)
 	if !typ.IsHTML() {
 		return data
 	}
@@ -52,7 +51,7 @@ func (f *FileSystem) CreateTemplateFile(t *model.Template) (string, error) {
 	defer fp.Close()
 
 	//TODO レイアウト時は追加を設定
-	typ := db.TemplateType(t.Typ)
+	typ := model.TemplateType(t.Typ)
 	if typ.IsHTML() {
 	}
 
@@ -69,7 +68,7 @@ func (f *FileSystem) ReadTemplate(t *model.Template) ([]byte, error) {
 	}
 
 	//レイアウト用のフレームを削除して返す
-	typ := db.TemplateType(t.Typ)
+	typ := model.TemplateType(t.Typ)
 	if typ.IsHTML() {
 		firstIdx := len(layoutTemplateFrame)
 		if typ.IsContent() {
@@ -92,7 +91,7 @@ func (f *FileSystem) WriteTemplate(t *model.Template, data []byte) (string, erro
 	defer fp.Close()
 
 	//枠を作成
-	txt := AddTemplateFrame(db.TemplateType(t.Typ), data)
+	txt := AddTemplateFrame(model.TemplateType(t.Typ), data)
 
 	_, err = fp.Write(txt)
 	if err != nil {

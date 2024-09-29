@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"binder/db"
 	"binder/db/model"
 	"binder/fs"
 
@@ -138,6 +137,7 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 	} else {
 		f := w.getSVGFile(id)
 		code = fmt.Sprintf(`<img src="%s">`, f)
+		//TODO 公開しているかを確認するのOKかも
 	}
 
 	return template.HTML(fmt.Sprintf(`
@@ -193,7 +193,11 @@ func convertLF2Comma(src string) string {
 	return strings.ReplaceAll(src, "\n", ",")
 }
 
-func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*template.Template, error) {
+// テンプレートを作成
+// text が指定してある場合、テンプレート編集時になる為、
+// 指定してあるテンプレートではなく、文字列を使用して描画を行う
+// TODO 現在テンプレート編集時の描画を止めている為、再度実装する際に考慮する
+func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text string) (*template.Template, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -203,6 +207,7 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*templ
 	//FuncMapを準備
 	tmpl := template.New(fs.TemplatePageRoot).Funcs(defineFuncMap(w))
 
+	//TODO Note指定がない場合の描画を考える
 	layId := "layout"
 	conId := "content"
 
@@ -211,10 +216,9 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*templ
 		conId = w.note.ContentTemplate
 	}
 
-	if typ == "layout" && text != "" {
-
+	if typ == model.LayoutTemplateType && text != "" {
 		//レイアウトをテキストで代用
-		data := fs.AddTemplateFrame(db.LayoutTemplateType, []byte(text))
+		data := fs.AddTemplateFrame(model.LayoutTemplateType, []byte(text))
 
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
@@ -229,9 +233,9 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ string, text string) (*templ
 		}
 	}
 
-	if typ == "content" && text != "" {
+	if typ == model.ContentTemplateType && text != "" {
 
-		data := fs.AddTemplateFrame(db.ContentTemplateType, []byte(text))
+		data := fs.AddTemplateFrame(model.ContentTemplateType, []byte(text))
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("Parse() error: %w", err)
@@ -393,7 +397,7 @@ func (b *Binder) CreateTemplateHTML(temp *model.Template, note *model.Note, data
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
-	tmpl, err := b.createHTMLTemplate(w, temp.Typ, data)
+	tmpl, err := b.createHTMLTemplate(w, model.TemplateType(temp.Typ), data)
 	if err != nil {
 		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}

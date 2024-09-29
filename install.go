@@ -240,7 +240,7 @@ func (b *Binder) initializeAsset() error {
 func (b *Binder) initializeTemplate() error {
 	var layout model.Template
 	layout.Id = TemplateLayoutId
-	layout.Typ = string(db.LayoutTemplateType)
+	layout.Typ = string(model.LayoutTemplateType)
 	layout.Name = "Layout"
 	_, err := b.createTemplate(&layout)
 	if err != nil {
@@ -249,7 +249,7 @@ func (b *Binder) initializeTemplate() error {
 
 	var index model.Template
 	index.Id = TemplateIndexId
-	index.Typ = string(db.ContentTemplateType)
+	index.Typ = string(model.ContentTemplateType)
 	index.Name = "Index"
 	_, err = b.createTemplate(&index)
 	if err != nil {
@@ -258,7 +258,7 @@ func (b *Binder) initializeTemplate() error {
 
 	var content model.Template
 	content.Id = TemplateContentId
-	content.Typ = string(db.ContentTemplateType)
+	content.Typ = string(model.ContentTemplateType)
 	content.Name = "Content"
 	_, err = b.createTemplate(&content)
 	if err != nil {

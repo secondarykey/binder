@@ -10,34 +10,41 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (a *App) LoadBinder(dir string) error {
+func (a *App) LoadBinder(dir string) (string, error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
 
-	err := a.load(dir)
+	add, err := a.load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("load() error\n%+v", err)
+		return "", fmt.Errorf("load() error\n%+v", err)
 	}
-	return nil
+
+	return add, nil
 }
 
-func (a *App) load(dir string) error {
+func (a *App) load(dir string) (string, error) {
 
 	if dir == "" {
-		return xerrors.Errorf("empty directory error")
+		return "", xerrors.Errorf("empty directory error")
 	}
 
 	s := settings.Get()
 	b, err := binder.Load(dir)
 	if err != nil {
-		return xerrors.Errorf("Binder Load() error: %w", err)
+		return "", xerrors.Errorf("Binder Load() error: %w", err)
 	}
+
 	err = b.Serve()
 	if err != nil {
-		return xerrors.Errorf("Binder Serve() error: %w", err)
+		return "", xerrors.Errorf("Binder Serve() error: %w", err)
 	}
 	a.SetCurrent(b)
+
+	address, err := a.Address()
+	if err != nil {
+		return "", xerrors.Errorf("Binder Address() error: %w", err)
+	}
 
 	//履歴に追加
 	s.Path.AddHistory(dir)
@@ -45,7 +52,8 @@ func (a *App) load(dir string) error {
 	if err != nil {
 		log.PrintStackTrace(err)
 	}
-	return nil
+
+	return address, nil
 }
 
 func (a *App) CloseBinder() error {
@@ -64,55 +72,63 @@ func (a *App) CloseBinder() error {
 	return nil
 }
 
-func (a *App) CreateBinder(dir string, name string) error {
+func (a *App) CreateBinder(dir string, name string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateBinder()"))
 
 	err := binder.Install(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("binder Install error\n%+v", err)
+		return "", fmt.Errorf("binder Install error\n%+v", err)
 	}
 
-	err = a.load(dir)
+	address, err := a.load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("binder load error\n%+v", err)
+		return "", fmt.Errorf("binder load error\n%+v", err)
 	}
 
 	err = a.current.Initialize(name)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("binder Initialize() error\n%+v", err)
+		return "", fmt.Errorf("binder Initialize() error\n%+v", err)
 	}
 
-	return nil
+	return address, nil
 }
 
-func (a *App) CreateRemoteBinder(url string, dir string) error {
+func (a *App) CreateRemoteBinder(url string, dir string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateRemoteBinder()"))
 
 	err := binder.CreateRemote(url, dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("CreateRemote() error\n%+v", err)
+		return "", fmt.Errorf("CreateRemote() error\n%+v", err)
 	}
 
-	err = a.load(dir)
+	address, err := a.load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("load() error\n%+v", err)
+		return "", fmt.Errorf("load() error\n%+v", err)
 	}
 
-	return nil
+	return address, nil
 }
 
 func (a *App) Generate(mode string, id string, data string) error {
+
+	defer log.PrintTrace(log.Func("Generate()", mode, id))
+
 	var err error
 	switch mode {
 	case "note":
-		_, err = a.current.PublishNote(id, []byte(data))
+
+		html, err := a.CreateNoteHTML(id, data)
+		if err == nil {
+			_, err = a.current.PublishNote(id, []byte(html))
+		}
+
 	case "diagram":
 		_, err = a.current.PublishDiagram(id, []byte(data))
 	case "assets":
