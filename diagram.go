@@ -21,6 +21,7 @@ func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 	if d.Id == "" {
 
 		d.Id = b.generateId()
+		d.Alias = d.Id
 
 		f, err := b.fileSystem.CreateDiagramFile(d)
 		if err != nil {
