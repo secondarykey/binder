@@ -39,8 +39,8 @@ function Binder(props) {
   }
 
   useEffect(() => {
-    Event.changeTitle("Edit Binder");
 
+    Event.changeTitle("Edit Binder");
     GetConfig().then((conf) => {
 
       setName(conf.name);

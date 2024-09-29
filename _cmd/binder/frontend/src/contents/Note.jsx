@@ -7,7 +7,7 @@ import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
 import { GetNote, GetHTMLTemplates } from "../../wailsjs/go/api/App";
-import { SelectFile, EditNote, Address, RemoveNote } from "../../wailsjs/go/api/App";
+import { SelectFile, EditNote, RemoveNote,Address } from "../../wailsjs/go/api/App";
 import noImage from '../assets/images/noimage.png'
 
 import Event from "../Event";
@@ -29,6 +29,8 @@ function Note(props) {
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
   const [imageFile, setImageFile] = useState("");
+
+  const [address, setAddress] = useState("");
   const [viewImage, setViewImage] = useState("");
   const [detail, setDetail] = useState("");
 
@@ -36,7 +38,6 @@ function Note(props) {
   const [content, setContent] = useState("");
   const [layouts, setLayouts] = useState([]);
   const [contents, setContents] = useState([]);
-
 
   /**
    * ID変更時操作
@@ -77,12 +78,19 @@ function Note(props) {
       Message.showError(err);
     })
 
+    setViewImage(address + "/assets/meta");
+
   }, [currentId]);
 
   /**
    * 初期処理
    */
   useEffect(() => {
+
+    //アドレス変更時の処理
+    Event.register(Event.ChangeAddress,function(arg) {
+      setAddress(arg);
+    });
 
     GetHTMLTemplates().then((tmpls) => {
       setLayouts(tmpls.layouts)
@@ -92,12 +100,13 @@ function Note(props) {
         setLayout(tmpls.layouts[0].id)
         setContent(tmpls.contents[0].id)
       }
+
     }).catch((err) => {
       Message.showError(err);
     })
 
-    Address().then((address) => {
-      setViewImage(address + "/assets/" + id + "/meta")
+    Address().then((arg) => {
+      setAddress(arg);
     }).catch((err) => {
       Message.showError(err);
     })
@@ -122,13 +131,16 @@ function Note(props) {
       Message.showWarning("name is required.");
       return;
     }
-    if ( alias === "" ) {
-      Message.showWarning("alias is required.");
-      return;
-    }
     if ( layout === "" || content === "" ) {
       Message.showWarning("Choose a Template.");
       return;
+    }
+
+    if ( mode !== "register") {
+      if ( alias === "" ) {
+        Message.showWarning("alias is required.");
+        return;
+      }
     }
 
     EditNote(note, imageFile).then((resp) => {

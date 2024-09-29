@@ -26,8 +26,12 @@ function BinderRegister(props) {
     }
 
     //インストールを別にする
-    CreateBinder(dir,"simple").then(() => {
+    CreateBinder(dir,"simple").then((href) => {
+
+      Event.changeAddress(href);
+      //TODO Binder変更通知
       nav("/note/index");
+
     }).catch( (err)=> {
       Message.showError(err);
     })
