@@ -197,6 +197,7 @@ function Editor(props) {
       return val;
     }
     //return marked.marked(p);
+    return "";
   }
 
   const viewHTML = async (txt, embNoteElm) => {
@@ -279,13 +280,15 @@ function Editor(props) {
     if (mode === "note") {
       elm = await createMarked(id,text,false);
     } else if (mode === "diagram") {
-      elm = await Mermaid.parse(text);
+      var obj = await Mermaid.parse(text);
+      elm = obj.svg
     } else if (mode === "template") {
       elm = text;
     } else if (mode === "asset") {
       elm = text;
     }
 
+    console.log(elm)
     //出力処理を行う
     Generate(mode,id,elm).then(() => {
       Message.showSuccess("Generate.")

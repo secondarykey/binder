@@ -135,8 +135,14 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 		}
 		code = string(txt)
 	} else {
-		f := w.getSVGFile(id)
-		code = fmt.Sprintf(`<img src="%s">`, f)
+
+		f, err := w.getSVGFile(id)
+		if err != nil {
+			code = fmt.Sprintf("SVG File error: %v", err)
+		} else {
+			code = fmt.Sprintf(`<img src="%s">`, f)
+		}
+
 		//TODO 公開しているかを確認するのOKかも
 	}
 
@@ -146,12 +152,15 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 </div>`, "binderSVG", id, code))
 }
 
-func (w *wrapper) getSVGFile(id string) string {
-	//TODO
-	d, _ := w.owner.GetDiagram(id)
+func (w *wrapper) getSVGFile(id string) (string, error) {
+	d, err := w.owner.GetDiagram(id)
+	if err != nil {
+		return "", xerrors.Errorf("GetDiagram() error: %w", err)
+	}
+
 	f := fs.SVGFile(d)
 	buf := strings.Replace(f, w.owner.fileSystem.GetPublic(), "", 1)
-	return fs.ConvertHTTPPath(buf)
+	return fs.ConvertHTTPPath(buf), nil
 }
 
 func safeTemplate(src string) string {

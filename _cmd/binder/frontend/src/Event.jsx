@@ -1,6 +1,4 @@
-export function useEvent() {
-    return new Event();
-}
+import { createContext } from "react";
 
 /**
  * イベント
@@ -8,19 +6,13 @@ export function useEvent() {
 class Event {
 
     /**
-     * 管理イベント
-     */
-    static eventMap = new Map();
-    /**
      * タイトル変更時
      */
     static ReloadTitle = "title.reload"
-
     /**
      * バインダー部分のタイトル変更
      */
     static ReloadBinderTitle = "binder.title.reload"
-
     /**
      * ツリーの再描画
      */
@@ -36,6 +28,11 @@ class Event {
     static ChangeAddress = "change.address"
 
     /**
+     * 管理イベント
+     */
+    static eventMap = new Map();
+
+    /**
      * イベント登録
      * @param {*} key 
      * @param {*} func 
@@ -45,7 +42,6 @@ class Event {
         if ( e === undefined || e === null ) {
             e = [];
         }
-
         e.push(func);
         this.eventMap.set(key,e);
     }
@@ -65,7 +61,6 @@ class Event {
     static changeAddress(address) {
         this.raise(Event.ChangeAddress,address);
     }
- 
 
     /**
      * 登録されている関数を呼び出す
@@ -86,5 +81,7 @@ class Event {
         })
     }
 }
+
+export const EventContext = createContext(new Event());
 
 export default Event;
