@@ -20,7 +20,7 @@ var gCtx context.Context
 var def *slog.Logger
 
 func init() {
-	slog.SetLogLoggerLevel(TraceLevel)
+	//slog.SetLogLoggerLevel(TraceLevel)
 	gCtx = context.Background()
 	def = slog.Default()
 }
