@@ -14,7 +14,7 @@ import (
 func TestInstall(t *testing.T) {
 
 	dir := filepath.Join(test.Dir, "create")
-	err := binder.Install(dir)
+	err := binder.Install(dir, test.LatestVersion)
 	if err != nil {
 		t.Fatalf("create error: %+v\n", err)
 	}
@@ -44,12 +44,12 @@ func TestInstall(t *testing.T) {
 func TestInitialize(t *testing.T) {
 
 	dir := filepath.Join(test.Dir, "init")
-	err := binder.Install(dir)
+	err := binder.Install(dir, test.LatestVersion)
 	if err != nil {
 		t.Fatalf("create error: %v", err)
 	}
 
-	b, err := binder.Load(dir)
+	b, err := binder.Load(dir, test.LatestVersion)
 	if err != nil {
 		t.Fatalf("Binder Load() error: %v", err)
 	}

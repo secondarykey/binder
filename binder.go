@@ -2,6 +2,8 @@ package binder
 
 import (
 	"binder/db"
+	"binder/db/convert"
+	"binder/db/model"
 	"binder/fs"
 	"binder/log"
 	"binder/settings"
@@ -38,7 +40,7 @@ func createUserOp(userId string) db.Op {
 	return op
 }
 
-func CreateRemote(url, dir string) error {
+func CreateRemote(url, dir string, version *model.Version) error {
 
 	f, err := fs.Clone(dir, url)
 	if err != nil {
@@ -51,7 +53,7 @@ func CreateRemote(url, dir string) error {
 	err = checkDirectory(dir, false)
 	if err != nil {
 		//インストール処理を行う
-		err := install(f, dir)
+		err := install(f, dir, version)
 		if err != nil {
 			return xerrors.Errorf("binder.install() error: %w", err)
 		}
@@ -67,7 +69,14 @@ func CreateRemote(url, dir string) error {
 	return nil
 }
 
-func Load(dir string) (*Binder, error) {
+func Load(dir string, ver *model.Version) (*Binder, error) {
+
+	//変換処理を開く前に入れておく
+	dbDir := dir + "/db"
+	nf, err := convert.Run(dbDir, ver)
+	if err != nil {
+		return nil, xerrors.Errorf("db Convert() error: %w", err)
+	}
 
 	bfs, err := fs.Load(dir)
 	if err != nil {
@@ -86,7 +95,12 @@ func Load(dir string) (*Binder, error) {
 		return nil, xerrors.Errorf("checkDirectory() error: %w", err)
 	}
 
-	inst, err := db.New(dir + "/db")
+	if nf != "" {
+		//TODO コミットを行う
+		slog.Info("Schema:" + nf)
+	}
+
+	inst, err := db.New(dbDir)
 	if err != nil {
 		return nil, xerrors.Errorf("db.New() error: %w", err)
 	}
