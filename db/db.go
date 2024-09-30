@@ -1,11 +1,14 @@
 package db
 
 import (
+	"binder/db/model"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	_ "github.com/mithrandie/csvq-driver"
@@ -55,31 +58,65 @@ func Tables() map[string]string {
 	return tables
 }
 
-func Create(dir string) error {
+const SchemaFileSuffix = "_schema"
+
+func SchemaVersion(dir string) (*model.Version, error) {
+
+	files, err := filepath.Glob(filepath.Join(dir, "*"+SchemaFileSuffix))
+	if err != nil {
+		return nil, xerrors.Errorf("filepath.Glob() error: %w", err)
+	}
+
+	v := "0.0.0"
+
+	if len(files) >= 1 {
+		if len(files) > 1 {
+			slog.Warn("schema file duplicate:" + dir)
+		}
+
+		f := files[0]
+		n := filepath.Base(f)
+		//ファイル名
+		v = strings.Replace(n, SchemaFileSuffix, "", 1)
+	}
+
+	ver, err := model.NewVersion(v)
+	if err != nil {
+		return nil, xerrors.Errorf("model.NewVersion() error: %w", err)
+	}
+	return ver, nil
+}
+
+func Create(dir string, version *model.Version) (string, error) {
 
 	//ファイルチェック
 	//すでに存在する場合
 	err := createTableFiles(dir)
 	if err != nil {
-		return xerrors.Errorf("createTableFiles() error: %w", err)
+		return "", xerrors.Errorf("createTableFiles() error: %w", err)
 	}
 
 	inst, err := New(dir)
 	if err != nil {
-		return xerrors.Errorf("db.New() error: %w", err)
+		return "", xerrors.Errorf("db.New() error: %w", err)
 	}
 	err = inst.Open()
 	if err != nil {
-		return xerrors.Errorf("inst.Open() error: %w", err)
+		return "", xerrors.Errorf("inst.Open() error: %w", err)
 	}
 	defer inst.Close()
 
-	err = inst.insertDefaultConfig()
+	vf, err := createSchemaFile(dir, version)
 	if err != nil {
-		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
+		return "", xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
 	}
 
-	return nil
+	err = inst.insertDefaultConfig()
+	if err != nil {
+		return "", xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
+	}
+
+	return vf, nil
 }
 
 func createTableFiles(dir string) error {
@@ -125,6 +162,33 @@ func createTableFile(file string, clm string) error {
 	}
 
 	return nil
+}
+
+func CreateSchemaFile(dir string, ver *model.Version) (string, error) {
+
+	//既存バージョンがないか確認
+
+	//あった場合エラー
+
+	return createSchemaFile(dir, ver)
+}
+
+func createSchemaFile(dir string, ver *model.Version) (string, error) {
+
+	rtn := ver.String() + SchemaFileSuffix
+	f := filepath.Join(dir, rtn)
+
+	fp, err := os.Create(f)
+	if err != nil {
+		return "", xerrors.Errorf("os.Create() error: %w", err)
+	}
+	defer fp.Close()
+
+	_, err = fp.Write([]byte(ver.String()))
+	if err != nil {
+		return "", xerrors.Errorf("os.Write() error: %w", err)
+	}
+	return rtn, nil
 }
 
 type scanner interface {

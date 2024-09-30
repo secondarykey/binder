@@ -44,10 +44,10 @@ func tablePath(f string) string {
 	return DBDir + "/" + f
 }
 
-func (f *FileSystem) AddDBFiles() error {
+func (f *FileSystem) AddDBFiles(ver string) error {
 
 	files := tableFiles(db.ConfigTableName, db.NoteTableName,
-		db.DiagramTableName, db.AssetTableName, db.TemplateTableName)
+		db.DiagramTableName, db.AssetTableName, db.TemplateTableName, ver)
 
 	err := f.add(files...)
 	if err != nil {

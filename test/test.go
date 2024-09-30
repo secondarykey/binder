@@ -2,8 +2,10 @@ package test
 
 import (
 	"binder"
+	"binder/db/model"
+	"binder/log"
 	"binder/settings"
-	"log"
+
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,7 +15,22 @@ const (
 	Dir = "testing_work"
 )
 
+var LatestVersion *model.Version
+
+func init() {
+	LatestVersion = NewVer("0.0.0")
+}
+
+func NewVer(ver string) *model.Version {
+	v, err := model.NewVersion(ver)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 func Clean() {
+
 	defer os.Mkdir(Dir, 0666)
 	_, err := os.Stat(Dir)
 	if err != nil {
@@ -31,7 +48,7 @@ func Clean() {
 func remove(dir string) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		log.Println(err)
+		log.PrintStackTrace(err)
 		return
 	}
 
@@ -39,7 +56,7 @@ func remove(dir string) {
 
 		i, err := entry.Info()
 		if err != nil {
-			log.Println(err)
+			log.PrintStackTrace(err)
 			return
 		}
 
@@ -56,12 +73,12 @@ func CreateBinder(t *testing.T, dir string) *binder.Binder {
 
 	work := filepath.Join(Dir, dir)
 
-	err := binder.Install(work)
+	err := binder.Install(work, LatestVersion)
 	if err != nil {
 		t.Fatalf("binder.Install error: %v", err)
 	}
 
-	b, err := binder.Load(work)
+	b, err := binder.Load(work, LatestVersion)
 	if err != nil {
 		t.Fatalf("binder.Load() error: %v", err)
 	}

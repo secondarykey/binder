@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder"
+	"binder/db/model"
 	"binder/log"
 	"binder/settings"
 
@@ -17,13 +18,17 @@ type App struct {
 	ctx     context.Context
 	current *binder.Binder
 	//handler *binder.BinderHandler
+	version *model.Version
 }
 
 // NewApp creates a new App application struct
 // func New(h *binder.BinderHandler) *App {
-func New() *App {
+func New(version *model.Version) *App {
 	var app App
 	//app.handler = h
+	app.version = version
+
+	log.Notice(fmt.Sprintf("Binder Version: %s", app.version))
 	return &app
 }
 
@@ -44,7 +49,7 @@ func (a *App) Startup(ctx context.Context) {
 	if set.Path.RunWithOpen {
 		his := set.Path.Histories
 		if len(his) > 0 {
-			b, err := binder.Load(his[0])
+			b, err := binder.Load(his[0], a.version)
 			if err != nil {
 				log.PrintStackTrace(err)
 			} else {

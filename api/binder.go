@@ -30,7 +30,7 @@ func (a *App) load(dir string) (string, error) {
 	}
 
 	s := settings.Get()
-	b, err := binder.Load(dir)
+	b, err := binder.Load(dir, a.version)
 	if err != nil {
 		return "", xerrors.Errorf("Binder Load() error: %w", err)
 	}
@@ -76,7 +76,7 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateBinder()"))
 
-	err := binder.Install(dir)
+	err := binder.Install(dir, a.version)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("binder Install error\n%+v", err)
@@ -101,7 +101,7 @@ func (a *App) CreateRemoteBinder(url string, dir string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateRemoteBinder()"))
 
-	err := binder.CreateRemote(url, dir)
+	err := binder.CreateRemote(url, dir, a.version)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateRemote() error\n%+v", err)
