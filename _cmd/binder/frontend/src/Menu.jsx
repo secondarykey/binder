@@ -195,6 +195,8 @@ function Menu(props) {
   </>);
   }
 
+  console.log(location.href);
+
   return (
     <>
       {/** 固定メニューの箇所 */}

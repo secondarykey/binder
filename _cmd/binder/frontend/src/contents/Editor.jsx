@@ -156,6 +156,8 @@ function Editor(props) {
       }).catch((err) => {
         Message.showError(err);
       })
+    } else if (mode === "assets") {
+
     }
 
   }, [id]);
@@ -345,6 +347,7 @@ function Editor(props) {
     color = "#cf540c";
   }
 
+  //コミット用のアイコン(コメント欄の横)
   var commitIcon = (
     <InputAdornment position="end" className="linkBtn"> 
       <CommitIcon fontSize="small" style={{ color: color }}  onClick={handleCommit}> </CommitIcon> 
@@ -357,7 +360,9 @@ function Editor(props) {
   return (
     <>
       <Paper id="splitScreen">
+
         <div id="editorWrapper" style={editWrapperStyle}>
+
           {/** テキスト編集 */}
           <textarea id="editor" style={editorStyle} onChange={(e) => changeText(e.target.value)} value={text} />
 
@@ -414,6 +419,7 @@ function Editor(props) {
 </>
 }
             </Container>
+
           </Toolbar>
 
         </div>

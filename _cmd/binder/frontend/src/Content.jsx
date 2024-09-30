@@ -16,13 +16,14 @@ import Note from "./contents/Note";
 import Diagram from "./contents/Diagram";
 import Assets from "./contents/Assets";
 import History from "./contents/History";
-import BinderRemote from "./Viewer/BinderRemote";
+import BinderRemote from "./contents/BinderRemote";
 
 import { Routes, Route } from "react-router-dom";
 
-import "./assets/Viewer.css"
 import Template from "./contents/Template";
 import { Hidden } from "./App";
+
+import "./assets/Content.css"
 /**
  * コンテンツ表示部分
  * <pre>
@@ -31,7 +32,7 @@ import { Hidden } from "./App";
  * @param {*} props 
  * @returns 
  */
-function Viewer(props) {
+function Content(props) {
 
   //タイトルの文字列
   const [title,setTitle] = useState("");
@@ -58,17 +59,21 @@ function Viewer(props) {
   return (
     <>
       {/** タイトルと他を表示 */}
-      <Paper id="viewer">
+      <Paper id="contentViewer">
 
         <Toolbar id="mainTitle" className="title">
           {/** 表示名称 */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
+
+          {/** TODO ピン留め、最大化 */}
+
           {/** アプリ終了 */}
           <IconButton id="closeButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
             <CloseIcon />
           </IconButton>
+
         </Toolbar>
 
         {/** 
@@ -79,6 +84,7 @@ function Viewer(props) {
           <Routes>
             <Route path="/" element={<History />} />
             <Route path="/file/new" element={<BinderRegister />} />
+            <Route path="/file/remote" element={<BinderRemote />} />
 
             <Route path="/binder/edit" element={<Binder />} />
             <Route path="/setting" element={<Setting />} />
@@ -93,13 +99,6 @@ function Viewer(props) {
             <Route path="/editor/:mode/:id" element={<Editor />} />
           </Routes>
 
-{/** 移行がまだなコンポーネント*/}
-          {false &&
-            <>
-              <BinderRemote onMessage={props.onMessage} />
-            </>
-          }
-
         </Paper>
       </Paper>
 
@@ -107,4 +106,4 @@ function Viewer(props) {
   );
 }
 
-export default Viewer;
+export default Content;

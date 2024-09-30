@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { SelectDirectory, CreateRemoteBinder } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
+import Message from "../Message";
+import Event from "../Event";
 
 /**
  * Binder新規作成
@@ -14,13 +16,20 @@ function BinderRemote(props) {
   const [remote, setRemote] = useState("");
   const [dir, setDir] = useState("");
 
-  props.onChangeTitle("Remote Import");
+  useEffect( () => {
+    Event.changeTitle("Remote Import");
+  },[])
 
   //保存
   const handleSave = () => {
 
+    if ( remote == "" ) {
+      Message.showWarning("input remote URL");
+      return;
+      }
+
     if ( dir == "" ) {
-      props.onMessage("error","reqired select directory");
+      Message.showWarning("choose directory");
       return;
     }
 
@@ -29,11 +38,10 @@ function BinderRemote(props) {
       //TODO アドレス変更通知
 
       //開く
-      props.onChangeMode("loadBinder");
+      nav("/binder/");
 
     }).catch( (err)=> {
-      console.warn(err);
-      props.onMessage("error",err);
+      Message.showError(err);
     })
   }
 
@@ -43,8 +51,7 @@ function BinderRemote(props) {
         setDir(f);
       }
     }).catch((err) => {
-      console.warn(err);
-      props.onMessage("error", err);
+      Message.showError(err)
     });
   }
 

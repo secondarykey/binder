@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import Menu from './Menu.jsx';
-import Viewer from './Viewer.jsx';
+import Content from './Content.jsx';
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
 import { SavePosition, GetSetting } from '../wailsjs/go/api/App.js';
@@ -39,7 +39,6 @@ function App() {
 
   useEffect(() => {
 
-    console.log(location.href)
     //設定を取得
     GetSetting().then((s) => {
       if (s.path.runWithOpen) {
@@ -66,7 +65,7 @@ function App() {
       {/** 左メニュー部 */}
       <Menu />
       {/** メイン表示 */}
-      <Viewer />
+      <Content />
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />
     </div>
