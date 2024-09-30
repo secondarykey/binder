@@ -12,6 +12,8 @@ type Asset struct {
 	Name     string `db:"name" json:"name"`
 	Detail   string `db:"detail" json:"detail"`
 
+	Binary bool `db:"binary" json:"binary"`
+
 	Created     time.Time `db:"created_date:insert" json:"created"`
 	CreatedUser string    `db:"created_user:insert" json:"createdUser"`
 	Updated     time.Time `db:"updated_date" json:"updated"`
