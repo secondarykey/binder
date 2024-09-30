@@ -23,6 +23,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const schemaVersion = "0.1.0"
+
 type input struct {
 	object interface{}
 	name   string
@@ -124,6 +126,7 @@ type Table struct {
 	Name          string
 	TableName     string
 	Time          time.Time
+	Version       string
 	Base          string
 	HasKey        bool
 	Columns       []Column
@@ -196,6 +199,7 @@ func generate(fn string, buf *strings.Builder) error {
 func createTable(in input) (*Table, error) {
 
 	table := Table{}
+	table.Version = schemaVersion
 	table.Time = time.Now()
 	table.Base = in.base
 	table.TableName = in.name

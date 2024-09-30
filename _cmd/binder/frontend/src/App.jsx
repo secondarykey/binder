@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
 import { SavePosition, GetSetting } from '../wailsjs/go/api/App.js';
 
-import Event from "./Event";
+import Event, { EventContext } from "./Event";
 import Message, { SystemMessage } from './Message';
 
 import './assets/App.css';
@@ -37,6 +37,8 @@ var intervalId = undefined;
  */
 function App() {
 
+  const evt = useContext(EventContext)
+
   useEffect(() => {
 
     //設定を取得
@@ -52,6 +54,7 @@ function App() {
     if (intervalId !== undefined) {
       clearInterval(intervalId);
     }
+
     //定期処理を実行
     intervalId = setInterval(function () {
       //メニュー表示、メニュー位置、スプリット位置
