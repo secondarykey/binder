@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
+	"flag"
 	"log/slog"
 
 	"github.com/wailsapp/wails/v2"
@@ -9,11 +11,15 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
 	"binder/api"
+	"binder/db/model"
 	"binder/settings"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed wails.json
+var wailsJson []byte
 
 func attrFunc(groups []string, a slog.Attr) slog.Attr {
 	if a.Key == slog.TimeKey {
@@ -24,7 +30,32 @@ func attrFunc(groups []string, a slog.Attr) slog.Attr {
 	return a
 }
 
+var version *model.Version
+
+func init() {
+	wails := make(map[string]interface{})
+
+	err := json.Unmarshal(wailsJson, &wails)
+	if err != nil {
+		slog.Error("wails.json not read")
+	}
+	obj, ok := wails["version"]
+
+	v := "0.0.0"
+	if ok {
+		v = obj.(string)
+	}
+
+	version, err = model.NewVersion(v)
+	if err != nil {
+		slog.Error("wails.json version error: " + err.Error())
+	}
+
+}
+
 func main() {
+
+	flag.Parse()
 	/*
 		opts := &slog.HandlerOptions{}
 		opts.Level = slog.LevelInfo
@@ -35,7 +66,7 @@ func main() {
 	//開いているBinderに対するProxy
 	//handler := binder.NewBinderHandler()
 	//app := api.New(handler)
-	app := api.New()
+	app := api.New(version)
 	//config を読み込む
 	set := settings.Get()
 
