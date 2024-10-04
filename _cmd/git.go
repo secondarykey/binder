@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/format/diff"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -42,6 +43,10 @@ func run(args []string) error {
 		err = printStatus(rep)
 	case "log":
 		err = printLog(rep, f)
+	case "patch":
+		err = printPatch(rep, f)
+	default:
+		err = fmt.Errorf("NotFound error: %s", sub)
 	}
 
 	if err != nil {
@@ -129,6 +134,81 @@ func lessFileName(f1, f2 string) bool {
 
 var ItrDone = fmt.Errorf("Iterator done.")
 
+func printPatch(p string, f string) error {
+	r, err := git.PlainOpen(p)
+	if err != nil {
+		return xerrors.Errorf("git.PlainOpen() error: %w", err)
+	}
+
+	ref, err := r.Head()
+	if err != nil {
+		return xerrors.Errorf("repo.Head() error: %w", err)
+	}
+
+	itr, err := r.Log(&git.LogOptions{
+		PathFilter: func(path string) bool {
+			return path == f
+		},
+		From: ref.Hash()})
+	if err != nil {
+		return xerrors.Errorf("repo.Log() error: %w", err)
+	}
+
+	latest, err := itr.Next()
+	if err != nil {
+		return xerrors.Errorf("commit.Next() error: %w", err)
+	}
+
+	//Fromオブジェクトかな？
+	fo, err := latest.File(f)
+	if err != nil {
+		return xerrors.Errorf("commit.File() error: %w", err)
+	}
+
+	c, err := fo.Contents()
+	if err != nil {
+		return xerrors.Errorf("Contents() error: %w", err)
+	}
+
+	fmt.Println(latest.Hash)
+	//今のデータとdiffを取る
+	fmt.Println(fo.Name)
+	fmt.Println(c)
+
+	/*
+		fp, err := filterPatch(f, patch)
+		if err != nil {
+			return xerrors.Errorf("filterPatch() error: %w", err)
+		}
+	*/
+
+	return nil
+}
+
+func filterPatch(fn string, p diff.Patch) (diff.Patch, error) {
+	for _, fp := range p.FilePatches() {
+		if isFile(fn, fp) {
+			return newPatch(fp), nil
+		}
+	}
+	return nil, fmt.Errorf("Not Found: %s", fn)
+}
+
+func isFile(fn string, p diff.FilePatch) bool {
+	from, to := p.Files()
+	if from != nil {
+		if from.Path() == fn {
+			return true
+		}
+	}
+	if to != nil {
+		if to.Path() == fn {
+			return true
+		}
+	}
+	return false
+}
+
 func printLog(p string, f string) error {
 
 	r, err := git.PlainOpen(p)
@@ -165,52 +245,13 @@ func printLog(p string, f string) error {
 		return xerrors.Errorf("repo.Log() error: %w", err)
 	}
 
-	commit, err := r.CommitObject(ref.Hash())
-	if err != nil {
-		return xerrors.Errorf("repo.CommitObject() error: %w", err)
-	}
-	parent, err := commit.Parents().Next()
-	if err != nil {
-		return xerrors.Errorf("commit.Parents() error: %w", err)
-	}
-
 	idx := 0
 	err = itr.ForEach(func(c *object.Commit) error {
+
 		fmt.Printf("---------------------------------------\n")
 		fmt.Printf("Commit: %s\n  Date:%s\n%s\n", c.Hash, c.Author.When, c.Message)
+		fmt.Printf("---------------------------------------\n")
 		idx++
-
-		patch, err := parent.Patch(c)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(patch)
-
-		//for _, fp := range patch.FilePatches() {
-
-		/*
-			//fp.IsBinary
-			from, to := fp.Files()
-			//create new file is nil
-			if from != nil {
-				fmt.Printf("FROM:%s\n", from.Path())
-			}
-			//delete is nil
-			if to != nil {
-				fmt.Printf("To  :%s\n", to.Path())
-			}
-
-			for _, chunk := range fp.Chunks() {
-				fmt.Printf(chunk.Content())
-			}
-			fmt.Println()
-
-			//if fp.FileName() == f {
-			//fmt.Printf("%s\n", fp.String())
-			//}
-		*/
-		//}
 
 		if idx >= 5 {
 			return ItrDone
