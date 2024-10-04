@@ -18,6 +18,10 @@ func (inst *Instance) FindAssets() ([]*model.Asset, error) {
 	return inst.findAsset("", "created_date", -1, -1)
 }
 
+func (inst *Instance) FindInAssetId(ids ...interface{}) ([]*model.Asset, error) {
+	return inst.findAsset("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
+}
+
 func (inst *Instance) FindAssetWithParent() ([]*model.Asset, error) {
 	assets, err := inst.findAsset("", "created_date", -1, -1)
 	if err != nil {

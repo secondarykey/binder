@@ -46,5 +46,5 @@ func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, er
 }
 
 func (inst *Instance) FindInNoteId(ids ...interface{}) ([]*model.Note, error) {
-	return inst.findNote("id in ("+csvQ(ids)+")", "", -1, -1, ids...)
+	return inst.findNote("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
 }

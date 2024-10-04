@@ -22,6 +22,10 @@ func (inst *Instance) FindDiagrams() ([]*model.Diagram, error) {
 	return inst.findDiagram("", "updated_date desc", -1, -1)
 }
 
+func (inst *Instance) FindInDiagramId(ids ...interface{}) ([]*model.Diagram, error) {
+	return inst.findDiagram("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
+}
+
 func (inst *Instance) PublishDiagram(id string, op Op) error {
 	now := time.Now()
 	num, err := inst.updateDiagram(

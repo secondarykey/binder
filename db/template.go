@@ -17,3 +17,7 @@ func (inst *Instance) findTypeTemplates(t model.TemplateType) ([]*model.Template
 func (inst *Instance) FindTemplates() ([]*model.Template, error) {
 	return inst.findTemplate("", "updated_date desc", -1, -1)
 }
+
+func (inst *Instance) FindInTemplateId(ids ...interface{}) ([]*model.Template, error) {
+	return inst.findTemplate("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
+}
