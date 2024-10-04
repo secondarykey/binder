@@ -27,6 +27,7 @@ function Assets(props) {
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
+  const [binary, setBinary] = useState(false);
   const [file, setFile] = useState("");
 
   useEffect(() => {
@@ -39,6 +40,7 @@ function Assets(props) {
     setDetail("")
     setAlias("")
     setFile("")
+    setBinary(false)
 
     if (mode === "register") {
       setId("");
@@ -54,6 +56,7 @@ function Assets(props) {
       setAlias(data.alias);
       setDetail(data.detail)
       setParentId(data.parentId);
+      setBinary(data.binary);
       Event.changeTitle("Edit Assets:" + data.name);
     }).catch((err) => {
       Message.showError(err);
@@ -76,6 +79,7 @@ function Assets(props) {
     data.name = name
     data.alias = alias
     data.detail = detail
+    data.binary = binary
 
     EditAsset(data, file).then((resp) => {
       Event.refreshTree();

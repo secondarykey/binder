@@ -134,3 +134,13 @@ body {
     border: none;
     background-color: rgba(255, 255, 255, 1);
 }
+
+div.MuiAccordionSummary-content {
+    margin:0px !important;
+    padding:0px;
+}
+
+div.Mui-expanded {
+    margin:0px !important;
+    padding:0px;
+}
