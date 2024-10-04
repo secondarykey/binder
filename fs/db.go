@@ -44,65 +44,38 @@ func tablePath(f string) string {
 	return DBDir + "/" + f
 }
 
+func (f *FileSystem) SchemaCommit(fn string) error {
+
+	n := tablePath(fn)
+	err := f.add(n)
+	if err != nil {
+		return xerrors.Errorf("fs.add() error: %w", err)
+	}
+
+	files := allTableFiles()
+	files = append(files, n)
+
+	err = f.Commit(M("Schema Evolution", "Database"), files...)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return nil
+}
+
+func allTableFiles() []string {
+	return tableFiles(db.ConfigTableName, db.NoteTableName,
+		db.DiagramTableName, db.AssetTableName, db.TemplateTableName)
+}
+
 func (f *FileSystem) AddDBFiles(ver string) error {
 
-	files := tableFiles(db.ConfigTableName, db.NoteTableName,
-		db.DiagramTableName, db.AssetTableName, db.TemplateTableName, ver)
+	files := allTableFiles()
+	files = append(files, tablePath(ver))
 
 	err := f.add(files...)
 	if err != nil {
 		return xerrors.Errorf("fs.add() error: %w", err)
-	}
-	return nil
-}
-
-func (f *FileSystem) commitTableFiles(m string, tables ...string) error {
-
-	files := tableFiles(tables...)
-
-	err := f.Commit(m, files...)
-	if err != nil {
-		return xerrors.Errorf("Commit() error: %w", err)
-	}
-	return nil
-}
-
-func (f *FileSystem) CommitConfigTable(m string) error {
-	err := f.commitTableFiles(m, db.ConfigTableName)
-	if err != nil {
-		return xerrors.Errorf("commitTableFiles() error: %w", err)
-	}
-	return nil
-}
-
-func (f *FileSystem) CommitNoteTable(m string) error {
-	err := f.commitTableFiles(m, db.NoteTableName)
-	if err != nil {
-		return xerrors.Errorf("commitTableFiles() error: %w", err)
-	}
-	return nil
-}
-
-func (f *FileSystem) CommitDiagramTable(m string) error {
-	err := f.commitTableFiles(m, db.DiagramTableName)
-	if err != nil {
-		return xerrors.Errorf("commitTableFiles() error: %w", err)
-	}
-	return nil
-}
-
-func (f *FileSystem) CommitAssetTable(m string) error {
-	err := f.commitTableFiles(m, db.AssetTableName)
-	if err != nil {
-		return xerrors.Errorf("commitTableFiles() error: %w", err)
-	}
-	return nil
-}
-
-func (f *FileSystem) CommitTemplateTable(m string) error {
-	err := f.commitTableFiles(m, db.TemplateTableName)
-	if err != nil {
-		return xerrors.Errorf("commitTableFiles() error: %w", err)
 	}
 	return nil
 }

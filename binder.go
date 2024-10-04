@@ -96,8 +96,10 @@ func Load(dir string, ver *model.Version) (*Binder, error) {
 	}
 
 	if nf != "" {
-		//TODO コミットを行う
-		slog.Info("Schema:" + nf)
+		err = bfs.SchemaCommit(nf)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.SchemaCommit() error: %w", err)
+		}
 	}
 
 	inst, err := db.New(dbDir)
