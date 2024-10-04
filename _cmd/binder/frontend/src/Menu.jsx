@@ -22,6 +22,7 @@ import Event from './Event';
 import Message from './Message';
 
 import "./assets/Menu.css";
+import ModifiedMenu from './contents/ModifiedMenu';
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -137,6 +138,17 @@ function Menu(props) {
   }
 
   /**
+   * 更新一覧
+   */
+  const handleClickModified = () => {
+    nav("/status/modified");
+  }
+
+  const handleClickPublish = () => {
+    nav("/status/publish");
+  }
+
+  /**
    * テンプレート設定
    */
   const handleClickTemplate = () => {
@@ -159,6 +171,7 @@ function Menu(props) {
 
   //router の定義用に書いておく
   var tempTree = <TemplateTree/>
+  var modified = <ModifiedMenu/>
 
   //バインダーが開いている時のみ表示するコンポーネント
   const OpenBinderComponent = () => {
@@ -169,11 +182,12 @@ function Menu(props) {
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
         </IconButton>
 
-        {/** Update History */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+        {/** Modified  */}
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
           <UpdateIcon fill="white" className="leftIcon" />
         </IconButton>
 
+        {/** Publish  */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
           <PublishIcon fill="white" className="leftIcon" />
         </IconButton>
@@ -255,6 +269,9 @@ function Menu(props) {
             <Route path={"/file/*"} element={<> <FileMenu /> </>} />
             <Route path={"/template/*"} element={tempTree} />
             <Route path={"/editor/template/:id"} element={tempTree} />
+
+            <Route path="/status/modified" element={modified} />
+            <Route path="/status/modified/*" element={modified} />
 
             <Route path="*" element={<>
               <BinderTree />

@@ -24,6 +24,7 @@ import Template from "./contents/Template";
 import { Hidden } from "./App";
 
 import "./assets/Content.css"
+import Patch from "./contents/Patch";
 /**
  * コンテンツ表示部分
  * <pre>
@@ -86,6 +87,7 @@ function Content(props) {
             <Route path="/file/new" element={<BinderRegister />} />
             <Route path="/file/remote" element={<BinderRemote />} />
 
+
             <Route path="/binder/edit" element={<Binder />} />
             <Route path="/setting" element={<Setting />} />
 
@@ -95,8 +97,11 @@ function Content(props) {
             <Route path="/template/:mode/:currentId" element={<Template />} />
 
             <Route path="/template/view" element={<Hidden />} />
+            <Route path="/status/modified" element={<Hidden />} />
+            <Route path="/status/modified/:type/:currentId" element={<Patch />} />
 
             <Route path="/editor/:mode/:id" element={<Editor />} />
+
           </Routes>
 
         </Paper>
