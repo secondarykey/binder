@@ -29,7 +29,7 @@ func check(ov, nv *model.Version) ([]core.Converter, error) {
 	var c []core.Converter
 	//現在のバージョンを取得
 	//新しいのバージョンのスキーマを取得
-	if ov.Le(v010) {
+	if ov.Lt(v010) {
 		c = append(c, convert010.Convert010)
 	}
 
@@ -110,7 +110,6 @@ func convert(p string, v *model.Version, fset []*core.FileSet) (string, error) {
 
 		if !ok {
 			f := filepath.Join(p, n)
-			slog.Info("Delete:" + f)
 			err = os.Remove(f)
 			if err != nil {
 				return "", xerrors.Errorf("os.Remove() error: %w", err)
