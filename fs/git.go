@@ -3,6 +3,7 @@ package fs
 import (
 	"binder/settings"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/format/diff"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"golang.org/x/xerrors"
@@ -21,6 +23,52 @@ var UpdatedFilesError = fmt.Errorf("No updated files")
 
 func M(header string, name string) string {
 	return fmt.Sprintf("%s : %s", header, name)
+}
+
+type ModifiedFiles []*Modified
+
+func (data ModifiedFiles) Ids() []interface{} {
+	ids := make([]interface{}, len(data))
+	for idx, m := range data {
+		ids[idx] = m.Id
+	}
+	return ids
+}
+
+func (data ModifiedFiles) Exists() bool {
+	return len(data) > 0
+}
+
+func (data ModifiedFiles) Notes() ModifiedFiles {
+	return data.filter("note")
+}
+
+func (data ModifiedFiles) Diagrams() ModifiedFiles {
+	return data.filter("diagram")
+}
+
+func (data ModifiedFiles) Assets() ModifiedFiles {
+	return data.filter("asset")
+}
+
+func (data ModifiedFiles) Templates() ModifiedFiles {
+	return data.filter("template")
+}
+
+func (data ModifiedFiles) filter(t string) ModifiedFiles {
+	var files []*Modified
+	for _, f := range data {
+		if t == f.Typ {
+			files = append(files, f)
+		}
+	}
+	return files
+}
+
+type Modified struct {
+	Id     string
+	Typ    string
+	Status *git.FileStatus
 }
 
 func (f *FileSystem) CreateRemote(name, url string) error {
@@ -187,56 +235,66 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 	return names, nil
 }
 
-func (f *FileSystem) Status() error {
+func (f *FileSystem) Status() (ModifiedFiles, error) {
 
 	w, err := f.repo.Worktree()
 	if err != nil {
-		return xerrors.Errorf("Worktree() error: %w", err)
+		return nil, xerrors.Errorf("Worktree() error: %w", err)
 	}
 
 	status, err := w.Status()
 	if err != nil {
-		return xerrors.Errorf("Status() error: %w", err)
+		return nil, xerrors.Errorf("Status() error: %w", err)
 	}
 
+	var rtn []*Modified
 	//notes,diagrams,templates 以外ないはず
 	for f, s := range status {
 		slog.Debug("Status", "File", f, "Staging", s.Staging, "Worktree", s.Worktree, "Extra", s.Extra)
-
 		//fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
-		typ, id, err := getModelType(f)
+		mod, err := getModelType(f)
 		if err != nil {
 			slog.Warn(err.Error())
 			//return xerrors.Errorf("getModelType() error: %w", err)
 		} else {
-			fmt.Printf("%s[%s]\n", id, typ)
+			mod.Status = s
+			rtn = append(rtn, mod)
 		}
 	}
 
-	return nil
+	return rtn, nil
 }
 
-func getModelType(f string) (string, string, error) {
+func getModelType(f string) (*Modified, error) {
+
+	var mod Modified
+
 	data := strings.Split(f, "/")
 	if len(data) < 2 {
-		slog.Warn("Top Directory")
-		return "", "", fmt.Errorf("Path error")
+		return nil, fmt.Errorf("Path error")
 	}
 
 	fn := data[1]
 	if strings.Index(f, NoteDir) == 0 {
+		mod.Typ = "note"
 		//".md"
-		return "note", fn[:len(fn)-3], nil
+		mod.Id = fn[:len(fn)-3]
 	} else if strings.Index(f, DiagramDir) == 0 {
+		mod.Typ = "diagram"
 		//".md"
-		return "diagram", fn[:len(fn)-3], nil
+		mod.Id = fn[:len(fn)-3]
 	} else if strings.Index(f, AssetDir) == 0 {
-		return "assets", data[2], nil
+		mod.Typ = "asset"
+		mod.Id = data[2]
 	} else if strings.Index(f, TemplateDir) == 0 {
+		mod.Typ = "template"
 		//".tmpl"
-		return "template", fn[:len(fn)-5], nil
+		mod.Id = fn[:len(fn)-5]
+	} else {
+		return nil, fmt.Errorf("ModelType not found.[%s]", f)
 	}
-	return "", "", fmt.Errorf("ModelType not found.[%s]", f)
+
+	return &mod, nil
 }
 
 func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
@@ -328,8 +386,55 @@ func (f *FileSystem) add(files ...string) error {
 	for _, n := range files {
 		_, err = w.Add(n)
 		if err != nil {
-			return xerrors.Errorf("Add() error: %w", err)
+			return xerrors.Errorf("Add(%s) error: %w", n, err)
 		}
+	}
+	return nil
+}
+
+func (f *FileSystem) WriteFilePatch(w io.Writer, file string) error {
+
+	fn := convertPath(file)
+
+	p, err := f.Patch(fn)
+	if err != nil {
+		return xerrors.Errorf("Patch() error: %w", err)
+	}
+
+	err = writePatch(w, p)
+	if err != nil {
+		return xerrors.Errorf("writePatch() error: %w", err)
+	}
+	return nil
+}
+
+// Patch内からFilePatchを探す
+func filterFilePatch(name string, patch diff.Patch) (diff.FilePatch, error) {
+
+	for _, fp := range patch.FilePatches() {
+
+		from, to := fp.Files()
+
+		if from != nil {
+			if from.Path() == name {
+				return fp, nil
+			}
+		}
+		if to != nil {
+			if to.Path() == name {
+				return fp, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("Not Found FilePatch: %s", name)
+}
+
+func writePatch(w io.Writer, p diff.Patch) error {
+	ue := diff.NewUnifiedEncoder(w, diff.DefaultContextLines)
+	err := ue.Encode(p)
+	if err != nil {
+		return xerrors.Errorf("Encode() error: %w", err)
 	}
 	return nil
 }

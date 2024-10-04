@@ -1,9 +1,10 @@
 package fs
 
 import (
+	"binder/log"
+
 	"io"
 	"io/fs"
-	"log"
 
 	"github.com/go-git/go-billy/v5"
 	"golang.org/x/xerrors"
@@ -76,7 +77,7 @@ func (f *File) Stat() (fs.FileInfo, error) {
 // error -2
 func IsText(r io.Reader) int {
 
-	buf := make([]byte, 1024)
+	buf := make([]byte, 1024*4)
 
 	rtn := -1
 	for {
@@ -88,7 +89,7 @@ func IsText(r io.Reader) int {
 		rtn = 1
 
 		if err != nil {
-			log.Println(err)
+			log.PrintStackTrace(err)
 			return -2
 		}
 

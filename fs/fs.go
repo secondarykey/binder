@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-billy/v5"
@@ -179,6 +180,23 @@ func (f *FileSystem) DeprecatedRemove(n string) error {
 	//TODO インデックスを削除
 
 	return nil
+}
+
+func (f *FileSystem) readTextFile(n string) (string, error) {
+
+	fp, err := f.Open(n)
+	if err != nil {
+		return "", xerrors.Errorf("Open() error: %w", err)
+	}
+	defer fp.Close()
+
+	var builder strings.Builder
+	_, err = io.Copy(&builder, fp)
+	if err != nil {
+		return "", xerrors.Errorf("io.Copy() error: %w", err)
+	}
+
+	return builder.String(), nil
 }
 
 func (f *FileSystem) copyFile(out string, in string) error {

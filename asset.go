@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,6 +26,9 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("os.ReadFile() error: %w", err)
 		}
+
+		buf := bytes.NewBuffer(data)
+		a.Binary = (fs.IsText(buf) == 0)
 
 		fn := filepath.Base(f)
 		//指定がない状態だった場合、ファイル名で設定しておく

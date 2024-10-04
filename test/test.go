@@ -18,7 +18,7 @@ const (
 var LatestVersion *model.Version
 
 func init() {
-	LatestVersion = NewVer("0.0.0")
+	LatestVersion = NewVer("0.1.0")
 }
 
 func NewVer(ver string) *model.Version {
