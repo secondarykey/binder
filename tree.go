@@ -183,3 +183,79 @@ func convertTemplateLeaf(d *model.Template) *Leaf {
 	l.Type = string(d.Typ)
 	return &l
 }
+
+func (b *Binder) GetModifiedTree() (*Tree, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	var tree Tree
+
+	//全データを検索する
+	files, err := b.fileSystem.Status()
+	if err != nil {
+		return nil, xerrors.Errorf("fs.Status() error: %w", err)
+	}
+
+	dirNote := newLeaf("DIR_Note", "note")
+	tree.Data = append(tree.Data, dirNote)
+	wk := files.Notes()
+	if wk.Exists() {
+		ids := wk.Ids()
+		notes, err := b.db.FindInNoteId(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("db.FindInNoteId() error: %w", err)
+		}
+		for _, n := range notes {
+			dirNote.AddChild(convertNote2Leaf(n))
+		}
+	}
+
+	dirDiagram := newLeaf("DIR_Diagram", "diagram")
+	tree.Data = append(tree.Data, dirDiagram)
+	wk = files.Diagrams()
+	if wk.Exists() {
+		ids := wk.Ids()
+		diagrams, err := b.db.FindInDiagramId(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("db.FindInDiagramId() error: %w", err)
+		}
+		for _, d := range diagrams {
+			dirDiagram.AddChild(convertDiagram2Leaf(d))
+		}
+	}
+
+	dirAsset := newLeaf("DIR_Asset", "asset")
+	tree.Data = append(tree.Data, dirAsset)
+	wk = files.Assets()
+	if wk.Exists() {
+		ids := wk.Ids()
+		assets, err := b.db.FindInAssetId(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("db.FindInAssetId() error: %w", err)
+		}
+		for _, a := range assets {
+			dirAsset.AddChild(convertAsset2Leaf(a))
+		}
+	}
+
+	dirTemplate := newLeaf("DIR_Template", "template")
+	tree.Data = append(tree.Data, dirTemplate)
+	wk = files.Templates()
+	if wk.Exists() {
+		ids := wk.Ids()
+		templates, err := b.db.FindInTemplateId(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("db.FindIdTempalteId() error: %w", err)
+		}
+		for _, t := range templates {
+			//テンプレートのTypeだと、テンプレートのタイプになるため注意
+			l := newLeaf(t.Id, t.Name)
+			l.Type = "template"
+			dirTemplate.AddChild(l)
+		}
+	}
+
+	return &tree, nil
+}
