@@ -43,6 +43,10 @@ export function GetDiagram(arg1:string):Promise<model.Diagram>;
 
 export function GetHTMLTemplates():Promise<api.Templates>;
 
+export function GetLatestPatch(arg1:string,arg2:string):Promise<string>;
+
+export function GetModifiedTree():Promise<binder.Tree>;
+
 export function GetNote(arg1:string):Promise<model.Note>;
 
 export function GetSetting():Promise<settings.Setting>;

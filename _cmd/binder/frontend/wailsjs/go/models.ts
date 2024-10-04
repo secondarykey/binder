@@ -239,6 +239,7 @@ export namespace model {
 	    alias: string;
 	    name: string;
 	    detail: string;
+	    binary: boolean;
 	    // Go type: time
 	    created: any;
 	    createdUser: string;
@@ -260,6 +261,7 @@ export namespace model {
 	        this.alias = source["alias"];
 	        this.name = source["name"];
 	        this.detail = source["detail"];
+	        this.binary = source["binary"];
 	        this.created = this.convertValues(source["created"], null);
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);

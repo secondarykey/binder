@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"golang.org/x/xerrors"
 )
@@ -60,4 +61,16 @@ func (a *App) AddRemote(name string, url string) error {
 		return fmt.Errorf("CreateRemote() error: %+v", err)
 	}
 	return nil
+}
+
+func (a *App) GetLatestPatch(typ string, id string) (string, error) {
+
+	defer log.PrintTrace(log.Func("GetLatestPatch()", typ, id))
+	var w strings.Builder
+	err := a.current.WriteLatestPatch(&w, typ, id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("WriteLatestPath() error: %+v", err)
+	}
+	return w.String(), nil
 }

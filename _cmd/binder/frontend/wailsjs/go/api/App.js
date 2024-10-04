@@ -78,6 +78,14 @@ export function GetHTMLTemplates() {
   return window['go']['api']['App']['GetHTMLTemplates']();
 }
 
+export function GetLatestPatch(arg1, arg2) {
+  return window['go']['api']['App']['GetLatestPatch'](arg1, arg2);
+}
+
+export function GetModifiedTree() {
+  return window['go']['api']['App']['GetModifiedTree']();
+}
+
 export function GetNote(arg1) {
   return window['go']['api']['App']['GetNote'](arg1);
 }

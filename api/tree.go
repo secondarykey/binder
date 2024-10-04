@@ -30,3 +30,15 @@ func (a *App) GetTemplateTree() (*binder.Tree, error) {
 
 	return tree, nil
 }
+
+func (a *App) GetModifiedTree() (*binder.Tree, error) {
+
+	defer log.PrintTrace(log.Func("GetModifiedTree()"))
+
+	tree, err := a.current.GetModifiedTree()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetModifiedTree() error\n%+v", err)
+	}
+	return tree, nil
+}
