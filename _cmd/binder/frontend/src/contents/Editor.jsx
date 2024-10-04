@@ -4,7 +4,7 @@ import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
-import { Generate,Commit } from "../../wailsjs/go/api/App.js";
+import { GetAsset,Generate,Commit } from "../../wailsjs/go/api/App.js";
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import HTMLFrame from "../components/HTMLFrame.jsx";
@@ -27,6 +27,9 @@ import '../assets/Editor.css'
 function Editor(props) {
 
   var {mode,id} = useParams();
+
+  const [editor, setEditor] = useState(true);
+  const [viewer, setViewer] = useState(true);
 
   const [text, setText] = useState("");
   const [name, setName] = useState("");
@@ -95,6 +98,9 @@ function Editor(props) {
 
     if ( mode === "diagram" ) {
 
+      setEditor(true);
+      setViewer(true);
+
       OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -116,6 +122,9 @@ function Editor(props) {
 
     } else if (mode === "note") {
 
+      setEditor(true);
+      setViewer(true);
+
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -134,6 +143,9 @@ function Editor(props) {
       })
 
     } else if (mode === "template") {
+
+      setEditor(true);
+      setViewer(false);
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
@@ -158,6 +170,24 @@ function Editor(props) {
       })
     } else if (mode === "assets") {
 
+      GetAsset(id).then((resp) => {
+
+        setEditor(!resp.binary);
+        setViewer(resp.binary);
+
+        if ( resp.updatedStatus > 0 ) {
+          setUpdated(true);
+        } else {
+          setUpdated(false);
+        }
+        setName(resp.name);
+
+        if (!resp.binary) {
+          //アセットを開く
+        }
+      }).catch((err) => {
+        Message.showError(err);
+      })
     }
 
   }, [id]);
@@ -320,6 +350,8 @@ function Editor(props) {
       tempLink.click();
   }
 
+  //editor の場合に削除
+
   var editorStyle = {};
   editorStyle.fontSize = "20px";
   editorStyle.color = "#eeeeee";
@@ -361,6 +393,8 @@ function Editor(props) {
     <>
       <Paper id="splitScreen">
 
+{/** エディタ */}
+{editor && 
         <div id="editorWrapper" style={editWrapperStyle}>
 
           {/** テキスト編集 */}
@@ -381,9 +415,17 @@ function Editor(props) {
             </Container>
           </Toolbar>
         </div>
+}
 
+{/** セパレータ */}
+{editor && viewer && 
         <div draggable="true" id="splitter" style={splitterStyle} onDragStart={dragSplitter} onDragEnd={dragSplitter} onDrag={dragSplitter}></div>
+}
 
+
+{/** 表示側 */}
+{viewer && 
+<>
         {/** 表示するコンポーネントを変更 */}
         <div id="dataViewer" style={viewerStyle}>
 
@@ -423,6 +465,8 @@ function Editor(props) {
           </Toolbar>
 
         </div>
+</>
+}
 
       </Paper>
     </>
