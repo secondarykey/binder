@@ -48,6 +48,7 @@ class Event {
      * @param {*} func 
      */
     register(key,func) {
+        //console.log(this.register.callee)
         var e = this.eventMap.get(key);
         if ( e === undefined || e === null ) {
             e = [];
