@@ -1,19 +1,19 @@
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
   Accordion, AccordionDetails, AccordionSummary,
   ListItemIcon, ListItemText, MenuItem,
-  FormControlLabel, Checkbox
+  FormControlLabel, Checkbox,
+  Button
 } from '@mui/material';
 
-import { SelectDirectory, LoadBinder, GetModifiedTree } from '../../wailsjs/go/api/App';
-
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { GetModifiedTree, CommitFiles } from '../../wailsjs/go/api/App';
 
 import Event from '../Event';
 import Message from '../Message';
 
-import { useEffect, useState } from 'react';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { ArrowDropDown, CheckBox } from '@mui/icons-material';
 
 /**
@@ -30,43 +30,116 @@ function ModifiedMenu(props) {
   const [assets, setAssets] = useState([]);
   const [templates, setTemplates] = useState([]);
 
-  useEffect(() => {
+  const noteRef = useRef(null);
+  const diagramRef = useRef(null);
+  const assetRef = useRef(null);
+  const templateRef = useRef(null);
 
-    Event.changeTitle("Modified Files");
+  /**
+   * 更新一覧を更新
+   */
+  const updatedTree = () => {
+
+    //更新一覧を取得
     GetModifiedTree().then((tree) => {
+
       var data = tree.data;
+      var comment = "Updated:";
+
+      var writeComment = function (prefix, children) {
+        if ( children.length === 0 ) return;
+        comment += "\n  " + prefix + ":";
+        children.forEach((l) => {
+          comment += "\n    " + l.name;
+        });
+      }
+
       data.map((leaf) => {
-        if (!leaf.children) {
-          return;
+
+        var leafs = leaf.children;
+        if ( leafs === undefined || leafs === null ) {
+          leafs = [];
         }
+
         if (leaf.id === "DIR_Note") {
-          setNotes(leaf.children)
+          setNotes(leafs);
+          writeComment("Note", leafs)
         } else if (leaf.id === "DIR_Diagram") {
-          setDiagrams(leaf.children)
+          setDiagrams(leafs)
+          writeComment("Diagram", leafs)
         } else if (leaf.id === "DIR_Asset") {
-          setAssets(leaf.children)
+          setAssets(leafs)
+          writeComment("Asset", leafs)
         } else if (leaf.id === "DIR_Template") {
-          setTemplates(leaf.children)
+          setTemplates(leafs)
+          writeComment("Template", leafs)
         }
       })
+      //コメント欄を更新
+      Event.raise(Event.ModifiedComment, comment);
+
+      console.log("GetModifiedTeee():");
+      console.log(noteRef);
+      console.log(noteRef.current);
+      console.log(noteRef.current.checked());
     }).catch((err) => {
       Message.showError(err);
     })
+  }
+
+  useEffect(() => {
+
+    Event.register(Event.ModifiedCommit, handleCommit);
+    Event.changeTitle("Modified Files");
+    updatedTree();
+
   }, [])
 
-  const handleOpen = (e,leaf) => {
+  const handleOpen = (e, leaf) => {
     Event.changeTitle(leaf.name);
     nav("/status/modified/" + leaf.type + "/" + leaf.id);
   }
 
-  const handleCommit = () => {
+  const getFiles = () => {
+    var files = [];
+    console.log("getFiles():");
+    console.log(noteRef);
+    console.log(noteRef.current);
+    console.log(noteRef.current.checked());
+    return;
   }
 
+  const handleCommit = (comment) => {
+
+    //現在チェックのあるファイルをコミットする
+    var files = [];
+   
+    getFiles()
+    return;
+
+    files.push(...noteRef.current.checked());
+    files.push(...diagramRef.current.checked());
+    files.push(...assetRef.current.checked());
+    files.push(...templateRef.current.checked());
+
+    CommitFiles(files, comment).then(() => {
+      updatedTree();
+      Message.showSuccess("Commit");
+    }).catch((err) => {
+      Message.showError(err);
+    })
+
+  }
+
+
+  console.log("render()");
+  console.log(noteRef);
   return (<>
-    <ModifiedList name="Note" data={notes} onClick={handleOpen}/>
-    <ModifiedList name="Diagram" data={diagrams} onClick={handleOpen}/>
-    <ModifiedList name="Asset" data={assets} onClick={handleOpen}/>
-    <ModifiedList name="Template" data={templates} onClick={handleOpen}/>
+    <ModifiedList name="Note" data={notes} onClick={handleOpen} ref={noteRef} />
+    <ModifiedList name="Diagram" data={diagrams} onClick={handleOpen} ref={diagramRef} />
+    <ModifiedList name="Asset" data={assets} onClick={handleOpen} ref={assetRef} />
+    <ModifiedList name="Template" data={templates} onClick={handleOpen} ref={templateRef} />
+    <Button onClick={handleCommit}>Test</Button>
   </>);
 }
 
@@ -75,11 +148,11 @@ function ModifiedMenu(props) {
  * @param {*} props 
  * @returns 
  */
-const ModifiedList = (props) => {
+const ModifiedList = forwardRef((props, ref) => {
 
-  const [expand,setExpand] = useState(true);
-  const [all,setAll] = useState(false);
-  const [data,setData] = useState([]);
+  const [data, setData] = useState([]);
+  const [expand, setExpand] = useState(true);
+  const [all, setAll] = useState(false);
 
   var summaryStyle = {}
   summaryStyle.margin = "0px";
@@ -106,23 +179,39 @@ const ModifiedList = (props) => {
   }
 
   useEffect(() => {
+
     var wk = [];
-    props.data.forEach( (leaf) => {
+    props.data.forEach((leaf) => {
       leaf.checked = true;
       wk.push(leaf);
     })
 
-    setAll(props.data.length > 0 )
+    setAll(props.data.length > 0)
     setData(wk);
-  },[props.data]);
 
-  const handleChecked = (e,l) => {
+  }, [props.data]);
+
+  const checked = () => {
+    var rtn = [];
+    data.forEach((val) => {
+      if (val.checked) {
+        rtn.push(val)
+      }
+    })
+    return rtn;
+  }
+
+  useImperativeHandle(ref, () => ({
+    checked: checked,
+  }),[data]);
+
+  const handleChecked = (e, l) => {
 
     e.stopPropagation()
     e.preventDefault();
 
     var rtn = data.map((leaf) => {
-      if ( l.id === leaf.id) {
+      if (l.id === leaf.id) {
         leaf.checked = !leaf.checked;
       }
       return leaf;
@@ -151,11 +240,11 @@ const ModifiedList = (props) => {
   }
 
   return (
-    <Accordion expanded={expand}>
+    <Accordion expanded={expand} ref={ref}>
       <AccordionSummary style={summaryStyle} expandIcon={<ArrowDropDownIcon />} onClick={handleExpand}>
         <FormControlLabel style={controlStyle}
           control={
-            <Checkbox checked={all} disabled={disabled} onClick={handleCheckedAll}/>
+            <Checkbox checked={all} disabled={disabled} onClick={handleCheckedAll} />
           }
           label={props.name} />
       </AccordionSummary>
@@ -163,9 +252,9 @@ const ModifiedList = (props) => {
       <AccordionDetails style={detailsStyle}>
         {data.map((leaf) => {
           return (
-            <MenuItem style={rowStyle} key={leaf.id} onClick={(e) => props.onClick(e,leaf)}>
+            <MenuItem style={rowStyle} key={leaf.id} onClick={(e) => props.onClick(e, leaf)}>
               <ListItemIcon>
-                <Checkbox checked={leaf.checked} onClick={(e) => handleChecked(e,leaf)}/>
+                <Checkbox checked={leaf.checked} onClick={(e) => handleChecked(e, leaf)} />
               </ListItemIcon>
               <ListItemText>{leaf.name}</ListItemText>
             </MenuItem>
@@ -175,6 +264,6 @@ const ModifiedList = (props) => {
     </Accordion>
   );
 
-}
+});
 
 export default ModifiedMenu;

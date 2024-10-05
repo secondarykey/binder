@@ -4,7 +4,7 @@ import (
 	"binder/db/model"
 	"bytes"
 	"fmt"
-	stdFs "io/fs"
+	"io"
 	"os"
 
 	"golang.org/x/xerrors"
@@ -74,15 +74,15 @@ func (f *FileSystem) DeleteNote(n *model.Note) ([]string, error) {
 	return files, nil
 }
 
-func (f *FileSystem) ReadNoteText(id string) ([]byte, error) {
+func (f *FileSystem) ReadNoteText(w io.Writer, id string) error {
 
 	n := NoteFile(id)
-	//TODO stdFs必要？
-	data, err := stdFs.ReadFile(f, n)
+
+	err := f.readFile(w, n)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)
+		return xerrors.Errorf("fs.ReadFile() error: %w", err)
 	}
-	return data, nil
+	return nil
 }
 
 func (f *FileSystem) WriteNoteText(id string, data []byte) error {

@@ -6,9 +6,6 @@ import Event from "./Event";
 
 class Message {
 
-  //使い方？
-   evt = useContext(EventContext)
-
     static createMessage(type, msg) {
         var wk = "";
         if (typeof msg === 'object') {

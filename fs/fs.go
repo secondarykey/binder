@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/go-git/go-billy/v5"
@@ -182,21 +181,34 @@ func (f *FileSystem) DeprecatedRemove(n string) error {
 	return nil
 }
 
-func (f *FileSystem) readTextFile(n string) (string, error) {
+func (f *FileSystem) readFile(w io.Writer, n string) error {
 
 	fp, err := f.Open(n)
 	if err != nil {
-		return "", xerrors.Errorf("Open() error: %w", err)
+		return xerrors.Errorf("Open() error: %w", err)
 	}
 	defer fp.Close()
 
-	var builder strings.Builder
-	_, err = io.Copy(&builder, fp)
+	_, err = io.Copy(w, fp)
 	if err != nil {
-		return "", xerrors.Errorf("io.Copy() error: %w", err)
+		return xerrors.Errorf("io.Copy() error: %w", err)
 	}
 
-	return builder.String(), nil
+	return nil
+}
+
+func (f *FileSystem) writeFile(n string, r io.Reader) error {
+	fp, err := f.Create(n)
+	if err != nil {
+		return xerrors.Errorf("Create() error: %w", err)
+	}
+	defer fp.Close()
+
+	_, err = io.Copy(fp, r)
+	if err != nil {
+		return xerrors.Errorf("io.Copy() error: %w", err)
+	}
+	return nil
 }
 
 func (f *FileSystem) copyFile(out string, in string) error {
@@ -220,15 +232,9 @@ func (f *FileSystem) copyReader(out string, r io.Reader) error {
 	p := filepath.Dir(out)
 	f.mkdir(p)
 
-	fp, err := f.Create(out)
+	err := f.writeFile(out, r)
 	if err != nil {
-		return xerrors.Errorf("Create() error: %w", err)
-	}
-	defer fp.Close()
-
-	_, err = io.Copy(fp, r)
-	if err != nil {
-		return xerrors.Errorf("io.Copy() error: %w", err)
+		return xerrors.Errorf("writeFile() error: %w", err)
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"binder/log"
 	"log/slog"
+	"strings"
 
 	"fmt"
 )
@@ -50,12 +51,14 @@ func (a *App) OpenNote(noteId string) (string, error) {
 
 	defer log.PrintTrace(log.Func("OpenNote()"))
 
-	data, err := a.current.OpenNote(noteId)
+	var w strings.Builder
+
+	err := a.current.ReadNote(&w, noteId)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("OpenNote() error\n%+v", err)
 	}
-	return string(data), nil
+	return w.String(), nil
 }
 
 func (a *App) SaveNote(noteId string, data string) error {

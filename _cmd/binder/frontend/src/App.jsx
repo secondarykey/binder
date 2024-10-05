@@ -37,6 +37,7 @@ var intervalId = undefined;
  */
 function App() {
 
+  //使い方？
   const evt = useContext(EventContext)
 
   useEffect(() => {

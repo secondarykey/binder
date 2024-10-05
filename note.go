@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"io"
 
 	"golang.org/x/xerrors"
 )
@@ -137,16 +138,17 @@ func (b *Binder) createNote(n *model.Note) (string, error) {
 	return fn, nil
 }
 
-func (b *Binder) OpenNote(noteId string) ([]byte, error) {
+func (b *Binder) ReadNote(w io.Writer, noteId string) error {
+
 	if b == nil {
-		return nil, EmptyError
+		return EmptyError
 	}
 
-	data, err := b.fileSystem.ReadNoteText(noteId)
+	err := b.fileSystem.ReadNoteText(w, noteId)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.ReadNoteText() error: %w", err)
+		return xerrors.Errorf("fs.ReadNoteText() error: %w", err)
 	}
-	return data, nil
+	return nil
 }
 
 func (b *Binder) SaveNote(noteId string, data []byte) error {
@@ -180,15 +182,6 @@ func (b *Binder) GetUnpublishedNotes() ([]*model.Note, error) {
 		}
 	}
 	return pr, nil
-}
-
-func (b *Binder) CommitNote(id string, m string) error {
-	f := fs.NoteFile(id)
-	err := b.fileSystem.Commit(m, f)
-	if err != nil {
-		return xerrors.Errorf("fs.Commit() error: %w", err)
-	}
-	return nil
 }
 
 func (b *Binder) PublishNote(id string, data []byte) (*model.Note, error) {

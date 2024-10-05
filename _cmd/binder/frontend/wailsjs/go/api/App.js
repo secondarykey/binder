@@ -18,6 +18,10 @@ export function Commit(arg1, arg2, arg3) {
   return window['go']['api']['App']['Commit'](arg1, arg2, arg3);
 }
 
+export function CommitFiles(arg1, arg2) {
+  return window['go']['api']['App']['CommitFiles'](arg1, arg2);
+}
+
 export function CreateBinder(arg1, arg2) {
   return window['go']['api']['App']['CreateBinder'](arg1, arg2);
 }
@@ -78,16 +82,16 @@ export function GetHTMLTemplates() {
   return window['go']['api']['App']['GetHTMLTemplates']();
 }
 
-export function GetLatestPatch(arg1, arg2) {
-  return window['go']['api']['App']['GetLatestPatch'](arg1, arg2);
-}
-
 export function GetModifiedTree() {
   return window['go']['api']['App']['GetModifiedTree']();
 }
 
 export function GetNote(arg1) {
   return window['go']['api']['App']['GetNote'](arg1);
+}
+
+export function GetNowPatch(arg1, arg2) {
+  return window['go']['api']['App']['GetNowPatch'](arg1, arg2);
 }
 
 export function GetSetting() {

@@ -87,6 +87,20 @@ export namespace binder {
 		    return a;
 		}
 	}
+	export class Patch {
+	    patch: string;
+	    source: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Patch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.patch = source["patch"];
+	        this.source = source["source"];
+	    }
+	}
 	export class Tree {
 	    data: Leaf[];
 	

@@ -3,6 +3,7 @@ package api
 import (
 	"binder/db/model"
 	"binder/log"
+	"strings"
 
 	"fmt"
 )
@@ -48,13 +49,14 @@ func (a *App) OpenDiagram(id string) (string, error) {
 
 	defer log.PrintTrace(log.Func("OpenDiagram()"))
 
-	data, err := a.current.OpenDiagram(id)
+	var w strings.Builder
+	err := a.current.ReadDiagram(&w, id)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("ReadDataText() error\n%+v", err)
 	}
 
-	return string(data), nil
+	return w.String(), nil
 }
 
 func (a *App) SaveDiagram(id string, data string) error {

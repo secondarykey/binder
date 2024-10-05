@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"io"
 
 	"golang.org/x/xerrors"
 )
@@ -81,15 +82,15 @@ func (b *Binder) GetDiagram(id string) (*model.Diagram, error) {
 	return d, nil
 }
 
-func (b *Binder) OpenDiagram(id string) ([]byte, error) {
+func (b *Binder) ReadDiagram(w io.Writer, id string) error {
 	if b == nil {
-		return nil, EmptyError
+		return EmptyError
 	}
-	data, err := b.fileSystem.ReadDiagram(id)
+	err := b.fileSystem.ReadDiagram(w, id)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.ReadDiagram() error: %w", err)
+		return xerrors.Errorf("fs.ReadDiagram() error: %w", err)
 	}
-	return data, nil
+	return nil
 }
 
 func (b *Binder) SaveDiagram(id string, data []byte) error {
@@ -162,15 +163,6 @@ func (b *Binder) GetUnpublishedDiagrams() ([]*model.Diagram, error) {
 		}
 	}
 	return pr, nil
-}
-
-func (b *Binder) CommitDiagram(id string, m string) error {
-	f := fs.DiagramFile(id)
-	err := b.fileSystem.Commit(m, f)
-	if err != nil {
-		return xerrors.Errorf("fs.Commit() error: %w", err)
-	}
-	return nil
 }
 
 func (b *Binder) PublishDiagram(id string, data []byte) (*model.Diagram, error) {

@@ -25,6 +25,7 @@ import { Hidden } from "./App";
 
 import "./assets/Content.css"
 import Patch from "./contents/Patch";
+import Commit from "./contents/Commit";
 /**
  * コンテンツ表示部分
  * <pre>
@@ -71,7 +72,7 @@ function Content(props) {
           {/** TODO ピン留め、最大化 */}
 
           {/** アプリ終了 */}
-          <IconButton id="closeButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
+          <IconButton id="closeButton" size="large" edge="start" color="inherit" aria-label="commit" sx={{ mr: 2 }} onClick={handleExit}>
             <CloseIcon />
           </IconButton>
 
@@ -97,7 +98,7 @@ function Content(props) {
             <Route path="/template/:mode/:currentId" element={<Template />} />
 
             <Route path="/template/view" element={<Hidden />} />
-            <Route path="/status/modified" element={<Hidden />} />
+            <Route path="/status/modified" element={<Commit />} />
             <Route path="/status/modified/:type/:currentId" element={<Patch />} />
 
             <Route path="/editor/:mode/:id" element={<Editor />} />

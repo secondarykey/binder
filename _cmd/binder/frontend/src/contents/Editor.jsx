@@ -391,6 +391,8 @@ function Editor(props) {
       */}
   return (
     <>
+
+      {/** エディタ */}
       <Paper id="splitScreen">
 
 {/** エディタ */}

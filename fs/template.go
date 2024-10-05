@@ -4,7 +4,7 @@ import (
 	"binder/db/model"
 	"bytes"
 	"fmt"
-	stdFs "io/fs"
+	"io"
 
 	"golang.org/x/xerrors"
 )
@@ -58,32 +58,35 @@ func (f *FileSystem) CreateTemplateFile(t *model.Template) (string, error) {
 	return n, nil
 }
 
-func (f *FileSystem) ReadTemplate(t *model.Template) ([]byte, error) {
+func (f *FileSystem) ReadTemplate(w io.Writer, t *model.Template) error {
 
 	fn := TemplateFile(t.Id)
 
-	data, err := stdFs.ReadFile(f, fn)
+	err := f.readFile(w, fn)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.ReadFile() error: %w", err)
+		return xerrors.Errorf("fs.readFile() error: %w", err)
 	}
 
+	fmt.Println("ファイルにはフレームを設定しないように変更する")
 	//レイアウト用のフレームを削除して返す
-	typ := model.TemplateType(t.Typ)
-	if typ.IsHTML() {
-		firstIdx := len(layoutTemplateFrame)
-		if typ.IsContent() {
-			firstIdx = len(contentTemplateFrame)
-		}
-		leng := len(data) - len(endTemplateFrame)
-		return data[firstIdx:leng], nil
-	}
+	//typ := model.TemplateType(t.Typ)
+	//if typ.IsHTML() {
+	//firstIdx := len(layoutTemplateFrame)
+	//if typ.IsContent() {
+	//firstIdx = len(contentTemplateFrame)
+	//}
+	//leng := len(data) - len(endTemplateFrame)
+	//
+	//return data[firstIdx:leng], nil
+	//}
 
-	return data, nil
+	return nil
 }
 
 func (f *FileSystem) WriteTemplate(t *model.Template, data []byte) (string, error) {
 
 	fn := TemplateFile(t.Id)
+
 	fp, err := f.Create(fn)
 	if err != nil {
 		return "", fmt.Errorf("Open() error\n%+v", err)
@@ -91,9 +94,9 @@ func (f *FileSystem) WriteTemplate(t *model.Template, data []byte) (string, erro
 	defer fp.Close()
 
 	//枠を作成
-	txt := AddTemplateFrame(model.TemplateType(t.Typ), data)
+	//txt := AddTemplateFrame(model.TemplateType(t.Typ), data)
 
-	_, err = fp.Write(txt)
+	_, err = fp.Write(data)
 	if err != nil {
 		return "", fmt.Errorf("Write() error\n%+v", err)
 	}
@@ -109,7 +112,6 @@ func (f *FileSystem) SetTemplateStatus(t *model.Template) error {
 	if err != nil {
 		return xerrors.Errorf("getPublishStatus() error: %w", err)
 	}
-	fmt.Println(t.Id, us)
 	t.UpdatedStatus = us
 
 	return nil

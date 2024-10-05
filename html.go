@@ -129,11 +129,12 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 
 	code := ""
 	if w.Local {
-		txt, err := w.owner.OpenDiagram(id)
+		var d strings.Builder
+		err := w.owner.ReadDiagram(&d, id)
 		if err != nil {
 			return template.HTML(err.Error())
 		}
-		code = string(txt)
+		code = d.String()
 	} else {
 
 		f, err := w.getSVGFile(id)
@@ -225,15 +226,19 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text str
 		conId = w.note.ContentTemplate
 	}
 
+	//TODO 同等の処理になるはずなので、適当にまとめる
 	if typ == model.LayoutTemplateType && text != "" {
+
 		//レイアウトをテキストで代用
 		data := fs.AddTemplateFrame(model.LayoutTemplateType, []byte(text))
-
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
 		}
 	} else {
+
+		//TODO ここでテンプレートを変数化する
+
 		layoutFile := fs.ConvertHTTPPath(fs.TemplateFile(layId))
 		//layout と typeでパース
 		_, err = tmpl.ParseFS(b.fileSystem, layoutFile)
@@ -251,6 +256,8 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text str
 		}
 
 	} else {
+
+		//TODO ここでテンプレートを変数化する
 
 		tmpFile := fs.ConvertHTTPPath(fs.TemplateFile(conId))
 		//layout と typeでパース

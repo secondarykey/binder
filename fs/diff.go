@@ -63,7 +63,7 @@ func getCommitContent(c *object.Commit, n string) (string, error) {
 	return content, nil
 }
 
-func (f *FileSystem) Patch(n string) (diff.Patch, error) {
+func (f *FileSystem) getLatestPatch(n string, now string) (diff.Patch, error) {
 
 	//コミットから取得
 	fromContent, err := f.getLastCommitContent(n)
@@ -71,11 +71,14 @@ func (f *FileSystem) Patch(n string) (diff.Patch, error) {
 		return nil, xerrors.Errorf("getLastContent() error: %w", err)
 	}
 
-	//現在のファイルシステムから取得
-	toContent, err := f.readTextFile(n)
+	p, err := createPatch(n, fromContent, now)
 	if err != nil {
-		return nil, xerrors.Errorf("readTextFile() error: %w", err)
+		return nil, xerrors.Errorf("patch() error: %w", err)
 	}
+	return p, nil
+}
+
+func createPatch(n string, from, to string) (diff.Patch, error) {
 
 	fromFile := newFile(n)
 	//fromFile.hash = plumbing.NewHash(fromContent)
@@ -87,7 +90,7 @@ func (f *FileSystem) Patch(n string) (diff.Patch, error) {
 	var fp filePatch
 	fp.from = fromFile
 	fp.to = toFile
-	fp.chunks = createChunks(fromContent, toContent)
+	fp.chunks = createChunks(from, to)
 
 	return newPatch(&fp), nil
 }

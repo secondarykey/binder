@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"binder/log"
 	"fmt"
+	"strings"
 )
 
 func (a *App) EditTemplate(t *model.Template) (*model.Template, error) {
@@ -34,12 +35,13 @@ func (a *App) OpenTemplate(id string) (string, error) {
 
 	defer log.PrintTrace(log.Func("OpenTemplate()"))
 
-	data, err := a.current.OpenTemplate(id)
+	var w strings.Builder
+	err := a.current.ReadTemplate(&w, id)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("ReadTemplate() error\n%+v", err)
 	}
-	return string(data), nil
+	return w.String(), nil
 }
 
 func (a *App) SaveTemplate(id string, data string) error {

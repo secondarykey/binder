@@ -3,10 +3,40 @@ package binder
 import (
 	"binder/fs"
 	"fmt"
-	"io"
+	"log/slog"
 
 	"golang.org/x/xerrors"
 )
+
+func (b *Binder) ToFile(mode string, id string) string {
+	f := ""
+	switch mode {
+	case "note":
+		f = fs.NoteFile(id)
+	case "diagram":
+		f = fs.DiagramFile(id)
+	case "asset":
+		f = b.AssetFile(id)
+	case "template":
+		f = fs.TemplateFile(id)
+	default:
+		slog.Warn("leaf is template type? " + mode)
+	}
+	return f
+}
+
+func (b *Binder) CommitFiles(m string, files ...string) error {
+	err := b.fileSystem.Commit(m, files...)
+	if err != nil {
+		return xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+	return nil
+}
+
+type Patch struct {
+	Patch  string `json:"patch"`
+	Source string `json:"source"`
+}
 
 func (b *Binder) getFilename(typ, id string) (string, error) {
 	fn := ""
@@ -30,17 +60,21 @@ func (b *Binder) getFilename(typ, id string) (string, error) {
 	return fn, nil
 }
 
-func (b *Binder) WriteLatestPatch(w io.Writer, typ string, id string) error {
+func (b *Binder) GetNowPatch(typ string, id string) (*Patch, error) {
 
 	fn, err := b.getFilename(typ, id)
 	if err != nil {
-		return xerrors.Errorf("getFilename() error: %w", err)
+		return nil, xerrors.Errorf("getFilename() error: %w", err)
 	}
 
-	err = b.fileSystem.WriteFilePatch(w, fn)
+	now, patch, err := b.fileSystem.GetNowPatch(fn)
 	if err != nil {
-		return xerrors.Errorf("WriteFilePatch() error: %w", err)
+		return nil, xerrors.Errorf("WriteFilePatch() error: %w", err)
 	}
 
-	return nil
+	var p Patch
+	p.Patch = patch
+	p.Source = now
+
+	return &p, nil
 }

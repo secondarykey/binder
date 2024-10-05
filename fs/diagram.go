@@ -4,7 +4,7 @@ import (
 	"binder/db/model"
 	"bytes"
 	"fmt"
-	stdFs "io/fs"
+	"io"
 
 	"golang.org/x/xerrors"
 )
@@ -47,16 +47,15 @@ func (f *FileSystem) DeleteDiagram(d *model.Diagram) ([]string, error) {
 	return files, nil
 }
 
-func (f *FileSystem) ReadDiagram(id string) ([]byte, error) {
+func (f *FileSystem) ReadDiagram(w io.Writer, id string) error {
 
 	fn := DiagramFile(id)
 
-	//TODO stdFs必要？
-	data, err := stdFs.ReadFile(f, fn)
+	err := f.readFile(w, fn)
 	if err != nil {
-		return nil, fmt.Errorf("diagramTextFile() error\n%+v", err)
+		return fmt.Errorf("diagramTextFile() error\n%+v", err)
 	}
-	return data, nil
+	return nil
 }
 
 func (f *FileSystem) WriteDiagram(id string, data []byte) error {

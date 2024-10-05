@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"fmt"
+	"io"
 
 	"golang.org/x/xerrors"
 )
@@ -75,22 +76,22 @@ func (b *Binder) GetTemplate(id string) (*model.Template, error) {
 	return t, nil
 }
 
-func (b *Binder) OpenTemplate(id string) ([]byte, error) {
+func (b *Binder) ReadTemplate(w io.Writer, id string) error {
 
 	if b == nil {
-		return nil, EmptyError
+		return EmptyError
 	}
 
 	t, err := b.db.GetTemplate(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetTemplate() error: %w", err)
+		return xerrors.Errorf("db.GetTemplate() error: %w", err)
 	}
 
-	data, err := b.fileSystem.ReadTemplate(t)
+	err = b.fileSystem.ReadTemplate(w, t)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.ReadTemplate() error: %w", err)
+		return xerrors.Errorf("fs.ReadTemplate() error: %w", err)
 	}
-	return data, nil
+	return nil
 }
 
 func (b *Binder) SaveTemplate(id string, data []byte) error {
@@ -130,13 +131,4 @@ func (b *Binder) GetHTMLTemplates() ([]*model.Template, []*model.Template, error
 		return nil, nil, xerrors.Errorf("FindContentTemplates() error: %w", err)
 	}
 	return layouts, contents, nil
-}
-
-func (b *Binder) CommitTemplate(id string, m string) error {
-	f := fs.TemplateFile(id)
-	err := b.fileSystem.Commit(m, f)
-	if err != nil {
-		return xerrors.Errorf("fs.Commit() error: %w", err)
-	}
-	return nil
 }

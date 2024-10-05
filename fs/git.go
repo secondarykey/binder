@@ -392,20 +392,30 @@ func (f *FileSystem) add(files ...string) error {
 	return nil
 }
 
-func (f *FileSystem) WriteFilePatch(w io.Writer, file string) error {
+func (f *FileSystem) GetNowPatch(file string) (string, string, error) {
 
 	fn := convertPath(file)
 
-	p, err := f.Patch(fn)
+	var now strings.Builder
+	//現在のファイルシステムから取得
+	err := f.readFile(&now, fn)
 	if err != nil {
-		return xerrors.Errorf("Patch() error: %w", err)
+		return "", "", xerrors.Errorf("readTextFile() error: %w", err)
 	}
 
-	err = writePatch(w, p)
+	source := now.String()
+
+	p, err := f.getLatestPatch(fn, source)
 	if err != nil {
-		return xerrors.Errorf("writePatch() error: %w", err)
+		return "", "", xerrors.Errorf("Patch() error: %w", err)
 	}
-	return nil
+
+	var w strings.Builder
+	err = writePatch(&w, p)
+	if err != nil {
+		return "", "", xerrors.Errorf("writePatch() error: %w", err)
+	}
+	return source, w.String(), nil
 }
 
 // Patch内からFilePatchを探す

@@ -28,6 +28,17 @@ class Event {
     static ChangeAddress = "change.address"
 
     /**
+     * Commitへコメントを伝達
+     */
+    static ModifiedComment = "git.modified.comment"
+
+    /**
+     * コミット(Commit画面からModifiedTree側に伝達)
+     */
+    static ModifiedCommit = "git.modified.commit"
+
+
+    /**
      * 管理イベント
      */
     static eventMap = new Map();
