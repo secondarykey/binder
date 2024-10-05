@@ -1,14 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { EditTemplate, GetTemplate } from "../../wailsjs/go/api/App";
-import { copyClipboard } from "../App";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
-import ContentCopy from '@mui/icons-material/ContentCopy';
 
-import Event from "../Event";
-import Message from '../Message';
+import {EventContext} from "../Event";
 
 /**
  * テンプレートの作成、編集を行う
@@ -17,6 +14,7 @@ import Message from '../Message';
  */
 function Template(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
   const { mode, currentId } = useParams();
 
@@ -66,7 +64,7 @@ function Template(props) {
       console.log(t)
 
       setType(t);
-      Event.changeTitle("Register Template");
+      evt.changeTitle("Register Template");
       return;
     } else {
       setId(currentId)
@@ -76,9 +74,9 @@ function Template(props) {
       setName(data.name);
       setDetail(data.detail)
       setType(data.type)
-      Event.changeTitle("Edit Template:" + data.name);
+      evt.changeTitle("Edit Template:" + data.name);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }, [currentId]);
 
@@ -92,32 +90,32 @@ function Template(props) {
     data.type = type
 
     if ( name === "" ) {
-      Message.showWarning("name is required");
+      evt.showWarningMessage("name is required");
       return;
     }
 
     EditTemplate(data).then((resp) => {
-      Event.refreshTree();
+      evt.refreshTree();
       if (mode === "register") {
         nav("/template/edit/" + resp.id);
         return;
       }
-      Message.showSuccess("Update Template.");
+      evt.showSuccessMessage("Update Template.");
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
   const handleDelete = () => {
     RemoveTemplate(id).then((resp) => {
-      Event.refreshTree();
+      evt.refreshTree();
       // 遷移する
-      Message.showSuccess("Remove Template.")
+      evt.showSuccessMessage("Remove Template.")
 
       //TODO 選択できるかな？
 
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect ,useContext} from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
@@ -8,8 +8,7 @@ import { ContentCopy } from "@mui/icons-material";
 import { EditDiagram, GetDiagram, RemoveDiagram } from "../../wailsjs/go/api/App";
 import { copyClipboard } from "../App";
 
-import Event from "../Event";
-import Message from '../Message';
+import {EventContext} from "../Event";
 /**
  * データのメタ情報を表示、編集
  * @param {*} props 
@@ -17,7 +16,9 @@ import Message from '../Message';
  */
 function Diagram(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
+
   const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
@@ -40,7 +41,7 @@ function Diagram(props) {
     if (mode === "register") {
       setId("");
       setParentId(currentId);
-      Event.changeTitle("Register Diagram");
+      evt.changeTitle("Register Diagram");
       return;
     } else {
       setId(currentId);
@@ -51,9 +52,9 @@ function Diagram(props) {
       setAlias(data.alias);
       setDetail(data.detail);
       setParentId(data.parentId);
-      Event.changeTitle("Edit Diagram:" + data.name);
+      evt.changeTitle("Edit Diagram:" + data.name);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
   }, [currentId]);
@@ -68,45 +69,45 @@ function Diagram(props) {
     data.alias = alias;
 
     if ( name === "" ) {
-      Message.showWarning("name is required")
+      evt.showWarningMessage("name is required")
       return;
     }
 
     if ( alias === "" ) {
-      Message.showWarning("alias is required")
+      evt.showWarningMessage("alias is required")
       return;
     }
 
     EditDiagram(data).then((resp) => {
 
-      Event.refreshTree();
+      evt.refreshTree();
       //新規作成時は移動
       if (mode === "register") {
         nav("/diagram/edit/" + resp.id);
         return;
       }
-      Message.showSuccess("Update Diagram.");
+      evt.showSuccessMessage("Update Diagram.");
 
     }).catch((err) => {
-      Message.showError(err)
+      evt.showErrorMessage(err)
     });
   }
 
   const handleDelete = () => {
 
     RemoveDiagram(id).then((resp) => {
-      Event.refreshTree();
+      evt.refreshTree();
       // 遷移する
-      Message.showSuccess("Remove Diagram.")
+      evt.showSuccessMessage("Remove Diagram.")
       nav("/note/edit/" + parentId);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
   const handleCopyId = (e) => {
     copyClipboard(id);
-    Message.showSuccess("Copied.");
+    evt.showSuccessMessage("Copied.");
   }
 
   var start = "/images/"

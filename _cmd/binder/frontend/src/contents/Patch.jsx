@@ -1,19 +1,18 @@
-import { useEffect, useState,useRef } from "react";
+import { useEffect, useState, useRef ,useContext} from "react";
 import { useParams } from "react-router-dom";
 
 import { GetNowPatch } from "../../wailsjs/go/api/App";
 
-import Message from "../Message";
-import { textAlign } from "@mui/system";
+import {EventContext} from "../Event";
 
 function createPosition(line) {
     var s = line.split(",");
     var pos = {};
     pos.start = s[0];
-    if ( s.length > 1 ) {
-      pos.end = s[1];
+    if (s.length > 1) {
+        pos.end = s[1];
     } else {
-      pos.end = s[0];
+        pos.end = s[0];
     }
     return pos;
 }
@@ -22,36 +21,36 @@ function isDiffLine(line) {
 
     var idx = line.indexOf("@@");
     //@@が2つ存在
-    if ( idx !== -1 ) {
-      var startIdx = idx+2
-      idx = line.substring(startIdx).indexOf("@@");
-      if ( idx !== -1 ) {
-        var lastIdx = idx + startIdx;
-        var diff = line.substring(startIdx,lastIdx);
-        var remain = line.substring(lastIdx+2);
-        var obj = {};
-        obj.remain = remain;
-        var sd = diff.split(" ");
+    if (idx !== -1) {
+        var startIdx = idx + 2
+        idx = line.substring(startIdx).indexOf("@@");
+        if (idx !== -1) {
+            var lastIdx = idx + startIdx;
+            var diff = line.substring(startIdx, lastIdx);
+            var remain = line.substring(lastIdx + 2);
+            var obj = {};
+            obj.remain = remain;
+            var sd = diff.split(" ");
 
-        sd.forEach( (line) => {
-            if ( line === "" ) {
-                return;
-            }
-            idx = line.indexOf("-");
-            if ( idx !== -1 ) {
-                obj.minus = createPosition(line.substring(idx+1));
-            }
-            idx = line.indexOf("+");
-            if ( idx !== -1 ) {
-                obj.plus = createPosition(line.substring(idx+1));
-            }
-        });
+            sd.forEach((line) => {
+                if (line === "") {
+                    return;
+                }
+                idx = line.indexOf("-");
+                if (idx !== -1) {
+                    obj.minus = createPosition(line.substring(idx + 1));
+                }
+                idx = line.indexOf("+");
+                if (idx !== -1) {
+                    obj.plus = createPosition(line.substring(idx + 1));
+                }
+            });
 
-        if ( (obj.minus === undefined) || (obj.plus === undefined) ) {
-            return undefined;
+            if ((obj.minus === undefined) || (obj.plus === undefined)) {
+                return undefined;
+            }
+            return obj;
         }
-        return obj;
-      }
     }
     //@@ 内に-,+が存在
     return undefined;
@@ -59,168 +58,169 @@ function isDiffLine(line) {
 
 function Patch(props) {
 
-    const {type,currentId} = useParams();
-   
-    const [patch,setPatch] = useState("");
-    const [source,setSource] = useState("");
-    const [html,setHtml] = useState("");
-    const [rows,setRows] = useState("");
+    const evt = useContext(EventContext)
+    const { type, currentId } = useParams();
+
+    const [patch, setPatch] = useState("");
+    const [source, setSource] = useState("");
+    const [html, setHtml] = useState("");
+    const [rows, setRows] = useState("");
     const viewer = useRef();
     const lineViewer = useRef();
 
     useEffect(() => {
-        viewer.current.addEventListener("scroll",function() {
+        viewer.current.addEventListener("scroll", function () {
             lineViewer.current.scrollTop = viewer.current.scrollTop;
         })
-        GetNowPatch(type,currentId).then((resp) => {
+        GetNowPatch(type, currentId).then((resp) => {
             setPatch(resp.patch);
             setSource(resp.source);
-        }).catch( (err) => {
-            Message.showError(err);
+        }).catch((err) => {
+            evt.showErrorMessage(err);
         })
-    },[currentId])
+    }, [currentId])
 
     var parentStyle = {
-        position:"reactive",
-        width:"calc(100% - 46px)",
-        height:"calc(100% - 50px)",
+        position: "reactive",
+        width: "calc(100% - 46px)",
+        height: "calc(100% - 50px)",
     }
 
     var pos = "105px";
     var lineStyle = {
-        backgroundColor:"#222222",
-        border:"0",
-        borderRight:"1px double #cccccc",
-        position:"absolute",
-        width:"90px",
-        zIndex:10,
-        color:"#eeeeee",
-        paddingRight:"5px",
-        fontSize:"20px",
-        fontFamily:"Calex Code JP Regular",
-        height:"calc(100% - 110px)",
-        textAlign:"right",
-        overflow:"hidden",
-        whiteSpace:"pre-line",
+        backgroundColor: "#222222",
+        border: "0",
+        borderRight: "1px double #cccccc",
+        position: "absolute",
+        width: "90px",
+        zIndex: 10,
+        color: "#eeeeee",
+        paddingRight: "5px",
+        fontSize: "20px",
+        fontFamily: "Calex Code JP Regular",
+        height: "calc(100% - 110px)",
+        textAlign: "right",
+        overflow: "hidden",
+        whiteSpace: "pre-line",
     }
 
     var textStyle = {
-        backgroundColor:"#222222",
-        color:"#eeeeee",
-        whiteSpace:"pre",
-        fontSize:"20px",
-        fontFamily:"Calex Code JP Regular",
-        width:"100%",
-        height:"100%",
-        overflow:"auto",
-        paddingLeft:pos,
+        backgroundColor: "#222222",
+        color: "#eeeeee",
+        whiteSpace: "pre",
+        fontSize: "20px",
+        fontFamily: "Calex Code JP Regular",
+        width: "100%",
+        height: "100%",
+        overflow: "auto",
+        paddingLeft: pos,
     }
 
-    useEffect( () => {
+    useEffect(() => {
 
-      var vals = source.split("\n");
-      var diff = undefined; 
+        var vals = source.split("\n");
+        var diff = undefined;
 
-      var plus = {}; 
-      var minus = {}; 
+        var plus = {};
+        var minus = {};
 
-      var lines = []
-      //ソースを行で展開
-      vals.forEach( (line) => {
-        lines.push(line);
-      })
+        var lines = []
+        //ソースを行で展開
+        vals.forEach((line) => {
+            lines.push(line);
+        })
 
-      vals = patch.split("\n");
+        vals = patch.split("\n");
 
-      var now = 1;
-      //パッチによる、色付け、
-      vals.forEach( (line) => {
+        var now = 1;
+        //パッチによる、色付け、
+        vals.forEach((line) => {
 
-        var wk = isDiffLine(line);
-        if ( wk !== undefined ) {
-            diff = wk;
-            //line = diff.remain;
-            num = diff.plus.start;
-            //後続の処理を設定
-            now = num;
-            //変更箇所に一旦色をつけておく
-            for ( var idx = 1; idx <= diff.plus.end; ++idx ) {
-              plus[num] = "green";
-              num++;
+            var wk = isDiffLine(line);
+            if (wk !== undefined) {
+                diff = wk;
+                //line = diff.remain;
+                num = diff.plus.start;
+                //後続の処理を設定
+                now = num;
+                //変更箇所に一旦色をつけておく
+                for (var idx = 1; idx <= diff.plus.end; ++idx) {
+                    plus[num] = "green";
+                    num++;
+                }
+                //飛ばす
+                return;
             }
-            //飛ばす
-            return;
-        }
 
-        //ヘッダ部分を飛ばす
-        if ( diff === undefined ) return;
-        //意味のない行は飛ばす
-        if ( line.length < 1 ) {
-            return;
-        }
-
-        var flag = line.substring(0,1);
-        if ( flag === "+" ) {
-            now++
-        } else if ( flag === "-" ) {
-            var wk = minus[now];
-            if ( wk === undefined ) {
-                wk = [];
+            //ヘッダ部分を飛ばす
+            if (diff === undefined) return;
+            //意味のない行は飛ばす
+            if (line.length < 1) {
+                return;
             }
-            wk.push(line.substring(1));
-            minus[now] = wk;
-        } else if ( flag === "\\" ) {
 
-        } else if ( flag === " " ) {
-            //消し込む
-            plus[now] = undefined;
-            now++;
+            var flag = line.substring(0, 1);
+            if (flag === "+") {
+                now++
+            } else if (flag === "-") {
+                var wk = minus[now];
+                if (wk === undefined) {
+                    wk = [];
+                }
+                wk.push(line.substring(1));
+                minus[now] = wk;
+            } else if (flag === "\\") {
+
+            } else if (flag === " ") {
+                //消し込む
+                plus[now] = undefined;
+                now++;
+            }
+
+            //console.log(diff);
+            //Plus ,Minus で装飾を決定
+        })
+
+        var num = 1;
+        var html = [];
+        var nums = [];
+
+        var write = function (key, color, line, num) {
+            html.push(<div key={"line_" + key} style={{ color: color }}> {line} </div>);
+            nums.push(<div key={"num_" + key} style={{ color: color }}> {num} </div>);
         }
 
-        //console.log(diff);
-        //Plus ,Minus で装飾を決定
-      })
+        //実際に表示する処理
+        lines.forEach((line) => {
 
-      var num  = 1;
-      var html = [];
-      var nums = [];
+            var c = "";
+            if (plus[num]) {
+                c = plus[num];
+            }
 
-      var write = function(key,color,line,num) {
-        html.push(<div key={"line_" + key} style={{color:color}}> { line } </div>);
-        nums.push(<div key={"num_" + key} style={{color:color}}> { num } </div>);
-      }
+            write("g_" + num, c, line, num);
 
-      //実際に表示する処理
-      lines.forEach( (line) => {
+            if (minus[num]) {
+                var m = minus[num];
+                m.forEach((del, idx) => {
+                    write("m_" + idx + "_" + num, "red", del, "\u00A0DEL");
+                })
+            }
 
-        var c = "";
-        if ( plus[num] ) {
-            c = plus[num];
-        }
+            num++;
+            return;
+        });
 
-        write("g_" + num,c,line,num);
+        setRows(nums);
+        setHtml(html);
 
-        if ( minus[num] ) {
-            var m = minus[num];
-            m.forEach( (del,idx) => {
-                write("m_" + idx + "_" + num,"red",del,"\u00A0DEL");
-            })
-        }
-
-        num++;
-        return;
-      });
-
-      setRows(nums);
-      setHtml(html);
-
-    },[source]);
+    }, [source]);
 
     return (<>
-    <div style={parentStyle} id="lines">
-      <div style={lineStyle} ref={lineViewer}>{rows}</div>
-      <div style={textStyle} ref={viewer}>{html}</div>
-    </div>
+        <div style={parentStyle} id="lines">
+            <div style={lineStyle} ref={lineViewer}>{rows}</div>
+            <div style={textStyle} ref={viewer}>{html}</div>
+        </div>
     </>)
 }
 

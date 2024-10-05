@@ -1,5 +1,5 @@
 import { createContext } from "react";
-
+import Message from "./Message";
 /**
  * イベント
  */
@@ -37,18 +37,17 @@ class Event {
      */
     static ModifiedCommit = "git.modified.commit"
 
-
     /**
      * 管理イベント
      */
-    static eventMap = new Map();
+    eventMap = new Map();
 
     /**
      * イベント登録
      * @param {*} key 
      * @param {*} func 
      */
-    static register(key,func) {
+    register(key,func) {
         var e = this.eventMap.get(key);
         if ( e === undefined || e === null ) {
             e = [];
@@ -57,20 +56,50 @@ class Event {
         this.eventMap.set(key,e);
     }
 
-    static refreshTree() {
+    refreshTree() {
         this.raise(Event.ReloadTree);
     }
 
-    static changeTitle(title) {
+    changeTitle(title) {
         this.raise(Event.ReloadTitle,title);
     }
 
-    static changeBinderTitle(title) {
+    changeBinderTitle(title) {
         this.raise(Event.ReloadBinderTitle,title);
     }
 
-    static changeAddress(address) {
+    changeAddress(address) {
         this.raise(Event.ChangeAddress,address);
+    }
+
+    showMessage(obj) {
+        this.raise(Event.ShowMessage, obj);
+    }
+
+    clearMessage() {
+        var mo = Message.createMessage("clear", "");
+        this.showMessage(mo);
+    }
+
+    showSuccessMessage(msg) {
+        var mo = Message.createMessage("success", msg);
+        this.showMessage(mo);
+    }
+
+    showWarningMessage(msg) {
+        console.warn(msg)
+        var mo = Message.createMessage("warning", msg);
+        this.showMessage(mo);
+    }
+
+    showInfoMessage(msg) {
+        var mo = Message.createMessage("info", msg);
+        this.showMessage(mo);
+    }
+
+    showErrorMessage(err) {
+        var mo = Message.createMessage("error", err);
+        this.showMessage(mo);
     }
 
     /**
@@ -79,7 +108,7 @@ class Event {
      * @param {*} obj 
      * @returns 
      */
-    static raise(key,obj) {
+    raise(key,obj) {
 
         var evts = this.eventMap.get(key);
         if ( !evts ) {

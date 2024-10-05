@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useContext } from "react";
 import { Grid, TextField, FormControl,FormLabel,Button} from "@mui/material";
 
-import Event from '../Event';
-import Message from '../Message';
+import Event,{EventContext} from '../Event';
 
 /**
  * 履歴からバインダーの選択を行う
@@ -11,10 +10,11 @@ import Message from '../Message';
  */
 function Commit(props) {
 
+  const evt = useContext(EventContext)
   const [comment, setComment] = useState("Updated:");
 
   useEffect(() => {
-    Event.register(Event.ModifiedComment,function(comment) {
+    evt.register(Event.ModifiedComment,function(comment) {
       setComment(comment);
     })
   }, [])
@@ -22,7 +22,7 @@ function Commit(props) {
   //保存
   const handleCommit = () => {
     //イベントでツリー側で処理
-    Event.raise(Event.ModifiedCommit,comment);
+    evt.raise(Event.ModifiedCommit,comment);
   }
 
   var rowNum = comment.split("\n").length + 1;

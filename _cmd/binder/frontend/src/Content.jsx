@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useContext} from "react";
 
 import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Terminate } from "../wailsjs/go/api/App";
 
-import Event from "./Event";
+import Event,{EventContext} from "./Event";
 
 import Binder from "./contents/Binder";
 import Setting from "./contents/Setting";
@@ -36,6 +36,7 @@ import Commit from "./contents/Commit";
  */
 function Content(props) {
 
+  const evt = useContext(EventContext)
   //タイトルの文字列
   const [title,setTitle] = useState("");
 
@@ -53,7 +54,7 @@ function Content(props) {
    */
   useEffect( ()=> {
     //タイトル変更のイベントを設定
-    Event.register(Event.ReloadTitle,function(obj) {
+    evt.register(Event.ReloadTitle,function(obj) {
       setTitle(obj);
     });
   });

@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useContext} from "react";
 
 import { Accordion, AccordionDetails, AccordionSummary, Button, FormControl, FormLabel, Grid, Switch, TextField } from "@mui/material";
 import { GetSetting, SaveSetting } from "../../wailsjs/go/api/App";
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import Event from "../Event";
-import Message from '../Message';
+import {EventContext} from "../Event";
 
 /**
  * アプリ設定
@@ -14,6 +13,8 @@ import Message from '../Message';
  * @returns 
  */
 function Setting(props) {
+
+  const evt = useContext(EventContext)
 
   const [pathDefault, setPathDefault] = useState("");
   const [pathRunWith, setPathRunWith] = useState(true);
@@ -25,7 +26,7 @@ function Setting(props) {
   const [gitCode, setGitCode] = useState("");
 
   useEffect(() => {
-    Event.changeTitle("Setting")
+    evt.changeTitle("Setting")
     GetSetting().then((set) => {
       setPathDefault(set.path.default);
       setPathRunWith(set.path.runWithOpen);
@@ -35,7 +36,7 @@ function Setting(props) {
       setGitMail(set.git.mail);
       setGitCode(set.git.code);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }, []);
 
@@ -55,9 +56,9 @@ function Setting(props) {
     setting.git = git;
 
     SaveSetting(setting).then((resp) => {
-      Message.showSuccess("Updated");
+      evt.showSuccessMessage("Updated");
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 

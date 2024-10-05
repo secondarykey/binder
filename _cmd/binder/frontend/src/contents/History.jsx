@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 
 import { LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
 import { List, ListItemButton, ListItemText } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-import Event from '../Event';
-import Message from '../Message';
+import {EventContext} from '../Event';
 
 /**
  * 履歴からバインダーの選択を行う
@@ -14,6 +13,7 @@ import Message from '../Message';
  */
 function History(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
   const [histories, setHistories] = useState([]);
 
@@ -28,12 +28,12 @@ function History(props) {
     LoadBinder(val).then((href) => {
      
       console.log(href)
-      Event.changeAddress(href);
+      evt.changeAddress(href);
 
       nav("/note/edit/index");
 
     }).catch((err) => {
-      Message.showError(err)
+      evt.showErrorMessage(err)
     })
   }
 

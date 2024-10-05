@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect ,useContext} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Menu, MenuItem } from '@mui/material';
@@ -11,8 +11,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { OpenBinderSite, GetBinderTree } from '../../wailsjs/go/api/App';
 
-import Event from '../Event';
-import Message from '../Message';
+import Event,{EventContext} from '../Event';
 
 /**
  * Mermaid アイコン
@@ -37,6 +36,7 @@ function MermaidIcon() {
 {/** バインダーのツリー */ }
 function BinderTree(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
 
   //ツリーデータ
@@ -44,21 +44,19 @@ function BinderTree(props) {
 
   //選択しているID
   const [id, setId] = useState("index");
-  //選択しているオブジェクトの親ID
-  const [parentId, setParentId] = useState("");
 
   //リソースを作成
   const viewTree = () => {
     GetBinderTree().then((resp) => {
       setTree(resp.data);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
   useEffect(() => {
     //再描画を追加しておく
-    Event.register(Event.ReloadTree,() => {
+    evt.register(Event.ReloadTree,() => {
       viewTree();
     })
     viewTree();

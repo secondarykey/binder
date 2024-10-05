@@ -1,21 +1,22 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
+import { useParams } from "react-router-dom";
+
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
 import { GetAsset,Generate,Commit } from "../../wailsjs/go/api/App.js";
+
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import HTMLFrame from "../components/HTMLFrame.jsx";
 import PublishIcon from '@mui/icons-material/Publish';
 
 import Marked from "../components/Marked";
-import Event from "../Event.jsx";
-import Message from '../Message';
-
-import { useParams } from "react-router-dom";
 import Mermaid from "../components/Mermaid";
+
+import {EventContext} from "../Event.jsx";
 
 import '../assets/vim.min.js';
 import '../assets/Editor.css'
@@ -27,6 +28,7 @@ import '../assets/Editor.css'
 function Editor(props) {
 
   var {mode,id} = useParams();
+  const evt = useContext(EventContext)
 
   const [editor, setEditor] = useState(true);
   const [viewer, setViewer] = useState(true);
@@ -87,7 +89,7 @@ function Editor(props) {
   //開いた時の初期処理
   useEffect(() => {
 
-    Message.clear();
+    evt.clearMessage();
 
     vim.open({
       debug: false,
@@ -104,7 +106,7 @@ function Editor(props) {
       OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
 
       GetDiagram(id).then((resp) => {
@@ -117,7 +119,7 @@ function Editor(props) {
 
         setName(resp.name);
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
 
     } else if (mode === "note") {
@@ -128,7 +130,7 @@ function Editor(props) {
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       });
 
       GetNote(id).then((resp) => {
@@ -139,7 +141,7 @@ function Editor(props) {
         }
         setName(resp.name);
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
 
     } else if (mode === "template") {
@@ -154,7 +156,7 @@ function Editor(props) {
         //TODO: HTML をどのように作成するかを考える 
         //createNoteElement();
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       });
 
       GetTemplate(id).then((resp) => {
@@ -166,7 +168,7 @@ function Editor(props) {
 
         setName(resp.name);
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
     } else if (mode === "assets") {
 
@@ -186,7 +188,7 @@ function Editor(props) {
           //アセットを開く
         }
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
     }
 
@@ -194,7 +196,7 @@ function Editor(props) {
 
   //名称が変更になった場合の処理
   useEffect(() => {
-    Event.changeTitle(name)
+    evt.changeTitle(name)
     setComment("Updated: " + name);
   }, [name]);
 
@@ -220,7 +222,7 @@ function Editor(props) {
     await ParseNote(id,local,txt).then((resp) => {
       p = resp;
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
       p = txt;
     });
 
@@ -240,7 +242,7 @@ function Editor(props) {
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
 
     } else if (mode === "template") {
@@ -259,7 +261,7 @@ function Editor(props) {
       elm.innerHTML = data.svg;
     }).catch((err) => {
       console.log(txt)
-      Message.showWarning("Diagram parse error:" + err);
+      evt.showWarningMessage("Diagram parse error:" + err);
     });
 
   }
@@ -288,19 +290,19 @@ function Editor(props) {
       SaveNote(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
     } else if (mode === "diagram") {
       SaveDiagram(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
     } else if (mode === "template") {
       SaveTemplate(id, txt).then(() => {
         console.debug("ok");
       }).catch((err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
     }
   }
@@ -323,9 +325,9 @@ function Editor(props) {
     console.log(elm)
     //出力処理を行う
     Generate(mode,id,elm).then(() => {
-      Message.showSuccess("Generate.")
+      evt.showSuccessMessage("Generate.")
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }
 
@@ -333,9 +335,9 @@ function Editor(props) {
   const handleCommit = () => {
     Commit(mode,id,comment).then(() => {
       setUpdated(false);
-      Message.showSuccess("Commit.")
+      evt.showSuccessMessage("Commit.")
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }
 

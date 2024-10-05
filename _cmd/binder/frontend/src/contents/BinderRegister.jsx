@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { SelectDirectory, CreateBinder } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
 
-import Event from "../Event";
-import Message from '../Message';
+import Event,{EventContext} from "../Event";
 
 /**
  * Binder新規作成
@@ -15,25 +14,26 @@ import Message from '../Message';
  */
 function BinderRegister(props) {
 
+  const evt = useContext(EventContext);
   const nav = useNavigate();
   const [dir, setDir] = useState("");
 
   //保存
   const handleSave = () => {
     if ( dir == "" ) {
-      Message.showWarning("reqired select directory");
+      evt.showWarningMessage("reqired select directory");
       return;
     }
 
     //インストールを別にする
     CreateBinder(dir,"simple").then((href) => {
 
-      Event.changeAddress(href);
+      evt.changeAddress(href);
       //TODO Binder変更通知
       nav("/note/index");
 
     }).catch( (err)=> {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }
 
@@ -43,7 +43,7 @@ function BinderRegister(props) {
         setDir(f);
       }
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 

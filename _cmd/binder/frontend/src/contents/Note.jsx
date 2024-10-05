@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect,useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
@@ -10,8 +10,7 @@ import { GetNote, GetHTMLTemplates } from "../../wailsjs/go/api/App";
 import { SelectFile, EditNote, RemoveNote,Address } from "../../wailsjs/go/api/App";
 import noImage from '../assets/images/noimage.png'
 
-import Event from "../Event";
-import Message from '../Message';
+import Event,{EventContext} from "../Event";
 
 /**
  * ノートのメタデータを表示,編集
@@ -20,7 +19,9 @@ import Message from '../Message';
  */
 function Note(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
+
   const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
@@ -56,7 +57,7 @@ function Note(props) {
     if (mode === "register") {
       setId("");
       setParentId(currentId)
-      Event.changeTitle("Register Note");
+      evt.changeTitle("Register Note");
       return;
     } else {
       setId(currentId);
@@ -72,10 +73,10 @@ function Note(props) {
       setLayout(note.layoutTemplate)
       setContent(note.contentTemplate)
 
-      Event.changeTitle("Edit Note:" + note.name);
+      evt.changeTitle("Edit Note:" + note.name);
 
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
     setViewImage(address + "/assets/meta");
@@ -88,7 +89,7 @@ function Note(props) {
   useEffect(() => {
 
     //アドレス変更時の処理
-    Event.register(Event.ChangeAddress,function(arg) {
+    evt.register(Event.ChangeAddress,function(arg) {
       setAddress(arg);
     });
 
@@ -102,13 +103,13 @@ function Note(props) {
       }
 
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
     Address().then((arg) => {
       setAddress(arg);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
   }, []);
@@ -128,33 +129,33 @@ function Note(props) {
     note.contentTemplate = content;
 
     if ( name === "" ) {
-      Message.showWarning("name is required.");
+      evt.showWarningMessage("name is required.");
       return;
     }
     if ( layout === "" || content === "" ) {
-      Message.showWarning("Choose a Template.");
+      evt.showWarningMessage("Choose a Template.");
       return;
     }
 
     if ( mode !== "register") {
       if ( alias === "" ) {
-        Message.showWarning("alias is required.");
+        evt.showWarningMessage("alias is required.");
         return;
       }
     }
 
     EditNote(note, imageFile).then((resp) => {
 
-      Event.refreshTree();
+      evt.refreshTree();
       //新規作成時のみ切り替え
       if (mode === "register") {
         nav("/note/edit/" + resp.id);
         return;
       }
 
-      Message.showSuccess("Update Note.")
+      evt.showSuccessMessage("Update Note.")
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
@@ -163,12 +164,12 @@ function Note(props) {
    */
   const handleDelete = () => {
     RemoveNote(id).then((resp) => {
-      Event.refreshTree();
+      evt.refreshTree();
       // 遷移する
-      Message.showSuccess("Remove Note.")
+      evt.showSuccessMessage("Remove Note.")
       nav("/note/edit/" + parentId);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   };
 
@@ -181,7 +182,7 @@ function Note(props) {
         setImageFile(f);
       }
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
@@ -195,7 +196,7 @@ function Note(props) {
    */
   const handleCopyId = (e) => {
     copyClipboard(id);
-    Message.showSuccess("Copied.");
+    evt.showSuccessMessage("Copied.");
   }
 
   /**

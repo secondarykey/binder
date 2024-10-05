@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useContext} from "react";
 
 import { SelectDirectory, CreateRemoteBinder } from "../../wailsjs/go/api/App";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
-import Message from "../Message";
-import Event from "../Event";
+
+import Event,{EventContext} from "../Event";
 
 /**
  * Binder新規作成
@@ -13,23 +13,25 @@ import Event from "../Event";
  */
 function BinderRemote(props) {
 
+  const evt = useContext(EventContext)
+
   const [remote, setRemote] = useState("");
   const [dir, setDir] = useState("");
 
   useEffect( () => {
-    Event.changeTitle("Remote Import");
+    evt.changeTitle("Remote Import");
   },[])
 
   //保存
   const handleSave = () => {
 
     if ( remote == "" ) {
-      Message.showWarning("input remote URL");
+      evt.showWarningMessage("input remote URL");
       return;
       }
 
     if ( dir == "" ) {
-      Message.showWarning("choose directory");
+      evt.showWarningMessage("choose directory");
       return;
     }
 
@@ -41,7 +43,7 @@ function BinderRemote(props) {
       nav("/binder/");
 
     }).catch( (err)=> {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }
 
@@ -51,7 +53,7 @@ function BinderRemote(props) {
         setDir(f);
       }
     }).catch((err) => {
-      Message.showError(err)
+      evt.showErrorMessage(err)
     });
   }
 

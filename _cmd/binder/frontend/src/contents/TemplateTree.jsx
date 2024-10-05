@@ -1,27 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Menu, MenuItem } from '@mui/material';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
 
-import WebAssetIcon from '@mui/icons-material/WebAsset';
-import NoteIcon from '@mui/icons-material/Note';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
-import HtmlIcon from '@mui/icons-material/Html';
-import CodeIcon from '@mui/icons-material/Code';
-import AttachmentIcon from '@mui/icons-material/Attachment';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
-import { copyClipboard } from '../App';
 
-import { OpenBinderSite, GetTemplateTree } from '../../wailsjs/go/api/App';
+import { GetTemplateTree } from '../../wailsjs/go/api/App';
 
-import Event from '../Event';
-import Message from '../Message';
+import Event,{EventContext} from '../Event';
 
 {/** バインダーのツリー */ }
 function TemplateTree(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
   //ツリーデータ
   const [tree, setTree] = useState([]);
@@ -35,13 +28,13 @@ function TemplateTree(props) {
     GetTemplateTree().then((resp) => {
       setTree(resp.data);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
   useEffect(() => {
     //再描画を追加しておく
-    Event.register(Event.ReloadTree,() => {
+    evt.register(Event.ReloadTree,() => {
       viewTree();
     })
     viewTree();

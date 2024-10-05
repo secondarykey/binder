@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
@@ -5,10 +6,8 @@ import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 import { SelectDirectory,LoadBinder } from '../../wailsjs/go/api/App';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import DownloadIcon from '@mui/icons-material/Download';
 
-import Event from '../Event';
-import Message from '../Message';
+import Event,{EventContext} from '../Event';
 
 /**
  * Binderを開く画面
@@ -17,6 +16,7 @@ import Message from '../Message';
  */
 function FileMenu(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
 
   const handleNew = () => {
@@ -33,15 +33,15 @@ function FileMenu(props) {
       if ( p == "" ) return;
       LoadBinder(p).then((href) => {
 
-        Event.changeAddress(href);
+        evt.changeAddress(href);
 
         nav("/note/edit/index");
       }).catch( (err) => {
-        Message.showError(err);
+        evt.showErrorMessage(err);
       })
 
     }).catch( (err)=> {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
   }

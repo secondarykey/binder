@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { SelectFile, EditAsset, GetAsset, RemoveAsset } from "../../wailsjs/go/api/App";
@@ -8,8 +8,7 @@ import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from 
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 
-import Event from "../Event";
-import Message from '../Message';
+import Event,{EventContext} from "../Event";
 
 /**
  * ノートのアッセット情報を表示、編集
@@ -18,7 +17,9 @@ import Message from '../Message';
  */
 function Assets(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
+
   const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
@@ -45,7 +46,7 @@ function Assets(props) {
     if (mode === "register") {
       setId("");
       setParentId(currentId);
-      Event.changeTitle("Register Assets");
+      evt.changeTitle("Register Assets");
       return;
     } else {
       setId(currentId)
@@ -57,9 +58,9 @@ function Assets(props) {
       setDetail(data.detail)
       setParentId(data.parentId);
       setBinary(data.binary);
-      Event.changeTitle("Edit Assets:" + data.name);
+      evt.changeTitle("Edit Assets:" + data.name);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }, [currentId]);
 
@@ -68,7 +69,7 @@ function Assets(props) {
 
     if (mode === "register") {
       if (file == "") {
-        Message.showWarning("Choose a File")
+        evt.showWarningMessage("Choose a File")
         return;
       }
     }
@@ -82,14 +83,14 @@ function Assets(props) {
     data.binary = binary
 
     EditAsset(data, file).then((resp) => {
-      Event.refreshTree();
+      evt.refreshTree();
       if (mode === "register") {
         nav("/assets/edit/" + resp.id);
         return;
       }
-      Message.showSuccess("Update Assets.");
+      evt.showSuccessMessage("Update Assets.");
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
@@ -102,7 +103,7 @@ function Assets(props) {
         setFile(f);
       }
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
@@ -111,18 +112,18 @@ function Assets(props) {
    */
   const handleDelete = () => {
     RemoveAsset(id).then((resp) => {
-      Event.refreshTree();
+      evt.refreshTree();
       // 遷移する
-      Message.showSuccess("Remove Assets.")
+      evt.showSuccessMessage("Remove Assets.")
       nav("/note/edit/" + parentId);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
   const handleCopyId = (e) => {
     copyClipboard(props.id);
-    Message.showSuccess("Copied.");
+    evt.showSuccessMessage("Copied.");
   }
 
   var start = "/assets/{noteAlias}/";

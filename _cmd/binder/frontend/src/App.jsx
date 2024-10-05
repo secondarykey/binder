@@ -1,12 +1,11 @@
 import { useContext, useEffect } from 'react';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
-import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
 import { SavePosition, GetSetting } from '../wailsjs/go/api/App.js';
 
-import Event, { EventContext } from "./Event";
-import Message, { SystemMessage } from './Message';
+import { EventContext } from "./Event";
+import { SystemMessage } from './Message';
 
 import './assets/App.css';
 
@@ -37,7 +36,6 @@ var intervalId = undefined;
  */
 function App() {
 
-  //使い方？
   const evt = useContext(EventContext)
 
   useEffect(() => {
@@ -49,7 +47,7 @@ function App() {
       } else {
       }
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
 
     if (intervalId !== undefined) {

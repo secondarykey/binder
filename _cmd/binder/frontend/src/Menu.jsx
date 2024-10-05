@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router-dom";
 
 import { GetConfig, CloseBinder,Address } from '../wailsjs/go/api/App';
@@ -18,8 +18,7 @@ import BinderTree from './contents/BinderTree';
 import { SettingsApplications } from '@mui/icons-material';
 import TemplateTree from './contents/TemplateTree';
 
-import Event from './Event';
-import Message from './Message';
+import Event,{EventContext} from './Event';
 
 import "./assets/Menu.css";
 import ModifiedMenu from './contents/ModifiedMenu';
@@ -58,6 +57,8 @@ function BinderSVGIcon(props) {
  */
 function Menu(props) {
 
+  //使い方
+  const evt = useContext(EventContext)
   const nav = useNavigate();
 
   //上部タイトル表示
@@ -85,7 +86,7 @@ function Menu(props) {
    */
   useEffect(() => {
 
-    Event.register(Event.ReloadBinderTitle,function(t) {
+    evt.register(Event.ReloadBinderTitle,function(t) {
       setTitle(t);
     });
     setTitle("Binder");
@@ -95,18 +96,18 @@ function Menu(props) {
       //名称を設定
       setTitle(conf.name);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
 
     //アドレス変更時の処理
-    Event.register(Event.ChangeAddress,function(arg) {
+    evt.register(Event.ChangeAddress,function(arg) {
       setURL(arg);
     });
 
     Address().then((arg) => {
       setURL(arg);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
   },[]);
@@ -121,7 +122,7 @@ function Menu(props) {
       //トップメニューに移動
       nav("/");
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
   }

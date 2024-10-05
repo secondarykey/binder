@@ -1,13 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useContext} from "react";
 
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormLabel, Grid, InputAdornment, MenuItem, Select, TextField } from "@mui/material";
 import { GetConfig, EditConfig, Remotes, AddRemote } from "../../wailsjs/go/api/App";
 
-import {useLocation, useNavigate} from "react-router-dom";
-import CloudIcon from '@mui/icons-material/Cloud';
-
-import Event from "../Event";
-import Message from '../Message';
+import Event,{EventContext} from "../Event";
 
 /**
  * バインダーのメタデータを表示,編集
@@ -15,6 +11,8 @@ import Message from '../Message';
  * @returns 
  */
 function Binder(props) {
+
+  const evt = useContext(EventContext)
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
@@ -34,13 +32,13 @@ function Binder(props) {
     Remotes().then((res) => {
       setRemoteList(res);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
   useEffect(() => {
 
-    Event.changeTitle("Edit Binder");
+    evt.changeTitle("Edit Binder");
     GetConfig().then((conf) => {
 
       setName(conf.name);
@@ -50,7 +48,7 @@ function Binder(props) {
       setBranch(conf.branch);
       setAuto(conf.autoCommit);
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
     getRemoteList();
   }, []);
@@ -64,10 +62,10 @@ function Binder(props) {
     config.branch = branch;
     config.autoCommit = Number(auto);
     EditConfig(config).then((resp) => {
-      Event.changeBinderTitle(name);
-      Message.showSuccess("update binder.");
+      evt.changeBinderTitle(name);
+      evt.showSuccessMessage("update binder.");
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     });
   }
 
@@ -163,7 +161,7 @@ function Binder(props) {
             handleChangeRemote(undefined,remoteName);
             handleDialogClose();
           }).catch((err) => {
-            Message.showError(err);
+            evt.showErrorMessage(err);
           });
         },
         style: {

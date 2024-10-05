@@ -1,20 +1,17 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useContext,useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
   Accordion, AccordionDetails, AccordionSummary,
   ListItemIcon, ListItemText, MenuItem,
   FormControlLabel, Checkbox,
-  Button
 } from '@mui/material';
 
 import { GetModifiedTree, CommitFiles } from '../../wailsjs/go/api/App';
 
-import Event from '../Event';
-import Message from '../Message';
+import Event,{EventContext} from '../Event';
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { ArrowDropDown, CheckBox } from '@mui/icons-material';
 
 /**
  * 変更一覧
@@ -23,6 +20,7 @@ import { ArrowDropDown, CheckBox } from '@mui/icons-material';
  */
 function ModifiedMenu(props) {
 
+  const evt = useContext(EventContext)
   const nav = useNavigate();
 
   const [notes, setNotes] = useState([]);
@@ -76,70 +74,52 @@ function ModifiedMenu(props) {
         }
       })
       //コメント欄を更新
-      Event.raise(Event.ModifiedComment, comment);
+      evt.raise(Event.ModifiedComment, comment);
 
-      console.log("GetModifiedTeee():");
-      console.log(noteRef);
-      console.log(noteRef.current);
-      console.log(noteRef.current.checked());
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
   }
 
   useEffect(() => {
 
-    Event.register(Event.ModifiedCommit, handleCommit);
-    Event.changeTitle("Modified Files");
+    evt.register(Event.ModifiedCommit, handleCommit);
+    evt.changeTitle("Modified Files");
     updatedTree();
 
   }, [])
 
   const handleOpen = (e, leaf) => {
-    Event.changeTitle(leaf.name);
+    evt.changeTitle(leaf.name);
     nav("/status/modified/" + leaf.type + "/" + leaf.id);
   }
 
   const getFiles = () => {
     var files = [];
-    console.log("getFiles():");
-    console.log(noteRef);
-    console.log(noteRef.current);
-    console.log(noteRef.current.checked());
-    return;
-  }
-
-  const handleCommit = (comment) => {
-
-    //現在チェックのあるファイルをコミットする
-    var files = [];
-   
-    getFiles()
-    return;
-
     files.push(...noteRef.current.checked());
     files.push(...diagramRef.current.checked());
     files.push(...assetRef.current.checked());
     files.push(...templateRef.current.checked());
+    return files;
+  }
 
+  const handleCommit = (comment) => {
+    //現在チェックのあるファイルをコミットする
+    var files = getFiles();
     CommitFiles(files, comment).then(() => {
       updatedTree();
-      Message.showSuccess("Commit");
+      evt.showSuccessMessage("Commit");
     }).catch((err) => {
-      Message.showError(err);
+      evt.showErrorMessage(err);
     })
 
   }
 
-
-  console.log("render()");
-  console.log(noteRef);
   return (<>
     <ModifiedList name="Note" data={notes} onClick={handleOpen} ref={noteRef} />
     <ModifiedList name="Diagram" data={diagrams} onClick={handleOpen} ref={diagramRef} />
     <ModifiedList name="Asset" data={assets} onClick={handleOpen} ref={assetRef} />
     <ModifiedList name="Template" data={templates} onClick={handleOpen} ref={templateRef} />
-    <Button onClick={handleCommit}>Test</Button>
   </>);
 }
 

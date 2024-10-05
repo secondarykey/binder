@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useContext } from "react";
 
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
-import Event from "./Event";
+import Event,{EventContext} from "./Event";
 
 class Message {
 
@@ -21,32 +21,6 @@ class Message {
             type: type,
             message: wk,
         }
-    }
-
-    static clear() {
-        var mo = this.createMessage("clear", "");
-        Event.raise(Event.ShowMessage, mo);
-    }
-
-    static showSuccess(msg) {
-        var mo = this.createMessage("success", msg);
-        Event.raise(Event.ShowMessage, mo);
-    }
-
-    static showWarning(msg) {
-        console.warn(msg)
-        var mo = this.createMessage("warning", msg);
-        Event.raise(Event.ShowMessage, mo);
-    }
-
-    static showInfo(msg) {
-        var mo = this.createMessage("info", msg);
-        Event.raise(Event.ShowMessage, mo);
-    }
-
-    static showError(err) {
-        var mo = this.createMessage("error", err);
-        Event.raise(Event.ShowMessage, mo);
     }
 }
 
@@ -79,14 +53,17 @@ const createSlideMessage = (obj) => {
 
 export function SystemMessage(props) {
 
+    const evt = useContext(EventContext)
+
     //現在の設定を取得(最初に画面表示を選ぶ)
     var initMsg = createSlideMessage({ type: "success", message: "" });
     //メニューの開閉管理
     const [msgObj, setMessage] = useState(initMsg);
     const [msgDlg, setMessageDialog] = useState(false);
+
     useEffect(() => {
         //イベント登録
-        Event.register(Event.ShowMessage, (obj) => {
+        evt.register(Event.ShowMessage, (obj) => {
             showSlideMessage(obj);
         })
     }, []);
