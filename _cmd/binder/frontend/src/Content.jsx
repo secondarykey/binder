@@ -54,7 +54,7 @@ function Content(props) {
    */
   useEffect( ()=> {
     //タイトル変更のイベントを設定
-    evt.register(Event.ReloadTitle,function(obj) {
+    evt.register("Content",Event.ReloadTitle,function(obj) {
       setTitle(obj);
     });
   });
@@ -99,7 +99,7 @@ function Content(props) {
             <Route path="/template/:mode/:currentId" element={<Template />} />
 
             <Route path="/template/view" element={<Hidden />} />
-            <Route path="/status/modified" element={<Commit />} />
+            <Route path="/status/modified/:date" element={<Commit />} />
             <Route path="/status/modified/:type/:currentId" element={<Patch />} />
 
             <Route path="/editor/:mode/:id" element={<Editor />} />

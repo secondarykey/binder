@@ -63,7 +63,7 @@ export function SystemMessage(props) {
 
     useEffect(() => {
         //イベント登録
-        evt.register(Event.ShowMessage, (obj) => {
+        evt.register("SystemMessage",Event.ShowMessage, (obj) => {
             showSlideMessage(obj);
         })
     }, []);

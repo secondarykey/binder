@@ -34,7 +34,7 @@ function TemplateTree(props) {
 
   useEffect(() => {
     //再描画を追加しておく
-    evt.register(Event.ReloadTree,() => {
+    evt.register("TemplateTree",Event.ReloadTree,() => {
       viewTree();
     })
     viewTree();

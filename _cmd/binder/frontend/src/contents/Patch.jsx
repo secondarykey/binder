@@ -5,6 +5,11 @@ import { GetNowPatch } from "../../wailsjs/go/api/App";
 
 import {EventContext} from "../Event";
 
+/**
+ * パッチの行数を解析
+ * @param {*} line 
+ * @returns 
+ */
 function createPosition(line) {
     var s = line.split(",");
     var pos = {};
@@ -17,6 +22,11 @@ function createPosition(line) {
     return pos;
 }
 
+/**
+ * パッチの行数取得
+ * @param {*} line 
+ * @returns 
+ */
 function isDiffLine(line) {
 
     var idx = line.indexOf("@@");
@@ -56,6 +66,11 @@ function isDiffLine(line) {
     return undefined;
 }
 
+/**
+ * パッチコンポーネント
+ * @param {*} props 
+ * @returns 
+ */
 function Patch(props) {
 
     const evt = useContext(EventContext)
@@ -69,9 +84,11 @@ function Patch(props) {
     const lineViewer = useRef();
 
     useEffect(() => {
+        //同時スクロール
         viewer.current.addEventListener("scroll", function () {
             lineViewer.current.scrollTop = viewer.current.scrollTop;
         })
+        //現在のファイルシステムとのパッチを取得
         GetNowPatch(type, currentId).then((resp) => {
             setPatch(resp.patch);
             setSource(resp.source);
@@ -92,7 +109,7 @@ function Patch(props) {
         border: "0",
         borderRight: "1px double #cccccc",
         position: "absolute",
-        width: "90px",
+        width: "calc(" + pos + "-15px)",
         zIndex: 10,
         color: "#eeeeee",
         paddingRight: "5px",

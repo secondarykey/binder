@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, forwardRef, useContext,useImperativeHandle } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , useParams } from 'react-router-dom';
 
 import {
   Accordion, AccordionDetails, AccordionSummary,
@@ -21,6 +21,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 function ModifiedMenu(props) {
 
   const evt = useContext(EventContext)
+  const {date} = useParams();
+
   const nav = useNavigate();
 
   const [notes, setNotes] = useState([]);
@@ -60,19 +62,28 @@ function ModifiedMenu(props) {
         }
 
         if (leaf.id === "DIR_Note") {
-          setNotes(leafs);
+          if ( leafs.length != notes.length ) {
+            setNotes(leafs);
+          }
           writeComment("Note", leafs)
         } else if (leaf.id === "DIR_Diagram") {
-          setDiagrams(leafs)
+          if ( leafs.length != diagrams.length ) {
+            setDiagrams(leafs)
+          }
           writeComment("Diagram", leafs)
         } else if (leaf.id === "DIR_Asset") {
-          setAssets(leafs)
+          if ( leafs.length != templates.length ) {
+            setAssets(leafs)
+          }
           writeComment("Asset", leafs)
         } else if (leaf.id === "DIR_Template") {
-          setTemplates(leafs)
+          if ( leafs.length != assets.length ) {
+            setTemplates(leafs)
+          }
           writeComment("Template", leafs)
         }
       })
+
       //コメント欄を更新
       evt.raise(Event.ModifiedComment, comment);
 
@@ -81,38 +92,34 @@ function ModifiedMenu(props) {
     })
   }
 
+
   useEffect(() => {
 
-    evt.register(Event.ModifiedCommit, handleCommit);
+    //コミットの登録
+    evt.register("ModifiedMenu",Event.ModifiedCommit, function(comment) {
+      var files = [];
+      files.push(...noteRef.current.checked());
+      files.push(...diagramRef.current.checked());
+      files.push(...assetRef.current.checked());
+      files.push(...templateRef.current.checked());
+
+      CommitFiles(files, comment).then(() => {
+        evt.showSuccessMessage("Commit");
+        setTimeout(function() {
+          updatedTree();
+        },500);
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      })
+    });
+
     evt.changeTitle("Modified Files");
     updatedTree();
-
-  }, [])
+  }, [date])
 
   const handleOpen = (e, leaf) => {
     evt.changeTitle(leaf.name);
     nav("/status/modified/" + leaf.type + "/" + leaf.id);
-  }
-
-  const getFiles = () => {
-    var files = [];
-    files.push(...noteRef.current.checked());
-    files.push(...diagramRef.current.checked());
-    files.push(...assetRef.current.checked());
-    files.push(...templateRef.current.checked());
-    return files;
-  }
-
-  const handleCommit = (comment) => {
-    //現在チェックのあるファイルをコミットする
-    var files = getFiles();
-    CommitFiles(files, comment).then(() => {
-      updatedTree();
-      evt.showSuccessMessage("Commit");
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    })
-
   }
 
   return (<>

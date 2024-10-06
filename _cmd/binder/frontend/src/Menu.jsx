@@ -86,7 +86,7 @@ function Menu(props) {
    */
   useEffect(() => {
 
-    evt.register(Event.ReloadBinderTitle,function(t) {
+    evt.register("Menu",Event.ReloadBinderTitle,function(t) {
       setTitle(t);
     });
     setTitle("Binder");
@@ -100,7 +100,7 @@ function Menu(props) {
     });
 
     //アドレス変更時の処理
-    evt.register(Event.ChangeAddress,function(arg) {
+    evt.register("Menu",Event.ChangeAddress,function(arg) {
       setURL(arg);
     });
 
@@ -142,7 +142,7 @@ function Menu(props) {
    * 更新一覧
    */
   const handleClickModified = () => {
-    nav("/status/modified");
+    nav("/status/modified/" + (new Date()).toISOString());
   }
 
   const handleClickPublish = () => {
@@ -271,8 +271,8 @@ function Menu(props) {
             <Route path={"/template/*"} element={tempTree} />
             <Route path={"/editor/template/:id"} element={tempTree} />
 
-            <Route path="/status/modified" element={modified} />
-            <Route path="/status/modified/*" element={modified} />
+            <Route path="/status/modified/:date" element={modified} />
+            <Route path="/status/modified/:type/:currentId" element={modified} />
 
             <Route path="*" element={<>
               <BinderTree />

@@ -1,4 +1,5 @@
 import { useEffect, useState,useContext } from "react";
+import { useParams } from "react-router-dom";
 import { Grid, TextField, FormControl,FormLabel,Button} from "@mui/material";
 
 import Event,{EventContext} from '../Event';
@@ -12,12 +13,13 @@ function Commit(props) {
 
   const evt = useContext(EventContext)
   const [comment, setComment] = useState("Updated:");
+  const {date} = useParams();
 
   useEffect(() => {
-    evt.register(Event.ModifiedComment,function(comment) {
+    evt.register("Commit",Event.ModifiedComment,function(comment) {
       setComment(comment);
     })
-  }, [])
+  }, [date])
 
   //保存
   const handleCommit = () => {

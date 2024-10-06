@@ -358,6 +358,7 @@ function Editor(props) {
   editorStyle.fontSize = "20px";
   editorStyle.color = "#eeeeee";
   editorStyle.fontFamily = "Calex Code JP Regular";
+  //editorStyle.fontFamily = "Yu Gothic UI Semibold";
 
   var menuWidth = 310;
   var splitterW = 10;

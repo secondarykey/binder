@@ -47,14 +47,26 @@ class Event {
      * @param {*} key 
      * @param {*} func 
      */
-    register(key,func) {
-        //console.log(this.register.callee)
+    register(component,key,func) {
+
         var e = this.eventMap.get(key);
         if ( e === undefined || e === null ) {
             e = [];
         }
-        e.push(func);
-        this.eventMap.set(key,e);
+
+        var newE = [];
+        e.forEach( (obj) => {
+            if ( obj.key !== component ) {
+                newE.push(obj);
+            }
+        })
+
+        var obj = {};
+        obj.key = component;
+        obj.func = func;
+
+        newE.push(obj);
+        this.eventMap.set(key,newE);
     }
 
     refreshTree() {
@@ -117,8 +129,8 @@ class Event {
             return;
         }
 
-        evts.forEach( f => {
-            f(obj);
+        evts.forEach( wk => {
+            wk.func(obj);
         })
     }
 }

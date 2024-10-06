@@ -89,7 +89,7 @@ function Note(props) {
   useEffect(() => {
 
     //アドレス変更時の処理
-    evt.register(Event.ChangeAddress,function(arg) {
+    evt.register("Note",Event.ChangeAddress,function(arg) {
       setAddress(arg);
     });
 
