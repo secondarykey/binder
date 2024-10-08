@@ -42,3 +42,14 @@ func (a *App) GetModifiedTree() (*binder.Tree, error) {
 	}
 	return tree, nil
 }
+
+func (a *App) GetUnpublishedTree() (*binder.Tree, error) {
+	defer log.PrintTrace(log.Func("GetUnpublishedTree()"))
+
+	tree, err := a.current.GetUnpublishedTree()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetModifiedTree() error\n%+v", err)
+	}
+	return tree, nil
+}

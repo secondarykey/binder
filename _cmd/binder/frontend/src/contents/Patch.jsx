@@ -103,18 +103,22 @@ function Patch(props) {
         height: "calc(100% - 50px)",
     }
 
-    var pos = "105px";
+    var fontName = "Calex Code JP Regular";
+    var fontSize = 20;
+    var digit = 3;
+    var pos = (fontSize *  digit) + "px";
+
     var lineStyle = {
         backgroundColor: "#222222",
         border: "0",
         borderRight: "1px double #cccccc",
         position: "absolute",
-        width: "calc(" + pos + "-15px)",
+        width: "calc(" + pos + ")",
         zIndex: 10,
         color: "#eeeeee",
         paddingRight: "5px",
-        fontSize: "20px",
-        fontFamily: "Calex Code JP Regular",
+        fontSize: fontSize + "px",
+        fontFamily: fontName,
         height: "calc(100% - 110px)",
         textAlign: "right",
         overflow: "hidden",
@@ -125,8 +129,8 @@ function Patch(props) {
         backgroundColor: "#222222",
         color: "#eeeeee",
         whiteSpace: "pre",
-        fontSize: "20px",
-        fontFamily: "Calex Code JP Regular",
+        fontSize: fontSize + "px",
+        fontFamily: fontName,
         width: "100%",
         height: "100%",
         overflow: "auto",
@@ -220,7 +224,7 @@ function Patch(props) {
             if (minus[num]) {
                 var m = minus[num];
                 m.forEach((del, idx) => {
-                    write("m_" + idx + "_" + num, "red", del, "\u00A0DEL");
+                    write("m_" + idx + "_" + num, "red", del, "\u00A0-");
                 })
             }
 

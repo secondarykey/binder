@@ -106,6 +106,10 @@ export function GetTemplateTree() {
   return window['go']['api']['App']['GetTemplateTree']();
 }
 
+export function GetUnpublishedTree() {
+  return window['go']['api']['App']['GetUnpublishedTree']();
+}
+
 export function LoadBinder(arg1) {
   return window['go']['api']['App']['LoadBinder'](arg1);
 }

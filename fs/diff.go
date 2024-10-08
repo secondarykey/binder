@@ -11,6 +11,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// 指定ファイルの最終コミット取得
 func (f *FileSystem) getLastCommit(n string) (*object.Commit, error) {
 
 	ref, err := f.repo.Head()
@@ -49,6 +50,7 @@ func (f *FileSystem) getLastCommitContent(n string) (string, error) {
 	return c, nil
 }
 
+// 指定したコミットのファイルの中身
 func getCommitContent(c *object.Commit, n string) (string, error) {
 
 	fo, err := c.File(n)
@@ -63,6 +65,7 @@ func getCommitContent(c *object.Commit, n string) (string, error) {
 	return content, nil
 }
 
+// 最終コミットと引数のパッチ
 func (f *FileSystem) getLatestPatch(n string, now string) (diff.Patch, error) {
 
 	//コミットから取得
@@ -71,28 +74,26 @@ func (f *FileSystem) getLatestPatch(n string, now string) (diff.Patch, error) {
 		return nil, xerrors.Errorf("getLastContent() error: %w", err)
 	}
 
-	p, err := createPatch(n, fromContent, now)
+	p, err := createSinglePatch(n, fromContent, now)
 	if err != nil {
 		return nil, xerrors.Errorf("patch() error: %w", err)
 	}
 	return p, nil
 }
 
-func createPatch(n string, from, to string) (diff.Patch, error) {
+// 指定ファイル名でパッチを作成
+// 現状特にハッシュを指定してない
+func createSinglePatch(n string, from, to string) (diff.Patch, error) {
 
-	fromFile := newFile(n)
-	//fromFile.hash = plumbing.NewHash(fromContent)
-	//fmt.Println(fromFile.hash)
-	toFile := newFile(n)
-	//toFile.hash = plumbing.NewHash(toContent)
-	//fmt.Println(toFile.hash)
+	fromFile := newPatchFile(n)
+	toFile := newPatchFile(n)
 
 	var fp filePatch
 	fp.from = fromFile
 	fp.to = toFile
 	fp.chunks = createChunks(from, to)
 
-	return newPatch(&fp), nil
+	return newSinglePatch(&fp), nil
 }
 
 // LICENSE
@@ -119,27 +120,27 @@ func createChunks(from string, to string) []diff.Chunk {
 	return chunks
 }
 
-type patch struct {
+type singlePatch struct {
 	fp diff.FilePatch
 }
 
-func newPatch(fp diff.FilePatch) diff.Patch {
-	var p patch
+func newSinglePatch(fp diff.FilePatch) diff.Patch {
+	var p singlePatch
 	p.fp = fp
 	return &p
 }
 
-func (p *patch) FilePatches() []diff.FilePatch {
+func (p *singlePatch) FilePatches() []diff.FilePatch {
 	return []diff.FilePatch{p.fp}
 }
 
-func (p *patch) Message() string {
+func (p *singlePatch) Message() string {
 	return "Binder Patch"
 }
 
 type filePatch struct {
-	from   *file
-	to     *file
+	from   *patchFile
+	to     *patchFile
 	chunks []diff.Chunk
 }
 
@@ -156,26 +157,26 @@ func (f *filePatch) Chunks() []diff.Chunk {
 	return f.chunks
 }
 
-type file struct {
+type patchFile struct {
 	path string
 	hash plumbing.Hash
 }
 
-func newFile(p string) *file {
-	var f file
+func newPatchFile(p string) *patchFile {
+	var f patchFile
 	f.path = p
 	return &f
 }
 
-func (f *file) Hash() plumbing.Hash {
+func (f *patchFile) Hash() plumbing.Hash {
 	return f.hash
 }
 
-func (f *file) Mode() filemode.FileMode {
+func (f *patchFile) Mode() filemode.FileMode {
 	return filemode.Regular
 }
 
-func (f *file) Path() string {
+func (f *patchFile) Path() string {
 	return f.path
 }
 

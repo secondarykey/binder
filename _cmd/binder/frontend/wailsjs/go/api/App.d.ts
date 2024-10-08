@@ -57,6 +57,8 @@ export function GetTemplate(arg1:string):Promise<model.Template>;
 
 export function GetTemplateTree():Promise<binder.Tree>;
 
+export function GetUnpublishedTree():Promise<binder.Tree>;
+
 export function LoadBinder(arg1:string):Promise<string>;
 
 export function OpenBinderSite():Promise<void>;

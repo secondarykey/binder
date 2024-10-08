@@ -35,10 +35,28 @@ function ModifiedMenu(props) {
   const assetRef = useRef(null);
   const templateRef = useRef(null);
 
-  /**
-   * 更新一覧を更新
-   */
-  const updatedTree = () => {
+  useEffect(() => {
+
+    //コミットの登録
+    evt.register("ModifiedMenu",Event.ModifiedCommit, function(comment) {
+
+      var files = [];
+      files.push(...noteRef.current.checked());
+      files.push(...diagramRef.current.checked());
+      files.push(...assetRef.current.checked());
+      files.push(...templateRef.current.checked());
+
+      CommitFiles(files, comment).then(() => {
+        evt.showSuccessMessage("Commit");
+        setTimeout(function() {
+          nav("/status/modified/" + (new Date()).toISOString);
+        },200);
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      })
+    });
+
+    evt.changeTitle("Modified Files");
 
     //更新一覧を取得
     GetModifiedTree().then((tree) => {
@@ -90,31 +108,7 @@ function ModifiedMenu(props) {
     }).catch((err) => {
       evt.showErrorMessage(err);
     })
-  }
 
-
-  useEffect(() => {
-
-    //コミットの登録
-    evt.register("ModifiedMenu",Event.ModifiedCommit, function(comment) {
-      var files = [];
-      files.push(...noteRef.current.checked());
-      files.push(...diagramRef.current.checked());
-      files.push(...assetRef.current.checked());
-      files.push(...templateRef.current.checked());
-
-      CommitFiles(files, comment).then(() => {
-        evt.showSuccessMessage("Commit");
-        setTimeout(function() {
-          updatedTree();
-        },500);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
-    });
-
-    evt.changeTitle("Modified Files");
-    updatedTree();
   }, [date])
 
   const handleOpen = (e, leaf) => {

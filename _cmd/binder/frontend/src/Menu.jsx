@@ -44,6 +44,10 @@ function BinderSVGIcon(props) {
   </>);
 }
 
+function dateString() {
+  return (new Date()).toISOString();
+}
+
 /*
  * 操作用のメニュー
  * <pre>
@@ -142,11 +146,14 @@ function Menu(props) {
    * 更新一覧
    */
   const handleClickModified = () => {
-    nav("/status/modified/" + (new Date()).toISOString());
+    nav("/status/modified/" + dateString());
   }
 
+  /**
+   * 公開一覧
+   */
   const handleClickPublish = () => {
-    nav("/status/publish");
+    nav("/status/published/" + dateString());
   }
 
   /**
@@ -189,7 +196,7 @@ function Menu(props) {
         </IconButton>
 
         {/** Publish  */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
           <PublishIcon fill="white" className="leftIcon" />
         </IconButton>
 

@@ -259,3 +259,45 @@ func (b *Binder) GetModifiedTree() (*Tree, error) {
 
 	return &tree, nil
 }
+
+func (b *Binder) GetUnpublishedTree() (*Tree, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	var tree Tree
+
+	dirNote := newLeaf("DIR_Note", "note")
+	tree.Data = append(tree.Data, dirNote)
+	notes, err := b.GetUnpublishedNotes()
+	if err != nil {
+		return nil, xerrors.Errorf("UnpublishNotes() error: %w", err)
+	}
+	for _, n := range notes {
+		dirNote.AddChild(convertNote2Leaf(n))
+	}
+
+	dirDiagram := newLeaf("DIR_Diagram", "diagram")
+	tree.Data = append(tree.Data, dirDiagram)
+	diagrams, err := b.GetUnpublishedDiagrams()
+	if err != nil {
+		return nil, xerrors.Errorf("UnpublishDiagrams() error: %w", err)
+	}
+	for _, d := range diagrams {
+		dirDiagram.AddChild(convertDiagram2Leaf(d))
+	}
+
+	dirAsset := newLeaf("DIR_Asset", "asset")
+
+	tree.Data = append(tree.Data, dirAsset)
+	assets, err := b.GetUnpublishedAssets()
+	if err != nil {
+		return nil, xerrors.Errorf("UnpublishAssets() error: %w", err)
+	}
+	for _, a := range assets {
+		dirAsset.AddChild(convertAsset2Leaf(a))
+	}
+
+	return &tree, nil
+}
