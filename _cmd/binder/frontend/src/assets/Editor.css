@@ -45,6 +45,7 @@ iframe.htmlViewer {
     height:calc( 100% - 48px);
     justify-content: center;
     align-items:center;
+    overflow: auto;
 }
 
 #editor {

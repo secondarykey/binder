@@ -259,8 +259,42 @@ function Editor(props) {
     Mermaid.parse(txt).then( (data) => {
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
+
+      var svg = document.querySelector('#mermaidViewer svg');
+      var left = 0;
+      var top = 0;
+      var scale = 1.0;
+
+      var transform = function()  {
+        var px = left + 'px';
+        var py = top + 'px';
+        svg.style.transform = `translate(${px},${py}) scale(${scale})`;
+      }
+
+      //ドラッグ
+      svg.addEventListener("pointermove",function( event ) {
+        if ( !event.buttons ) {
+          return;
+        }
+        left = (left + event.movementX);
+        top = (top + event.movementY);
+        transform();
+      });
+
+      //Wheelによる拡大
+      svg.addEventListener("wheel", function( event ) {
+        var dy = event.deltaY;
+        var s = 0.1;
+        if ( dy > 0 ) {
+          s *= -1;
+        }
+        scale += s;
+        transform();
+      });
+      transform();
+
     }).catch((err) => {
-      console.log(txt)
+      //console.log(txt)
       evt.showWarningMessage("Diagram parse error:" + err);
     });
 

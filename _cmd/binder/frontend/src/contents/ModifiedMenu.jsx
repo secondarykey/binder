@@ -50,7 +50,7 @@ function ModifiedMenu(props) {
         evt.showSuccessMessage("Commit");
         setTimeout(function() {
           nav("/status/modified/" + (new Date()).toISOString);
-        },200);
+        },1000);
       }).catch((err) => {
         evt.showErrorMessage(err);
       })

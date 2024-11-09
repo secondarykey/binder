@@ -10,54 +10,55 @@ const URL = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
  */
 class MermaidScript {
 
-    static isExists() {
-       return Scripter.isExists(Name)
-    }
+  static isExists() {
+    return Scripter.isExists(Name)
+  }
 
-    static async init() {
+  static async init() {
 
-      //11 のURLだと、defaultがないって言われる
-      //+esm だとimport (URL) が可能だけどinitialize が実行できない
-        var rtn = new Promise( (res,rej) => {
-          Scripter.getScript(URL).then( (s) => {
-            var func = new Function(s);
-            func();
-            res();
-          }).catch( (err) => {
+    //11 のURLだと、defaultがないって言われる
+    //+esm だとimport (URL) が可能だけどinitialize が実行できない
+    var rtn = new Promise((res, rej) => {
+      Scripter.getScript(URL).then((s) => {
+        var func = new Function(s);
+        func();
+        res();
+      }).catch((err) => {
+        rej(err);
+      });
+    })
+    return rtn;
+  }
+
+  static async parse(txt) {
+
+    var rtn = new Promise((res, rej) => {
+      var func = function () {
+        mermaid.parse(txt).then(() => {
+          mermaid.render('svg', txt).then((data) => {
+            res(data);
+          }).catch((err) => {
+          }).catch((err) => {
             rej(err);
           });
-        })
-        return rtn;
-    }
+        }).catch((err) => {
+          rej(err);
+        });
+      }
 
-    static async parse(txt) {
-        var rtn = new Promise( (res,rej) => {
-          var func = function() {
-            mermaid.parse(txt).then(() => {
-              mermaid.render('svg', txt).then((data) => {
-                res(data);
-              }).catch((err) => {
-            }).catch((err) => {
-                rej(err);
-              });
-            }).catch((err) => {
-              rej(err);
-            });
-          }
+      if (this.isExists()) {
+        func();
+        return;
+      }
 
-          if ( this.isExists() ) {
-            func();
-            return;
-          }
-
-          this.init().then( () => {
-            func();
-          }).catch( (err) => {
-            rej(err);
-          })
-        })
-        return rtn;
-    }
+      this.init().then(() => {
+        func();
+      }).catch((err) => {
+        rej(err);
+      })
+    })
+    return rtn;
+  }
 }
 
 export default MermaidScript;

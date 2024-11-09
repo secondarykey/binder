@@ -82,12 +82,14 @@ function Patch(props) {
     const [rows, setRows] = useState("");
     const viewer = useRef();
     const lineViewer = useRef();
-
     useEffect(() => {
         //同時スクロール
         viewer.current.addEventListener("scroll", function () {
             lineViewer.current.scrollTop = viewer.current.scrollTop;
         })
+    }, [])
+
+    useEffect(() => {
         //現在のファイルシステムとのパッチを取得
         GetNowPatch(type, currentId).then((resp) => {
             setPatch(resp.patch);
@@ -95,7 +97,7 @@ function Patch(props) {
         }).catch((err) => {
             evt.showErrorMessage(err);
         })
-    }, [currentId])
+    }, [type,currentId])
 
     var parentStyle = {
         position: "reactive",
@@ -235,7 +237,7 @@ function Patch(props) {
         setRows(nums);
         setHtml(html);
 
-    }, [source]);
+    }, [source,patch]);
 
     return (<>
         <div style={parentStyle} id="lines">
