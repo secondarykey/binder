@@ -3,6 +3,9 @@ import Scripter from "./Scripter";
 const Name = "marked"
 const URL = "https://cdn.jsdelivr.net/npm/marked@14/lib/marked.umd.min.js";
 
+/**
+ * marked.js を利用するクラス
+ */
 class MarkedScript {
 
     static isExists() {
@@ -11,7 +14,7 @@ class MarkedScript {
 
     static async init() {
         var rtn = new Promise( (res,rej) => {
-          Scripter.getScript(URL).then( (s) => {
+          Scripter.get(URL).then( (s) => {
             var objFunc = new Function(s);
             objFunc();
             res();
