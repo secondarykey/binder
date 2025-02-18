@@ -1,30 +1,30 @@
-package model_test
+package internal_test
 
 import (
-	"binder/db/model"
+	. "binder/internal"
 	"testing"
 )
 
 func TestVersion(t *testing.T) {
 
-	v, err := model.NewVersion("0.0.0")
+	v, err := NewVersion("0.0.0")
 	if err != nil {
 		t.Errorf("NewVersion() error is not nil: %v", err)
 	} else if v.String() != "0.0.0" {
 		t.Errorf("String() want 0.0.0 got %v", v)
 	}
 
-	v, err = model.NewVersion("0.0")
+	v, err = NewVersion("0.0")
 	if err == nil {
 		t.Errorf("NewVersion() parse error is nil 0.0")
 	}
 
-	v, err = model.NewVersion("0.0.0.0")
+	v, err = NewVersion("0.0.0.0")
 	if err == nil {
 		t.Errorf("NewVersion() parse error is nil 0.0.0.0")
 	}
 
-	v, err = model.NewVersion("0.0.0-PR1")
+	v, err = NewVersion("0.0.0-PR1")
 	if err != nil {
 		t.Errorf("NewVersion() PR parse error is nil 0.0.0-PR1: %v", err)
 	}
@@ -32,7 +32,7 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewVersion() PR parse not PR1")
 	}
 
-	v, err = model.NewVersion("0.0.0+Build2")
+	v, err = NewVersion("0.0.0+Build2")
 	if err != nil {
 		t.Errorf("NewVersion() Build parse error is nil 0.0.0+Build2: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewVersion() Build parse not Build2")
 	}
 
-	v, err = model.NewVersion("0.0.0-PR3+Build4")
+	v, err = NewVersion("0.0.0-PR3+Build4")
 	if err != nil {
 		t.Errorf("NewVersion() PR and Build parse error is nil 0.0.0-PR3+Build4: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewVersion() Build parse not Build4")
 	}
 
-	v, err = model.NewVersion("0.0.0+Build5-PR6")
+	v, err = NewVersion("0.0.0+Build5-PR6")
 	if err != nil {
 		t.Errorf("NewVersion() PR and Build parse error is nil 0.0.0+Build5-PR6: %v", err)
 	}
@@ -64,30 +64,30 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewVersion() Build parse not Build5-PR6")
 	}
 
-	v, err = model.NewVersion("0.0.0*PR6")
+	v, err = NewVersion("0.0.0*PR6")
 	if err == nil {
 		t.Errorf("NewVersion() PR and Build parse error is nil 0.0.0*PR6: %v", err)
 	}
 
-	v, err = model.NewVersion("0a.0.0")
+	v, err = NewVersion("0a.0.0")
 	if err == nil {
 		t.Errorf("NewVersion() PR and Build parse error is nil 0a.0.0")
 	}
 
-	v, err = model.NewVersion("0.0a.0")
+	v, err = NewVersion("0.0a.0")
 	if err == nil {
 		t.Errorf("NewVersion() PR and Build parse error is nil 0.0a.0")
 	}
 
-	v, err = model.NewVersion("0.0.0a")
+	v, err = NewVersion("0.0.0a")
 	if err == nil {
 		t.Errorf("NewVersion() PR and Build parse error is nil 0.0.0a")
 	}
 
 }
 
-func newVer(t *testing.T, buf string) *model.Version {
-	v, err := model.NewVersion(buf)
+func newVer(t *testing.T, buf string) *Version {
+	v, err := NewVersion(buf)
 	if err != nil {
 		t.Fatalf("Version error: %v", err)
 	}
@@ -96,8 +96,8 @@ func newVer(t *testing.T, buf string) *model.Version {
 
 func TestCompareCore(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  int
 	}{
 		{newVer(t, "1.0.0"), newVer(t, "1.0.1"), -1},
@@ -116,8 +116,8 @@ func TestCompareCore(t *testing.T) {
 
 func TestLt(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "1.0.0"), newVer(t, "1.0.1"), true},
@@ -133,8 +133,8 @@ func TestLt(t *testing.T) {
 }
 func TestLe(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "1.0.0"), newVer(t, "1.0.1"), true},
@@ -150,8 +150,8 @@ func TestLe(t *testing.T) {
 }
 func TestGt(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "1.0.0"), newVer(t, "1.0.1"), false},
@@ -167,8 +167,8 @@ func TestGt(t *testing.T) {
 }
 func TestGe(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "1.0.0"), newVer(t, "1.0.1"), false},
@@ -185,8 +185,8 @@ func TestGe(t *testing.T) {
 
 func TestEq(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "1.0.0"), newVer(t, "1.0.1"), false},
@@ -203,8 +203,8 @@ func TestEq(t *testing.T) {
 
 func TestPR(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "0.0.0-PR"), newVer(t, "0.0.0"), true},
@@ -228,8 +228,8 @@ func TestPR(t *testing.T) {
 
 func TestBuild(t *testing.T) {
 	vers := []struct {
-		left  *model.Version
-		right *model.Version
+		left  *Version
+		right *Version
 		want  bool
 	}{
 		{newVer(t, "0.0.0+B"), newVer(t, "0.0.0"), false},
