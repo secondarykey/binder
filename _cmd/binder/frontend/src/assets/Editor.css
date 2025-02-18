@@ -1,7 +1,18 @@
 #editorWrapper {
     position: absolute;
-    top:48px;
+    top:40px;
     bottom: 0;
+}
+
+#editorMenu {
+    background-color: #111111;
+    position: absolute;
+    left: 0;
+    top: 10px;
+    height:40px;
+    padding-top:4px !important;
+    padding-left:4px !important;
+    padding-right:4px !important;
 }
 
 #splitter {
@@ -36,16 +47,40 @@ iframe.htmlViewer {
     width:calc( 100% - 5px );
     height:calc( 100% - 48px );
 
-    transition: opacity 0.1s;
+    opacity: 1;
+    visibility: visible;
+}
+
+iframe.htmlViewer.hide{
+  transition: 0.5s;
+  opacity: 0;
+  visibility: hidden;
+}
+
+iframe.htmlViewer.show{
+  transition: 0.5s;
+  opacity: 1;
+  visibility: visible;
+}
+
+#bufferd {
+    visibility: hidden;
+    position: absolute;
+    z-index: 1000;
+    font-size:72px;
+    color: white;
+    right:50px;
+    opacity: 0.5;
+    visibility: hidden;
 }
 
 #mermaidViewer {
-    display:flex;
-    width:calc( 100% - 5px );
-    height:calc( 100% - 48px);
-    justify-content: center;
-    align-items:center;
-    overflow: auto;
+  display:flex;
+  width:calc( 100% - 5px );
+  height:calc( 100% - 48px);
+  justify-content: center;
+  align-items:center;
+  overflow: auto;
 }
 
 #editor {
@@ -54,7 +89,7 @@ iframe.htmlViewer {
     position: absolute;
     left: 0;
     right: 0;
-    top: 0;
+    top: 48px;
     bottom: 48px;
 
     background-color: #252525;
