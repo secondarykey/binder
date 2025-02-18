@@ -82,4 +82,14 @@ export function Hidden() {
   return <></>;
 }
 
+/**
+ * 各種モード
+ */
+export const Mode = Object.freeze({
+    template: 'template',
+    asset: 'asset',
+    note: 'note',
+    diagram: 'diagram',
+})
+
 export default App
