@@ -1,6 +1,8 @@
 package binder
 
 import (
+	. "binder/internal"
+
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
@@ -26,7 +28,7 @@ var embFs embed.FS
 // 渡されたパスをBinderに設定する
 // ディレクトリが存在する場合は行えない
 // サンプルとしていくつかデータを作成する
-func Install(dir string, ver *model.Version) error {
+func Install(dir string, ver *Version) error {
 
 	err := checkDirectory(dir, true)
 	if err != nil {
@@ -42,7 +44,7 @@ func Install(dir string, ver *model.Version) error {
 	return install(f, dir, ver)
 }
 
-func install(f *fs.FileSystem, dir string, ver *model.Version) error {
+func install(f *fs.FileSystem, dir string, ver *Version) error {
 
 	//空でもディレクトリは作っておく
 	docsdir := filepath.Join(dir, f.GetPublic())
@@ -82,16 +84,18 @@ func install(f *fs.FileSystem, dir string, ver *model.Version) error {
 		return xerrors.Errorf("os.Mkdir() error: %w", err)
 	}
 
-	vf, err := db.Create(dbdir, ver)
+	err = db.Create(dbdir, ver)
 	if err != nil {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
 	//Gitへの追加を行う
-	err = f.AddDBFiles(vf)
-	if err != nil {
-		return xerrors.Errorf("Add() error: %w", err)
-	}
+	/*
+		err = f.AddDBFiles(vf)
+		if err != nil {
+			return xerrors.Errorf("Add() error: %w", err)
+		}
+	*/
 
 	err = f.CommitAll(fs.M("Install", "Database"))
 	if err != nil {

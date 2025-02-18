@@ -1,7 +1,8 @@
 package db
 
 import (
-	"binder/db/model"
+	. "binder/internal"
+	"bufio"
 	"context"
 	"database/sql"
 	"errors"
@@ -58,65 +59,50 @@ func Tables() map[string]string {
 	return tables
 }
 
+// 0.0.0 検索用
 const SchemaFileSuffix = "_schema"
+const SchemaFile = "schema.version"
 
-func SchemaVersion(dir string) (*model.Version, error) {
+func SchemaVersion(dir string) (*Version, error) {
 
-	files, err := filepath.Glob(filepath.Join(dir, "*"+SchemaFileSuffix))
+	v := loadSchemaFile(dir)
+	ver, err := NewVersion(v)
 	if err != nil {
-		return nil, xerrors.Errorf("filepath.Glob() error: %w", err)
-	}
-
-	v := "0.0.0"
-
-	if len(files) >= 1 {
-		if len(files) > 1 {
-			slog.Warn("schema file duplicate:" + dir)
-		}
-
-		f := files[0]
-		n := filepath.Base(f)
-		//ファイル名
-		v = strings.Replace(n, SchemaFileSuffix, "", 1)
-	}
-
-	ver, err := model.NewVersion(v)
-	if err != nil {
-		return nil, xerrors.Errorf("model.NewVersion() error: %w", err)
+		return nil, xerrors.Errorf("NewVersion() error: %w", err)
 	}
 	return ver, nil
 }
 
-func Create(dir string, version *model.Version) (string, error) {
+func Create(dir string, version *Version) error {
 
 	//ファイルチェック
 	//すでに存在する場合
 	err := createTableFiles(dir)
 	if err != nil {
-		return "", xerrors.Errorf("createTableFiles() error: %w", err)
+		return xerrors.Errorf("createTableFiles() error: %w", err)
 	}
 
 	inst, err := New(dir)
 	if err != nil {
-		return "", xerrors.Errorf("db.New() error: %w", err)
+		return xerrors.Errorf("db.New() error: %w", err)
 	}
 	err = inst.Open()
 	if err != nil {
-		return "", xerrors.Errorf("inst.Open() error: %w", err)
+		return xerrors.Errorf("inst.Open() error: %w", err)
 	}
 	defer inst.Close()
 
-	vf, err := createSchemaFile(dir, version)
+	err = createSchemaFile(dir, version)
 	if err != nil {
-		return "", xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
+		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
 	}
 
 	err = inst.insertDefaultConfig()
 	if err != nil {
-		return "", xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
+		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
 	}
 
-	return vf, nil
+	return nil
 }
 
 func createTableFiles(dir string) error {
@@ -164,31 +150,79 @@ func createTableFile(file string, clm string) error {
 	return nil
 }
 
-func CreateSchemaFile(dir string, ver *model.Version) (string, error) {
+func CreateSchemaFile(dir string, ver *Version) error {
 
 	//既存バージョンがないか確認
 
 	//あった場合エラー
-
-	return createSchemaFile(dir, ver)
+	err := createSchemaFile(dir, ver)
+	if err != nil {
+		return xerrors.Errorf("os.Create() error: %w", err)
+	}
+	return nil
 }
 
-func createSchemaFile(dir string, ver *model.Version) (string, error) {
+func createSchemaFile(dir string, ver *Version) error {
 
-	rtn := ver.String() + SchemaFileSuffix
-	f := filepath.Join(dir, rtn)
+	f := filepath.Join(dir, SchemaFile)
 
 	fp, err := os.Create(f)
 	if err != nil {
-		return "", xerrors.Errorf("os.Create() error: %w", err)
+		return xerrors.Errorf("os.Create() error: %w", err)
 	}
 	defer fp.Close()
 
 	_, err = fp.Write([]byte(ver.String()))
 	if err != nil {
-		return "", xerrors.Errorf("os.Write() error: %w", err)
+		return xerrors.Errorf("os.Write() error: %w", err)
 	}
-	return rtn, nil
+	return nil
+}
+
+// スキーマファイルからバージョンを取得
+func loadSchemaFile(dir string) string {
+
+	p := filepath.Join(dir, SchemaFile)
+	//存在しない場合
+	if _, err := os.Stat(p); err != nil {
+		return loadOldSchemaFile(dir)
+	}
+
+	fp, err := os.Open(p)
+	if err != nil {
+		return "0.0.0"
+	}
+	defer fp.Close()
+
+	s := bufio.NewScanner(fp)
+	if !s.Scan() {
+		return "0.0.0"
+	}
+
+	return s.Text()
+}
+
+// Deprecated: old version
+func loadOldSchemaFile(dir string) string {
+
+	files, err := filepath.Glob(filepath.Join(dir, "*"+SchemaFileSuffix))
+	if err != nil {
+		return "0.0.0"
+	}
+
+	v := "0.0.0"
+	//存在する場合
+	if len(files) >= 1 {
+		if len(files) > 1 {
+			slog.Warn("schema file duplicate:" + dir)
+		}
+
+		f := files[0]
+		n := filepath.Base(f)
+		//ファイル名
+		v = strings.Replace(n, SchemaFileSuffix, "", 1)
+	}
+	return v
 }
 
 type scanner interface {

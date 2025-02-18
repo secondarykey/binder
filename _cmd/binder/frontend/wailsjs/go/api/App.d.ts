@@ -79,6 +79,8 @@ export function RemoveDiagram(arg1:string):Promise<void>;
 
 export function RemoveNote(arg1:string):Promise<void>;
 
+export function RunEditor(arg1:string,arg2:string):Promise<void>;
+
 export function SaveDiagram(arg1:string,arg2:string):Promise<void>;
 
 export function SaveNote(arg1:string,arg2:string):Promise<void>;

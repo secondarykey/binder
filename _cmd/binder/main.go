@@ -11,7 +11,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
 	"binder/api"
-	"binder/db/model"
 	"binder/settings"
 )
 
@@ -20,6 +19,7 @@ var assets embed.FS
 
 //go:embed wails.json
 var wailsJson []byte
+var ver string
 
 func attrFunc(groups []string, a slog.Attr) slog.Attr {
 	if a.Key == slog.TimeKey {
@@ -30,8 +30,6 @@ func attrFunc(groups []string, a slog.Attr) slog.Attr {
 	return a
 }
 
-var version *model.Version
-
 func init() {
 	wails := make(map[string]interface{})
 
@@ -41,16 +39,10 @@ func init() {
 	}
 	obj, ok := wails["version"]
 
-	v := "0.0.0"
+	ver = "0.0.0"
 	if ok {
-		v = obj.(string)
+		ver = obj.(string)
 	}
-
-	version, err = model.NewVersion(v)
-	if err != nil {
-		slog.Error("wails.json version error: " + err.Error())
-	}
-
 }
 
 func main() {
@@ -66,15 +58,13 @@ func main() {
 	//開いているBinderに対するProxy
 	//handler := binder.NewBinderHandler()
 	//app := api.New(handler)
-	app := api.New(version)
+	app := api.New(ver)
 	//config を読み込む
 	set := settings.Get()
 
 	if !set.IsDefault() {
-
 		//起動引数候補を作成
 		// -p -> 位置をリセット
-
 	}
 
 	// Create application with options

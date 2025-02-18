@@ -40,7 +40,7 @@ func open() *db.Instance {
 
 func create() error {
 	os.Mkdir(testPath, 0666)
-	_, err := db.Create(testPath, test.LatestVersion)
+	err := db.Create(testPath, test.LatestVersion)
 	return err
 }
 
@@ -96,13 +96,9 @@ func TestCrete(t *testing.T) {
 
 	tv := test.NewVer("1.0.0")
 
-	nf, err := db.Create(filepath.Join(test.Dir, "create"), tv)
+	err := db.Create(filepath.Join(test.Dir, "create"), tv)
 	if err != nil {
 		t.Errorf("db.Create() is not nil:%v", err)
-	}
-
-	if nf != tv.String()+"_schema" {
-		t.Errorf("schema file error :want %v_schema got %s", tv, nf)
 	}
 
 }

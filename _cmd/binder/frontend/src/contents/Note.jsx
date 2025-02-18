@@ -21,7 +21,6 @@ function Note(props) {
 
   const evt = useContext(EventContext)
   const nav = useNavigate();
-
   const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");

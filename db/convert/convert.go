@@ -1,12 +1,13 @@
 package convert
 
 import (
+	. "binder/internal"
+
 	"binder/db"
 	convert010 "binder/db/convert/010"
 	"binder/db/convert/core"
 	"os"
 
-	"binder/db/model"
 	"binder/log"
 	"log/slog"
 	"path/filepath"
@@ -14,17 +15,17 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var v010 *model.Version
+var v010 *Version
 
 func init() {
 	var err error
-	v010, err = model.NewVersion("0.1.0")
+	v010, err = NewVersion("0.1.0")
 	if err != nil {
 		log.PrintStackTrace(err)
 	}
 }
 
-func check(ov, nv *model.Version) ([]core.Converter, error) {
+func check(ov, nv *Version) ([]core.Converter, error) {
 
 	var c []core.Converter
 	//現在のバージョンを取得
@@ -37,35 +38,35 @@ func check(ov, nv *model.Version) ([]core.Converter, error) {
 }
 
 // 新バージョンはアプリから取得
-func Run(p string, v *model.Version) (string, error) {
+func Run(p string, v *Version) error {
 
 	if v == nil {
 		slog.Info("convert.Run() is not run(version is nil)")
-		return "", nil
+		return nil
 	}
 
 	//DB のパスからバージョンを取得
 	ov, err := db.SchemaVersion(p)
 	if err != nil {
-		return "", xerrors.Errorf("db.SchemaVersion() error: %w", err)
+		return xerrors.Errorf("db.SchemaVersion() error: %w", err)
 	}
 
 	converter, err := check(ov, v)
 	if err != nil {
-		return "", xerrors.Errorf("check() error: %w", err)
+		return xerrors.Errorf("check() error: %w", err)
 	} else if len(converter) == 0 {
-		return "", nil
+		return nil
 	}
 
 	if len(converter) <= 0 {
-		return "", nil
+		return nil
 	}
 
 	//p の位置の全CSVファイルを取得
 	var files []*core.FileSet
 	matches, err := filepath.Glob(filepath.Join(p, "*.csv"))
 	if err != nil {
-		return "", xerrors.Errorf("filepath.Glob() error: %w", err)
+		return xerrors.Errorf("filepath.Glob() error: %w", err)
 	}
 
 	//元ファイル名を作成
@@ -78,19 +79,19 @@ func Run(p string, v *model.Version) (string, error) {
 	for _, c := range converter {
 		files, err = c(p, files)
 		if err != nil {
-			return "", xerrors.Errorf("converter call error: %w", err)
+			return xerrors.Errorf("converter call error: %w", err)
 		}
 	}
 
-	nf, err := convert(p, v, files)
+	err = convert(p, v, files)
 	if err != nil {
-		return "", xerrors.Errorf("convert() error: %w", err)
+		return xerrors.Errorf("convert() error: %w", err)
 	}
 
-	return nf, nil
+	return nil
 }
 
-func convert(p string, v *model.Version, fset []*core.FileSet) (string, error) {
+func convert(p string, v *Version, fset []*core.FileSet) error {
 
 	files := make(map[string]string)
 	for _, fs := range fset {
@@ -99,7 +100,7 @@ func convert(p string, v *model.Version, fset []*core.FileSet) (string, error) {
 
 	entries, err := os.ReadDir(p)
 	if err != nil {
-		return "", xerrors.Errorf("os.ReadDir() error: %w", err)
+		return xerrors.Errorf("os.ReadDir() error: %w", err)
 	}
 
 	//他のファイルを削除
@@ -112,7 +113,7 @@ func convert(p string, v *model.Version, fset []*core.FileSet) (string, error) {
 			f := filepath.Join(p, n)
 			err = os.Remove(f)
 			if err != nil {
-				return "", xerrors.Errorf("os.Remove() error: %w", err)
+				return xerrors.Errorf("os.Remove() error: %w", err)
 			}
 		}
 	}
@@ -138,14 +139,14 @@ func convert(p string, v *model.Version, fset []*core.FileSet) (string, error) {
 
 		err = os.Rename(nf, df)
 		if err != nil {
-			return "", xerrors.Errorf("os.Rename() error: %w", err)
+			return xerrors.Errorf("os.Rename() error: %w", err)
 		}
 	}
 
 	//新しいスキーマバージョンを設定
-	nf, err := db.CreateSchemaFile(p, v)
+	err = db.CreateSchemaFile(p, v)
 	if err != nil {
-		return "", xerrors.Errorf("db.CreateSchemaFile() error: %w", err)
+		return xerrors.Errorf("db.CreateSchemaFile() error: %w", err)
 	}
-	return nf, nil
+	return nil
 }

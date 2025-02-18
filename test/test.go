@@ -1,8 +1,9 @@
 package test
 
 import (
+	. "binder/internal"
+
 	"binder"
-	"binder/db/model"
 	"binder/log"
 	"binder/settings"
 
@@ -15,14 +16,14 @@ const (
 	Dir = "testing_work"
 )
 
-var LatestVersion *model.Version
+var LatestVersion *Version
 
 func init() {
 	LatestVersion = NewVer("0.1.0")
 }
 
-func NewVer(ver string) *model.Version {
-	v, err := model.NewVersion(ver)
+func NewVer(ver string) *Version {
+	v, err := NewVersion(ver)
 	if err != nil {
 		panic(err)
 	}
