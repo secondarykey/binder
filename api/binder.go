@@ -144,3 +144,14 @@ func (a *App) Generate(mode string, id string, data string) error {
 	}
 	return nil
 }
+
+func (a *App) RunEditor(mode, id string) error {
+
+	defer log.PrintTrace(log.Func("RunEditor()", mode, id))
+
+	err := a.current.RunEditor(mode, id)
+	if err != nil {
+		return xerrors.Errorf("RunEditor() error: %+v", err)
+	}
+	return nil
+}

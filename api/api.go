@@ -1,8 +1,10 @@
 package api
 
 import (
+	. "binder/internal"
+	"log/slog"
+
 	"binder"
-	"binder/db/model"
 	"binder/log"
 	"binder/settings"
 
@@ -18,15 +20,20 @@ type App struct {
 	ctx     context.Context
 	current *binder.Binder
 	//handler *binder.BinderHandler
-	version *model.Version
+	version *Version
 }
 
 // NewApp creates a new App application struct
 // func New(h *binder.BinderHandler) *App {
-func New(version *model.Version) *App {
+func New(version string) *App {
 	var app App
+	var err error
 	//app.handler = h
-	app.version = version
+	app.version, err = NewVersion(version)
+
+	if err != nil {
+		slog.Warn(fmt.Sprintf("Version parse error: %+v", err))
+	}
 
 	log.Notice(fmt.Sprintf("Binder Version: %s", app.version))
 	return &app

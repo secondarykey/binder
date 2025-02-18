@@ -1,9 +1,10 @@
 package binder
 
 import (
+	. "binder/internal"
+
 	"binder/db"
 	"binder/db/convert"
-	"binder/db/model"
 	"binder/fs"
 	"binder/log"
 	"binder/settings"
@@ -16,6 +17,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var BinderVersionFile = "binder.version"
 var EmptyError = fmt.Errorf("Binder is empty")
 
 type Binder struct {
@@ -40,7 +42,7 @@ func createUserOp(userId string) db.Op {
 	return op
 }
 
-func CreateRemote(url, dir string, version *model.Version) error {
+func CreateRemote(url, dir string, version *Version) error {
 
 	f, err := fs.Clone(dir, url)
 	if err != nil {
@@ -69,11 +71,11 @@ func CreateRemote(url, dir string, version *model.Version) error {
 	return nil
 }
 
-func Load(dir string, ver *model.Version) (*Binder, error) {
+func Load(dir string, ver *Version) (*Binder, error) {
 
 	//変換処理を開く前に入れておく
 	dbDir := dir + "/db"
-	nf, err := convert.Run(dbDir, ver)
+	err := convert.Run(dbDir, ver)
 	if err != nil {
 		return nil, xerrors.Errorf("db Convert() error: %w", err)
 	}
@@ -95,12 +97,14 @@ func Load(dir string, ver *model.Version) (*Binder, error) {
 		return nil, xerrors.Errorf("checkDirectory() error: %w", err)
 	}
 
-	if nf != "" {
-		err = bfs.SchemaCommit(nf)
-		if err != nil {
-			return nil, xerrors.Errorf("fs.SchemaCommit() error: %w", err)
+	/*
+		if nf != "" {
+			err = bfs.SchemaCommit(nf)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.SchemaCommit() error: %w", err)
+			}
 		}
-	}
+	*/
 
 	inst, err := db.New(dbDir)
 	if err != nil {
