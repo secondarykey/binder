@@ -14,6 +14,11 @@ class Event {
      */
     static ReloadBinderTitle = "binder.title.reload"
     /**
+     * メニューの表示
+     */
+    static ShowMenu = "menu.show"
+
+    /**
      * ツリーの再描画
      */
     static ReloadTree = "tree.reload"
@@ -69,6 +74,10 @@ class Event {
         this.eventMap.set(key,newE);
     }
 
+    showMenu(flag) {
+        this.raise(Event.ShowMenu, flag);
+    }
+
     refreshTree() {
         this.raise(Event.ReloadTree);
     }
@@ -88,6 +97,7 @@ class Event {
     showMessage(obj) {
         this.raise(Event.ShowMessage, obj);
     }
+
 
     clearMessage() {
         var mo = Message.createMessage("clear", "");

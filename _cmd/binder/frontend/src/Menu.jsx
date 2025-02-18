@@ -77,12 +77,14 @@ function Menu(props) {
    */
   const handleMenuOpen = () => {
     setMenuClasses("")
+    evt.showMenu(true);
   }
   /**
    * メニューを閉じる
    */
   const handleMenuClose = () => {
     setMenuClasses("hideMenu")
+    evt.showMenu(false);
   }
 
   /**
