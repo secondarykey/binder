@@ -73,7 +73,7 @@ function Diagram(props) {
       return;
     }
 
-    if ( alias === "" ) {
+    if ( mode !== "register" && alias === "" ) {
       evt.showWarningMessage("alias is required")
       return;
     }
