@@ -22,6 +22,7 @@ import Event, {EventContext} from "../Event.jsx";
 
 import '../assets/Editor.css'
 import { Mode } from "../App.jsx";
+
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
  * スプリッターでコントロールを可能にする
@@ -39,7 +40,6 @@ function Editor(props) {
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
 
-  const [noteElm, setNoteElm] = useState("");
   const [width, setWidth] = useState(500);
   const [menuWidth, setMenuWidth] = useState(310);
 
@@ -47,7 +47,6 @@ function Editor(props) {
   const [html, setHTML] = useState("");
   //更新状態のアイコン
   const [updated, setUpdated] = useState(false);
-
 
   //メニューを開いているかのイベント
   evt.register("Editor",Event.ShowMenu,function(flag) {
@@ -106,7 +105,7 @@ function Editor(props) {
 
     evt.clearMessage();
 
-    if ( mode === "diagram" ) {
+    if ( mode === Mode.diagram ) {
 
       setEditor(true);
       setViewer(true);
@@ -130,7 +129,7 @@ function Editor(props) {
         evt.showErrorMessage(err);
       })
 
-    } else if (mode === "note") {
+    } else if (mode === Mode.note ) {
 
       setEditor(true);
       setViewer(true);
@@ -152,7 +151,7 @@ function Editor(props) {
         evt.showErrorMessage(err);
       })
 
-    } else if (mode === "template") {
+    } else if ( mode === Mode.template ) {
 
       setEditor(true);
       setViewer(false);
@@ -178,7 +177,8 @@ function Editor(props) {
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
-    } else if (mode === "assets") {
+    } else if ( mode === "assets" ) {
+      // assets に合わせる
 
       GetAsset(id).then((resp) => {
 
@@ -212,31 +212,23 @@ function Editor(props) {
     if ( text === "" ) {
       return;
     }
-    if (mode === "diagram") {
-        viewDiagram(text);
-    } else if (mode === "note") {
+
+    if ( mode === Mode.diagram ) {
+      await viewDiagram(text);
+    } else if ( mode === Mode.note ) {
       //公開時にここが入らないようにする
-      viewHTML(insertCenterTag(text));
-    } else if (mode === "template") {
+      await viewHTML(insertCenterTag(text));
+    } else if ( mode === Mode.template ) {
       //viewHTML(text, noteElm);
     } else {
       //初回時の実行があるか
     }
-    parseInterval = -1;
   }
 
-  var parseInterval = -1;
-  var parseSec = 1;
   //テキスト変更時の処理
   useEffect(() => {
-    if ( parseInterval > 0 ) {
-      clearTimeout(parseInterval);
-      parseInterval = setTimeout(parseText,parseSec * 1000);
-    } else {
-      parseText();
-      parseInterval = setTimeout(function() {},parseSec * 1000);
-    }
-  }, [text, noteElm]);
+    parseText();
+  }, [text]);
 
   //データをマークダウンからHTMLに変換
   const createMarked = async (id, txt, local) => {
@@ -280,7 +272,7 @@ function Editor(props) {
    * ダイアグラムの表示
    * @param {*} txt 
    */
-  const viewDiagram = (txt) => {
+  const viewDiagram = async (txt) => {
 
     Mermaid.parse(txt).then( (data) => {
 
@@ -325,7 +317,6 @@ function Editor(props) {
       //console.log(txt)
       evt.showWarningMessage("Diagram parse error:" + err);
     });
-
   }
 
   var startX;
@@ -412,12 +403,80 @@ function Editor(props) {
       tempLink.click();
   }
 
-  const handleRunEditor = () => {
-    console.log("handle")
-    RunEditor(mode,id).then( () => {
+  /**
+   * Enter時にインデントを挿入
+   * @param {*} e 
+   * @returns 
+   */
+  const handleKeyDown = (e) => {
+    if (e.key !== "Enter" ) {
+      return;
+    }
+    
+    e.preventDefault();
+    const textarea = e.target;
+    const val = textarea.value;
 
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const before = val.substring(0,start)
+    const after = val.substring(end)
+
+    var indent = "";
+    var char = "";
+    //文字列の前方の状態を確認
+    const last = before.lastIndexOf('\n')
+    if ( last !== -1 ) {
+      const line = before.substring(last+1);
+      for ( let idx = 0; idx < line.length; ++idx ) {
+        var c = line[idx]
+        if ( c !== " " ) {
+          if ( c === "-" ) {
+            char = "- ";
+          } else if ( c === ">" ) {
+            char = "> ";
+          } else if ( c === "1" ) {
+            var c2 = line[idx + 1];
+            if ( c === "." ) {
+              char = "1. ";
+            }
+          }
+          break;
+        }
+        indent += " ";
+      }
+    }
+
+    var at = "\n" + indent + char;
+
+    textarea.value =  before + at + after;
+    textarea.selectionStart = start + at.length;
+    textarea.selectionEnd = start + at.length;
+
+    setTimeout(function() {
+      setText(textarea.value);
+    },500)
+  }
+
+  const handleRunEditor = () => {
+
+    //TODO 画面抑制を開始
+
+    //ファイルを監視
+    const sec = 2;
+    var interval = setInterval(function() {
+      // ファイルの内容を取得
+    },1000 * sec)
+
+    RunEditor(mode,id).then( () => {
+      clearInterval(interval)
     }).catch( (err) => {
       evt.showErrorMessage(err);
+      clearInterval(interval)
+    }).finally( () => {
+      console.log("finally");
+      clearInterval(interval)
     })
   }
 
@@ -481,7 +540,10 @@ function Editor(props) {
           </Container>
 
           {/** テキスト編集 */}
-          <textarea id="editor" style={editorStyle} onChange={(e) => changeText(e.target.value)} value={text} />
+          <textarea id="editor" style={editorStyle} 
+                                value={text} 
+                                onKeyDown={(e) => handleKeyDown(e)} 
+                                onChange={(e) => changeText(e.target.value)} />
 
           {/** 左側の操作用位置 */}
           <Toolbar className="buttonBar">

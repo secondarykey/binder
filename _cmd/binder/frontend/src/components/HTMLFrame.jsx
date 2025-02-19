@@ -37,9 +37,7 @@ class HTMLFrame extends React.Component {
   }
 
   componentDidUpdate() {
-    this.view();
-    /*
-    var sec = 0.3
+    var sec = 0.7;
     if ( this.interval > 0 ) {
       clearTimeout(this.interval);
       this.interval = setTimeout(this.view,sec * 1000);
@@ -47,7 +45,6 @@ class HTMLFrame extends React.Component {
       this.interval = setTimeout(function() {},sec * 1000);
       this.view();
     }
-    */
   }
 
   view() {
@@ -89,7 +86,7 @@ class HTMLFrame extends React.Component {
           Mermaid.parse(txt).then((data) => {
             elm.innerHTML = data.svg;
           }).catch((err) => {
-            Message.showWarning("Diagram parse error:" + err);
+            Message.showWarningMessage("Diagram parse error:" + err);
           });
         })
       }

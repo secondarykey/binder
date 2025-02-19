@@ -28,8 +28,6 @@ class MermaidScript {
 
     var z = await import(ZenURL);
     mermaid.registerExternalDiagrams([z.default]);
-
-    console.log("init()")
   }
 
   static async parse(txt) {
