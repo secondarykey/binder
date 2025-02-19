@@ -46,6 +46,8 @@ func Install(dir string, ver *Version) error {
 
 func install(f *fs.FileSystem, dir string, ver *Version) error {
 
+	//スキーマファイルを作成
+
 	//空でもディレクトリは作っておく
 	docsdir := filepath.Join(dir, f.GetPublic())
 	err := os.MkdirAll(docsdir, 0666)
@@ -77,6 +79,8 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
 	}
 
+	//スキーマファイルをGitに追加
+
 	//データベースを作成
 	dbdir := filepath.Join(dir, fs.DBDir)
 	err = os.MkdirAll(dbdir, 0666)
@@ -90,13 +94,10 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 	}
 
 	//Gitへの追加を行う
-	/*
-		err = f.AddDBFiles(vf)
-		if err != nil {
-			return xerrors.Errorf("Add() error: %w", err)
-		}
-	*/
-
+	err = f.AddDBFiles()
+	if err != nil {
+		return xerrors.Errorf("Add() error: %w", err)
+	}
 	err = f.CommitAll(fs.M("Install", "Database"))
 	if err != nil {
 		return xerrors.Errorf("CommitAll() error: %w", err)

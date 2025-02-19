@@ -68,10 +68,10 @@ func allTableFiles() []string {
 		db.DiagramTableName, db.AssetTableName, db.TemplateTableName)
 }
 
-func (f *FileSystem) AddDBFiles(ver string) error {
+func (f *FileSystem) AddDBFiles() error {
 
 	files := allTableFiles()
-	files = append(files, tablePath(ver))
+	files = append(files, tablePath(db.SchemaFile))
 
 	err := f.add(files...)
 	if err != nil {
