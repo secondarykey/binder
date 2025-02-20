@@ -74,8 +74,7 @@ type Look struct {
 }
 
 type Editor struct {
-	Text Font `json:"text"`
-	Vim  Vim  `json:"vim"`
+	Text *Font `json:"text"`
 }
 
 type Font struct {
@@ -134,6 +133,19 @@ func def() *Setting {
 
 	set.Path = &path
 	//最後に開いていたバインダーを開く
+
+	var look Look
+	var editor Editor
+	var ef Font
+
+	ef.Name = ""
+	ef.Size = 14
+	ef.Color = ""
+	ef.ForeColor = ""
+
+	editor.Text = &ef
+	look.Editor = &editor
+	set.Look = &look
 
 	//表示情報
 	var auth Git

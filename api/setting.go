@@ -1,6 +1,7 @@
 package api
 
 import (
+	"binder"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -56,4 +57,9 @@ func (a *App) SavePosition() error {
 		}
 	}
 	return nil
+}
+
+func (a *App) GetFontNames() ([]string, error) {
+	names := binder.FontNames()
+	return names, nil
 }
