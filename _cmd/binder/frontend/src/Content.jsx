@@ -1,6 +1,9 @@
 import { useEffect, useState ,useContext} from "react";
 
 import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
+import PushPinIcon from '@mui/icons-material/PushPin';
+import MaximizeIcon from '@mui/icons-material/Maximize';
+import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Terminate } from "../wailsjs/go/api/App";
@@ -11,7 +14,7 @@ import Binder from "./contents/Binder";
 import Setting from "./contents/Setting";
 import BinderRegister from "./contents/BinderRegister";
 
-import Editor from "./contents/Editor";
+import Editor from "./contents/Editor/Component";
 import Note from "./contents/Note";
 import Diagram from "./contents/Diagram";
 import Assets from "./contents/Assets";
@@ -26,6 +29,8 @@ import { Hidden } from "./App";
 import "./assets/Content.css"
 import Patch from "./contents/Patch";
 import Commit from "./contents/Commit";
+
+import {WindowMinimise,WindowToggleMaximise,WindowSetAlwaysOnTop} from "../wailsjs/runtime/runtime";
 /**
  * コンテンツ表示部分
  * <pre>
@@ -39,15 +44,33 @@ function Content(props) {
   const evt = useContext(EventContext)
   //タイトルの文字列
   const [title,setTitle] = useState("");
+  const [pin,setPin] = useState(false);
+
+  const handlePin = () => {
+    var p = !pin;
+    WindowSetAlwaysOnTop(p);
+    setPin(p)
+  }
+
+  const handleMin = () => {
+    WindowMinimise();
+  }
+
+  const handleMax = () => {
+    WindowToggleMaximise();
+  }
 
   //終了処理
   const handleExit = () => {
+    //TODO 終了処理を入れる
     Terminate().then(() => {
       console.log("?")
     }).catch((err) => {
       console.warn(err);
     });
   }
+
+
 
   /**
    * 初期処理
@@ -58,6 +81,12 @@ function Content(props) {
       setTitle(obj);
     });
   });
+
+  var pinClass = "";
+  if ( pin ) {
+    pinClass = "top";
+  }
+  
 
   return (
     <>
@@ -70,10 +99,20 @@ function Content(props) {
             {title}
           </Typography>
 
-          {/** TODO ピン留め、最大化 */}
-
+          {/** ピン留め */}
+          <IconButton id="pinBtn" className={pinClass} size="large" edge="start" color="inherit" aria-label="pin" sx={{ mr: 2 }} onClick={handlePin}>
+            <PushPinIcon />
+          </IconButton>
+          {/** 最小化 */}
+          <IconButton size="large" edge="start" color="inherit" aria-label="minimum" sx={{ mr: 2 }} onClick={handleMin}>
+            <MinimizeIcon />
+          </IconButton>
+          {/** 最大化 */}
+          <IconButton size="large" edge="start" color="inherit" aria-label="maxmize" sx={{ mr: 2 }} onClick={handleMax}>
+            <MaximizeIcon />
+          </IconButton>
           {/** アプリ終了 */}
-          <IconButton id="closeButton" size="large" edge="start" color="inherit" aria-label="commit" sx={{ mr: 2 }} onClick={handleExit}>
+          <IconButton size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
             <CloseIcon />
           </IconButton>
 
