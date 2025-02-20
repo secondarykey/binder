@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef ,useContext} from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 
 import { GetNowPatch } from "../../wailsjs/go/api/App";
 

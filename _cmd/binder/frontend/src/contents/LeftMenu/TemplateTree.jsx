@@ -1,8 +1,8 @@
 import { useState, useEffect,useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { Menu, MenuItem } from '@mui/material';
-import { TreeView, TreeItem } from '@mui/x-tree-view';
+import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -146,7 +146,7 @@ function TemplateTree(props) {
 
       console.debug(leaf);
       return (
-        <TreeItem key={leaf.id} nodeId={leaf.id}
+        <TreeItem key={leaf.id} itemId={leaf.id}
                   label={leaf.name} icon={icon}
                   onDoubleClick={(e) => expanded(e,leaf.id)}
                   onClick={(e) => evFunc(e,leaf.id)}
@@ -159,12 +159,12 @@ function TemplateTree(props) {
   return (<>
 
     {/** ツリーの表示 */}
-    <TreeView id="tree" className='treeText'
-              selected={selected}
-              expanded={expand}
-              aria-label="binder system navigator">
+    <SimpleTreeView id="tree" className='treeText'
+                    selected={selected}
+                    expanded={expand}
+                    aria-label="binder system navigator">
       {getTreeItemsFromData(tree)}
-    </TreeView>
+    </SimpleTreeView>
 
     {/** テンプレートメニュー */}
     <Menu anchorEl={templateEl}

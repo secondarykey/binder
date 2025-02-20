@@ -1,5 +1,5 @@
 import { useState, useEffect,useContext } from 'react';
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router";
 
 import { GetConfig, CloseBinder,Address } from '../wailsjs/go/api/App';
 

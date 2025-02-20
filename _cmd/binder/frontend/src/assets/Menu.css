@@ -52,15 +52,11 @@ svg.leftIcon {
     --wails-draggable:no-drag;
 }
 
-
-#expandButton {
-  margin-right:0px !important;
+#tree div.content {
+  margin:0px ;
+  padding:2px ;
 }
 
-#expandIcon {
-  transform: rotate(90deg);
-}
-
-svg.openIcon {
-  transform: rotate(270deg);
+#tree div.content > div:first-child {
+  margin-right:0px;
 }

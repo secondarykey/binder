@@ -1,5 +1,5 @@
 import { useEffect, useState,useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { Grid, TextField, FormControl,FormLabel,Button} from "@mui/material";
 
 import Event,{EventContext} from '../Event';

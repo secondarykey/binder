@@ -1,6 +1,5 @@
 import { useState, useEffect ,useContext} from "react";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useParams,useNavigate } from "react-router";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 
