@@ -3,9 +3,28 @@ package fs
 import (
 	"binder/db/model"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
 )
+
+func (sys *FileSystem) ToFullPath(mode, id string) string {
+	fn := ""
+	switch mode {
+	case "note":
+		fn = noteFile(id)
+	case "diagram":
+		fn = diagramFile(id)
+	case "template":
+		slog.Warn("Not Implemented")
+	case "assets":
+		slog.Warn("Not Implemented")
+	default:
+	}
+
+	rp := sys.base
+	return filepath.Join(rp, fn)
+}
 
 // GitBash用のパス変換
 func ToGitBash(p string) string {

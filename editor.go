@@ -1,6 +1,9 @@
 package binder
 
 import (
+	"binder/fs"
+	"log/slog"
+
 	"os/exec"
 	"strings"
 
@@ -11,9 +14,12 @@ const editorFileMark = "{file}"
 
 func (b *Binder) RunEditor(mode, id string) error {
 
+	//TODO 設定から取得
 	bash := true
 	entry := "\"D:\\Program Files\\Git\\git-bash.exe\" -c \"/usr/bin/vim {file}\""
-	fn := "D:\\Go\\Projects\\binder\\_cmd\\binder\\frontend\\docs\\binder.md"
+
+	fn := b.fileSystem.ToFullPath(mode, id)
+	slog.Info(fn)
 
 	//設定から取得
 	ch, err := runEditor(entry, fn, bash)
@@ -31,7 +37,7 @@ func (b *Binder) RunEditor(mode, id string) error {
 func runEditor(entry, fn string, winBash bool) (chan error, error) {
 
 	if winBash {
-		fn = convertWinBashPath(fn)
+		fn = fs.ToGitBash(fn)
 	}
 
 	//区切り文字のスライスを作成
@@ -76,22 +82,6 @@ func runEditor(entry, fn string, winBash bool) (chan error, error) {
 	}(ch)
 
 	return ch, nil
-}
-
-func convertWinBashPath(p string) string {
-
-	var buf strings.Builder
-	buf.Grow(len(p))
-
-	sp := strings.Split(p, "\\")
-	for idx, p := range sp {
-		buf.WriteString("/")
-		if idx == 0 {
-			p = strings.ReplaceAll(p, ":", "")
-		}
-		buf.WriteString(p)
-	}
-	return buf.String()
 }
 
 /**
