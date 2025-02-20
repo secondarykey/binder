@@ -1,7 +1,7 @@
 import React from "react";
 
-import Mermaid from "../components/Mermaid";
-import Message from '../Message';
+import Mermaid from "./engines/Mermaid";
+import Message from '../../Message';
 
 /**
  * IFrame更新のちらつきを抑えるコンポーネント

@@ -7,9 +7,9 @@ import { TreeView, TreeItem } from '@mui/x-tree-view';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 
-import { GetTemplateTree } from '../../wailsjs/go/api/App';
+import { GetTemplateTree } from '../../../wailsjs/go/api/App';
 
-import Event,{EventContext} from '../Event';
+import Event,{EventContext} from '../../Event';
 
 {/** バインダーのツリー */ }
 function TemplateTree(props) {

@@ -3,25 +3,25 @@ import { useParams } from "react-router-dom";
 
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
-import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../wailsjs/go/api/App.js";
-import { GetDiagram, OpenDiagram, SaveDiagram } from "../../wailsjs/go/api/App.js";
-import { GetTemplate,OpenTemplate, SaveTemplate} from "../../wailsjs/go/api/App.js";
-import { GetAsset,Generate,Commit } from "../../wailsjs/go/api/App.js";
-import { RunEditor } from "../../wailsjs/go/api/App.js";
+import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../wailsjs/go/api/App.js";
+import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../wailsjs/go/api/App.js";
+import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../wailsjs/go/api/App.js";
+import { GetAsset,Generate,Commit } from "../../../wailsjs/go/api/App.js";
+import { RunEditor } from "../../../wailsjs/go/api/App.js";
 
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
-import HTMLFrame from "../components/HTMLFrame.jsx";
 import PublishIcon from '@mui/icons-material/Publish';
 import LaunchIcon from '@mui/icons-material/Launch';
 
-import Marked from "../components/Marked";
-import Mermaid from "../components/Mermaid";
+import Marked from "./engines/Marked.jsx";
+import Mermaid from "./engines/Mermaid.jsx";
 
-import Event, {EventContext} from "../Event.jsx";
+import Event, {EventContext} from "../../Event.jsx";
 
-import '../assets/Editor.css'
-import { Mode } from "../App.jsx";
+import HTMLFrame from "./HTMLFrame.jsx";
+import '../../assets/Editor.css'
+import { Mode } from "../../App.jsx";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -438,7 +438,7 @@ function Editor(props) {
             char = "> ";
           } else if ( c === "1" ) {
             var c2 = line[idx + 1];
-            if ( c === "." ) {
+            if ( c2 === "." ) {
               char = "1. ";
             }
           }

@@ -9,9 +9,9 @@ import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { OpenBinderSite, GetBinderTree } from '../../wailsjs/go/api/App';
+import { OpenBinderSite, GetBinderTree } from '../../../wailsjs/go/api/App';
 
-import Event,{EventContext} from '../Event';
+import Event,{EventContext} from '../../Event';
 
 /**
  * Mermaid アイコン

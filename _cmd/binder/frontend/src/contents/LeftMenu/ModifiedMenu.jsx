@@ -7,9 +7,9 @@ import {
   FormControlLabel, Checkbox,
 } from '@mui/material';
 
-import { GetModifiedTree, CommitFiles } from '../../wailsjs/go/api/App';
+import { GetModifiedTree, CommitFiles } from '../../../wailsjs/go/api/App';
 
-import Event,{EventContext} from '../Event';
+import Event,{EventContext} from '../../Event';
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 

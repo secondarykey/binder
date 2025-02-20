@@ -12,16 +12,16 @@ import UpdateIcon from '@mui/icons-material/Update';
 import PublishIcon from '@mui/icons-material/Publish';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import FileMenu from './contents/FileMenu';
-import BinderTree from './contents/BinderTree';
+import FileMenu from './contents/LeftMenu/FileMenu';
+import BinderTree from './contents/LeftMenu/BinderTree';
 
 import { SettingsApplications } from '@mui/icons-material';
-import TemplateTree from './contents/TemplateTree';
+import TemplateTree from './contents/LeftMenu/TemplateTree';
 
 import Event,{EventContext} from './Event';
 
 import "./assets/Menu.css";
-import ModifiedMenu from './contents/ModifiedMenu';
+import ModifiedMenu from './contents/LeftMenu/ModifiedMenu';
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -219,7 +219,7 @@ function Menu(props) {
   </>);
   }
 
-  console.log(location.href);
+  console.debug(location.href);
 
   return (
     <>
