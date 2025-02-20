@@ -414,20 +414,6 @@ export namespace model {
 
 export namespace settings {
 	
-	export class Vim {
-	    use: boolean;
-	    openWith: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new Vim(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.use = source["use"];
-	        this.openWith = source["openWith"];
-	    }
-	}
 	export class Font {
 	    name: string;
 	    color: string;
@@ -447,8 +433,7 @@ export namespace settings {
 	    }
 	}
 	export class Editor {
-	    text: Font;
-	    vim: Vim;
+	    text?: Font;
 	
 	    static createFrom(source: any = {}) {
 	        return new Editor(source);
@@ -457,7 +442,6 @@ export namespace settings {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.text = this.convertValues(source["text"], Font);
-	        this.vim = this.convertValues(source["vim"], Vim);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -78,6 +78,10 @@ export function GetDiagram(arg1) {
   return window['go']['api']['App']['GetDiagram'](arg1);
 }
 
+export function GetFontNames() {
+  return window['go']['api']['App']['GetFontNames']();
+}
+
 export function GetHTMLTemplates() {
   return window['go']['api']['App']['GetHTMLTemplates']();
 }

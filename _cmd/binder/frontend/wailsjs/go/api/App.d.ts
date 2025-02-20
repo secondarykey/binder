@@ -43,6 +43,8 @@ export function GetConfig():Promise<model.Config>;
 
 export function GetDiagram(arg1:string):Promise<model.Diagram>;
 
+export function GetFontNames():Promise<Array<string>>;
+
 export function GetHTMLTemplates():Promise<api.Templates>;
 
 export function GetModifiedTree():Promise<binder.Tree>;
