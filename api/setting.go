@@ -4,6 +4,8 @@ import (
 	"binder/log"
 	"binder/settings"
 	"fmt"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func (a *App) GetSetting() *settings.Setting {
@@ -33,10 +35,25 @@ func (a *App) SavePosition() error {
 
 	defer log.PrintTrace(log.Func("SetPosition()"))
 
-	//w, h := runtime.WindowGetSize(a.ctx)
-	//x, y := runtime.WindowGetPosition(a.ctx)
+	w, h := runtime.WindowGetSize(a.ctx)
+	x, y := runtime.WindowGetPosition(a.ctx)
 
-	//fmt.Println(x, y, w, h)
+	obj := settings.Get()
+	if obj == nil {
+		log.PrintStackTrace(fmt.Errorf("setting is nil"))
+	} else {
 
+		pos := obj.Position
+		pos.Left = x
+		pos.Top = y
+		pos.Width = w
+		pos.Height = h
+
+		err := a.current.SaveSetting(obj)
+		if err != nil {
+			log.PrintStackTrace(err)
+			return fmt.Errorf("SaveSetting() error:\n%+v", err)
+		}
+	}
 	return nil
 }
