@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react"
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
@@ -9,11 +9,6 @@ import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../wailsjs/go/api/A
 import { GetAsset,Generate,Commit } from "../../../wailsjs/go/api/App.js";
 import { RunEditor } from "../../../wailsjs/go/api/App.js";
 
-import CommitIcon from '@mui/icons-material/Commit';
-import DownloadIcon from '@mui/icons-material/Download';
-import PublishIcon from '@mui/icons-material/Publish';
-import LaunchIcon from '@mui/icons-material/Launch';
-
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 
@@ -22,6 +17,18 @@ import Event, {EventContext} from "../../Event.jsx";
 import HTMLFrame from "./HTMLFrame.jsx";
 import '../../assets/Editor.css'
 import { Mode } from "../../App.jsx";
+
+import CommitIcon from '@mui/icons-material/Commit';
+import DownloadIcon from '@mui/icons-material/Download';
+import PublishIcon from '@mui/icons-material/Publish';
+
+import LaunchIcon from '@mui/icons-material/Launch';
+import FontDownloadIcon from '@mui/icons-material/FontDownload';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import CodeIcon from '@mui/icons-material/Code';
+import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
+import FontDialog from "../FontDialog.jsx";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -42,20 +49,13 @@ function Editor(props) {
 
   const [width, setWidth] = useState(500);
   const [menuWidth, setMenuWidth] = useState(310);
+  const [fontDialog, setShowFontDialog] = useState(false);
+  const [editorStyle, setEditorStyle] = useState({});
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
   //更新状態のアイコン
   const [updated, setUpdated] = useState(false);
-
-  //メニューを開いているかのイベント
-  evt.register("Editor",Event.ShowMenu,function(flag) {
-    if ( flag ) {
-      setMenuWidth(310);
-    } else {
-      setMenuWidth(0);
-    }
-  });
 
   //テキストにセンタリング用のタグを埋め込む
   const insertCenterTag = (txt) => {
@@ -214,10 +214,10 @@ function Editor(props) {
     }
 
     if ( mode === Mode.diagram ) {
-      await viewDiagram(text);
+      viewDiagram(text);
     } else if ( mode === Mode.note ) {
       //公開時にここが入らないようにする
-      await viewHTML(insertCenterTag(text));
+      viewHTML(insertCenterTag(text));
     } else if ( mode === Mode.template ) {
       //viewHTML(text, noteElm);
     } else {
@@ -248,6 +248,11 @@ function Editor(props) {
     return "";
   }
 
+  /**
+   * HTMLの表示
+   * @param {*} txt 
+   * @param {*} embNoteElm 
+   */
   const viewHTML = async (txt, embNoteElm) => {
 
     if (mode === "note") {
@@ -337,7 +342,6 @@ function Editor(props) {
   const changeText = (txt) => {
 
     setUpdated(true);
-
     setText(txt);
     if ( mode === Mode.note ) {
       SaveNote(id, txt).then(() => {
@@ -404,6 +408,30 @@ function Editor(props) {
   }
 
   /**
+   * 文字列挿入
+   * @param {*} s 
+   * @param {*} e 
+   */
+  const handleInsert = (s,e) => {
+    var textarea = document.querySelector("#editor");
+    const val = textarea.value;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const before = val.substring(0,start)
+    const text = val.substring(start,end)
+    const after = val.substring(end)
+
+    textarea.value =  before + s + text + e + after;
+
+    setTimeout(function() {
+      setText(textarea.value);
+    },500)
+
+  }
+
+  /**
    * Enter時にインデントを挿入
    * @param {*} e 
    * @returns 
@@ -459,6 +487,9 @@ function Editor(props) {
     },500)
   }
 
+  /**
+   * エディタを起動
+   */
   const handleRunEditor = () => {
 
     //TODO 画面抑制を開始
@@ -480,15 +511,45 @@ function Editor(props) {
     })
   }
 
-  //editor の場合に削除
-  var editorStyle = {};
-  editorStyle.fontSize = "20px";
-  editorStyle.color = "#eeeeee";
-  editorStyle.fontFamily = "Calex Code JP Regular";
-  //editorStyle.fontFamily = "Yu Gothic UI Semibold";
+  /**
+   * フォントダイアログを表示
+   */
+  const handleFontDialog = () => {
+    setShowFontDialog(true);
+  }
+  /**
+   * フォントダイアログを終了
+   * @param {*} change 
+   */
+  const handleFontDialogClose = (change) => {
+    setShowFontDialog(false);
+  }
+
+  /**
+   * 初回起動のみのエフェクト
+   */
+  useEffect(() => {
+    //メニューを開いているかのイベント
+    evt.register("Editor",Event.ShowMenu,function(flag) {
+      if ( flag ) {
+        setMenuWidth(310);
+      } else {
+        setMenuWidth(0);
+      }
+    });
+
+    //設定を取得
+
+    var style = {};
+    style.fontSize = "20px";
+    style.color = "#eeeeee";
+    style.fontFamily = "Calex Code JP Regular";
+    setEditorStyle(style);
+
+  },[]);
+
 
   var splitterW = 10;
-
   {/** スプリッター部分をコンポーネント化するか？ */ }
   var editWrapperStyle = {};
   editWrapperStyle.width = (width) + "px";
@@ -509,7 +570,7 @@ function Editor(props) {
   }
 
   //コミット用のアイコン(コメント欄の横)
-  var commitIcon = (
+  const commitIcon = (
     <InputAdornment position="end" className="linkBtn"> 
       <CommitIcon fontSize="small" style={{ color: color }}  onClick={handleCommit}> </CommitIcon> 
     </InputAdornment>
@@ -531,11 +592,41 @@ function Editor(props) {
           {/** テキスト用のメニュー */}
           <Container id="editorMenu">
               <Container className="buttonBarLeft">
-              </Container>
-              <Container className="buttonBarRight">
-                <IconButton size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handleRunEditor}>
-                  <LaunchIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+
+                {/** 強調 */}
+                <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**","**")} className="editorBtn">
+                  <FormatBoldIcon fontSize="small" />
                 </IconButton>
+
+                {/** イタリック */}
+                <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*","*")} className="editorBtn">
+                  <FormatItalicIcon fontSize="small" />
+                </IconButton>
+
+                {/** 打ち消し線 */}
+                <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~","~~")} className="editorBtn">
+                  <FormatStrikethroughIcon fontSize="small" />
+                </IconButton>
+
+                {/** コードブロック */}
+                <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n","\n```\n")} className="editorBtn">
+                  <CodeIcon fontSize="small" />
+                </IconButton>
+
+              </Container>
+
+              <Container className="buttonBarRight">
+
+                {/** フォント設定 */}
+                <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
+                  <FontDownloadIcon fontSize="small" />
+                </IconButton>
+
+                {/** プログラム起動 */}
+                <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
+                  <LaunchIcon fontSize="small" />
+                </IconButton>
+
               </Container>
           </Container>
 
@@ -611,8 +702,10 @@ function Editor(props) {
         </div>
 </>
 }
-
       </Paper>
+
+      {/** フォント設定 */}
+      <FontDialog show={fontDialog} onClose={handleFontDialogClose}/>
     </>
   );
 }

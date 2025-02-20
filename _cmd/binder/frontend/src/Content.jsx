@@ -21,7 +21,7 @@ import Assets from "./contents/Assets";
 import History from "./contents/History";
 import BinderRemote from "./contents/BinderRemote";
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router";
 
 import Template from "./contents/Template";
 import { Hidden } from "./App";

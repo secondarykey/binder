@@ -1,18 +1,35 @@
 #editorWrapper {
-    position: absolute;
-    top:40px;
-    bottom: 0;
+  position: absolute;
+  top:40px;
+  bottom: 0;
 }
 
 #editorMenu {
-    background-color: #111111;
-    position: absolute;
-    left: 0;
-    top: 10px;
-    height:40px;
-    padding-top:4px !important;
-    padding-left:4px !important;
-    padding-right:4px !important;
+  display: flex;
+  background-color: #111111;
+  position: absolute;
+  left: 0;
+  top: 10px;
+  max-width: 100%;
+  height:40px;
+  padding-top:4px !important;
+  padding-left:4px !important;
+  padding-right:4px !important;
+}
+
+.editorBtn {
+  margin-left: 4px !important;
+  margin-right: 4px !important;
+}
+
+#editorMenu > div.buttonBarLeft {
+  margin-left:0px !important;
+  padding-left:0px !important;
+}
+
+#editorMenu > div.buttonBarRight {
+  margin-right:0px !important;
+  padding-right:0px !important;
 }
 
 #splitter {
@@ -22,12 +39,15 @@
     top: 48px;
     bottom: 0;
 
-    border:5px solid #444444;
+    border:4px solid #333333;
     cursor: ew-resize;
+
 }
 
 #splitter:hover {
-    border:5px solid #666666;
+  z-index:100px;
+  transition: 0.2s;
+  border:4px solid #5555ff;
 }
 
 #dataViewer {
