@@ -1,7 +1,7 @@
-import { useState, useEffect,useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
-import { GetConfig, CloseBinder,Address } from '../wailsjs/go/api/App';
+import { GetConfig, CloseBinder, Address } from '../wailsjs/go/api/App';
 
 import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
@@ -18,7 +18,7 @@ import BinderTree from './contents/LeftMenu/BinderTree';
 import { SettingsApplications } from '@mui/icons-material';
 import TemplateTree from './contents/LeftMenu/TemplateTree';
 
-import Event,{EventContext} from './Event';
+import Event, { EventContext } from './Event';
 
 import "./assets/Menu.css";
 import ModifiedMenu from './contents/LeftMenu/ModifiedMenu';
@@ -92,7 +92,7 @@ function Menu(props) {
    */
   useEffect(() => {
 
-    evt.register("Menu",Event.ReloadBinderTitle,function(t) {
+    evt.register("Menu", Event.ReloadBinderTitle, function (t) {
       setTitle(t);
     });
     setTitle("Binder");
@@ -106,7 +106,7 @@ function Menu(props) {
     });
 
     //アドレス変更時の処理
-    evt.register("Menu",Event.ChangeAddress,function(arg) {
+    evt.register("Menu", Event.ChangeAddress, function (arg) {
       setURL(arg);
     });
 
@@ -116,7 +116,7 @@ function Menu(props) {
       evt.showErrorMessage(err);
     })
 
-  },[]);
+  }, []);
 
   /**
    * ホームボタンクリック
@@ -180,13 +180,13 @@ function Menu(props) {
   }
 
   //router の定義用に書いておく
-  var tempTree = <TemplateTree/>
-  var modified = <ModifiedMenu/>
+  var tempTree = <TemplateTree />
+  var modified = <ModifiedMenu />
 
   //バインダーが開いている時のみ表示するコンポーネント
   const OpenBinderComponent = () => {
     return (
-  <>
+      <>
         {/** BinderTree */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
@@ -204,7 +204,7 @@ function Menu(props) {
 
         {/** Template */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
-          <ContentPasteIcon fill="white" className="leftIcon"  />
+          <ContentPasteIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Browser */}
@@ -216,7 +216,7 @@ function Menu(props) {
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
           <SettingsApplications fill="white" className="leftIcon" />
         </IconButton>
-  </>);
+      </>);
   }
 
   console.debug(location.href);
@@ -233,9 +233,9 @@ function Menu(props) {
         {/** Binderが開いている時のみ処理できないか？ */}
 
         <Routes>
-            <Route path={"/"} element={<></>} />
-            <Route path={"/file/*"} element={<></>} />
-            <Route path="*" element={<OpenBinderComponent/>} />
+          <Route path={"/"} element={<></>} />
+          <Route path={"/file/*"} element={<></>} />
+          <Route path="*" element={<OpenBinderComponent />} />
         </Routes>
 
 
@@ -251,13 +251,17 @@ function Menu(props) {
         <IconButton id="settingButton" className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleSettingClick}>
           <SettingsIcon className="leftIcon" />
         </IconButton>
+
       </Paper>
 
       <Paper id="menu" className={menuClasses}>
+
         {/** メニュークラスが設定されている(hide)場合、非表示*/}
         {menuClasses === "" &&
+
           <Toolbar id="titleBar" className="title">
-            {/** TODO 開いているバインダーの名称 */}
+
+            {/** 開いているバインダーの名称 */}
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               <>{title}</>
             </Typography>
@@ -270,6 +274,7 @@ function Menu(props) {
           </Toolbar>
         }
 
+        {/** メニューの中身 */}
         <Paper id="leftContent">
 
           <Routes>

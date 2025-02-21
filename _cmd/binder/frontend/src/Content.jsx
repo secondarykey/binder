@@ -1,4 +1,4 @@
-import { useEffect, useState ,useContext} from "react";
+import { useEffect, useState, useContext } from "react";
 
 import { Paper, Toolbar, Typography, IconButton } from "@mui/material";
 import PushPinIcon from '@mui/icons-material/PushPin';
@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { Terminate } from "../wailsjs/go/api/App";
 
-import Event,{EventContext} from "./Event";
+import Event, { EventContext } from "./Event";
 
 import Binder from "./contents/Binder";
 import Setting from "./contents/Setting";
@@ -30,7 +30,7 @@ import "./assets/Content.css"
 import Patch from "./contents/Patch";
 import Commit from "./contents/Commit";
 
-import {WindowMinimise,WindowToggleMaximise,WindowSetAlwaysOnTop} from "../wailsjs/runtime/runtime";
+import { WindowMinimise, WindowToggleMaximise, WindowSetAlwaysOnTop } from "../wailsjs/runtime/runtime";
 /**
  * コンテンツ表示部分
  * <pre>
@@ -43,8 +43,8 @@ function Content(props) {
 
   const evt = useContext(EventContext)
   //タイトルの文字列
-  const [title,setTitle] = useState("");
-  const [pin,setPin] = useState(false);
+  const [title, setTitle] = useState("");
+  const [pin, setPin] = useState(false);
 
   const handlePin = () => {
     var p = !pin;
@@ -70,23 +70,21 @@ function Content(props) {
     });
   }
 
-
-
   /**
    * 初期処理
    */
-  useEffect( ()=> {
+  useEffect(() => {
     //タイトル変更のイベントを設定
-    evt.register("Content",Event.ReloadTitle,function(obj) {
+    evt.register("Content", Event.ReloadTitle, function (obj) {
       setTitle(obj);
     });
   });
 
   var pinClass = "";
-  if ( pin ) {
+  if (pin) {
     pinClass = "top";
   }
-  
+
 
   return (
     <>

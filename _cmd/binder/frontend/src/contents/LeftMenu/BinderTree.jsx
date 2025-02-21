@@ -47,7 +47,7 @@ function BinderTree(props) {
   const [tree, setTree] = useState([]);
 
   //選択しているID
-  const [id, setId] = useState("index");
+  const [id, setId] = useState("note/index");
 
   //リソースを作成
   const viewTree = () => {
@@ -66,7 +66,6 @@ function BinderTree(props) {
     viewTree();
   }, [])
 
-  const [selected, setSelected] = useState([id]);
   const [expand, setExpand] = useState([id]);
 
   const [noteEl, setNoteEl] = useState(null);
@@ -91,25 +90,8 @@ function BinderTree(props) {
     call(null);
   };
 
-  const toggleList = (src, id) => {
-    var ex = false;
-    var list = [];
-    src.map((v) => {
-      if (v !== id) {
-        list.push(v);
-      } else {
-        ex = true;
-      }
-    });
-    if (!ex) {
-      list.push(id);
-    }
-    return list;
-  }
-
-  const setCurrentId = (id) => {
-    setId(id);
-    setSelected([id]);
+  const setCurrentId = (itemId) => {
+    setId(itemId);
   }
 
   //ノート作成
@@ -124,20 +106,13 @@ function BinderTree(props) {
     nav("/note/edit/" + id);
   }
 
-  //ノートを開く処理
-  const handleNoteOpen = (e, id) => {
-    e.stopPropagation();
-    setCurrentId(id);
-    nav("/editor/note/" + id);
-  }
-
   //ダイアグラム作成
   const handleRegisterDiagram = (e, call) => {
     closeMenu(call);
     nav("/diagram/register/" + id);
   }
 
-  //ダイアグラム作成
+  // アセット作成
   const handleRegisterAssets = (e, call) => {
     closeMenu(call);
     nav("/assets/register/" + id);
@@ -149,31 +124,15 @@ function BinderTree(props) {
     nav("/diagram/edit/" + id);
   }
 
-  //ダイアグラム開く
-  const handleDiagramOpen = (e, id) => {
-    e.stopPropagation();
-    setCurrentId(id);
-    nav("/editor/diagram/" + id);
-  }
-
   //ダイアグラム編集
   const handleEditAsset = (e, call) => {
     closeMenu(call);
     nav("/assets/edit/" + id);
   }
-  const handleAssetOpen = (e, id) => {
-    e.stopPropagation();
-    setCurrentId(id);
-    nav("/editor/assets/" + id);
-  }
 
-  const OpenSite = () => {
-    OpenBinderSite().then(() => {
-    }).catch((err) => {
-      console.warn(err);
-    });
-  }
-
+  /**
+   * ダイアログのみかどうか
+   */
   const onlyDiagram = (list) => {
     var only = true;
     list.forEach((v) => {
@@ -200,15 +159,12 @@ function BinderTree(props) {
 
       var icon = TextSnippetIcon;
       var caller = setNoteEl;
-      var evFunc = handleNoteOpen;
 
       if (leaf.type === "diagram") {
         caller = setDiagramEl;
-        evFunc = handleDiagramOpen;
         icon = MermaidIcon
       } else if (leaf.type === "asset") {
         caller = setAssetEl;
-        evFunc = handleAssetOpen;
         icon = AttachFileIcon
       } else if (children && children.length > 0) {
         if (onlyDiagram(leaf.children)) {
@@ -219,27 +175,27 @@ function BinderTree(props) {
       }
 
       console.debug(leaf);
+      //onClick={(e) => evFunc(e, leaf.id)}
+      //onDoubleClick={(e) => handleExpand(e,leaf)}
+
       return (
-        <CustomTreeItem key={leaf.id} itemId={leaf.id}
+        <CustomTreeItem key={leaf.id} itemId={leaf.type + "/" + leaf.id}
           label={leaf.name} labelIcon={icon}
-          onClick={(e) => evFunc(e, leaf.id)}
-          onDoubleClick={(e) => handleExpand(e,leaf)}
           onContextMenu={(e) => showMenu(e, caller)}
           children={children} />
       );
     });
   };
 
-  const handleExpanded = (e,items) => {
-    setExpand(items);
+  const handleItemToggle = (e,itemId,isSelected) => {
+    var [type,id] = itemId.split("/");
+    if ( isSelected ) {
+      setCurrentId(id);
+      nav("/editor/" + itemId);
+    }
   }
 
-  const handleExpand = (e,leaf) => {
-    if ( leaf.children && leaf.children.length === 0) {
-      return;
-    }
-
-    var items = toggleList(expand,leaf.id);
+  const handleExpanded = (e,items) => {
     setExpand(items);
   }
 
@@ -247,8 +203,8 @@ function BinderTree(props) {
 
     {/** ツリーの表示 */}
     <SimpleTreeView id="tree" className='treeText'
-      selected={selected}
       expandedItems={expand}
+      onItemSelectionToggle={handleItemToggle}
       onExpandedItemsChange={handleExpanded}
       slots={{
         expandIcon: ArrowRightIcon,

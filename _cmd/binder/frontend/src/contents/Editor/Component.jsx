@@ -542,19 +542,18 @@ function Editor(props) {
     style.fontSize = set.size + "px";
     style.color = set.color;
     style.backgroundColor = set.backgroundColor;
+    //エディタのスタイルを設定
     setEditorStyle(style);
     
     var f = set;
+    //ダイアログに設定
     setEditorFont(f)
 
+    //更新の場合
     if ( save ) {
       //設定を取得
       GetSetting().then( (s) => {
-
         s.lookAndFeel.editor.text = set;
-
-        console.log(set)
-        console.log(s)
         SaveSetting(s).then( () => {
         })
       }).catch( (err) => {
@@ -586,16 +585,15 @@ function Editor(props) {
 
   },[]);
 
-
   var splitterW = 10;
   {/** スプリッター部分をコンポーネント化するか？ */ }
   var editWrapperStyle = {};
-  editWrapperStyle.width = (width) + "px";
+  editWrapperStyle.width = (width - 4) + "px";
 
   var splitterStyle = {};
   splitterStyle.left = (menuWidth + width - 3) + "px";
   var viewerStyle = {};
-  viewerStyle.left = (menuWidth + width + splitterW) + "px";
+  viewerStyle.left = (menuWidth + width + splitterW -4) + "px";
 
   var commentStyle = {};
   commentStyle.fontSize = "12px";

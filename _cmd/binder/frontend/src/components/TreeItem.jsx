@@ -60,8 +60,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(props, ref) {
     bgColor,
     color,
     labelIcon: LabelIcon,
-    onClick,
-    onDoubleClick,
     colorForDarkMode,
     bgColorForDarkMode,
     ...other
@@ -98,8 +96,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(props, ref) {
             <TreeItem2Icon status={status} />
           </CustomTreeItemIconContainer>
           <Box
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
             style={{
                 "color":"white",
                 "margin":"0",

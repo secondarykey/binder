@@ -36,3 +36,23 @@ body {
 #pinBtn.top > svg {
     color : #555555;
 }
+
+#mainTitle {
+    background-color: #191919;
+    color: #f1f1f1;
+    padding-right: 0px;
+}
+
+#mainTitle > button:hover {
+    background-color: #1c1c1c;
+}
+
+#mainTitle > button{
+    margin-right: 12px ;
+}
+
+.saveBtn {
+    position: absolute !important;
+    bottom: 10px;
+    left: calc(320px);
+}

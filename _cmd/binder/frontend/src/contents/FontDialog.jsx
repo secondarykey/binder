@@ -49,6 +49,18 @@ func main() {
     })
   }, []);
 
+  //フォント設定があった場合
+  useEffect(() => {
+    if ( font === undefined ) {
+      return;
+    }
+    setName(font.name)
+    setSize(font.size)
+    setColor(font.color)
+    setBGColor(font.backgroundColor)
+    changeStyle(font.name,font.size,font.color,font.backgroundColor);
+  }, [font]);
+
   const handleSubmit = (e) => {
     var rtn = {};
     rtn.name = name;
@@ -108,6 +120,8 @@ func main() {
     >
       <DialogTitle>Font Setting</DialogTitle>
       <DialogContent>
+
+        {/** フォント一覧 */}
         <FormControl style={{"width":"100%"}}>
           <Select value={name} onChange={handleChangeName} style={{ "minWidth": "100%" }}>
             {fonts.map((v) => {
@@ -116,12 +130,14 @@ func main() {
           </Select>
         </FormControl>
 
+        {/** サイズ、色、背景色の指定 */}
         <FormControl style={{"display":"flex","flexDirection":"row"}}>
           <TextField value={size} onChange={handleChangeSize} type="number" />
           <MuiColorInput format="hex" value={color} onChange={handleChangeColor} />
           <MuiColorInput format="hex" value={bgcolor} onChange={handleChangeBGColor} />
         </FormControl>
 
+        {/** サンプルコード */}
         <FormControl style={{"width":"100%","height":"100px"}}>
           <TextField className="codeSample" multiline fullWidth 
                      value={text} onChange={handleChangeText}

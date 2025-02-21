@@ -74,7 +74,9 @@ type Look struct {
 }
 
 type Editor struct {
-	Text *Font `json:"text"`
+	Program string `json:"program"`
+	GitBash bool   `json: "gitbash"`
+	Text    *Font  `json:"text"`
 }
 
 type Font struct {
@@ -143,7 +145,7 @@ func def() *Setting {
 	var editor Editor
 	var ef Font
 
-	ef.Name = "'Courier New', Courier, monospace"
+	ef.Name = "Araial"
 	ef.Size = 16
 	ef.Color = "#000000"
 	ef.BackgroundColor = "#FFFFFF"

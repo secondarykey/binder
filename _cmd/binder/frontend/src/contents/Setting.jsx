@@ -1,11 +1,13 @@
-import { useEffect, useState ,useContext} from "react";
+import { useEffect, useState, useContext } from "react";
 
-import { Accordion, AccordionDetails, AccordionSummary, Button, FormControl, FormLabel, Grid, Switch, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, FormControl, FormLabel, Grid2, Switch, TextField } from "@mui/material";
 import { GetSetting, SaveSetting } from "../../wailsjs/go/api/App";
 
+import { IconButton } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SaveIcon from '@mui/icons-material/Save';
 
-import {EventContext} from "../Event";
+import { EventContext } from "../Event";
 
 /**
  * アプリ設定
@@ -19,6 +21,10 @@ function Setting(props) {
   const [pathDefault, setPathDefault] = useState("");
   const [pathRunWith, setPathRunWith] = useState(true);
   const [pathOpenWith, setPathOpenWith] = useState(false);
+
+  const [editorProgram, setEditorProgram] = useState("notepad {file}");
+  const [editorGitBash, setEditorGitBash] = useState(false);
+  const [editorFont, setEditorFont] = useState({});
 
   const [gitBranch, setGitBranch] = useState("");
   const [gitName, setGitName] = useState("");
@@ -35,6 +41,9 @@ function Setting(props) {
       setGitName(set.git.name);
       setGitMail(set.git.mail);
       setGitCode(set.git.code);
+
+      setEditorProgram(set.lookAndFeel.editor.program);
+      setEditorGitBash(set.lookAndFeel.editor.gitBash);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -48,6 +57,7 @@ function Setting(props) {
     path.runWithOpen = pathRunWith;
     path.openWithItem = pathOpenWith;
     setting.path = path;
+
     var git = {};
     git.branch = gitBranch;
     git.name = gitName;
@@ -67,24 +77,43 @@ function Setting(props) {
   }
 
   return (<>
-    <Grid className="formGrid">
+
+    <Grid2 className="formGrid">
 
       {/** ファイル処理全般 */}
       <Accordion defaultExpanded={true}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}
           aria-controls="panel1-content" id="panel1-header"> Files </AccordionSummary>
         <AccordionDetails className="formContainer">
+          {/** デフォルトパス保存先 */}
           <FormControl>
             <FormLabel>Default Path</FormLabel>
             <TextField value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
           </FormControl>
+          {/** 最後に開いたBinderを開くか */}
           <FormControl>
             <FormLabel>Run with open Binder</FormLabel>
             <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
           </FormControl>
+          {/** 起動時に最後に開いたファイルを開くか？ */}
           <FormControl>
             <FormLabel>Open with note(or data)</FormLabel>
             <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
+          </FormControl>
+        </AccordionDetails>
+      </Accordion>
+
+      {/** エディタ設定 */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}
+          aria-controls="panel1-content">Editor</AccordionSummary>
+        <AccordionDetails className="formContainer">
+          {/** エディタパス */}
+          <FormControl>
+            <FormLabel>
+            Editor Program
+            </FormLabel>
+            <TextField value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)}></TextField>
           </FormControl>
         </AccordionDetails>
       </Accordion>
@@ -94,31 +123,31 @@ function Setting(props) {
         <AccordionSummary expandIcon={<ExpandMoreIcon />}
           aria-controls="panel1-content">Git</AccordionSummary>
         <AccordionDetails className="formContainer">
+          {/** デフォルトのブランチ名 */}
           <FormControl>
-            <FormLabel>Branch Name</FormLabel>
+            <FormLabel>Default Branch Name</FormLabel>
             <TextField value={gitBranch} onChange={(e) => setGitBranch(e.target.value)}></TextField>
           </FormControl>
+          {/** ユーザ名 */}
           <FormControl>
             <FormLabel>Name</FormLabel>
             <TextField value={gitName} onChange={(e) => setGitName(e.target.value)}></TextField>
           </FormControl>
+          {/** メールアドレス */}
           <FormControl>
             <FormLabel>Mail</FormLabel>
             <TextField value={gitMail} onChange={(e) => setGitMail(e.target.value)}></TextField>
           </FormControl>
-          <FormControl>
-            <FormLabel>Code</FormLabel>
-            <TextField value={gitCode} onChange={(e) => setGitCode(e.target.value)}></TextField>
-          </FormControl>
-
         </AccordionDetails>
       </Accordion>
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleSave}>Save</Button>
-      </FormControl>
+      {/** 保存 */}
+      <IconButton className="saveBtn" onClick={handleSave} aria-label="save">
+        <SaveIcon fontSize="large" color="primary" />
+      </IconButton>
 
-    </Grid>
+    </Grid2>
+
   </>);
 }
 export default Setting;

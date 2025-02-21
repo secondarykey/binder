@@ -1,27 +1,9 @@
-
 @font-face {
     font-family: "Nunito";
     font-style: normal;
     font-weight: 400;
     src: local(""),
     url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
-}
-
-.title {
-    background-color: #080808 !important;
-    min-height: 52px !important;
-    color: #f1f1f1 !important;
-}
-
-
-#leftContent {
-    background-color: #191919;
-    color: #f1f1f1;
-    overflow: auto !important;
-    border:0;
-    height:calc(100% - 100px);
-    max-height:calc(100% - 100px);
-    white-space: nowrap;
 }
 
 .treeText {
@@ -32,8 +14,6 @@
     border:0;
 }
 
-
-
 #fileMenu {
     position:relative;
     height:calc(100% - 100px);
@@ -43,6 +23,17 @@
     position: absolute;
     width: 100%;
     bottom:0;
+}
+
+.formContainer {
+  display: flex;
+  flex-flow: column;
+  background-color: #292929;
+  color: #f1f1f1;
+}
+
+.messageTxt {
+    white-space:pre-wrap;
 }
 
 
@@ -62,26 +53,10 @@
     --wails-draggable:no-drag;
 }
 
-
-.messageTxt {
-    white-space:pre-wrap;
-}
-
-
 .MuiAccordion-root {
   background-color: #202020 !important;
   color: #f1f1f1 !important;
 }
-
-.formContainer {
-  display: flex;
-  flex-flow: column;
-  background-color: #292929;
-  color: #f1f1f1;
-}
-
-
-
 
 .input-box .btn {
     width: 60px;
@@ -127,4 +102,21 @@ div.MuiAccordionSummary-content {
 
 div.Mui-expanded {
     margin:0px !important;
+}
+
+
+::-webkit-scrollbar {
+    width: 14px; 
+}
+
+::-webkit-scrollbar-track {
+    background: #888; 
+}
+
+::-webkit-scrollbar-thumb {
+    background: #f1f1f1; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
