@@ -417,7 +417,7 @@ export namespace settings {
 	export class Font {
 	    name: string;
 	    color: string;
-	    foreColor: string;
+	    backgroundColor: string;
 	    size: number;
 	
 	    static createFrom(source: any = {}) {
@@ -428,7 +428,7 @@ export namespace settings {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.color = source["color"];
-	        this.foreColor = source["foreColor"];
+	        this.backgroundColor = source["backgroundColor"];
 	        this.size = source["size"];
 	    }
 	}

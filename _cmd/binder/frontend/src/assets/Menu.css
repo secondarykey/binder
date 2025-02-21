@@ -60,3 +60,7 @@ svg.leftIcon {
 #tree div.content > div:first-child {
   margin-right:0px;
 }
+
+.codeSample > div > textarea {
+  color :inherit !important
+}

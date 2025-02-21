@@ -30,6 +30,8 @@ func attrFunc(groups []string, a slog.Attr) slog.Attr {
 	return a
 }
 
+var resetPosition bool
+
 func init() {
 	wails := make(map[string]interface{})
 
@@ -43,6 +45,7 @@ func init() {
 	if ok {
 		ver = obj.(string)
 	}
+	flag.BoolVar(&resetPos, "reset-position", false, "Windows Position reset")
 }
 
 func main() {
@@ -64,7 +67,9 @@ func main() {
 
 	if !set.IsDefault() {
 		//起動引数候補を作成
-		// -p -> 位置をリセット
+		if !resetPosition {
+			WindowSetPosition(set.Position.Left, set.Position.Top)
+		}
 	}
 
 	// Create application with options

@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../wailsjs/go/api/App.js";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../wailsjs/go/api/App.js";
 import { GetAsset,Generate,Commit } from "../../../wailsjs/go/api/App.js";
-import { RunEditor } from "../../../wailsjs/go/api/App.js";
+import { RunEditor,GetSetting,SaveSetting } from "../../../wailsjs/go/api/App.js";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -50,6 +50,8 @@ function Editor(props) {
   const [width, setWidth] = useState(500);
   const [menuWidth, setMenuWidth] = useState(310);
   const [fontDialog, setShowFontDialog] = useState(false);
+
+  const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
 
   //viewHTMLのprop
@@ -521,10 +523,46 @@ function Editor(props) {
    * フォントダイアログを終了
    * @param {*} change 
    */
-  const handleFontDialogClose = (change) => {
+  const handleFontDialogClose = (font) => {
+    if ( font !== undefined) {
+      settingFont(font,true);
+    }
     setShowFontDialog(false);
   }
 
+  /**
+   * フォントの設定
+   * @param {*} set 
+   * @param {*} save 
+   */
+  const settingFont = (set,save) => {
+
+    var style = {};
+    style.fontFamily = set.name;
+    style.fontSize = set.size + "px";
+    style.color = set.color;
+    style.backgroundColor = set.backgroundColor;
+    setEditorStyle(style);
+    
+    var f = set;
+    setEditorFont(f)
+
+    if ( save ) {
+      //設定を取得
+      GetSetting().then( (s) => {
+
+        s.lookAndFeel.editor.text = set;
+
+        console.log(set)
+        console.log(s)
+        SaveSetting(s).then( () => {
+        })
+      }).catch( (err) => {
+        evt.showErrorMessage(err);
+      });
+    } else {
+    }
+  }
   /**
    * 初回起動のみのエフェクト
    */
@@ -539,12 +577,12 @@ function Editor(props) {
     });
 
     //設定を取得
-
-    var style = {};
-    style.fontSize = "20px";
-    style.color = "#eeeeee";
-    style.fontFamily = "Calex Code JP Regular";
-    setEditorStyle(style);
+    GetSetting().then( (s) => {
+      var set = s.lookAndFeel.editor.text;
+      settingFont(set);
+    }).catch( (err) => {
+      evt.showErrorMessage(err);
+    });
 
   },[]);
 
@@ -705,7 +743,7 @@ function Editor(props) {
       </Paper>
 
       {/** フォント設定 */}
-      <FontDialog show={fontDialog} onClose={handleFontDialogClose}/>
+      <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose}/>
     </>
   );
 }

@@ -78,10 +78,10 @@ type Editor struct {
 }
 
 type Font struct {
-	Name      string `json:"name"`
-	Color     string `json:"color"`
-	ForeColor string `json:"foreColor"`
-	Size      int    `json:"size"`
+	Name            string `json:"name"`
+	Color           string `json:"color"`
+	BackgroundColor string `json:"backgroundColor"`
+	Size            int    `json:"size"`
 }
 
 type Vim struct {
@@ -98,6 +98,11 @@ func Get() *Setting {
 		if err != nil {
 			pSet = def()
 		}
+	}
+
+	if pSet.Look == nil {
+		ds := def()
+		pSet.Look = ds.Look
 	}
 	return pSet
 }
@@ -138,10 +143,10 @@ func def() *Setting {
 	var editor Editor
 	var ef Font
 
-	ef.Name = ""
-	ef.Size = 14
-	ef.Color = ""
-	ef.ForeColor = ""
+	ef.Name = "'Courier New', Courier, monospace"
+	ef.Size = 16
+	ef.Color = "#000000"
+	ef.BackgroundColor = "#FFFFFF"
 
 	editor.Text = &ef
 	look.Editor = &editor
