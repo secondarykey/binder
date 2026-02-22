@@ -2,115 +2,115 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## プロジェクト概要
 
-Binder is an experimental desktop Markdown editor for technical writing. It uses **Wails v2** (Go + React) to create a frameless desktop application. Content is stored as files in a local git repository, with metadata tracked in CSV-based SQL tables (csvq).
+Binderは技術文書作成向けの実験的なデスクトップMarkdownエディタ。**Wails v2**（Go + React）でフレームレスのデスクトップアプリケーションを構築している。コンテンツはローカルgitリポジトリにファイルとして保存され、メタデータはCSVベースのSQLテーブル（csvq）で管理される。
 
-## Build & Development Commands
+## ビルド・開発コマンド
 
-### Prerequisites
+### 前提条件
 - Go 1.22+
-- Node.js with npm
+- Node.js + npm
 - Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 
-### Development
+### 開発
 ```bash
-# Run in dev mode (from _cmd/binder/)
+# 開発モードで起動（_cmd/binder/ から実行）
 cd _cmd/binder && wails dev
 ```
 
-### Build
+### ビルド
 ```bash
-# Production build (from _cmd/binder/)
+# プロダクションビルド（_cmd/binder/ から実行）
 cd _cmd/binder && wails build
 ```
 
-### Testing
+### テスト
 ```bash
-# Run all Go tests
+# 全Goテスト実行
 go test ./...
 
-# Run tests for a specific package
+# パッケージ単位でテスト実行
 go test ./fs/...
 go test ./db/...
 
-# Run a single test
+# 単一テスト実行
 go test ./fs/ -run TestAssetRead
 ```
 
-### Frontend only
+### フロントエンドのみ
 ```bash
-# From _cmd/binder/frontend/
+# _cmd/binder/frontend/ から実行
 npm install
-npm run dev      # Vite dev server
-npm run build    # Production build
+npm run dev      # Vite開発サーバー
+npm run build    # プロダクションビルド
 ```
 
-## Architecture
+## アーキテクチャ
 
-### Layer Structure
+### レイヤー構成
 
 ```
-React Frontend (JSX, MUI, Vite)
-    ↓ Wails IPC bindings
-api/ — Go API layer (App struct bound to Wails, exposes methods to JS)
+Reactフロントエンド (JSX, MUI, Vite)
+    ↓ Wails IPCバインディング
+api/ — Go APIレイヤー（App構造体をWailsにバインドし、JSにメソッドを公開）
     ↓
-Root package (binder.go, note.go, diagram.go, etc.) — Core business logic (Binder struct)
+ルートパッケージ (binder.go, note.go, diagram.go 等) — コアビジネスロジック（Binder構造体）
     ↓
-db/  — CSV-based SQL database (csvq-driver), DAOs
-fs/  — Git-backed filesystem (go-git), file I/O, commit management
+db/  — CSVベースのSQLデータベース（csvq-driver）、DAO
+fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O、コミット管理
 ```
 
-### Key Types
+### 主要な型
 
-- **`Binder`** (binder.go) — Central orchestrator holding references to FileSystem, DB, and HTTP server. Lifecycle: `Load()` → use → `Close()`.
-- **`api.App`** (api/api.go) — Wails-bound struct. Frontend calls methods on this. Delegates to `Binder`.
-- **`fs.FileSystem`** (fs/fs.go) — Wraps a go-git repository. All content changes go through here and are git-committed.
-- **`db.Instance`** (db/db.go) — SQL interface over CSV files using csvq. Tables: notes, diagrams, assets, templates, config.
+- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`
+- **`api.App`** (api/api.go) — Wailsにバインドされる構造体。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
+- **`fs.FileSystem`** (fs/fs.go) — go-gitリポジトリのラッパー。全コンテンツ変更はここを経由し、gitコミットされる
+- **`db.Instance`** (db/db.go) — csvqを使用したCSVファイルへのSQLインターフェース。テーブル: notes, diagrams, assets, templates, config
 
-### Data Flow
+### データフロー
 
-Every mutation (create/edit/delete note, diagram, asset) follows this pattern:
-1. Frontend calls an `api.App` method via Wails binding
-2. `api.App` delegates to `Binder` business logic
-3. `Binder` writes to filesystem via `fs` and updates metadata via `db`
-4. `fs` commits the change to git
-5. JSON response returned to frontend
+全ての変更操作（ノート・ダイアグラム・アセットの作成/編集/削除）は以下のパターンに従う:
+1. フロントエンドがWailsバインディング経由で`api.App`のメソッドを呼び出す
+2. `api.App`が`Binder`のビジネスロジックに委譲する
+3. `Binder`が`fs`でファイルシステムに書き込み、`db`でメタデータを更新する
+4. `fs`が変更をgitコミットする
+5. JSONレスポンスをフロントエンドに返す
 
-### Frontend Structure (_cmd/binder/frontend/src/)
+### フロントエンド構成 (_cmd/binder/frontend/src/)
 
-- **App.jsx** — Root layout: left Menu + right Content
-- **Menu.jsx** — Sidebar navigation
-- **Content.jsx** — Route-based content switching (react-router)
-- **Event.jsx** — Custom event bus for cross-component communication
-- **contents/Editor/** — Split-pane markdown editor (edit left, preview right) with marked.js and Mermaid.js
-- **contents/LeftMenu/** — Tree views for notes/diagrams using @mui/x-tree-view
-- **wailsjs/go/** — Auto-generated Wails TypeScript bindings (do not edit manually)
+- **App.jsx** — ルートレイアウト: 左側Menu + 右側Content
+- **Menu.jsx** — サイドバーナビゲーション
+- **Content.jsx** — ルートベースのコンテンツ切り替え（react-router）
+- **Event.jsx** — コンポーネント間通信用のカスタムイベントバス
+- **contents/Editor/** — 分割ペインのMarkdownエディタ（左:編集、右:プレビュー）、marked.jsとMermaid.js使用
+- **contents/LeftMenu/** — @mui/x-tree-viewを使ったノート・ダイアグラムのツリー表示
+- **wailsjs/go/** — Wailsが自動生成するTypeScriptバインディング（手動編集不可）
 
-### Domain Entities (db/model/)
+### ドメインエンティティ (db/model/)
 
-- **Note** — Hierarchical (parentId), contains markdown content, supports templates and publishing
-- **Diagram** — Mermaid diagrams with similar structure to Note
-- **Asset** — Binary/text files attached to notes
-- **Template** — Reusable HTML layout/content templates for publishing
-- **Config** — Application settings
+- **Note** — 階層構造（parentId）、Markdownコンテンツ、テンプレートと公開機能をサポート
+- **Diagram** — Noteと同様の構造を持つMermaidダイアグラム
+- **Asset** — ノートに添付されるバイナリ/テキストファイル
+- **Template** — 公開用の再利用可能なHTMLレイアウト/コンテンツテンプレート
+- **Config** — アプリケーション設定
 
-### Database (db/)
+### データベース (db/)
 
-Uses csvq (SQL on CSV files). The `db/` directory in a binder repository contains CSV table files. Schema migrations are handled by `db/convert/`.
+csvq（CSVファイルに対するSQL）を使用。binderリポジトリ内の`db/`ディレクトリにCSVテーブルファイルを格納。スキーママイグレーションは`db/convert/`で処理。
 
-### Settings
+### 設定
 
-Application settings stored as `.binder.json` in the user's home directory (window position, git config, look & feel). Managed by the `settings/` package.
+アプリケーション設定はユーザーのホームディレクトリに`.binder.json`として保存（ウィンドウ位置、git設定、外観）。`settings/`パッケージで管理。
 
-## Conventions
+## コーディング規約
 
-- Error wrapping uses `golang.org/x/xerrors` (`xerrors.Errorf("context: %w", err)`)
-- Logging uses `log/slog` with helpers in the `log/` package (`log.PrintTrace()`, `log.PrintStackTrace()`)
-- IDs are UUID v7 (`github.com/google/uuid`)
-- The Wails app entry point is in `_cmd/binder/` (note the underscore prefix)
-- Japanese comments appear throughout the codebase
-- Commit messages use conventional commits format (fix:, feat:)
-- The `api/json/` package contains API-facing model types, separate from `db/model/`
-- DAO files use the `_dao.go` suffix
-- The `fs` package supports both OS filesystem and in-memory filesystem (billy) for testing
+- エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）
+- ロギングは`log/slog`と`log/`パッケージのヘルパーを使用（`log.PrintTrace()`, `log.PrintStackTrace()`）
+- IDはUUID v7（`github.com/google/uuid`）
+- Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
+- コードベース全体に日本語コメントあり
+- コミットメッセージはConventional Commits形式（fix:, feat:）
+- `api/json/`パッケージはAPI向けのモデル型を含み、`db/model/`とは別
+- DAOファイルは`_dao.go`サフィックスを使用
+- `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
