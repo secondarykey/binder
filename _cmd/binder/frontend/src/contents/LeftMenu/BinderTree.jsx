@@ -112,24 +112,34 @@ function BinderTree(props) {
       viewTree();
     });
 
-    // HashRouter により前回 URL が復元された場合、BinderTree はアプリ起動直後に
-    // マウントされる。Wails v2 は window.go をページロード後に非同期で注入するため、
-    // その時点では window.go がまだ利用できないことがある。
-    // 呼び出しが成功（例外が発生しない）するまで 50ms 間隔でリトライする（最大 5 秒）。
-    let attempts = 0;
-    let timerId;
-    const tryLoad = () => {
-      try {
-        viewTree();
-      } catch (e) {
-        if (attempts < 100) {
-          attempts++;
-          timerId = setTimeout(tryLoad, 50);
+    // Wails v2 は window.go をページロード後に非同期で注入する。
+    // さらに IPC ブリッジが確立するまでは Promise が解決されないことがある。
+    // そのため try-catch（同期例外のみ）ではなく、以下の方式でリトライする:
+    //   - Promise.resolve().then() で同期例外を Promise rejection に変換
+    //   - Promise.race でタイムアウトを設定（2 秒）
+    //   - 最大 30 秒間、100ms 間隔でリトライ
+    let alive = true;
+
+    (async () => {
+      const deadline = Date.now() + 30_000;
+      while (alive && Date.now() < deadline) {
+        try {
+          const resp = await Promise.race([
+            Promise.resolve().then(() => GetBinderTree()),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('timeout')), 2_000)
+            ),
+          ]);
+          if (alive) setTree(resp.data);
+          return;
+        } catch (_e) {
+          if (!alive) return;
+          await new Promise(r => setTimeout(r, 100));
         }
       }
-    };
-    tryLoad();
-    return () => clearTimeout(timerId);
+    })();
+
+    return () => { alive = false; };
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
