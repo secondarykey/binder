@@ -107,39 +107,22 @@ function BinderTree(props) {
   }
 
   useEffect(() => {
-    // 再描画イベントを登録
+    // ツリー内容変更時の再描画
     evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
     });
 
-    // Wails v2 は window.go をページロード後に非同期で注入する。
-    // さらに IPC ブリッジが確立するまでは Promise が解決されないことがある。
-    // そのため try-catch（同期例外のみ）ではなく、以下の方式でリトライする:
-    //   - Promise.resolve().then() で同期例外を Promise rejection に変換
-    //   - Promise.race でタイムアウトを設定（2 秒）
-    //   - 最大 30 秒間、100ms 間隔でリトライ
-    let alive = true;
+    // LoadBinder() 成功後に発火するイベント。
+    // このタイミングでは window.go が確実に利用可能なため、
+    // バインダーが開かれるたびにツリーを更新する。
+    evt.register("BinderTree", Event.ChangeAddress, () => {
+      viewTree();
+    });
 
-    (async () => {
-      const deadline = Date.now() + 30_000;
-      while (alive && Date.now() < deadline) {
-        try {
-          const resp = await Promise.race([
-            Promise.resolve().then(() => GetBinderTree()),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('timeout')), 2_000)
-            ),
-          ]);
-          if (alive) setTree(resp.data);
-          return;
-        } catch (_e) {
-          if (!alive) return;
-          await new Promise(r => setTimeout(r, 100));
-        }
-      }
-    })();
-
-    return () => { alive = false; };
+    // 起動時に一度試みる。
+    // window.go がまだ未注入の場合は例外が発生するが無視する
+    // （その後 ChangeAddress イベントで再取得される）。
+    try { viewTree(); } catch (_e) { /* window.go 未準備 */ }
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
