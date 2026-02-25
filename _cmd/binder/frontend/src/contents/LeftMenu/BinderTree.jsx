@@ -116,12 +116,24 @@ function BinderTree(props) {
     };
 
     // Wailsランタイム（window.go）が準備できてから呼び出す。
-    // 軽量コンポーネントはランタイム注入より先にマウントされる場合があるため。
+    // wails dev では軽量コンポーネントがランタイム注入より先にマウントされる場合があるため、
+    // window.go が利用可能になるまで 50ms 間隔でポーリングする。
     if (window.go) {
       initialize();
-    } else {
-      window.addEventListener('wails:loaded', initialize, { once: true });
+      return;
     }
+
+    let timerId;
+    const poll = () => {
+      if (window.go) {
+        initialize();
+      } else {
+        timerId = setTimeout(poll, 50);
+      }
+    };
+    timerId = setTimeout(poll, 50);
+
+    return () => clearTimeout(timerId);
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
