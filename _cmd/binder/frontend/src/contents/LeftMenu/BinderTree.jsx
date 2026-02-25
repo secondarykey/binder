@@ -1,26 +1,22 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 import { Menu, MenuItem } from '@mui/material';
-import { SimpleTreeView } from '@mui/x-tree-view';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { OpenBinderSite, GetBinderTree } from '../../../wailsjs/go/api/App';
+import { GetBinderTree } from '../../../wailsjs/go/api/App';
 
 import Event, { EventContext } from '../../Event';
-import CustomTreeItem, { EndIcon } from '../../components/TreeItem';
-
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import Tree from '../../components/Tree';
 
 /**
  * Mermaid アイコン
- * @param {*} props 
- * @returns 
+ * @param {*} props
+ * @returns
  */
 function MermaidSVG(props) {
   return (<>
@@ -34,22 +30,74 @@ function MermaidSVG(props) {
 }
 
 function MermaidIcon() {
-  return <MermaidSVG width="20px" height="20px" fill="white" contents="black" />
+  return <MermaidSVG width="20px" height="20px" fill="white" contents="black" />;
 }
+
+/**
+ * ツリー表示用のアイコンマップ
+ * - folder / folderOpen: 子を持つノート（FolderIcon）
+ * - folderDiagram: 子がすべてダイアグラムのノート（LibraryBooksIcon）
+ * - note / diagram / asset: 各リーフノード
+ */
+const binderIcons = {
+  note:          <TextSnippetIcon fontSize="small" />,
+  diagram:       <MermaidIcon />,
+  asset:         <AttachFileIcon fontSize="small" />,
+  folder:        <FolderIcon fontSize="small" />,
+  folderOpen:    <FolderIcon fontSize="small" />,
+  folderDiagram: <LibraryBooksIcon fontSize="small" />,
+};
+
+/**
+ * 子ノードがすべてダイアグラムかどうか
+ */
+const onlyDiagram = (list) => list.every(v => v.type === "diagram");
+
+/**
+ * GetBinderTree() の戻り値をカスタムTreeコンポーネント用に変換する
+ * - 子を持つ note → displayType を "folder" or "folderDiagram" に変換
+ * - nodeType に元の type を保持（コンテキストメニュー判定用）
+ */
+const processTreeData = (leafs) => {
+  if (!leafs) return [];
+  return leafs.map(leaf => {
+    const children = leaf.children ? processTreeData(leaf.children) : undefined;
+    const hasChildren = children && children.length > 0;
+
+    let displayType = leaf.type;
+    if (leaf.type === "note" && hasChildren) {
+      displayType = onlyDiagram(leaf.children) ? "folderDiagram" : "folder";
+    }
+
+    return {
+      id: leaf.id,
+      name: leaf.name,
+      type: displayType,    // アイコン表示用（folder/folderDiagram/note/diagram/asset）
+      nodeType: leaf.type,  // コンテキストメニュー判定用（元のtype）
+      children: hasChildren ? children : undefined,
+    };
+  });
+};
 
 {/** バインダーのツリー */ }
 function BinderTree(props) {
 
-  const evt = useContext(EventContext)
+  const evt = useContext(EventContext);
   const nav = useNavigate();
 
-  //ツリーデータ
+  // ツリーデータ（APIから取得した生データ）
   const [tree, setTree] = useState([]);
 
-  //選択しているID
-  const [id, setId] = useState("note/index");
+  // 展開しているノードのID配列
+  const [expand, setExpand] = useState([]);
 
-  //リソースを作成
+  // 選択中のノードID
+  const [selectedId, setSelectedId] = useState(null);
+
+  // コンテキストメニューの状態
+  const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0, node: null });
+
+  // ツリーデータを取得
   const viewTree = () => {
     GetBinderTree().then((resp) => {
       setTree(resp.data);
@@ -59,195 +107,108 @@ function BinderTree(props) {
   }
 
   useEffect(() => {
-    //再描画を追加しておく
+    // 再描画イベントを登録
     evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
-    })
-    viewTree();
-  }, [])
-
-  const [expand, setExpand] = useState([id]);
-
-  const [noteEl, setNoteEl] = useState(null);
-  const noteMenu = Boolean(noteEl);
-
-  const [diagramEl, setDiagramEl] = useState(null);
-  const diagramMenu = Boolean(diagramEl);
-
-  const [assetEl, setAssetEl] = useState(null);
-  const assetMenu = Boolean(assetEl);
-
-  //メニュー表示
-  const showMenu = (e, call) => {
-    e.preventDefault();
-    call(e.target);
-    e.stopPropagation();
-  }
-
-  //メニューを閉じる
-  const closeMenu = (call) => {
-    setId(undefined);
-    call(null);
-  };
-
-  const setCurrentId = (itemId) => {
-    setId(itemId);
-  }
-
-  //ノート作成
-  const handleRegisterNote = (e, call) => {
-    closeMenu(call);
-    nav("/note/register/" + id);
-  }
-
-  //ノート編集
-  const handleEditNote = (e, call) => {
-    closeMenu(call);
-    nav("/note/edit/" + id);
-  }
-
-  //ダイアグラム作成
-  const handleRegisterDiagram = (e, call) => {
-    closeMenu(call);
-    nav("/diagram/register/" + id);
-  }
-
-  // アセット作成
-  const handleRegisterAssets = (e, call) => {
-    closeMenu(call);
-    nav("/assets/register/" + id);
-  }
-
-  //ダイアグラム編集
-  const handleEditDiagram = (e, call) => {
-    closeMenu(call);
-    nav("/diagram/edit/" + id);
-  }
-
-  //ダイアグラム編集
-  const handleEditAsset = (e, call) => {
-    closeMenu(call);
-    nav("/assets/edit/" + id);
-  }
-
-  /**
-   * ダイアログのみかどうか
-   */
-  const onlyDiagram = (list) => {
-    var only = true;
-    list.forEach((v) => {
-      if (v.type !== "diagram") {
-        only = false;
-      }
-    })
-    return only;
-  }
-
-  //ツリー描画　
-  const getTreeItemsFromData = leafs => {
-
-    if (leafs === null) {
-      //return <></>;
-    }
-
-    return leafs.map(leaf => {
-
-      let children = [];
-      if (leaf.children && leaf.children.length > 0) {
-        children = getTreeItemsFromData(leaf.children);
-      }
-
-      var icon = TextSnippetIcon;
-      var caller = setNoteEl;
-
-      if (leaf.type === "diagram") {
-        caller = setDiagramEl;
-        icon = MermaidIcon
-      } else if (leaf.type === "asset") {
-        caller = setAssetEl;
-        icon = AttachFileIcon
-      } else if (children && children.length > 0) {
-        if (onlyDiagram(leaf.children)) {
-          icon = LibraryBooksIcon
-        } else {
-          icon = FolderIcon
-        }
-      }
-
-      console.debug(leaf);
-      //onClick={(e) => evFunc(e, leaf.id)}
-      //onDoubleClick={(e) => handleExpand(e,leaf)}
-
-      return (
-        <CustomTreeItem key={leaf.id} itemId={leaf.type + "/" + leaf.id}
-          label={leaf.name} labelIcon={icon}
-          onContextMenu={(e) => showMenu(e, caller)}
-          children={children} />
-      );
     });
+    viewTree();
+  }, []);
+
+  // Treeコンポーネント用データ（メモ化）
+  const treeData = useMemo(() => processTreeData(tree), [tree]);
+
+  // ---- ハンドラ ----
+
+  /** 展開/折りたたみトグル */
+  const handleExpand = (nodeId) => {
+    setExpand(prev =>
+      prev.includes(nodeId) ? prev.filter(i => i !== nodeId) : [...prev, nodeId]
+    );
   };
 
-  const handleItemToggle = (e,itemId,isSelected) => {
-    var [type,id] = itemId.split("/");
-    if ( isSelected ) {
-      setCurrentId(id);
-      nav("/editor/" + itemId);
-    }
-  }
+  /** ノードクリック → エディタへナビゲート */
+  const handleClick = (node) => {
+    const type = node.nodeType || node.type;
+    nav("/editor/" + type + "/" + node.id);
+  };
 
-  const handleExpanded = (e,items) => {
-    setExpand(items);
-  }
+  /** コンテキストメニューを開く */
+  const handleContextMenu = (e, node) => {
+    e.preventDefault();
+    setContextMenu({ open: true, x: e.clientX, y: e.clientY, node });
+  };
+
+  /** コンテキストメニューを閉じる */
+  const closeContextMenu = () => {
+    setContextMenu({ open: false, x: 0, y: 0, node: null });
+  };
+
+  /** D&D（UIのみ・永続化なし） */
+  const handleChange = (_changeInfo) => {
+    // 将来: MoveNote API 呼び出しをここに実装
+  };
+
+  // ---- コンテキストメニューのナビゲーションハンドラ ----
+
+  const handleEditNote        = () => { closeContextMenu(); nav("/note/edit/"        + contextMenu.node.id); };
+  const handleRegisterNote    = () => { closeContextMenu(); nav("/note/register/"    + contextMenu.node.id); };
+  const handleRegisterDiagram = () => { closeContextMenu(); nav("/diagram/register/" + contextMenu.node.id); };
+  const handleRegisterAssets  = () => { closeContextMenu(); nav("/assets/register/"  + contextMenu.node.id); };
+  const handleEditDiagram     = () => { closeContextMenu(); nav("/diagram/edit/"     + contextMenu.node.id); };
+  const handleEditAsset       = () => { closeContextMenu(); nav("/assets/edit/"      + contextMenu.node.id); };
+
+  // 現在右クリックされているノードの元type
+  const contextNodeType = contextMenu.node?.nodeType;
 
   return (<>
 
-    {/** ツリーの表示 */}
-    <SimpleTreeView id="tree" className='treeText'
-      expandedItems={expand}
-      onItemSelectionToggle={handleItemToggle}
-      onExpandedItemsChange={handleExpanded}
-      slots={{
-        expandIcon: ArrowRightIcon,
-        collapseIcon: ArrowDropDownIcon,
-        endIcon: EndIcon,
-      }}
-      aria-label="binder system navigator">
-      {getTreeItemsFromData(tree)}
-    </SimpleTreeView>
+    {/** カスタムツリー */}
+    <Tree
+      data={treeData}
+      selected={selectedId}
+      onSelect={(id) => setSelectedId(id)}
+      onClick={handleClick}
+      expand={expand}
+      onExpand={handleExpand}
+      onChange={handleChange}
+      onNodeContextMenu={handleContextMenu}
+      icons={binderIcons}
+    />
 
-    {/** 以下ツリー用のメニュ－ */}
-    {/** ノートメニュー 
-      編集 -> IDの変更、ノート削除
-      アセットの追加
-      データテキストの追加
-      */}
-    <Menu anchorEl={noteEl}
-      open={noteMenu}
-      onClose={() => closeMenu(setNoteEl)}>
-      <MenuItem onClick={(e) => handleEditNote(e, setNoteEl)} divider>Edit</MenuItem>
-      <MenuItem onClick={(e) => handleRegisterNote(e, setNoteEl)}>Add Note</MenuItem>
-      <MenuItem onClick={(e) => handleRegisterDiagram(e, setNoteEl)}>Add Diagram</MenuItem>
-      <MenuItem onClick={(e) => handleRegisterAssets(e, setNoteEl)}>Add Assets</MenuItem>
+    {/** ノートメニュー: Edit / Add Note / Add Diagram / Add Assets */}
+    <Menu
+      open={contextMenu.open && contextNodeType === "note"}
+      onClose={closeContextMenu}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+    >
+      <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
+      <MenuItem onClick={handleRegisterNote}>Add Note</MenuItem>
+      <MenuItem onClick={handleRegisterDiagram}>Add Diagram</MenuItem>
+      <MenuItem onClick={handleRegisterAssets}>Add Assets</MenuItem>
     </Menu>
 
-    {/** ダイアグラムメニュー 
-      編集 -> 変更 削除
-      */}
-    <Menu anchorEl={diagramEl}
-      open={diagramMenu}
-      onClose={() => closeMenu(setDiagramEl)}>
-      <MenuItem onClick={(e) => handleEditDiagram(e, setDiagramEl)}>Edit</MenuItem>
+    {/** ダイアグラムメニュー: Edit */}
+    <Menu
+      open={contextMenu.open && contextNodeType === "diagram"}
+      onClose={closeContextMenu}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+    >
+      <MenuItem onClick={handleEditDiagram}>Edit</MenuItem>
     </Menu>
 
-    {/** アセットメニュー 
-      編集 -> 変更 削除 
-      */}
-    <Menu anchorEl={assetEl}
-      open={assetMenu}
-      onClose={() => closeMenu(setAssetEl)}>
-      <MenuItem onClick={(e) => handleEditAsset(e, setAssetEl)}>Edit</MenuItem>
+    {/** アセットメニュー: Edit */}
+    <Menu
+      open={contextMenu.open && contextNodeType === "asset"}
+      onClose={closeContextMenu}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+    >
+      <MenuItem onClick={handleEditAsset}>Edit</MenuItem>
     </Menu>
 
   </>);
 }
+
 export default BinderTree;
