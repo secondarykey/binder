@@ -111,7 +111,25 @@ function BinderTree(props) {
     evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
     });
-    viewTree();
+
+    // HashRouter により前回 URL が復元された場合、BinderTree はアプリ起動直後に
+    // マウントされる。Wails v2 は window.go をページロード後に非同期で注入するため、
+    // その時点では window.go がまだ利用できないことがある。
+    // 呼び出しが成功（例外が発生しない）するまで 50ms 間隔でリトライする（最大 5 秒）。
+    let attempts = 0;
+    let timerId;
+    const tryLoad = () => {
+      try {
+        viewTree();
+      } catch (e) {
+        if (attempts < 100) {
+          attempts++;
+          timerId = setTimeout(tryLoad, 50);
+        }
+      }
+    };
+    tryLoad();
+    return () => clearTimeout(timerId);
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
