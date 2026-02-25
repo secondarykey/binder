@@ -8,7 +8,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { GetBinderTree } from '../../../wailsjs/go/api/App';
+import { GetBinderTree } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -111,18 +111,11 @@ function BinderTree(props) {
     evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
     });
-
-    // LoadBinder() 成功後に発火するイベント。
-    // このタイミングでは window.go が確実に利用可能なため、
-    // バインダーが開かれるたびにツリーを更新する。
+    // バインダーを開いたとき（LoadBinder 成功後）に再取得
     evt.register("BinderTree", Event.ChangeAddress, () => {
       viewTree();
     });
-
-    // 起動時に一度試みる。
-    // window.go がまだ未注入の場合は例外が発生するが無視する
-    // （その後 ChangeAddress イベントで再取得される）。
-    try { viewTree(); } catch (_e) { /* window.go 未準備 */ }
+    viewTree();
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
