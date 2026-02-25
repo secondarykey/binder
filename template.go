@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
+func (b *Binder) EditTemplate(t *json.Template) (*json.Template, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -30,7 +31,9 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 		prefix = "Create Template"
 
 	} else {
-		err := b.db.UpdateTemplate(t, b.op)
+
+		m := model.ConvertTemplate(t)
+		err := b.db.UpdateTemplate(m, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateTemplate() error: %w", err)
 		}
@@ -48,20 +51,23 @@ func (b *Binder) EditTemplate(t *model.Template) (*model.Template, error) {
 	return t, nil
 }
 
-func (b *Binder) createTemplate(t *model.Template) (string, error) {
+func (b *Binder) createTemplate(t *json.Template) (string, error) {
 
 	fn, err := b.fileSystem.CreateTemplateFile(t)
 	if err != nil {
 		return "", xerrors.Errorf("fs.CreteTemplateFile() error: %w", err)
 	}
-	err = b.db.InsertTemplate(t, b.op)
+
+	m := model.ConvertTemplate(t)
+	err = b.db.InsertTemplate(m, b.op)
 	if err != nil {
 		return "", xerrors.Errorf("db.InsertTemplate() error: %w", err)
 	}
 	return fn, nil
 }
 
-func (b *Binder) GetTemplate(id string) (*model.Template, error) {
+func (b *Binder) GetTemplate(id string) (*json.Template, error) {
+
 	if b == nil {
 		return nil, EmptyError
 	}
@@ -69,11 +75,13 @@ func (b *Binder) GetTemplate(id string) (*model.Template, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("fs.GetTemplate() error: %w", err)
 	}
-	err = b.fileSystem.SetTemplateStatus(t)
+
+	j := t.To()
+	err = b.fileSystem.SetTemplateStatus(j)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.SetTemplateStatus() error: %w", err)
 	}
-	return t, nil
+	return j, nil
 }
 
 func (b *Binder) ReadTemplate(w io.Writer, id string) error {
@@ -87,7 +95,8 @@ func (b *Binder) ReadTemplate(w io.Writer, id string) error {
 		return xerrors.Errorf("db.GetTemplate() error: %w", err)
 	}
 
-	err = b.fileSystem.ReadTemplate(w, t)
+	j := t.To()
+	err = b.fileSystem.ReadTemplate(w, j)
 	if err != nil {
 		return xerrors.Errorf("fs.ReadTemplate() error: %w", err)
 	}
@@ -105,7 +114,8 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 		return xerrors.Errorf("db.GetTemplate() error: %w", err)
 	}
 
-	fn, err := b.fileSystem.WriteTemplate(t, data)
+	j := t.To()
+	fn, err := b.fileSystem.WriteTemplate(j, data)
 	if err != nil {
 		return xerrors.Errorf("fs.WriteTemplate() error: %w", err)
 	}
@@ -116,19 +126,29 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 	return nil
 }
 
-func (b *Binder) GetHTMLTemplates() ([]*model.Template, []*model.Template, error) {
+func (b *Binder) GetHTMLTemplates() ([]*json.Template, []*json.Template, error) {
 
 	if b == nil {
 		return nil, nil, EmptyError
 	}
 
-	layouts, err := b.db.FindLayoutTemplates()
+	tmps, err := b.db.FindLayoutTemplates()
 	if err != nil {
 		return nil, nil, xerrors.Errorf("FindLayoutTemplates() error: %w", err)
 	}
-	contents, err := b.db.FindContentTemplates()
+	layouts := make([]*json.Template, len(tmps))
+	for idx, t := range tmps {
+		layouts[idx] = t.To()
+	}
+
+	tmps, err = b.db.FindContentTemplates()
 	if err != nil {
 		return nil, nil, xerrors.Errorf("FindContentTemplates() error: %w", err)
 	}
+	contents := make([]*json.Template, len(tmps))
+	for idx, t := range tmps {
+		contents[idx] = t.To()
+	}
+
 	return layouts, contents, nil
 }

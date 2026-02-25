@@ -1,0 +1,40 @@
+version: '3'
+
+vars:
+  APP_NAME: '{{.APP_NAME | default "binder"}}'
+  BIN_DIR: '{{.BIN_DIR | default "bin"}}'
+  FRONTEND_DIR: "frontend"
+  VITE_PORT: '{{.VITE_PORT | default 9245}}'
+
+tasks:
+  install:frontend:deps:
+    summary: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules
+    cmds:
+      - npm install
+
+  build:frontend:
+    summary: Build the frontend project
+    dir: "{{.FRONTEND_DIR}}"
+    deps:
+      - install:frontend:deps
+    cmds:
+      - npm run build
+
+  generate:bindings:
+    summary: Generate Wails bindings
+    cmds:
+      - wails3 generate bindings
+
+  dev:frontend:
+    summary: Run the frontend dev server
+    dir: "{{.FRONTEND_DIR}}"
+    deps:
+      - install:frontend:deps
+    cmds:
+      - npm run dev -- --port {{.VITE_PORT}} --strictPort

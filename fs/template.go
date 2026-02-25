@@ -1,10 +1,11 @@
 package fs
 
 import (
-	"binder/db/model"
 	"bytes"
 	"fmt"
 	"io"
+
+	"binder/api/json"
 
 	"golang.org/x/xerrors"
 )
@@ -17,9 +18,9 @@ const (
 )
 
 // テンプレート用のフレームを作成して処理
-func AddTemplateFrame(t model.TemplateType, data []byte) []byte {
+func AddTemplateFrame(t json.TemplateType, data []byte) []byte {
 
-	typ := model.TemplateType(t)
+	typ := json.TemplateType(t)
 	if !typ.IsHTML() {
 		return data
 	}
@@ -40,7 +41,7 @@ func AddTemplateFrame(t model.TemplateType, data []byte) []byte {
 	return buf.Bytes()
 }
 
-func (f *FileSystem) CreateTemplateFile(t *model.Template) (string, error) {
+func (f *FileSystem) CreateTemplateFile(t *json.Template) (string, error) {
 
 	n := TemplateFile(t.Id)
 	//ノートファイルを作成
@@ -51,14 +52,14 @@ func (f *FileSystem) CreateTemplateFile(t *model.Template) (string, error) {
 	defer fp.Close()
 
 	//TODO レイアウト時は追加を設定
-	typ := model.TemplateType(t.Typ)
+	typ := json.TemplateType(t.Typ)
 	if typ.IsHTML() {
 	}
 
 	return n, nil
 }
 
-func (f *FileSystem) ReadTemplate(w io.Writer, t *model.Template) error {
+func (f *FileSystem) ReadTemplate(w io.Writer, t *json.Template) error {
 
 	fn := TemplateFile(t.Id)
 
@@ -83,7 +84,7 @@ func (f *FileSystem) ReadTemplate(w io.Writer, t *model.Template) error {
 	return nil
 }
 
-func (f *FileSystem) WriteTemplate(t *model.Template, data []byte) (string, error) {
+func (f *FileSystem) WriteTemplate(t *json.Template, data []byte) (string, error) {
 
 	fn := TemplateFile(t.Id)
 
@@ -103,7 +104,7 @@ func (f *FileSystem) WriteTemplate(t *model.Template, data []byte) (string, erro
 	return fn, nil
 }
 
-func (f *FileSystem) SetTemplateStatus(t *model.Template) error {
+func (f *FileSystem) SetTemplateStatus(t *json.Template) error {
 
 	//元ファイルを作成
 	base := TemplateFile(t.Id)

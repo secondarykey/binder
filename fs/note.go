@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"bytes"
 	"fmt"
 	"io"
@@ -10,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateNoteFile(n *model.Note) (string, error) {
+func (f *FileSystem) CreateNoteFile(n *json.Note) (string, error) {
 
 	fn := NoteFile(n.Id)
 	fp, err := f.Create(fn)
@@ -27,7 +27,7 @@ func (f *FileSystem) CreateNoteFile(n *model.Note) (string, error) {
 	return fn, nil
 }
 
-func (f *FileSystem) EditMetadata(n *model.Note, fn string) (string, error) {
+func (f *FileSystem) EditMetadata(n *json.Note, fn string) (string, error) {
 
 	mf := MetaFile(n)
 	fp, err := f.Create(mf)
@@ -51,7 +51,7 @@ func (f *FileSystem) EditMetadata(n *model.Note, fn string) (string, error) {
 	return mf, nil
 }
 
-func (f *FileSystem) DeleteNote(n *model.Note) ([]string, error) {
+func (f *FileSystem) DeleteNote(n *json.Note) ([]string, error) {
 
 	var files []string
 
@@ -101,7 +101,7 @@ func (f *FileSystem) WriteNoteText(id string, data []byte) error {
 	return nil
 }
 
-func (f *FileSystem) SetNoteStatus(n *model.Note) error {
+func (f *FileSystem) SetNoteStatus(n *json.Note) error {
 
 	//元ファイルを作成
 	base := NoteFile(n.Id)
@@ -118,7 +118,7 @@ func (f *FileSystem) SetNoteStatus(n *model.Note) error {
 	return nil
 }
 
-func (f *FileSystem) PublishNote(data []byte, n *model.Note) (string, error) {
+func (f *FileSystem) PublishNote(data []byte, n *json.Note) (string, error) {
 	//公開ファイルを取得
 	pub := HTMLFile(n)
 	r := bytes.NewReader(data)
@@ -131,7 +131,7 @@ func (f *FileSystem) PublishNote(data []byte, n *model.Note) (string, error) {
 	return pub, nil
 }
 
-func (f *FileSystem) UnpublishNote(n *model.Note) (string, error) {
+func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
 
 	//公開ファイルを取得
 	pub := HTMLFile(n)

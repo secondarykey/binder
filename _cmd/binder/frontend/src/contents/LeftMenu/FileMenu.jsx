@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
-import { SelectDirectory,LoadBinder } from '../../../wailsjs/go/api/App';
+import { SelectDirectory,LoadBinder } from '../../../bindings/binder/api/app';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 

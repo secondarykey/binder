@@ -16,6 +16,7 @@
     "@mui/styled-engine-sc": "^6.4.3",
     "@mui/styles": "^6.4.5",
     "@mui/x-tree-view": "^7.26.0",
+    "@wailsio/runtime": "^3.0.0-alpha.79",
     "mui-color-input": "^5.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

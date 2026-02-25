@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 
-import { LoadBinder, GetSetting } from "../../wailsjs/go/api/App";
+import { LoadBinder, GetSetting } from "../../bindings/binder/api/app";
 import { List, ListItemButton, ListItemText } from "@mui/material";
 import { useNavigate } from "react-router";
 

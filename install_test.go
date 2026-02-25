@@ -2,7 +2,7 @@ package binder_test
 
 import (
 	"binder"
-	"binder/db/model"
+	"binder/api/json"
 	"binder/fs"
 	"binder/test"
 	"log/slog"
@@ -20,6 +20,7 @@ func TestInstall(t *testing.T) {
 	}
 
 	files := []string{
+		filepath.Join(dir, "binder.json"),
 		filepath.Join(dir, "templates"),
 		filepath.Join(dir, "notes"),
 		filepath.Join(dir, "diagrams"),
@@ -30,6 +31,7 @@ func TestInstall(t *testing.T) {
 		filepath.Join(dir, "db", "notes.csv"),
 		filepath.Join(dir, "db", "diagrams.csv"),
 		filepath.Join(dir, "db", "assets.csv"),
+		filepath.Join(dir, "db", "structures.csv"),
 	}
 
 	//データベース確認
@@ -105,9 +107,10 @@ func TestInitialize(t *testing.T) {
 
 	//テンプレートファイル確認
 	f := b.GetFS()
-	tempIds := make(map[string]*model.Template)
+
+	tempIds := make(map[string]*json.Template)
 	for _, tmpl := range tmpls {
-		tempIds[tmpl.Id] = tmpl
+		tempIds[tmpl.Id] = tmpl.To()
 	}
 
 	for id, _ := range tempIds {
@@ -118,9 +121,9 @@ func TestInitialize(t *testing.T) {
 		}
 	}
 
-	noteIds := make(map[string]*model.Note)
+	noteIds := make(map[string]*json.Note)
 	for _, n := range notes {
-		noteIds[n.Id] = n
+		noteIds[n.Id] = n.To()
 	}
 	for id, _ := range noteIds {
 		fn := fs.NoteFile(id)
@@ -138,7 +141,14 @@ func TestInitialize(t *testing.T) {
 		t.Errorf("diagram [%s] file not found error: %v", diagramId, err)
 	}
 
-	fn = fs.AssetFile(asset)
+	ja := asset.To()
+	// Structure経由でparentIdを取得
+	assetStruct, err := inst.GetStructure(asset.Id)
+	if err != nil {
+		t.Fatalf("GetStructure(asset) error: %v", err)
+	}
+	ja.ApplyStructure(assetStruct.To())
+	fn = fs.AssetFile(ja)
 
 	slog.Error(fn)
 	_, err = f.Stat(fn)

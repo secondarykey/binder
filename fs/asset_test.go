@@ -1,21 +1,20 @@
 package fs_test
 
 import (
+	"binder/api/json"
 	"testing"
-
-	"binder/db/model"
 )
 
 func TestCreateAsset(t *testing.T) {
 
 	f := createFileSystem(t, "create_asset")
 
-	var a model.Asset
+	var a json.Asset
 	a.Id = "asset"
 	a.Name = "Test Asset"
 	a.Alias = "pub"
 
-	var n model.Note
+	var n json.Note
 	n.Id = "note"
 	n.Alias = "noteAlias"
 

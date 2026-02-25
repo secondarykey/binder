@@ -1,12 +1,12 @@
 package api
 
 import (
-	"binder"
+	"binder/api/json"
 	"binder/log"
 	"fmt"
 )
 
-func (a *App) GetBinderTree() (*binder.Tree, error) {
+func (a *App) GetBinderTree() (*json.Tree, error) {
 
 	defer log.PrintTrace(log.Func("GetBinderTree()"))
 
@@ -18,7 +18,7 @@ func (a *App) GetBinderTree() (*binder.Tree, error) {
 	return tree, nil
 }
 
-func (a *App) GetTemplateTree() (*binder.Tree, error) {
+func (a *App) GetTemplateTree() (*json.Tree, error) {
 
 	defer log.PrintTrace(log.Func("GetTemplateTree()"))
 
@@ -31,7 +31,7 @@ func (a *App) GetTemplateTree() (*binder.Tree, error) {
 	return tree, nil
 }
 
-func (a *App) GetModifiedTree() (*binder.Tree, error) {
+func (a *App) GetModifiedTree() (*json.Tree, error) {
 
 	defer log.PrintTrace(log.Func("GetModifiedTree()"))
 
@@ -43,7 +43,7 @@ func (a *App) GetModifiedTree() (*binder.Tree, error) {
 	return tree, nil
 }
 
-func (a *App) GetUnpublishedTree() (*binder.Tree, error) {
+func (a *App) GetUnpublishedTree() (*json.Tree, error) {
 	defer log.PrintTrace(log.Func("GetUnpublishedTree()"))
 
 	tree, err := a.current.GetUnpublishedTree()

@@ -1,0 +1,40 @@
+version: '3'
+
+info:
+  companyName: "secondarykey"
+  productName: "Binder"
+  productIdentifier: "com.secondarykey.binder"
+  description: "A desktop Markdown editor for technical documents"
+  copyright: "(c) 2025, secondarykey"
+  comments: "Binder - Markdown Editor"
+  version: "0.1.0"
+
+dev_mode:
+  root_path: .
+  log_level: warn
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - node_modules
+      - frontend
+      - bin
+      - build
+    file:
+      - .DS_Store
+      - .gitignore
+      - .gitkeep
+    watched_extension:
+      - "*.go"
+    git_ignore: true
+  executes:
+    - cmd: wails3 task common:install:frontend:deps
+      type: once
+    - cmd: wails3 task common:generate:bindings
+      type: once
+    - cmd: wails3 task common:dev:frontend
+      type: background
+    - cmd: go build -o bin/binder.exe
+      type: blocking
+    - cmd: bin/binder.exe
+      type: primary

@@ -1,34 +1,42 @@
 package model
 
 import (
+	"binder/api/json"
 	"fmt"
 	"time"
 )
 
 type Diagram struct {
-	Id       string `db:"id:key" json:"id"`
-	ParentId string `db:"parent_id" json:"parentId"`
-	Alias    string `db:"alias" json:"alias"`
-	Name     string `db:"name" json:"name"`
-	Detail   string `db:"detail" json:"detail"`
-
-	Publish     time.Time `db:"publish_date" json:"publish"`
-	Created     time.Time `db:"created_date:insert" json:"created"`
-	CreatedUser string    `db:"created_user:insert" json:"createdUser"`
-	Updated     time.Time `db:"updated_date" json:"updated"`
-	UpdatedUser string    `db:"updated_user" json:"updatedUser"`
-
-	// not schema
-	Parent        *Note  `db:"-" json:"note"`
-	PublishStatus Status `db:"-" json:"publishStatus"`
-	UpdatedStatus Status `db:"-" json:"updatedStatus"`
+	Id      string `db:"id:key"`
+	Publish     time.Time `db:"publish_date"`
+	Created     time.Time `db:"created_date:insert"`
+	CreatedUser string    `db:"created_user:insert"`
+	Updated     time.Time `db:"updated_date"`
+	UpdatedUser string    `db:"updated_user"`
 }
 
 func (d *Diagram) String() string {
-	return fmt.Sprintf("%s,%s,%s", d.Id, d.ParentId, d.Name)
+	return fmt.Sprintf("%s", d.Id)
 }
 
-func (d *Diagram) SetParent(n *Note) {
-	d.Parent = n
-	n.addDiagram(d)
+func (d *Diagram) To() *json.Diagram {
+	var rtn json.Diagram
+	rtn.Id = d.Id
+	rtn.Publish = d.Publish
+	rtn.Created = d.Created
+	rtn.CreatedUser = d.CreatedUser
+	rtn.Updated = d.Updated
+	rtn.UpdatedUser = d.UpdatedUser
+	return &rtn
+}
+
+func ConvertDiagram(d *json.Diagram) *Diagram {
+	var rtn Diagram
+	rtn.Id = d.Id
+	rtn.Publish = d.Publish
+	rtn.Created = d.Created
+	rtn.CreatedUser = d.CreatedUser
+	rtn.Updated = d.Updated
+	rtn.UpdatedUser = d.UpdatedUser
+	return &rtn
 }

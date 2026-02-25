@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -240,10 +240,10 @@ func (f *FileSystem) copyReader(out string, r io.Reader) error {
 	return nil
 }
 
-func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, error) {
+func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, error) {
 
-	us := model.ErrorStatus
-	ps := model.ErrorStatus
+	us := json.ErrorStatus
+	ps := json.ErrorStatus
 
 	p := ConvertPaths(source, pub)
 
@@ -253,9 +253,9 @@ func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, 
 
 	if err == nil {
 		if len(m) > 0 {
-			us = model.UpdatedStatus
+			us = json.UpdatedStatus
 		} else {
-			us = model.NothingStatus
+			us = json.NothingStatus
 		}
 	} else {
 		slog.Warn("modified error " + sfn + ":" + err.Error())
@@ -280,12 +280,12 @@ func (f *FileSystem) getStatus(source, pub string) (model.Status, model.Status, 
 	if err == nil {
 		pt = pi.ModTime()
 		if bt.After(pt) {
-			ps = model.UpdatedStatus
+			ps = json.UpdatedStatus
 		} else {
-			ps = model.LatestStatus
+			ps = json.LatestStatus
 		}
 	} else {
-		ps = model.PrivateStatus
+		ps = json.PrivateStatus
 	}
 
 	return us, ps, nil

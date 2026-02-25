@@ -1,40 +1,3 @@
-export namespace api {
-	
-	export class Templates {
-	    layouts: model.Template[];
-	    contents: model.Template[];
-	
-	    static createFrom(source: any = {}) {
-	        return new Templates(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.layouts = this.convertValues(source["layouts"], model.Template);
-	        this.contents = this.convertValues(source["contents"], model.Template);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-
-}
-
 export namespace binder {
 	
 	export class Binder {
@@ -48,44 +11,6 @@ export namespace binder {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	
 	    }
-	}
-	export class Leaf {
-	    id: string;
-	    parentId: string;
-	    name: string;
-	    type: string;
-	    children: Leaf[];
-	
-	    static createFrom(source: any = {}) {
-	        return new Leaf(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.parentId = source["parentId"];
-	        this.name = source["name"];
-	        this.type = source["type"];
-	        this.children = this.convertValues(source["children"], Leaf);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class Patch {
 	    patch: string;
@@ -101,16 +26,35 @@ export namespace binder {
 	        this.source = source["source"];
 	    }
 	}
-	export class Tree {
-	    data: Leaf[];
+
+}
+
+export namespace json {
+	
+	export class Template {
+	    id: string;
+	    type: string;
+	    name: string;
+	    detail: string;
+	    // Go type: time
+	    created: any;
+	    // Go type: time
+	    updated: any;
+	    updatedStatus: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new Tree(source);
+	        return new Template(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.data = this.convertValues(source["data"], Leaf);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.name = source["name"];
+	        this.detail = source["detail"];
+	        this.created = this.convertValues(source["created"], null);
+	        this.updated = this.convertValues(source["updated"], null);
+	        this.updatedStatus = source["updatedStatus"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -131,38 +75,42 @@ export namespace binder {
 		    return a;
 		}
 	}
-
-}
-
-export namespace model {
-	
-	export class Template {
+	export class Diagram {
 	    id: string;
-	    type: string;
+	    parentId: string;
+	    alias: string;
 	    name: string;
 	    detail: string;
+	    // Go type: time
+	    publish: any;
 	    // Go type: time
 	    created: any;
 	    createdUser: string;
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
+	    note?: Note;
+	    publishStatus: number;
 	    updatedStatus: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new Template(source);
+	        return new Diagram(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.type = source["type"];
+	        this.parentId = source["parentId"];
+	        this.alias = source["alias"];
 	        this.name = source["name"];
 	        this.detail = source["detail"];
+	        this.publish = this.convertValues(source["publish"], null);
 	        this.created = this.convertValues(source["created"], null);
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
+	        this.note = this.convertValues(source["note"], Note);
+	        this.publishStatus = source["publishStatus"];
 	        this.updatedStatus = source["updatedStatus"];
 	    }
 	
@@ -200,6 +148,10 @@ export namespace model {
 	    // Go type: time
 	    updated: any;
 	    updatedUser: string;
+	    Parent?: Note;
+	    Children: Note[];
+	    Diagrams: Diagram[];
+	    Assets: Asset[];
 	    publishStatus: number;
 	    updatedStatus: number;
 	    layouts: Template[];
@@ -223,6 +175,10 @@ export namespace model {
 	        this.createdUser = source["createdUser"];
 	        this.updated = this.convertValues(source["updated"], null);
 	        this.updatedUser = source["updatedUser"];
+	        this.Parent = this.convertValues(source["Parent"], Note);
+	        this.Children = this.convertValues(source["Children"], Note);
+	        this.Diagrams = this.convertValues(source["Diagrams"], Diagram);
+	        this.Assets = this.convertValues(source["Assets"], Asset);
 	        this.publishStatus = source["publishStatus"];
 	        this.updatedStatus = source["updatedStatus"];
 	        this.layouts = this.convertValues(source["layouts"], Template);
@@ -351,43 +307,25 @@ export namespace model {
 		    return a;
 		}
 	}
-	export class Diagram {
+	
+	export class Leaf {
 	    id: string;
 	    parentId: string;
-	    alias: string;
 	    name: string;
-	    detail: string;
-	    // Go type: time
-	    publish: any;
-	    // Go type: time
-	    created: any;
-	    createdUser: string;
-	    // Go type: time
-	    updated: any;
-	    updatedUser: string;
-	    note?: Note;
-	    publishStatus: number;
-	    updatedStatus: number;
+	    type: string;
+	    children: Leaf[];
 	
 	    static createFrom(source: any = {}) {
-	        return new Diagram(source);
+	        return new Leaf(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.parentId = source["parentId"];
-	        this.alias = source["alias"];
 	        this.name = source["name"];
-	        this.detail = source["detail"];
-	        this.publish = this.convertValues(source["publish"], null);
-	        this.created = this.convertValues(source["created"], null);
-	        this.createdUser = source["createdUser"];
-	        this.updated = this.convertValues(source["updated"], null);
-	        this.updatedUser = source["updatedUser"];
-	        this.note = this.convertValues(source["note"], Note);
-	        this.publishStatus = source["publishStatus"];
-	        this.updatedStatus = source["updatedStatus"];
+	        this.type = source["type"];
+	        this.children = this.convertValues(source["children"], Leaf);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -409,6 +347,69 @@ export namespace model {
 		}
 	}
 	
+	
+	export class Templates {
+	    layouts: Template[];
+	    contents: Template[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Templates(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.layouts = this.convertValues(source["layouts"], Template);
+	        this.contents = this.convertValues(source["contents"], Template);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Tree {
+	    data: Leaf[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Tree(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], Leaf);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 
 }
 
@@ -433,6 +434,8 @@ export namespace settings {
 	    }
 	}
 	export class Editor {
+	    program: string;
+	    GitBash: boolean;
 	    text?: Font;
 	
 	    static createFrom(source: any = {}) {
@@ -441,6 +444,8 @@ export namespace settings {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.program = source["program"];
+	        this.GitBash = source["GitBash"];
 	        this.text = this.convertValues(source["text"], Font);
 	    }
 	

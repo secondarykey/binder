@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
 	"io"
@@ -8,7 +9,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
+func (b *Binder) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -29,34 +30,46 @@ func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 		}
 		files = append(files, f)
 
+		m := model.ConvertDiagram(d)
 		//DB設定
-		err = b.db.InsertDiagram(d, b.op)
+		err = b.db.InsertDiagram(m, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.InsertDiagram() error: %w", err)
+		}
+
+		// Structure作成
+		err = b.createStructure(d.Id, d.ParentId, "diagram", d.Name, d.Detail, d.Alias)
+		if err != nil {
+			return nil, xerrors.Errorf("createStructure() error: %w", err)
 		}
 
 		prefix = "Create Diagram"
 	} else {
 
-		old, err := b.db.GetDiagram(d.Id)
+		_, err := b.db.GetDiagram(d.Id)
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 		}
 
-		if old.Alias != d.Alias {
-			// TODO Alias変更の処理を行う
-			// 現在公開中のものを新規の場所にコピー
-		}
+		// TODO Alias変更の処理を行う (old alias取得はStructureから)
+		// 現在公開中のものを新規の場所にコピー
 
-		err = b.db.UpdateDiagram(d, b.op)
+		m := model.ConvertDiagram(d)
+		err = b.db.UpdateDiagram(m, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateDiagram() error: %w", err)
+		}
+
+		// Structure更新
+		err = b.updateStructure(d.Id, d.ParentId, d.Name, d.Detail, d.Alias)
+		if err != nil {
+			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}
 
 		prefix = "Edit Diagram"
 	}
 
-	files = append(files, fs.DiagramTableFile())
+	files = append(files, fs.DiagramTableFile(), fs.StructureTableFile())
 	//コミット
 	err := b.fileSystem.Commit(fs.M(prefix, d.Name), files...)
 	if err != nil {
@@ -66,7 +79,7 @@ func (b *Binder) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 	return d, nil
 }
 
-func (b *Binder) GetDiagram(id string) (*model.Diagram, error) {
+func (b *Binder) GetDiagram(id string) (*json.Diagram, error) {
 	if b == nil {
 		return nil, EmptyError
 	}
@@ -74,12 +87,21 @@ func (b *Binder) GetDiagram(id string) (*model.Diagram, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 	}
-	err = b.fileSystem.SetDiagramStatus(d)
+
+	m := d.To()
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+	m.ApplyStructure(s.To())
+
+	err = b.fileSystem.SetDiagramStatus(m)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.SetDiagramStatus() error: %w", err)
 	}
 
-	return d, nil
+	return m, nil
 }
 
 func (b *Binder) ReadDiagram(w io.Writer, id string) error {
@@ -106,7 +128,7 @@ func (b *Binder) SaveDiagram(id string, data []byte) error {
 	return nil
 }
 
-func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
+func (b *Binder) RemoveDiagram(id string) (*json.Diagram, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -117,8 +139,16 @@ func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
 		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 	}
 
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
+	m := d.To()
+	m.ApplyStructure(s.To())
+
 	//ファイルを削除
-	files, err := b.fileSystem.DeleteDiagram(d)
+	files, err := b.fileSystem.DeleteDiagram(m)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.DeleteDiagram() error: %w", err)
 	}
@@ -129,43 +159,62 @@ func (b *Binder) RemoveDiagram(id string) (*model.Diagram, error) {
 		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
 	}
 
-	fn := fs.DiagramTableFile()
-	files = append(files, fn)
+	err = b.db.DeleteStructure(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
+	files = append(files, fs.DiagramTableFile(), fs.StructureTableFile())
 
 	//コミット
-	err = b.fileSystem.Commit(fs.M("Remove Diagram", d.Name), files...)
+	err = b.fileSystem.Commit(fs.M("Remove Diagram", m.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
 
-	return d, nil
+	return m, nil
 }
 
-func (b *Binder) GetUnpublishedDiagrams() ([]*model.Diagram, error) {
+func (b *Binder) GetUnpublishedDiagrams() ([]*json.Diagram, error) {
 
 	all, err := b.db.FindDiagrams()
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindDiagrams() error: %w", err)
 	}
 
-	pr := make([]*model.Diagram, 0, len(all))
+	// Structure情報を取得
+	ids := make([]interface{}, len(all))
+	for i, d := range all {
+		ids[i] = d.Id
+	}
+	structMap, err := b.getStructureMap(ids...)
+	if err != nil {
+		return nil, xerrors.Errorf("getStructureMap() error: %w", err)
+	}
+
+	pr := make([]*json.Diagram, 0, len(all))
 
 	for _, d := range all {
 
-		err = b.fileSystem.SetDiagramStatus(d)
+		m := d.To()
+		if s, ok := structMap[d.Id]; ok {
+			m.ApplyStructure(s.To())
+		}
+
+		err = b.fileSystem.SetDiagramStatus(m)
 		if err != nil {
 			return nil, xerrors.Errorf("SetDiagramStatus() error: %w", err)
 		}
 
 		//最新じゃない場合は追加
-		if d.PublishStatus != model.LatestStatus {
-			pr = append(pr, d)
+		if m.PublishStatus != json.LatestStatus {
+			pr = append(pr, m)
 		}
 	}
 	return pr, nil
 }
 
-func (b *Binder) PublishDiagram(id string, data []byte) (*model.Diagram, error) {
+func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 
 	var files []string
 
@@ -174,22 +223,30 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*model.Diagram, error) 
 		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 	}
 
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
 	if d.Publish.IsZero() {
 		//TODO Publish dateがない場合
 		// files にデータベースを追加
 	}
 
-	fn, err := b.fileSystem.PublishDiagram(data, d)
+	m := d.To()
+	m.ApplyStructure(s.To())
+
+	fn, err := b.fileSystem.PublishDiagram(data, m)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.PublishNote() error: %w", err)
 	}
 
 	files = append(files, fn)
 	//コミット
-	err = b.fileSystem.Commit(fs.M("Publish Diagram", d.Name), files...)
+	err = b.fileSystem.Commit(fs.M("Publish Diagram", m.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
 
-	return d, nil
+	return m, nil
 }

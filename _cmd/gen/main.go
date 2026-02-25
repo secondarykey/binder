@@ -23,7 +23,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const schemaVersion = "0.1.0"
+const schemaVersion = "0.2.1"
 
 type input struct {
 	object interface{}
@@ -72,6 +72,7 @@ func main() {
 		{model.Diagram{}, "diagrams", "db/model/diagram.go", "db/diagram_dao.go"},
 		{model.Asset{}, "assets", "db/model/asset.go", "db/asset_dao.go"},
 		{model.Template{}, "templates", "db/model/template.go", "db/template_dao.go"},
+		{model.Structure{}, "structures", "db/model/structure.go", "db/structure_dao.go"},
 	}
 
 	err := run(in)

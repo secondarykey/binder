@@ -1,16 +1,19 @@
 package db
 
-import "binder/db/model"
+import (
+	"binder/api/json"
+	"binder/db/model"
+)
 
 func (inst *Instance) FindLayoutTemplates() ([]*model.Template, error) {
-	return inst.findTypeTemplates(model.LayoutTemplateType)
+	return inst.findTypeTemplates(json.LayoutTemplateType)
 }
 
 func (inst *Instance) FindContentTemplates() ([]*model.Template, error) {
-	return inst.findTypeTemplates(model.ContentTemplateType)
+	return inst.findTypeTemplates(json.ContentTemplateType)
 }
 
-func (inst *Instance) findTypeTemplates(t model.TemplateType) ([]*model.Template, error) {
+func (inst *Instance) findTypeTemplates(t json.TemplateType) ([]*model.Template, error) {
 	return inst.findTemplate("type = ?", "updated_date desc", -1, -1, string(t))
 }
 

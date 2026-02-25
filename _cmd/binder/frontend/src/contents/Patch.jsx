@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef ,useContext} from "react";
 import { useParams } from "react-router";
 
-import { GetNowPatch } from "../../wailsjs/go/api/App";
+import { GetNowPatch } from "../../bindings/binder/api/app";
 
 import {EventContext} from "../Event";
 

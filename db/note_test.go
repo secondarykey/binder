@@ -17,7 +17,6 @@ func TestNotes(t *testing.T) {
 	var n model.Note
 	id, _ := uuid.NewV7()
 	n.Id = id.String()
-	n.Name = "単純テスト"
 
 	err := inst.InsertNote(&n, testOp())
 	if err != nil {
@@ -63,7 +62,6 @@ func TestInsertNote(t *testing.T) {
 
 	var n model.Note
 	n.Id = "test2"
-	n.Name = "単純テスト"
 
 	err := inst.InsertNote(&n, testOp())
 	if err != nil {
@@ -72,7 +70,6 @@ func TestInsertNote(t *testing.T) {
 
 	n = model.Note{}
 	n.Id = "test2"
-	n.Name = "キー重複テスト"
 	err = inst.InsertNote(&n, testOp())
 	if err == nil {
 		t.Errorf("db.InsertNote() is nil:%v", err)

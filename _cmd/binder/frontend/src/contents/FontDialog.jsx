@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useContext, Fragment, isValidElement } from "react";
 
-import { GetFontNames } from "../../wailsjs/go/api/App.js";
+import { GetFontNames } from "../../bindings/binder/api/app";
 
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';

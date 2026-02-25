@@ -1,10 +1,9 @@
 package fs_test
 
 import (
+	"binder/api/json"
 	"binder/fs"
 	"testing"
-
-	"binder/db/model"
 )
 
 func TestToGitBash(t *testing.T) {
@@ -25,7 +24,7 @@ func TestToGitBash(t *testing.T) {
 }
 
 func TestHTMLFile(t *testing.T) {
-	var n model.Note
+	var n json.Note
 
 	var vals = []struct {
 		id    string
@@ -49,7 +48,7 @@ func TestHTMLFile(t *testing.T) {
 }
 
 func TestSVGFile(t *testing.T) {
-	var d model.Diagram
+	var d json.Diagram
 
 	var vals = []struct {
 		id    string
@@ -72,7 +71,7 @@ func TestSVGFile(t *testing.T) {
 }
 
 func TestPublicMetaFile(t *testing.T) {
-	var n model.Note
+	var n json.Note
 
 	var vals = []struct {
 		id    string
@@ -95,8 +94,8 @@ func TestPublicMetaFile(t *testing.T) {
 
 func TestPublicAssetFile(t *testing.T) {
 
-	var n model.Note
-	var a model.Asset
+	var n json.Note
+	var a json.Asset
 
 	var vals = []struct {
 		n_alias string
@@ -163,7 +162,7 @@ func TestDiagramFile(t *testing.T) {
 
 func TestMetaFile(t *testing.T) {
 
-	var n model.Note
+	var n json.Note
 	var vals = []struct {
 		id   string
 		want string
@@ -183,8 +182,8 @@ func TestMetaFile(t *testing.T) {
 
 func TestAssetFile(t *testing.T) {
 
-	var n model.Note
-	var a model.Asset
+	var n json.Note
+	var a json.Asset
 	//どっちもID
 	var vals = []struct {
 		id    string

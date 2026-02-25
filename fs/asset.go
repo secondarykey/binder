@@ -1,14 +1,14 @@
 package fs
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"fmt"
 	"path/filepath"
 
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) (string, error) {
+func (f *FileSystem) CreateAsset(a *json.Asset, data []byte) (string, error) {
 
 	dataFn := AssetFile(a)
 	if dataFn == "" {
@@ -32,7 +32,7 @@ func (f *FileSystem) CreateAsset(a *model.Asset, data []byte) (string, error) {
 	return dataFn, nil
 }
 
-func (f *FileSystem) DeleteAsset(a *model.Asset) ([]string, error) {
+func (f *FileSystem) DeleteAsset(a *json.Asset) ([]string, error) {
 
 	var files []string
 	fn := PublicAssetFile(a)
@@ -56,7 +56,7 @@ func (f *FileSystem) DeleteAsset(a *model.Asset) ([]string, error) {
 	return files, nil
 }
 
-func (f *FileSystem) UnpublishAsset(a *model.Asset) (string, error) {
+func (f *FileSystem) UnpublishAsset(a *json.Asset) (string, error) {
 
 	//公開ファイルを取得
 	pub := PublicAssetFile(a)
@@ -68,7 +68,7 @@ func (f *FileSystem) UnpublishAsset(a *model.Asset) (string, error) {
 	return pub, nil
 }
 
-func (f *FileSystem) PublishAsset(a *model.Asset) (string, error) {
+func (f *FileSystem) PublishAsset(a *json.Asset) (string, error) {
 
 	//元ファイルを作成
 	base := AssetFile(a)
@@ -83,7 +83,7 @@ func (f *FileSystem) PublishAsset(a *model.Asset) (string, error) {
 	return pub, nil
 }
 
-func (f *FileSystem) SetAssetStatus(a *model.Asset) error {
+func (f *FileSystem) SetAssetStatus(a *json.Asset) error {
 
 	//元ファイルを作成
 	base := AssetFile(a)

@@ -7,7 +7,7 @@ import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 
-import { GetTemplateTree } from '../../../wailsjs/go/api/App';
+import { GetTemplateTree } from '../../../bindings/binder/api/app';
 
 import Event,{EventContext} from '../../Event';
 

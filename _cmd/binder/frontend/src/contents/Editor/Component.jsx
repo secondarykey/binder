@@ -3,11 +3,11 @@ import { useParams } from "react-router";
 
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
-import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../wailsjs/go/api/App.js";
-import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../wailsjs/go/api/App.js";
-import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../wailsjs/go/api/App.js";
-import { GetAsset,Generate,Commit } from "../../../wailsjs/go/api/App.js";
-import { RunEditor,GetSetting,SaveSetting } from "../../../wailsjs/go/api/App.js";
+import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
+import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
+import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../bindings/binder/api/app";
+import { GetAsset,Generate,Commit } from "../../../bindings/binder/api/app";
+import { RunEditor,GetSetting,SaveSetting } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -61,7 +61,8 @@ function Editor(props) {
 
   //テキストにセンタリング用のタグを埋め込む
   const insertCenterTag = (txt) => {
-    if ( txt === "" ) {
+
+    if ( txt== null || txt === "" ) {
       return txt;
     }
 
@@ -341,13 +342,13 @@ function Editor(props) {
    * テキストの変更
    * @param {*} txt 
    */
-  const changeText = (txt) => {
+  const handleChangeText = (e) => {
 
-    setUpdated(true);
+    var txt = e.target.value;
     setText(txt);
+
     if ( mode === Mode.note ) {
-      SaveNote(id, txt).then(() => {
-        console.debug("ok");
+      SaveNote(id, txt).then( () => {
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
@@ -439,13 +440,14 @@ function Editor(props) {
    * @returns 
    */
   const handleKeyDown = (e) => {
+
+    const textarea = e.target;
+    const val = textarea.value;
+
     if (e.key !== "Enter" ) {
       return;
     }
-    
     e.preventDefault();
-    const textarea = e.target;
-    const val = textarea.value;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -669,8 +671,7 @@ function Editor(props) {
           {/** テキスト編集 */}
           <textarea id="editor" style={editorStyle} 
                                 value={text} 
-                                onKeyDown={(e) => handleKeyDown(e)} 
-                                onChange={(e) => changeText(e.target.value)} />
+                                onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}/>
 
           {/** 左側の操作用位置 */}
           <Toolbar className="buttonBar">

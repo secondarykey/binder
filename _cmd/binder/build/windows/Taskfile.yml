@@ -1,0 +1,16 @@
+version: '3'
+
+vars:
+  APP_NAME: '{{.APP_NAME | default "binder"}}'
+  BIN_DIR: '{{.BIN_DIR | default "bin"}}'
+
+tasks:
+  build:
+    summary: Builds the application for Windows
+    cmds:
+      - go build {{if .DEV}}-gcflags "all=-N -l"{{end}} -o {{.BIN_DIR}}/{{.APP_NAME}}.exe
+
+  run:
+    summary: Runs the application
+    cmds:
+      - '{{.BIN_DIR}}/{{.APP_NAME}}.exe'

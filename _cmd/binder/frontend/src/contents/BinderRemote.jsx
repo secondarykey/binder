@@ -1,6 +1,6 @@
 import { useEffect, useState ,useContext} from "react";
 
-import { SelectDirectory, CreateRemoteBinder } from "../../wailsjs/go/api/App";
+import { SelectDirectory, CreateRemoteBinder } from "../../bindings/binder/api/app";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
 

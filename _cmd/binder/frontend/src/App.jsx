@@ -2,7 +2,7 @@ import { useContext, useEffect } from 'react';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 
-import { SavePosition, GetSetting } from '../wailsjs/go/api/App.js';
+import { SavePosition, GetSetting } from '../bindings/binder/api/app';
 
 import { EventContext } from "./Event";
 import { SystemMessage } from './Message';
@@ -60,7 +60,25 @@ function App() {
       SavePosition();
     }, 60 * 1000);
 
+    /**
+     * リロード周りのバグ時のデバッグ
+    window.addEventListener('beforeunload', function(event) {
+      console.log(event)
+      event.preventDefault();
+      console.log("beforeload")
+    })
+    window.addEventListener('popstate', function(event) {
+      event.preventDefault();
+      console.log("popstate")
+    })
+    window.addEventListener('hashchange', function(event) {
+      event.preventDefault();
+      console.log("hashchange")
+    })
+     */
+
   }, []);
+
 
   return (
     <div id="App">

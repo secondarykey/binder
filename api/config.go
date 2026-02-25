@@ -1,12 +1,12 @@
 package api
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"binder/log"
 	"fmt"
 )
 
-func (a *App) EditConfig(conf *model.Config) (*model.Config, error) {
+func (a *App) EditConfig(conf *json.Config) (*json.Config, error) {
 
 	defer log.PrintTrace(log.Func("EditConfig()"))
 
@@ -18,7 +18,7 @@ func (a *App) EditConfig(conf *model.Config) (*model.Config, error) {
 	return conf, nil
 }
 
-func (a *App) GetConfig() (*model.Config, error) {
+func (a *App) GetConfig() (*json.Config, error) {
 
 	defer log.PrintTrace(log.Func("GetConfig()"))
 

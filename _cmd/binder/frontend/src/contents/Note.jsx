@@ -6,8 +6,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
-import { GetNote, GetHTMLTemplates } from "../../wailsjs/go/api/App";
-import { SelectFile, EditNote, RemoveNote,Address } from "../../wailsjs/go/api/App";
+import { GetNote, GetHTMLTemplates } from "../../bindings/binder/api/app";
+import { SelectFile, EditNote, RemoveNote,Address } from "../../bindings/binder/api/app";
 import noImage from '../assets/images/noimage.png'
 
 import Event,{EventContext} from "../Event";

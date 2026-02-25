@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"binder/api/json"
 	. "binder/internal"
 
 	"binder/db"
@@ -93,11 +94,29 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
+	// binder.jsonをルートディレクトリに作成
+	if ver != nil {
+		meta := &BinderMeta{
+			Version: ver.String(),
+			Schema:  ver.String(),
+		}
+		err = saveMeta(dir, meta)
+		if err != nil {
+			return xerrors.Errorf("saveMeta() error: %w", err)
+		}
+	}
+
 	//Gitへの追加を行う
 	err = f.AddDBFiles()
 	if err != nil {
 		return xerrors.Errorf("Add() error: %w", err)
 	}
+
+	err = f.AddFile(BinderMetaFile)
+	if err != nil {
+		return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+	}
+
 	err = f.CommitAll(fs.M("Install", "Database"))
 	if err != nil {
 		return xerrors.Errorf("CommitAll() error: %w", err)
@@ -188,7 +207,7 @@ func (b *Binder) Initialize(name string) error {
 
 func (b *Binder) initializeNote() error {
 	//新規作成の為、EditNoteは利用できないので注意
-	var index model.Note
+	var index json.Note
 	index.Id = NoteRootId
 	index.ParentId = ""
 	index.Name = "Index"
@@ -200,12 +219,26 @@ func (b *Binder) initializeNote() error {
 		return fmt.Errorf("createNote(index) error\n%+v", err)
 	}
 
-	var child model.Note
+	// ルートノートのStructureを直接作成（EditNoteは使えないため）
+	var rootStruct model.Structure
+	rootStruct.Id = NoteRootId
+	rootStruct.ParentId = ""
+	rootStruct.Seq = 1
+	rootStruct.Typ = "note"
+	rootStruct.Name = "Index"
+	rootStruct.Alias = NoteRootId
+	err = b.db.InsertStructure(&rootStruct, b.op)
+	if err != nil {
+		return fmt.Errorf("InsertStructure(index) error\n%+v", err)
+	}
+
+	var child json.Note
 	child.Id = ""
 	child.ParentId = NoteRootId
 	child.Name = "Content"
 	child.LayoutTemplate = TemplateLayoutId
 	child.ContentTemplate = TemplateContentId
+
 	_, err = b.EditNote(&child, "")
 	if err != nil {
 		return fmt.Errorf("content register error\n%+v", err)
@@ -214,11 +247,13 @@ func (b *Binder) initializeNote() error {
 }
 
 func (b *Binder) initializeDiagram() error {
+
 	//ダイアグラム
-	var diagram model.Diagram
+	var diagram json.Diagram
 	diagram.Id = ""
 	diagram.ParentId = NoteRootId
 	diagram.Name = "Diagram"
+
 	_, err := b.EditDiagram(&diagram)
 	if err != nil {
 		return fmt.Errorf("diagram register error\n%+v", err)
@@ -229,7 +264,7 @@ func (b *Binder) initializeDiagram() error {
 func (b *Binder) initializeAsset() error {
 	//アセット作成
 	//ダイアグラム
-	var asset model.Asset
+	var asset json.Asset
 	asset.Id = ""
 	asset.ParentId = NoteRootId
 	asset.Name = "Asset"
@@ -243,27 +278,28 @@ func (b *Binder) initializeAsset() error {
 }
 
 func (b *Binder) initializeTemplate() error {
-	var layout model.Template
+
+	var layout json.Template
 	layout.Id = TemplateLayoutId
-	layout.Typ = string(model.LayoutTemplateType)
+	layout.Typ = string(json.LayoutTemplateType)
 	layout.Name = "Layout"
 	_, err := b.createTemplate(&layout)
 	if err != nil {
 		return fmt.Errorf("layout register error\n%+v", err)
 	}
 
-	var index model.Template
+	var index json.Template
 	index.Id = TemplateIndexId
-	index.Typ = string(model.ContentTemplateType)
+	index.Typ = string(json.ContentTemplateType)
 	index.Name = "Index"
 	_, err = b.createTemplate(&index)
 	if err != nil {
 		return fmt.Errorf("index register error\n%+v", err)
 	}
 
-	var content model.Template
+	var content json.Template
 	content.Id = TemplateContentId
-	content.Typ = string(model.ContentTemplateType)
+	content.Typ = string(json.ContentTemplateType)
 	content.Name = "Content"
 	_, err = b.createTemplate(&content)
 	if err != nil {

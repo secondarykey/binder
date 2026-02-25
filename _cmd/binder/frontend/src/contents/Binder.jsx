@@ -1,7 +1,7 @@
 import { useEffect, useState ,useContext} from "react";
 
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormLabel, Grid, InputAdornment, MenuItem, Select, TextField } from "@mui/material";
-import { GetConfig, EditConfig, Remotes, AddRemote } from "../../wailsjs/go/api/App";
+import { GetConfig, EditConfig, Remotes, AddRemote } from "../../bindings/binder/api/app";
 
 import Event,{EventContext} from "../Event";
 

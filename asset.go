@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
 	"bytes"
@@ -11,7 +12,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
+func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -46,7 +47,7 @@ func (b *Binder) EditAsset(a *model.Asset, f string) (*model.Asset, error) {
 	return a, nil
 }
 
-func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
+func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 
 	var prefix string
 	var files []string
@@ -55,23 +56,37 @@ func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
 	if a.Id == "" {
 
 		a.Id = b.generateId()
-		n, err := b.db.GetNote(a.ParentId)
-		if err != nil {
-			return nil, xerrors.Errorf("db.GetNote() error: %w", err)
-		}
-		a.SetParent(n)
 
-		err = b.db.InsertAsset(a, b.op)
+		m := model.ConvertAsset(a)
+
+		err := b.db.InsertAsset(m, b.op)
 		if err != nil {
-			return nil, xerrors.Errorf("fs.InsertAsset() error: %w", err)
+			return nil, xerrors.Errorf("db.InsertAsset() error: %w", err)
+		}
+
+		// Structure作成（ParentIdはフロントから渡される）
+		err = b.createStructure(a.Id, a.ParentId, "asset", a.Name, a.Detail, a.Alias)
+		if err != nil {
+			return nil, xerrors.Errorf("createStructure() error: %w", err)
 		}
 
 		prefix = "Created Asset"
+
 	} else {
-		err := b.db.UpdateAsset(a, b.op)
+
+		m := model.ConvertAsset(a)
+
+		err := b.db.UpdateAsset(m, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}
+
+		// Structure更新
+		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias)
+		if err != nil {
+			return nil, xerrors.Errorf("updateStructure() error: %w", err)
+		}
+
 		prefix = "Updated Asset"
 	}
 
@@ -85,7 +100,7 @@ func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
 	}
 
 	//データベースコミット
-	files = append(files, fs.AssetTableFile())
+	files = append(files, fs.AssetTableFile(), fs.StructureTableFile())
 	err := b.fileSystem.Commit(fs.M(prefix, a.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Commit() error: %w", err)
@@ -94,7 +109,7 @@ func (b *Binder) editAsset(a *model.Asset, data []byte) (*model.Asset, error) {
 	return a, nil
 }
 
-func (b *Binder) GetAsset(id string) (*model.Asset, error) {
+func (b *Binder) GetAsset(id string) (*json.Asset, error) {
 	if b == nil {
 		return nil, EmptyError
 	}
@@ -104,15 +119,23 @@ func (b *Binder) GetAsset(id string) (*model.Asset, error) {
 		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
-	err = b.fileSystem.SetAssetStatus(a)
+	m := a.To()
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+	m.ApplyStructure(s.To())
+
+	err = b.fileSystem.SetAssetStatus(m)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
 	}
 
-	return a, nil
+	return m, nil
 }
 
-func (b *Binder) GetAssetWithParent(id string) (*model.Asset, error) {
+func (b *Binder) GetAssetWithParent(id string) (*json.Asset, error) {
 	if b == nil {
 		return nil, EmptyError
 	}
@@ -123,7 +146,7 @@ func (b *Binder) GetAssetWithParent(id string) (*model.Asset, error) {
 	return a, nil
 }
 
-func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
+func (b *Binder) RemoveAsset(id string) (*json.Asset, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -140,13 +163,18 @@ func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
 		return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
 	}
 
+	err = b.db.DeleteStructure(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
 	//ファイルを削除
 	files, err := b.fileSystem.DeleteAsset(a)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.RemoveAsset() error: %w", err)
 	}
 
-	files = append(files, fs.AssetTableFile())
+	files = append(files, fs.AssetTableFile(), fs.StructureTableFile())
 
 	err = b.fileSystem.Commit(fs.M("Remove Asset", a.Name), files...)
 	if err != nil {
@@ -156,7 +184,7 @@ func (b *Binder) RemoveAsset(id string) (*model.Asset, error) {
 	return a, nil
 }
 
-func (b *Binder) PublishAsset(id string) (*model.Asset, error) {
+func (b *Binder) PublishAsset(id string) (*json.Asset, error) {
 
 	a, err := b.db.GetAssetWithParent(id)
 	if err != nil {
@@ -176,14 +204,14 @@ func (b *Binder) PublishAsset(id string) (*model.Asset, error) {
 
 //TODO 個別非公開
 
-func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
+func (b *Binder) GetUnpublishedAssets() ([]*json.Asset, error) {
 
 	all, err := b.db.FindAssetWithParent()
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindAssetWithParent() error: %w", err)
 	}
 
-	pr := make([]*model.Asset, 0, len(all))
+	pr := make([]*json.Asset, 0, len(all))
 
 	for _, a := range all {
 
@@ -192,7 +220,7 @@ func (b *Binder) GetUnpublishedAssets() ([]*model.Asset, error) {
 			return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
 		}
 		//最新じゃない場合は追加
-		if a.PublishStatus != model.LatestStatus {
+		if a.PublishStatus != json.LatestStatus {
 			pr = append(pr, a)
 		}
 	}

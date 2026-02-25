@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
 import { Accordion, AccordionDetails, AccordionSummary, FormControl, FormLabel, Grid2, Switch, TextField } from "@mui/material";
-import { GetSetting, SaveSetting } from "../../wailsjs/go/api/App";
+import { GetSetting, SaveSetting } from "../../bindings/binder/api/app";
 
 import { IconButton } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';

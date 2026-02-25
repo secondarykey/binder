@@ -26,6 +26,10 @@ func TemplateTableFile() string {
 	return tableFiles(db.TemplateTableName)[0]
 }
 
+func StructureTableFile() string {
+	return tableFiles(db.StructureTableName)[0]
+}
+
 func tableFile(v string) string {
 	return tableFiles(v)[0]
 }
@@ -65,15 +69,23 @@ func (f *FileSystem) SchemaCommit(fn string) error {
 
 func allTableFiles() []string {
 	return tableFiles(db.ConfigTableName, db.NoteTableName,
-		db.DiagramTableName, db.AssetTableName, db.TemplateTableName)
+		db.DiagramTableName, db.AssetTableName, db.TemplateTableName, db.StructureTableName)
 }
 
 func (f *FileSystem) AddDBFiles() error {
 
 	files := allTableFiles()
-	files = append(files, tablePath(db.SchemaFile))
 
 	err := f.add(files...)
+	if err != nil {
+		return xerrors.Errorf("fs.add() error: %w", err)
+	}
+	return nil
+}
+
+// AddFile は指定したファイルをgitのインデックスに追加する
+func (f *FileSystem) AddFile(name string) error {
+	err := f.add(name)
 	if err != nil {
 		return xerrors.Errorf("fs.add() error: %w", err)
 	}

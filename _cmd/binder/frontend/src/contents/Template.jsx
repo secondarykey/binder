@@ -1,7 +1,7 @@
 import { useEffect, useState,useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { EditTemplate, GetTemplate } from "../../wailsjs/go/api/App";
+import { EditTemplate, GetTemplate } from "../../bindings/binder/api/app";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 

@@ -9,7 +9,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { OpenBinderSite, GetBinderTree } from '../../../wailsjs/go/api/App';
+import { OpenBinderSite, GetBinderTree } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import CustomTreeItem, { EndIcon } from '../../components/TreeItem';
@@ -61,6 +61,7 @@ function BinderTree(props) {
   useEffect(() => {
     //再描画を追加しておく
     evt.register("BinderTree", Event.ReloadTree, () => {
+      console.log("Reload Tree")
       viewTree();
     })
     viewTree();
@@ -78,9 +79,9 @@ function BinderTree(props) {
   const assetMenu = Boolean(assetEl);
 
   //メニュー表示
-  const showMenu = (e, call) => {
+  const showMenu = (e, call,itemId) => {
     e.preventDefault();
-    call(e.target);
+    call(e.target,itemId);
     e.stopPropagation();
   }
 
@@ -178,11 +179,12 @@ function BinderTree(props) {
       //onClick={(e) => evFunc(e, leaf.id)}
       //onDoubleClick={(e) => handleExpand(e,leaf)}
 
+      let itemId = leaf.type + "/" + leaf.id;
       return (
         <CustomTreeItem key={leaf.id} itemId={leaf.type + "/" + leaf.id}
-          label={leaf.name} labelIcon={icon}
-          onContextMenu={(e) => showMenu(e, caller)}
-          children={children} />
+                        label={leaf.name} labelIcon={icon}
+                        onContextMenu={(e) => showMenu(e, caller,itemId)}
+                        children={children} />
       );
     });
   };
@@ -217,9 +219,11 @@ function BinderTree(props) {
 
     {/** 以下ツリー用のメニュ－ */}
     {/** ノートメニュー 
-      編集 -> IDの変更、ノート削除
+      編集 
+      ------------
+      ノートの追加
+      データの追加
       アセットの追加
-      データテキストの追加
       */}
     <Menu anchorEl={noteEl}
       open={noteMenu}
@@ -231,7 +235,7 @@ function BinderTree(props) {
     </Menu>
 
     {/** ダイアグラムメニュー 
-      編集 -> 変更 削除
+      編集
       */}
     <Menu anchorEl={diagramEl}
       open={diagramMenu}
@@ -240,7 +244,7 @@ function BinderTree(props) {
     </Menu>
 
     {/** アセットメニュー 
-      編集 -> 変更 削除 
+      編集
       */}
     <Menu anchorEl={assetEl}
       open={assetMenu}

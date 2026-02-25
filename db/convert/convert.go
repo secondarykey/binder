@@ -3,8 +3,9 @@ package convert
 import (
 	. "binder/internal"
 
-	"binder/db"
 	convert010 "binder/db/convert/010"
+	convert020 "binder/db/convert/020"
+	convert021 "binder/db/convert/021"
 	"binder/db/convert/core"
 	"os"
 
@@ -16,10 +17,20 @@ import (
 )
 
 var v010 *Version
+var v020 *Version
+var v021 *Version
 
 func init() {
 	var err error
 	v010, err = NewVersion("0.1.0")
+	if err != nil {
+		log.PrintStackTrace(err)
+	}
+	v020, err = NewVersion("0.2.0")
+	if err != nil {
+		log.PrintStackTrace(err)
+	}
+	v021, err = NewVersion("0.2.1")
 	if err != nil {
 		log.PrintStackTrace(err)
 	}
@@ -33,22 +44,22 @@ func check(ov, nv *Version) ([]core.Converter, error) {
 	if ov.Lt(v010) {
 		c = append(c, convert010.Convert010)
 	}
+	if ov.Lt(v020) {
+		c = append(c, convert020.Convert020)
+	}
+	if ov.Lt(v021) {
+		c = append(c, convert021.Convert021)
+	}
 
 	return c, nil
 }
 
-// 新バージョンはアプリから取得
-func Run(p string, v *Version) error {
+// Run はスキーマ変換を実行する。ovは呼び出し元がbinder.jsonから取得した現在のスキーマバージョン
+func Run(p string, ov *Version, v *Version) error {
 
 	if v == nil {
 		slog.Info("convert.Run() is not run(version is nil)")
 		return nil
-	}
-
-	//DB のパスからバージョンを取得
-	ov, err := db.SchemaVersion(p)
-	if err != nil {
-		return xerrors.Errorf("db.SchemaVersion() error: %w", err)
 	}
 
 	converter, err := check(ov, v)
@@ -130,11 +141,18 @@ func convert(p string, v *Version, fset []*core.FileSet) error {
 
 		_, err = os.Stat(nf)
 		if err != nil {
+			// ソースファイルが存在しない場合、既にリネーム済みの可能性
+			_, err2 := os.Stat(df)
+			if err2 == nil {
+				// 宛先が既に存在 → 前回の実行でリネーム済み、スキップ
+				slog.Warn("Already renamed: " + df)
+				continue
+			}
 			slog.Warn("Not Found:" + err.Error())
 		}
 		_, err = os.Stat(df)
 		if err == nil {
-			slog.Warn("Found:" + err.Error())
+			slog.Warn("Found:" + df)
 		}
 
 		err = os.Rename(nf, df)
@@ -143,10 +161,5 @@ func convert(p string, v *Version, fset []*core.FileSet) error {
 		}
 	}
 
-	//新しいスキーマバージョンを設定
-	err = db.CreateSchemaFile(p, v)
-	if err != nil {
-		return xerrors.Errorf("db.CreateSchemaFile() error: %w", err)
-	}
 	return nil
 }

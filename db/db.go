@@ -26,6 +26,7 @@ func init() {
 	tables[DiagramTableName] = DiagramTableName + ".csv"
 	tables[AssetTableName] = AssetTableName + ".csv"
 	tables[TemplateTableName] = TemplateTableName + ".csv"
+	tables[StructureTableName] = StructureTableName + ".csv"
 }
 
 var DuplicateKey = fmt.Errorf("duplicate key error")
@@ -92,11 +93,6 @@ func Create(dir string, version *Version) error {
 	}
 	defer inst.Close()
 
-	err = createSchemaFile(dir, version)
-	if err != nil {
-		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
-	}
-
 	err = inst.insertDefaultConfig()
 	if err != nil {
 		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
@@ -131,6 +127,11 @@ func createTableFiles(dir string) error {
 	err = createTemplateTable(dir)
 	if err != nil {
 		return xerrors.Errorf("createTemplateTable() error: %w", err)
+	}
+
+	err = createStructureTable(dir)
+	if err != nil {
+		return xerrors.Errorf("createStructureTable() error: %w", err)
 	}
 	return nil
 }

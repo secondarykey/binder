@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
-import { GetConfig, CloseBinder, Address } from '../wailsjs/go/api/App';
+import { GetConfig, CloseBinder, Address } from '../bindings/binder/api/app';
 
 import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
@@ -12,6 +12,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 import PublishIcon from '@mui/icons-material/Publish';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
+import { Browser } from '@wailsio/runtime';
 import FileMenu from './contents/LeftMenu/FileMenu';
 import BinderTree from './contents/LeftMenu/BinderTree';
 
@@ -176,7 +177,7 @@ function Menu(props) {
    * ブラウザで開く
    */
   const handleClickBrowser = () => {
-    window.runtime.BrowserOpenURL(url);
+    Browser.OpenURL(url);
   }
 
   //router の定義用に書いておく
@@ -259,7 +260,7 @@ function Menu(props) {
         {/** メニュークラスが設定されている(hide)場合、非表示*/}
         {menuClasses === "" &&
 
-          <Toolbar id="titleBar" className="title">
+          <Toolbar id="titleBar" className="binderTitle">
 
             {/** 開いているバインダーの名称 */}
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>

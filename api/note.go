@@ -1,7 +1,7 @@
 package api
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"binder/log"
 	"log/slog"
 	"strings"
@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
+func (a *App) EditNote(n *json.Note, imageName string) (*json.Note, error) {
 
 	defer log.PrintTrace(log.Func("EditNote()"))
 
@@ -20,6 +20,7 @@ func (a *App) EditNote(n *model.Note, imageName string) (*model.Note, error) {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("EditNote() error\n%+v", err)
 	}
+
 	return n, nil
 }
 
@@ -35,7 +36,7 @@ func (a *App) RemoveNote(id string) error {
 	return nil
 }
 
-func (a *App) GetNote(id string) (*model.Note, error) {
+func (a *App) GetNote(id string) (*json.Note, error) {
 
 	defer log.PrintTrace(log.Func("GetNote()"))
 
@@ -44,6 +45,7 @@ func (a *App) GetNote(id string) (*model.Note, error) {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetNote() error\n%+v", err)
 	}
+
 	return n, nil
 }
 
@@ -65,10 +67,12 @@ func (a *App) SaveNote(noteId string, data string) error {
 
 	defer log.PrintTrace(log.Func("SaveNote()"))
 
+	fmt.Println("")
 	err := a.current.SaveNote(noteId, []byte(data))
 	if err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("ReadNote() error\n%+v", err)
 	}
+
 	return nil
 }

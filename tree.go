@@ -1,99 +1,49 @@
 package binder
 
 import (
+	"binder/api/json"
 	"binder/db/model"
-	"fmt"
+
 	"log/slog"
 
 	"golang.org/x/xerrors"
 )
 
-type Tree struct {
-	Data []*Leaf `json:"data"`
-}
-
-type Leaf struct {
-	Id       string  `json:"id"`
-	ParentId string  `json:"parentId"`
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	Children []*Leaf `json:"children"`
-}
-
-func newLeaf(id, name string) *Leaf {
-	var l Leaf
-	l.Id = id
-	l.Name = name
-	return &l
-}
-
-func (l *Leaf) AddChild(c *Leaf) {
-	l.Children = append(l.Children, c)
-	c.ParentId = l.Id
-}
-
-func (l *Leaf) String() string {
-	return fmt.Sprintf("%s(%s) %s", l.Name, l.Id, l.Type)
-}
-
-func (b *Binder) GetBinderTree() (*Tree, error) {
+func (b *Binder) GetBinderTree() (*json.Tree, error) {
 
 	if b == nil {
 		return nil, EmptyError
 	}
 
-	//err := b.fileSystem.PrintStatus()
-	//if err != nil {
-	//log.PrintStackTrace(err)
-	//}
-
-	//TODO 多い場合の表示を考える
-	notes, err := b.db.FindUpdatedNotes(-1, -1)
+	// Structureテーブルのみで全ツリーを構築
+	structures, err := b.db.FindStructures()
 	if err != nil {
-		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
+		return nil, xerrors.Errorf("db.FindStructures() error: %w", err)
 	}
 
-	diagrams, err := b.db.FindDiagrams()
-	if err != nil {
-		return nil, xerrors.Errorf("db.FindDiagrams() error: %w", err)
+	slog.Info("Tree Length", "Structures", len(structures))
+
+	treeMap := make(map[string][]*json.Leaf)
+	for _, s := range structures {
+		slog.Debug("GetTree()", "Structure", s)
+		list := treeMap[s.ParentId]
+		treeMap[s.ParentId] = append(list, convertStructure2Leaf(s))
 	}
 
-	assets, err := b.db.FindAssets()
-	if err != nil {
-		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
-	}
-
-	slog.Info("Tree Length", "Notes", len(notes), "Diagrams", len(diagrams), "Assets", len(assets))
-
-	treeMap := make(map[string][]*Leaf)
-	for _, n := range notes {
-		slog.Debug("GetTree()", "Note", n)
-		list := treeMap[n.ParentId]
-		treeMap[n.ParentId] = append(list, convertNote2Leaf(n))
-	}
-
-	for _, d := range diagrams {
-		slog.Debug("GetTree()", "Diagram", d)
-		list := treeMap[d.ParentId]
-		treeMap[d.ParentId] = append(list, convertDiagram2Leaf(d))
-	}
-
-	for _, a := range assets {
-		slog.Debug("GetTree()", "Asset", a)
-		list := treeMap[a.ParentId]
-		treeMap[a.ParentId] = append(list, convertAsset2Leaf(a))
-	}
-
-	var root []*Leaf
-	for key, children := range treeMap {
-		if key == "" {
-			root = children
-		}
-		for _, child := range children {
-			wk := treeMap[child.Id]
-			child.Children = wk
+	root := treeMap[""]
+	visited := make(map[string]bool)
+	var buildTree func(nodes []*json.Leaf)
+	buildTree = func(nodes []*json.Leaf) {
+		for _, node := range nodes {
+			if node.Id == "" || visited[node.Id] {
+				continue
+			}
+			visited[node.Id] = true
+			node.Children = treeMap[node.Id]
+			buildTree(node.Children)
 		}
 	}
+	buildTree(root)
 
 	slog.Info("Tree", "RootLength", len(root))
 	if root != nil {
@@ -101,63 +51,45 @@ func (b *Binder) GetBinderTree() (*Tree, error) {
 		slog.Info("Tree", "Root Children", len(root[0].Children))
 	}
 
-	var tree Tree
+	var tree json.Tree
 	tree.Data = root
 
 	return &tree, nil
 }
 
-func convertNote2Leaf(n *model.Note) *Leaf {
-	var l Leaf
-	l.Id = n.Id
-	l.ParentId = n.ParentId
-	l.Name = n.Name
-	l.Type = "note"
+func convertStructure2Leaf(s *model.Structure) *json.Leaf {
+	var l json.Leaf
+	l.Id = s.Id
+	l.ParentId = s.ParentId
+	l.Name = s.Name
+	l.Type = s.Typ
 	return &l
 }
 
-func convertDiagram2Leaf(d *model.Diagram) *Leaf {
-	var l Leaf
-	l.Id = d.Id
-	l.ParentId = d.ParentId
-	l.Name = d.Name
-	l.Type = "diagram"
-	return &l
-}
-
-func convertAsset2Leaf(a *model.Asset) *Leaf {
-	var l Leaf
-	l.Id = a.Id
-	l.ParentId = a.ParentId
-	l.Name = a.Name
-	l.Type = "asset"
-	return &l
-}
-
-func (b *Binder) GetTemplateTree() (*Tree, error) {
+func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 
 	if b == nil {
 		return nil, EmptyError
 	}
 
-	htmlLeaf := newLeaf("DIR_HTML", "HTML")
+	htmlLeaf := json.NewLeaf("DIR_HTML", "HTML")
 
-	tempMap := make(map[model.TemplateType]*Leaf)
-	tempMap[model.LayoutTemplateType] = newLeaf("DIR_HTML_Layout", "Layout")
-	tempMap[model.ContentTemplateType] = newLeaf("DIR_HTML_Content", "Content")
-	tempMap[model.NoteTemplateType] = newLeaf("DIR_Note", "Note")
-	tempMap[model.DiagramTemplateType] = newLeaf("DIR_Diagram", "Diagram")
-	tempMap[model.TemplateTemplateType] = newLeaf("DIR_Template", "Template")
+	tempMap := make(map[json.TemplateType]*json.Leaf)
+	tempMap[json.LayoutTemplateType] = json.NewLeaf("DIR_HTML_Layout", "Layout")
+	tempMap[json.ContentTemplateType] = json.NewLeaf("DIR_HTML_Content", "Content")
+	tempMap[json.NoteTemplateType] = json.NewLeaf("DIR_Note", "Note")
+	tempMap[json.DiagramTemplateType] = json.NewLeaf("DIR_Diagram", "Diagram")
+	tempMap[json.TemplateTemplateType] = json.NewLeaf("DIR_Template", "Template")
 
 	//大枠のツリーを作成
-	root := make([]*Leaf, 4)
+	root := make([]*json.Leaf, 4)
 	root[0] = htmlLeaf
-	root[1] = tempMap[model.NoteTemplateType]
-	root[2] = tempMap[model.DiagramTemplateType]
-	root[3] = tempMap[model.TemplateTemplateType]
+	root[1] = tempMap[json.NoteTemplateType]
+	root[2] = tempMap[json.DiagramTemplateType]
+	root[3] = tempMap[json.TemplateTemplateType]
 
-	htmlLeaf.AddChild(tempMap[model.LayoutTemplateType])
-	htmlLeaf.AddChild(tempMap[model.ContentTemplateType])
+	htmlLeaf.AddChild(tempMap[json.LayoutTemplateType])
+	htmlLeaf.AddChild(tempMap[json.ContentTemplateType])
 
 	templates, err := b.db.FindTemplates()
 	if err != nil {
@@ -165,32 +97,32 @@ func (b *Binder) GetTemplateTree() (*Tree, error) {
 	}
 
 	for _, temp := range templates {
-		t := model.TemplateType(temp.Typ)
+		t := json.TemplateType(temp.Typ)
 		current := tempMap[t]
 		current.AddChild(convertTemplateLeaf(temp))
 	}
 
-	var tree Tree
+	var tree json.Tree
 	tree.Data = root
 
 	return &tree, nil
 }
 
-func convertTemplateLeaf(d *model.Template) *Leaf {
-	var l Leaf
+func convertTemplateLeaf(d *model.Template) *json.Leaf {
+	var l json.Leaf
 	l.Id = d.Id
 	l.Name = d.Name
 	l.Type = string(d.Typ)
 	return &l
 }
 
-func (b *Binder) GetModifiedTree() (*Tree, error) {
+func (b *Binder) GetModifiedTree() (*json.Tree, error) {
 
 	if b == nil {
 		return nil, EmptyError
 	}
 
-	var tree Tree
+	var tree json.Tree
 
 	//全データを検索する
 	files, err := b.fileSystem.Status()
@@ -198,49 +130,55 @@ func (b *Binder) GetModifiedTree() (*Tree, error) {
 		return nil, xerrors.Errorf("fs.Status() error: %w", err)
 	}
 
-	dirNote := newLeaf("DIR_Note", "note")
+	dirNote := json.NewLeaf("DIR_Note", "note")
 	tree.Data = append(tree.Data, dirNote)
 	wk := files.Notes()
 	if wk.Exists() {
 		ids := wk.Ids()
-		notes, err := b.db.FindInNoteId(ids...)
+		structures, err := b.db.FindInStructureId(ids...)
 		if err != nil {
-			return nil, xerrors.Errorf("db.FindInNoteId() error: %w", err)
+			return nil, xerrors.Errorf("db.FindInStructureId() error: %w", err)
 		}
-		for _, n := range notes {
-			dirNote.AddChild(convertNote2Leaf(n))
+		for _, s := range structures {
+			if s.Typ == "note" {
+				dirNote.AddChild(convertStructure2Leaf(s))
+			}
 		}
 	}
 
-	dirDiagram := newLeaf("DIR_Diagram", "diagram")
+	dirDiagram := json.NewLeaf("DIR_Diagram", "diagram")
 	tree.Data = append(tree.Data, dirDiagram)
 	wk = files.Diagrams()
 	if wk.Exists() {
 		ids := wk.Ids()
-		diagrams, err := b.db.FindInDiagramId(ids...)
+		structures, err := b.db.FindInStructureId(ids...)
 		if err != nil {
-			return nil, xerrors.Errorf("db.FindInDiagramId() error: %w", err)
+			return nil, xerrors.Errorf("db.FindInStructureId() error: %w", err)
 		}
-		for _, d := range diagrams {
-			dirDiagram.AddChild(convertDiagram2Leaf(d))
+		for _, s := range structures {
+			if s.Typ == "diagram" {
+				dirDiagram.AddChild(convertStructure2Leaf(s))
+			}
 		}
 	}
 
-	dirAsset := newLeaf("DIR_Asset", "asset")
+	dirAsset := json.NewLeaf("DIR_Asset", "asset")
 	tree.Data = append(tree.Data, dirAsset)
 	wk = files.Assets()
 	if wk.Exists() {
 		ids := wk.Ids()
-		assets, err := b.db.FindInAssetId(ids...)
+		structures, err := b.db.FindInStructureId(ids...)
 		if err != nil {
-			return nil, xerrors.Errorf("db.FindInAssetId() error: %w", err)
+			return nil, xerrors.Errorf("db.FindInStructureId() error: %w", err)
 		}
-		for _, a := range assets {
-			dirAsset.AddChild(convertAsset2Leaf(a))
+		for _, s := range structures {
+			if s.Typ == "asset" {
+				dirAsset.AddChild(convertStructure2Leaf(s))
+			}
 		}
 	}
 
-	dirTemplate := newLeaf("DIR_Template", "template")
+	dirTemplate := json.NewLeaf("DIR_Template", "template")
 	tree.Data = append(tree.Data, dirTemplate)
 	wk = files.Templates()
 	if wk.Exists() {
@@ -251,7 +189,7 @@ func (b *Binder) GetModifiedTree() (*Tree, error) {
 		}
 		for _, t := range templates {
 			//テンプレートのTypeだと、テンプレートのタイプになるため注意
-			l := newLeaf(t.Id, t.Name)
+			l := json.NewLeaf(t.Id, t.Name)
 			l.Type = "template"
 			dirTemplate.AddChild(l)
 		}
@@ -260,35 +198,38 @@ func (b *Binder) GetModifiedTree() (*Tree, error) {
 	return &tree, nil
 }
 
-func (b *Binder) GetUnpublishedTree() (*Tree, error) {
+func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 
 	if b == nil {
 		return nil, EmptyError
 	}
 
-	var tree Tree
+	var tree json.Tree
 
-	dirNote := newLeaf("DIR_Note", "note")
+	dirNote := json.NewLeaf("DIR_Note", "note")
 	tree.Data = append(tree.Data, dirNote)
 	notes, err := b.GetUnpublishedNotes()
 	if err != nil {
 		return nil, xerrors.Errorf("UnpublishNotes() error: %w", err)
 	}
+
 	for _, n := range notes {
-		dirNote.AddChild(convertNote2Leaf(n))
+		l := &json.Leaf{Id: n.Id, ParentId: n.ParentId, Name: n.Name, Type: "note"}
+		dirNote.AddChild(l)
 	}
 
-	dirDiagram := newLeaf("DIR_Diagram", "diagram")
+	dirDiagram := json.NewLeaf("DIR_Diagram", "diagram")
 	tree.Data = append(tree.Data, dirDiagram)
 	diagrams, err := b.GetUnpublishedDiagrams()
 	if err != nil {
 		return nil, xerrors.Errorf("UnpublishDiagrams() error: %w", err)
 	}
 	for _, d := range diagrams {
-		dirDiagram.AddChild(convertDiagram2Leaf(d))
+		l := &json.Leaf{Id: d.Id, ParentId: d.ParentId, Name: d.Name, Type: "diagram"}
+		dirDiagram.AddChild(l)
 	}
 
-	dirAsset := newLeaf("DIR_Asset", "asset")
+	dirAsset := json.NewLeaf("DIR_Asset", "asset")
 
 	tree.Data = append(tree.Data, dirAsset)
 	assets, err := b.GetUnpublishedAssets()
@@ -296,7 +237,8 @@ func (b *Binder) GetUnpublishedTree() (*Tree, error) {
 		return nil, xerrors.Errorf("UnpublishAssets() error: %w", err)
 	}
 	for _, a := range assets {
-		dirAsset.AddChild(convertAsset2Leaf(a))
+		l := &json.Leaf{Id: a.Id, ParentId: a.ParentId, Name: a.Name, Type: "asset"}
+		dirAsset.AddChild(l)
 	}
 
 	return &tree, nil

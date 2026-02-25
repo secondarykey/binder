@@ -1,14 +1,14 @@
 package api
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"binder/log"
 	"strings"
 
 	"fmt"
 )
 
-func (a *App) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
+func (a *App) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 
 	defer log.PrintTrace(log.Func("EditDiagram()"))
 
@@ -21,7 +21,7 @@ func (a *App) EditDiagram(d *model.Diagram) (*model.Diagram, error) {
 	return rtn, nil
 }
 
-func (a *App) GetDiagram(id string) (*model.Diagram, error) {
+func (a *App) GetDiagram(id string) (*json.Diagram, error) {
 
 	defer log.PrintTrace(log.Func("GetDiagram()"))
 

@@ -6,7 +6,7 @@ import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { Terminate } from "../wailsjs/go/api/App";
+import { Terminate } from "../bindings/binder/api/app";
 
 import Event, { EventContext } from "./Event";
 
@@ -30,7 +30,8 @@ import "./assets/Content.css"
 import Patch from "./contents/Patch";
 import Commit from "./contents/Commit";
 
-import { WindowMinimise, WindowToggleMaximise, WindowSetAlwaysOnTop } from "../wailsjs/runtime/runtime";
+import { Window } from '@wailsio/runtime';
+
 /**
  * コンテンツ表示部分
  * <pre>
@@ -48,16 +49,16 @@ function Content(props) {
 
   const handlePin = () => {
     var p = !pin;
-    WindowSetAlwaysOnTop(p);
+    Window.SetAlwaysOnTop(p);
     setPin(p)
   }
 
   const handleMin = () => {
-    WindowMinimise();
+    Window.Minimise();
   }
 
   const handleMax = () => {
-    WindowToggleMaximise();
+    Window.ToggleMaximise();
   }
 
   //終了処理
@@ -91,7 +92,7 @@ function Content(props) {
       {/** タイトルと他を表示 */}
       <Paper id="contentViewer">
 
-        <Toolbar id="mainTitle" className="title">
+        <Toolbar id="mainTitle" className="binderTitle">
           {/** 表示名称 */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {title}

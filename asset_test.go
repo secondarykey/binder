@@ -44,7 +44,13 @@ func TestRemoveAsset(t *testing.T) {
 		t.Errorf("GetAsset() error: %v", err)
 	}
 
-	fn := "assets/" + a.ParentId + "/" + id
+	// Structure経由でparentId取得
+	s, err := db.GetStructure(id)
+	if err != nil {
+		t.Fatalf("GetStructure() error: %v", err)
+	}
+
+	fn := "assets/" + s.ParentId + "/" + id
 
 	_, err = fs.Stat(fn)
 	if err != nil {

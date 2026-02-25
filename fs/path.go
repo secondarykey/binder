@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -82,7 +82,7 @@ func SetPublishDirectory(dir string) {
 
 const pagesDir = "pages"
 
-func HTMLFile(note *model.Note) string {
+func HTMLFile(note *json.Note) string {
 	if note == nil {
 		return "error"
 	}
@@ -99,7 +99,7 @@ func htmlFile(a string) string {
 
 const resourceDir = "images"
 
-func SVGFile(diagram *model.Diagram) string {
+func SVGFile(diagram *json.Diagram) string {
 	return svgFile(diagram.Alias)
 }
 
@@ -113,14 +113,14 @@ func resourceFile(s string, ext string) string {
 
 const publicAssetsDir = "assets"
 
-func PublicMetaFile(n *model.Note) string {
+func PublicMetaFile(n *json.Note) string {
 	if n == nil {
 		return "error"
 	}
 	return publicAssetFile(n.Alias, "meta")
 }
 
-func PublicAssetFile(a *model.Asset) string {
+func PublicAssetFile(a *json.Asset) string {
 	if a.Parent == nil {
 		return ""
 	}
@@ -164,11 +164,11 @@ func diagramFile(id string) string {
 
 const AssetDir = "assets"
 
-func MetaFile(n *model.Note) string {
+func MetaFile(n *json.Note) string {
 	return assetFile(n.Id, "meta")
 }
 
-func AssetFile(a *model.Asset) string {
+func AssetFile(a *json.Asset) string {
 	if a.ParentId == "" {
 		return ""
 	}

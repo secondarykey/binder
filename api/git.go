@@ -2,15 +2,17 @@ package api
 
 import (
 	"binder"
+	"binder/api/json"
 	"binder/fs"
 	"binder/log"
+
 	"errors"
 	"fmt"
 
 	"golang.org/x/xerrors"
 )
 
-func (a *App) CommitFiles(leafs []*binder.Leaf, m string) error {
+func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
 
 	files := make([]string, len(leafs))
 	for idx, leaf := range leafs {

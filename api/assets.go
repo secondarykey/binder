@@ -1,13 +1,13 @@
 package api
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"binder/log"
 
 	"fmt"
 )
 
-func (a *App) EditAsset(as *model.Asset, file string) (*model.Asset, error) {
+func (a *App) EditAsset(as *json.Asset, file string) (*json.Asset, error) {
 
 	defer log.PrintTrace(log.Func("EditAsset()", as, file))
 
@@ -21,7 +21,7 @@ func (a *App) EditAsset(as *model.Asset, file string) (*model.Asset, error) {
 	return rtn, nil
 }
 
-func (a *App) GetAsset(id string) (*model.Asset, error) {
+func (a *App) GetAsset(id string) (*json.Asset, error) {
 
 	defer log.PrintTrace(log.Func("GetAsset()"))
 

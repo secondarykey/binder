@@ -1,47 +1,45 @@
 package model
 
 import (
+	"binder/api/json"
 	"fmt"
 	"time"
 )
 
 type Template struct {
-	Id     string `db:"id:key" json:"id"`
-	Typ    string `db:"type" json:"type"`
-	Name   string `db:"name" json:"name"`
-	Detail string `db:"detail" json:"detail"`
+	Id     string `db:"id:key"`
+	Typ    string `db:"type"`
+	Name   string `db:"name"`
+	Detail string `db:"detail"`
 
-	Created     time.Time `db:"created_date:insert" json:"created"`
-	CreatedUser string    `db:"created_user:insert" json:"createdUser"`
-	Updated     time.Time `db:"updated_date" json:"updated"`
-	UpdatedUser string    `db:"updated_user" json:"updatedUser"`
-
-	UpdatedStatus Status `db:"-" json:"updatedStatus"`
+	Created     time.Time `db:"created_date:insert"`
+	CreatedUser string    `db:"created_user:insert"`
+	Updated     time.Time `db:"updated_date"`
+	UpdatedUser string    `db:"updated_user"`
 }
 
 func (t *Template) String() string {
 	return fmt.Sprintf("%s,%s,%s", t.Id, t.Name, t.Typ)
 }
 
-type TemplateType string
-
-const (
-	LayoutTemplateType   TemplateType = "html_layout"
-	ContentTemplateType  TemplateType = "html_content"
-	DiagramTemplateType  TemplateType = "diagram"
-	NoteTemplateType     TemplateType = "note"
-	TemplateTemplateType TemplateType = "template"
-)
-
-func (t TemplateType) IsHTML() bool {
-	if t == LayoutTemplateType || t == ContentTemplateType {
-		return true
-	}
-	return false
+func (t *Template) To() *json.Template {
+	var rtn json.Template
+	rtn.Id = t.Id
+	rtn.Typ = t.Typ
+	rtn.Name = t.Name
+	rtn.Detail = t.Detail
+	rtn.Created = t.Created
+	rtn.Updated = t.Updated
+	return &rtn
 }
-func (t TemplateType) IsContent() bool {
-	if t == ContentTemplateType {
-		return true
-	}
-	return false
+
+func ConvertTemplate(a *json.Template) *Template {
+	var rtn Template
+	rtn.Id = a.Id
+	rtn.Typ = a.Typ
+	rtn.Name = a.Name
+	rtn.Detail = a.Detail
+	rtn.Created = a.Created
+	rtn.Updated = a.Updated
+	return &rtn
 }

@@ -12,46 +12,48 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // App struct
 type App struct {
-	ctx     context.Context
+	app     *application.App
+	window  *application.WebviewWindow
 	current *binder.Binder
-	//handler *binder.BinderHandler
+
 	version *Version
 }
 
-// NewApp creates a new App application struct
-// func New(h *binder.BinderHandler) *App {
 func New(version string) *App {
+
 	var app App
 	var err error
-	//app.handler = h
 	app.version, err = NewVersion(version)
-
 	if err != nil {
 		slog.Warn(fmt.Sprintf("Version parse error: %+v", err))
 	}
 
 	log.Notice(fmt.Sprintf("Binder Version: %s", app.version))
+
 	return &app
+}
+
+func (a *App) SetWindow(w *application.WebviewWindow) {
+	a.window = w
 }
 
 func (app *App) SetCurrent(c *binder.Binder) {
 	defer log.PrintTrace(log.Func("SetCurrent()"))
 	app.current = c
-	//app.handler.SetFS(c, fs.PublishDir)
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
-func (a *App) Startup(ctx context.Context) {
+// ServiceStartup is called by Wails v3 during application startup
+func (a *App) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
 
-	defer log.PrintTrace(log.Func("Startup()"))
+	defer log.PrintTrace(log.Func("ServiceStartup()"))
 
-	a.ctx = ctx
+	a.app = application.Get()
+
 	set := settings.Get()
 	if set.Path.RunWithOpen {
 		his := set.Path.Histories
@@ -68,6 +70,8 @@ func (a *App) Startup(ctx context.Context) {
 			}
 		}
 	}
+
+	return nil
 }
 
 func (a *App) Terminate() bool {
@@ -81,7 +85,7 @@ func (a *App) Terminate() bool {
 			os.Exit(1)
 		}
 	}
-	os.Exit(0)
+	a.app.Quit()
 	return false
 }
 
@@ -90,16 +94,20 @@ func (a *App) SelectDirectory(create bool) (string, error) {
 	defer log.PrintTrace(log.Func("SelectDirectory()"))
 
 	s := settings.Get()
-	dir, err := runtime.OpenDirectoryDialog(a.ctx,
-		runtime.OpenDialogOptions{
-			DefaultDirectory:     s.Path.Default,
-			CanCreateDirectories: create,
-			Title:                "Select Binder Directory",
-		})
+	dialog := a.app.Dialog.OpenFile().
+		CanChooseDirectories(true).
+		CanChooseFiles(false).
+		CanCreateDirectories(create).
+		SetTitle("Select Binder Directory")
 
+	if s.Path.Default != "" {
+		dialog.SetDirectory(s.Path.Default)
+	}
+
+	dir, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("SelectDiretory() error\n%+v", err)
+		return "", fmt.Errorf("SelectDirectory() error\n%+v", err)
 	}
 	return dir, nil
 }
@@ -108,15 +116,11 @@ func (a *App) SelectFile(name string, ptn string) (string, error) {
 
 	defer log.PrintTrace(log.Func("SelectFile()"))
 
-	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select File",
-		Filters: []runtime.FileFilter{
-			{
-				DisplayName: name,
-				Pattern:     ptn,
-			},
-		},
-	})
+	selection, err := a.app.Dialog.OpenFile().
+		SetTitle("Select File").
+		AddFilter(name, ptn).
+		PromptForSingleSelection()
+
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("SelectFile() error\n%+v", err)
@@ -129,7 +133,7 @@ func (a *App) OpenBinderSite() error {
 	defer log.PrintTrace(log.Func("OpenBinderSite()"))
 
 	address, _ := a.Address()
-	runtime.BrowserOpenURL(a.ctx, address)
+	a.app.Browser.OpenURL(address)
 
 	return nil
 }

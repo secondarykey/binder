@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
 
@@ -32,11 +33,11 @@ func formatTime(t time.Time) string {
 
 type wrapper struct {
 	owner *Binder
-	note  *model.Note
+	note  *json.Note
 	Local bool
 }
 
-func newWrapper(o *Binder, local bool, note *model.Note) (*wrapper, error) {
+func newWrapper(o *Binder, local bool, note *json.Note) (*wrapper, error) {
 	var w wrapper
 	w.owner = o
 	w.Local = local
@@ -78,13 +79,24 @@ func (w *wrapper) getNotes(limit int, offset int) []*tempNote {
 		return rtn
 	}
 
+	// Structure情報を取得
+	ids := make([]interface{}, len(notes))
+	for i, n := range notes {
+		ids[i] = n.Id
+	}
+	structMap, _ := w.owner.getStructureMap(ids...)
+
 	for idx, n := range notes {
-		rtn[idx] = w.convertNote(n)
+		jn := n.To()
+		if s, ok := structMap[n.Id]; ok {
+			jn.ApplyStructure(s.To())
+		}
+		rtn[idx] = w.convertNote(jn)
 	}
 	return rtn
 }
 
-func (w *wrapper) convertNote(n *model.Note) *tempNote {
+func (w *wrapper) convertNote(n *json.Note) *tempNote {
 
 	var t tempNote
 
@@ -103,7 +115,8 @@ func (w *wrapper) convertNote(n *model.Note) *tempNote {
 	return &t
 }
 
-func (w *wrapper) getUpdatedNoteFile(n *model.Note) time.Time {
+func (w *wrapper) getUpdatedNoteFile(n *json.Note) time.Time {
+
 	info, err := w.owner.fileSystem.Stat(fs.HTMLFile(n))
 	if err != nil {
 		return time.Time{}
@@ -207,7 +220,7 @@ func convertLF2Comma(src string) string {
 // text が指定してある場合、テンプレート編集時になる為、
 // 指定してあるテンプレートではなく、文字列を使用して描画を行う
 // TODO 現在テンプレート編集時の描画を止めている為、再度実装する際に考慮する
-func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text string) (*template.Template, error) {
+func (b *Binder) createHTMLTemplate(w *wrapper, typ json.TemplateType, text string) (*template.Template, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -227,10 +240,10 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text str
 	}
 
 	//TODO 同等の処理になるはずなので、適当にまとめる
-	if typ == model.LayoutTemplateType && text != "" {
+	if typ == json.LayoutTemplateType && text != "" {
 
 		//レイアウトをテキストで代用
-		data := fs.AddTemplateFrame(model.LayoutTemplateType, []byte(text))
+		data := fs.AddTemplateFrame(json.LayoutTemplateType, []byte(text))
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
@@ -247,9 +260,9 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text str
 		}
 	}
 
-	if typ == model.ContentTemplateType && text != "" {
+	if typ == json.ContentTemplateType && text != "" {
 
-		data := fs.AddTemplateFrame(model.ContentTemplateType, []byte(text))
+		data := fs.AddTemplateFrame(json.ContentTemplateType, []byte(text))
 		_, err = tmpl.Parse(string(data))
 		if err != nil {
 			return nil, xerrors.Errorf("Parse() error: %w", err)
@@ -271,7 +284,7 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ model.TemplateType, text str
 }
 
 // ノートの要素を一度テンプレート処理を行う
-func (b *Binder) ParseElement(note *model.Note, local bool, elm string) (string, error) {
+func (b *Binder) ParseElement(note *json.Note, local bool, elm string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
@@ -374,7 +387,7 @@ func (b *Binder) generateHTML(w *wrapper) error {
 }
 
 // HTMLメモリ作成
-func (b *Binder) CreateNoteHTML(note *model.Note, local bool, elm string) (string, error) {
+func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
@@ -403,17 +416,18 @@ func (b *Binder) CreateNoteHTML(note *model.Note, local bool, elm string) (strin
 	return builder.String(), nil
 }
 
-func (b *Binder) CreateTemplateHTML(temp *model.Template, note *model.Note, data string, elm string) (string, error) {
+func (b *Binder) CreateTemplateHTML(temp *json.Template, note *json.Note, data string, elm string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
 	}
+
 	w, err := newWrapper(b, true, note)
 	if err != nil {
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
-	tmpl, err := b.createHTMLTemplate(w, model.TemplateType(temp.Typ), data)
+	tmpl, err := b.createHTMLTemplate(w, json.TemplateType(temp.Typ), data)
 	if err != nil {
 		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}

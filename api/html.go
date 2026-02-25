@@ -1,7 +1,7 @@
 package api
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"binder/log"
 	"fmt"
 )
@@ -53,8 +53,9 @@ func (a *App) CreateTemplateHTML(id string, data string, elm string) (string, er
 	}
 
 	//TODO ノートを指定
-	var note model.Note
-	html, err := a.current.CreateTemplateHTML(temp, &note, data, elm)
+	var n json.Note
+
+	html, err := a.current.CreateTemplateHTML(temp, &n, data, elm)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateTemplateHTML() error\n%+v", err)

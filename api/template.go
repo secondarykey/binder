@@ -1,13 +1,13 @@
 package api
 
 import (
-	"binder/db/model"
+	"binder/api/json"
 	"binder/log"
 	"fmt"
 	"strings"
 )
 
-func (a *App) EditTemplate(t *model.Template) (*model.Template, error) {
+func (a *App) EditTemplate(t *json.Template) (*json.Template, error) {
 
 	defer log.PrintTrace(log.Func("EditTemplate()"))
 
@@ -19,7 +19,7 @@ func (a *App) EditTemplate(t *model.Template) (*model.Template, error) {
 	return tmp, nil
 }
 
-func (a *App) GetTemplate(id string) (*model.Template, error) {
+func (a *App) GetTemplate(id string) (*json.Template, error) {
 
 	defer log.PrintTrace(log.Func("GetTemplate()"))
 
@@ -57,12 +57,7 @@ func (a *App) SaveTemplate(id string, data string) error {
 	return nil
 }
 
-type Templates struct {
-	Layouts  []*model.Template `json:"layouts"`
-	Contents []*model.Template `json:"contents"`
-}
-
-func (a *App) GetHTMLTemplates() (*Templates, error) {
+func (a *App) GetHTMLTemplates() (*json.Templates, error) {
 
 	defer log.PrintTrace(log.Func("GetHTMLTemplates()"))
 
@@ -72,8 +67,9 @@ func (a *App) GetHTMLTemplates() (*Templates, error) {
 		return nil, fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
 	}
 
-	var tmpls Templates
+	var tmpls json.Templates
 	tmpls.Layouts = l
 	tmpls.Contents = c
+
 	return &tmpls, nil
 }

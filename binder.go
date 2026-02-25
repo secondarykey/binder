@@ -17,7 +17,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var BinderVersionFile = "binder.version"
 var EmptyError = fmt.Errorf("Binder is empty")
 
 type Binder struct {
@@ -73,11 +72,33 @@ func CreateRemote(url, dir string, version *Version) error {
 
 func Load(dir string, ver *Version) (*Binder, error) {
 
+	// binder.jsonからメタ情報を読み込む（存在しない場合は旧スキーマファイルから生成）
+	meta, err := loadMeta(dir)
+	if err != nil {
+		return nil, xerrors.Errorf("loadMeta() error: %w", err)
+	}
+
+	ov, err := meta.schemaVersion()
+	if err != nil {
+		return nil, xerrors.Errorf("meta.schemaVersion() error: %w", err)
+	}
+
 	//変換処理を開く前に入れておく
 	dbDir := dir + "/db"
-	err := convert.Run(dbDir, ver)
+	err = convert.Run(dbDir, ov, ver)
 	if err != nil {
 		return nil, xerrors.Errorf("db Convert() error: %w", err)
+	}
+
+	// binder.jsonを更新（スキーマ変換後、または初回作成）
+	if ver != nil {
+		meta.Schema = ver.String()
+		meta.Version = ver.String()
+		if err = saveMeta(dir, meta); err != nil {
+			return nil, xerrors.Errorf("saveMeta() error: %w", err)
+		}
+		// binder.jsonへの移行後に旧スキーマファイルを削除
+		removeOldSchemaFiles(dir)
 	}
 
 	bfs, err := fs.Load(dir)

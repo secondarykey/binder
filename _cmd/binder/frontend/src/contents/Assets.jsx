@@ -1,7 +1,7 @@
 import { useEffect, useState,useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { SelectFile, EditAsset, GetAsset, RemoveAsset } from "../../wailsjs/go/api/App";
+import { SelectFile, EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
 import { copyClipboard } from "../App";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";

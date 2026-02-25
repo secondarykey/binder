@@ -7,7 +7,7 @@ import {
   FormControlLabel, Checkbox,
 } from '@mui/material';
 
-import { GetModifiedTree, CommitFiles } from '../../../wailsjs/go/api/App';
+import { GetModifiedTree, CommitFiles } from '../../../bindings/binder/api/app';
 
 import Event,{EventContext} from '../../Event';
 

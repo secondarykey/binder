@@ -4,7 +4,7 @@ import { useParams,useNavigate } from "react-router";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 
 import { ContentCopy } from "@mui/icons-material";
-import { EditDiagram, GetDiagram, RemoveDiagram } from "../../wailsjs/go/api/App";
+import { EditDiagram, GetDiagram, RemoveDiagram } from "../../bindings/binder/api/app";
 import { copyClipboard } from "../App";
 
 import {EventContext} from "../Event";
