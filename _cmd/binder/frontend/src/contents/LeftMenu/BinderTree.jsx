@@ -107,11 +107,21 @@ function BinderTree(props) {
   }
 
   useEffect(() => {
-    // 再描画イベントを登録
-    evt.register("BinderTree", Event.ReloadTree, () => {
+    const initialize = () => {
+      // 再描画イベントを登録
+      evt.register("BinderTree", Event.ReloadTree, () => {
+        viewTree();
+      });
       viewTree();
-    });
-    viewTree();
+    };
+
+    // Wailsランタイム（window.go）が準備できてから呼び出す。
+    // 軽量コンポーネントはランタイム注入より先にマウントされる場合があるため。
+    if (window.go) {
+      initialize();
+    } else {
+      window.addEventListener('wails:loaded', initialize, { once: true });
+    }
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
