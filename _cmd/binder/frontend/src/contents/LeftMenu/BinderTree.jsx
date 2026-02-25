@@ -107,39 +107,11 @@ function BinderTree(props) {
   }
 
   useEffect(() => {
-    const initialize = () => {
-      // 再描画イベントを登録
-      evt.register("BinderTree", Event.ReloadTree, () => {
-        viewTree();
-      });
+    // 再描画イベントを登録
+    evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
-    };
-
-    // Wailsランタイムが準備できたか判定する。
-    // window.go は空オブジェクト {} として先に存在する場合があるため、
-    // 実際に使用する関数が登録済みかどうかで判定する。
-    const isReady = () => typeof window?.go?.api?.App?.GetBinderTree === 'function';
-
-    if (isReady()) {
-      initialize();
-      return;
-    }
-
-    // wails dev では軽量コンポーネントがランタイム注入より先にマウントされる場合があるため、
-    // 準備完了まで 50ms 間隔でポーリングする（最大 100 回 = 5 秒）。
-    let timerId;
-    let attempts = 0;
-    const poll = () => {
-      if (isReady()) {
-        initialize();
-      } else if (attempts < 100) {
-        attempts++;
-        timerId = setTimeout(poll, 50);
-      }
-    };
-    timerId = setTimeout(poll, 50);
-
-    return () => clearTimeout(timerId);
+    });
+    viewTree();
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
