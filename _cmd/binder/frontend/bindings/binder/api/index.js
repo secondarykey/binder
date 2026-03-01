@@ -6,3 +6,12 @@ import * as App from "./app.js";
 export {
     App
 };
+
+import * as $models from "./models.js";
+
+/**
+ * AppRuntime はデスクトップ環境の操作を抽象化するインターフェース。
+ * 具体的な実装（Wails v3 等）は _cmd/binder 層で提供し、
+ * binder パッケージ自体が Wails v3 に依存しない設計とする。
+ * @typedef {$models.AppRuntime} AppRuntime
+ */

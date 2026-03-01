@@ -20,9 +20,10 @@ import * as json$0 from "./json/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as settings$0 from "../settings/models.js";
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as application$0 from "../../github.com/wailsapp/wails/v3/pkg/application/models.js";
+import * as $models from "./models.js";
 
 /**
  * @param {string} name
@@ -447,11 +448,22 @@ export function SetCurrent(c) {
 }
 
 /**
- * @param {application$0.WebviewWindow | null} w
+ * SetRuntime は AppRuntime の実装を注入する。
+ * Wails v3 を使う場合は _cmd/binder/main.go 内で呼び出す。
+ * @param {$models.AppRuntime} r
  * @returns {$CancellablePromise<void>}
  */
-export function SetWindow(w) {
-    return $Call.ByID(2950776581, w);
+export function SetRuntime(r) {
+    return $Call.ByID(1076124227, r);
+}
+
+/**
+ * Startup は起動時の初期化処理を行う。
+ * Wails v3 の ServiceStartup とは切り離されており、main() から直接呼び出せる。
+ * @returns {$CancellablePromise<void>}
+ */
+export function Startup() {
+    return $Call.ByID(1457916904);
 }
 
 /**
