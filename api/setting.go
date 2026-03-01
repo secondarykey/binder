@@ -34,8 +34,8 @@ func (a *App) SavePosition() error {
 
 	defer log.PrintTrace(log.Func("SetPosition()"))
 
-	w, h := a.window.Size()
-	x, y := a.window.Position()
+	w, h := a.runtime.WindowSize()
+	x, y := a.runtime.WindowPosition()
 
 	obj := settings.Get()
 	if obj == nil {
