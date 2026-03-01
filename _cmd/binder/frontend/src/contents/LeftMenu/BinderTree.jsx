@@ -97,25 +97,32 @@ function BinderTree(props) {
   // コンテキストメニューの状態
   const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0, node: null });
 
-  // ツリーデータを取得
-  const viewTree = () => {
+  // ツリーデータを取得する。
+  // expandTop=true の場合、取得後にトップ階層のノードをすべて展開する。
+  // expandTop=false（ReloadTree 等）の場合は展開状態を維持する。
+  const viewTree = (expandTop = false) => {
     GetBinderTree().then((resp) => {
       setTree(resp.data);
+      if (expandTop) {
+        const topIds = (resp.data || []).map(n => n.id);
+        setExpand(topIds);
+      }
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
   }
 
   useEffect(() => {
-    // ツリー内容変更時の再描画
+    // ツリー内容変更時の再描画（展開状態は維持）
     evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
     });
-    // バインダーを開いたとき（LoadBinder 成功後）に再取得
+    // バインダーを開いたとき（LoadBinder 成功後）に再取得してトップ展開
     evt.register("BinderTree", Event.ChangeAddress, () => {
-      viewTree();
+      viewTree(true);
     });
-    viewTree();
+    // 初回表示時もトップ階層を展開
+    viewTree(true);
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
