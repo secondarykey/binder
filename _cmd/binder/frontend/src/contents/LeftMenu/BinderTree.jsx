@@ -11,7 +11,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { GetBinderTree } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
-import Tree from 'tree';
+import Tree from '../../components/Tree';
 
 /**
  * Mermaid アイコン
