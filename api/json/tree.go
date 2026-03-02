@@ -9,6 +9,7 @@ type Tree struct {
 type Leaf struct {
 	Id       string  `json:"id"`
 	ParentId string  `json:"parentId"`
+	Seq      int     `json:"seq"`
 	Name     string  `json:"name"`
 	Type     string  `json:"type"`
 	Children []*Leaf `json:"children"`
