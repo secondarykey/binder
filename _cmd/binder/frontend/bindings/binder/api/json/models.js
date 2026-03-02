@@ -324,6 +324,13 @@ export class Leaf {
              */
             this["parentId"] = "";
         }
+        if (!("seq" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["seq"] = 0;
+        }
         if (!("name" in $$source)) {
             /**
              * @member
@@ -355,10 +362,10 @@ export class Leaf {
      * @returns {Leaf}
      */
     static createFrom($$source = {}) {
-        const $$createField4_0 = $$createType2;
+        const $$createField5_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("children" in $$parsedSource) {
-            $$parsedSource["children"] = $$createField4_0($$parsedSource["children"]);
+            $$parsedSource["children"] = $$createField5_0($$parsedSource["children"]);
         }
         return new Leaf(/** @type {Partial<Leaf>} */($$parsedSource));
     }
