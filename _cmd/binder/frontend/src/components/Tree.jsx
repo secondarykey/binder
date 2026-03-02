@@ -227,7 +227,11 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           $isInside={isInside}
         >
             <Row>
-              <NodeContent onClick={handleNodeClick} $isSelected={isSelected}>
+              <NodeContent
+                onClick={handleNodeClick}
+                onDoubleClick={(e) => { e.stopPropagation(); if (hasChildren) onExpand && onExpand(node.id); }}
+                $isSelected={isSelected}
+              >
                 {hasChildren && (
                   <ExpandButton onClick={(e) => { e.stopPropagation(); onExpand && onExpand(node.id); }}>
                     {isExpanded ? '−' : '+'}
