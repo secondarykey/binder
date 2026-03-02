@@ -22,23 +22,26 @@ const Row = styled.div`
   width: 100%;
 `;
 
+// アイコン列より少し左にはみ出す展開ボタン
 const ExpandButton = styled.span`
+  position: absolute;
+  left: 1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
   cursor: pointer;
-  margin-right: 5px;
-  width: 20px;
-  display: inline-block;
   text-align: center;
   font-family: monospace;
+  font-size: 10px;
+  line-height: 1;
+  color: #aaa;
+  z-index: 1;
 `;
 
-const EmptySpacer = styled.span`
-  margin-right: 5px;
-  width: 20px;
-  display: inline-block;
-`;
-
+// padding-left でアイコン開始位置を固定し、ExpandButton の絶対配置先を提供
 const NodeContent = styled.div`
-  padding: 2px;
+  position: relative;
+  padding: 2px 2px 2px 18px;
   border-radius: 2px;
   background-color: ${props => props.$isSelected ? '#222529' : 'transparent'};
   flex-grow: 1;
@@ -224,12 +227,12 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           $isInside={isInside}
         >
             <Row>
-              {hasChildren ? (
-                <ExpandButton onClick={() => onExpand && onExpand(node.id)}>{isExpanded ? '[-]' : '[+]'}</ExpandButton>
-              ) : (
-                <EmptySpacer />
-              )}
               <NodeContent onClick={handleNodeClick} $isSelected={isSelected}>
+                {hasChildren && (
+                  <ExpandButton onClick={(e) => { e.stopPropagation(); onExpand && onExpand(node.id); }}>
+                    {isExpanded ? '−' : '+'}
+                  </ExpandButton>
+                )}
                 <IconWrapper>
                     {typeof icon === 'string' ? icon : React.isValidElement(icon) ? icon : icon ? React.createElement(icon) : null}
                 </IconWrapper>
@@ -262,5 +265,7 @@ Tree.propTypes = {
   icons: PropTypes.object,
   onNodeContextMenu: PropTypes.func,
 };
+
+// EmptySpacer は廃止（NodeContent の padding-left でアイコン位置を統一）
 
 export default Tree;
