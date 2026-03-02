@@ -7,7 +7,7 @@ const TreeContainer = styled.div`
 `;
 
 const NodeWrapper = styled.div`
-  margin-left: 20px;
+  margin-left: ${props => props.$isRoot ? '0' : '20px'};
   border-top: ${props => props.$isBefore ? '2px solid #1a73e8' : 'none'};
   border-bottom: ${props => props.$isAfter ? '2px solid #1a73e8' : 'none'};
 `;
@@ -216,7 +216,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     const isInside = dropTargetInfo?.id === node.id && dropTargetInfo?.position === 'inside';
 
     return (
-      <NodeWrapper key={node.id} $isBefore={isBefore} $isAfter={isAfter}>
+      <NodeWrapper key={node.id} $isRoot={isRoot} $isBefore={isBefore} $isAfter={isAfter}>
         <NodeContentContainer
           draggable={!isRoot}
           onDragStart={(e) => !isRoot && handleDragStart(e, node.id)}
