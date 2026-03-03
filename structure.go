@@ -3,6 +3,7 @@ package binder
 import (
 	"binder/db/model"
 	"binder/fs"
+	"errors"
 
 	"golang.org/x/xerrors"
 )
@@ -72,8 +73,17 @@ func (b *Binder) MoveNode(parentId string, childIds []string) error {
 		}
 	}
 
+	// csvq の書き込みを git インデックスに反映するため明示的にステージング
+	if err := b.fileSystem.AddFile(fs.StructureTableFile()); err != nil {
+		return xerrors.Errorf("AddFile() error: %w", err)
+	}
+
 	err := b.fileSystem.Commit(fs.M("Move", "node"), fs.StructureTableFile())
 	if err != nil {
+		if errors.Is(err, fs.UpdatedFilesError) {
+			// 変更なし（同一位置へのドロップ等）は正常扱い
+			return nil
+		}
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
 	return nil

@@ -337,6 +337,9 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 			} else if s.Staging == git.Added {
 				slog.Warn("s.Staging is added")
 				commitOk = true
+			} else if s.Staging == git.Modified {
+				// 事前に w.Add() でステージング済みのファイル
+				commitOk = true
 			} else if s.Staging == git.Untracked {
 				slog.Warn("s.Staging is untracked?")
 				//commitOk = true
