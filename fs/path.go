@@ -117,18 +117,18 @@ func PublicMetaFile(n *json.Note) string {
 	if n == nil {
 		return "error"
 	}
-	return publicAssetFile(n.Alias, "meta")
+	return publicAssetFile(n.Alias + "-meta")
 }
 
 func PublicAssetFile(a *json.Asset) string {
-	if a.Parent == nil {
+	if a.Alias == "" {
 		return ""
 	}
-	return publicAssetFile(a.Parent.Alias, a.Alias)
+	return publicAssetFile(a.Alias)
 }
 
-func publicAssetFile(p string, a string) string {
-	return filepath.Join(publishDir, publicAssetsDir, p, a)
+func publicAssetFile(alias string) string {
+	return filepath.Join(publishDir, publicAssetsDir, alias)
 }
 
 // private
@@ -165,18 +165,18 @@ func diagramFile(id string) string {
 const AssetDir = "assets"
 
 func MetaFile(n *json.Note) string {
-	return assetFile(n.Id, "meta")
+	return filepath.Join(AssetDir, n.Id+"-meta")
 }
 
 func AssetFile(a *json.Asset) string {
-	if a.ParentId == "" {
+	if a.Id == "" {
 		return ""
 	}
-	return assetFile(a.ParentId, a.Id)
+	return assetFile(a.Id)
 }
 
-func assetFile(p string, id string) string {
-	return filepath.Join(AssetDir, p, id)
+func assetFile(id string) string {
+	return filepath.Join(AssetDir, id)
 }
 
 const TemplateDir = "templates"

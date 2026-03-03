@@ -29,7 +29,7 @@ func TestCreateAsset(t *testing.T) {
 	if !f.IsExist(fn) {
 		t.Errorf("CreateAsset() asset file is not exist")
 	}
-	if f.IsExist("docs/assets/noteAlias/pub") {
+	if f.IsExist("docs/assets/pub") {
 		t.Errorf("CreateAsset() asset file(publish) is exist")
 	}
 
@@ -47,11 +47,11 @@ func TestCreateAsset(t *testing.T) {
 		t.Errorf("DeleteAsset() error: %v", err)
 	}
 
-	if f.IsExist("assets/note/asset") {
+	if f.IsExist("assets/asset") {
 		t.Errorf("file status is error(exists)")
 	}
 
-	if f.IsExist("docs/assets/noteAlias/pub") {
+	if f.IsExist("docs/assets/pub") {
 		t.Errorf("CreateAsset() asset file(publish) is exist")
 	}
 

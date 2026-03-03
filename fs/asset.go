@@ -3,7 +3,6 @@ package fs
 import (
 	"binder/api/json"
 	"fmt"
-	"path/filepath"
 
 	"golang.org/x/xerrors"
 )
@@ -12,11 +11,10 @@ func (f *FileSystem) CreateAsset(a *json.Asset, data []byte) (string, error) {
 
 	dataFn := AssetFile(a)
 	if dataFn == "" {
-		return "", fmt.Errorf("AssetFile() error: id is empty(%s,%s)", a.ParentId, a.Id)
+		return "", fmt.Errorf("AssetFile() error: id is empty(%s)", a.Id)
 	}
 
-	parentDir := filepath.Dir(dataFn)
-	f.mkdir(parentDir)
+	f.mkdir(AssetDir)
 
 	fp, err := f.Create(dataFn)
 	if err != nil {

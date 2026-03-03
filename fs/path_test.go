@@ -78,8 +78,8 @@ func TestPublicMetaFile(t *testing.T) {
 		alias string
 		want  string
 	}{
-		{"index", "alias", "docs\\assets\\alias\\meta"},
-		{"test", "alias_x", "docs\\assets\\alias_x\\meta"},
+		{"index", "alias", "docs\\assets\\alias-meta"},
+		{"test", "alias_x", "docs\\assets\\alias_x-meta"},
 	}
 
 	for _, v := range vals {
@@ -97,24 +97,20 @@ func TestPublicAssetFile(t *testing.T) {
 	var n json.Note
 	var a json.Asset
 
+	// アセットパスはフラット化され、aliasのみで決まる（親ノードのaliasは不要）
 	var vals = []struct {
 		n_alias string
 		a_alias string
 		want    string
 	}{
-		{"index", "alias", "docs\\assets\\index\\alias"},
-		{"test", "alias_x", "docs\\assets\\test\\alias_x"},
-		{"", "alias_x", ""},
+		{"index", "alias", "docs\\assets\\alias"},
+		{"test", "alias_x", "docs\\assets\\alias_x"},
+		{"test", "", ""},
 	}
 
 	for _, v := range vals {
-
-		if v.n_alias == "" {
-			a.SetParent(nil)
-		} else {
-			n.Alias = v.n_alias
-			a.SetParent(&n)
-		}
+		n.Alias = v.n_alias
+		a.SetParent(&n)
 		a.Alias = v.a_alias
 
 		got := fs.PublicAssetFile(&a)
@@ -167,8 +163,8 @@ func TestMetaFile(t *testing.T) {
 		id   string
 		want string
 	}{
-		{"index", "assets\\index\\meta"},
-		{"test", "assets\\test\\meta"},
+		{"index", "assets\\index-meta"},
+		{"test", "assets\\test-meta"},
 	}
 
 	for _, v := range vals {
@@ -182,29 +178,19 @@ func TestMetaFile(t *testing.T) {
 
 func TestAssetFile(t *testing.T) {
 
-	var n json.Note
 	var a json.Asset
-	//どっちもID
+	// アセットパスはフラット化され、a.Idのみで決まる（親ノードのIDは不要）
 	var vals = []struct {
-		id    string
-		alias string
-		want  string
+		id   string
+		want string
 	}{
-		{"index", "test.data", "assets\\index\\test.data"},
-		{"test", "aaa", "assets\\test\\aaa"},
-		{"", "aaa", ""},
+		{"test.data", "assets\\test.data"},
+		{"aaa", "assets\\aaa"},
+		{"", ""},
 	}
 
 	for _, v := range vals {
-		n.Id = v.id
-		if n.Id == "" {
-			a.ParentId = n.Id
-			a.SetParent(nil)
-		} else {
-			a.ParentId = n.Id
-			a.SetParent(&n)
-		}
-		a.Id = v.alias
+		a.Id = v.id
 
 		got := fs.AssetFile(&a)
 		if v.want != got {

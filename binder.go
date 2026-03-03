@@ -90,6 +90,13 @@ func Load(dir string, ver *Version) (*Binder, error) {
 		return nil, xerrors.Errorf("db Convert() error: %w", err)
 	}
 
+	// ファイルシステム移行: アセットディレクトリのフラット化（0.2.2）
+	if ver != nil && ov.Lt(v022migrate) {
+		if err = migrateFilesystemV022(dir); err != nil {
+			return nil, xerrors.Errorf("migrateFilesystemV022() error: %w", err)
+		}
+	}
+
 	// binder.jsonを更新（スキーマ変換後、または初回作成）
 	if ver != nil {
 		meta.Schema = ver.String()
