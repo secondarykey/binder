@@ -93,7 +93,7 @@ const insertNode = (nodes, targetId, draggedNode, position) => {
         for (const node of nodes) {
             if (node.children) {
                 const result = insertNode(node.children, targetId, draggedNode, position);
-                if (result) return { parentId: node.id, children: result.children };
+                if (result) return { parentId: result.parentId !== null ? result.parentId : node.id, children: result.children };
             }
         }
     }
