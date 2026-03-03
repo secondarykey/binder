@@ -30,7 +30,7 @@ function MermaidSVG(props) {
 }
 
 function MermaidIcon() {
-  return <MermaidSVG width="20px" height="20px" fill="white" contents="black" />;
+  return <MermaidSVG width="16px" height="16px" fill="white" contents="black" />;
 }
 
 /**
