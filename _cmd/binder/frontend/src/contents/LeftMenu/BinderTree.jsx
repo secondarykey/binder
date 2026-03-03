@@ -8,7 +8,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { GetBinderTree } from '../../../bindings/binder/api/app';
+import { GetBinderTree, MoveNode } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -154,9 +154,14 @@ function BinderTree(props) {
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
-  /** D&D（UIのみ・永続化なし） */
-  const handleChange = (_changeInfo) => {
-    // 将来: MoveNote API 呼び出しをここに実装
+  /** D&D: parentId と childIds を使って Seq を更新する */
+  const handleChange = (changeInfo) => {
+    const parentId = changeInfo.parentId ?? "";
+    MoveNode(parentId, changeInfo.childIds).then(() => {
+      viewTree();
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
   };
 
   // ---- コンテキストメニューのナビゲーションハンドラ ----

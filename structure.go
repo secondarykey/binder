@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/db/model"
+	"binder/fs"
 
 	"golang.org/x/xerrors"
 )
@@ -46,6 +47,34 @@ func (b *Binder) updateStructure(id, parentId, name, detail, alias string) error
 	err = b.db.UpdateStructure(s, b.op)
 	if err != nil {
 		return xerrors.Errorf("db.UpdateStructure() error: %w", err)
+	}
+	return nil
+}
+
+// MoveNode はノードの親と並び順を更新する。
+// parentId が空文字の場合はルート配置。childIds はその親配下の全ノードIDを順序通りに指定する。
+func (b *Binder) MoveNode(parentId string, childIds []string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	for i, id := range childIds {
+		s, err := b.db.GetStructure(id)
+		if err != nil {
+			return xerrors.Errorf("db.GetStructure(%s) error: %w", id, err)
+		}
+		s.ParentId = parentId
+		s.Seq = i + 1
+		err = b.db.UpdateStructure(s, b.op)
+		if err != nil {
+			return xerrors.Errorf("db.UpdateStructure(%s) error: %w", id, err)
+		}
+	}
+
+	err := b.fileSystem.Commit(fs.M("Move", "node"), fs.StructureTableFile())
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
 	}
 	return nil
 }

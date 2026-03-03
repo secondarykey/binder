@@ -43,6 +43,18 @@ func (a *App) GetModifiedTree() (*json.Tree, error) {
 	return tree, nil
 }
 
+func (a *App) MoveNode(parentId string, childIds []string) error {
+
+	defer log.PrintTrace(log.Func("MoveNode()"))
+
+	err := a.current.MoveNode(parentId, childIds)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("MoveNode() error\n%+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetUnpublishedTree() (*json.Tree, error) {
 	defer log.PrintTrace(log.Func("GetUnpublishedTree()"))
 

@@ -298,6 +298,15 @@ export function LoadBinder(dir) {
 }
 
 /**
+ * @param {string} parentId
+ * @param {string[]} childIds
+ * @returns {$CancellablePromise<void>}
+ */
+export function MoveNode(parentId, childIds) {
+    return $Call.ByID(3004732458, parentId, childIds);
+}
+
+/**
  * @returns {$CancellablePromise<void>}
  */
 export function OpenBinderSite() {
