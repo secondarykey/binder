@@ -6,7 +6,7 @@ import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../bindings/binder/api/app";
-import { GetAsset,Generate,Commit } from "../../../bindings/binder/api/app";
+import { GetAsset,Generate,Commit,DropAsset } from "../../../bindings/binder/api/app";
 import { RunEditor,GetSetting,SaveSetting } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
@@ -435,9 +435,80 @@ function Editor(props) {
   }
 
   /**
+   * ファイルドロップ許可
+   */
+  const handleDragOver = (e) => {
+    if (e.dataTransfer?.types?.includes('Files')) {
+      e.preventDefault();
+    }
+  }
+
+  /**
+   * エディタへのファイルドロップ処理
+   * 画像: {{assetsImage "id"}} を挿入
+   * その他: {{assets "id"}} を挿入
+   */
+  const handleDrop = (e) => {
+    if (mode !== Mode.note) return;
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    e.preventDefault();
+
+    // ドロップ時点のカーソル位置を記録（非同期処理前に取得）
+    const dropPos = e.currentTarget.selectionStart;
+
+    Array.from(files).forEach((file) => {
+      const isImage = file.type.startsWith('image/');
+      const filename = file.name || `drop-${Date.now()}`;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result.split(',')[1];
+        if (!base64) {
+          evt.showWarningMessage('ファイルデータが空です');
+          return;
+        }
+
+        const asset = {
+          Id: '',
+          ParentId: id,
+          Name: filename,
+          Alias: filename,
+          Detail: '',
+          Binary: false,
+        };
+
+        DropAsset(asset, filename, base64).then((result) => {
+          evt.refreshTree();
+          if (result?.id) {
+            const tag = isImage
+              ? `{{assetsImage "${result.id}"}}`
+              : `{{assets "${result.id}"}}`;
+            const ta = document.querySelector('#editor');
+            if (!ta) return;
+            const val = ta.value;
+            const before = val.substring(0, dropPos);
+            const after = val.substring(dropPos);
+            const newVal = before + tag + after;
+            ta.value = newVal;
+            ta.selectionStart = dropPos + tag.length;
+            ta.selectionEnd = dropPos + tag.length;
+            setTimeout(() => setText(newVal), 500);
+          }
+        }).catch((err) => {
+          evt.showErrorMessage(err);
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
    * 文字列挿入
-   * @param {*} s 
-   * @param {*} e 
+   * @param {*} s
+   * @param {*} e
    */
   const handleInsert = (s,e) => {
     var textarea = document.querySelector("#editor");
@@ -693,9 +764,10 @@ function Editor(props) {
           </Container>
 
           {/** テキスト編集 */}
-          <textarea id="editor" style={editorStyle} 
-                                value={text} 
-                                onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}/>
+          <textarea id="editor" style={editorStyle}
+                                value={text}
+                                onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
+                                onDragOver={handleDragOver} onDrop={handleDrop}/>
 
           {/** 左側の操作用位置 */}
           <Toolbar className="buttonBar">
