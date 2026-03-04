@@ -1,6 +1,10 @@
 package api
 
 import (
+	"encoding/base64"
+	"os"
+	"path/filepath"
+
 	"binder/api/json"
 	"binder/log"
 
@@ -46,6 +50,34 @@ func (a *App) DropAsset(as *json.Asset, filename string, base64data string) (*js
 	}
 
 	return rtn, nil
+}
+
+// ImportLocalFiles は OS のファイルパス一覧を受け取り、各ファイルを指定ノートのアセットとして登録する。
+// Wails ネイティブファイルドロップ (EnableFileDrop) から Go ハンドラ経由で呼び出される。
+func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
+
+	defer log.PrintTrace(log.Func("ImportLocalFiles()", parentId))
+
+	for _, p := range filePaths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return fmt.Errorf("ImportLocalFiles() error reading %s\n%+v", p, err)
+		}
+		filename := filepath.Base(p)
+		b64 := base64.StdEncoding.EncodeToString(data)
+		as := &json.Asset{
+			ParentId: parentId,
+			Name:     filename,
+			Alias:    filename,
+			Detail:   "",
+			Binary:   false,
+		}
+		if _, err := a.current.DropAsset(as, filename, b64); err != nil {
+			log.PrintStackTrace(err)
+			return fmt.Errorf("ImportLocalFiles() DropAsset error\n%+v", err)
+		}
+	}
+	return nil
 }
 
 func (a *App) RemoveAsset(id string) error {

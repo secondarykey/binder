@@ -8,7 +8,9 @@ import FolderIcon from '@mui/icons-material/Folder';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { GetBinderTree, MoveNode, DropAsset } from '../../../bindings/binder/api/app';
+import { Events } from '@wailsio/runtime';
+
+import { GetBinderTree, MoveNode } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -125,6 +127,21 @@ function BinderTree(props) {
     viewTree(true);
   }, []);
 
+  useEffect(() => {
+    // Wails ネイティブファイルドロップ: Go ハンドラ (main.go) がファイルを受け取り、
+    // アセット登録後に binder:filedrop:done を発行する。エラー時は binder:error を発行。
+    const cleanupDone = Events.On('binder:filedrop:done', () => {
+      viewTree();
+    });
+    const cleanupError = Events.On('binder:error', (event) => {
+      evt.showErrorMessage(event.data ?? event);
+    });
+    return () => {
+      cleanupDone();
+      cleanupError();
+    };
+  }, []);
+
   // Treeコンポーネント用データ（メモ化）
   const treeData = useMemo(() => processTreeData(tree), [tree]);
 
@@ -152,42 +169,6 @@ function BinderTree(props) {
   /** コンテキストメニューを閉じる */
   const closeContextMenu = () => {
     setContextMenu({ open: false, x: 0, y: 0, node: null });
-  };
-
-  /**
-   * 外部ファイルドロップ: ノードに OS からファイルをドロップしてアセットとして登録する。
-   * ノートタイプ（note / folder / folderDiagram）のみ受け付ける。
-   */
-  const handleFileDrop = (node, files) => {
-    console.log('[BinderTree] handleFileDrop called:', { nodeId: node?.id, nodeType: node?.nodeType, fileCount: files?.length });
-    const nodeType = node.nodeType;
-    if (nodeType !== 'note') {
-      console.log('[BinderTree] rejected: nodeType is not note:', nodeType);
-      evt.showErrorMessage('アセットはノートにのみ追加できます');
-      return;
-    }
-
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        // readAsDataURL は "data:<mime>;base64,<data>" を返すので base64 部分を抽出
-        const base64 = ev.target.result.split(',')[1];
-        const asset = {
-          Id: '',
-          ParentId: node.id,
-          Name: file.name,
-          Alias: file.name,
-          Detail: '',
-          Binary: false,
-        };
-        DropAsset(asset, file.name, base64).then(() => {
-          viewTree();
-        }).catch((err) => {
-          evt.showErrorMessage(err);
-        });
-      };
-      reader.readAsDataURL(file);
-    });
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
@@ -224,7 +205,6 @@ function BinderTree(props) {
       onExpand={handleExpand}
       onChange={handleChange}
       onNodeContextMenu={handleContextMenu}
-      onFileDrop={handleFileDrop}
       icons={binderIcons}
     />
 

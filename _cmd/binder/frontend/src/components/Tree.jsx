@@ -107,18 +107,6 @@ const insertNode = (nodes, targetId, draggedNode, position) => {
     return null;
 };
 
-// ツリーからノードを ID で検索する
-const findNode = (nodes, id) => {
-  for (const node of nodes) {
-    if (node.id === id) return node;
-    if (node.children) {
-      const found = findNode(node.children, id);
-      if (found) return found;
-    }
-  }
-  return null;
-};
-
 // dataTransfer に外部ファイルが含まれているか判定する
 const hasExternalFiles = (dataTransfer) => {
   if (!dataTransfer || !dataTransfer.types) return false;
@@ -126,7 +114,7 @@ const hasExternalFiles = (dataTransfer) => {
 };
 
 
-const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu, onFileDrop }) => {
+const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu }) => {
   const [data, setData] = useState(initialData);
   const [selectedId, setSelectedId] = useState(selected);
   const [dropTargetInfo, setDropTargetInfo] = useState(null);
@@ -143,10 +131,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     emptyImg.current = img;
   }, []);
 
-  // ドラッグ中の右クリックキャンセル:
-  // HTML5 DnD 中は contextmenu/mousedown/pointermove の buttons が更新されないが、
-  // 右クリックは新しい pointerdown イベントとして発火する。
-  // capture: true でブラウザの DnD 抑制より前にキャプチャする。
+  // ドラッグ中の右クリックキャンセル
   useEffect(() => {
     const handlePointerDown = (e) => {
       if (e.button === 2 && draggedNodeId.current !== null) {
@@ -197,8 +182,8 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     }
 
     // 外部ファイルドラッグ: 常に inside で強調表示（内部D&Dとは独立）
+    // 実際のドロップ処理は Wails EnableFileDrop + Go ハンドラで行う
     if (hasExternalFiles(e.dataTransfer) && draggedNodeId.current === null) {
-      console.log('[Tree] external dragover detected, nodeId:', id, 'types:', [...e.dataTransfer.types]);
       setDropTargetInfo({ id, position: 'inside' });
       return;
     }
@@ -220,30 +205,10 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
 
   const handleDragLeave = () => { setDropTargetInfo(null); };
 
-  // targetNode: NodeContentContainer の onDrop から渡されるノード（外部ファイル用）
-  // dragleave が drop より先に発火して dropTargetInfo が null になるケースの対策
-  const handleDrop = (e, targetNode = null) => {
+  // 内部 D&D のみ処理する。外部ファイルドロップは Wails EnableFileDrop + Go ハンドラが担当。
+  const handleDrop = (e) => {
     e.preventDefault();
-    console.log('[Tree] drop event:', {
-      fileCount: e.dataTransfer.files?.length,
-      types: [...(e.dataTransfer.types || [])],
-      draggedNodeId: draggedNodeId.current,
-      targetNodeId: targetNode?.id,
-      dropTargetInfo,
-    });
 
-    // 外部ファイルのドロップ
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0 && draggedNodeId.current === null) {
-      // targetNode を優先、なければ dropTargetInfo から検索
-      const node = targetNode ?? (dropTargetInfo ? findNode(data, dropTargetInfo.id) : null);
-      console.log('[Tree] external drop → node:', node?.id, node?.nodeType);
-      if (onFileDrop && node) onFileDrop(node, files);
-      setDropTargetInfo(null);
-      return;
-    }
-
-    // 内部 D&D
     if (!draggedNodeId.current || !dropTargetInfo) return;
     const { id: targetId, position } = dropTargetInfo;
     if (draggedNodeId.current === targetId) return;
@@ -329,7 +294,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           onDragStart={(e) => !isRoot && handleDragStart(e, node.id)}
           onDragOver={(e) => handleDragOver(e, node.id, isRoot)}
           onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, node)}
+          onDrop={handleDrop}
           onDragEnd={handleDragEnd}
           onContextMenu={(e) => {
             if (draggedNodeId.current !== null) {
@@ -344,6 +309,9 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           }}
           $isInside={isInside}
           $isDragging={draggingId === node.id}
+          data-file-drop-target=""
+          data-wails-node-id={node.id}
+          data-wails-node-type={node.nodeType || ''}
         >
             <Row>
               <NodeContent
@@ -390,7 +358,6 @@ Tree.propTypes = {
   onSelect: PropTypes.func,
   icons: PropTypes.object,
   onNodeContextMenu: PropTypes.func,
-  onFileDrop: PropTypes.func,
 };
 
 // EmptySpacer は廃止（NodeContent の padding-left でアイコン位置を統一）

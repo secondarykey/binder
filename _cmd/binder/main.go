@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"binder/api"
 	"binder/log"
@@ -127,6 +128,7 @@ func main() {
 		BackgroundColour:       application.NewRGBA(27, 38, 54, 255),
 		URL:                    "/",
 		OpenInspectorOnStartup: true,
+		EnableFileDrop:         true,
 	})
 
 	// 3. Wails ランタイムを注入して起動処理を実行
@@ -136,6 +138,39 @@ func main() {
 	if err := app.Startup(); err != nil {
 		log.PrintStackTrace(err)
 	}
+
+	// 外部ファイルドロップ: OS からのファイルドロップを Wails ネイティブイベントで処理する。
+	// EnableFileDrop: true が前提。Wails runtime (window.ts) が drop を補足し、
+	// Go 側の WindowFilesDropped イベントとして通知する。
+	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		ctx := event.Context()
+		files := ctx.DroppedFiles()
+		details := ctx.DropTargetDetails()
+
+		if len(files) == 0 || details == nil {
+			return
+		}
+
+		nodeId, hasId := details.Attributes["data-wails-node-id"]
+		nodeType := details.Attributes["data-wails-node-type"]
+
+		if !hasId || nodeId == "" {
+			return
+		}
+
+		if nodeType != "note" {
+			wailsApp.Event.Emit("binder:error", "アセットはノートにのみ追加できます")
+			return
+		}
+
+		if err := app.ImportLocalFiles(nodeId, files); err != nil {
+			log.PrintStackTrace(err)
+			wailsApp.Event.Emit("binder:error", err.Error())
+			return
+		}
+
+		wailsApp.Event.Emit("binder:filedrop:done")
+	})
 
 	// 4. 実行
 	err := wailsApp.Run()
