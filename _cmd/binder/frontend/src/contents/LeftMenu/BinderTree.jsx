@@ -188,6 +188,10 @@ function BinderTree(props) {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(',')[1];
+        if (!base64) {
+          evt.showWarningMessage('クリップボード画像のデータが空です');
+          return;
+        }
         const asset = {
           Id: '',
           ParentId: id,

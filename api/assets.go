@@ -63,6 +63,9 @@ func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
 		if err != nil {
 			return fmt.Errorf("ImportLocalFiles() error reading %s\n%+v", p, err)
 		}
+		if len(data) == 0 {
+			return fmt.Errorf("ImportLocalFiles() error: empty file %s", filepath.Base(p))
+		}
 		filename := filepath.Base(p)
 		b64 := base64.StdEncoding.EncodeToString(data)
 		as := &json.Asset{
