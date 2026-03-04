@@ -80,6 +80,26 @@ func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
 	return nil
 }
 
+// GetAssetContent はアセットファイルの内容を base64 エンコードして返す。
+// AssetContent.Binary が true の場合はバイナリ、false の場合はテキストファイル。
+func (a *App) GetAssetContent(id string) (*json.AssetContent, error) {
+
+	defer log.PrintTrace(log.Func("GetAssetContent()", id))
+
+	data, meta, err := a.current.ReadAssetBytes(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetAssetContent() error\n%+v", err)
+	}
+
+	return &json.AssetContent{
+		Id:      id,
+		Name:    meta.Name,
+		Binary:  meta.Binary,
+		Content: base64.StdEncoding.EncodeToString(data),
+	}, nil
+}
+
 func (a *App) RemoveAsset(id string) error {
 	defer log.PrintTrace(log.Func("RemoveAsset()"))
 	_, err := a.current.RemoveAsset(id)

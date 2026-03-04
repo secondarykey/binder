@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -268,4 +269,30 @@ func (b *Binder) AssetFile(id string) string {
 		return ""
 	}
 	return fs.AssetFile(a)
+}
+
+// ReadAssetBytes はアセットファイルの内容をバイト列で返す。
+// メタデータ（名前・バイナリフラグ）も合わせて返す。
+func (b *Binder) ReadAssetBytes(id string) ([]byte, *json.Asset, error) {
+	if b == nil {
+		return nil, nil, EmptyError
+	}
+	a, err := b.db.GetAssetWithParent(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetAssetWithParent() error: %w", err)
+	}
+
+	fn := fs.AssetFile(a)
+	f, err := b.fileSystem.Open(fn)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("Open() error: %w", err)
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("io.ReadAll() error: %w", err)
+	}
+
+	return data, a, nil
 }

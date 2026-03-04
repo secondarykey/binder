@@ -115,6 +115,60 @@ export class Asset {
     }
 }
 
+/**
+ * AssetContent はアセットのメタデータとファイル内容を合わせた型。
+ * GetAssetContent() API で返却される。Content は常に base64 エンコードされた文字列。
+ */
+export class AssetContent {
+    /**
+     * Creates a new AssetContent instance.
+     * @param {Partial<AssetContent>} [$$source = {}] - The source object to create the AssetContent.
+     */
+    constructor($$source = {}) {
+        if (!("id" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["name"] = "";
+        }
+        if (!("binary" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["binary"] = false;
+        }
+        if (!("content" in $$source)) {
+            /**
+             * base64 encoded
+             * @member
+             * @type {string}
+             */
+            this["content"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AssetContent instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {AssetContent}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AssetContent(/** @type {Partial<AssetContent>} */($$parsedSource));
+    }
+}
+
 export class Config {
     /**
      * Creates a new Config instance.

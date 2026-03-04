@@ -189,11 +189,23 @@ export function GetAsset(id) {
 }
 
 /**
+ * GetAssetContent はアセットファイルの内容を base64 エンコードして返す。
+ * AssetContent.Binary が true の場合はバイナリ、false の場合はテキストファイル。
+ * @param {string} id
+ * @returns {$CancellablePromise<json$0.AssetContent | null>}
+ */
+export function GetAssetContent(id) {
+    return $Call.ByID(2381067512, id).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType11($result);
+    }));
+}
+
+/**
  * @returns {$CancellablePromise<json$0.Tree | null>}
  */
 export function GetBinderTree() {
     return $Call.ByID(2685130125).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType11($result);
+        return $$createType13($result);
     }));
 }
 
@@ -221,7 +233,7 @@ export function GetDiagram(id) {
  */
 export function GetFontNames() {
     return $Call.ByID(3495059948).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType12($result);
+        return $$createType14($result);
     }));
 }
 
@@ -230,7 +242,7 @@ export function GetFontNames() {
  */
 export function GetHTMLTemplates() {
     return $Call.ByID(3234023383).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType14($result);
+        return $$createType16($result);
     }));
 }
 
@@ -239,7 +251,7 @@ export function GetHTMLTemplates() {
  */
 export function GetModifiedTree() {
     return $Call.ByID(463238562).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType11($result);
+        return $$createType13($result);
     }));
 }
 
@@ -260,7 +272,7 @@ export function GetNote(id) {
  */
 export function GetNowPatch(typ, id) {
     return $Call.ByID(3682172215, typ, id).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType16($result);
+        return $$createType18($result);
     }));
 }
 
@@ -269,7 +281,7 @@ export function GetNowPatch(typ, id) {
  */
 export function GetSetting() {
     return $Call.ByID(63257543).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType18($result);
+        return $$createType20($result);
     }));
 }
 
@@ -288,7 +300,7 @@ export function GetTemplate(id) {
  */
 export function GetTemplateTree() {
     return $Call.ByID(207242683).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType11($result);
+        return $$createType13($result);
     }));
 }
 
@@ -297,8 +309,19 @@ export function GetTemplateTree() {
  */
 export function GetUnpublishedTree() {
     return $Call.ByID(655040332).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType11($result);
+        return $$createType13($result);
     }));
+}
+
+/**
+ * ImportLocalFiles は OS のファイルパス一覧を受け取り、各ファイルを指定ノートのアセットとして登録する。
+ * Wails ネイティブファイルドロップ (EnableFileDrop) から Go ハンドラ経由で呼び出される。
+ * @param {string} parentId
+ * @param {string[]} filePaths
+ * @returns {$CancellablePromise<void>}
+ */
+export function ImportLocalFiles(parentId, filePaths) {
+    return $Call.ByID(1451623208, parentId, filePaths);
 }
 
 /**
@@ -364,7 +387,7 @@ export function ParseNote(id, local, elm) {
  */
 export function Remotes() {
     return $Call.ByID(1373910066).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType12($result);
+        return $$createType14($result);
     }));
 }
 
@@ -505,12 +528,14 @@ const $$createType6 = json$0.Note.createFrom;
 const $$createType7 = $Create.Nullable($$createType6);
 const $$createType8 = json$0.Template.createFrom;
 const $$createType9 = $Create.Nullable($$createType8);
-const $$createType10 = json$0.Tree.createFrom;
+const $$createType10 = json$0.AssetContent.createFrom;
 const $$createType11 = $Create.Nullable($$createType10);
-const $$createType12 = $Create.Array($Create.Any);
-const $$createType13 = json$0.Templates.createFrom;
-const $$createType14 = $Create.Nullable($$createType13);
-const $$createType15 = binder$0.Patch.createFrom;
+const $$createType12 = json$0.Tree.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);
+const $$createType14 = $Create.Array($Create.Any);
+const $$createType15 = json$0.Templates.createFrom;
 const $$createType16 = $Create.Nullable($$createType15);
-const $$createType17 = settings$0.Setting.createFrom;
+const $$createType17 = binder$0.Patch.createFrom;
 const $$createType18 = $Create.Nullable($$createType17);
+const $$createType19 = settings$0.Setting.createFrom;
+const $$createType20 = $Create.Nullable($$createType19);

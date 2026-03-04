@@ -221,10 +221,14 @@ function BinderTree(props) {
     );
   };
 
-  /** ノードクリック → エディタへナビゲート */
+  /** ノードクリック → エディタ or ビューアへナビゲート */
   const handleClick = (node) => {
     const type = node.nodeType || node.type;
-    nav("/editor/" + type + "/" + node.id);
+    if (type === 'asset') {
+      nav("/assets/view/" + node.id);
+    } else {
+      nav("/editor/" + type + "/" + node.id);
+    }
   };
 
   /** コンテキストメニューを開く */

@@ -4,6 +4,7 @@
 
 export {
     Asset,
+    AssetContent,
     Config,
     Diagram,
     Leaf,
