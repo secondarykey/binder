@@ -129,17 +129,18 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
   useEffect(() => { setSelectedId(selected); }, [selected]);
 
   // ドラッグ中の右クリックキャンセル:
-  // HTML5 DnD ではドラッグ中に contextmenu イベントが抑制されるブラウザが多いため、
-  // document レベルの mousedown (button=2) で確実に検出してキャンセルする
+  // HTML5 DnD ではドラッグ中に contextmenu / mousedown イベントが抑制されるため、
+  // pointermove の e.buttons ビットで右ボタン押下を検出してキャンセルする
   useEffect(() => {
-    const handleMouseDownGlobal = (e) => {
-      if (e.button === 2 && draggedNodeId.current !== null) {
+    const handlePointerMove = (e) => {
+      // buttons & 2: 右ボタンが押されている
+      if ((e.buttons & 2) && draggedNodeId.current !== null) {
         draggedNodeId.current = null;
         setDropTargetInfo(null);
       }
     };
-    document.addEventListener('mousedown', handleMouseDownGlobal);
-    return () => document.removeEventListener('mousedown', handleMouseDownGlobal);
+    document.addEventListener('pointermove', handlePointerMove);
+    return () => document.removeEventListener('pointermove', handlePointerMove);
   }, []);
 
   const handleDragStart = (e, id) => {
@@ -165,6 +166,13 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
 
   const handleDragOver = (e, id, isRoot) => {
     e.preventDefault();
+
+    // 右ボタンが押されている場合はドラッグをキャンセル
+    if ((e.buttons & 2) && draggedNodeId.current !== null) {
+      draggedNodeId.current = null;
+      setDropTargetInfo(null);
+      return;
+    }
 
     // 外部ファイルドラッグ: 常に inside で強調表示（内部D&Dとは独立）
     if (hasExternalFiles(e.dataTransfer) && draggedNodeId.current === null) {
@@ -328,7 +336,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     );
   };
 
-  return <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>{data.map(node => renderNode(node, true))}</TreeContainer>;
+  return <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); if ((e.buttons & 2) && draggedNodeId.current !== null) { draggedNodeId.current = null; setDropTargetInfo(null); } }}>{data.map(node => renderNode(node, true))}</TreeContainer>;
 };
 
 Tree.propTypes = {
