@@ -206,8 +206,10 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
   const handleDragLeave = () => { setDropTargetInfo(null); };
 
   // 内部 D&D のみ処理する。外部ファイルドロップは Wails EnableFileDrop + Go ハンドラが担当。
+  // ドロップ時は常にハイライトをクリアする（外部ファイルも含む）。
   const handleDrop = (e) => {
     e.preventDefault();
+    setDropTargetInfo(null);
 
     if (!draggedNodeId.current || !dropTargetInfo) return;
     const { id: targetId, position } = dropTargetInfo;
