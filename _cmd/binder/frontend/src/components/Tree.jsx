@@ -217,18 +217,23 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     setDropTargetInfo({ id, position });
   };
 
-  const handleDragLeave = () => { setDropTargetInfo(null); };
+  // 子要素への移動による dragleave は無視する（外部ファイル drop の直前にも発火するため）
+  const handleDragLeave = (e) => {
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setDropTargetInfo(null);
+  };
 
-  const handleDrop = (e) => {
+  // targetNode: NodeContentContainer の onDrop から渡されるノード（外部ファイル用）
+  // dragleave が drop より先に発火して dropTargetInfo が null になるケースの対策
+  const handleDrop = (e, targetNode = null) => {
     e.preventDefault();
 
     // 外部ファイルのドロップ
     const files = e.dataTransfer.files;
     if (files && files.length > 0 && draggedNodeId.current === null) {
-      if (onFileDrop && dropTargetInfo) {
-        const targetNode = findNode(data, dropTargetInfo.id);
-        if (targetNode) onFileDrop(targetNode, files);
-      }
+      // targetNode を優先、なければ dropTargetInfo から検索
+      const node = targetNode ?? (dropTargetInfo ? findNode(data, dropTargetInfo.id) : null);
+      if (onFileDrop && node) onFileDrop(node, files);
       setDropTargetInfo(null);
       return;
     }
@@ -319,7 +324,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           onDragStart={(e) => !isRoot && handleDragStart(e, node.id)}
           onDragOver={(e) => handleDragOver(e, node.id, isRoot)}
           onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onDrop={(e) => handleDrop(e, node)}
           onDragEnd={handleDragEnd}
           onContextMenu={(e) => {
             if (draggedNodeId.current !== null) {
