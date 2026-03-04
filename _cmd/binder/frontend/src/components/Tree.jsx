@@ -14,6 +14,8 @@ const NodeWrapper = styled.div`
 
 const NodeContentContainer = styled.div`
   background-color: ${props => props.$isInside ? 'rgb(41, 43, 48)' : 'transparent'};
+  opacity: ${props => props.$isDragging ? 0.4 : 1};
+  transition: opacity 0.1s;
 `;
 
 const Row = styled.div`
@@ -123,10 +125,18 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
   const [data, setData] = useState(initialData);
   const [selectedId, setSelectedId] = useState(selected);
   const [dropTargetInfo, setDropTargetInfo] = useState(null);
+  const [draggingId, setDraggingId] = useState(null);
   const draggedNodeId = useRef(null);
+  // 1x1透明PNG: dragstart でゴースト画像を非表示にするために使用
+  const emptyImg = useRef(null);
 
   useEffect(() => { setData(initialData); }, [initialData]);
   useEffect(() => { setSelectedId(selected); }, [selected]);
+  useEffect(() => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    emptyImg.current = img;
+  }, []);
 
   // ドラッグ中の右クリックキャンセル:
   // HTML5 DnD 中は contextmenu/mousedown/pointermove の buttons が更新されないが、
@@ -136,6 +146,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     const handlePointerDown = (e) => {
       if (e.button === 2 && draggedNodeId.current !== null) {
         draggedNodeId.current = null;
+        setDraggingId(null);
         setDropTargetInfo(null);
       }
     };
@@ -145,13 +156,17 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
 
   const handleDragStart = (e, id) => {
     draggedNodeId.current = id;
+    setDraggingId(id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
+    // ブラウザのゴースト画像を透明化: 右クリックキャンセル後もゴーストが残らないようにする
+    if (emptyImg.current) e.dataTransfer.setDragImage(emptyImg.current, 0, 0);
   };
 
   // ドラッグ終了時（ドロップ先なし・Escapeキーなど）に状態をリセット
   const handleDragEnd = () => {
     draggedNodeId.current = null;
+    setDraggingId(null);
     setDropTargetInfo(null);
   };
 
@@ -160,6 +175,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     if (draggedNodeId.current !== null) {
       e.preventDefault();
       draggedNodeId.current = null;
+      setDraggingId(null);
       setDropTargetInfo(null);
     }
   };
@@ -170,6 +186,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     // 右ボタンが押されている場合はドラッグをキャンセル
     if ((e.buttons & 2) && draggedNodeId.current !== null) {
       draggedNodeId.current = null;
+      setDraggingId(null);
       setDropTargetInfo(null);
       return;
     }
@@ -304,12 +321,14 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
               // ドラッグ中の右クリック → ドラッグをキャンセル
               e.preventDefault();
               draggedNodeId.current = null;
+              setDraggingId(null);
               setDropTargetInfo(null);
               return;
             }
             onNodeContextMenu && onNodeContextMenu(e, node);
           }}
           $isInside={isInside}
+          $isDragging={draggingId === node.id}
         >
             <Row>
               <NodeContent
@@ -336,7 +355,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     );
   };
 
-  return <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); if ((e.buttons & 2) && draggedNodeId.current !== null) { draggedNodeId.current = null; setDropTargetInfo(null); } }}>{data.map(node => renderNode(node, true))}</TreeContainer>;
+  return <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); if ((e.buttons & 2) && draggedNodeId.current !== null) { draggedNodeId.current = null; setDraggingId(null); setDropTargetInfo(null); } }}>{data.map(node => renderNode(node, true))}</TreeContainer>;
 };
 
 Tree.propTypes = {
