@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 import { Menu, MenuItem } from '@mui/material';
@@ -10,7 +10,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { Events } from '@wailsio/runtime';
 
-import { GetBinderTree, MoveNode } from '../../../bindings/binder/api/app';
+import { GetBinderTree, MoveNode, DropAsset } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -56,6 +56,19 @@ const binderIcons = {
 const onlyDiagram = (list) => list.every(v => v.type === "diagram");
 
 /**
+ * ツリー（生データ）を id で再帰検索する
+ */
+const findNodeInTree = (nodes, id) => {
+  if (!nodes) return null;
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const found = findNodeInTree(node.children, id);
+    if (found) return found;
+  }
+  return null;
+};
+
+/**
  * GetBinderTree() の戻り値をカスタムTreeコンポーネント用に変換する
  * - 子を持つ note → displayType を "folder" or "folderDiagram" に変換
  * - nodeType に元の type を保持（コンテキストメニュー判定用）
@@ -99,6 +112,12 @@ function BinderTree(props) {
   // コンテキストメニューの状態
   const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0, node: null });
 
+  // paste イベントハンドラ内で最新値を参照するための ref
+  const selectedIdRef = useRef(null);
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  const treeRef = useRef([]);
+  useEffect(() => { treeRef.current = tree; }, [tree]);
+
   // ツリーデータを取得する。
   // expandTop=true の場合、取得後にトップ階層のノードをすべて展開する。
   // expandTop=false（ReloadTree 等）の場合は展開状態を維持する。
@@ -140,6 +159,54 @@ function BinderTree(props) {
       cleanupDone();
       cleanupError();
     };
+  }, []);
+
+  useEffect(() => {
+    // クリップボード画像貼り付け: 選択中ノートが note の場合、画像をアセットとして登録する。
+    // selectedIdRef / treeRef を使って最新の状態を参照する。
+    const handlePaste = (e) => {
+      const id = selectedIdRef.current;
+      if (!id) return;
+
+      // 生データから選択ノードを検索し note 型かチェック
+      const node = findNodeInTree(treeRef.current, id);
+      if (!node || node.type !== 'note') return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageItem = Array.from(items).find(item => item.type.startsWith('image/'));
+      if (!imageItem) return;
+
+      const file = imageItem.getAsFile();
+      if (!file) return;
+
+      // MIME サブタイプを拡張子に変換（image/jpeg → jpg）
+      const ext = imageItem.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
+      const filename = `clipboard-${Date.now()}.${ext}`;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result.split(',')[1];
+        const asset = {
+          Id: '',
+          ParentId: id,
+          Name: filename,
+          Alias: filename,
+          Detail: '',
+          Binary: false,
+        };
+        DropAsset(asset, filename, base64).then(() => {
+          viewTree();
+        }).catch((err) => {
+          evt.showErrorMessage(err);
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
