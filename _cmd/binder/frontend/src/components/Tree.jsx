@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
+
+// ドラッグ中はブラウザの DnD カーソルを上書きして通常カーソルを維持する
+const DragCursorOverride = createGlobalStyle`
+  * { cursor: default !important; }
+`;
 
 const TreeContainer = styled.div`
   user-select: none;
@@ -355,7 +360,10 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     );
   };
 
-  return <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); if ((e.buttons & 2) && draggedNodeId.current !== null) { draggedNodeId.current = null; setDraggingId(null); setDropTargetInfo(null); } }}>{data.map(node => renderNode(node, true))}</TreeContainer>;
+  return <>
+    {draggingId && <DragCursorOverride />}
+    <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); if ((e.buttons & 2) && draggedNodeId.current !== null) { draggedNodeId.current = null; setDraggingId(null); setDropTargetInfo(null); } }}>{data.map(node => renderNode(node, true))}</TreeContainer>
+  </>;
 };
 
 Tree.propTypes = {
