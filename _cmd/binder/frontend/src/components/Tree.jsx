@@ -100,8 +100,26 @@ const insertNode = (nodes, targetId, draggedNode, position) => {
     return null;
 };
 
+// ツリーからノードを ID で検索する
+const findNode = (nodes, id) => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
-const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu }) => {
+// dataTransfer に外部ファイルが含まれているか判定する
+const hasExternalFiles = (dataTransfer) => {
+  if (!dataTransfer || !dataTransfer.types) return false;
+  return Array.from(dataTransfer.types).includes('Files');
+};
+
+
+const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu, onFileDrop }) => {
   const [data, setData] = useState(initialData);
   const [selectedId, setSelectedId] = useState(selected);
   const [dropTargetInfo, setDropTargetInfo] = useState(null);
@@ -133,6 +151,13 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
 
   const handleDragOver = (e, id, isRoot) => {
     e.preventDefault();
+
+    // 外部ファイルドラッグ: 常に inside で強調表示（内部D&Dとは独立）
+    if (hasExternalFiles(e.dataTransfer) && draggedNodeId.current === null) {
+      setDropTargetInfo({ id, position: 'inside' });
+      return;
+    }
+
     if (id === draggedNodeId.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
@@ -152,6 +177,19 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
 
   const handleDrop = (e) => {
     e.preventDefault();
+
+    // 外部ファイルのドロップ
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0 && draggedNodeId.current === null) {
+      if (onFileDrop && dropTargetInfo) {
+        const targetNode = findNode(data, dropTargetInfo.id);
+        if (targetNode) onFileDrop(targetNode, files);
+      }
+      setDropTargetInfo(null);
+      return;
+    }
+
+    // 内部 D&D
     if (!draggedNodeId.current || !dropTargetInfo) return;
     const { id: targetId, position } = dropTargetInfo;
     if (draggedNodeId.current === targetId) return;
@@ -293,6 +331,7 @@ Tree.propTypes = {
   onSelect: PropTypes.func,
   icons: PropTypes.object,
   onNodeContextMenu: PropTypes.func,
+  onFileDrop: PropTypes.func,
 };
 
 // EmptySpacer は廃止（NodeContent の padding-left でアイコン位置を統一）

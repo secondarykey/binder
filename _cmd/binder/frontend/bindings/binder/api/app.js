@@ -106,6 +106,18 @@ export function CreateTemplateHTML(id, data, elm) {
 
 /**
  * @param {json$0.Asset | null} $as
+ * @param {string} filename
+ * @param {string} base64data
+ * @returns {$CancellablePromise<json$0.Asset | null>}
+ */
+export function DropAsset($as, filename, base64data) {
+    return $Call.ByID(515404762, $as, filename, base64data).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType1($result);
+    }));
+}
+
+/**
+ * @param {json$0.Asset | null} $as
  * @param {string} file
  * @returns {$CancellablePromise<json$0.Asset | null>}
  */

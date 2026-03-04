@@ -5,6 +5,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,6 +41,40 @@ func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
 	}
 
 	_, err = b.editAsset(a, data)
+	if err != nil {
+		return nil, xerrors.Errorf("editAsset() error: %w", err)
+	}
+
+	return a, nil
+}
+
+// DropAsset はフロントエンドからのファイルドロップでアセットを登録する。
+// filename はドロップされたファイル名、base64data はファイル内容の base64 文字列。
+func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*json.Asset, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	var data []byte
+	if base64data != "" {
+		var err error
+		data, err = base64.StdEncoding.DecodeString(base64data)
+		if err != nil {
+			return nil, xerrors.Errorf("base64.DecodeString() error: %w", err)
+		}
+
+		buf := bytes.NewBuffer(data)
+		a.Binary = (fs.IsText(buf) == 0)
+
+		// 新規アセットの場合はファイル名で名前・エイリアスを設定
+		if a.Id == "" {
+			a.Name = filename
+			a.Alias = filename
+		}
+	}
+
+	_, err := b.editAsset(a, data)
 	if err != nil {
 		return nil, xerrors.Errorf("editAsset() error: %w", err)
 	}

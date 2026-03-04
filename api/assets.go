@@ -35,6 +35,19 @@ func (a *App) GetAsset(id string) (*json.Asset, error) {
 	return rtn, nil
 }
 
+func (a *App) DropAsset(as *json.Asset, filename string, base64data string) (*json.Asset, error) {
+
+	defer log.PrintTrace(log.Func("DropAsset()", as, filename))
+
+	rtn, err := a.current.DropAsset(as, filename, base64data)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("DropAsset() error\n%+v", err)
+	}
+
+	return rtn, nil
+}
+
 func (a *App) RemoveAsset(id string) error {
 	defer log.PrintTrace(log.Func("RemoveAsset()"))
 	_, err := a.current.RemoveAsset(id)
