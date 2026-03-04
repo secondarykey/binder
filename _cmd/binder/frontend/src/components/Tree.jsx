@@ -217,11 +217,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     setDropTargetInfo({ id, position });
   };
 
-  // 子要素への移動による dragleave は無視する（外部ファイル drop の直前にも発火するため）
-  const handleDragLeave = (e) => {
-    if (e.currentTarget.contains(e.relatedTarget)) return;
-    setDropTargetInfo(null);
-  };
+  const handleDragLeave = () => { setDropTargetInfo(null); };
 
   // targetNode: NodeContentContainer の onDrop から渡されるノード（外部ファイル用）
   // dragleave が drop より先に発火して dropTargetInfo が null になるケースの対策
