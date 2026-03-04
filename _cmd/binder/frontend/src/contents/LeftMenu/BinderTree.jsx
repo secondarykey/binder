@@ -203,8 +203,8 @@ function BinderTree(props) {
         DropAsset(asset, filename, base64).then((result) => {
           viewTree();
           // アセット登録後、エディタのカーソル位置に {{assetImage "id"}} を挿入
-          if (result?.Id) {
-            evt.insertText(`{{assetImage "${result.Id}"}}`);
+          if (result?.id) {
+            evt.insertText(`{{assetImage "${result.id}"}}`);
           }
         }).catch((err) => {
           evt.showErrorMessage(err);
