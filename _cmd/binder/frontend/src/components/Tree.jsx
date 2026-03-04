@@ -198,6 +198,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
 
     // 外部ファイルドラッグ: 常に inside で強調表示（内部D&Dとは独立）
     if (hasExternalFiles(e.dataTransfer) && draggedNodeId.current === null) {
+      console.log('[Tree] external dragover detected, nodeId:', id, 'types:', [...e.dataTransfer.types]);
       setDropTargetInfo({ id, position: 'inside' });
       return;
     }
@@ -223,12 +224,20 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
   // dragleave が drop より先に発火して dropTargetInfo が null になるケースの対策
   const handleDrop = (e, targetNode = null) => {
     e.preventDefault();
+    console.log('[Tree] drop event:', {
+      fileCount: e.dataTransfer.files?.length,
+      types: [...(e.dataTransfer.types || [])],
+      draggedNodeId: draggedNodeId.current,
+      targetNodeId: targetNode?.id,
+      dropTargetInfo,
+    });
 
     // 外部ファイルのドロップ
     const files = e.dataTransfer.files;
     if (files && files.length > 0 && draggedNodeId.current === null) {
       // targetNode を優先、なければ dropTargetInfo から検索
       const node = targetNode ?? (dropTargetInfo ? findNode(data, dropTargetInfo.id) : null);
+      console.log('[Tree] external drop → node:', node?.id, node?.nodeType);
       if (onFileDrop && node) onFileDrop(node, files);
       setDropTargetInfo(null);
       return;

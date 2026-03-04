@@ -159,8 +159,10 @@ function BinderTree(props) {
    * ノートタイプ（note / folder / folderDiagram）のみ受け付ける。
    */
   const handleFileDrop = (node, files) => {
+    console.log('[BinderTree] handleFileDrop called:', { nodeId: node?.id, nodeType: node?.nodeType, fileCount: files?.length });
     const nodeType = node.nodeType;
     if (nodeType !== 'note') {
+      console.log('[BinderTree] rejected: nodeType is not note:', nodeType);
       evt.showErrorMessage('アセットはノートにのみ追加できます');
       return;
     }
