@@ -1,8 +1,10 @@
 package binder
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	stdFs "io/fs"
 	"net"
@@ -78,6 +80,7 @@ func parseAddress(url string) string {
 
 type handler struct {
 	fileServer http.Handler
+	binder     *Binder // プライベートアセット配信用
 }
 
 func (b *Binder) newHTTPServer() (*http.Server, error) {
@@ -93,19 +96,41 @@ func (b *Binder) newHTTPServer() (*http.Server, error) {
 	}
 	var h handler
 	h.fileServer = http.FileServer(http.FS(docs))
+	h.binder = b
 	return &http.Server{Handler: &h}, nil
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	url := r.URL.String()
-	switch url {
-	case "/search":
+	path := r.URL.Path
+	switch {
+	case path == "/search":
 		//検索系
-	case "/private":
+	case path == "/private":
 		//公開前の表示
+	case strings.HasPrefix(path, "/binder-assets/"):
+		// プレビュー用プライベートアセット配信
+		id := strings.TrimPrefix(path, "/binder-assets/")
+		h.servePrivateAsset(w, r, id)
 	default:
 		h.fileServer.ServeHTTP(w, r)
 	}
+}
+
+// servePrivateAsset はプライベートアセットをIDで配信する（エディタプレビュー用）
+func (h *handler) servePrivateAsset(w http.ResponseWriter, r *http.Request, id string) {
+	if h.binder == nil || id == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	data, meta, err := h.binder.ReadAssetBytes(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// ファイル名からContent-Typeを自動判定して配信
+	http.ServeContent(w, r, meta.Name, time.Time{}, bytes.NewReader(data))
 }
 
 func (b *Binder) Serve() error {

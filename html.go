@@ -50,6 +50,16 @@ func (w *wrapper) localAddr() string {
 }
 
 func (w *wrapper) assets(id string) string {
+	if w.Local {
+		// エディタプレビュー用: HTTPサーバーのプライベートアセットエンドポイントを使用
+		addr := w.owner.ServerAddress()
+		if addr == "" {
+			return "assets/error"
+		}
+		return fmt.Sprintf("http://%s/binder-assets/%s", addr, id)
+	}
+
+	// パブリッシュ用: 従来の相対URL（公開済みアセット）
 	a, err := w.owner.GetAssetWithParent(id)
 	if err != nil {
 		return "assets/error"
