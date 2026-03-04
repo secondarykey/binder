@@ -116,6 +116,21 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     e.dataTransfer.setData('text/plain', id);
   };
 
+  // ドラッグ終了時（ドロップ先なし・Escapeキーなど）に状態をリセット
+  const handleDragEnd = () => {
+    draggedNodeId.current = null;
+    setDropTargetInfo(null);
+  };
+
+  // ドラッグ中の右クリックでキャンセルする（コンテナの空白エリア用）
+  const handleContainerContextMenu = (e) => {
+    if (draggedNodeId.current !== null) {
+      e.preventDefault();
+      draggedNodeId.current = null;
+      setDropTargetInfo(null);
+    }
+  };
+
   const handleDragOver = (e, id, isRoot) => {
     e.preventDefault();
     if (id === draggedNodeId.current) return;
@@ -223,7 +238,17 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           onDragOver={(e) => handleDragOver(e, node.id, isRoot)}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onContextMenu={(e) => onNodeContextMenu && onNodeContextMenu(e, node)}
+          onDragEnd={handleDragEnd}
+          onContextMenu={(e) => {
+            if (draggedNodeId.current !== null) {
+              // ドラッグ中の右クリック → ドラッグをキャンセル
+              e.preventDefault();
+              draggedNodeId.current = null;
+              setDropTargetInfo(null);
+              return;
+            }
+            onNodeContextMenu && onNodeContextMenu(e, node);
+          }}
           $isInside={isInside}
         >
             <Row>
@@ -251,7 +276,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     );
   };
 
-  return <TreeContainer onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>{data.map(node => renderNode(node, true))}</TreeContainer>;
+  return <TreeContainer onContextMenu={handleContainerContextMenu} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>{data.map(node => renderNode(node, true))}</TreeContainer>;
 };
 
 Tree.propTypes = {
