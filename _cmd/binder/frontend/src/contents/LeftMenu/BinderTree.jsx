@@ -202,9 +202,9 @@ function BinderTree(props) {
         };
         DropAsset(asset, filename, base64).then((result) => {
           viewTree();
-          // アセット登録後、エディタのカーソル位置に {{assetImage "id"}} を挿入
+          // アセット登録後、エディタのカーソル位置に {{assetsImage "id"}} を挿入
           if (result?.id) {
-            evt.insertText(`{{assetImage "${result.id}"}}`);
+            evt.insertText(`{{assetsImage "${result.id}"}}`);
           }
         }).catch((err) => {
           evt.showErrorMessage(err);
