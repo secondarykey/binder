@@ -69,6 +69,12 @@ func (w *wrapper) assets(id string) string {
 	return w.convertURL(p)
 }
 
+// assetImage はアセットIDから <img> タグを生成するテンプレート関数
+func (w *wrapper) assetImage(id string) template.HTML {
+	src := w.assets(id)
+	return template.HTML(fmt.Sprintf(`<img src="%s">`, src))
+}
+
 func (w *wrapper) latestNotes(n int) []*tempNote {
 	return w.getNotes(n, -1)
 }
@@ -204,6 +210,7 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"drawDiagram": w.drawSVG,
 		"replace":     strings.ReplaceAll,
 		"assets":      w.assets,
+		"assetImage":  w.assetImage,
 		"latestNotes": w.latestNotes,
 		"safe":        safeTemplate,
 		"localeDate":  localeDateScript,

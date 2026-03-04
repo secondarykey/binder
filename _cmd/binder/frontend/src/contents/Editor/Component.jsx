@@ -205,6 +205,30 @@ function Editor(props) {
 
   }, [id]);
 
+  // エディタへのテキスト挿入イベントを購読
+  // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
+  useEffect(() => {
+    evt.register('Editor', Event.InsertText, (text) => {
+      const textarea = document.querySelector("#editor");
+      if (!textarea) return;
+
+      const val = textarea.value;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      const before = val.substring(0, start);
+      const after = val.substring(end);
+
+      textarea.value = before + text + after;
+      textarea.selectionStart = start + text.length;
+      textarea.selectionEnd = start + text.length;
+
+      setTimeout(() => {
+        setText(textarea.value);
+      }, 500);
+    });
+  }, []);
+
   //名称が変更になった場合の処理
   useEffect(() => {
     evt.changeTitle(name)

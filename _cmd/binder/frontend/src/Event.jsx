@@ -43,6 +43,11 @@ class Event {
     static ModifiedCommit = "git.modified.commit"
 
     /**
+     * エディタへのテキスト挿入（カーソル位置に挿入）
+     */
+    static InsertText = "editor.insert.text"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();
@@ -92,6 +97,10 @@ class Event {
 
     changeAddress(address) {
         this.raise(Event.ChangeAddress,address);
+    }
+
+    insertText(text) {
+        this.raise(Event.InsertText, text);
     }
 
     showMessage(obj) {
