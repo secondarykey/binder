@@ -129,18 +129,18 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
   useEffect(() => { setSelectedId(selected); }, [selected]);
 
   // ドラッグ中の右クリックキャンセル:
-  // HTML5 DnD ではドラッグ中に contextmenu / mousedown イベントが抑制されるため、
-  // pointermove の e.buttons ビットで右ボタン押下を検出してキャンセルする
+  // HTML5 DnD 中は contextmenu/mousedown/pointermove の buttons が更新されないが、
+  // 右クリックは新しい pointerdown イベントとして発火する。
+  // capture: true でブラウザの DnD 抑制より前にキャプチャする。
   useEffect(() => {
-    const handlePointerMove = (e) => {
-      // buttons & 2: 右ボタンが押されている
-      if ((e.buttons & 2) && draggedNodeId.current !== null) {
+    const handlePointerDown = (e) => {
+      if (e.button === 2 && draggedNodeId.current !== null) {
         draggedNodeId.current = null;
         setDropTargetInfo(null);
       }
     };
-    document.addEventListener('pointermove', handlePointerMove);
-    return () => document.removeEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    return () => document.removeEventListener('pointerdown', handlePointerDown, { capture: true });
   }, []);
 
   const handleDragStart = (e, id) => {
