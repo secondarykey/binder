@@ -128,6 +128,20 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
   useEffect(() => { setData(initialData); }, [initialData]);
   useEffect(() => { setSelectedId(selected); }, [selected]);
 
+  // ドラッグ中の右クリックキャンセル:
+  // HTML5 DnD ではドラッグ中に contextmenu イベントが抑制されるブラウザが多いため、
+  // document レベルの mousedown (button=2) で確実に検出してキャンセルする
+  useEffect(() => {
+    const handleMouseDownGlobal = (e) => {
+      if (e.button === 2 && draggedNodeId.current !== null) {
+        draggedNodeId.current = null;
+        setDropTargetInfo(null);
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDownGlobal);
+    return () => document.removeEventListener('mousedown', handleMouseDownGlobal);
+  }, []);
+
   const handleDragStart = (e, id) => {
     draggedNodeId.current = id;
     e.dataTransfer.effectAllowed = 'move';
@@ -140,7 +154,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     setDropTargetInfo(null);
   };
 
-  // ドラッグ中の右クリックでキャンセルする（コンテナの空白エリア用）
+  // ドラッグ中でない通常の右クリックは contextmenu で処理（コンテナの空白エリア用）
   const handleContainerContextMenu = (e) => {
     if (draggedNodeId.current !== null) {
       e.preventDefault();
