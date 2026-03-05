@@ -10,7 +10,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Window } from '@wailsio/runtime';
-import { SavePosition, GetSetting, Terminate } from '../bindings/binder/api/app';
+import { SavePosition, GetSetting, Terminate, GetConfig } from '../bindings/binder/api/app';
 
 import Event, { EventContext } from "./Event";
 import { SystemMessage } from './Message';
@@ -47,23 +47,40 @@ function App() {
 
   const evt = useContext(EventContext)
 
-  //文書名（ページタイトル）
-  const [title, setTitle] = useState("");
+  //文書名（ページタイトル: ノート名・画面名など）
+  const [pageTitle, setPageTitle] = useState("");
   //開いているBinder名
-  const [binderTitle, setBinderTitle] = useState("");
+  const [binderName, setBinderName] = useState("");
   const [pin, setPin] = useState(false);
+
+  // Binder名を GetConfig() から取得してセット
+  const loadBinderName = () => {
+    GetConfig().then((conf) => {
+      setBinderName(conf.name);
+    }).catch(() => {
+      // バインダー未選択時はエラーを無視
+    });
+  };
 
   useEffect(() => {
 
-    //文書名変更のイベントを設定
+    //文書名（ページタイトル）変更イベント
     evt.register("App", Event.ReloadTitle, function (obj) {
-      setTitle(obj);
+      setPageTitle(obj);
     });
 
-    //Binder名変更のイベントを設定
+    //Binder名を編集保存したときのイベント
     evt.register("App", Event.ReloadBinderTitle, function (obj) {
-      setBinderTitle(obj);
+      setBinderName(obj);
     });
+
+    //バインダーを開いたとき（アドレス変更時）にBinder名を再取得
+    evt.register("App", Event.ChangeAddress, function () {
+      loadBinderName();
+    });
+
+    //初回取得
+    loadBinderName();
 
     //設定を取得
     GetSetting().then((s) => {
@@ -143,13 +160,13 @@ function App() {
             <MenuIcon fontSize="small" />
           </IconButton>
           <Typography variant="body2" component="div" noWrap>
-            {binderTitle}
+            {binderName}
           </Typography>
         </Box>
 
-        {/** 中央セクション: 文書名 */}
+        {/** 中央セクション: 文書名（ノート名・画面名） */}
         <Typography variant="body1" component="div" noWrap sx={{ textAlign: 'center', px: 1 }}>
-          {title}
+          {pageTitle}
         </Typography>
 
         {/** 右セクション: ウィンドウ操作ボタン */}
