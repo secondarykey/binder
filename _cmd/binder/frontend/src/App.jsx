@@ -151,7 +151,7 @@ function App() {
           <MaximizeIcon fontSize="small" />
         </IconButton>
         {/** アプリ終了 */}
-        <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleExit}>
+        <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </Toolbar>

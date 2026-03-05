@@ -64,6 +64,7 @@ body {
 }
 
 #mainTitle {
+    padding-left: 4px !important;
     padding-right: 0px;
 
     color: #f1f1f1 !important;
