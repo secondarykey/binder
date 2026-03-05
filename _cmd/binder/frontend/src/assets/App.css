@@ -19,8 +19,16 @@ body {
     margin:0;
     padding:0;
     display: flex;
+    flex-direction: column;
     width:100%;
     height: 100vh;
+}
+
+#mainArea {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .result {
@@ -56,9 +64,7 @@ body {
 #mainTitle {
     padding-right: 0px;
 
-    background-color: #191919;
     color: #f1f1f1 !important;
-    border-left: 1px solid #262626;
     border-bottom: 1px solid #262626;
     background-color: #1c1c1c !important;
     --wails-draggable: drag;

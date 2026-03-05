@@ -1,17 +1,25 @@
-import { useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 
-import { SavePosition, GetSetting } from '../bindings/binder/api/app';
+import { Paper, Toolbar, Typography, IconButton } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import MaximizeIcon from '@mui/icons-material/Maximize';
+import MinimizeIcon from '@mui/icons-material/Minimize';
+import CloseIcon from '@mui/icons-material/Close';
 
-import { EventContext } from "./Event";
+import { Window } from '@wailsio/runtime';
+import { SavePosition, GetSetting, Terminate } from '../bindings/binder/api/app';
+
+import Event, { EventContext } from "./Event";
 import { SystemMessage } from './Message';
 
 import './assets/App.css';
 
 /**
  * クリップボードのコピー
- * @param {*} val 
+ * @param {*} val
  */
 export async function copyClipboard(val) {
 
@@ -30,15 +38,25 @@ export async function copyClipboard(val) {
 }
 
 var intervalId = undefined;
+
 /**
  * アプリケーション全体
- * @returns 
+ * @returns
  */
 function App() {
 
   const evt = useContext(EventContext)
 
+  //タイトルの文字列
+  const [title, setTitle] = useState("");
+  const [pin, setPin] = useState(false);
+
   useEffect(() => {
+
+    //タイトル変更のイベントを設定
+    evt.register("App", Event.ReloadTitle, function (obj) {
+      setTitle(obj);
+    });
 
     //設定を取得
     GetSetting().then((s) => {
@@ -79,13 +97,73 @@ function App() {
 
   }, []);
 
+  const handlePin = () => {
+    var p = !pin;
+    Window.SetAlwaysOnTop(p);
+    setPin(p);
+  }
+
+  const handleMin = () => {
+    Window.Minimise();
+  }
+
+  const handleMax = () => {
+    Window.ToggleMaximise();
+  }
+
+  //終了処理
+  const handleExit = () => {
+    //TODO 終了処理を入れる
+    Terminate().then(() => {
+      console.log("?")
+    }).catch((err) => {
+      console.warn(err);
+    });
+  }
+
+  var pinClass = pin ? "top" : "";
 
   return (
     <div id="App">
-      {/** 左メニュー部 */}
-      <Menu />
-      {/** メイン表示 */}
-      <Content />
+
+      {/** 全幅タイトルバー */}
+      <Toolbar id="mainTitle" className="binderTitle">
+        {/** ハンバーガーアイコン（将来的にメニュー開閉に使用） */}
+        <IconButton size="large" edge="start" color="inherit" aria-label="menu" sx={{ mr: 1 }}>
+          <MenuIcon />
+        </IconButton>
+
+        {/** 表示名称 */}
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          {title}
+        </Typography>
+
+        {/** ピン留め */}
+        <IconButton id="pinBtn" className={pinClass} size="large" color="inherit" aria-label="pin" sx={{ mr: 2 }} onClick={handlePin}>
+          <PushPinIcon />
+        </IconButton>
+        {/** 最小化 */}
+        <IconButton size="large" color="inherit" aria-label="minimum" sx={{ mr: 2 }} onClick={handleMin}>
+          <MinimizeIcon />
+        </IconButton>
+        {/** 最大化 */}
+        <IconButton size="large" color="inherit" aria-label="maximize" sx={{ mr: 2 }} onClick={handleMax}>
+          <MaximizeIcon />
+        </IconButton>
+        {/** アプリ終了 */}
+        <IconButton size="large" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
+          <CloseIcon />
+        </IconButton>
+      </Toolbar>
+
+      {/** タイトルバー下のメインエリア（左メニュー＋コンテンツ） */}
+      <div id="mainArea">
+        {/** 左メニュー部 */}
+        <Menu />
+        {/** メイン表示 */}
+        <Content />
+      </div>
+
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />
     </div>
@@ -94,7 +172,7 @@ function App() {
 
 /**
  * コンポーネント非表示
- * @returns 
+ * @returns
  */
 export function Hidden() {
   return <></>;
