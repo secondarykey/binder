@@ -175,7 +175,7 @@ function Menu(props) {
       <>
         {/** BinderTree */}
         <IconButton className="leftButton" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
-          <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="36" height="36" />
+          <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="20" height="20" />
         </IconButton>
 
         {/** Modified  */}
