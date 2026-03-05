@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'react-router';
 
 import { GetAsset, GetAssetContent } from '../../bindings/binder/api/app';
@@ -25,9 +25,102 @@ function getMimeType(name) {
 }
 
 /**
+ * 画像ビューア（ドラッグ移動・ホイール拡大縮小）
+ * SVGビューア（Editor/Component.jsx viewDiagram）と同じロジックを流用。
+ * - 初期表示: コンテナに収まるようにフィットし中央配置
+ * - ドラッグ: pointermove で移動
+ * - ズーム: wheel で拡大縮小（0.1 刻み）
+ */
+function ImageViewer({ src, alt }) {
+  const containerRef = useRef(null);
+  const imgRef      = useRef(null);
+  // React state を使わず ref で transform 値を保持（ポインタ移動ごとの再レンダーを避ける）
+  const tfRef = useRef({ left: 0, top: 0, scale: 1 });
+
+  const applyTransform = () => {
+    if (!imgRef.current) return;
+    const { left, top, scale } = tfRef.current;
+    imgRef.current.style.transform = `translate(${left}px, ${top}px) scale(${scale})`;
+  };
+
+  // ホイールはブラウザのデフォルト（ページスクロール）を抑制する必要があるため
+  // passive: false の native リスナーで登録する
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const s = e.deltaY > 0 ? -0.1 : 0.1;
+      tfRef.current.scale = Math.max(0.1, tfRef.current.scale + s);
+      applyTransform();
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // 画像読み込み後: コンテナにフィットするスケールで中央配置
+  const handleLoad = () => {
+    const container = containerRef.current;
+    const img       = imgRef.current;
+    if (!container || !img) return;
+
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+
+    const scale = Math.min(cw / iw, ch / ih);
+    const left  = (cw - iw * scale) / 2;
+    const top   = (ch - ih * scale) / 2;
+
+    tfRef.current = { left, top, scale };
+    applyTransform();
+  };
+
+  // ドラッグ移動（SVGビューアと同じ pointermove + movementX/Y）
+  const handlePointerMove = (e) => {
+    if (!e.buttons) return;
+    tfRef.current.left += e.movementX;
+    tfRef.current.top  += e.movementY;
+    applyTransform();
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        position: 'relative',
+        cursor: 'grab',
+        userSelect: 'none',
+      }}
+      onPointerMove={handlePointerMove}
+    >
+      <img
+        ref={imgRef}
+        src={src}
+        alt={alt}
+        onLoad={handleLoad}
+        draggable={false}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          transformOrigin: '0 0',
+          maxWidth: 'none', // CSS による自動リサイズを無効化
+          userSelect: 'none',
+        }}
+      />
+    </div>
+  );
+}
+
+/**
  * アセットビューア
+ * - 画像ファイル: ドラッグ移動・ホイール拡大縮小付き画像表示
  * - テキストファイル: テキスト表示
- * - 画像ファイル: 画像表示
  * - その他バイナリ: 非表示通知
  * - ファイルが見つからない場合: メッセージ表示
  */
@@ -91,24 +184,22 @@ function AssetViewer() {
   }
 
   const { name, binary, content } = assetContent;
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  const ext     = name.split('.').pop()?.toLowerCase() ?? '';
   const isImage = binary && imageExts.has(ext);
 
+  // 画像: ImageViewer でドラッグ・ズーム表示
   if (isImage) {
     const mime = getMimeType(name);
     return (
-      <div style={{ padding: '16px', overflow: 'auto', height: '100%', boxSizing: 'border-box' }}>
-        <img
-          src={`data:${mime};base64,${content}`}
-          alt={name}
-          style={{ maxWidth: '100%', display: 'block' }}
-        />
-      </div>
+      <ImageViewer
+        src={`data:${mime};base64,${content}`}
+        alt={name}
+      />
     );
   }
 
+  // テキストファイル: base64 → UTF-8 テキスト
   if (!binary) {
-    // テキストファイル: base64 → UTF-8 テキスト
     let text = '';
     try {
       text = decodeURIComponent(escape(atob(content)));
