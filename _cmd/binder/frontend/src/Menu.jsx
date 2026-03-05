@@ -1,9 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
-import { GetConfig, CloseBinder, Address } from '../bindings/binder/api/app';
+import { CloseBinder, Address } from '../bindings/binder/api/app';
 
-import { IconButton, Paper, Toolbar, Typography } from '@mui/material';
+import { IconButton, Paper } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HomeIcon from '@mui/icons-material/Home';
@@ -55,10 +55,10 @@ function dateString() {
  * 基本操作のアイコンを左側に表示、
  * 他ツリーやメニューを他のコンポーネントで行う
  * </pre>
- * @param {*} props  
+ * @param {*} props
  * onClose=>閉じる際に呼び出される
  * onChangeMode=> モード変更時に呼び出される
- * @returns 
+ * @returns
  */
 function Menu(props) {
 
@@ -66,8 +66,6 @@ function Menu(props) {
   const evt = useContext(EventContext)
   const nav = useNavigate();
 
-  //上部タイトル表示
-  const [title, setTitle] = useState("");
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
 
@@ -92,19 +90,6 @@ function Menu(props) {
    * 初期処理
    */
   useEffect(() => {
-
-    evt.register("Menu", Event.ReloadBinderTitle, function (t) {
-      setTitle(t);
-    });
-    setTitle("Binder");
-
-    //設定を取得
-    GetConfig().then((conf) => {
-      //名称を設定
-      setTitle(conf.name);
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    });
 
     //アドレス変更時の処理
     evt.register("Menu", Event.ChangeAddress, function (arg) {
@@ -220,8 +205,6 @@ function Menu(props) {
       </>);
   }
 
-  console.debug(location.href);
-
   return (
     <>
       {/** 固定メニューの箇所 */}
@@ -257,22 +240,13 @@ function Menu(props) {
 
       <Paper id="menu" className={menuClasses}>
 
-        {/** メニュークラスが設定されている(hide)場合、非表示*/}
+        {/** ツリー折りたたみボタン（左上） */}
         {menuClasses === "" &&
-
-          <Toolbar id="titleBar" className="binderTitle">
-
-            {/** 開いているバインダーの名称 */}
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              <>{title}</>
-            </Typography>
-
-            {/** メニューを閉じる */}
-            <IconButton id="expandButton" size="large" edge="start" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleMenuClose}>
+          <div id="menuCollapseBar">
+            <IconButton id="expandButton" size="small" color="inherit" aria-label="close menu" onClick={handleMenuClose}>
               <ExpandCircleDownIcon id="expandIcon" />
             </IconButton>
-
-          </Toolbar>
+          </div>
         }
 
         {/** メニューの中身 */}

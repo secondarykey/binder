@@ -29,11 +29,17 @@
     min-width: 0px;
 }
 
+#menuCollapseBar {
+    display: flex;
+    align-items: center;
+    height: 36px;
+}
+
 #leftContent {
     overflow: auto !important;
     border:0;
-    height:calc(100% - 100px);
-    max-height:calc(100% - 100px);
+    height:calc(100% - 36px);
+    max-height:calc(100% - 36px);
     white-space: nowrap;
 
     background-color: #191919;
