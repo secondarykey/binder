@@ -13,6 +13,7 @@
 
 
 #menu {
+    position: relative;
     width: 250px;
     max-width: 250px;
     min-width: 250px;
@@ -30,17 +31,17 @@
 }
 
 #menuCollapseBar {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    height: 36px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
 }
 
 #leftContent {
     overflow: auto !important;
     border:0;
-    height:calc(100% - 36px);
-    max-height:calc(100% - 36px);
+    height:100%;
+    max-height:100%;
     white-space: nowrap;
 
     background-color: #191919;
