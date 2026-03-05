@@ -1,8 +1,8 @@
 #binderMenu {
     display: flex;
     margin-top: 0px;
-    width: 64px;
-    max-width: 64px;
+    width: 48px;
+    max-width: 48px;
     flex-flow: column;
     justify-content: flex-start;
 

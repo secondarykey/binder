@@ -174,32 +174,32 @@ function Menu(props) {
     return (
       <>
         {/** BinderTree */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
           <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="20" height="20" />
         </IconButton>
 
         {/** Modified  */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
           <UpdateIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Publish  */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
           <PublishIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Template */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
           <ContentPasteIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Browser */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="browser" onClick={handleClickBrowser}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="browser" onClick={handleClickBrowser}>
           <OpenInBrowserIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Binder Setting */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
           <SettingsApplications fill="white" className="leftIcon" />
         </IconButton>
       </>);
@@ -210,7 +210,7 @@ function Menu(props) {
       {/** 固定メニューの箇所 */}
       <Paper id="binderMenu">
         {/** ホーム */}
-        <IconButton className="leftButton" edge="start" color="inherit" aria-label="home" onClick={handleClickHome}>
+        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="home" onClick={handleClickHome}>
           <HomeIcon className="leftIcon" />
         </IconButton>
 
@@ -226,7 +226,7 @@ function Menu(props) {
         {/** メニューを閉じてる場合 */}
         {/** メニューを開く */}
         {menuClasses !== "" &&
-          <IconButton className="leftButton" edge="start" color="inherit" aria-label="open" onClick={handleMenuOpen}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="open" onClick={handleMenuOpen}>
             <ExpandCircleDownIcon className="openIcon leftIcon" />
           </IconButton>
         }
