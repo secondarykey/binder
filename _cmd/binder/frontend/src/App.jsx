@@ -129,30 +129,30 @@ function App() {
       {/** 全幅タイトルバー */}
       <Toolbar id="mainTitle" className="binderTitle">
         {/** ハンバーガーアイコン（将来的にメニュー開閉に使用） */}
-        <IconButton size="large" edge="start" color="inherit" aria-label="menu" sx={{ mr: 1 }}>
-          <MenuIcon />
+        <IconButton size="small" edge="start" color="inherit" aria-label="menu" sx={{ mr: 1 }}>
+          <MenuIcon fontSize="small" />
         </IconButton>
 
         {/** 表示名称 */}
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="body1" component="div" sx={{ flexGrow: 1 }}>
           {title}
         </Typography>
 
         {/** ピン留め */}
-        <IconButton id="pinBtn" className={pinClass} size="large" color="inherit" aria-label="pin" sx={{ mr: 2 }} onClick={handlePin}>
-          <PushPinIcon />
+        <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" sx={{ mr: 1 }} onClick={handlePin}>
+          <PushPinIcon fontSize="small" />
         </IconButton>
         {/** 最小化 */}
-        <IconButton size="large" color="inherit" aria-label="minimum" sx={{ mr: 2 }} onClick={handleMin}>
-          <MinimizeIcon />
+        <IconButton size="small" color="inherit" aria-label="minimum" sx={{ mr: 1 }} onClick={handleMin}>
+          <MinimizeIcon fontSize="small" />
         </IconButton>
         {/** 最大化 */}
-        <IconButton size="large" color="inherit" aria-label="maximize" sx={{ mr: 2 }} onClick={handleMax}>
-          <MaximizeIcon />
+        <IconButton size="small" color="inherit" aria-label="maximize" sx={{ mr: 1 }} onClick={handleMax}>
+          <MaximizeIcon fontSize="small" />
         </IconButton>
         {/** アプリ終了 */}
-        <IconButton size="large" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
-          <CloseIcon />
+        <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleExit}>
+          <CloseIcon fontSize="small" />
         </IconButton>
       </Toolbar>
 
