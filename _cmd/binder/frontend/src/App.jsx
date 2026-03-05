@@ -153,7 +153,7 @@ function App() {
         </Typography>
 
         {/** 右セクション: ウィンドウ操作ボタン */}
-        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 0.5 }}>
           {/** ピン留め */}
           <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
             <PushPinIcon fontSize="small" />
