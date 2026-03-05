@@ -142,7 +142,14 @@ function Assets(props) {
 
           <FormControl>
             <FormLabel>Alias</FormLabel>
-            <TextField value={alias} onChange={(e) => setAlias(e.target.value)}>
+            <TextField
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">
+                  <FormLabel>/assets/</FormLabel>
+                </InputAdornment>,
+              }}>
             </TextField>
           </FormControl>
 
