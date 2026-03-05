@@ -9,7 +9,6 @@
     border-right: 1px solid #343434;
     background-color: #191919;
     color: #e9e9e9;
-    --wails-draggable: no-drag;
 }
 
 
@@ -22,7 +21,6 @@
 
     background-color: #292929;
     color: #e9e9e9;
-    --wails-draggable: no-drag;
 }
 
 #menu.hideMenu {
