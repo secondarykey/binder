@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 
-import { Paper, Toolbar, Typography, IconButton } from '@mui/material';
+import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import MaximizeIcon from '@mui/icons-material/Maximize';
@@ -47,15 +47,22 @@ function App() {
 
   const evt = useContext(EventContext)
 
-  //タイトルの文字列
+  //文書名（ページタイトル）
   const [title, setTitle] = useState("");
+  //開いているBinder名
+  const [binderTitle, setBinderTitle] = useState("");
   const [pin, setPin] = useState(false);
 
   useEffect(() => {
 
-    //タイトル変更のイベントを設定
+    //文書名変更のイベントを設定
     evt.register("App", Event.ReloadTitle, function (obj) {
       setTitle(obj);
+    });
+
+    //Binder名変更のイベントを設定
+    evt.register("App", Event.ReloadBinderTitle, function (obj) {
+      setBinderTitle(obj);
     });
 
     //設定を取得
@@ -128,32 +135,43 @@ function App() {
 
       {/** 全幅タイトルバー */}
       <Toolbar id="mainTitle" className="binderTitle">
-        {/** ハンバーガーアイコン（将来的にメニュー開閉に使用） */}
-        <IconButton size="small" edge="start" color="inherit" aria-label="menu" sx={{ mr: 1 }}>
-          <MenuIcon fontSize="small" />
-        </IconButton>
 
-        {/** 表示名称 */}
-        <Typography variant="body1" component="div" sx={{ flexGrow: 1 }}>
+        {/** 左セクション: ハンバーガー + Binder名 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          {/** ハンバーガーアイコン（将来的にメニュー開閉に使用） */}
+          <IconButton size="small" color="inherit" aria-label="menu" sx={{ mr: 1 }}>
+            <MenuIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="body2" component="div" noWrap>
+            {binderTitle}
+          </Typography>
+        </Box>
+
+        {/** 中央セクション: 文書名 */}
+        <Typography variant="body1" component="div" noWrap sx={{ textAlign: 'center', px: 1 }}>
           {title}
         </Typography>
 
-        {/** ピン留め */}
-        <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" sx={{ mr: 1 }} onClick={handlePin}>
-          <PushPinIcon fontSize="small" />
-        </IconButton>
-        {/** 最小化 */}
-        <IconButton size="small" color="inherit" aria-label="minimum" sx={{ mr: 1 }} onClick={handleMin}>
-          <MinimizeIcon fontSize="small" />
-        </IconButton>
-        {/** 最大化 */}
-        <IconButton size="small" color="inherit" aria-label="maximize" sx={{ mr: 1 }} onClick={handleMax}>
-          <MaximizeIcon fontSize="small" />
-        </IconButton>
-        {/** アプリ終了 */}
-        <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 2 }} onClick={handleExit}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        {/** 右セクション: ウィンドウ操作ボタン */}
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+          {/** ピン留め */}
+          <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
+            <PushPinIcon fontSize="small" />
+          </IconButton>
+          {/** 最小化 */}
+          <IconButton size="small" color="inherit" aria-label="minimum" onClick={handleMin}>
+            <MinimizeIcon fontSize="small" />
+          </IconButton>
+          {/** 最大化 */}
+          <IconButton size="small" color="inherit" aria-label="maximize" onClick={handleMax}>
+            <MaximizeIcon fontSize="small" />
+          </IconButton>
+          {/** アプリ終了（右端に8px余白） */}
+          <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleExit}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
       </Toolbar>
 
       {/** タイトルバー下のメインエリア（左メニュー＋コンテンツ） */}

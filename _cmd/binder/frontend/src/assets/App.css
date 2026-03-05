@@ -64,7 +64,7 @@ body {
 }
 
 #mainTitle {
-    padding-left: 4px !important;
+    padding-left: 8px !important;
     padding-right: 0px;
 
     color: #f1f1f1 !important;
@@ -77,12 +77,8 @@ body {
     --wails-draggable: no-drag;
 }
 
-#mainTitle > button:hover {
+#mainTitle button:hover {
     background-color: #2a2a2a;
-}
-
-#mainTitle > button {
-    margin-right: 4px;
 }
 
 .saveBtn {
