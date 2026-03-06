@@ -1,16 +1,17 @@
 import { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import HomeIcon from '@mui/icons-material/Home';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Window } from '@wailsio/runtime';
-import { SavePosition, GetSetting, Terminate, GetConfig } from '../bindings/binder/api/app';
+import { SavePosition, GetSetting, Terminate, GetConfig, CloseBinder } from '../bindings/binder/api/app';
 
 import Event, { EventContext } from "./Event";
 import { SystemMessage } from './Message';
@@ -46,6 +47,7 @@ var intervalId = undefined;
 function App() {
 
   const evt = useContext(EventContext)
+  const nav = useNavigate();
 
   //文書名（ページタイトル: ノート名・画面名など）
   const [pageTitle, setPageTitle] = useState("");
@@ -121,6 +123,17 @@ function App() {
 
   }, []);
 
+  /**
+   * ホームボタンクリック: バインダーを閉じてトップへ移動
+   */
+  const handleClickHome = () => {
+    CloseBinder().then(() => {
+      nav("/");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  }
+
   const handlePin = () => {
     var p = !pin;
     Window.SetAlwaysOnTop(p);
@@ -153,11 +166,11 @@ function App() {
       {/** 全幅タイトルバー */}
       <Toolbar id="mainTitle" className="binderTitle" onDoubleClick={handleMax}>
 
-        {/** 左セクション: ハンバーガー + Binder名 */}
+        {/** 左セクション: ホームボタン + Binder名 */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
-          {/** ハンバーガーアイコン（将来的にメニュー開閉に使用） */}
-          <IconButton size="small" color="inherit" aria-label="menu" sx={{ mr: 1, ml: '-2px' }}>
-            <MenuIcon fontSize="small" />
+          {/** ホームボタン: バインダーを閉じてトップへ戻る */}
+          <IconButton size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
+            <HomeIcon fontSize="small" />
           </IconButton>
           <Typography variant="body1" component="div" noWrap>
             {binderName}

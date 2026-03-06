@@ -1,12 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
-import { CloseBinder, Address } from '../bindings/binder/api/app';
+import { Address } from '../bindings/binder/api/app';
 
 import { IconButton, Paper } from '@mui/material';
 import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
 import SettingsIcon from '@mui/icons-material/Settings';
-import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import UpdateIcon from '@mui/icons-material/Update';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -104,21 +103,6 @@ function Menu(props) {
 
   }, []);
 
-  /**
-   * ホームボタンクリック
-   */
-  const handleClickHome = () => {
-
-    //バインダーを閉じる
-    CloseBinder().then(() => {
-      //トップメニューに移動
-      nav("/");
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    })
-
-  }
-
   const handleClickTree = () => {
     nav("/editor/note/index");
   }
@@ -209,10 +193,6 @@ function Menu(props) {
     <>
       {/** 固定メニューの箇所 */}
       <Paper id="binderMenu">
-        {/** ホーム */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="home" onClick={handleClickHome}>
-          <HomeIcon className="leftIcon" />
-        </IconButton>
 
         {/** Binderが開いている時のみ処理できないか？ */}
 
