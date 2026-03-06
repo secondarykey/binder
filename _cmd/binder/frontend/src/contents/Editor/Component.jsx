@@ -48,7 +48,7 @@ function Editor(props) {
   const [comment, setComment] = useState("");
 
   const [width, setWidth] = useState(500);
-  const [menuWidth, setMenuWidth] = useState(310);
+  const [menuWidth, setMenuWidth] = useState(288);
   const [fontDialog, setShowFontDialog] = useState(false);
 
   const [editorFont, setEditorFont] = useState(undefined);
@@ -666,7 +666,7 @@ function Editor(props) {
     //メニューを開いているかのイベント
     evt.register("Editor",Event.ShowMenu,function(flag) {
       if ( flag ) {
-        setMenuWidth(310);
+        setMenuWidth(288);
       } else {
         setMenuWidth(0);
       }
