@@ -1,6 +1,6 @@
 #editorWrapper {
   position: absolute;
-  top: 40px;
+  top: 42px;
   bottom: 0;
 }
 
@@ -36,7 +36,7 @@
   --wails-draggable: no-drag;
 
   position: absolute;
-  top: 40px;
+  top: 42px;
   bottom: 0;
   cursor: ew-resize;
 
@@ -54,7 +54,7 @@
   --wails-draggable: no-drag;
 
   position: absolute;
-  top: 40px;
+  top: 42px;
   right: 0;
   bottom: 0px;
   display: flex;
