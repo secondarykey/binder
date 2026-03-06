@@ -5,6 +5,7 @@
     max-width: 42px;
     flex-flow: column;
     justify-content: flex-start;
+    gap: 4px;
 
     border-right: 1px solid #343434;
     background-color: #191919;
