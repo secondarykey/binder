@@ -151,7 +151,7 @@ function App() {
     <div id="App">
 
       {/** 全幅タイトルバー */}
-      <Toolbar id="mainTitle" className="binderTitle">
+      <Toolbar id="mainTitle" className="binderTitle" onDoubleClick={handleMax}>
 
         {/** 左セクション: ハンバーガー + Binder名 */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
