@@ -48,7 +48,7 @@ function Editor(props) {
   const [comment, setComment] = useState("");
 
   const [width, setWidth] = useState(500);
-  const [menuWidth, setMenuWidth] = useState(288);
+  const [menuWidth, setMenuWidth] = useState(293);
   const [fontDialog, setShowFontDialog] = useState(false);
 
   const [editorFont, setEditorFont] = useState(undefined);
@@ -666,9 +666,9 @@ function Editor(props) {
     //メニューを開いているかのイベント
     evt.register("Editor",Event.ShowMenu,function(flag) {
       if ( flag ) {
-        setMenuWidth(288);
+        setMenuWidth(293);
       } else {
-        setMenuWidth(0);
+        setMenuWidth(43);
       }
     });
 
@@ -685,6 +685,7 @@ function Editor(props) {
   var splitterW = 10;
   {/** スプリッター部分をコンポーネント化するか？ */ }
   var editWrapperStyle = {};
+  editWrapperStyle.left = menuWidth + "px";
   editWrapperStyle.width = (width - 4) + "px";
 
   var splitterStyle = {};
