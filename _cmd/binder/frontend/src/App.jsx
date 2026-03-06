@@ -156,7 +156,7 @@ function App() {
         {/** 左セクション: ハンバーガー + Binder名 */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
           {/** ハンバーガーアイコン（将来的にメニュー開閉に使用） */}
-          <IconButton size="small" color="inherit" aria-label="menu" sx={{ mr: 1, ml: '-1px' }}>
+          <IconButton size="small" color="inherit" aria-label="menu" sx={{ mr: 1, ml: '-2px' }}>
             <MenuIcon fontSize="small" />
           </IconButton>
           <Typography variant="body2" component="div" noWrap>
