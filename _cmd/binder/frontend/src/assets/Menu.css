@@ -1,8 +1,8 @@
 #binderMenu {
     display: flex;
     margin-top: 0px;
-    width: 48px;
-    max-width: 48px;
+    width: 42px;
+    max-width: 42px;
     flex-flow: column;
     justify-content: flex-start;
 
@@ -66,10 +66,6 @@ div.leftButton.active {
   border-radius: 0px !important;
 }
 
-svg.leftIcon {
-  width:20px;
-  height:20px;
-}
 
 #tree div.content {
   margin:0px ;
