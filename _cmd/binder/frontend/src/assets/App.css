@@ -66,6 +66,7 @@ body {
 #mainTitle {
     padding-left: 8px !important;
     padding-right: 0px;
+    padding-top: 2px !important;
 
     color: #f1f1f1 !important;
     border-bottom: 1px solid #262626;
