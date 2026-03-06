@@ -159,7 +159,7 @@ function App() {
           <IconButton size="small" color="inherit" aria-label="menu" sx={{ mr: 1, ml: '-2px' }}>
             <MenuIcon fontSize="small" />
           </IconButton>
-          <Typography variant="body2" component="div" noWrap>
+          <Typography variant="body1" component="div" noWrap>
             {binderName}
           </Typography>
         </Box>

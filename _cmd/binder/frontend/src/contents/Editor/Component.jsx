@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useRef } from "react"
 import { useParams } from "react-router";
 
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
@@ -50,6 +50,11 @@ function Editor(props) {
   const [width, setWidth] = useState(500);
   const [menuWidth, setMenuWidth] = useState(293);
   const [fontDialog, setShowFontDialog] = useState(false);
+
+  // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
+  // handleChangeText だけが true にセットする。ファイルオープン時はセットされないので即時描画になる。
+  const isEditingRef = useRef(false);
+  const parseTimerRef = useRef(null);
 
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
@@ -163,7 +168,7 @@ function Editor(props) {
       OpenTemplate(id).then((resp) => {
         setText(resp);
         //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
-        //TODO: HTML をどのように作成するかを考える 
+        //TODO: HTML をどのように作成するかを考える
         //createNoteElement();
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -253,7 +258,18 @@ function Editor(props) {
   }
 
   //テキスト変更時の処理
+  // handleChangeText（ユーザー入力）→ isEditingRef=true → デバウンス
+  // ファイルオープン時は isEditingRef が false のまま → 即時描画
   useEffect(() => {
+    if (isEditingRef.current) {
+      // ユーザーが入力中 → 500msデバウンスして描画
+      isEditingRef.current = false;
+      if (parseTimerRef.current) clearTimeout(parseTimerRef.current);
+      parseTimerRef.current = setTimeout(parseText, 500);
+      return () => clearTimeout(parseTimerRef.current);
+    }
+    // ファイルオープン時（または挿入操作） → 即座に描画
+    if (text === "") return;
     parseText();
   }, [text]);
 
@@ -368,6 +384,8 @@ function Editor(props) {
    */
   const handleChangeText = (e) => {
 
+    // ユーザー入力フラグを立てる（useEffect[text] でデバウンスを選択させる）
+    isEditingRef.current = true;
     var txt = e.target.value;
     setText(txt);
 
@@ -576,14 +594,21 @@ function Editor(props) {
     }
 
     var at = "\n" + indent + char;
+    const newCursor = start + at.length;
 
     textarea.value =  before + at + after;
-    textarea.selectionStart = start + at.length;
-    textarea.selectionEnd = start + at.length;
+    textarea.selectionStart = newCursor;
+    textarea.selectionEnd = newCursor;
 
-    setTimeout(function() {
-      setText(textarea.value);
-    },500)
+    // isEditingRef を立ててデバウンスを有効化し、即時 setText する。
+    // setTimeout を使うと次の Enter 連打時に React 再レンダリングでカーソルが末尾に飛ぶため、
+    // requestAnimationFrame で再レンダリング後にカーソル位置を復元する。
+    isEditingRef.current = true;
+    setText(textarea.value);
+    requestAnimationFrame(() => {
+      textarea.selectionStart = newCursor;
+      textarea.selectionEnd = newCursor;
+    });
   }
 
   /**
