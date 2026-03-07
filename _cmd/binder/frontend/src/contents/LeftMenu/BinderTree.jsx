@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button } from '@mui/material';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -10,7 +10,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { Events } from '@wailsio/runtime';
 
-import { GetBinderTree, MoveNode, DropAsset } from '../../../bindings/binder/api/app';
+import { GetBinderTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -114,6 +114,9 @@ function BinderTree(props) {
 
   // Add サブメニューのアンカー要素
   const [addMenuAnchor, setAddMenuAnchor] = useState(null);
+
+  // 削除確認ダイアログの状態
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
 
   // paste イベントハンドラ内で最新値を参照するための ref
   const selectedIdRef = useRef(null);
@@ -283,6 +286,38 @@ function BinderTree(props) {
   const handleEditDiagram     = () => { closeAllMenus(); nav("/diagram/edit/"     + contextMenu.node.id); };
   const handleEditAsset       = () => { closeAllMenus(); nav("/assets/edit/"      + contextMenu.node.id); };
 
+  /** 削除確認ダイアログを開く */
+  const handleDeleteRequest = () => {
+    const node = contextMenu.node;
+    closeAllMenus();
+    setDeleteConfirm({ open: true, node });
+  };
+
+  /** 削除確認後の実行 */
+  const handleDeleteConfirm = () => {
+    const { node } = deleteConfirm;
+    setDeleteConfirm({ open: false, node: null });
+    if (!node) return;
+
+    const type = node.nodeType || node.type;
+    const remove =
+      type === 'note'    ? RemoveNote(node.id) :
+      type === 'diagram' ? RemoveDiagram(node.id) :
+                           RemoveAsset(node.id);
+
+    remove.then(() => {
+      evt.refreshTree();
+      evt.showSuccessMessage("Deleted.");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  /** 削除をキャンセル */
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ open: false, node: null });
+  };
+
   // 現在右クリックされているノードの元type
   const contextNodeType = contextMenu.node?.nodeType;
 
@@ -301,7 +336,7 @@ function BinderTree(props) {
       icons={binderIcons}
     />
 
-    {/** ノートメニュー: Edit / Add ▶ */}
+    {/** ノートメニュー: Edit / Add ▶ / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "note"}
       onClose={closeAllMenus}
@@ -309,7 +344,8 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
-      <MenuItem onClick={handleAddMenuOpen}>Add ▶</MenuItem>
+      <MenuItem onClick={handleAddMenuOpen} divider>Add ▶</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
@@ -325,25 +361,38 @@ function BinderTree(props) {
       <MenuItem onClick={handleRegisterAssets}>Assets</MenuItem>
     </Menu>
 
-    {/** ダイアグラムメニュー: Edit */}
+    {/** ダイアグラムメニュー: Edit / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
-      <MenuItem onClick={handleEditDiagram}>Edit</MenuItem>
+      <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
 
-    {/** アセットメニュー: Edit */}
+    {/** アセットメニュー: Edit / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "asset"}
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
-      <MenuItem onClick={handleEditAsset}>Edit</MenuItem>
+      <MenuItem onClick={handleEditAsset} divider>Edit</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
+
+    {/** 削除確認ダイアログ */}
+    <Dialog open={deleteConfirm.open} onClose={handleDeleteCancel}>
+      <DialogTitle>
+        「{deleteConfirm.node?.name}」を削除しますか？
+      </DialogTitle>
+      <DialogActions>
+        <Button onClick={handleDeleteCancel}>Cancel</Button>
+        <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
+      </DialogActions>
+    </Dialog>
 
   </>);
 }
