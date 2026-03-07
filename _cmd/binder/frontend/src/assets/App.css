@@ -45,6 +45,14 @@ body {
     color : #555555;
 }
 
+#sidebarBtn.open {
+    background-color: #333333;
+}
+
+#sidebarBtn.open > svg {
+    color: #aaaacc;
+}
+
 
 .binderTitle {
     min-height: 40px !important;

@@ -55,6 +55,7 @@ function App() {
   //開いているBinder名
   const [binderName, setBinderName] = useState("");
   const [pin, setPin] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Binder名を GetConfig() から取得してセット
   const loadBinderName = () => {
@@ -75,6 +76,11 @@ function App() {
     //Binder名を編集保存したときのイベント
     evt.register("App", Event.ReloadBinderTitle, function (obj) {
       setBinderName(obj);
+    });
+
+    //サイドバーの開閉状態を同期
+    evt.register("App", Event.ShowMenu, function (flag) {
+      setSidebarOpen(flag);
     });
 
     //バインダーを開いたとき（アドレス変更時）にBinder名を再取得
@@ -164,6 +170,7 @@ function App() {
   }
 
   var pinClass = pin ? "top" : "";
+  var sidebarClass = sidebarOpen ? "open" : "";
 
   return (
     <div id="App">
@@ -181,7 +188,7 @@ function App() {
             {binderName}
           </Typography>
           {/** サイドバー開閉: Binder名の横 */}
-          <IconButton size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
+          <IconButton id="sidebarBtn" className={sidebarClass} size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
             <ViewSidebarIcon fontSize="small" />
           </IconButton>
         </Box>
