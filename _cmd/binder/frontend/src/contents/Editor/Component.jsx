@@ -367,16 +367,32 @@ function Editor(props) {
     });
   }
 
-  var startX;
-  const dragSplitter = (e) => {
-    var t = e.type;
-    if (t === "dragstart") {
-      startX = e.screenX;
-    } else if (t === "dragend") {
-      var w = width - (startX - e.screenX );
-      setWidth(w);
-    }
-  }
+  // スプリッタードラッグ: HTML5 DnD の代わりに Pointer Capture を使用
+  // → ブラウザの禁止カーソルが出なくなり、iframeをまたいでもイベントが途切れない
+  const splitterRef = useRef(null);
+  const splitStartRef = useRef(null);
+
+  const handleSplitterPointerDown = (e) => {
+    e.preventDefault();
+    splitStartRef.current = { startX: e.clientX, startWidth: width };
+    splitterRef.current.setPointerCapture(e.pointerId);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleSplitterPointerMove = (e) => {
+    if (!splitStartRef.current) return;
+    const delta = e.clientX - splitStartRef.current.startX;
+    const newWidth = Math.max(100, splitStartRef.current.startWidth + delta);
+    setWidth(newWidth);
+  };
+
+  const handleSplitterPointerUp = () => {
+    if (!splitStartRef.current) return;
+    splitStartRef.current = null;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  };
 
   /**
    * テキストの変更
@@ -820,7 +836,11 @@ function Editor(props) {
 
 {/** セパレータ */}
 {editor && viewer && 
-        <div draggable="true" id="splitter" style={splitterStyle} onDragStart={dragSplitter} onDragEnd={dragSplitter} onDrag={dragSplitter}></div>
+        <div ref={splitterRef} id="splitter" style={splitterStyle}
+             onPointerDown={handleSplitterPointerDown}
+             onPointerMove={handleSplitterPointerMove}
+             onPointerUp={handleSplitterPointerUp}
+        />
 }
 
 {/** 表示側 */}
