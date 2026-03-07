@@ -19,17 +19,7 @@ function History(props) {
 
   useEffect(() => {
     GetSetting().then((s) => {
-      const hs = s.path.histories;
-      setHistories(hs);
-      // 履歴があれば最後に使ったバインダーを自動的に開く
-      if (hs && hs.length > 0) {
-        LoadBinder(hs[0]).then((href) => {
-          evt.changeAddress(href);
-          nav("/note/edit/index");
-        }).catch((err) => {
-          evt.showErrorMessage(err);
-        });
-      }
+      setHistories(s.path.histories);
     });
   }, [])
 

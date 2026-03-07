@@ -11,7 +11,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Window } from '@wailsio/runtime';
-import { SavePosition, GetSetting, Terminate, GetConfig, CloseBinder } from '../bindings/binder/api/app';
+import { SavePosition, GetSetting, LoadBinder, Terminate, GetConfig, CloseBinder } from '../bindings/binder/api/app';
 
 import Event, { EventContext } from "./Event";
 import { SystemMessage } from './Message';
@@ -84,11 +84,15 @@ function App() {
     //初回取得
     loadBinderName();
 
-    //設定を取得
+    //設定を取得し、履歴があれば最後のバインダーをエディタで自動的に開く
     GetSetting().then((s) => {
-      if (s.path.runWithOpen) {
-        //TODO バインダーを選択する
-      } else {
+      if (s.path.histories && s.path.histories.length > 0) {
+        LoadBinder(s.path.histories[0]).then((href) => {
+          evt.changeAddress(href);
+          nav("/editor/note/index");
+        }).catch((err) => {
+          evt.showErrorMessage(err);
+        });
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
