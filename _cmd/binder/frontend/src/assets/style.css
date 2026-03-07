@@ -53,6 +53,50 @@
     --wails-draggable:no-drag;
 }
 
+/* ダイアログのダークモード */
+.MuiDialog-paper {
+  background-color: #1e1e1e !important;
+  color: #f1f1f1 !important;
+}
+
+.MuiDialogTitle-root {
+  color: #f1f1f1 !important;
+}
+
+.MuiDialogContentText-root {
+  color: #c0c0c0 !important;
+}
+
+.MuiOutlinedInput-root {
+  background-color: #2a2a2a !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border-color: #444 !important;
+}
+
+.MuiSelect-icon {
+  color: #c0c0c0 !important;
+}
+
+/* セレクトボックスのドロップダウンメニュー */
+.MuiPopover-paper, .MuiMenu-paper {
+  background-color: #2a2a2a !important;
+  color: #f1f1f1 !important;
+}
+
+.MuiMenuItem-root {
+  color: #f1f1f1 !important;
+}
+
+.MuiMenuItem-root:hover {
+  background-color: #3a3a3a !important;
+}
+
+.MuiMenuItem-root.Mui-selected {
+  background-color: #333a4a !important;
+}
+
 .MuiAccordion-root {
   background-color: #202020 !important;
   color: #f1f1f1 !important;
