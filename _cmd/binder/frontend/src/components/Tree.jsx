@@ -50,7 +50,7 @@ const NodeContent = styled.div`
   position: relative;
   padding: 2px 2px 2px 18px;
   border-radius: 2px;
-  background-color: ${props => props.$isSelected ? '#222529' : 'transparent'};
+  background-color: ${props => props.$isSelected ? '#2a3f6f' : 'transparent'};
   flex-grow: 1;
   cursor: pointer;
   display: flex;
