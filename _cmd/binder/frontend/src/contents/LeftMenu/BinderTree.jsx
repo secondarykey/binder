@@ -5,7 +5,6 @@ import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button } from '@mui
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { Events } from '@wailsio/runtime';
@@ -39,22 +38,15 @@ function MermaidIcon() {
 /**
  * ツリー表示用のアイコンマップ
  * - folder / folderOpen: 子を持つノート（FolderIcon）
- * - folderDiagram: 子がすべてダイアグラムのノート（LibraryBooksIcon）
  * - note / diagram / asset: 各リーフノード
  */
 const binderIcons = {
-  note:          <TextSnippetIcon fontSize="small" />,
-  diagram:       <MermaidIcon />,
-  asset:         <AttachFileIcon fontSize="small" />,
-  folder:        <FolderIcon fontSize="small" />,
-  folderOpen:    <FolderIcon fontSize="small" />,
-  folderDiagram: <LibraryBooksIcon fontSize="small" />,
+  note:       <TextSnippetIcon fontSize="small" />,
+  diagram:    <MermaidIcon />,
+  asset:      <AttachFileIcon fontSize="small" />,
+  folder:     <FolderIcon fontSize="small" />,
+  folderOpen: <FolderIcon fontSize="small" />,
 };
-
-/**
- * 子ノードがすべてダイアグラムかどうか
- */
-const onlyDiagram = (list) => list.every(v => v.type === "diagram");
 
 /**
  * ツリー（生データ）を id で再帰検索する
@@ -71,7 +63,7 @@ const findNodeInTree = (nodes, id) => {
 
 /**
  * GetBinderTree() の戻り値をカスタムTreeコンポーネント用に変換する
- * - 子を持つ note → displayType を "folder" or "folderDiagram" に変換
+ * - 子を持つ note → displayType を "folder" に変換
  * - nodeType に元の type を保持（コンテキストメニュー判定用）
  */
 const processTreeData = (leafs) => {
@@ -80,15 +72,12 @@ const processTreeData = (leafs) => {
     const children = leaf.children ? processTreeData(leaf.children) : undefined;
     const hasChildren = children && children.length > 0;
 
-    let displayType = leaf.type;
-    if (leaf.type === "note" && hasChildren) {
-      displayType = onlyDiagram(leaf.children) ? "folderDiagram" : "folder";
-    }
+    const displayType = (leaf.type === "note" && hasChildren) ? "folder" : leaf.type;
 
     return {
       id: leaf.id,
       name: leaf.name,
-      type: displayType,    // アイコン表示用（folder/folderDiagram/note/diagram/asset）
+      type: displayType,    // アイコン表示用（folder/note/diagram/asset）
       nodeType: leaf.type,  // コンテキストメニュー判定用（元のtype）
       children: hasChildren ? children : undefined,
     };
