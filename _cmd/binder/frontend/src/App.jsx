@@ -4,7 +4,7 @@ import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
+import StorageIcon from '@mui/icons-material/Storage';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
@@ -174,7 +174,7 @@ function App() {
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
           {/** ホームボタン: バインダーを閉じてトップへ戻る */}
           <IconButton size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
-            <HomeIcon fontSize="small" />
+            <StorageIcon fontSize="small" />
           </IconButton>
           <Typography variant="body1" component="div" noWrap>
             {binderName}
