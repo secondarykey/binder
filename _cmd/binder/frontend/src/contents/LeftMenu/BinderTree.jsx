@@ -112,6 +112,9 @@ function BinderTree(props) {
   // コンテキストメニューの状態
   const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0, node: null });
 
+  // Add サブメニューのアンカー要素
+  const [addMenuAnchor, setAddMenuAnchor] = useState(null);
+
   // paste イベントハンドラ内で最新値を参照するための ref
   const selectedIdRef = useRef(null);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
@@ -250,6 +253,17 @@ function BinderTree(props) {
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
+  /** コンテキストメニューとAddサブメニューをまとめて閉じる */
+  const closeAllMenus = () => {
+    setAddMenuAnchor(null);
+    setContextMenu({ open: false, x: 0, y: 0, node: null });
+  };
+
+  /** Addサブメニューを開く */
+  const handleAddMenuOpen = (e) => {
+    setAddMenuAnchor(e.currentTarget);
+  };
+
   /** D&D: parentId と childIds を使って Seq を更新する */
   const handleChange = (changeInfo) => {
     const parentId = changeInfo.parentId ?? "";
@@ -262,12 +276,12 @@ function BinderTree(props) {
 
   // ---- コンテキストメニューのナビゲーションハンドラ ----
 
-  const handleEditNote        = () => { closeContextMenu(); nav("/note/edit/"        + contextMenu.node.id); };
-  const handleRegisterNote    = () => { closeContextMenu(); nav("/note/register/"    + contextMenu.node.id); };
-  const handleRegisterDiagram = () => { closeContextMenu(); nav("/diagram/register/" + contextMenu.node.id); };
-  const handleRegisterAssets  = () => { closeContextMenu(); nav("/assets/register/"  + contextMenu.node.id); };
-  const handleEditDiagram     = () => { closeContextMenu(); nav("/diagram/edit/"     + contextMenu.node.id); };
-  const handleEditAsset       = () => { closeContextMenu(); nav("/assets/edit/"      + contextMenu.node.id); };
+  const handleEditNote        = () => { closeAllMenus(); nav("/note/edit/"        + contextMenu.node.id); };
+  const handleRegisterNote    = () => { closeAllMenus(); nav("/note/register/"    + contextMenu.node.id); };
+  const handleRegisterDiagram = () => { closeAllMenus(); nav("/diagram/register/" + contextMenu.node.id); };
+  const handleRegisterAssets  = () => { closeAllMenus(); nav("/assets/register/"  + contextMenu.node.id); };
+  const handleEditDiagram     = () => { closeAllMenus(); nav("/diagram/edit/"     + contextMenu.node.id); };
+  const handleEditAsset       = () => { closeAllMenus(); nav("/assets/edit/"      + contextMenu.node.id); };
 
   // 現在右クリックされているノードの元type
   const contextNodeType = contextMenu.node?.nodeType;
@@ -287,23 +301,34 @@ function BinderTree(props) {
       icons={binderIcons}
     />
 
-    {/** ノートメニュー: Edit / Add Note / Add Diagram / Add Assets */}
+    {/** ノートメニュー: Edit / Add ▶ */}
     <Menu
       open={contextMenu.open && contextNodeType === "note"}
-      onClose={closeContextMenu}
+      onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
-      <MenuItem onClick={handleRegisterNote}>Add Note</MenuItem>
-      <MenuItem onClick={handleRegisterDiagram}>Add Diagram</MenuItem>
-      <MenuItem onClick={handleRegisterAssets}>Add Assets</MenuItem>
+      <MenuItem onClick={handleAddMenuOpen}>Add ▶</MenuItem>
+    </Menu>
+
+    {/** Add サブメニュー: Note / Diagram / Assets */}
+    <Menu
+      open={Boolean(addMenuAnchor)}
+      onClose={closeAllMenus}
+      anchorEl={addMenuAnchor}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+    >
+      <MenuItem onClick={handleRegisterNote}>Note</MenuItem>
+      <MenuItem onClick={handleRegisterDiagram}>Diagram</MenuItem>
+      <MenuItem onClick={handleRegisterAssets}>Assets</MenuItem>
     </Menu>
 
     {/** ダイアグラムメニュー: Edit */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
-      onClose={closeContextMenu}
+      onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
@@ -313,7 +338,7 @@ function BinderTree(props) {
     {/** アセットメニュー: Edit */}
     <Menu
       open={contextMenu.open && contextNodeType === "asset"}
-      onClose={closeContextMenu}
+      onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
