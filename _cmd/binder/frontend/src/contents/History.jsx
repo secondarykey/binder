@@ -30,7 +30,7 @@ function History(props) {
       console.log(href)
       evt.changeAddress(href);
 
-      nav("/note/edit/index");
+      nav("/editor/note/index");
 
     }).catch((err) => {
       evt.showErrorMessage(err)
