@@ -171,7 +171,7 @@ function App() {
       {/** 全幅タイトルバー */}
       <Toolbar id="mainTitle" className="binderTitle" onDoubleClick={handleMax}>
 
-        {/** 左セクション: ホームボタン + Binder名 */}
+        {/** 左セクション: ホームボタン + Binder名 + サイドバー開閉 */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
           {/** ホームボタン: バインダーを閉じてトップへ戻る */}
           <IconButton size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
@@ -180,6 +180,10 @@ function App() {
           <Typography variant="body1" component="div" noWrap>
             {binderName}
           </Typography>
+          {/** サイドバー開閉: Binder名の横 */}
+          <IconButton size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
+            <ViewSidebarIcon fontSize="small" />
+          </IconButton>
         </Box>
 
         {/** 中央セクション: 文書名（ノート名・画面名） */}
@@ -189,10 +193,6 @@ function App() {
 
         {/** 右セクション: ウィンドウ操作ボタン */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 2, mr: 0.5 }}>
-          {/** サイドバー開閉 */}
-          <IconButton size="small" color="inherit" aria-label="toggle sidebar" onClick={() => evt.toggleSidebar()}>
-            <ViewSidebarIcon fontSize="small" />
-          </IconButton>
           {/** ピン留め */}
           <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
             <PushPinIcon fontSize="small" />
