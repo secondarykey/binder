@@ -284,8 +284,12 @@ func getModelType(f string) (*Modified, error) {
 		//".md"
 		mod.Id = fn[:len(fn)-3]
 	} else if strings.Index(f, AssetDir) == 0 {
+		// 0.2.2以降フラット構造: assets/{assetId} または assets/{noteId}-meta
+		if strings.HasSuffix(fn, "-meta") {
+			return nil, fmt.Errorf("MetaFile skip [%s]", f)
+		}
 		mod.Typ = "asset"
-		mod.Id = data[2]
+		mod.Id = fn
 	} else if strings.Index(f, TemplateDir) == 0 {
 		mod.Typ = "template"
 		//".tmpl"
