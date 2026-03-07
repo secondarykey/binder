@@ -10,7 +10,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { Events } from '@wailsio/runtime';
 
-import { GetBinderTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset } from '../../../bindings/binder/api/app';
+import { GetBinderTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
+         EditNote, EditDiagram, EditAsset, SelectFile, GetHTMLTemplates } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -280,11 +281,62 @@ function BinderTree(props) {
   // ---- コンテキストメニューのナビゲーションハンドラ ----
 
   const handleEditNote        = () => { closeAllMenus(); nav("/note/edit/"        + contextMenu.node.id); };
-  const handleRegisterNote    = () => { closeAllMenus(); nav("/note/register/"    + contextMenu.node.id); };
-  const handleRegisterDiagram = () => { closeAllMenus(); nav("/diagram/register/" + contextMenu.node.id); };
-  const handleRegisterAssets  = () => { closeAllMenus(); nav("/assets/register/"  + contextMenu.node.id); };
   const handleEditDiagram     = () => { closeAllMenus(); nav("/diagram/edit/"     + contextMenu.node.id); };
   const handleEditAsset       = () => { closeAllMenus(); nav("/assets/edit/"      + contextMenu.node.id); };
+
+  /** ノートをデフォルト値で即時作成してエディタへ */
+  const handleRegisterNote = async () => {
+    const parentId = contextMenu.node.id;
+    closeAllMenus();
+    try {
+      const tmpls = await GetHTMLTemplates();
+      const note = {
+        id: "",
+        parentId,
+        name: "New Note",
+        alias: "",
+        detail: "",
+        layoutTemplate: tmpls.layouts[0].id,
+        contentTemplate: tmpls.contents[0].id,
+      };
+      const resp = await EditNote(note, "");
+      evt.refreshTree();
+      nav("/editor/note/" + resp.id);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
+  /** ダイアグラムをデフォルト値で即時作成してエディタへ */
+  const handleRegisterDiagram = async () => {
+    const parentId = contextMenu.node.id;
+    closeAllMenus();
+    try {
+      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "" };
+      const resp = await EditDiagram(diagram);
+      evt.refreshTree();
+      nav("/editor/diagram/" + resp.id);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
+  /** ファイル選択後にアセットを作成してエディタへ */
+  const handleRegisterAssets = async () => {
+    const parentId = contextMenu.node.id;
+    closeAllMenus();
+    try {
+      const filePath = await SelectFile("Any File", "*");
+      if (!filePath) return;
+      const name = filePath.split(/[/\\]/).pop() || "New Asset";
+      const asset = { id: "", parentId, name, alias: "", detail: "", binary: false };
+      const resp = await EditAsset(asset, filePath);
+      evt.refreshTree();
+      nav("/editor/assets/" + resp.id);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
 
   /** 削除確認ダイアログを開く */
   const handleDeleteRequest = () => {
