@@ -59,6 +59,10 @@ button.leftButton {
   margin-right:0px !important;
 }
 
+button.leftButton:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 #settingButton {
   margin-top:auto !important;
 }
