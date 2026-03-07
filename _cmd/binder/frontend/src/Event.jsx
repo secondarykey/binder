@@ -19,6 +19,11 @@ class Event {
     static ShowMenu = "menu.show"
 
     /**
+     * サイドバーの開閉トグル
+     */
+    static ToggleSidebar = "sidebar.toggle"
+
+    /**
      * ツリーの再描画
      */
     static ReloadTree = "tree.reload"
@@ -81,6 +86,10 @@ class Event {
 
     showMenu(flag) {
         this.raise(Event.ShowMenu, flag);
+    }
+
+    toggleSidebar() {
+        this.raise(Event.ToggleSidebar);
     }
 
     refreshTree() {

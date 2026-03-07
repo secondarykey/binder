@@ -1,10 +1,9 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
 import { Address } from '../bindings/binder/api/app';
 
 import { IconButton, Paper } from '@mui/material';
-import ExpandCircleDownIcon from '@mui/icons-material/ExpandCircleDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import UpdateIcon from '@mui/icons-material/Update';
@@ -67,6 +66,8 @@ function Menu(props) {
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
+  // イベントハンドラ内で最新の開閉状態を参照するための ref
+  const menuOpenRef = useRef(true);
 
   const [url, setURL] = useState("");
 
@@ -74,6 +75,7 @@ function Menu(props) {
    * メニューを開く
    */
   const handleMenuOpen = () => {
+    menuOpenRef.current = true;
     setMenuClasses("")
     evt.showMenu(true);
   }
@@ -81,6 +83,7 @@ function Menu(props) {
    * メニューを閉じる
    */
   const handleMenuClose = () => {
+    menuOpenRef.current = false;
     setMenuClasses("hideMenu")
     evt.showMenu(false);
   }
@@ -93,6 +96,15 @@ function Menu(props) {
     //アドレス変更時の処理
     evt.register("Menu", Event.ChangeAddress, function (arg) {
       setURL(arg);
+    });
+
+    // サイドバー開閉トグル
+    evt.register("Menu", Event.ToggleSidebar, function () {
+      if (menuOpenRef.current) {
+        handleMenuClose();
+      } else {
+        handleMenuOpen();
+      }
     });
 
     Address().then((arg) => {
@@ -202,15 +214,6 @@ function Menu(props) {
           <Route path="*" element={<OpenBinderComponent />} />
         </Routes>
 
-
-        {/** メニューを閉じてる場合 */}
-        {/** メニューを開く */}
-        {menuClasses !== "" &&
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="open" onClick={handleMenuOpen}>
-            <ExpandCircleDownIcon className="openIcon leftIcon" />
-          </IconButton>
-        }
-
         {/** Settingsのボタン */}
         <IconButton id="settingButton" className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleSettingClick}>
           <SettingsIcon className="leftIcon" />
@@ -219,15 +222,6 @@ function Menu(props) {
       </Paper>
 
       <Paper id="menu" className={menuClasses}>
-
-        {/** ツリー折りたたみボタン（左上） */}
-        {menuClasses === "" &&
-          <div id="menuCollapseBar">
-            <IconButton id="expandButton" size="small" color="inherit" aria-label="close menu" onClick={handleMenuClose}>
-              <ExpandCircleDownIcon id="expandIcon" />
-            </IconButton>
-          </div>
-        }
 
         {/** メニューの中身 */}
         <Paper id="leftContent">

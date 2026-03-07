@@ -5,6 +5,7 @@ import Content from './Content.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
+import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
@@ -188,6 +189,10 @@ function App() {
 
         {/** 右セクション: ウィンドウ操作ボタン */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 2, mr: 0.5 }}>
+          {/** サイドバー開閉 */}
+          <IconButton size="small" color="inherit" aria-label="toggle sidebar" onClick={() => evt.toggleSidebar()}>
+            <ViewSidebarIcon fontSize="small" />
+          </IconButton>
           {/** ピン留め */}
           <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
             <PushPinIcon fontSize="small" />
