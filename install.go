@@ -94,11 +94,10 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		return xerrors.Errorf("db.Create() error: %w", err)
 	}
 
-	// binder.jsonをルートディレクトリに作成
+	// binder.jsonをルートディレクトリに作成（0.3.2以降はappバージョンのみ）
 	if ver != nil {
 		meta := &BinderMeta{
 			Version: ver.String(),
-			Schema:  ver.String(),
 		}
 		err = saveMeta(dir, meta)
 		if err != nil {

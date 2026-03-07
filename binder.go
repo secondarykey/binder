@@ -98,8 +98,10 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	}
 
 	// binder.jsonを更新（スキーマ変換後、または初回作成）
+	// 0.3.2マイグレーション: schemaフィールドを空にしてappバージョンのみで管理する。
+	// 0.3.2未満のbinder.jsonにはschemaフィールドが存在するが、保存時にomitemptyで除去される。
 	if ver != nil {
-		meta.Schema = ver.String()
+		meta.Schema = ""
 		meta.Version = ver.String()
 		if err = saveMeta(dir, meta); err != nil {
 			return nil, xerrors.Errorf("saveMeta() error: %w", err)

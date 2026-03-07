@@ -15,9 +15,11 @@ import (
 const BinderMetaFile = "binder.json"
 
 // BinderMeta はbinderディレクトリのメタ情報（binder.json）
+// 0.3.2以降はappバージョンのみで管理し、schemaフィールドは廃止。
+// 旧フォーマット（0.3.2未満）との互換性のため読み込み時のみschemaを受け入れる。
 type BinderMeta struct {
 	Version string `json:"version"`
-	Schema  string `json:"schema"`
+	Schema  string `json:"schema,omitempty"` // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
 }
 
 // loadMeta はbinder.jsonを読み込む。存在しない場合は旧バージョンのschema.versionから読み込む
@@ -44,9 +46,9 @@ func loadMetaFromLegacy(dir string) (*BinderMeta, error) {
 	dbDir := filepath.Join(dir, "db")
 	ver, err := db.SchemaVersion(dbDir)
 	if err != nil {
-		return &BinderMeta{Version: "0.0.0", Schema: "0.0.0"}, nil
+		return &BinderMeta{Version: "0.0.0"}, nil
 	}
-	return &BinderMeta{Version: ver.String(), Schema: ver.String()}, nil
+	return &BinderMeta{Version: ver.String()}, nil
 }
 
 // saveMeta はbinder.jsonを書き込む
@@ -64,11 +66,13 @@ func saveMeta(dir string, meta *BinderMeta) error {
 	return nil
 }
 
-// schemaVersion はBinderMetaのスキーマバージョンをVersionとして返す
+// schemaVersion はbinderのバージョンをVersionとして返す。
+// 0.3.2以降はappバージョン（Version）でスキーマも管理する。
+// 0.3.2未満の旧binder.jsonではversion==schemaだったため後方互換性は保たれる。
 func (m *BinderMeta) schemaVersion() (*Version, error) {
-	v, err := NewVersion(m.Schema)
+	v, err := NewVersion(m.Version)
 	if err != nil {
-		return nil, xerrors.Errorf("schema version parse error: %w", err)
+		return nil, xerrors.Errorf("version parse error: %w", err)
 	}
 	return v, nil
 }
