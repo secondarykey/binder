@@ -170,7 +170,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     }
   };
 
-  const handleDragOver = (e, id, isRoot) => {
+  const handleDragOver = (e, id, isRoot, nodeType) => {
     e.preventDefault();
 
     // 右ボタンが押されている場合はドラッグをキャンセル
@@ -181,9 +181,10 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
       return;
     }
 
-    // 外部ファイルドラッグ: 常に inside で強調表示（内部D&Dとは独立）
+    // 外部ファイルドラッグ: note のみ inside を許可
     // 実際のドロップ処理は Wails EnableFileDrop + Go ハンドラで行う
     if (hasExternalFiles(e.dataTransfer) && draggedNodeId.current === null) {
+      if (nodeType !== 'note') { setDropTargetInfo(null); return; }
       setDropTargetInfo({ id, position: 'inside' });
       return;
     }
@@ -199,6 +200,11 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     if (isRoot && (position === 'before' || position === 'after')) {
         setDropTargetInfo(null);
         return;
+    }
+    // note 以外のノードには inside ドロップを許可しない
+    if (position === 'inside' && nodeType !== 'note') {
+      setDropTargetInfo(null);
+      return;
     }
     setDropTargetInfo({ id, position });
   };
@@ -294,7 +300,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
         <NodeContentContainer
           draggable={!isRoot}
           onDragStart={(e) => !isRoot && handleDragStart(e, node.id)}
-          onDragOver={(e) => handleDragOver(e, node.id, isRoot)}
+          onDragOver={(e) => handleDragOver(e, node.id, isRoot, node.nodeType || node.type)}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onDragEnd={handleDragEnd}
