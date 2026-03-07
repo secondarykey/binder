@@ -4,6 +4,19 @@
   bottom: 0;
 }
 
+/* メニュー開閉時のみエディタ要素をアニメーションさせる（スプリッタードラッグ時は無効） */
+.menu-animating #editorWrapper {
+  transition: left 0.5s, width 0.5s;
+}
+
+.menu-animating #splitter {
+  transition: left 0.5s;
+}
+
+.menu-animating #dataViewer {
+  transition: left 0.5s;
+}
+
 #editorMenu {
   display: flex;
   position: absolute;

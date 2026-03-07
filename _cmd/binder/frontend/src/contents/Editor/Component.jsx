@@ -690,6 +690,12 @@ function Editor(props) {
   useEffect(() => {
     //メニューを開いているかのイベント
     evt.register("Editor",Event.ShowMenu,function(flag) {
+      // メニューアニメーション中だけ transition クラスを付与する
+      const el = document.querySelector("#splitScreen");
+      if (el) {
+        el.classList.add("menu-animating");
+        setTimeout(() => el.classList.remove("menu-animating"), 500);
+      }
       if ( flag ) {
         setMenuWidth(293);
       } else {
