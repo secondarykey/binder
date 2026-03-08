@@ -126,6 +126,28 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 	return nil
 }
 
+// UpdateTemplateSeqs はIDリストの順序に従って各テンプレートのseqを更新し、1回でコミットする。
+// ドラッグ＆ドロップによる並び替えUIから呼ばれる。
+func (b *Binder) UpdateTemplateSeqs(ids []string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	for i, id := range ids {
+		if err := b.db.UpdateTemplateSeq(id, i); err != nil {
+			return xerrors.Errorf("db.UpdateTemplateSeq(%s, %d) error: %w", id, i, err)
+		}
+	}
+
+	err := b.fileSystem.Commit(fs.M("Reorder Templates", "seq"), fs.TemplateTableFile())
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return nil
+}
+
 func (b *Binder) GetHTMLTemplates() ([]*json.Template, []*json.Template, error) {
 
 	if b == nil {

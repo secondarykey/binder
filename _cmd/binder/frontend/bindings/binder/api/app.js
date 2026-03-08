@@ -517,6 +517,14 @@ export function Terminate() {
     return $Call.ByID(4145435618);
 }
 
+/**
+ * @param {string[]} ids
+ * @returns {$CancellablePromise<void>}
+ */
+export function UpdateTemplateSeqs(ids) {
+    return $Call.ByID(295598620, ids);
+}
+
 // Private type creation functions
 const $$createType0 = json$0.Asset.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);

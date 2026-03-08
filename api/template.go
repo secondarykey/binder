@@ -57,6 +57,18 @@ func (a *App) SaveTemplate(id string, data string) error {
 	return nil
 }
 
+func (a *App) UpdateTemplateSeqs(ids []string) error {
+
+	defer log.PrintTrace(log.Func("UpdateTemplateSeqs()"))
+
+	err := a.current.UpdateTemplateSeqs(ids)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("UpdateTemplateSeqs() error\n%+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetHTMLTemplates() (*json.Templates, error) {
 
 	defer log.PrintTrace(log.Func("GetHTMLTemplates()"))

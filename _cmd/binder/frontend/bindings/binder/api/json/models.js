@@ -618,6 +618,13 @@ export class Template {
              */
             this["detail"] = "";
         }
+        if (!("seq" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["seq"] = 0;
+        }
         if (!("created" in $$source)) {
             /**
              * @member

@@ -3,6 +3,8 @@ package db
 import (
 	"binder/api/json"
 	"binder/db/model"
+
+	"golang.org/x/xerrors"
 )
 
 func (inst *Instance) FindLayoutTemplates() ([]*model.Template, error) {
@@ -15,6 +17,19 @@ func (inst *Instance) FindContentTemplates() ([]*model.Template, error) {
 
 func (inst *Instance) findTypeTemplates(t json.TemplateType) ([]*model.Template, error) {
 	return inst.findTemplate("type = ?", "seq asc, updated_date desc", -1, -1, string(t))
+}
+
+// UpdateTemplateSeq は指定IDのテンプレートのseqのみを更新する。
+// バッチ順序更新（UpdateTemplateSeqs）から呼ばれる。
+func (inst *Instance) UpdateTemplateSeq(id string, seq int) error {
+	num, err := inst.updateTemplate("seq = ?", "id = ?", seq, from(id))
+	if err != nil {
+		return xerrors.Errorf("updateTemplate() error: %w", err)
+	}
+	if num != 1 {
+		return xerrors.Errorf("UpdateTemplateSeq non single error: id=%s", id)
+	}
+	return nil
 }
 
 // FindDefaultContentTemplate はseqが最小のcontentテンプレートを返す。
