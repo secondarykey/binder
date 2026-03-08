@@ -8,6 +8,7 @@ import (
 	convert021 "binder/db/convert/021"
 	convert022 "binder/db/convert/022"
 	convert033 "binder/db/convert/033"
+	convert034 "binder/db/convert/034"
 	"binder/db/convert/core"
 	"os"
 
@@ -23,6 +24,7 @@ var v020 *Version
 var v021 *Version
 var v022 *Version
 var v033 *Version
+var v034 *Version
 
 func init() {
 	var err error
@@ -43,6 +45,10 @@ func init() {
 		log.PrintStackTrace(err)
 	}
 	v033, err = NewVersion("0.3.3")
+	if err != nil {
+		log.PrintStackTrace(err)
+	}
+	v034, err = NewVersion("0.3.4")
 	if err != nil {
 		log.PrintStackTrace(err)
 	}
@@ -67,6 +73,9 @@ func check(ov, nv *Version) ([]core.Converter, error) {
 	}
 	if ov.Lt(v033) {
 		c = append(c, convert033.Convert033)
+	}
+	if ov.Lt(v034) {
+		c = append(c, convert034.Convert034)
 	}
 
 	return c, nil

@@ -7,6 +7,7 @@ type Template struct {
 	Typ    string `json:"type"`
 	Name   string `json:"name"`
 	Detail string `json:"detail"`
+	Seq    int    `json:"seq"`
 
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`

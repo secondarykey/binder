@@ -23,7 +23,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const schemaVersion = "0.3.3"
+const schemaVersion = "0.3.4"
 
 type input struct {
 	object interface{}

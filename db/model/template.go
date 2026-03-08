@@ -11,6 +11,7 @@ type Template struct {
 	Typ    string `db:"type"`
 	Name   string `db:"name"`
 	Detail string `db:"detail"`
+	Seq    int    `db:"seq"`
 
 	Created     time.Time `db:"created_date:insert"`
 	CreatedUser string    `db:"created_user:insert"`
@@ -28,6 +29,7 @@ func (t *Template) To() *json.Template {
 	rtn.Typ = t.Typ
 	rtn.Name = t.Name
 	rtn.Detail = t.Detail
+	rtn.Seq = t.Seq
 	rtn.Created = t.Created
 	rtn.Updated = t.Updated
 	return &rtn
@@ -39,6 +41,7 @@ func ConvertTemplate(a *json.Template) *Template {
 	rtn.Typ = a.Typ
 	rtn.Name = a.Name
 	rtn.Detail = a.Detail
+	rtn.Seq = a.Seq
 	rtn.Created = a.Created
 	rtn.Updated = a.Updated
 	return &rtn

@@ -96,6 +96,18 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 
 		n.Id = b.generateId()
 		n.Alias = n.Id
+
+		// ContentTemplateが未指定の場合、seqが最小のcontentテンプレートをデフォルトとして設定する
+		if n.ContentTemplate == "" {
+			dt, err := b.db.FindDefaultContentTemplate()
+			if err != nil {
+				return nil, xerrors.Errorf("db.FindDefaultContentTemplate() error: %w", err)
+			}
+			if dt != nil {
+				n.ContentTemplate = dt.Id
+			}
+		}
+
 		fn, err := b.createNote(n)
 
 		if err != nil {
