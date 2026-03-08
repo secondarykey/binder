@@ -74,33 +74,27 @@ func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 	}
 
 	htmlLeaf := json.NewLeaf("DIR_HTML", "HTML")
+	layoutLeaf := json.NewLeaf("DIR_HTML_Layout", "Layout")
+	contentLeaf := json.NewLeaf("DIR_HTML_Content", "Content")
 
-	tempMap := make(map[json.TemplateType]*json.Leaf)
-	tempMap[json.LayoutTemplateType] = json.NewLeaf("DIR_HTML_Layout", "Layout")
-	tempMap[json.ContentTemplateType] = json.NewLeaf("DIR_HTML_Content", "Content")
-	tempMap[json.NoteTemplateType] = json.NewLeaf("DIR_Note", "Note")
-	tempMap[json.DiagramTemplateType] = json.NewLeaf("DIR_Diagram", "Diagram")
-	tempMap[json.TemplateTemplateType] = json.NewLeaf("DIR_Template", "Template")
+	htmlLeaf.AddChild(layoutLeaf)
+	htmlLeaf.AddChild(contentLeaf)
 
-	//大枠のツリーを作成
-	root := make([]*json.Leaf, 4)
-	root[0] = htmlLeaf
-	root[1] = tempMap[json.NoteTemplateType]
-	root[2] = tempMap[json.DiagramTemplateType]
-	root[3] = tempMap[json.TemplateTemplateType]
-
-	htmlLeaf.AddChild(tempMap[json.LayoutTemplateType])
-	htmlLeaf.AddChild(tempMap[json.ContentTemplateType])
+	//大枠のツリーを作成（HTMLテンプレートのみ）
+	root := []*json.Leaf{htmlLeaf}
 
 	templates, err := b.db.FindTemplates()
 	if err != nil {
-		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
+		return nil, xerrors.Errorf("db.FindTemplates() error: %w", err)
 	}
 
 	for _, temp := range templates {
-		t := json.TemplateType(temp.Typ)
-		current := tempMap[t]
-		current.AddChild(convertTemplateLeaf(temp))
+		switch json.TemplateType(temp.Typ) {
+		case json.LayoutTemplateType:
+			layoutLeaf.AddChild(convertTemplateLeaf(temp))
+		case json.ContentTemplateType:
+			contentLeaf.AddChild(convertTemplateLeaf(temp))
+		}
 	}
 
 	var tree json.Tree

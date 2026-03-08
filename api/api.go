@@ -70,6 +70,11 @@ func (a *App) Startup() error {
 
 	defer log.PrintTrace(log.Func("Startup()"))
 
+	// デフォルト snippets.json を ~/.binder/snippets.json に配置（初回起動時のみ）
+	if err := binder.InstallSnippets(); err != nil {
+		log.PrintStackTrace(err)
+	}
+
 	set := settings.Get()
 	if set.Path.RunWithOpen {
 		his := set.Path.Histories

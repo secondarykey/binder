@@ -22,11 +22,8 @@ type Templates struct {
 type TemplateType string
 
 const (
-	LayoutTemplateType   TemplateType = "html_layout"
-	ContentTemplateType  TemplateType = "html_content"
-	DiagramTemplateType  TemplateType = "diagram"
-	NoteTemplateType     TemplateType = "note"
-	TemplateTemplateType TemplateType = "template"
+	LayoutTemplateType  TemplateType = "layout"
+	ContentTemplateType TemplateType = "content"
 )
 
 func (t TemplateType) IsHTML() bool {

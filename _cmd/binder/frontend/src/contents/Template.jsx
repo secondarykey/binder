@@ -42,19 +42,10 @@ function Template(props) {
       var t = "";
       switch (currentId) {
         case "DIR_HTML_Layout":
-          t = "html_layout"
+          t = "layout"
           break;
         case "DIR_HTML_Content":
-          t = "html_content"
-          break;
-        case "DIR_Note":
-          t = "note"
-          break;
-        case "DIR_Diagram":
-          t = "diagram"
-          break;
-        case "DIR_Template":
-          t = "template"
+          t = "content"
           break;
         default:
           console.error(currentId);

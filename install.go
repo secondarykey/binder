@@ -8,6 +8,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"binder/settings"
+	"binder/snippet"
 	"embed"
 	"fmt"
 	"os"
@@ -278,6 +279,9 @@ func (b *Binder) initializeAsset() error {
 
 func (b *Binder) initializeTemplate() error {
 
+	// HTMLテンプレート（layout/content）のみ初期化する。
+	// snippet（note/diagram/template型）は0.3.3でtemplatesテーブルから分離済み。
+
 	var layout json.Template
 	layout.Id = TemplateLayoutId
 	layout.Typ = string(json.LayoutTemplateType)
@@ -303,6 +307,33 @@ func (b *Binder) initializeTemplate() error {
 	_, err = b.createTemplate(&content)
 	if err != nil {
 		return fmt.Errorf("content register error\n%+v", err)
+	}
+
+	return nil
+}
+
+// InstallSnippets はデフォルトの snippets.json を ~/.binder/snippets.json に配置する。
+// ファイルが既に存在する場合はスキップする（ユーザーの編集を上書きしない）。
+func InstallSnippets() error {
+
+	dir := snippet.DirPath()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
+	}
+
+	p := snippet.FilePath()
+	if _, err := os.Stat(p); err == nil {
+		// 既に存在する場合はスキップ
+		return nil
+	}
+
+	data, err := embFs.ReadFile("_assets/snippets.json")
+	if err != nil {
+		return xerrors.Errorf("embFs.ReadFile() error: %w", err)
+	}
+
+	if err = os.WriteFile(p, data, 0644); err != nil {
+		return xerrors.Errorf("os.WriteFile(%s) error: %w", p, err)
 	}
 
 	return nil
