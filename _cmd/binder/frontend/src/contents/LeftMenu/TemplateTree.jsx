@@ -1,26 +1,25 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem } from '@mui/material';
-import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
-
+import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
-import FolderIcon from '@mui/icons-material/Folder';
+import AddIcon from '@mui/icons-material/Add';
 
 import { GetTemplateTree } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 
-{/** HTMLテンプレートのツリー（layout / content） */}
+{/** HTMLテンプレートのリスト（layout / content） */}
 function TemplateTree(props) {
 
-  const evt = useContext(EventContext)
+  const evt = useContext(EventContext);
   const nav = useNavigate();
   const [tree, setTree] = useState([]);
   const [id, setId] = useState(undefined);
+  const [selectedId, setSelectedId] = useState(undefined);
 
-  const [selected, setSelected] = useState(["DIR_HTML"]);
-  const [expand, setExpand] = useState(["DIR_HTML"]);
+  const [templateEl, setTemplateEl] = useState(null);
+  const templateMenu = Boolean(templateEl);
 
   const viewTree = () => {
     GetTemplateTree().then((resp) => {
@@ -37,131 +36,96 @@ function TemplateTree(props) {
     viewTree();
   }, []);
 
-  const [dirEl, setDirEl] = useState(null);
-  const dirMenu = Boolean(dirEl);
-  const [templateEl, setTemplateEl] = useState(null);
-  const templateMenu = Boolean(templateEl);
+  const closeMenu = () => {
+    setId(undefined);
+    setTemplateEl(null);
+  };
 
-  const showMenu = (e, call) => {
+  // テンプレート本文を開く（シングルクリック）
+  const handleTemplateOpen = (e, leafId) => {
+    setSelectedId(leafId);
+    nav("/editor/template/" + leafId);
+  }
+
+  // テンプレート右クリックでコンテキストメニューを表示
+  const handleContextMenu = (e, leafId) => {
     e.preventDefault();
-    call(e.target);
+    setId(leafId);
+    setTemplateEl(e.currentTarget);
     e.stopPropagation();
   }
 
-  const closeMenu = (call) => {
-    setId(undefined);
-    call(null);
-  };
-
-  const toggleList = (src, id) => {
-    var ex = false;
-    var list = [];
-    src.map((v) => {
-      if (v !== id) {
-        list.push(v);
-      } else {
-        ex = true;
-      }
-    });
-    if (!ex) {
-      list.push(id);
-    }
-    return list;
-  }
-
-  const expanded = (e, selectId) => {
-    e.preventDefault();
-    if (id === selectId) {
-      var wk = toggleList(expand, selectId);
-      setExpand(wk);
-    }
-  }
-
-  const setCurrentId = (id) => {
-    setId(id);
-    setSelected([id]);
-  }
-
-  // テンプレート新規作成（ディレクトリ右クリックメニュー）
-  const handleRegisterTemplate = (e, call) => {
-    closeMenu(call);
-    nav("/template/register/" + id);
-  }
-
-  // テンプレートメタ情報編集（テンプレート右クリックメニュー）
-  const handleEditTemplate = (e, call) => {
-    closeMenu(call);
+  // テンプレートメタ情報編集（右クリックメニューから）
+  const handleEditTemplate = () => {
+    setTemplateEl(null);
     nav("/template/edit/" + id);
+    setId(undefined);
   }
 
-  // テンプレート本文を開く（テンプレートシングルクリック）
-  const handleTemplateOpen = (e, id) => {
-    setCurrentId(id);
-    nav("/editor/template/" + id);
+  // テンプレート新規作成（セクションヘッダーの + ボタン）
+  const handleRegisterTemplate = (dirId) => {
+    nav("/template/register/" + dirId);
   }
 
-  const getTreeItemsFromData = leafs => {
+  // tree データから指定ディレクトリの子アイテムを取得
+  // バックエンドの構造: [{id:"DIR_HTML", children:[{id:"DIR_HTML_Layout",...},{id:"DIR_HTML_Content",...}]}]
+  const getSection = (dirId) => {
+    if (!tree || tree.length === 0) return [];
+    const root = tree[0]; // DIR_HTML
+    if (!root || !root.children) return [];
+    const dir = root.children.find(c => c.id === dirId);
+    return dir && dir.children ? dir.children : [];
+  }
 
-    if (leafs === null) {
-      return [];
-    }
+  const renderItems = (items) => {
+    return items.map(item => (
+      <ListItemButton key={item.id}
+        selected={selectedId === item.id}
+        onClick={(e) => handleTemplateOpen(e, item.id)}
+        onContextMenu={(e) => handleContextMenu(e, item.id)}
+        sx={{ pl: 2 }}>
+        <ListItemIcon sx={{ minWidth: 32 }}>
+          <TextSnippetIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={item.name} primaryTypographyProps={{ noWrap: true }} />
+      </ListItemButton>
+    ));
+  }
 
-    return leafs.map(leaf => {
-
-      let children = [];
-      if (leaf.children && leaf.children.length > 0) {
-        children = getTreeItemsFromData(leaf.children);
-      }
-
-      var icon = <TextSnippetIcon />;
-      var caller = setTemplateEl;
-      var evFunc = handleTemplateOpen;
-
-      if (leaf.id.indexOf("DIR_") === 0) {
-        icon = <FolderIcon />;
-        if (leaf.id === "DIR_HTML") {
-          // HTML ルートは直接操作不可
-          caller = function(e) {};
-          evFunc = function(e, id) {};
-        } else {
-          // Layout / Content ディレクトリ：右クリックで Add Template
-          caller = setDirEl;
-          evFunc = function(e, id) { setCurrentId(id); };
-        }
-      }
-
-      return (
-        <TreeItem key={leaf.id} itemId={leaf.id}
-          label={leaf.name} icon={icon}
-          onDoubleClick={(e) => expanded(e, leaf.id)}
-          onClick={(e) => evFunc(e, leaf.id)}
-          onContextMenu={(e) => showMenu(e, caller)}
-          children={children} />
-      );
-    });
-  };
+  const layoutItems = getSection("DIR_HTML_Layout");
+  const contentItems = getSection("DIR_HTML_Content");
 
   return (<>
 
-    <SimpleTreeView id="tree" className='treeText'
-      selected={selected}
-      expanded={expand}
-      aria-label="template navigator">
-      {getTreeItemsFromData(tree)}
-    </SimpleTreeView>
+    <List dense disablePadding className='treeText'>
+
+      {/** Layout セクション */}
+      <ListSubheader disableSticky
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px' }}>
+        Layout
+        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Layout")}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </ListSubheader>
+      {renderItems(layoutItems)}
+
+      {/** Content セクション */}
+      <ListSubheader disableSticky
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px' }}>
+        Content
+        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Content")}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </ListSubheader>
+      {renderItems(contentItems)}
+
+    </List>
 
     {/** テンプレートメニュー（右クリック） */}
     <Menu anchorEl={templateEl}
       open={templateMenu}
-      onClose={() => closeMenu(setTemplateEl)}>
-      <MenuItem onClick={(e) => handleEditTemplate(e, setTemplateEl)}>Edit</MenuItem>
-    </Menu>
-
-    {/** ディレクトリメニュー（右クリック） */}
-    <Menu anchorEl={dirEl}
-      open={dirMenu}
-      onClose={() => closeMenu(setDirEl)}>
-      <MenuItem onClick={(e) => handleRegisterTemplate(e, setDirEl)}>Add Template</MenuItem>
+      onClose={closeMenu}>
+      <MenuItem onClick={handleEditTemplate}>Edit</MenuItem>
     </Menu>
 
   </>);
