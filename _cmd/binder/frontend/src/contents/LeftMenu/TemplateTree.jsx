@@ -150,9 +150,10 @@ function TemplateTree(props) {
     });
   };
 
-  return (<>
+  return (<div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-    <List dense disablePadding className='treeText'>
+    <List dense disablePadding className='treeText'
+      sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
 
       {/** Layout セクション */}
       <ListSubheader disableSticky
@@ -211,6 +212,6 @@ function TemplateTree(props) {
       <MenuItem onClick={handleEditTemplate}>Edit</MenuItem>
     </Menu>
 
-  </>);
+  </div>);
 }
 export default TemplateTree;
