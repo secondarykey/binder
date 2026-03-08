@@ -17,7 +17,8 @@ const (
 	endTemplateFrame     = `{{ end }}`
 )
 
-// テンプレート用のフレームを作成して処理
+// AddTemplateFrame はテンプレートの内容を Go テンプレートの {{ define "..." }}...{{ end }} で包む。
+// HTML レンダリング時に内部で呼ばれるため、ファイルにはフレームを書かなくてよい。
 func AddTemplateFrame(t json.TemplateType, data []byte) []byte {
 
 	typ := json.TemplateType(t)
@@ -37,8 +38,32 @@ func AddTemplateFrame(t json.TemplateType, data []byte) []byte {
 	buf.Write(data)
 	buf.Write([]byte(endTemplateFrame))
 
-	//Len() とって削除しておかないとoxooが入る？
 	return buf.Bytes()
+}
+
+// StripTemplateFrame は保存済みテンプレートファイルから {{ define ... }}/{{ end }} フレームを取り除く。
+// 以前の形式（ファイルにフレームを含めていた）との後方互換のために使用する。
+func StripTemplateFrame(t json.TemplateType, data []byte) []byte {
+
+	typ := json.TemplateType(t)
+	if !typ.IsHTML() {
+		return data
+	}
+
+	var frame string
+	if typ.IsContent() {
+		frame = contentTemplateFrame
+	} else {
+		frame = layoutTemplateFrame
+	}
+
+	if bytes.HasPrefix(data, []byte(frame)) && bytes.HasSuffix(data, []byte(endTemplateFrame)) {
+		data = data[len(frame):]
+		data = data[:len(data)-len(endTemplateFrame)]
+		return bytes.TrimSpace(data)
+	}
+
+	return data
 }
 
 func (f *FileSystem) CreateTemplateFile(t *json.Template) (string, error) {
@@ -59,6 +84,8 @@ func (f *FileSystem) CreateTemplateFile(t *json.Template) (string, error) {
 	return n, nil
 }
 
+// ReadTemplate はテンプレートファイルの生の内容（フレームなし）をライターに書き出す。
+// ファイルには {{ define "..." }} フレームを含めないため、そのまま返す。
 func (f *FileSystem) ReadTemplate(w io.Writer, t *json.Template) error {
 
 	fn := TemplateFile(t.Id)
@@ -67,19 +94,6 @@ func (f *FileSystem) ReadTemplate(w io.Writer, t *json.Template) error {
 	if err != nil {
 		return xerrors.Errorf("fs.readFile() error: %w", err)
 	}
-
-	fmt.Println("ファイルにはフレームを設定しないように変更する")
-	//レイアウト用のフレームを削除して返す
-	//typ := model.TemplateType(t.Typ)
-	//if typ.IsHTML() {
-	//firstIdx := len(layoutTemplateFrame)
-	//if typ.IsContent() {
-	//firstIdx = len(contentTemplateFrame)
-	//}
-	//leng := len(data) - len(endTemplateFrame)
-	//
-	//return data[firstIdx:leng], nil
-	//}
 
 	return nil
 }

@@ -233,6 +233,33 @@ func convertLF2Comma(src string) string {
 	return strings.ReplaceAll(src, "\n", ",")
 }
 
+// parseTemplateFile はファイルシステムからテンプレートを読み込み、
+// {{ define "..." }}...{{ end }} フレームを自動付与してパースする。
+// 既存ファイルに手動でフレームが書かれていた場合は一度除去してから付与するため後方互換が保たれる。
+func (b *Binder) parseTemplateFile(tmpl *template.Template, path string, typ json.TemplateType) (*template.Template, error) {
+
+	f, err := b.fileSystem.Open(path)
+	if err != nil {
+		return nil, xerrors.Errorf("Open(%s) error: %w", path, err)
+	}
+	defer f.Close()
+
+	raw, err := io.ReadAll(f)
+	if err != nil {
+		return nil, xerrors.Errorf("ReadAll(%s) error: %w", path, err)
+	}
+
+	// 既存フレームを除去してから改めて付与（後方互換）
+	raw = fs.StripTemplateFrame(typ, raw)
+	raw = fs.AddTemplateFrame(typ, raw)
+
+	t, err := tmpl.Parse(string(raw))
+	if err != nil {
+		return nil, xerrors.Errorf("Parse(%s) error: %w", path, err)
+	}
+	return t, nil
+}
+
 // テンプレートを作成
 // text が指定してある場合、テンプレート編集時になる為、
 // 指定してあるテンプレートではなく、文字列を使用して描画を行う
@@ -267,13 +294,10 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ json.TemplateType, text stri
 		}
 	} else {
 
-		//TODO ここでテンプレートを変数化する
-
 		layoutFile := fs.ConvertHTTPPath(fs.TemplateFile(layId))
-		//layout と typeでパース
-		_, err = tmpl.ParseFS(b.fileSystem, layoutFile)
+		tmpl, err = b.parseTemplateFile(tmpl, layoutFile, json.LayoutTemplateType)
 		if err != nil {
-			return nil, xerrors.Errorf("layout ParseFS() error: %w", err)
+			return nil, xerrors.Errorf("layout parseTemplateFile() error: %w", err)
 		}
 	}
 
@@ -287,13 +311,10 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ json.TemplateType, text stri
 
 	} else {
 
-		//TODO ここでテンプレートを変数化する
-
 		tmpFile := fs.ConvertHTTPPath(fs.TemplateFile(conId))
-		//layout と typeでパース
-		_, err = tmpl.ParseFS(b.fileSystem, tmpFile)
+		tmpl, err = b.parseTemplateFile(tmpl, tmpFile, json.ContentTemplateType)
 		if err != nil {
-			return nil, xerrors.Errorf("Parse() error: %w", err)
+			return nil, xerrors.Errorf("content parseTemplateFile() error: %w", err)
 		}
 	}
 
