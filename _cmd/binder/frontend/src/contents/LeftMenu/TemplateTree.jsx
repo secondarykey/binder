@@ -101,7 +101,7 @@ function TemplateTree(props) {
 
       {/** Layout セクション */}
       <ListSubheader disableSticky
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px' }}>
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px', backgroundColor: 'transparent', color: 'inherit' }}>
         Layout
         <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Layout")}>
           <AddIcon fontSize="small" />
@@ -111,7 +111,7 @@ function TemplateTree(props) {
 
       {/** Content セクション */}
       <ListSubheader disableSticky
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px' }}>
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px', backgroundColor: 'transparent', color: 'inherit' }}>
         Content
         <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Content")}>
           <AddIcon fontSize="small" />
