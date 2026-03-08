@@ -6,7 +6,6 @@ import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
-import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import AddIcon from '@mui/icons-material/Add';
 
@@ -32,7 +31,13 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
       selected={selectedId === item.id}
       onClick={(e) => onOpen(e, item.id)}
       onContextMenu={(e) => onContextMenu(e, item.id)}
-      sx={{ pl: 3 }}>
+      sx={{
+        pl: 3,
+        py: 0.25,
+        borderRadius: '2px',
+        '&.Mui-selected': { backgroundColor: '#2a3f6f' },
+        '&.Mui-selected:hover': { backgroundColor: '#2a3f6f' },
+      }}>
 
       {/** ドラッグハンドル: クリックイベントが親に伝播しないようにする */}
       <ListItemIcon
@@ -43,10 +48,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
         <DragHandleIcon fontSize="small" sx={{ opacity: 0.35 }} />
       </ListItemIcon>
 
-      <ListItemIcon sx={{ minWidth: 28 }}>
-        <TextSnippetIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText primary={item.name} primaryTypographyProps={{ noWrap: true }} />
+      <ListItemText primary={item.name} primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }} />
     </ListItemButton>
   );
 }
