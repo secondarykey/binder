@@ -1,16 +1,16 @@
-import { useEffect, useState,useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { EditTemplate, GetTemplate } from "../../bindings/binder/api/app";
 
-import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import { Button, FormControl, FormLabel, Grid, TextField } from "@mui/material";
 
-import {EventContext} from "../Event";
+import { EventContext } from "../Event";
 
 /**
- * テンプレートの作成、編集を行う
- * @param {*} props 
- * @returns 
+ * HTMLテンプレートの作成・編集を行う（layout / content のみ）
+ * @param {*} props
+ * @returns
  */
 function Template(props) {
 
@@ -19,7 +19,6 @@ function Template(props) {
   const { mode, currentId } = useParams();
 
   const [id, setId] = useState("");
-
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
   const [type, setType] = useState("");
@@ -34,7 +33,7 @@ function Template(props) {
     }
 
     setName("");
-    setDetail("")
+    setDetail("");
 
     if (mode === "register") {
       setId("");
@@ -42,45 +41,42 @@ function Template(props) {
       var t = "";
       switch (currentId) {
         case "DIR_HTML_Layout":
-          t = "layout"
+          t = "layout";
           break;
         case "DIR_HTML_Content":
-          t = "content"
+          t = "content";
           break;
         default:
-          console.error(currentId);
+          console.error("Unknown template directory:", currentId);
           break;
       }
-
-      console.log(t)
 
       setType(t);
       evt.changeTitle("Register Template");
       return;
     } else {
-      setId(currentId)
+      setId(currentId);
     }
 
     GetTemplate(currentId).then((data) => {
       setName(data.name);
-      setDetail(data.detail)
-      setType(data.type)
+      setDetail(data.detail);
+      setType(data.type);
       evt.changeTitle("Edit Template:" + data.name);
     }).catch((err) => {
       evt.showErrorMessage(err);
-    })
+    });
   }, [currentId]);
 
-  //保存
   const handleSave = () => {
 
     var data = {};
-    data.id = id
-    data.name = name
-    data.detail = detail
-    data.type = type
+    data.id = id;
+    data.name = name;
+    data.detail = detail;
+    data.type = type;
 
-    if ( name === "" ) {
+    if (name === "") {
       evt.showWarningMessage("name is required");
       return;
     }
@@ -97,50 +93,33 @@ function Template(props) {
     });
   }
 
-  const handleDelete = () => {
-    RemoveTemplate(id).then((resp) => {
-      evt.refreshTree();
-      // 遷移する
-      evt.showSuccessMessage("Remove Template.")
-
-      //TODO 選択できるかな？
-
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    });
-  }
-
   return (<>
     <Grid className="formGrid">
 
       {mode === "edit" &&
         <FormControl>
           <FormLabel>ID</FormLabel>
-          <TextField value={id} />
+          <TextField value={id} slotProps={{ input: { readOnly: true } }} />
         </FormControl>
       }
 
       <FormControl>
         <FormLabel>Name</FormLabel>
-        <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
+        <TextField value={name} onChange={(e) => setName(e.target.value)} />
       </FormControl>
 
       <FormControl>
         <FormLabel>Detail</FormLabel>
-        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
+        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true} />
       </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>
-          {mode === "register" && <> Create </>}
-          {mode === "edit" && <> Save </>}
+          {mode === "register" && <>Create</>}
+          {mode === "edit" && <>Save</>}
         </Button>
-
-        {mode === "edit" &&
-          <Button style={{ marginLeft: "auto" }}
-            variant="contained" color="error" onClick={handleDelete}>Delete</Button>
-        }
       </FormControl>
+
     </Grid>
   </>);
 }

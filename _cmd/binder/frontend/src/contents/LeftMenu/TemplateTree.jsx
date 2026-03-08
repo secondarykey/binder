@@ -1,4 +1,4 @@
-import { useState, useEffect,useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router';
 
 import { Menu, MenuItem } from '@mui/material';
@@ -9,21 +9,19 @@ import FolderIcon from '@mui/icons-material/Folder';
 
 import { GetTemplateTree } from '../../../bindings/binder/api/app';
 
-import Event,{EventContext} from '../../Event';
+import Event, { EventContext } from '../../Event';
 
-{/** バインダーのツリー */ }
+{/** HTMLテンプレートのツリー（layout / content） */}
 function TemplateTree(props) {
 
   const evt = useContext(EventContext)
   const nav = useNavigate();
-  //ツリーデータ
   const [tree, setTree] = useState([]);
-  const [id,setId] = useState(undefined);
+  const [id, setId] = useState(undefined);
 
-  const [selected,setSelected] = useState(["DIR_HTML"]);
-  const [expand,setExpand] = useState(["DIR_HTML"]);
+  const [selected, setSelected] = useState(["DIR_HTML"]);
+  const [expand, setExpand] = useState(["DIR_HTML"]);
 
-  //リソースを作成
   const viewTree = () => {
     GetTemplateTree().then((resp) => {
       setTree(resp.data);
@@ -33,54 +31,48 @@ function TemplateTree(props) {
   }
 
   useEffect(() => {
-    //再描画を追加しておく
-    evt.register("TemplateTree",Event.ReloadTree,() => {
+    evt.register("TemplateTree", Event.ReloadTree, () => {
       viewTree();
-    })
+    });
     viewTree();
-  }, [])
+  }, []);
 
   const [dirEl, setDirEl] = useState(null);
   const dirMenu = Boolean(dirEl);
   const [templateEl, setTemplateEl] = useState(null);
   const templateMenu = Boolean(templateEl);
 
-  //メニュー表示
-  const showMenu = (e,call) => {
+  const showMenu = (e, call) => {
     e.preventDefault();
     call(e.target);
     e.stopPropagation();
   }
 
-  //メニューを閉じる
   const closeMenu = (call) => {
     setId(undefined);
     call(null);
   };
 
-  const toggleList = (src,id) => {
+  const toggleList = (src, id) => {
     var ex = false;
     var list = [];
-    src.map( (v) => {
-      if ( v !== id ) {
+    src.map((v) => {
+      if (v !== id) {
         list.push(v);
       } else {
         ex = true;
       }
     });
-    if ( !ex ) {
+    if (!ex) {
       list.push(id);
     }
     return list;
   }
 
-  const expanded = (e,selectId) => {
+  const expanded = (e, selectId) => {
     e.preventDefault();
-    //すでに選択していた場合
-    if ( id === selectId ) {
-      var wk = toggleList(expand,selectId);
-      console.log("selectId:" + selectId)
-      console.log("Extended:" + wk)
+    if (id === selectId) {
+      var wk = toggleList(expand, selectId);
       setExpand(wk);
     }
   }
@@ -90,41 +82,34 @@ function TemplateTree(props) {
     setSelected([id]);
   }
 
-  //テンプレート作成
-  const handleRegisterTemplate = (e,call) => {
+  // テンプレート新規作成（ディレクトリ右クリックメニュー）
+  const handleRegisterTemplate = (e, call) => {
     closeMenu(call);
     nav("/template/register/" + id);
   }
 
-  //テンプレート編集
-  const handleEditTemplate = (e,call) => {
+  // テンプレートメタ情報編集（テンプレート右クリックメニュー）
+  const handleEditTemplate = (e, call) => {
     closeMenu(call);
     nav("/template/edit/" + id);
   }
 
-  //テンプレートを開く
+  // テンプレート本文を開く（テンプレートシングルクリック）
   const handleTemplateOpen = (e, id) => {
     setCurrentId(id);
     nav("/editor/template/" + id);
   }
 
-  //テンプレートを開く
-  const handleSelectDir = (e, id) => {
-    setCurrentId(id);
-    nav("/template/view");
-  }
-
-  //ツリー描画　
   const getTreeItemsFromData = leafs => {
 
-    if ( leafs === null ) {
-      //return <></>;
+    if (leafs === null) {
+      return [];
     }
 
     return leafs.map(leaf => {
 
       let children = [];
-      if ( leaf.children && leaf.children.length > 0) {
+      if (leaf.children && leaf.children.length > 0) {
         children = getTreeItemsFromData(leaf.children);
       }
 
@@ -132,54 +117,52 @@ function TemplateTree(props) {
       var caller = setTemplateEl;
       var evFunc = handleTemplateOpen;
 
-      //DIR指定は固定
-      if ( leaf.id.indexOf("DIR_") === 0 ) {
-        icon = <FolderIcon/>
-        if ( leaf.id === "DIR_HTML") {
-          caller = function(e){};
-          evFunc = function(e,id){};
+      if (leaf.id.indexOf("DIR_") === 0) {
+        icon = <FolderIcon />;
+        if (leaf.id === "DIR_HTML") {
+          // HTML ルートは直接操作不可
+          caller = function(e) {};
+          evFunc = function(e, id) {};
         } else {
+          // Layout / Content ディレクトリ：右クリックで Add Template
           caller = setDirEl;
-          evFunc = handleSelectDir;
+          evFunc = function(e, id) { setCurrentId(id); };
         }
       }
 
-      console.debug(leaf);
       return (
         <TreeItem key={leaf.id} itemId={leaf.id}
-                  label={leaf.name} icon={icon}
-                  onDoubleClick={(e) => expanded(e,leaf.id)}
-                  onClick={(e) => evFunc(e,leaf.id)}
-                  onContextMenu={(e) => showMenu(e,caller)}
-                  children={children} />
+          label={leaf.name} icon={icon}
+          onDoubleClick={(e) => expanded(e, leaf.id)}
+          onClick={(e) => evFunc(e, leaf.id)}
+          onContextMenu={(e) => showMenu(e, caller)}
+          children={children} />
       );
     });
   };
 
   return (<>
 
-    {/** ツリーの表示 */}
     <SimpleTreeView id="tree" className='treeText'
-                    selected={selected}
-                    expanded={expand}
-                    aria-label="binder system navigator">
+      selected={selected}
+      expanded={expand}
+      aria-label="template navigator">
       {getTreeItemsFromData(tree)}
     </SimpleTreeView>
 
-    {/** テンプレートメニュー */}
+    {/** テンプレートメニュー（右クリック） */}
     <Menu anchorEl={templateEl}
       open={templateMenu}
       onClose={() => closeMenu(setTemplateEl)}>
-      <MenuItem onClick={(e) => handleEditTemplate(e,setTemplateEl)}>Edit</MenuItem>
+      <MenuItem onClick={(e) => handleEditTemplate(e, setTemplateEl)}>Edit</MenuItem>
     </Menu>
 
-    {/** ディレクトリメニュー */}
+    {/** ディレクトリメニュー（右クリック） */}
     <Menu anchorEl={dirEl}
       open={dirMenu}
       onClose={() => closeMenu(setDirEl)}>
-      <MenuItem onClick={(e) => handleRegisterTemplate(e,setDirEl)}>Add Template</MenuItem>
+      <MenuItem onClick={(e) => handleRegisterTemplate(e, setDirEl)}>Add Template</MenuItem>
     </Menu>
-
 
   </>);
 }
