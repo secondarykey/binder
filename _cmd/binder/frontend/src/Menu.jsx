@@ -14,7 +14,7 @@ import { Browser } from '@wailsio/runtime';
 import FileMenu from './contents/LeftMenu/FileMenu';
 import BinderTree from './contents/LeftMenu/BinderTree';
 
-import { SettingsApplications } from '@mui/icons-material';
+import { SettingsApplications, LibraryBooks as LibraryBooksIcon } from '@mui/icons-material';
 import TemplateTree from './contents/LeftMenu/TemplateTree';
 
 import Event, { EventContext } from './Event';
@@ -171,7 +171,7 @@ function Menu(props) {
       <>
         {/** BinderTree */}
         <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
-          <BinderSVGIcon contents="#1a1a1a" fill="white" className="leftIcon" width="20" height="20" />
+          <LibraryBooksIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Modified  */}
