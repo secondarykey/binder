@@ -249,9 +249,18 @@ func (b *Binder) parseTemplateFile(tmpl *template.Template, path string, typ jso
 		return nil, xerrors.Errorf("ReadAll(%s) error: %w", path, err)
 	}
 
-	// 既存フレームを除去してから改めて付与（後方互換）
+	// 既存フレームを除去（後方互換）
 	raw = fs.StripTemplateFrame(typ, raw)
-	raw = fs.AddTemplateFrame(typ, raw)
+
+	// Layoutテンプレートは template.New("Pages") で生成したルートテンプレートの本体として
+	// 直接パースする。{{ define "Pages" }} で包むと「関連テンプレート」になり
+	// ルートが空のまま Execute() が失敗するため、フレームを付与しない。
+	//
+	// Contentテンプレートは layout 内の {{ template "Content" . }} から呼ばれるため
+	// {{ define "Content" }}...{{ end }} で包む必要がある。
+	if typ.IsContent() {
+		raw = fs.AddTemplateFrame(typ, raw)
+	}
 
 	t, err := tmpl.Parse(string(raw))
 	if err != nil {
@@ -286,9 +295,8 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ json.TemplateType, text stri
 	//TODO 同等の処理になるはずなので、適当にまとめる
 	if typ == json.LayoutTemplateType && text != "" {
 
-		//レイアウトをテキストで代用
-		data := fs.AddTemplateFrame(json.LayoutTemplateType, []byte(text))
-		_, err = tmpl.Parse(string(data))
+		// Layoutはルートテンプレートの本体として直接パース（{{ define "Pages" }} は不要）
+		_, err = tmpl.Parse(text)
 		if err != nil {
 			return nil, xerrors.Errorf("layout Parse() error: %w", err)
 		}
