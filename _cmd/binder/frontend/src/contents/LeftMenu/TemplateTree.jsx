@@ -32,7 +32,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
       selected={selectedId === item.id}
       onClick={(e) => onOpen(e, item.id)}
       onContextMenu={(e) => onContextMenu(e, item.id)}
-      sx={{ pl: 1 }}>
+      sx={{ pl: 3 }}>
 
       {/** ドラッグハンドル: クリックイベントが親に伝播しないようにする */}
       <ListItemIcon
@@ -154,7 +154,7 @@ function TemplateTree(props) {
 
       {/** Layout セクション */}
       <ListSubheader disableSticky
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px', backgroundColor: 'transparent', color: 'inherit' }}>
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'transparent', color: 'inherit' }}>
         Layout
         <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Layout")}>
           <AddIcon fontSize="small" />
@@ -178,7 +178,7 @@ function TemplateTree(props) {
 
       {/** Content セクション */}
       <ListSubheader disableSticky
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '32px', backgroundColor: 'transparent', color: 'inherit' }}>
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'transparent', color: 'inherit' }}>
         Content
         <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Content")}>
           <AddIcon fontSize="small" />
