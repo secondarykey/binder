@@ -63,8 +63,8 @@ const IconWrapper = styled.span`
   display: flex;
   align-items: center;
   ${({ $modified }) => $modified ? `
-    color: #f5a623;
-    & .MuiSvgIcon-root { fill: #f5a623; }
+    color: rgb(207, 84, 12);
+    & .MuiSvgIcon-root { fill: rgb(207, 84, 12); }
   ` : ''}
 `;
 
@@ -339,7 +339,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                 <IconWrapper $modified={node.modified}>
                     {typeof icon === 'string' ? icon : React.isValidElement(icon) ? icon : icon ? React.createElement(icon) : null}
                 </IconWrapper>
-                <span style={node.modified ? { color: '#f5a623' } : undefined}>{node.name}</span>
+                <span style={node.modified ? { color: 'rgb(207, 84, 12)' } : undefined}>{node.name}</span>
               </NodeContent>
             </Row>
         </NodeContentContainer>
