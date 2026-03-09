@@ -264,14 +264,9 @@ function BinderTree(props) {
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
-  /** Addサブメニューを開く（ホバー時） */
-  const handleAddMenuEnter = (e) => {
+  /** Addサブメニューを開く */
+  const handleAddMenuOpen = (e) => {
     setAddMenuAnchor(e.currentTarget);
-  };
-
-  /** Addサブメニューを閉じる（兄弟 MenuItem にホバーした時、開いている場合のみ） */
-  const handleCloseAddMenu = () => {
-    if (addMenuAnchor) setAddMenuAnchor(null);
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
@@ -405,10 +400,10 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleEditNote} onMouseEnter={handleCloseAddMenu} divider>Edit</MenuItem>
-      <MenuItem onMouseEnter={handleAddMenuEnter} divider>Add ▶</MenuItem>
-      <MenuItem onClick={handleHistoryNote} onMouseEnter={handleCloseAddMenu} divider>History</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} onMouseEnter={handleCloseAddMenu} sx={{ color: '#f44336' }}>Delete</MenuItem>
+      <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
+      <MenuItem onClick={handleAddMenuOpen} divider>Add ▶</MenuItem>
+      <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
