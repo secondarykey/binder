@@ -45,6 +45,7 @@
     flex: 1;
     overflow: auto;
     padding: 16px;
+    background-color: #252525;
 }
 
 /* 差分表示時は padding なし（Patch が自前でレイアウトするため） */
