@@ -129,7 +129,7 @@ function Patch(props) {
         paddingRight: "5px",
         fontSize: fontSize + "px",
         fontFamily: fontName,
-        height: "calc(100% - 110px)",
+        height: "100%",
         textAlign: "right",
         overflow: "hidden",
         whiteSpace: "pre-line",
