@@ -462,8 +462,8 @@ func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, 
 		return "", "", "", xerrors.Errorf("getCommitContent() error: %w", err)
 	}
 
-	// historical → source のパッチを生成
-	p, err := createSinglePatch(fn, historical, source)
+	// source → historical のパッチを生成（現在 → 過去方向）
+	p, err := createSinglePatch(fn, source, historical)
 	if err != nil {
 		return "", "", "", xerrors.Errorf("createSinglePatch() error: %w", err)
 	}
