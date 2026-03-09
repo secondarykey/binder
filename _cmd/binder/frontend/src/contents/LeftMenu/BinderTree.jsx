@@ -269,9 +269,9 @@ function BinderTree(props) {
     setAddMenuAnchor(e.currentTarget);
   };
 
-  /** Addサブメニューを閉じる（兄弟 MenuItem にホバーした時） */
+  /** Addサブメニューを閉じる（兄弟 MenuItem にホバーした時、開いている場合のみ） */
   const handleCloseAddMenu = () => {
-    setAddMenuAnchor(null);
+    if (addMenuAnchor) setAddMenuAnchor(null);
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
