@@ -264,18 +264,14 @@ function BinderTree(props) {
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
-  /** Addサブメニューのホバー遅延クローズ用タイマー */
-  const addMenuCloseTimerRef = useRef(null);
-
   /** Addサブメニューを開く（ホバー時） */
   const handleAddMenuEnter = (e) => {
-    clearTimeout(addMenuCloseTimerRef.current);
     setAddMenuAnchor(e.currentTarget);
   };
 
-  /** Addサブメニューを遅延クローズ（ホバー離脱時） */
-  const handleAddMenuLeave = () => {
-    addMenuCloseTimerRef.current = setTimeout(() => setAddMenuAnchor(null), 150);
+  /** Addサブメニューを閉じる（兄弟 MenuItem にホバーした時） */
+  const handleCloseAddMenu = () => {
+    setAddMenuAnchor(null);
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
@@ -409,10 +405,10 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
-      <MenuItem onMouseEnter={handleAddMenuEnter} onMouseLeave={handleAddMenuLeave} divider>Add ▶</MenuItem>
-      <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
+      <MenuItem onClick={handleEditNote} onMouseEnter={handleCloseAddMenu} divider>Edit</MenuItem>
+      <MenuItem onMouseEnter={handleAddMenuEnter} divider>Add ▶</MenuItem>
+      <MenuItem onClick={handleHistoryNote} onMouseEnter={handleCloseAddMenu} divider>History</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} onMouseEnter={handleCloseAddMenu} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
@@ -422,7 +418,7 @@ function BinderTree(props) {
       anchorEl={addMenuAnchor}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      slotProps={{ paper: { sx: { minWidth: 150 }, onMouseEnter: () => clearTimeout(addMenuCloseTimerRef.current), onMouseLeave: handleAddMenuLeave } }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
       <MenuItem onClick={handleRegisterNote}>Note</MenuItem>
       <MenuItem onClick={handleRegisterDiagram}>Diagram</MenuItem>
