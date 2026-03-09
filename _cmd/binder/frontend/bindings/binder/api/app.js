@@ -247,6 +247,29 @@ export function GetHTMLTemplates() {
 }
 
 /**
+ * @param {string} typ
+ * @param {string} id
+ * @returns {$CancellablePromise<(json$0.HistoryEntry | null)[]>}
+ */
+export function GetHistory(typ, id) {
+    return $Call.ByID(2057673555, typ, id).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType19($result);
+    }));
+}
+
+/**
+ * @param {string} typ
+ * @param {string} id
+ * @param {string} hash
+ * @returns {$CancellablePromise<binder$0.Patch | null>}
+ */
+export function GetHistoryPatch(typ, id, hash) {
+    return $Call.ByID(1532164903, typ, id, hash).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType21($result);
+    }));
+}
+
+/**
  * @returns {$CancellablePromise<json$0.Tree | null>}
  */
 export function GetModifiedTree() {
@@ -272,7 +295,7 @@ export function GetNote(id) {
  */
 export function GetNowPatch(typ, id) {
     return $Call.ByID(3682172215, typ, id).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType18($result);
+        return $$createType21($result);
     }));
 }
 
@@ -281,7 +304,7 @@ export function GetNowPatch(typ, id) {
  */
 export function GetSetting() {
     return $Call.ByID(63257543).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType20($result);
+        return $$createType23($result);
     }));
 }
 
@@ -354,6 +377,15 @@ export function OpenBinderSite() {
  */
 export function OpenDiagram(id) {
     return $Call.ByID(2938807272, id);
+}
+
+/**
+ * @param {string} typ
+ * @param {string} id
+ * @returns {$CancellablePromise<void>}
+ */
+export function OpenHistoryWindow(typ, id) {
+    return $Call.ByID(1061989645, typ, id);
 }
 
 /**
@@ -550,7 +582,10 @@ const $$createType13 = $Create.Nullable($$createType12);
 const $$createType14 = $Create.Array($Create.Any);
 const $$createType15 = json$0.Templates.createFrom;
 const $$createType16 = $Create.Nullable($$createType15);
-const $$createType17 = binder$0.Patch.createFrom;
+const $$createType17 = json$0.HistoryEntry.createFrom;
 const $$createType18 = $Create.Nullable($$createType17);
-const $$createType19 = settings$0.Setting.createFrom;
-const $$createType20 = $Create.Nullable($$createType19);
+const $$createType19 = $Create.Array($$createType18);
+const $$createType20 = binder$0.Patch.createFrom;
+const $$createType21 = $Create.Nullable($$createType20);
+const $$createType22 = settings$0.Setting.createFrom;
+const $$createType23 = $Create.Nullable($$createType22);

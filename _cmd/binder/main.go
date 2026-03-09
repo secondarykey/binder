@@ -54,9 +54,10 @@ func init() {
 // Wails v3 の依存はこの構造体および main() 内に閉じており、
 // ルートの binder パッケージには持ち込まない。
 type wailsRuntime struct {
-	app          *application.App
-	window       *application.WebviewWindow
-	commitWindow *application.WebviewWindow
+	app            *application.App
+	window         *application.WebviewWindow
+	commitWindow   *application.WebviewWindow
+	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
 }
 
 func (r *wailsRuntime) Quit() {
@@ -100,6 +101,40 @@ func (r *wailsRuntime) WindowSize() (int, int) {
 
 func (r *wailsRuntime) WindowPosition() (int, int) {
 	return r.window.Position()
+}
+
+func (r *wailsRuntime) OpenHistoryWindow(typ, id string) error {
+	key := typ + ":" + id
+
+	if r.historyWindows == nil {
+		r.historyWindows = make(map[string]*application.WebviewWindow)
+	}
+
+	// 既に開いていれば前面に出すだけ
+	if w, ok := r.historyWindows[key]; ok {
+		w.Focus()
+		return nil
+	}
+
+	w := r.app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - History",
+		Width:            900,
+		Height:           600,
+		MinWidth:         600,
+		MinHeight:        400,
+		Frameless:        true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?history=1&type=" + typ + "&id=" + id,
+	})
+
+	r.historyWindows[key] = w
+
+	// ウィンドウが閉じられたらリセット
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		delete(r.historyWindows, key)
+	})
+
+	return nil
 }
 
 func (r *wailsRuntime) OpenModifiedWindow() error {

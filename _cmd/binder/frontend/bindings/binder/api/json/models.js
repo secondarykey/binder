@@ -358,6 +358,52 @@ export class Diagram {
     }
 }
 
+/**
+ * HistoryEntry はファイル履歴の1エントリを表す
+ */
+export class HistoryEntry {
+    /**
+     * Creates a new HistoryEntry instance.
+     * @param {Partial<HistoryEntry>} [$$source = {}] - The source object to create the HistoryEntry.
+     */
+    constructor($$source = {}) {
+        if (!("hash" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["hash"] = "";
+        }
+        if (!("message" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["message"] = "";
+        }
+        if (!("when" in $$source)) {
+            /**
+             * RFC3339
+             * @member
+             * @type {string}
+             */
+            this["when"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new HistoryEntry instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {HistoryEntry}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new HistoryEntry(/** @type {Partial<HistoryEntry>} */($$parsedSource));
+    }
+}
+
 export class Leaf {
     /**
      * Creates a new Leaf instance.

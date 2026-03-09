@@ -78,3 +78,36 @@ func (b *Binder) GetNowPatch(typ string, id string) (*Patch, error) {
 
 	return &p, nil
 }
+
+func (b *Binder) GetHistory(typ, id string) ([]*fs.CommitInfo, error) {
+
+	fn, err := b.getFilename(typ, id)
+	if err != nil {
+		return nil, xerrors.Errorf("getFilename() error: %w", err)
+	}
+
+	result, err := b.fileSystem.GetFileHistory(fn)
+	if err != nil {
+		return nil, xerrors.Errorf("GetFileHistory() error: %w", err)
+	}
+	return result, nil
+}
+
+func (b *Binder) GetHistoryPatch(typ, id, hash string) (*Patch, error) {
+
+	fn, err := b.getFilename(typ, id)
+	if err != nil {
+		return nil, xerrors.Errorf("getFilename() error: %w", err)
+	}
+
+	source, patch, err := b.fileSystem.GetHistoryPatch(fn, hash)
+	if err != nil {
+		return nil, xerrors.Errorf("GetHistoryPatch() error: %w", err)
+	}
+
+	var p Patch
+	p.Patch = patch
+	p.Source = source
+
+	return &p, nil
+}

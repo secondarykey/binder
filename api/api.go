@@ -31,6 +31,8 @@ type AppRuntime interface {
 	WindowPosition() (int, int)
 	// OpenModifiedWindow はコミットウィンドウを開く（既に開いていれば前面に出す）
 	OpenModifiedWindow() error
+	// OpenHistoryWindow は指定ファイルの履歴ウィンドウを開く（既に開いていれば前面に出す）
+	OpenHistoryWindow(typ, id string) error
 }
 
 // App struct

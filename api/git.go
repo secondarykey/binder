@@ -86,3 +86,43 @@ func (a *App) GetNowPatch(typ string, id string) (*binder.Patch, error) {
 	}
 	return p, nil
 }
+
+func (a *App) OpenHistoryWindow(typ string, id string) error {
+
+	defer log.PrintTrace(log.Func("OpenHistoryWindow()", typ, id))
+
+	return a.runtime.OpenHistoryWindow(typ, id)
+}
+
+func (a *App) GetHistory(typ string, id string) ([]*json.HistoryEntry, error) {
+
+	defer log.PrintTrace(log.Func("GetHistory()", typ, id))
+
+	commits, err := a.current.GetHistory(typ, id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetHistory() error: %+v", err)
+	}
+
+	result := make([]*json.HistoryEntry, len(commits))
+	for i, c := range commits {
+		result[i] = &json.HistoryEntry{
+			Hash:    c.Hash,
+			Message: c.Message,
+			When:    c.When.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+	return result, nil
+}
+
+func (a *App) GetHistoryPatch(typ string, id string, hash string) (*binder.Patch, error) {
+
+	defer log.PrintTrace(log.Func("GetHistoryPatch()", typ, id, hash))
+
+	p, err := a.current.GetHistoryPatch(typ, id, hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetHistoryPatch() error: %+v", err)
+	}
+	return p, nil
+}

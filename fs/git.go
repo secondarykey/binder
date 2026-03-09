@@ -425,6 +425,46 @@ func (f *FileSystem) GetNowPatch(file string) (string, string, error) {
 	return source, w.String(), nil
 }
 
+// GetFileHistory は指定ファイルのgit履歴を新しい順で返す
+func (f *FileSystem) GetFileHistory(file string) ([]*CommitInfo, error) {
+
+	fn := convertPath(file)
+
+	result, err := f.getFileHistory(fn)
+	if err != nil {
+		return nil, xerrors.Errorf("getFileHistory() error: %w", err)
+	}
+	return result, nil
+}
+
+// GetHistoryPatch は指定ハッシュのコミット時点と現在のファイルの差分を返す
+// returns: (現在のファイル内容, unified patch string, error)
+func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, error) {
+
+	fn := convertPath(file)
+
+	var now strings.Builder
+	// 現在のファイルシステムから取得（表示用 source）
+	err := f.readFile(&now, fn)
+	if err != nil {
+		return "", "", xerrors.Errorf("readFile() error: %w", err)
+	}
+
+	source := now.String()
+
+	p, err := f.getCommitPatch(fn, hash, source)
+	if err != nil {
+		return "", "", xerrors.Errorf("getCommitPatch() error: %w", err)
+	}
+
+	var w strings.Builder
+	err = writePatch(&w, p)
+	if err != nil {
+		return "", "", xerrors.Errorf("writePatch() error: %w", err)
+	}
+	return source, w.String(), nil
+}
+
 // Patch内からFilePatchを探す
 func filterFilePatch(name string, patch diff.Patch) (diff.FilePatch, error) {
 

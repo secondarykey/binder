@@ -7,6 +7,7 @@ export {
     AssetContent,
     Config,
     Diagram,
+    HistoryEntry,
     Leaf,
     Note,
     Status,

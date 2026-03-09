@@ -10,7 +10,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { Events } from '@wailsio/runtime';
 
 import { GetBinderTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, SelectFile, GetHTMLTemplates } from '../../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, SelectFile, GetHTMLTemplates,
+         OpenHistoryWindow } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
@@ -273,6 +274,9 @@ function BinderTree(props) {
   const handleEditDiagram     = () => { closeAllMenus(); nav("/diagram/edit/"     + contextMenu.node.id); };
   const handleEditAsset       = () => { closeAllMenus(); nav("/assets/edit/"      + contextMenu.node.id); };
 
+  const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
+  const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
+
   /** ノートをデフォルト値で即時作成してエディタへ */
   const handleRegisterNote = async () => {
     const parentId = contextMenu.node.id;
@@ -377,7 +381,7 @@ function BinderTree(props) {
       icons={binderIcons}
     /></div>
 
-    {/** ノートメニュー: Edit / Add ▶ / Delete */}
+    {/** ノートメニュー: Edit / Add ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "note"}
       onClose={closeAllMenus}
@@ -386,6 +390,7 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
       <MenuItem onClick={handleAddMenuOpen} divider>Add ▶</MenuItem>
+      <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
 
@@ -402,7 +407,7 @@ function BinderTree(props) {
       <MenuItem onClick={handleRegisterAssets}>Assets</MenuItem>
     </Menu>
 
-    {/** ダイアグラムメニュー: Edit / Delete */}
+    {/** ダイアグラムメニュー: Edit / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
       onClose={closeAllMenus}
@@ -410,6 +415,7 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
     >
       <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
+      <MenuItem onClick={handleHistoryDiagram} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
 

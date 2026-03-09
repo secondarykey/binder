@@ -1,6 +1,9 @@
 package fs
 
 import (
+	"io"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
@@ -10,6 +13,13 @@ import (
 	dmp "github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/xerrors"
 )
+
+// CommitInfo はファイル履歴の1エントリを表す
+type CommitInfo struct {
+	Hash    string
+	Message string
+	When    time.Time
+}
 
 // 指定ファイルの最終コミット取得
 func (f *FileSystem) getLastCommit(n string) (*object.Commit, error) {
@@ -63,6 +73,62 @@ func getCommitContent(c *object.Commit, n string) (string, error) {
 		return "", xerrors.Errorf("Contents() error: %w", err)
 	}
 	return content, nil
+}
+
+// 指定ファイルの全コミット履歴を取得
+func (f *FileSystem) getFileHistory(n string) ([]*CommitInfo, error) {
+
+	ref, err := f.repo.Head()
+	if err != nil {
+		return nil, xerrors.Errorf("repo.Head() error: %w", err)
+	}
+
+	itr, err := f.repo.Log(&git.LogOptions{
+		PathFilter: func(path string) bool {
+			return path == n
+		},
+		From: ref.Hash(),
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("repo.Log() error: %w", err)
+	}
+
+	var result []*CommitInfo
+	for {
+		c, err := itr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, xerrors.Errorf("itr.Next() error: %w", err)
+		}
+		result = append(result, &CommitInfo{
+			Hash:    c.Hash.String(),
+			Message: c.Message,
+			When:    c.Author.When,
+		})
+	}
+	return result, nil
+}
+
+// 指定ハッシュのコミット時点のファイルと現在ファイルのパッチを作成
+func (f *FileSystem) getCommitPatch(n string, hash string, now string) (diff.Patch, error) {
+
+	c, err := f.repo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject() error: %w", err)
+	}
+
+	historical, err := getCommitContent(c, n)
+	if err != nil {
+		return nil, xerrors.Errorf("getCommitContent() error: %w", err)
+	}
+
+	p, err := createSinglePatch(n, historical, now)
+	if err != nil {
+		return nil, xerrors.Errorf("createSinglePatch() error: %w", err)
+	}
+	return p, nil
 }
 
 // 最終コミットと引数のパッチ
