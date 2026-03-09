@@ -12,6 +12,7 @@ type Leaf struct {
 	Seq      int     `json:"seq"`
 	Name     string  `json:"name"`
 	Type     string  `json:"type"`
+	Modified bool    `json:"modified"`
 	Children []*Leaf `json:"children"`
 }
 

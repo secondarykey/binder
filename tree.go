@@ -45,6 +45,15 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 	}
 	buildTree(root)
 
+	// Git 変更ステータスを取得してノードをマーク（エラーは無視して続行）
+	if files, err := b.fileSystem.Status(); err == nil {
+		modifiedIds := make(map[string]bool, len(files))
+		for _, m := range files {
+			modifiedIds[m.Id] = true
+		}
+		markModifiedLeafs(root, modifiedIds)
+	}
+
 	slog.Info("Tree", "RootLength", len(root))
 	if root != nil {
 		slog.Info("Tree", "RootId", root[0].Id)
@@ -55,6 +64,18 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 	tree.Data = root
 
 	return &tree, nil
+}
+
+// markModifiedLeafs はツリーを再帰的に走査して変更済みノードをマークする
+func markModifiedLeafs(nodes []*json.Leaf, modifiedIds map[string]bool) {
+	for _, node := range nodes {
+		if modifiedIds[node.Id] {
+			node.Modified = true
+		}
+		if node.Children != nil {
+			markModifiedLeafs(node.Children, modifiedIds)
+		}
+	}
 }
 
 func convertStructure2Leaf(s *model.Structure) *json.Leaf {

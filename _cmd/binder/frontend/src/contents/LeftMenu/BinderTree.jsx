@@ -78,8 +78,9 @@ const processTreeData = (leafs) => {
     return {
       id: leaf.id,
       name: leaf.name,
-      type: displayType,    // アイコン表示用（folder/note/diagram/asset）
-      nodeType: leaf.type,  // コンテキストメニュー判定用（元のtype）
+      type: displayType,        // アイコン表示用（folder/note/diagram/asset）
+      nodeType: leaf.type,      // コンテキストメニュー判定用（元のtype）
+      modified: leaf.modified,  // Git未コミット変更フラグ（オレンジ表示用）
       children: hasChildren ? children : undefined,
     };
   });

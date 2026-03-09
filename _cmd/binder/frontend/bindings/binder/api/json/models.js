@@ -445,6 +445,13 @@ export class Leaf {
              */
             this["type"] = "";
         }
+        if (!("modified" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["modified"] = false;
+        }
         if (!("children" in $$source)) {
             /**
              * @member
@@ -462,10 +469,10 @@ export class Leaf {
      * @returns {Leaf}
      */
     static createFrom($$source = {}) {
-        const $$createField5_0 = $$createType2;
+        const $$createField6_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("children" in $$parsedSource) {
-            $$parsedSource["children"] = $$createField5_0($$parsedSource["children"]);
+            $$parsedSource["children"] = $$createField6_0($$parsedSource["children"]);
         }
         return new Leaf(/** @type {Partial<Leaf>} */($$parsedSource));
     }
