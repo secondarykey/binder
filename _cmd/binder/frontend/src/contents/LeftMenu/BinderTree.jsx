@@ -9,7 +9,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { Events } from '@wailsio/runtime';
 
-import { GetBinderTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
+import { GetBinderTree, GetModifiedIds, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
          EditNote, EditDiagram, EditAsset, SelectFile, GetHTMLTemplates,
          OpenHistoryWindow } from '../../../bindings/binder/api/app';
 
@@ -67,10 +67,10 @@ const findNodeInTree = (nodes, id) => {
  * - 子を持つ note → displayType を "folder" に変換
  * - nodeType に元の type を保持（コンテキストメニュー判定用）
  */
-const processTreeData = (leafs) => {
+const processTreeData = (leafs, modifiedIds) => {
   if (!leafs) return [];
   return leafs.map(leaf => {
-    const children = leaf.children ? processTreeData(leaf.children) : undefined;
+    const children = leaf.children ? processTreeData(leaf.children, modifiedIds) : undefined;
     const hasChildren = children && children.length > 0;
 
     const displayType = (leaf.type === "note" && hasChildren) ? "folder" : leaf.type;
@@ -78,9 +78,9 @@ const processTreeData = (leafs) => {
     return {
       id: leaf.id,
       name: leaf.name,
-      type: displayType,        // アイコン表示用（folder/note/diagram/asset）
-      nodeType: leaf.type,      // コンテキストメニュー判定用（元のtype）
-      modified: leaf.modified,  // Git未コミット変更フラグ（オレンジ表示用）
+      type: displayType,                                           // アイコン表示用（folder/note/diagram/asset）
+      nodeType: leaf.type,                                         // コンテキストメニュー判定用（元のtype）
+      modified: modifiedIds ? modifiedIds.has(leaf.id) : false,   // Git未コミット変更フラグ
       children: hasChildren ? children : undefined,
     };
   });
@@ -94,6 +94,9 @@ function BinderTree(props) {
 
   // ツリーデータ（APIから取得した生データ）
   const [tree, setTree] = useState([]);
+
+  // Git変更済みIDのSet（ツリー表示後に非同期で取得）
+  const [modifiedIds, setModifiedIds] = useState(null);
 
   // 展開しているノードのID配列
   const [expand, setExpand] = useState([]);
@@ -126,6 +129,12 @@ function BinderTree(props) {
         const topIds = (resp.data || []).map(n => n.id);
         setExpand(topIds);
       }
+      // ツリー表示後に非同期でGit変更状態を取得して色を反映
+      GetModifiedIds().then((ids) => {
+        setModifiedIds(new Set(ids ?? []));
+      }).catch(() => {
+        // Git操作のエラーは無視（ツリー表示は維持）
+      });
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -216,7 +225,7 @@ function BinderTree(props) {
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
-  const treeData = useMemo(() => processTreeData(tree), [tree]);
+  const treeData = useMemo(() => processTreeData(tree, modifiedIds), [tree, modifiedIds]);
 
   // ---- ハンドラ ----
 

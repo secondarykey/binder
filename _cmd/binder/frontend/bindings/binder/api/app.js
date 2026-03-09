@@ -270,6 +270,15 @@ export function GetHistoryPatch(typ, id, hash) {
 }
 
 /**
+ * @returns {$CancellablePromise<string[]>}
+ */
+export function GetModifiedIds() {
+    return $Call.ByID(361532400).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType14($result);
+    }));
+}
+
+/**
  * @returns {$CancellablePromise<json$0.Tree | null>}
  */
 export function GetModifiedTree() {

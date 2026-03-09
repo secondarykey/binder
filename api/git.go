@@ -75,6 +75,18 @@ func (a *App) AddRemote(name string, url string) error {
 	return nil
 }
 
+func (a *App) GetModifiedIds() ([]string, error) {
+
+	defer log.PrintTrace(log.Func("GetModifiedIds()"))
+
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	return ids, nil
+}
+
 func (a *App) GetNowPatch(typ string, id string) (*binder.Patch, error) {
 
 	defer log.PrintTrace(log.Func("GetLatestPatch()", typ, id))

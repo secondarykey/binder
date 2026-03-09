@@ -61,6 +61,18 @@ func (b *Binder) getFilename(typ, id string) (string, error) {
 	return fn, nil
 }
 
+func (b *Binder) GetModifiedIds() ([]string, error) {
+	files, err := b.fileSystem.Status()
+	if err != nil {
+		return nil, xerrors.Errorf("fs.Status() error: %w", err)
+	}
+	ids := make([]string, len(files))
+	for i, f := range files {
+		ids[i] = f.Id
+	}
+	return ids, nil
+}
+
 func (b *Binder) GetNowPatch(typ string, id string) (*Patch, error) {
 
 	fn, err := b.getFilename(typ, id)
