@@ -1,8 +1,9 @@
 import { useEffect, useContext } from 'react';
 import { Routes, Route, useNavigate } from 'react-router';
 
-import { Toolbar, Typography, IconButton } from '@mui/material';
+import { Toolbar, Typography, IconButton, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { Window } from '@wailsio/runtime';
 
@@ -16,9 +17,37 @@ import './assets/App.css';
 import './assets/CommitApp.css';
 
 /**
+ * 差分表示 + コメントに戻るボタン
+ */
+function PatchView() {
+  const nav = useNavigate();
+
+  const handleBack = () => {
+    nav("/status/modified/" + new Date().toISOString());
+  };
+
+  return (
+    <div id="patchView">
+      <div id="patchBack">
+        <Button
+          size="small"
+          startIcon={<ArrowBackIcon fontSize="small" />}
+          onClick={handleBack}
+          sx={{ color: '#aaaaaa', textTransform: 'none' }}
+        >
+          コメントに戻る
+        </Button>
+      </div>
+      <div id="patchArea">
+        <Patch />
+      </div>
+    </div>
+  );
+}
+
+/**
  * コミットウィンドウ
  * 変更ファイル一覧（左）とコミットフォーム/差分表示（右）を並べたスタンドアロンウィンドウ
- * 右パネル: 上=コミットフォーム（常時表示）、下=差分（ファイル選択時のみ表示）
  */
 function CommitApp() {
 
@@ -45,7 +74,7 @@ function CommitApp() {
         </IconButton>
       </Toolbar>
 
-      {/** メインエリア: 左=変更一覧、右=コミットフォーム＋差分 */}
+      {/** メインエリア: 左=変更一覧、右=コミットフォームまたは差分 */}
       <div id="commitArea">
 
         <div id="commitLeft">
@@ -57,18 +86,10 @@ function CommitApp() {
         </div>
 
         <div id="commitRight">
-          {/** コミットフォーム: 常に上部に表示 */}
-          <div id="commitForm">
-            <Commit />
-          </div>
-
-          {/** 差分表示: ファイル選択時のみ下部に表示 */}
           <Routes>
-            <Route path="/status/modified/:type/:currentId" element={
-              <div id="commitPatch">
-                <Patch />
-              </div>
-            } />
+            <Route path="/status/modified/:date" element={<Commit />} />
+            <Route path="/status/modified/:type/:currentId" element={<PatchView />} />
+            <Route path="*" element={<Commit />} />
           </Routes>
         </div>
 
