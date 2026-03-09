@@ -365,7 +365,7 @@ function BinderTree(props) {
   return (<>
 
     {/** カスタムツリー */}
-    <Tree
+    <div style={{ marginTop: '4px' }}><Tree
       data={treeData}
       selected={selectedId}
       onSelect={(id) => setSelectedId(id)}
@@ -375,7 +375,7 @@ function BinderTree(props) {
       onChange={handleChange}
       onNodeContextMenu={handleContextMenu}
       icons={binderIcons}
-    />
+    /></div>
 
     {/** ノートメニュー: Edit / Add ▶ / Delete */}
     <Menu
