@@ -36,7 +36,7 @@
 #commitLeft {
     width: 280px;
     min-width: 280px;
-    background-color: #1a1a1a;
+    background-color: #292929;
     overflow-y: auto;
     border-right: 1px solid #333;
 }
