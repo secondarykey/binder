@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef ,useContext} from "react";
 import { useParams } from "react-router";
 
-import { GetNowPatch } from "../../bindings/binder/api/app";
+import { GetNowPatch, GetSetting } from "../../bindings/binder/api/app";
 
 import {EventContext} from "../Event";
 
@@ -80,6 +80,8 @@ function Patch(props) {
     const [source, setSource] = useState("");
     const [html, setHtml] = useState("");
     const [rows, setRows] = useState("");
+    const [fontName, setFontName] = useState("monospace");
+    const [fontSize, setFontSize] = useState(14);
     const viewer = useRef();
     const lineViewer = useRef();
     useEffect(() => {
@@ -87,6 +89,14 @@ function Patch(props) {
         viewer.current.addEventListener("scroll", function () {
             lineViewer.current.scrollTop = viewer.current.scrollTop;
         })
+        //エディタのフォント設定を取得
+        GetSetting().then((s) => {
+            const f = s?.lookAndFeel?.editor?.text;
+            if (f) {
+                if (f.name) setFontName(f.name);
+                if (f.size) setFontSize(f.size);
+            }
+        }).catch(() => {});
     }, [])
 
     useEffect(() => {
@@ -105,8 +115,6 @@ function Patch(props) {
         height: "calc(100% - 50px)",
     }
 
-    var fontName = "Calex Code JP Regular";
-    var fontSize = 20;
     var digit = 3;
     var pos = (fontSize *  digit) + "px";
 
