@@ -5,7 +5,7 @@ import { Grid, TextField, FormControl,FormLabel,Button} from "@mui/material";
 import Event,{EventContext} from '../Event';
 
 /**
- * 履歴からバインダーの選択を行う
+ * 編集を行っているファイルのコミットを行うコンポーネント
  * @param {*} props 
  * @returns 
  */
