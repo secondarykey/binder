@@ -18,7 +18,7 @@ import Event, { EventContext } from '../../Event';
 function ModifiedMenu(props) {
 
   const evt = useContext(EventContext)
-  const { date } = useParams();
+  const { date, currentId } = useParams();
 
   const nav = useNavigate();
 
@@ -116,10 +116,10 @@ function ModifiedMenu(props) {
   return (
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} ref={noteRef} />
-      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} ref={diagramRef} />
-      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} ref={assetRef} />
-      <ModifiedList name="Template" data={templates} onClick={handleOpen} ref={templateRef} />
+      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} selectedId={currentId} ref={noteRef} />
+      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} selectedId={currentId} ref={diagramRef} />
+      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} selectedId={currentId} ref={assetRef} />
+      <ModifiedList name="Template" data={templates} onClick={handleOpen} selectedId={currentId} ref={templateRef} />
     </List>
   );
 }
@@ -181,7 +181,12 @@ const ModifiedList = forwardRef((props, ref) => {
 
     {data.map((leaf) => (
       <ListItemButton key={leaf.id}
-        sx={{ pl: 2, py: 0.25, borderRadius: '2px' }}
+        selected={leaf.id === props.selectedId}
+        sx={{
+          pl: 2, py: 0.25, borderRadius: '2px',
+          '&.Mui-selected': { backgroundColor: '#2a3f6f' },
+          '&.Mui-selected:hover': { backgroundColor: '#2a3f6f' },
+        }}
         onClick={(e) => props.onClick(e, leaf)}>
         <ListItemIcon sx={{ minWidth: 32 }}>
           <Checkbox
