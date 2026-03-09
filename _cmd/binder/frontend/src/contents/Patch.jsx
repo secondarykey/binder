@@ -122,6 +122,7 @@ function Patch(props) {
         backgroundColor: "#222222",
         border: "0",
         borderRight: "1px double #cccccc",
+        boxSizing: "border-box",
         position: "absolute",
         width: "calc(" + pos + ")",
         zIndex: 10,
