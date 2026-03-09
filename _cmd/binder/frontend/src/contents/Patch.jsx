@@ -110,9 +110,9 @@ function Patch(props) {
     }, [type,currentId])
 
     var parentStyle = {
-        position: "reactive",
+        position: "relative",
         width: "calc(100% - 46px)",
-        height: "calc(100% - 50px)",
+        height: "100%",
     }
 
     var digit = 3;
