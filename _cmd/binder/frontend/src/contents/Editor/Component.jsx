@@ -747,7 +747,7 @@ function Editor(props) {
 
   var color = "#f1f1f1";
   if ( updated ) {
-    color = "#cf540c";
+    color = "#f5a623";
   }
 
   //コミット用のアイコン(コメント欄の横)
