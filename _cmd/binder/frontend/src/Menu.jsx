@@ -6,7 +6,7 @@ import { Address, OpenModifiedWindow } from '../bindings/binder/api/app';
 import { IconButton, Paper } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
-import UpdateIcon from '@mui/icons-material/Update';
+import CommitIcon from '@mui/icons-material/Commit';
 import PublishIcon from '@mui/icons-material/Publish';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
@@ -172,7 +172,7 @@ function Menu(props) {
 
         {/** Modified  */}
         <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
-          <UpdateIcon fill="white" className="leftIcon" />
+          <CommitIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Publish  */}
