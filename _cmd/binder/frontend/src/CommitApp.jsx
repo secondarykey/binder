@@ -87,9 +87,9 @@ function CommitApp() {
 
         <div id="commitRight">
           <Routes>
-            <Route path="/status/modified/:date" element={<Commit />} />
+            <Route path="/status/modified/:date" element={<div id="commitForm"><Commit /></div>} />
             <Route path="/status/modified/:type/:currentId" element={<PatchView />} />
-            <Route path="*" element={<Commit />} />
+            <Route path="*" element={<div id="commitForm"><Commit /></div>} />
           </Routes>
         </div>
 

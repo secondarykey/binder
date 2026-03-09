@@ -43,17 +43,24 @@
 
 #commitRight {
     flex: 1;
-    overflow: auto;
-    padding: 16px;
+    position: relative;
+    overflow: hidden;
     background-color: #252525;
 }
 
-/* 差分表示時は padding なし（Patch が自前でレイアウトするため） */
+#commitForm {
+    padding: 16px;
+    overflow: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* 差分表示: commitRight 全面を覆う */
 #patchView {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    margin: -16px;
 }
 
 #patchBack {
