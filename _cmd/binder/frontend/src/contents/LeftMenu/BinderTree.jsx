@@ -398,6 +398,7 @@ function BinderTree(props) {
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+      slotProps={{ paper: { sx: { minWidth: 250 } } }}
     >
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
       <MenuItem onClick={handleAddMenuOpen} divider>Add ▶</MenuItem>
@@ -412,6 +413,7 @@ function BinderTree(props) {
       anchorEl={addMenuAnchor}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      slotProps={{ paper: { sx: { minWidth: 250 } } }}
     >
       <MenuItem onClick={handleRegisterNote}>Note</MenuItem>
       <MenuItem onClick={handleRegisterDiagram}>Diagram</MenuItem>
@@ -424,6 +426,7 @@ function BinderTree(props) {
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+      slotProps={{ paper: { sx: { minWidth: 250 } } }}
     >
       <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
       <MenuItem onClick={handleHistoryDiagram} divider>History</MenuItem>
@@ -436,6 +439,7 @@ function BinderTree(props) {
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+      slotProps={{ paper: { sx: { minWidth: 250 } } }}
     >
       <MenuItem onClick={handleEditAsset} divider>Edit</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
