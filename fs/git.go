@@ -438,8 +438,8 @@ func (f *FileSystem) GetFileHistory(file string) ([]*CommitInfo, error) {
 }
 
 // GetHistoryPatch は指定ハッシュのコミット時点と現在のファイルの差分を返す
-// returns: (現在のファイル内容, unified patch string, error)
-func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, error) {
+// returns: (現在のファイル内容, 指定コミット時点のファイル内容, unified patch string, error)
+func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, string, error) {
 
 	fn := convertPath(file)
 
@@ -447,22 +447,33 @@ func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, 
 	// 現在のファイルシステムから取得（表示用 source）
 	err := f.readFile(&now, fn)
 	if err != nil {
-		return "", "", xerrors.Errorf("readFile() error: %w", err)
+		return "", "", "", xerrors.Errorf("readFile() error: %w", err)
 	}
 
 	source := now.String()
 
-	p, err := f.getCommitPatch(fn, hash, source)
+	// 指定コミット時点のファイル内容を取得
+	c, err := f.repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
-		return "", "", xerrors.Errorf("getCommitPatch() error: %w", err)
+		return "", "", "", xerrors.Errorf("CommitObject() error: %w", err)
+	}
+	historical, err := getCommitContent(c, fn)
+	if err != nil {
+		return "", "", "", xerrors.Errorf("getCommitContent() error: %w", err)
+	}
+
+	// historical → source のパッチを生成
+	p, err := createSinglePatch(fn, historical, source)
+	if err != nil {
+		return "", "", "", xerrors.Errorf("createSinglePatch() error: %w", err)
 	}
 
 	var w strings.Builder
 	err = writePatch(&w, p)
 	if err != nil {
-		return "", "", xerrors.Errorf("writePatch() error: %w", err)
+		return "", "", "", xerrors.Errorf("writePatch() error: %w", err)
 	}
-	return source, w.String(), nil
+	return source, historical, w.String(), nil
 }
 
 // Patch内からFilePatchを探す

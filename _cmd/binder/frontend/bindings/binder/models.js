@@ -47,6 +47,13 @@ export class Patch {
              */
             this["source"] = "";
         }
+        if (!("historical" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["historical"] = "";
+        }
 
         Object.assign(this, $$source);
     }

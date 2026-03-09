@@ -34,8 +34,9 @@ func (b *Binder) CommitFiles(m string, files ...string) error {
 }
 
 type Patch struct {
-	Patch  string `json:"patch"`
-	Source string `json:"source"`
+	Patch      string `json:"patch"`
+	Source     string `json:"source"`
+	Historical string `json:"historical"`
 }
 
 func (b *Binder) getFilename(typ, id string) (string, error) {
@@ -100,7 +101,7 @@ func (b *Binder) GetHistoryPatch(typ, id, hash string) (*Patch, error) {
 		return nil, xerrors.Errorf("getFilename() error: %w", err)
 	}
 
-	source, patch, err := b.fileSystem.GetHistoryPatch(fn, hash)
+	source, historical, patch, err := b.fileSystem.GetHistoryPatch(fn, hash)
 	if err != nil {
 		return nil, xerrors.Errorf("GetHistoryPatch() error: %w", err)
 	}
@@ -108,6 +109,7 @@ func (b *Binder) GetHistoryPatch(typ, id, hash string) (*Patch, error) {
 	var p Patch
 	p.Patch = patch
 	p.Source = source
+	p.Historical = historical
 
 	return &p, nil
 }
