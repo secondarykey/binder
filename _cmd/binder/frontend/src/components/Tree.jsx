@@ -332,7 +332,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     {isExpanded ? '−' : '+'}
                   </ExpandButton>
                 )}
-                <IconWrapper>
+                <IconWrapper style={node.modified ? { color: '#f5a623' } : undefined}>
                     {typeof icon === 'string' ? icon : React.isValidElement(icon) ? icon : icon ? React.createElement(icon) : null}
                 </IconWrapper>
                 <span style={node.modified ? { color: '#f5a623' } : undefined}>{node.name}</span>

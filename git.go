@@ -62,6 +62,9 @@ func (b *Binder) getFilename(typ, id string) (string, error) {
 }
 
 func (b *Binder) GetModifiedIds() ([]string, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
 	files, err := b.fileSystem.Status()
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Status() error: %w", err)

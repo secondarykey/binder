@@ -33,7 +33,7 @@ function MermaidSVG(props) {
 }
 
 function MermaidIcon() {
-  return <MermaidSVG width="16px" height="16px" fill="white" contents="black" />;
+  return <MermaidSVG width="16px" height="16px" fill="currentColor" contents="black" />;
 }
 
 /**
@@ -131,9 +131,10 @@ function BinderTree(props) {
       }
       // ツリー表示後に非同期でGit変更状態を取得して色を反映
       GetModifiedIds().then((ids) => {
+        console.log('[BinderTree] GetModifiedIds:', ids);
         setModifiedIds(new Set(ids ?? []));
-      }).catch(() => {
-        // Git操作のエラーは無視（ツリー表示は維持）
+      }).catch((err) => {
+        console.error('[BinderTree] GetModifiedIds error:', err);
       });
     }).catch((err) => {
       evt.showErrorMessage(err);
