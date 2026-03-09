@@ -29,6 +29,8 @@ type AppRuntime interface {
 	WindowSize() (int, int)
 	// WindowPosition は現在のウィンドウ位置（x, y）を返す
 	WindowPosition() (int, int)
+	// OpenModifiedWindow はコミットウィンドウを開く（既に開いていれば前面に出す）
+	OpenModifiedWindow() error
 }
 
 // App struct

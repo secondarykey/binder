@@ -12,6 +12,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func (a *App) OpenModifiedWindow() error {
+
+	defer log.PrintTrace(log.Func("OpenModifiedWindow()"))
+
+	return a.runtime.OpenModifiedWindow()
+}
+
 func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
 
 	files := make([]string, len(leafs))

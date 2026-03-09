@@ -357,6 +357,13 @@ export function OpenDiagram(id) {
 }
 
 /**
+ * @returns {$CancellablePromise<void>}
+ */
+export function OpenModifiedWindow() {
+    return $Call.ByID(2805916852);
+}
+
+/**
  * @param {string} noteId
  * @returns {$CancellablePromise<string>}
  */

@@ -18,8 +18,6 @@ import Template from "./contents/Template";
 import { Hidden } from "./App";
 
 import "./assets/Content.css"
-import Patch from "./contents/Patch";
-import Commit from "./contents/Commit";
 
 /**
  * コンテンツ表示部分
@@ -54,8 +52,6 @@ function Content(props) {
           <Route path="/template/:mode/:currentId" element={<Template />} />
 
           <Route path="/template/view" element={<Hidden />} />
-          <Route path="/status/modified/:date" element={<Commit />} />
-          <Route path="/status/modified/:type/:currentId" element={<Patch />} />
 
           <Route path="/editor/:mode/:id" element={<Editor />} />
 

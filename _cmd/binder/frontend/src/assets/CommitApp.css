@@ -1,0 +1,48 @@
+#CommitApp {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#commitTitle {
+    padding-left: 8px !important;
+    padding-right: 0px;
+    padding-top: 2px !important;
+    color: #f1f1f1 !important;
+    border-bottom: 1px solid #262626;
+    background-color: #1c1c1c !important;
+    --wails-draggable: drag;
+}
+
+#commitTitle button {
+    --wails-draggable: no-drag;
+}
+
+#commitTitle button:hover {
+    background-color: #2a2a2a;
+}
+
+#commitArea {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#commitLeft {
+    width: 280px;
+    min-width: 280px;
+    background-color: #1a1a1a;
+    overflow-y: auto;
+    border-right: 1px solid #333;
+}
+
+#commitRight {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+}

@@ -54,8 +54,9 @@ func init() {
 // Wails v3 の依存はこの構造体および main() 内に閉じており、
 // ルートの binder パッケージには持ち込まない。
 type wailsRuntime struct {
-	app    *application.App
-	window *application.WebviewWindow
+	app          *application.App
+	window       *application.WebviewWindow
+	commitWindow *application.WebviewWindow
 }
 
 func (r *wailsRuntime) Quit() {
@@ -99,6 +100,34 @@ func (r *wailsRuntime) WindowSize() (int, int) {
 
 func (r *wailsRuntime) WindowPosition() (int, int) {
 	return r.window.Position()
+}
+
+func (r *wailsRuntime) OpenModifiedWindow() error {
+	// 既に開いていれば前面に出すだけ
+	if r.commitWindow != nil {
+		r.commitWindow.Focus()
+		return nil
+	}
+
+	w := r.app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - Commit",
+		Width:            900,
+		Height:           600,
+		MinWidth:         600,
+		MinHeight:        400,
+		Frameless:        true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?commit=1",
+	})
+
+	r.commitWindow = w
+
+	// ウィンドウが閉じられたらリセット
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.commitWindow = nil
+	})
+
+	return nil
 }
 
 func main() {

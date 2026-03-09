@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
-import { Address } from '../bindings/binder/api/app';
+import { Address, OpenModifiedWindow } from '../bindings/binder/api/app';
 
 import { IconButton, Paper } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -20,7 +20,6 @@ import TemplateTree from './contents/LeftMenu/TemplateTree';
 import Event, { EventContext } from './Event';
 
 import "./assets/Menu.css";
-import ModifiedMenu from './contents/LeftMenu/ModifiedMenu';
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {
@@ -41,10 +40,6 @@ function BinderSVGIcon(props) {
       <use href="#binder" transform="translate(220,0)"></use>
     </svg>
   </>);
-}
-
-function dateString() {
-  return (new Date()).toISOString();
 }
 
 /*
@@ -127,10 +122,12 @@ function Menu(props) {
   }
 
   /**
-   * 更新一覧
+   * 更新一覧（別ウィンドウで開く）
    */
   const handleClickModified = () => {
-    nav("/status/modified/" + dateString());
+    OpenModifiedWindow().catch((err) => {
+      evt.showErrorMessage(err);
+    });
   }
 
   /**
@@ -163,7 +160,6 @@ function Menu(props) {
 
   //router の定義用に書いておく
   var tempTree = <TemplateTree />
-  var modified = <ModifiedMenu />
 
   //バインダーが開いている時のみ表示するコンポーネント
   const OpenBinderComponent = () => {
@@ -233,9 +229,6 @@ function Menu(props) {
             <Route path={"/file/*"} element={<> <FileMenu /> </>} />
             <Route path={"/template/*"} element={tempTree} />
             <Route path={"/editor/template/:id"} element={tempTree} />
-
-            <Route path="/status/modified/:date" element={modified} />
-            <Route path="/status/modified/:type/:currentId" element={modified} />
 
             <Route path="*" element={<>
               <BinderTree />
