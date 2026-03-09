@@ -19,7 +19,7 @@ const (
 var LatestVersion *Version
 
 func init() {
-	LatestVersion = NewVer("0.3.4")
+	LatestVersion = NewVer("0.4.0")
 }
 
 func NewVer(ver string) *Version {
