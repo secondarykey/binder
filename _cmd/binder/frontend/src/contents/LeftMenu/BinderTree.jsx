@@ -264,9 +264,18 @@ function BinderTree(props) {
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
-  /** Addサブメニューを開く */
-  const handleAddMenuOpen = (e) => {
+  /** Addサブメニューのホバー遅延クローズ用タイマー */
+  const addMenuCloseTimerRef = useRef(null);
+
+  /** Addサブメニューを開く（ホバー時） */
+  const handleAddMenuEnter = (e) => {
+    clearTimeout(addMenuCloseTimerRef.current);
     setAddMenuAnchor(e.currentTarget);
+  };
+
+  /** Addサブメニューを遅延クローズ（ホバー離脱時） */
+  const handleAddMenuLeave = () => {
+    addMenuCloseTimerRef.current = setTimeout(() => setAddMenuAnchor(null), 150);
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
@@ -398,10 +407,10 @@ function BinderTree(props) {
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
-      slotProps={{ paper: { sx: { minWidth: 250 } } }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
-      <MenuItem onClick={handleAddMenuOpen} divider>Add ▶</MenuItem>
+      <MenuItem onMouseEnter={handleAddMenuEnter} onMouseLeave={handleAddMenuLeave} divider>Add ▶</MenuItem>
       <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
@@ -413,7 +422,7 @@ function BinderTree(props) {
       anchorEl={addMenuAnchor}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      slotProps={{ paper: { sx: { minWidth: 250 } } }}
+      slotProps={{ paper: { sx: { minWidth: 150 }, onMouseEnter: () => clearTimeout(addMenuCloseTimerRef.current), onMouseLeave: handleAddMenuLeave } }}
     >
       <MenuItem onClick={handleRegisterNote}>Note</MenuItem>
       <MenuItem onClick={handleRegisterDiagram}>Diagram</MenuItem>
@@ -426,7 +435,7 @@ function BinderTree(props) {
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
-      slotProps={{ paper: { sx: { minWidth: 250 } } }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
       <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
       <MenuItem onClick={handleHistoryDiagram} divider>History</MenuItem>
@@ -439,7 +448,7 @@ function BinderTree(props) {
       onClose={closeAllMenus}
       anchorReference="anchorPosition"
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
-      slotProps={{ paper: { sx: { minWidth: 250 } } }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
       <MenuItem onClick={handleEditAsset} divider>Edit</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
