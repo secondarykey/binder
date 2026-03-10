@@ -305,24 +305,9 @@ function HistoryPatch({ typ, id }) {
             {/* 履歴ファイル表示パネル */}
             <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid #333" : "none" }}>
                 <div style={panelLabelStyle}>
-                    <span>Historical</span>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                        {/* Diff トグルボタン */}
-                        <Button
-                            size="small"
-                            variant={showDiff ? "contained" : "outlined"}
-                            startIcon={<DiffIcon fontSize="small" />}
-                            onClick={() => setShowDiff(v => !v)}
-                            disabled={!hash || !patch}
-                            sx={{
-                                ...btnSx,
-                                ...(showDiff ? { color: "#fff", backgroundColor: "#2a3f6f", borderColor: "#2a3f6f",
-                                    "&:hover": { backgroundColor: "#3a5080" } } : {}),
-                            }}
-                        >
-                            Diff
-                        </Button>
-                        {/* Restore ボタン */}
+                    {/* 左: Historical ラベル + Restore ボタン */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span>Historical</span>
                         <Button
                             size="small"
                             variant="outlined"
@@ -334,6 +319,21 @@ function HistoryPatch({ typ, id }) {
                             Restore
                         </Button>
                     </div>
+                    {/* 右: Diff トグルボタン */}
+                    <Button
+                        size="small"
+                        variant={showDiff ? "contained" : "outlined"}
+                        startIcon={<DiffIcon fontSize="small" />}
+                        onClick={() => setShowDiff(v => !v)}
+                        disabled={!hash || !patch}
+                        sx={{
+                            ...btnSx,
+                            ...(showDiff ? { color: "#fff", backgroundColor: "#2a3f6f", borderColor: "#2a3f6f",
+                                "&:hover": { backgroundColor: "#3a5080" } } : {}),
+                        }}
+                    >
+                        Diff
+                    </Button>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <TextPanel
