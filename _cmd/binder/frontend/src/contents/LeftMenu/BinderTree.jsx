@@ -150,6 +150,10 @@ function BinderTree(props) {
     evt.register("BinderTree", Event.ChangeAddress, () => {
       viewTree(true);
     });
+    // 履歴復元などでツリーのノード選択を外部から更新する
+    evt.register("BinderTree", Event.SelectTree, (id) => {
+      setSelectedId(id);
+    });
     // 初回表示時もトップ階層を展開
     viewTree(true);
   }, []);

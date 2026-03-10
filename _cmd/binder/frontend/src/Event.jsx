@@ -53,6 +53,11 @@ class Event {
     static InsertText = "editor.insert.text"
 
     /**
+     * ツリーのノード選択
+     */
+    static SelectTree = "tree.select"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();
@@ -110,6 +115,10 @@ class Event {
 
     insertText(text) {
         this.raise(Event.InsertText, text);
+    }
+
+    selectTreeNode(id) {
+        this.raise(Event.SelectTree, id);
     }
 
     showMessage(obj) {

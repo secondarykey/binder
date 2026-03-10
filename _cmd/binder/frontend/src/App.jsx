@@ -89,6 +89,7 @@ function App() {
       const { typ, id } = event.data ?? {};
       if (typ && id) {
         nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now() } });
+        evt.selectTreeNode(id);
       }
     });
 
