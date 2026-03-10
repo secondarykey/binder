@@ -28,7 +28,7 @@ class Scripter {
 
     static async import(url) {
         var rtn = new Promise( (res,rej) => {
-            import(url).then( (m) => {
+            import(/* @vite-ignore */ url).then( (m) => {
                 res(m);
             })
         })

@@ -38,7 +38,7 @@ class MermaidScript {
    * @param {*} url 
    */
   static async load(url) {
-    var m = await import(url);
+    var m = await import(/* @vite-ignore */url);
     var mermaid = m.default;
     return mermaid;
   }
