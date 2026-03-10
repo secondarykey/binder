@@ -230,7 +230,8 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 	}
 
 	if len(names) == 0 {
-		slog.Info("names is zero")
+		//更新がない場合
+		//slog.Info("names is zero")
 	}
 	return names, nil
 }

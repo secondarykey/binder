@@ -67,7 +67,6 @@ func (a *App) SaveNote(noteId string, data string) error {
 
 	defer log.PrintTrace(log.Func("SaveNote()"))
 
-	fmt.Println("")
 	err := a.current.SaveNote(noteId, []byte(data))
 	if err != nil {
 		log.PrintStackTrace(err)
