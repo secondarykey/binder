@@ -23,7 +23,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const schemaVersion = "0.4.0"
+var schemaVersion string
 
 type input struct {
 	object interface{}
@@ -66,6 +66,13 @@ func init() {
 func main() {
 	//outputは物理位置だが
 	//baseはヘッダに書くだけなので相対のパッケージ位置でよい
+
+	// バージョンを config.yml から読み込む（実行時に決定）
+	if wd, err := os.Getwd(); err == nil {
+		root := getRoot(wd)
+		schemaVersion = readConfigVersion(root)
+	}
+
 	in := []input{
 		{model.Config{}, "config", "db/model/config.go", "db/config_dao.go"},
 		{model.Note{}, "notes", "db/model/note.go", "db/note_dao.go"},
@@ -110,6 +117,28 @@ func run(ins []input) error {
 		fmt.Println("generate:", in.output)
 	}
 	return nil
+}
+
+// readConfigVersion は プロジェクトルート/_cmd/binder/build/config.yml から
+// version: "x.y.z" を取り出す。
+func readConfigVersion(root string) string {
+	p := filepath.Join(root, "_cmd", "binder", "build", "config.yml")
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return "0.0.0"
+	}
+	const key = `version: "`
+	s := string(data)
+	idx := strings.Index(s, key)
+	if idx < 0 {
+		return "0.0.0"
+	}
+	s = s[idx+len(key):]
+	end := strings.Index(s, `"`)
+	if end < 0 {
+		return "0.0.0"
+	}
+	return s[:end]
 }
 
 func getRoot(p string) string {
