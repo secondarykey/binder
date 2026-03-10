@@ -74,9 +74,16 @@ function HistoryMenu({ typ, id }) {
           onClick={() => handleClick(entry)}>
           <ListItemText
             primary={entry.message.split('\n')[0]}
-            secondary={formatDate(entry.when)}
+            secondary={
+              <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{formatDate(entry.when)}</span>
+                <span style={{ fontFamily: 'monospace', flexShrink: 0, marginLeft: '8px' }}>
+                  {entry.hash.slice(0, 7)}
+                </span>
+              </span>
+            }
             primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }}
-            secondaryTypographyProps={{ noWrap: true, fontSize: '0.75rem', color: '#888' }}
+            secondaryTypographyProps={{ component: 'span', fontSize: '0.75rem', color: '#888' }}
           />
         </ListItemButton>
       ))}
