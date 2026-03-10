@@ -251,7 +251,7 @@ function HistoryPatch({ typ, id }) {
     const doRestore = () => {
         RestoreHistory(typ, id, hash).then(() => {
             // メインウィンドウにファイルを再オープンするよう通知してから閉じる
-            Events.Emit({ name: "binder:restored", data: { typ, id } });
+            Events.Emit("binder:restored", { typ, id });
             Window.Close();
         }).catch((err) => {
             evt.showErrorMessage(err);
