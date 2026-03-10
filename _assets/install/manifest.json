@@ -1,8 +1,8 @@
 {
   "templates": [
     {"id": "layout",  "type": "layout",  "name": "Layout",  "file": "layout.tmpl"},
-    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"},
-    {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"}
+    {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"},
+    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"}
   ],
   "notes": [
     {
