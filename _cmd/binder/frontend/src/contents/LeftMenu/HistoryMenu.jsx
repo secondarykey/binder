@@ -73,6 +73,7 @@ function HistoryMenu({ typ, id }) {
           }}
           onClick={() => handleClick(entry)}>
           <ListItemText
+            sx={{ my: 0 }}
             primary={entry.message.split('\n')[0]}
             secondary={
               <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
