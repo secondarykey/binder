@@ -4,6 +4,8 @@ import { useParams } from "react-router";
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import RestoreIcon from "@mui/icons-material/Restore";
 
+import { Events, Window } from "@wailsio/runtime";
+
 import { GetHistoryPatch, GetModifiedIds, GetSetting, RestoreHistory } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
@@ -248,7 +250,9 @@ function HistoryPatch({ typ, id }) {
 
     const doRestore = () => {
         RestoreHistory(typ, id, hash).then(() => {
-            evt.showSuccessMessage("ファイルを復元しました。コミットして確定してください。");
+            // メインウィンドウにファイルを再オープンするよう通知してから閉じる
+            Events.Emit({ name: "binder:restored", data: { typ, id } });
+            Window.Close();
         }).catch((err) => {
             evt.showErrorMessage(err);
         });

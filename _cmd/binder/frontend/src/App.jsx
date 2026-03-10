@@ -11,7 +11,7 @@ import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { Window } from '@wailsio/runtime';
+import { Events, Window } from '@wailsio/runtime';
 import { SavePosition, GetSetting, LoadBinder, Terminate, GetConfig, CloseBinder } from '../bindings/binder/api/app';
 
 import Event, { EventContext } from "./Event";
@@ -83,6 +83,14 @@ function App() {
       setSidebarOpen(flag);
     });
 
+    // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
+    const cleanupRestored = Events.On("binder:restored", (event) => {
+      const { typ, id } = event.data ?? {};
+      if (typ && id) {
+        nav(`/editor/${typ}/${id}`);
+      }
+    });
+
     //バインダーを開いたとき（アドレス変更時）にBinder名を再取得
     evt.register("App", Event.ChangeAddress, function () {
       loadBinderName();
@@ -114,6 +122,10 @@ function App() {
       //メニュー表示、メニュー位置、スプリット位置
       SavePosition();
     }, 60 * 1000);
+
+    return () => {
+      cleanupRestored();
+    };
 
     /**
      * リロード周りのバグ時のデバッグ
