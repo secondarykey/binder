@@ -462,8 +462,9 @@ func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, 
 		return "", "", "", xerrors.Errorf("getCommitContent() error: %w", err)
 	}
 
-	// source → historical のパッチを生成（現在 → 過去方向）
-	p, err := createSinglePatch(fn, source, historical)
+	// historical → source のパッチを生成（過去 → 現在方向）
+	// buildDiffView は source を "to" ファイルとして扱うため、パッチは historical を from にする必要がある
+	p, err := createSinglePatch(fn, historical, source)
 	if err != nil {
 		return "", "", "", xerrors.Errorf("createSinglePatch() error: %w", err)
 	}
