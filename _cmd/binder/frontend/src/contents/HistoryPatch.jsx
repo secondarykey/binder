@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router";
 
-import { GetHistoryPatch, GetSetting } from "../../bindings/binder/api/app";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import RestoreIcon from "@mui/icons-material/Restore";
+
+import { GetHistoryPatch, GetModifiedIds, GetSetting, RestoreHistory } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
 
@@ -187,6 +190,7 @@ function HistoryPatch({ typ, id }) {
     const [patch,      setPatch]      = useState("");
     const [fontName,   setFontName]   = useState("monospace");
     const [fontSize,   setFontSize]   = useState(14);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const histScrollRef = useRef();
     const histLineRef   = useRef();
@@ -227,6 +231,29 @@ function HistoryPatch({ typ, id }) {
         });
     }, [typ, id, hash]);
 
+    // Restore ボタン押下: 未コミット変更があれば確認ダイアログ、なければ即時実行
+    const handleRestoreClick = () => {
+        if (!typ || !id || !hash) return;
+        GetModifiedIds().then((ids) => {
+            const modified = (ids ?? []).includes(id);
+            if (modified) {
+                setConfirmOpen(true);
+            } else {
+                doRestore();
+            }
+        }).catch(() => {
+            doRestore();
+        });
+    };
+
+    const doRestore = () => {
+        RestoreHistory(typ, id, hash).then(() => {
+            evt.showSuccessMessage("ファイルを復元しました。コミットして確定してください。");
+        }).catch((err) => {
+            evt.showErrorMessage(err);
+        });
+    };
+
     const { html: histHtml, nums: histNums } = buildPlainView(historical);
     const { html: diffHtml, nums: diffNums } = buildDiffView(source, patch);
 
@@ -239,6 +266,9 @@ function HistoryPatch({ typ, id }) {
         borderBottom: "1px solid #333",
         backgroundColor: "#1c1c1c",
         flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
     };
 
     const panelStyle = {
@@ -250,11 +280,29 @@ function HistoryPatch({ typ, id }) {
     };
 
     return (
+        <>
         <div style={{ display: "flex", width: "100%", height: "100%" }}>
 
             {/* 左: 選択コミット時点のテキスト */}
             <div style={{ ...panelStyle, borderRight: "1px solid #333" }}>
-                <div style={panelLabelStyle}>Historical</div>
+                <div style={panelLabelStyle}>
+                    <span>Historical</span>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<RestoreIcon fontSize="small" />}
+                        onClick={handleRestoreClick}
+                        disabled={!hash}
+                        sx={{
+                            fontSize: "0.65rem", py: 0, px: 1,
+                            color: "#aaa", borderColor: "#555",
+                            textTransform: "none",
+                            "&:hover": { borderColor: "#aaa", color: "#fff" },
+                        }}
+                    >
+                        Restore
+                    </Button>
+                </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <TextPanel
                         rows={histNums}
@@ -269,7 +317,9 @@ function HistoryPatch({ typ, id }) {
 
             {/* 右: 現在ファイルとの差分 */}
             <div style={panelStyle}>
-                <div style={panelLabelStyle}>Current (diff)</div>
+                <div style={panelLabelStyle}>
+                    <span>Current (diff)</span>
+                </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <TextPanel
                         rows={diffNums}
@@ -283,6 +333,24 @@ function HistoryPatch({ typ, id }) {
             </div>
 
         </div>
+
+        {/* 未コミット変更がある場合の確認ダイアログ */}
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+            <DialogTitle>ファイルを復元しますか？</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    現在のファイルにコミットされていない変更があります。
+                    復元すると、その変更は失われます。
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={() => setConfirmOpen(false)}>キャンセル</Button>
+                <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(); }}>
+                    復元する
+                </Button>
+            </DialogActions>
+        </Dialog>
+        </>
     );
 }
 

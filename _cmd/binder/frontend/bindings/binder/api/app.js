@@ -464,6 +464,16 @@ export function RemoveNote(id) {
 }
 
 /**
+ * @param {string} typ
+ * @param {string} id
+ * @param {string} hash
+ * @returns {$CancellablePromise<void>}
+ */
+export function RestoreHistory(typ, id, hash) {
+    return $Call.ByID(3271656689, typ, id, hash);
+}
+
+/**
  * @param {string} mode
  * @param {string} id
  * @returns {$CancellablePromise<void>}

@@ -106,6 +106,18 @@ func (a *App) OpenHistoryWindow(typ string, id string) error {
 	return a.runtime.OpenHistoryWindow(typ, id)
 }
 
+func (a *App) RestoreHistory(typ string, id string, hash string) error {
+
+	defer log.PrintTrace(log.Func("RestoreHistory()", typ, id, hash))
+
+	err := a.current.RestoreHistory(typ, id, hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("RestoreHistory() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetHistory(typ string, id string) ([]*json.HistoryEntry, error) {
 
 	defer log.PrintTrace(log.Func("GetHistory()", typ, id))

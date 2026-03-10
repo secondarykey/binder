@@ -95,6 +95,22 @@ func (b *Binder) GetNowPatch(typ string, id string) (*Patch, error) {
 	return &p, nil
 }
 
+// RestoreHistory は指定コミット時点のファイル内容で現在のファイルを上書きする。
+// コミットは行わない（呼び出し元が任意でコミットする）。
+func (b *Binder) RestoreHistory(typ, id, hash string) error {
+
+	fn, err := b.getFilename(typ, id)
+	if err != nil {
+		return xerrors.Errorf("getFilename() error: %w", err)
+	}
+
+	err = b.fileSystem.RestoreFile(fn, hash)
+	if err != nil {
+		return xerrors.Errorf("RestoreFile() error: %w", err)
+	}
+	return nil
+}
+
 func (b *Binder) GetHistory(typ, id string) ([]*fs.CommitInfo, error) {
 
 	fn, err := b.getFilename(typ, id)

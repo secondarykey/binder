@@ -437,6 +437,29 @@ func (f *FileSystem) GetFileHistory(file string) ([]*CommitInfo, error) {
 	return result, nil
 }
 
+// RestoreFile は指定ハッシュのコミット時点のファイル内容で現在のファイルを上書きする。
+// コミットは行わない。
+func (f *FileSystem) RestoreFile(file string, hash string) error {
+
+	fn := convertPath(file)
+
+	c, err := f.repo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return xerrors.Errorf("CommitObject() error: %w", err)
+	}
+
+	historical, err := getCommitContent(c, fn)
+	if err != nil {
+		return xerrors.Errorf("getCommitContent() error: %w", err)
+	}
+
+	err = f.writeFile(fn, strings.NewReader(historical))
+	if err != nil {
+		return xerrors.Errorf("writeFile() error: %w", err)
+	}
+	return nil
+}
+
 // GetHistoryPatch は指定ハッシュのコミット時点と現在のファイルの差分を返す
 // returns: (現在のファイル内容, 指定コミット時点のファイル内容, unified patch string, error)
 func (f *FileSystem) GetHistoryPatch(file string, hash string) (string, string, string, error) {
