@@ -50,7 +50,8 @@ func TestRemoveAsset(t *testing.T) {
 		t.Fatalf("GetStructure() error: %v", err)
 	}
 
-	fn := "assets/" + s.ParentId + "/" + id
+	fn := "assets/" + id
+	_ = s
 
 	_, err = fs.Stat(fn)
 	if err != nil {

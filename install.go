@@ -180,20 +180,12 @@ func (b *Binder) Initialize(name string) error {
 
 	err = b.initializeDiagram()
 	if err != nil {
-		return xerrors.Errorf("initializeNote() error: %w", err)
-	}
-	err = b.fileSystem.CommitAll(fs.M("Initialize", "Diagrams"))
-	if err != nil {
-		return xerrors.Errorf("CommitAll(diagrams) error: %w", err)
+		return xerrors.Errorf("initializeDiagram() error: %w", err)
 	}
 
 	err = b.initializeAsset()
 	if err != nil {
-		return xerrors.Errorf("initializeNote() error: %w", err)
-	}
-	err = b.fileSystem.CommitAll(fs.M("Initialize", "Assets"))
-	if err != nil {
-		return xerrors.Errorf("CommitAll(assets) error: %w", err)
+		return xerrors.Errorf("initializeAsset() error: %w", err)
 	}
 
 	if name == "" {
