@@ -1,0 +1,25 @@
+{
+  "templates": [
+    {"id": "layout",  "type": "layout",  "name": "Layout",  "file": "layout.tmpl"},
+    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"},
+    {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"}
+  ],
+  "notes": [
+    {
+      "id": "index", "alias": "index", "name": "Index",
+      "parentId": "", "layoutTemplate": "layout", "contentTemplate": "index",
+      "file": "index.md"
+    },
+    {
+      "name": "Content", "parentId": "index",
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "content.md"
+    }
+  ],
+  "diagrams": [
+    {"name": "Diagram", "parentId": "index", "file": "diagram.md"}
+  ],
+  "assets": [
+    {"name": "Asset", "alias": "DataAsset", "parentId": "index", "file": "assets.txt"}
+  ]
+}

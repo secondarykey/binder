@@ -157,8 +157,12 @@ func (b *Binder) Initialize(name string) error {
 		return EmptyError
 	}
 
-	//TODO テンプレートを作成
-	err := b.initializeTemplate()
+	m, err := loadInstallManifest()
+	if err != nil {
+		return xerrors.Errorf("loadInstallManifest() error: %w", err)
+	}
+
+	err = b.initializeTemplate(m)
 	if err != nil {
 		return xerrors.Errorf("initializeTemplate() error: %w", err)
 	}
@@ -168,7 +172,7 @@ func (b *Binder) Initialize(name string) error {
 		return xerrors.Errorf("CommitAll(templates) error: %w", err)
 	}
 
-	err = b.initializeNote()
+	err = b.initializeNote(m)
 	if err != nil {
 		return xerrors.Errorf("initializeNote() error: %w", err)
 	}
@@ -178,12 +182,12 @@ func (b *Binder) Initialize(name string) error {
 		return xerrors.Errorf("CommitAll(notes) error: %w", err)
 	}
 
-	err = b.initializeDiagram()
+	err = b.initializeDiagram(m)
 	if err != nil {
 		return xerrors.Errorf("initializeDiagram() error: %w", err)
 	}
 
-	err = b.initializeAsset()
+	err = b.initializeAsset(m)
 	if err != nil {
 		return xerrors.Errorf("initializeAsset() error: %w", err)
 	}
@@ -197,110 +201,145 @@ func (b *Binder) Initialize(name string) error {
 	return nil
 }
 
-func (b *Binder) initializeNote() error {
-	//新規作成の為、EditNoteは利用できないので注意
-	var index json.Note
-	index.Id = NoteRootId
-	index.ParentId = ""
-	index.Name = "Index"
-	index.LayoutTemplate = TemplateLayoutId
-	index.ContentTemplate = TemplateIndexId
+func (b *Binder) initializeNote(m *installManifest) error {
+	for _, n := range m.Notes {
+		jn := &json.Note{
+			Id:              n.Id,
+			Alias:           n.Alias,
+			Name:            n.Name,
+			ParentId:        n.ParentId,
+			LayoutTemplate:  n.LayoutTemplate,
+			ContentTemplate: n.ContentTemplate,
+		}
 
-	_, err := b.createNote(&index)
-	if err != nil {
-		return fmt.Errorf("createNote(index) error\n%+v", err)
-	}
+		if n.Id != "" {
+			// 固定IDのノート（ルートノートなど）はEditNoteが使えないため直接作成
+			_, err := b.createNote(jn)
+			if err != nil {
+				return xerrors.Errorf("createNote(%s) error: %w", n.Id, err)
+			}
 
-	// ルートノートのStructureを直接作成（EditNoteは使えないため）
-	var rootStruct model.Structure
-	rootStruct.Id = NoteRootId
-	rootStruct.ParentId = ""
-	rootStruct.Seq = 1
-	rootStruct.Typ = "note"
-	rootStruct.Name = "Index"
-	rootStruct.Alias = NoteRootId
-	err = b.db.InsertStructure(&rootStruct, b.op)
-	if err != nil {
-		return fmt.Errorf("InsertStructure(index) error\n%+v", err)
-	}
+			var rootStruct model.Structure
+			rootStruct.Id = n.Id
+			rootStruct.ParentId = n.ParentId
+			rootStruct.Seq = 1
+			rootStruct.Typ = "note"
+			rootStruct.Name = n.Name
+			rootStruct.Alias = n.Alias
+			err = b.db.InsertStructure(&rootStruct, b.op)
+			if err != nil {
+				return xerrors.Errorf("InsertStructure(%s) error: %w", n.Id, err)
+			}
 
-	var child json.Note
-	child.Id = ""
-	child.ParentId = NoteRootId
-	child.Name = "Content"
-	child.LayoutTemplate = TemplateLayoutId
-	child.ContentTemplate = TemplateContentId
+			data, err := m.readFile(n.File)
+			if err != nil {
+				return xerrors.Errorf("readFile(%s) error: %w", n.File, err)
+			}
+			if len(data) > 0 {
+				err = b.fileSystem.WriteNoteText(n.Id, data)
+				if err != nil {
+					return xerrors.Errorf("WriteNoteText(%s) error: %w", n.Id, err)
+				}
+			}
+		} else {
+			// 通常ノートはEditNoteで作成（内部でコミットあり）
+			result, err := b.EditNote(jn, "")
+			if err != nil {
+				return xerrors.Errorf("EditNote(%s) error: %w", n.Name, err)
+			}
 
-	_, err = b.EditNote(&child, "")
-	if err != nil {
-		return fmt.Errorf("content register error\n%+v", err)
-	}
-	return nil
-}
-
-func (b *Binder) initializeDiagram() error {
-
-	//ダイアグラム
-	var diagram json.Diagram
-	diagram.Id = ""
-	diagram.ParentId = NoteRootId
-	diagram.Name = "Diagram"
-
-	_, err := b.EditDiagram(&diagram)
-	if err != nil {
-		return fmt.Errorf("diagram register error\n%+v", err)
-	}
-	return nil
-}
-
-func (b *Binder) initializeAsset() error {
-	//アセット作成
-	//ダイアグラム
-	var asset json.Asset
-	asset.Id = ""
-	asset.ParentId = NoteRootId
-	asset.Name = "Asset"
-	asset.Alias = "DataAsset"
-
-	_, err := b.editAsset(&asset, []byte("add a logo or something"))
-	if err != nil {
-		return fmt.Errorf("diagram register error\n%+v", err)
+			data, err := m.readFile(n.File)
+			if err != nil {
+				return xerrors.Errorf("readFile(%s) error: %w", n.File, err)
+			}
+			if len(data) > 0 {
+				err = b.SaveNote(result.Id, data)
+				if err != nil {
+					return xerrors.Errorf("SaveNote(%s) error: %w", n.Name, err)
+				}
+				err = b.fileSystem.Commit(fs.M("Initialize Note", n.Name), fs.NoteFile(result.Id))
+				if err != nil {
+					return xerrors.Errorf("Commit(note %s) error: %w", n.Name, err)
+				}
+			}
+		}
 	}
 	return nil
 }
 
-func (b *Binder) initializeTemplate() error {
+func (b *Binder) initializeDiagram(m *installManifest) error {
+	for _, d := range m.Diagrams {
+		jd := &json.Diagram{
+			ParentId: d.ParentId,
+			Name:     d.Name,
+		}
+		result, err := b.EditDiagram(jd)
+		if err != nil {
+			return xerrors.Errorf("EditDiagram(%s) error: %w", d.Name, err)
+		}
 
+		data, err := m.readFile(d.File)
+		if err != nil {
+			return xerrors.Errorf("readFile(%s) error: %w", d.File, err)
+		}
+		if len(data) > 0 {
+			err = b.SaveDiagram(result.Id, data)
+			if err != nil {
+				return xerrors.Errorf("SaveDiagram(%s) error: %w", d.Name, err)
+			}
+			err = b.fileSystem.Commit(fs.M("Initialize Diagram", d.Name), fs.DiagramFile(result.Id))
+			if err != nil {
+				return xerrors.Errorf("Commit(diagram %s) error: %w", d.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (b *Binder) initializeAsset(m *installManifest) error {
+	for _, a := range m.Assets {
+		ja := &json.Asset{
+			ParentId: a.ParentId,
+			Name:     a.Name,
+			Alias:    a.Alias,
+		}
+		data, err := m.readFile(a.File)
+		if err != nil {
+			return xerrors.Errorf("readFile(%s) error: %w", a.File, err)
+		}
+		_, err = b.editAsset(ja, data)
+		if err != nil {
+			return xerrors.Errorf("editAsset(%s) error: %w", a.Name, err)
+		}
+	}
+	return nil
+}
+
+func (b *Binder) initializeTemplate(m *installManifest) error {
 	// HTMLテンプレート（layout/content）のみ初期化する。
 	// snippet（note/diagram/template型）は0.3.3でtemplatesテーブルから分離済み。
+	for _, t := range m.Templates {
+		jt := &json.Template{
+			Id:   t.Id,
+			Typ:  t.Type,
+			Name: t.Name,
+		}
+		_, err := b.createTemplate(jt)
+		if err != nil {
+			return xerrors.Errorf("createTemplate(%s) error: %w", t.Id, err)
+		}
 
-	var layout json.Template
-	layout.Id = TemplateLayoutId
-	layout.Typ = string(json.LayoutTemplateType)
-	layout.Name = "Layout"
-	_, err := b.createTemplate(&layout)
-	if err != nil {
-		return fmt.Errorf("layout register error\n%+v", err)
+		data, err := m.readFile(t.File)
+		if err != nil {
+			return xerrors.Errorf("readFile(%s) error: %w", t.File, err)
+		}
+		if len(data) > 0 {
+			_, err = b.fileSystem.WriteTemplate(jt, data)
+			if err != nil {
+				return xerrors.Errorf("WriteTemplate(%s) error: %w", t.Id, err)
+			}
+		}
 	}
-
-	var index json.Template
-	index.Id = TemplateIndexId
-	index.Typ = string(json.ContentTemplateType)
-	index.Name = "Index"
-	_, err = b.createTemplate(&index)
-	if err != nil {
-		return fmt.Errorf("index register error\n%+v", err)
-	}
-
-	var content json.Template
-	content.Id = TemplateContentId
-	content.Typ = string(json.ContentTemplateType)
-	content.Name = "Content"
-	_, err = b.createTemplate(&content)
-	if err != nil {
-		return fmt.Errorf("content register error\n%+v", err)
-	}
-
 	return nil
 }
 
