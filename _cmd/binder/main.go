@@ -2,10 +2,10 @@ package main
 
 import (
 	"embed"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -18,8 +18,8 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed wails.json
-var wailsJson []byte
+//go:embed build/config.yml
+var configYml []byte
 var ver string
 
 func attrFunc(groups []string, a slog.Attr) slog.Attr {
@@ -34,20 +34,25 @@ func attrFunc(groups []string, a slog.Attr) slog.Attr {
 var resetPosition bool
 
 func init() {
-	wails := make(map[string]interface{})
-
-	err := json.Unmarshal(wailsJson, &wails)
-	if err != nil {
-		slog.Error("wails.json not read")
-	}
-	obj, ok := wails["version"]
-
-	ver = "0.0.0"
-	if ok {
-		ver = obj.(string)
-	}
-
+	ver = parseVersion(configYml)
 	flag.BoolVar(&resetPosition, "reset-position", false, "Windows Position reset")
+}
+
+// parseVersion は config.yml のバイト列から version: "x.y.z" を取り出す。
+func parseVersion(data []byte) string {
+	const key = `version: "`
+	s := string(data)
+	idx := strings.Index(s, key)
+	if idx < 0 {
+		slog.Warn("version not found in config.yml")
+		return "0.0.0"
+	}
+	s = s[idx+len(key):]
+	end := strings.Index(s, `"`)
+	if end < 0 {
+		return "0.0.0"
+	}
+	return s[:end]
 }
 
 // wailsRuntime は api.AppRuntime の Wails v3 実装。

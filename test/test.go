@@ -9,6 +9,7 @@ import (
 
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -19,7 +20,29 @@ const (
 var LatestVersion *Version
 
 func init() {
-	LatestVersion = NewVer("0.4.0")
+	LatestVersion = NewVer(readConfigVersion())
+}
+
+// readConfigVersion は _cmd/binder/build/config.yml からアプリバージョンを読み出す。
+// Go テストはパッケージディレクトリ (test/) から実行されるため、相対パスで参照できる。
+func readConfigVersion() string {
+	p := filepath.Join("..", "_cmd", "binder", "build", "config.yml")
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return "0.0.0"
+	}
+	const key = `version: "`
+	s := string(data)
+	idx := strings.Index(s, key)
+	if idx < 0 {
+		return "0.0.0"
+	}
+	s = s[idx+len(key):]
+	end := strings.Index(s, `"`)
+	if end < 0 {
+		return "0.0.0"
+	}
+	return s[:end]
 }
 
 func NewVer(ver string) *Version {
