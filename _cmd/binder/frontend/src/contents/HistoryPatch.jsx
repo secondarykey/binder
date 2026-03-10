@@ -83,7 +83,7 @@ function buildDiffView(source, patch) {
             num  = diff.plus.start;
             now  = num;
             for (var idx = 1; idx <= diff.plus.end; ++idx) {
-                plus[num] = "green";
+                plus[num] = "red";
                 num++;
             }
             return;
@@ -119,7 +119,7 @@ function buildDiffView(source, patch) {
         write("g_" + n, c, line, n);
         if (minus[n]) {
             minus[n].forEach((del, idx) => {
-                write("m_" + idx + "_" + n, "red", del, "\u00A0-");
+                write("m_" + idx + "_" + n, "green", del, "\u00A0-");
             });
         }
         n++;
