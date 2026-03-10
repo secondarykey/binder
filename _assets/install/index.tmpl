@@ -1,0 +1,7 @@
+<p>Simple Index</p>
+<ul>
+{{ range latestNotes 4 }}
+  <li><a href="{{.Link}}">{{ .Name }}</a></li>
+{{ end }}
+</ul>
+<a href="{{ .Page.List.Link }}">List Page</p>
