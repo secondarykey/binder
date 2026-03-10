@@ -45,10 +45,10 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 	}
 	buildTree(root)
 
-	slog.Info("Tree", "RootLength", len(root))
+	slog.Debug("Tree", "RootLength", len(root))
 	if root != nil {
-		slog.Info("Tree", "RootId", root[0].Id)
-		slog.Info("Tree", "Root Children", len(root[0].Children))
+		slog.Debug("Tree", "RootId", root[0].Id)
+		slog.Debug("Tree", "Root Children", len(root[0].Children))
 	}
 
 	var tree json.Tree
