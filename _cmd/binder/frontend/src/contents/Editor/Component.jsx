@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useRef } from "react"
-import { useParams } from "react-router";
+import { useParams, useLocation } from "react-router";
 
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
@@ -38,6 +38,8 @@ import FontDialog from "../FontDialog.jsx";
 function Editor(props) {
 
   var {mode,id} = useParams();
+  const location = useLocation();
+  const restoredAt = location.state?.restoredAt;
   const evt = useContext(EventContext)
 
   const [editor, setEditor] = useState(true);
@@ -208,7 +210,7 @@ function Editor(props) {
       })
     }
 
-  }, [id]);
+  }, [id, restoredAt]);
 
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する

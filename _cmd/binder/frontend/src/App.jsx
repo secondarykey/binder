@@ -84,10 +84,11 @@ function App() {
     });
 
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
+    // 同じURLにいる場合でも強制再読み込みするため、state に restoredAt タイムスタンプを付与する
     const cleanupRestored = Events.On("binder:restored", (event) => {
       const { typ, id } = event.data ?? {};
       if (typ && id) {
-        nav(`/editor/${typ}/${id}`);
+        nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now() } });
       }
     });
 
