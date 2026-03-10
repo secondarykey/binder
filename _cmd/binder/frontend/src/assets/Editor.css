@@ -76,7 +76,7 @@
 #splitter:hover {
   z-index: 100;
   transition: border-color 0.4s;
-  border: 4px solid #ccccff;
+  border: 4px solid #3333ff;
 }
 
 #splitter:hover::before {

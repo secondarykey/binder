@@ -131,7 +131,6 @@ function BinderTree(props) {
       }
       // ツリー表示後に非同期でGit変更状態を取得して色を反映
       GetModifiedIds().then((ids) => {
-        console.log('[BinderTree] GetModifiedIds:', ids);
         setModifiedIds(new Set(ids ?? []));
       }).catch((err) => {
         console.error('[BinderTree] GetModifiedIds error:', err);

@@ -1,7 +1,10 @@
 import React from "react";
 
+import { useContext } from "react";
+
 import Mermaid from "./engines/Mermaid";
-import Message from '../../Message';
+
+import { EventContext } from '../../Event';
 
 /**
  * IFrame更新のちらつきを抑えるコンポーネント
@@ -86,7 +89,8 @@ class HTMLFrame extends React.Component {
           Mermaid.parse(txt).then((data) => {
             elm.innerHTML = data.svg;
           }).catch((err) => {
-            Message.showWarningMessage("Diagram parse error:" + err);
+            console.error(err);
+            //evt.showWarningMessage("Diagram parse error:" + err);
           });
         })
       }
