@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import RestoreIcon from "@mui/icons-material/Restore";
+import DiffIcon from "@mui/icons-material/Difference";
 
 import { Events, Window } from "@wailsio/runtime";
 
@@ -193,24 +194,31 @@ function HistoryPatch({ typ, id }) {
     const [fontName,   setFontName]   = useState("monospace");
     const [fontSize,   setFontSize]   = useState(14);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    // デフォルトは履歴ファイルのみ表示。Diff ボタンで差分パネルをトグル
+    const [showDiff, setShowDiff] = useState(false);
 
     const histScrollRef = useRef();
     const histLineRef   = useRef();
     const diffScrollRef = useRef();
     const diffLineRef   = useRef();
 
+    // 差分パネルが表示されているときだけスクロール同期を設定する
     useEffect(() => {
         const histEl = histScrollRef.current;
-        const diffEl = diffScrollRef.current;
-        const syncHist = () => { histLineRef.current.scrollTop = histEl.scrollTop; };
-        const syncDiff = () => { diffLineRef.current.scrollTop = diffEl.scrollTop; };
+        if (!histEl) return;
+        const syncHist = () => { if (histLineRef.current) histLineRef.current.scrollTop = histEl.scrollTop; };
         histEl.addEventListener("scroll", syncHist);
-        diffEl.addEventListener("scroll", syncDiff);
-        return () => {
-            histEl.removeEventListener("scroll", syncHist);
-            diffEl.removeEventListener("scroll", syncDiff);
-        };
+        return () => { histEl.removeEventListener("scroll", syncHist); };
     }, []);
+
+    useEffect(() => {
+        if (!showDiff) return;
+        const diffEl = diffScrollRef.current;
+        if (!diffEl) return;
+        const syncDiff = () => { if (diffLineRef.current) diffLineRef.current.scrollTop = diffEl.scrollTop; };
+        diffEl.addEventListener("scroll", syncDiff);
+        return () => { diffEl.removeEventListener("scroll", syncDiff); };
+    }, [showDiff]);
 
     useEffect(() => {
         GetSetting().then((s) => {
@@ -259,7 +267,7 @@ function HistoryPatch({ typ, id }) {
     };
 
     const { html: histHtml, nums: histNums } = buildPlainView(historical);
-    const { html: diffHtml, nums: diffNums } = buildDiffView(source, patch);
+    const { html: diffHtml, nums: diffNums } = showDiff ? buildDiffView(source, patch) : { html: [], nums: [] };
 
     const panelLabelStyle = {
         fontSize: "0.7rem",
@@ -283,29 +291,49 @@ function HistoryPatch({ typ, id }) {
         overflow: "hidden",
     };
 
+    const btnSx = {
+        fontSize: "0.65rem", py: 0, px: 1,
+        color: "#aaa", borderColor: "#555",
+        textTransform: "none",
+        "&:hover": { borderColor: "#aaa", color: "#fff" },
+    };
+
     return (
         <>
         <div style={{ display: "flex", width: "100%", height: "100%" }}>
 
-            {/* 左: 選択コミット時点のテキスト */}
-            <div style={{ ...panelStyle, borderRight: "1px solid #333" }}>
+            {/* 履歴ファイル表示パネル */}
+            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid #333" : "none" }}>
                 <div style={panelLabelStyle}>
                     <span>Historical</span>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<RestoreIcon fontSize="small" />}
-                        onClick={handleRestoreClick}
-                        disabled={!hash}
-                        sx={{
-                            fontSize: "0.65rem", py: 0, px: 1,
-                            color: "#aaa", borderColor: "#555",
-                            textTransform: "none",
-                            "&:hover": { borderColor: "#aaa", color: "#fff" },
-                        }}
-                    >
-                        Restore
-                    </Button>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                        {/* Diff トグルボタン */}
+                        <Button
+                            size="small"
+                            variant={showDiff ? "contained" : "outlined"}
+                            startIcon={<DiffIcon fontSize="small" />}
+                            onClick={() => setShowDiff(v => !v)}
+                            disabled={!hash || !patch}
+                            sx={{
+                                ...btnSx,
+                                ...(showDiff ? { color: "#fff", backgroundColor: "#2a3f6f", borderColor: "#2a3f6f",
+                                    "&:hover": { backgroundColor: "#3a5080" } } : {}),
+                            }}
+                        >
+                            Diff
+                        </Button>
+                        {/* Restore ボタン */}
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<RestoreIcon fontSize="small" />}
+                            onClick={handleRestoreClick}
+                            disabled={!hash}
+                            sx={btnSx}
+                        >
+                            Restore
+                        </Button>
+                    </div>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <TextPanel
@@ -319,22 +347,24 @@ function HistoryPatch({ typ, id }) {
                 </div>
             </div>
 
-            {/* 右: 現在ファイルとの差分 */}
-            <div style={panelStyle}>
-                <div style={panelLabelStyle}>
-                    <span>Current (diff)</span>
+            {/* 右: 現在ファイルとの差分（Diff ボタンで表示） */}
+            {showDiff && (
+                <div style={panelStyle}>
+                    <div style={panelLabelStyle}>
+                        <span>Current (diff)</span>
+                    </div>
+                    <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                        <TextPanel
+                            rows={diffNums}
+                            html={diffHtml}
+                            fontName={fontName}
+                            fontSize={fontSize}
+                            scrollRef={diffScrollRef}
+                            lineRef={diffLineRef}
+                        />
+                    </div>
                 </div>
-                <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-                    <TextPanel
-                        rows={diffNums}
-                        html={diffHtml}
-                        fontName={fontName}
-                        fontSize={fontSize}
-                        scrollRef={diffScrollRef}
-                        lineRef={diffLineRef}
-                    />
-                </div>
-            </div>
+            )}
 
         </div>
 
