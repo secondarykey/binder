@@ -401,7 +401,9 @@ function BinderTree(props) {
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
-      <MenuItem onClick={handleAddMenuOpen} divider>Add ▶</MenuItem>
+      <MenuItem onClick={handleAddMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>Add</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
