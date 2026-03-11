@@ -1,37 +1,19 @@
-package binder
+package convert
 
 import (
-	. "binder/internal"
-	"bufio"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"golang.org/x/xerrors"
 )
 
-var v022migrate *Version
-var v045migrate *Version
-
-func init() {
-	var err error
-	v022migrate, err = NewVersion("0.2.2")
-	if err != nil {
-		panic("v022migrate version parse error: " + err.Error())
-	}
-	v045migrate, err = NewVersion("0.4.5")
-	if err != nil {
-		panic("v045migrate version parse error: " + err.Error())
-	}
-}
-
-// migrateFilesystemV022 はアセットのディレクトリ階層構造をフラット化する（スキーマ 0.2.2）。
+// MigrateV022 はアセットのディレクトリ階層構造をフラット化する（スキーマ 0.2.2）。
 // プライベートアセット: assets/{parentId}/{assetId} → assets/{assetId}
 // メタファイル:         assets/{noteId}/meta        → assets/{noteId}-meta
 // 公開アセット:         docs/assets/{noteAlias}/{assetAlias} → docs/assets/{assetAlias}
 // 公開メタファイル:     docs/assets/{noteAlias}/meta         → docs/assets/{noteAlias}-meta
-func migrateFilesystemV022(dir string) error {
+func MigrateV022(dir string) error {
 
 	// プライベートアセットの移行
 	privateAssets := filepath.Join(dir, "assets")
@@ -106,62 +88,4 @@ func flattenAssetDir(assetsDir string) error {
 	}
 
 	return nil
-}
-
-// readConfigCSV はdb/config.csvからnameとdetailを読み込む（0.4.5移行用）。
-// ファイルが存在しない場合やパースできない場合はデフォルト値を返す。
-func readConfigCSV(dbDir string) (name, detail string) {
-	p := filepath.Join(dbDir, "config.csv")
-	fp, err := os.Open(p)
-	if err != nil {
-		return "Binder", ""
-	}
-	defer fp.Close()
-
-	scanner := bufio.NewScanner(fp)
-
-	// ヘッダ行を読み込んでname/detailのインデックスを特定
-	if !scanner.Scan() {
-		return "Binder", ""
-	}
-	headers := strings.Split(scanner.Text(), ",")
-	nameIdx, detailIdx := -1, -1
-	for i, h := range headers {
-		switch h {
-		case "name":
-			nameIdx = i
-		case "detail":
-			detailIdx = i
-		}
-	}
-	if nameIdx < 0 {
-		return "Binder", ""
-	}
-
-	// 最初のデータ行を読み込む
-	if !scanner.Scan() {
-		return "Binder", ""
-	}
-	cols := strings.Split(scanner.Text(), ",")
-
-	if nameIdx < len(cols) {
-		name = unescapeCSVField(cols[nameIdx])
-	}
-	if detailIdx >= 0 && detailIdx < len(cols) {
-		detail = unescapeCSVField(cols[detailIdx])
-	}
-
-	if name == "" {
-		name = "Binder"
-	}
-	return name, detail
-}
-
-// unescapeCSVField はcsvqのエスケープを元に戻す
-func unescapeCSVField(s string) string {
-	s = strings.ReplaceAll(s, "&#10;", "\n")
-	s = strings.ReplaceAll(s, "&#32;", " ")
-	s = strings.ReplaceAll(s, "&#34;", "\"")
-	s = strings.ReplaceAll(s, "&#44;", ",")
-	return s
 }

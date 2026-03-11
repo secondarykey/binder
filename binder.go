@@ -4,8 +4,8 @@ import (
 	"errors"
 	. "binder/internal"
 
+	"binder/convert"
 	"binder/db"
-	"binder/db/convert"
 	"binder/fs"
 	"binder/log"
 	"binder/settings"
@@ -88,23 +88,10 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	//変換処理を開く前に入れておく
 	dbDir := dir + "/db"
 
-	// 0.4.5: config.csvをbinder.jsonに移行する前に値を読み込む
-	var configName, configDetail string
-	did045Migrate := ver != nil && ov.Lt(v045migrate)
-	if did045Migrate {
-		configName, configDetail = readConfigCSV(dbDir)
-	}
-
-	err = convert.Run(dbDir, ov, ver)
+	// CSVスキーマ変換 + ファイルシステム移行（0.2.2 アセットフラット化 / 0.4.5 config.csv退避）
+	migrateResult, err := convert.Run(dir, dbDir, ov, ver)
 	if err != nil {
-		return nil, xerrors.Errorf("db Convert() error: %w", err)
-	}
-
-	// ファイルシステム移行: アセットディレクトリのフラット化（0.2.2）
-	if ver != nil && ov.Lt(v022migrate) {
-		if err = migrateFilesystemV022(dir); err != nil {
-			return nil, xerrors.Errorf("migrateFilesystemV022() error: %w", err)
-		}
+		return nil, xerrors.Errorf("convert.Run() error: %w", err)
 	}
 
 	// binder.jsonを更新（スキーマ変換後、または初回作成）
@@ -113,12 +100,9 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	if ver != nil {
 		meta.Schema = ""
 		meta.Version = ver.String()
-		if ov.Lt(v045migrate) && meta.Name == "" {
-			if configName == "" {
-				configName = "Binder"
-			}
-			meta.Name = configName
-			meta.Detail = configDetail
+		if migrateResult.ConfigMigrated && meta.Name == "" {
+			meta.Name = migrateResult.ConfigName
+			meta.Detail = migrateResult.ConfigDetail
 		}
 		if err = saveMeta(dir, meta); err != nil {
 			return nil, xerrors.Errorf("saveMeta() error: %w", err)
@@ -142,7 +126,7 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
 	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
 	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
-	if did045Migrate {
+	if migrateResult.ConfigMigrated {
 		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
 		_ = bfs.RemoveFile("db/config.csv")
 		// binder.json をステージ
