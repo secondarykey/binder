@@ -74,41 +74,14 @@ func CreateRemote(url, dir string, version *Version) error {
 
 func Load(dir string, ver *Version) (*Binder, error) {
 
-	// binder.jsonからメタ情報を読み込む（存在しない場合は旧スキーマファイルから生成）
-	meta, err := loadMeta(dir)
-	if err != nil {
-		return nil, xerrors.Errorf("loadMeta() error: %w", err)
-	}
-
-	ov, err := meta.schemaVersion()
-	if err != nil {
-		return nil, xerrors.Errorf("meta.schemaVersion() error: %w", err)
-	}
-
 	//変換処理を開く前に入れておく
 	dbDir := dir + "/db"
 
-	// CSVスキーマ変換 + ファイルシステム移行（0.2.2 アセットフラット化 / 0.4.5 config.csv退避）
-	migrateResult, err := convert.Run(dir, dbDir, ov, ver)
+	// CSVスキーマ変換 + ファイルシステム移行 + binder.json更新
+	// （0.2.2 アセットフラット化 / 0.4.5 config.csv退避 / binder.jsonバージョン更新）
+	migrateResult, err := convert.Run(dir, dbDir, ver)
 	if err != nil {
 		return nil, xerrors.Errorf("convert.Run() error: %w", err)
-	}
-
-	// binder.jsonを更新（スキーマ変換後、または初回作成）
-	// 0.3.2マイグレーション: schemaフィールドを空にしてappバージョンのみで管理する。
-	// 0.4.5マイグレーション: config.csvのname/detailをbinder.jsonに移行する。
-	if ver != nil {
-		meta.Schema = ""
-		meta.Version = ver.String()
-		if migrateResult.ConfigMigrated && meta.Name == "" {
-			meta.Name = migrateResult.ConfigName
-			meta.Detail = migrateResult.ConfigDetail
-		}
-		if err = saveMeta(dir, meta); err != nil {
-			return nil, xerrors.Errorf("saveMeta() error: %w", err)
-		}
-		// binder.jsonへの移行後に旧スキーマファイルを削除
-		removeOldSchemaFiles(dir)
 	}
 
 	bfs, err := fs.Load(dir)
@@ -130,11 +103,11 @@ func Load(dir string, ver *Version) (*Binder, error) {
 		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
 		_ = bfs.RemoveFile("db/config.csv")
 		// binder.json をステージ
-		if err = bfs.AddFile(BinderMetaFile); err != nil {
+		if err = bfs.AddFile(convert.BinderMetaFile); err != nil {
 			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
 		}
-		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", ov.String(), ver.String())
-		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), BinderMetaFile)
+		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", migrateResult.SchemaVersion, ver.String())
+		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), convert.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
 			return nil, xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
 		}

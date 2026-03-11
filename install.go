@@ -4,6 +4,7 @@ import (
 	"binder/api/json"
 	. "binder/internal"
 
+	"binder/convert"
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
@@ -97,13 +98,13 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 
 	// binder.jsonをルートディレクトリに作成（0.4.5以降はname/detailも管理）
 	if ver != nil {
-		meta := &BinderMeta{
+		meta := &convert.BinderMeta{
 			Version: ver.String(),
 			Name:    "Binder",
 		}
-		err = saveMeta(dir, meta)
+		err = convert.SaveMeta(dir, meta)
 		if err != nil {
-			return xerrors.Errorf("saveMeta() error: %w", err)
+			return xerrors.Errorf("SaveMeta() error: %w", err)
 		}
 	}
 
@@ -113,7 +114,7 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		return xerrors.Errorf("Add() error: %w", err)
 	}
 
-	err = f.AddFile(BinderMetaFile)
+	err = f.AddFile(convert.BinderMetaFile)
 	if err != nil {
 		return xerrors.Errorf("AddFile(binder.json) error: %w", err)
 	}

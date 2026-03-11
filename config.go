@@ -2,6 +2,7 @@ package binder
 
 import (
 	"binder/api/json"
+	"binder/convert"
 	"binder/fs"
 
 	"golang.org/x/xerrors"
@@ -13,19 +14,19 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 		return EmptyError
 	}
 
-	meta, err := loadMeta(b.dir)
+	meta, err := convert.LoadMeta(b.dir)
 	if err != nil {
-		return xerrors.Errorf("loadMeta() error: %w", err)
+		return xerrors.Errorf("LoadMeta() error: %w", err)
 	}
 
 	meta.Name = conf.Name
 	meta.Detail = conf.Detail
 
-	if err = saveMeta(b.dir, meta); err != nil {
-		return xerrors.Errorf("saveMeta() error: %w", err)
+	if err = convert.SaveMeta(b.dir, meta); err != nil {
+		return xerrors.Errorf("SaveMeta() error: %w", err)
 	}
 
-	err = b.fileSystem.Commit(fs.M("Update Config", "Main"), BinderMetaFile)
+	err = b.fileSystem.Commit(fs.M("Update Config", "Main"), convert.BinderMetaFile)
 	if err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
@@ -38,9 +39,9 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 		return nil, EmptyError
 	}
 
-	meta, err := loadMeta(b.dir)
+	meta, err := convert.LoadMeta(b.dir)
 	if err != nil {
-		return nil, xerrors.Errorf("loadMeta() error: %w", err)
+		return nil, xerrors.Errorf("LoadMeta() error: %w", err)
 	}
 
 	var conf json.Config

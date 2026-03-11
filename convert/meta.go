@@ -1,4 +1,4 @@
-package binder
+package convert
 
 import (
 	"encoding/json"
@@ -24,8 +24,8 @@ type BinderMeta struct {
 	Schema  string `json:"schema,omitempty"` // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
 }
 
-// loadMeta はbinder.jsonを読み込む。存在しない場合は旧バージョンのschema.versionから読み込む
-func loadMeta(dir string) (*BinderMeta, error) {
+// LoadMeta はbinder.jsonを読み込む。存在しない場合は旧バージョンのschema.versionから読み込む
+func LoadMeta(dir string) (*BinderMeta, error) {
 	p := filepath.Join(dir, BinderMetaFile)
 
 	data, err := os.ReadFile(p)
@@ -53,8 +53,8 @@ func loadMetaFromLegacy(dir string) (*BinderMeta, error) {
 	return &BinderMeta{Version: ver.String()}, nil
 }
 
-// saveMeta はbinder.jsonを書き込む
-func saveMeta(dir string, meta *BinderMeta) error {
+// SaveMeta はbinder.jsonを書き込む
+func SaveMeta(dir string, meta *BinderMeta) error {
 	p := filepath.Join(dir, BinderMetaFile)
 
 	data, err := json.MarshalIndent(meta, "", "  ")
@@ -70,7 +70,6 @@ func saveMeta(dir string, meta *BinderMeta) error {
 
 // schemaVersion はbinderのバージョンをVersionとして返す。
 // 0.3.2以降はappバージョン（Version）でスキーマも管理する。
-// 0.3.2未満の旧binder.jsonではversion==schemaだったため後方互換性は保たれる。
 func (m *BinderMeta) schemaVersion() (*Version, error) {
 	v, err := NewVersion(m.Version)
 	if err != nil {

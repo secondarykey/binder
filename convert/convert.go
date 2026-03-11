@@ -93,7 +93,7 @@ func init() {
 		// Apply で config.csv が削除される前に値を読み込む
 		{v045, func(_, dbDir string, result *Result) error {
 			result.ConfigMigrated = true
-			result.ConfigName, result.ConfigDetail = readConfigCSV(dbDir)
+			result.configName, result.configDetail = readConfigCSV(dbDir)
 			return applyDB(dbDir, convert045.Convert045)
 		}},
 	}
@@ -101,11 +101,13 @@ func init() {
 
 // Result は移行処理の結果
 type Result struct {
-	// 0.4.5移行: config.csvから読んだname/detail（ConfigMigrated=trueの場合のみ有効）
-	ConfigName   string
-	ConfigDetail string
+	// SchemaVersion は移行前のスキーマバージョン文字列（コミットメッセージ等に利用）
+	SchemaVersion string
 	// ConfigMigrated は0.4.5移行が実行されたかどうかを示す
 	ConfigMigrated bool
+	// configName/configDetail は0.4.5移行時にconfig.csvから読んだ値（Run内部でのみ利用）
+	configName   string
+	configDetail string
 }
 
 // applyDB はひとつの CSV コンバーターを db ディレクトリに適用するヘルパー
@@ -114,15 +116,28 @@ func applyDB(dbDir string, c dbconvert.Converter) error {
 }
 
 // Run はバインダーレベルの全移行処理を実行する。
-// migrations リストをバージョン順に走査し、ov より新しい移行を順番に適用する。
+// binder.json を読み込んで現在のスキーマバージョンを取得し、必要な移行を順番に適用する。
+// 移行後は binder.json を更新して保存する。
 // 各移行は CSV スキーマ変換とファイルシステム移行を含む自己完結した処理単位。
-func Run(dir, dbDir string, ov, ver *Version) (*Result, error) {
+func Run(dir, dbDir string, ver *Version) (*Result, error) {
 
 	result := &Result{}
 
 	if ver == nil {
 		return result, nil
 	}
+
+	meta, err := LoadMeta(dir)
+	if err != nil {
+		return nil, xerrors.Errorf("LoadMeta() error: %w", err)
+	}
+
+	ov, err := meta.schemaVersion()
+	if err != nil {
+		return nil, xerrors.Errorf("meta.schemaVersion() error: %w", err)
+	}
+
+	result.SchemaVersion = ov.String()
 
 	for _, m := range migrations {
 		if ov.Lt(m.ver) {
@@ -131,6 +146,22 @@ func Run(dir, dbDir string, ov, ver *Version) (*Result, error) {
 			}
 		}
 	}
+
+	// binder.jsonを更新（スキーマ変換後、または初回作成）
+	// 0.3.2マイグレーション: schemaフィールドを空にしてappバージョンのみで管理する。
+	// 0.4.5マイグレーション: config.csvのname/detailをbinder.jsonに移行する。
+	meta.Schema = ""
+	meta.Version = ver.String()
+	if result.ConfigMigrated && meta.Name == "" {
+		meta.Name = result.configName
+		meta.Detail = result.configDetail
+	}
+	if err = SaveMeta(dir, meta); err != nil {
+		return nil, xerrors.Errorf("SaveMeta() error: %w", err)
+	}
+
+	// binder.jsonへの移行後に旧スキーマファイルを削除
+	removeOldSchemaFiles(dir)
 
 	return result, nil
 }
