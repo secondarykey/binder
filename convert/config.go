@@ -5,12 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"binder/db"
 )
 
 // readConfigCSV はdb/config.csvからnameとdetailを読み込む（0.4.5移行用）。
 // ファイルが存在しない場合やパースできない場合はデフォルト値を返す。
 func readConfigCSV(dbDir string) (name, detail string) {
-	p := filepath.Join(dbDir, "config.csv")
+	p := filepath.Join(dbDir, db.ConfigTableName+".csv")
 	fp, err := os.Open(p)
 	if err != nil {
 		return "Binder", ""

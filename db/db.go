@@ -58,6 +58,10 @@ func Tables() map[string]string {
 	return tables
 }
 
+// ConfigTableName は0.4.5で廃止されたconfigテーブルの名前。
+// db/config.csv の削除など移行処理で参照する用途に限り使用する。
+const ConfigTableName = "config"
+
 // 0.0.0 検索用
 const SchemaFileSuffix = "_schema"
 const SchemaFile = "schema.version"

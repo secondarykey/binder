@@ -6,6 +6,7 @@ import (
 
 	. "binder/internal"
 
+	"binder/db"
 	dbconvert "binder/db/convert"
 	convert010 "binder/db/convert/010"
 	convert020 "binder/db/convert/020"
@@ -166,7 +167,7 @@ func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
 	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
 	if state.configMigrated {
 		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
-		_ = bfs.RemoveFile("db/config.csv")
+		_ = bfs.RemoveFile(fs.DBDir + "/" + db.ConfigTableName + ".csv")
 		// binder.json をステージ
 		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
 			return xerrors.Errorf("AddFile(binder.json) error: %w", err)
