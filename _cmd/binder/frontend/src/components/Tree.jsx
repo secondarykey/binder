@@ -305,8 +305,8 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     return (
       <NodeWrapper key={node.id} $isRoot={isRoot} $isBefore={isBefore} $isAfter={isAfter}>
         <NodeContentContainer
-          draggable={!isRoot}
-          onDragStart={(e) => !isRoot && handleDragStart(e, node.id)}
+          draggable={!isRoot && !isRenaming}
+          onDragStart={(e) => !isRoot && !isRenaming && handleDragStart(e, node.id)}
           onDragOver={(e) => handleDragOver(e, node.id, isRoot, node.nodeType || node.type)}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -351,7 +351,6 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                       if (e.key === 'Enter') { e.preventDefault(); onRenameCommit && onRenameCommit(); }
                       if (e.key === 'Escape') { e.preventDefault(); onRenameCancel && onRenameCancel(); }
                     }}
-                    onBlur={() => onRenameCommit && onRenameCommit()}
                     onClick={(e) => e.stopPropagation()}
                     style={{
                       background: 'transparent',

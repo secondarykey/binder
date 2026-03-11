@@ -298,9 +298,13 @@ function BinderTree(props) {
   /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
   const handleRenameStart = () => {
     const node = contextMenu.node;
+    const { id, name } = node;
     closeAllMenus();
-    setRenamingValue(node.name);
-    setRenaming(node.id);
+    // MUI メニューのアニメーション完了後に input を表示して autoFocus を確実に効かせる
+    setTimeout(() => {
+      setRenamingValue(name);
+      setRenaming(id);
+    }, 150);
   };
 
   /** リネーム確定: Enter/blur 時に既存データを取得してから name のみ更新する */
