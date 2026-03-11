@@ -15,12 +15,15 @@ import Event, { EventContext } from '../../Event';
  * @param {*} props
  * @returns
  */
-function ModifiedMenu(props) {
+function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ...props }) {
 
   const evt = useContext(EventContext)
-  const { date, currentId } = useParams();
+  const params = useParams();
+  const routerNav = useNavigate();
 
-  const nav = useNavigate();
+  const date = dateProp ?? params.date;
+  const currentId = currentIdProp ?? params.currentId;
+  const nav = onNavigate ?? routerNav;
 
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);

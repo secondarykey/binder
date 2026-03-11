@@ -71,10 +71,12 @@ function isDiffLine(line) {
  * @param {*} props 
  * @returns 
  */
-function Patch(props) {
+function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
 
     const evt = useContext(EventContext)
-    const { type, currentId } = useParams();
+    const params = useParams();
+    const type = typeProp ?? params.type;
+    const currentId = currentIdProp ?? params.currentId;
 
     const [patch, setPatch] = useState("");
     const [source, setSource] = useState("");

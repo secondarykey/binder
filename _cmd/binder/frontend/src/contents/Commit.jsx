@@ -9,11 +9,12 @@ import Event,{EventContext} from '../Event';
  * @param {*} props 
  * @returns 
  */
-function Commit(props) {
+function Commit({ date: dateProp, ...props }) {
 
   const evt = useContext(EventContext)
   const [comment, setComment] = useState("Updated:");
-  const {date} = useParams();
+  const { date: paramDate } = useParams();
+  const date = dateProp ?? paramDate;
 
   useEffect(() => {
     evt.register("Commit",Event.ModifiedComment,function(comment) {
