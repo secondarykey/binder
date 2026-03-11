@@ -1,7 +1,6 @@
 package binder
 
 import (
-	"errors"
 	. "binder/internal"
 
 	"binder/convert"
@@ -74,16 +73,6 @@ func CreateRemote(url, dir string, version *Version) error {
 
 func Load(dir string, ver *Version) (*Binder, error) {
 
-	//変換処理を開く前に入れておく
-	dbDir := dir + "/db"
-
-	// CSVスキーマ変換 + ファイルシステム移行 + binder.json更新
-	// （0.2.2 アセットフラット化 / 0.4.5 config.csv退避 / binder.jsonバージョン更新）
-	migrateResult, err := convert.Run(dir, dbDir, ver)
-	if err != nil {
-		return nil, xerrors.Errorf("convert.Run() error: %w", err)
-	}
-
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
@@ -96,21 +85,13 @@ func Load(dir string, ver *Version) (*Binder, error) {
 		return nil, xerrors.Errorf("Branch -> %s error: %w", s.Git.Branch, err)
 	}
 
-	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
-	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
-	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
-	if migrateResult.ConfigMigrated {
-		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
-		_ = bfs.RemoveFile("db/config.csv")
-		// binder.json をステージ
-		if err = bfs.AddFile(convert.BinderMetaFile); err != nil {
-			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
-		}
-		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", migrateResult.SchemaVersion, ver.String())
-		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), convert.BinderMetaFile)
-		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-			return nil, xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
-		}
+	//変換処理を開く前に入れておく
+	dbDir := dir + "/db"
+
+	// CSVスキーマ変換 + ファイルシステム移行 + binder.json更新 + マイグレーションコミット
+	// （0.2.2 アセットフラット化 / 0.4.5 config.csv退避 / binder.jsonバージョン更新）
+	if err = convert.Run(dir, dbDir, ver, bfs); err != nil {
+		return nil, xerrors.Errorf("convert.Run() error: %w", err)
 	}
 
 	err = checkDirectory(dir, false)
