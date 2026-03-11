@@ -29,6 +29,7 @@ type migrateState struct {
 	configMigrated bool
 	configName     string
 	configDetail   string
+	docsMigrated   bool
 }
 
 // migration はひとつのバージョン移行を表す。
@@ -115,10 +116,11 @@ func init() {
 		}},
 		// 0.4.7: publish_date/republish_date を structures に移動し、
 		// notes/diagrams から publish_date を削除。docs ディレクトリをクリア。
-		{v047, func(dir, dbDir string, _ *migrateState) error {
+		{v047, func(dir, dbDir string, state *migrateState) error {
 			if err := applyDB(dbDir, convert047.Convert047); err != nil {
 				return err
 			}
+			state.docsMigrated = true
 			return fsconvert.MigrateV047(dir)
 		}},
 	}
@@ -189,6 +191,30 @@ func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
 		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
 			return xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
+		}
+	}
+
+	// 0.4.7マイグレーション: CSVスキーマ変更・docs削除・binder.json更新をgitにコミット
+	// CSV変更（structures/notes/diagrams）をステージし、docs/配下の削除済みファイルも
+	// ステージしてbinder.jsonと合わせてコミットする。
+	// docs/にコンテンツがない場合（未公開状態等）はUpdatedFilesErrorを無視する。
+	if state.docsMigrated {
+		// 変更されたCSVファイルをステージ
+		if err = bfs.AddDBFiles(); err != nil {
+			return xerrors.Errorf("AddDBFiles() error: %w", err)
+		}
+		// docs/ 配下の削除済みファイルをステージ（追跡済みのもののみ）
+		if err = bfs.StagePublishDirRemovals(); err != nil {
+			return xerrors.Errorf("StagePublishDirRemovals() error: %w", err)
+		}
+		// binder.json をステージ
+		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
+			return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+		}
+		commitMsg := fmt.Sprintf("Migrate schema 0.4.7: move publish dates to structures, clear docs/ (%s -> %s)", ov.String(), ver.String())
+		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
+		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
+			return xerrors.Errorf("AutoCommit(migrate 047) error: %w", commitErr)
 		}
 	}
 

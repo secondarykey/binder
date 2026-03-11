@@ -1,6 +1,8 @@
 package fs
 
 import (
+	"strings"
+
 	"binder/db"
 
 	"golang.org/x/xerrors"
@@ -92,4 +94,29 @@ func (f *FileSystem) AddFile(name string) error {
 // ファイルが追跡されていない場合はエラーを無視する
 func (f *FileSystem) RemoveFile(name string) error {
 	return f.remove(name)
+}
+
+// StagePublishDirRemovals は公開ディレクトリ（docs）内の削除済みファイルをgitインデックスにステージする。
+// マイグレーション時に docs/ を OS 上で削除した後に呼び出す。
+// 追跡されていないファイルは無視する。
+func (f *FileSystem) StagePublishDirRemovals() error {
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return xerrors.Errorf("Status() error: %w", err)
+	}
+
+	prefix := publishDir + "/"
+	for path := range status {
+		if strings.HasPrefix(path, prefix) {
+			// エラーは無視（未追跡ファイルが含まれる場合）
+			_, _ = w.Remove(path)
+		}
+	}
+	return nil
 }
