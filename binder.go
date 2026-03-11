@@ -149,7 +149,8 @@ func Load(dir string, ver *Version) (*Binder, error) {
 		if err = bfs.AddFile(BinderMetaFile); err != nil {
 			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
 		}
-		commitErr := bfs.AutoCommit(fs.M("Migrate Config to binder.json", "Schema"), BinderMetaFile)
+		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", ov.String(), ver.String())
+		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
 			return nil, xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
 		}
