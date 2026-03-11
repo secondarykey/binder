@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 import CommitModal from './CommitModal.jsx';
+import SettingModal from './SettingModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -58,6 +59,7 @@ function App() {
   const [pin, setPin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
+  const [settingModalOpen, setSettingModalOpen] = useState(false);
 
   // Binder名を GetConfig() から取得してセット
   const loadBinderName = () => {
@@ -88,6 +90,11 @@ function App() {
     //コミットモーダルを開く
     evt.register("App", Event.OpenCommitModal, function () {
       setCommitModalOpen(true);
+    });
+
+    //設定モーダルを開く
+    evt.register("App", Event.OpenSettingModal, function () {
+      setSettingModalOpen(true);
     });
 
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
@@ -251,6 +258,9 @@ function App() {
 
       {/** コミットモーダル */}
       <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
+
+      {/** 設定モーダル */}
+      <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />
 
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />

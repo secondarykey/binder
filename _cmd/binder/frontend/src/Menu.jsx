@@ -143,10 +143,10 @@ function Menu(props) {
   }
 
   /**
-   * 全体の設定を開く
+   * 全体の設定を開く（モーダルで表示）
    */
   const handleSettingClick = () => {
-    nav("/setting");
+    evt.openSettingModal();
   }
 
   /**

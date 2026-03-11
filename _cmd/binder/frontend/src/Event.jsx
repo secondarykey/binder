@@ -63,6 +63,11 @@ class Event {
     static OpenCommitModal = "commit.modal.open"
 
     /**
+     * 設定モーダルを開く
+     */
+    static OpenSettingModal = "setting.modal.open"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();
@@ -128,6 +133,10 @@ class Event {
 
     openCommitModal() {
         this.raise(Event.OpenCommitModal);
+    }
+
+    openSettingModal() {
+        this.raise(Event.OpenSettingModal);
     }
 
     showMessage(obj) {

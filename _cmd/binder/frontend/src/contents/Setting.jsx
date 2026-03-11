@@ -14,7 +14,7 @@ import { EventContext } from "../Event";
  * @param {*} props 
  * @returns 
  */
-function Setting(props) {
+function Setting({ isModal, ...props }) {
 
   const evt = useContext(EventContext)
 
@@ -32,7 +32,7 @@ function Setting(props) {
   const [gitCode, setGitCode] = useState("");
 
   useEffect(() => {
-    evt.changeTitle("Setting")
+    if (!isModal) evt.changeTitle("Setting")
     GetSetting().then((set) => {
       setPathDefault(set.path.default);
       setPathRunWith(set.path.runWithOpen);

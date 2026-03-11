@@ -1,7 +1,6 @@
 import { Paper } from "@mui/material";
 
 import Binder from "./contents/Binder";
-import Setting from "./contents/Setting";
 import BinderRegister from "./contents/BinderRegister";
 
 import Editor from "./contents/Editor/Component";
@@ -43,7 +42,6 @@ function Content(props) {
           <Route path="/file/remote" element={<BinderRemote />} />
 
           <Route path="/binder/edit" element={<Binder />} />
-          <Route path="/setting" element={<Setting />} />
 
           <Route path="/note/:mode/:currentId" element={<Note />} />
           <Route path="/diagram/:mode/:currentId" element={<Diagram />} />
