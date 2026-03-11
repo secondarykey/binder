@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate } from "react-router";
 
-import { Address, OpenModifiedWindow } from '../bindings/binder/api/app';
+import { Address } from '../bindings/binder/api/app';
 
 import { IconButton, Paper } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -122,12 +122,10 @@ function Menu(props) {
   }
 
   /**
-   * 更新一覧（別ウィンドウで開く）
+   * 更新一覧（モーダルで開く）
    */
   const handleClickModified = () => {
-    OpenModifiedWindow().catch((err) => {
-      evt.showErrorMessage(err);
-    });
+    evt.openCommitModal();
   }
 
   /**

@@ -58,6 +58,11 @@ class Event {
     static SelectTree = "tree.select"
 
     /**
+     * コミットモーダルを開く
+     */
+    static OpenCommitModal = "commit.modal.open"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();
@@ -119,6 +124,10 @@ class Event {
 
     selectTreeNode(id) {
         this.raise(Event.SelectTree, id);
+    }
+
+    openCommitModal() {
+        this.raise(Event.OpenCommitModal);
     }
 
     showMessage(obj) {

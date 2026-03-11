@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
+import CommitModal from './CommitModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -56,6 +57,7 @@ function App() {
   const [binderName, setBinderName] = useState("");
   const [pin, setPin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [commitModalOpen, setCommitModalOpen] = useState(false);
 
   // Binder名を GetConfig() から取得してセット
   const loadBinderName = () => {
@@ -81,6 +83,11 @@ function App() {
     //サイドバーの開閉状態を同期
     evt.register("App", Event.ShowMenu, function (flag) {
       setSidebarOpen(flag);
+    });
+
+    //コミットモーダルを開く
+    evt.register("App", Event.OpenCommitModal, function () {
+      setCommitModalOpen(true);
     });
 
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
@@ -241,6 +248,9 @@ function App() {
         {/** メイン表示 */}
         <Content />
       </div>
+
+      {/** コミットモーダル */}
+      <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
 
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />
