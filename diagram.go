@@ -228,13 +228,13 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
 	}
 
-	if d.Publish.IsZero() {
+	m := d.To()
+	m.ApplyStructure(s.To())
+
+	if m.Publish.IsZero() {
 		//TODO Publish dateがない場合
 		// files にデータベースを追加
 	}
-
-	m := d.To()
-	m.ApplyStructure(s.To())
 
 	fn, err := b.fileSystem.PublishDiagram(data, m)
 	if err != nil {

@@ -7,8 +7,7 @@ import (
 )
 
 type Diagram struct {
-	Id      string `db:"id:key"`
-	Publish     time.Time `db:"publish_date"`
+	Id          string    `db:"id:key"`
 	Created     time.Time `db:"created_date:insert"`
 	CreatedUser string    `db:"created_user:insert"`
 	Updated     time.Time `db:"updated_date"`
@@ -22,7 +21,6 @@ func (d *Diagram) String() string {
 func (d *Diagram) To() *json.Diagram {
 	var rtn json.Diagram
 	rtn.Id = d.Id
-	rtn.Publish = d.Publish
 	rtn.Created = d.Created
 	rtn.CreatedUser = d.CreatedUser
 	rtn.Updated = d.Updated
@@ -33,7 +31,6 @@ func (d *Diagram) To() *json.Diagram {
 func ConvertDiagram(d *json.Diagram) *Diagram {
 	var rtn Diagram
 	rtn.Id = d.Id
-	rtn.Publish = d.Publish
 	rtn.Created = d.Created
 	rtn.CreatedUser = d.CreatedUser
 	rtn.Updated = d.Updated

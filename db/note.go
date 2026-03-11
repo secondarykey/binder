@@ -20,15 +20,15 @@ func (inst *Instance) ExistNote(id string) bool {
 
 func (inst *Instance) PublishNote(id string, op Op) error {
 	now := time.Now()
-	num, err := inst.updateNote(
+	num, err := inst.updateStructure(
 		"publish_date = ?,updated_date = ?,updated_user = ?",
 		"id = ?",
 		now, now, op.GetOperationId(), id)
 	if err != nil {
-		return xerrors.Errorf("updateNote() error: %w", err)
+		return xerrors.Errorf("updateStructure() error: %w", err)
 	}
-	if err != nil {
-		return fmt.Errorf("updateNote() non single error: %v == %d", id, num)
+	if num != 1 {
+		return fmt.Errorf("updateStructure() non single error: %v == %d", id, num)
 	}
 	return nil
 }
@@ -42,7 +42,21 @@ func (inst *Instance) FindUpdatedNotes(limit int, offset int) ([]*model.Note, er
 }
 
 func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, error) {
-	return inst.findNote(fmt.Sprintf("!(publish_date = '%s')", TimeZero), "publish_date desc", limit, offset)
+	// publish_date は structures テーブルで管理されるため、先に公開済み note の ID を取得する
+	structs, err := inst.findStructure(
+		fmt.Sprintf("type = 'note' and !(publish_date = '%s')", TimeZero),
+		"publish_date desc", limit, 0)
+	if err != nil {
+		return nil, xerrors.Errorf("findStructure() error: %w", err)
+	}
+	if len(structs) == 0 {
+		return nil, nil
+	}
+	ids := make([]interface{}, len(structs))
+	for i, s := range structs {
+		ids[i] = s.Id
+	}
+	return inst.FindInNoteId(ids...)
 }
 
 func (inst *Instance) FindInNoteId(ids ...interface{}) ([]*model.Note, error) {

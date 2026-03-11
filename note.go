@@ -256,13 +256,13 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
 	}
 
-	if n.Publish.IsZero() {
+	rtn := n.To()
+	rtn.ApplyStructure(s.To())
+
+	if rtn.Publish.IsZero() {
 		//TODO Publish dateがない場合
 		// filesにも追加
 	}
-
-	rtn := n.To()
-	rtn.ApplyStructure(s.To())
 
 	fn, err := b.fileSystem.PublishNote(data, rtn)
 	if err != nil {

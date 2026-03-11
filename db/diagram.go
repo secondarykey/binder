@@ -28,15 +28,15 @@ func (inst *Instance) FindInDiagramId(ids ...interface{}) ([]*model.Diagram, err
 
 func (inst *Instance) PublishDiagram(id string, op Op) error {
 	now := time.Now()
-	num, err := inst.updateDiagram(
+	num, err := inst.updateStructure(
 		"publish_date = ?,updated_date = ?,updated_user = ?",
 		"id = ?",
 		now, now, op.GetOperationId(), id)
 	if err != nil {
-		return xerrors.Errorf("updateDiagram() error: %w", err)
+		return xerrors.Errorf("updateStructure() error: %w", err)
 	}
 	if num != 1 {
-		return fmt.Errorf("updateDiagram() non single error: %v == %d", id, num)
+		return fmt.Errorf("updateStructure() non single error: %v == %d", id, num)
 	}
 	return nil
 }

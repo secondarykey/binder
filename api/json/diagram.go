@@ -10,6 +10,7 @@ type Diagram struct {
 	Detail   string `json:"detail"`
 
 	Publish     time.Time `json:"publish"`
+	Republish   time.Time `json:"republish"`
 	Created     time.Time `json:"created"`
 	CreatedUser string    `json:"createdUser"`
 	Updated     time.Time `json:"updated"`
@@ -31,4 +32,6 @@ func (d *Diagram) ApplyStructure(s *Structure) {
 	d.Name = s.Name
 	d.Detail = s.Detail
 	d.Alias = s.Alias
+	d.Publish = s.Publish
+	d.Republish = s.Republish
 }

@@ -11,7 +11,6 @@ type Note struct {
 	LayoutTemplate  string `db:"layout_template"`
 	ContentTemplate string `db:"content_template"`
 
-	Publish     time.Time `db:"publish_date"`
 	Created     time.Time `db:"created_date:insert"`
 	CreatedUser string    `db:"created_user:insert"`
 	Updated     time.Time `db:"updated_date"`
@@ -27,7 +26,6 @@ func (n *Note) To() *json.Note {
 	rtn.Id = n.Id
 	rtn.LayoutTemplate = n.LayoutTemplate
 	rtn.ContentTemplate = n.ContentTemplate
-	rtn.Publish = n.Publish
 	rtn.Created = n.Created
 	rtn.CreatedUser = n.CreatedUser
 	rtn.Updated = n.Updated
@@ -40,7 +38,6 @@ func ConvertNote(a *json.Note) *Note {
 	rtn.Id = a.Id
 	rtn.LayoutTemplate = a.LayoutTemplate
 	rtn.ContentTemplate = a.ContentTemplate
-	rtn.Publish = a.Publish
 	rtn.Created = a.Created
 	rtn.CreatedUser = a.CreatedUser
 	rtn.Updated = a.Updated

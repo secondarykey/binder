@@ -15,13 +15,14 @@ import (
 	convert033 "binder/db/convert/033"
 	convert034 "binder/db/convert/034"
 	convert045 "binder/db/convert/045"
+	convert047 "binder/db/convert/047"
 	"binder/fs"
 	fsconvert "binder/fs/convert"
 
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045 *Version
+var v010, v020, v021, v022, v033, v034, v045, v047 *Version
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
@@ -72,6 +73,10 @@ func init() {
 	if err != nil {
 		panic("v045 version parse error: " + err.Error())
 	}
+	v047, err = NewVersion("0.4.7")
+	if err != nil {
+		panic("v047 version parse error: " + err.Error())
+	}
 
 	migrations = []migration{
 		// 0.1.0: assets.csv に binary 列を追加
@@ -107,6 +112,14 @@ func init() {
 			state.configMigrated = true
 			state.configName, state.configDetail = readConfigCSV(dbDir)
 			return applyDB(dbDir, convert045.Convert045)
+		}},
+		// 0.4.7: publish_date/republish_date を structures に移動し、
+		// notes/diagrams から publish_date を削除。docs ディレクトリをクリア。
+		{v047, func(dir, dbDir string, _ *migrateState) error {
+			if err := applyDB(dbDir, convert047.Convert047); err != nil {
+				return err
+			}
+			return fsconvert.MigrateV047(dir)
 		}},
 	}
 }

@@ -12,6 +12,7 @@ type Note struct {
 	ContentTemplate string `json:"contentTemplate"`
 
 	Publish     time.Time `json:"publish"`
+	Republish   time.Time `json:"republish"`
 	Created     time.Time `json:"created"`
 	CreatedUser string    `json:"createdUser"`
 	Updated     time.Time `json:"updated"`
@@ -54,4 +55,6 @@ func (n *Note) ApplyStructure(s *Structure) {
 	n.Name = s.Name
 	n.Detail = s.Detail
 	n.Alias = s.Alias
+	n.Publish = s.Publish
+	n.Republish = s.Republish
 }

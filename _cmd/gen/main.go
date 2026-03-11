@@ -74,7 +74,6 @@ func main() {
 	}
 
 	in := []input{
-		{model.Config{}, "config", "db/model/config.go", "db/config_dao.go"},
 		{model.Note{}, "notes", "db/model/note.go", "db/note_dao.go"},
 		{model.Diagram{}, "diagrams", "db/model/diagram.go", "db/diagram_dao.go"},
 		{model.Asset{}, "assets", "db/model/asset.go", "db/asset_dao.go"},
