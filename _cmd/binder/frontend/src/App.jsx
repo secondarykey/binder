@@ -4,6 +4,7 @@ import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 import CommitModal from './CommitModal.jsx';
 import SettingModal from './SettingModal.jsx';
+import BinderModal from './BinderModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -60,6 +61,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
+  const [binderModalOpen, setBinderModalOpen] = useState(false);
 
   // Binder名を GetConfig() から取得してセット
   const loadBinderName = () => {
@@ -95,6 +97,11 @@ function App() {
     //設定モーダルを開く
     evt.register("App", Event.OpenSettingModal, function () {
       setSettingModalOpen(true);
+    });
+
+    //バインダー編集モーダルを開く
+    evt.register("App", Event.OpenBinderModal, function () {
+      setBinderModalOpen(true);
     });
 
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
@@ -261,6 +268,9 @@ function App() {
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />
+
+      {/** バインダー編集モーダル */}
+      <BinderModal open={binderModalOpen} onClose={() => setBinderModalOpen(false)} />
 
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />

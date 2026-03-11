@@ -10,7 +10,7 @@ import Event,{EventContext} from "../Event";
  * @param {*} props 
  * @returns 
  */
-function Binder(props) {
+function Binder({ isModal, ...props }) {
 
   const evt = useContext(EventContext)
 
@@ -27,7 +27,7 @@ function Binder(props) {
   const [remoteDialog, showRemoteDialog] = useState(false);
   const [remoteName, setRemoteName] = useState("");
   const [remoteURL, setRemoteURL] = useState("");
-  
+
   const getRemoteList = () => {
     Remotes().then((res) => {
       setRemoteList(res);
@@ -38,7 +38,7 @@ function Binder(props) {
 
   useEffect(() => {
 
-    evt.changeTitle("Edit Binder");
+    if (!isModal) evt.changeTitle("Edit Binder");
     GetConfig().then((conf) => {
 
       setName(conf.name);

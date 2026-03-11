@@ -115,10 +115,10 @@ function Menu(props) {
   }
 
   /**
-   * バインダー設定を開く
+   * バインダー設定を開く（モーダルで表示）
    */
   const handleClickBinderSetting = () => {
-    nav("/binder/edit");
+    evt.openBinderModal();
   }
 
   /**

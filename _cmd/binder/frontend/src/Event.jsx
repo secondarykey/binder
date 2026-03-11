@@ -68,6 +68,11 @@ class Event {
     static OpenSettingModal = "setting.modal.open"
 
     /**
+     * バインダー編集モーダルを開く
+     */
+    static OpenBinderModal = "binder.modal.open"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();
@@ -137,6 +142,10 @@ class Event {
 
     openSettingModal() {
         this.raise(Event.OpenSettingModal);
+    }
+
+    openBinderModal() {
+        this.raise(Event.OpenBinderModal);
     }
 
     showMessage(obj) {
