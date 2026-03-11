@@ -116,6 +116,8 @@ function BinderTree(props) {
   // インラインリネームの状態
   const [renaming, setRenaming] = useState(null); // リネーム中のノードID
   const [renamingValue, setRenamingValue] = useState(''); // 編集中の名前
+  // リネーム確定/キャンセル後にナビゲートする URL（新規作成フローで使用）
+  const navAfterRenameRef = useRef(null);
 
   // paste イベントハンドラ内で最新値を参照するための ref
   const selectedIdRef = useRef(null);
@@ -307,43 +309,53 @@ function BinderTree(props) {
     }, 150);
   };
 
-  /** リネーム確定: Enter/blur 時に既存データを取得してから name のみ更新する */
+  /** リネーム確定: Enter 時に既存データを取得してから name のみ更新する */
   const handleRenameCommit = async () => {
     if (!renaming) return;
     const node = findNodeInTree(treeRef.current, renaming);
     const id = renaming;
     const nodeType = node?.nodeType || node?.type;
+    const pendingUrl = navAfterRenameRef.current;
+    navAfterRenameRef.current = null;
     setRenaming(null);
-    if (!node) return;
+
+    const doNav = () => { if (pendingUrl) nav(pendingUrl); };
+
+    if (!node) { doNav(); return; }
     const newName = renamingValue.trim();
-    if (!newName || newName === node.name) return;
+    if (!newName || newName === node.name) { doNav(); return; }
 
     try {
       if (nodeType === 'note') {
         const current = await GetNote(id);
-        if (!current) return;
+        if (!current) { doNav(); return; }
         await EditNote({ ...current, name: newName }, '');
       } else if (nodeType === 'diagram') {
         const current = await GetDiagram(id);
-        if (!current) return;
+        if (!current) { doNav(); return; }
         await EditDiagram({ ...current, name: newName });
       } else if (nodeType === 'asset') {
         const current = await GetAsset(id);
-        if (!current) return;
+        if (!current) { doNav(); return; }
         await EditAsset({ ...current, name: newName }, '');
       }
       evt.refreshTree();
+      doNav();
     } catch (err) {
       evt.showErrorMessage(err);
+      doNav();
     }
   };
 
-  /** リネームキャンセル */
+  /** リネームキャンセル: 新規作成フローではデフォルト名のままエディタへ遷移 */
   const handleRenameCancel = () => {
     setRenaming(null);
+    const pendingUrl = navAfterRenameRef.current;
+    navAfterRenameRef.current = null;
+    if (pendingUrl) nav(pendingUrl);
   };
 
-  /** ノートをデフォルト値で即時作成してエディタへ */
+  /** ノートをデフォルト値で作成 → インラインリネーム → エディタへ */
   const handleRegisterNote = async () => {
     const parentId = contextMenu.node.id;
     closeAllMenus();
@@ -360,13 +372,17 @@ function BinderTree(props) {
       };
       const resp = await EditNote(note, "");
       evt.refreshTree();
-      nav("/editor/note/" + resp.id);
+      navAfterRenameRef.current = "/editor/note/" + resp.id;
+      setTimeout(() => {
+        setRenamingValue("New Note");
+        setRenaming(resp.id);
+      }, 150);
     } catch (err) {
       evt.showErrorMessage(err);
     }
   };
 
-  /** ダイアグラムをデフォルト値で即時作成してエディタへ */
+  /** ダイアグラムをデフォルト値で作成 → インラインリネーム → エディタへ */
   const handleRegisterDiagram = async () => {
     const parentId = contextMenu.node.id;
     closeAllMenus();
@@ -374,7 +390,11 @@ function BinderTree(props) {
       const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "" };
       const resp = await EditDiagram(diagram);
       evt.refreshTree();
-      nav("/editor/diagram/" + resp.id);
+      navAfterRenameRef.current = "/editor/diagram/" + resp.id;
+      setTimeout(() => {
+        setRenamingValue("New Diagram");
+        setRenaming(resp.id);
+      }, 150);
     } catch (err) {
       evt.showErrorMessage(err);
     }
