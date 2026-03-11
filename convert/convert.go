@@ -125,14 +125,14 @@ func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
 		return nil
 	}
 
-	meta, err := LoadMeta(dir)
+	meta, err := loadMeta(dir)
 	if err != nil {
-		return xerrors.Errorf("LoadMeta() error: %w", err)
+		return xerrors.Errorf("loadMeta() error: %w", err)
 	}
 
-	ov, err := meta.schemaVersion()
+	ov, err := schemaVersion(meta)
 	if err != nil {
-		return xerrors.Errorf("meta.schemaVersion() error: %w", err)
+		return xerrors.Errorf("schemaVersion() error: %w", err)
 	}
 
 	state := &migrateState{}
@@ -154,8 +154,8 @@ func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
 		meta.Name = state.configName
 		meta.Detail = state.configDetail
 	}
-	if err = SaveMeta(dir, meta); err != nil {
-		return xerrors.Errorf("SaveMeta() error: %w", err)
+	if err = fs.SaveMeta(dir, meta); err != nil {
+		return xerrors.Errorf("fs.SaveMeta() error: %w", err)
 	}
 
 	// binder.jsonへの移行後に旧スキーマファイルを削除
@@ -168,11 +168,11 @@ func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
 		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
 		_ = bfs.RemoveFile("db/config.csv")
 		// binder.json をステージ
-		if err = bfs.AddFile(BinderMetaFile); err != nil {
+		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
 			return xerrors.Errorf("AddFile(binder.json) error: %w", err)
 		}
 		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", ov.String(), ver.String())
-		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), BinderMetaFile)
+		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
 			return xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
 		}
