@@ -87,3 +87,9 @@ func (f *FileSystem) AddFile(name string) error {
 	}
 	return nil
 }
+
+// RemoveFile はファイルをgitのインデックスから削除する（削除のステージング）
+// ファイルが追跡されていない場合はエラーを無視する
+func (f *FileSystem) RemoveFile(name string) error {
+	return f.remove(name)
+}

@@ -140,12 +140,18 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	}
 
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
-	// CommitAll (git commit -a) を使うことで追跡済みのconfig.csv削除も自動でステージされる。
+	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
 	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
 	if did045Migrate {
-		commitErr := bfs.CommitAll(fs.M("Migrate Config to binder.json", "Schema"))
+		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
+		_ = bfs.RemoveFile("db/config.csv")
+		// binder.json をステージ
+		if err = bfs.AddFile(BinderMetaFile); err != nil {
+			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
+		}
+		commitErr := bfs.AutoCommit(fs.M("Migrate Config to binder.json", "Schema"), BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-			return nil, xerrors.Errorf("CommitAll(migrate) error: %w", commitErr)
+			return nil, xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
 		}
 	}
 
