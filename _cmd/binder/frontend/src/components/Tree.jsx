@@ -118,7 +118,7 @@ const hasExternalFiles = (dataTransfer) => {
 };
 
 
-const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu }) => {
+const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu, renaming, renamingValue, onRenameChange, onRenameCommit, onRenameCancel }) => {
   const [data, setData] = useState(initialData);
   const [selectedId, setSelectedId] = useState(selected);
   const [dropTargetInfo, setDropTargetInfo] = useState(null);
@@ -289,7 +289,10 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     };
     const icon = getIconForType(node);
 
+    const isRenaming = renaming === node.id;
+
     const handleNodeClick = () => {
+      if (isRenaming) return;
       setSelectedId(node.id);
       if (onSelect) onSelect(node.id);
       if (onClick) onClick(node);
@@ -339,7 +342,31 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                 <IconWrapper $modified={node.modified}>
                     {typeof icon === 'string' ? icon : React.isValidElement(icon) ? icon : icon ? React.createElement(icon) : null}
                 </IconWrapper>
-                <span style={node.modified ? { color: '#f5a623' } : undefined}>{node.name}</span>
+                {isRenaming ? (
+                  <input
+                    autoFocus
+                    value={renamingValue ?? node.name}
+                    onChange={(e) => onRenameChange && onRenameChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); onRenameCommit && onRenameCommit(); }
+                      if (e.key === 'Escape') { e.preventDefault(); onRenameCancel && onRenameCancel(); }
+                    }}
+                    onBlur={() => onRenameCommit && onRenameCommit()}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #aaa',
+                      color: 'inherit',
+                      outline: 'none',
+                      width: '100%',
+                      fontSize: 'inherit',
+                      padding: 0,
+                    }}
+                  />
+                ) : (
+                  <span style={node.modified ? { color: '#f5a623' } : undefined}>{node.name}</span>
+                )}
               </NodeContent>
             </Row>
         </NodeContentContainer>
@@ -370,6 +397,11 @@ Tree.propTypes = {
   onSelect: PropTypes.func,
   icons: PropTypes.object,
   onNodeContextMenu: PropTypes.func,
+  renaming: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  renamingValue: PropTypes.string,
+  onRenameChange: PropTypes.func,
+  onRenameCommit: PropTypes.func,
+  onRenameCancel: PropTypes.func,
 };
 
 // EmptySpacer は廃止（NodeContent の padding-left でアイコン位置を統一）

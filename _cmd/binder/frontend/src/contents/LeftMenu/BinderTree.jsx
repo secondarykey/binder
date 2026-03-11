@@ -10,7 +10,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { Events } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, SelectFile, GetHTMLTemplates,
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, SelectFile, GetHTMLTemplates,
          OpenHistoryWindow } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
@@ -112,6 +112,10 @@ function BinderTree(props) {
 
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
+
+  // インラインリネームの状態
+  const [renaming, setRenaming] = useState(null); // リネーム中のノードID
+  const [renamingValue, setRenamingValue] = useState(''); // 編集中の名前
 
   // paste イベントハンドラ内で最新値を参照するための ref
   const selectedIdRef = useRef(null);
@@ -291,6 +295,50 @@ function BinderTree(props) {
   const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
 
+  /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
+  const handleRenameStart = () => {
+    const node = contextMenu.node;
+    closeAllMenus();
+    setRenamingValue(node.name);
+    setRenaming(node.id);
+  };
+
+  /** リネーム確定: Enter/blur 時に既存データを取得してから name のみ更新する */
+  const handleRenameCommit = async () => {
+    if (!renaming) return;
+    const node = findNodeInTree(treeRef.current, renaming);
+    const id = renaming;
+    const nodeType = node?.nodeType || node?.type;
+    setRenaming(null);
+    if (!node) return;
+    const newName = renamingValue.trim();
+    if (!newName || newName === node.name) return;
+
+    try {
+      if (nodeType === 'note') {
+        const current = await GetNote(id);
+        if (!current) return;
+        await EditNote({ ...current, name: newName }, '');
+      } else if (nodeType === 'diagram') {
+        const current = await GetDiagram(id);
+        if (!current) return;
+        await EditDiagram({ ...current, name: newName });
+      } else if (nodeType === 'asset') {
+        const current = await GetAsset(id);
+        if (!current) return;
+        await EditAsset({ ...current, name: newName }, '');
+      }
+      evt.refreshTree();
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
+  /** リネームキャンセル */
+  const handleRenameCancel = () => {
+    setRenaming(null);
+  };
+
   /** ノートをデフォルト値で即時作成してエディタへ */
   const handleRegisterNote = async () => {
     const parentId = contextMenu.node.id;
@@ -393,6 +441,11 @@ function BinderTree(props) {
       onChange={handleChange}
       onNodeContextMenu={handleContextMenu}
       icons={binderIcons}
+      renaming={renaming}
+      renamingValue={renamingValue}
+      onRenameChange={setRenamingValue}
+      onRenameCommit={handleRenameCommit}
+      onRenameCancel={handleRenameCancel}
     /></div>
 
     {/** ノートメニュー: Edit / Add ▶ / History / Delete */}
@@ -403,6 +456,7 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
+      <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
       <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
       <MenuItem onClick={handleAddMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span>Add</span><span>▶</span>
@@ -433,6 +487,7 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
+      <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
       <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
       <MenuItem onClick={handleHistoryDiagram} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
@@ -446,6 +501,7 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
+      <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
       <MenuItem onClick={handleEditAsset} divider>Edit</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
