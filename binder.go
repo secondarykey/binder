@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"errors"
 	. "binder/internal"
 
 	"binder/db"
@@ -89,7 +90,8 @@ func Load(dir string, ver *Version) (*Binder, error) {
 
 	// 0.4.5: config.csvをbinder.jsonに移行する前に値を読み込む
 	var configName, configDetail string
-	if ver != nil && ov.Lt(v045migrate) {
+	did045Migrate := ver != nil && ov.Lt(v045migrate)
+	if did045Migrate {
 		configName, configDetail = readConfigCSV(dbDir)
 	}
 
@@ -135,6 +137,16 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	err = bfs.Branch(s.Git.Branch)
 	if err != nil {
 		return nil, xerrors.Errorf("Branch -> %s error: %w", s.Git.Branch, err)
+	}
+
+	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
+	// CommitAll (git commit -a) を使うことで追跡済みのconfig.csv削除も自動でステージされる。
+	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
+	if did045Migrate {
+		commitErr := bfs.CommitAll(fs.M("Migrate Config to binder.json", "Schema"))
+		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
+			return nil, xerrors.Errorf("CommitAll(migrate) error: %w", commitErr)
+		}
 	}
 
 	err = checkDirectory(dir, false)
