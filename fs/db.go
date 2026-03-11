@@ -6,10 +6,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func ConfigTableFile() string {
-	return tableFiles(db.ConfigTableName)[0]
-}
-
 func NoteTableFile() string {
 	return tableFiles(db.NoteTableName)[0]
 }
@@ -68,7 +64,7 @@ func (f *FileSystem) SchemaCommit(fn string) error {
 }
 
 func allTableFiles() []string {
-	return tableFiles(db.ConfigTableName, db.NoteTableName,
+	return tableFiles(db.NoteTableName,
 		db.DiagramTableName, db.AssetTableName, db.TemplateTableName, db.StructureTableName)
 }
 

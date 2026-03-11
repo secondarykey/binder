@@ -20,8 +20,6 @@ var tables map[string]string
 
 func init() {
 	tables = make(map[string]string)
-	//tables[db.]
-	tables[ConfigTableName] = ConfigTableName + ".csv"
 	tables[NoteTableName] = NoteTableName + ".csv"
 	tables[DiagramTableName] = DiagramTableName + ".csv"
 	tables[AssetTableName] = AssetTableName + ".csv"
@@ -83,31 +81,12 @@ func Create(dir string, version *Version) error {
 		return xerrors.Errorf("createTableFiles() error: %w", err)
 	}
 
-	inst, err := New(dir)
-	if err != nil {
-		return xerrors.Errorf("db.New() error: %w", err)
-	}
-	err = inst.Open()
-	if err != nil {
-		return xerrors.Errorf("inst.Open() error: %w", err)
-	}
-	defer inst.Close()
-
-	err = inst.insertDefaultConfig()
-	if err != nil {
-		return xerrors.Errorf("inst.insertDefaultConfig() error: %w", err)
-	}
-
 	return nil
 }
 
 func createTableFiles(dir string) error {
 
 	var err error
-	err = createConfigTable(dir)
-	if err != nil {
-		return xerrors.Errorf("createConfigTable() error: %w", err)
-	}
 
 	err = createNoteTable(dir)
 	if err != nil {

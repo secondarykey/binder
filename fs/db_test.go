@@ -6,11 +6,7 @@ import (
 )
 
 func TestTableName(t *testing.T) {
-	fn := fs.ConfigTableFile()
-	if fn != "db/config.csv" {
-		t.Errorf("ConfigTableFile() is not db/config.csv")
-	}
-	fn = fs.NoteTableFile()
+	fn := fs.NoteTableFile()
 	if fn != "db/notes.csv" {
 		t.Errorf("NoteTableFile() is not db/notes.csv")
 	}

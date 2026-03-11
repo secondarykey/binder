@@ -26,7 +26,6 @@ func TestInstall(t *testing.T) {
 		filepath.Join(dir, "diagrams"),
 		filepath.Join(dir, "assets"),
 		filepath.Join(dir, "db"),
-		filepath.Join(dir, "db", "config.csv"),
 		filepath.Join(dir, "db", "templates.csv"),
 		filepath.Join(dir, "db", "notes.csv"),
 		filepath.Join(dir, "db", "diagrams.csv"),
@@ -40,6 +39,12 @@ func TestInstall(t *testing.T) {
 		if err != nil {
 			t.Errorf("not exists file[%s]", f)
 		}
+	}
+
+	// config.csvが存在しないことを確認
+	configCSV := filepath.Join(dir, "db", "config.csv")
+	if _, err = os.Stat(configCSV); err == nil {
+		t.Errorf("config.csv should not exist in 0.4.5+")
 	}
 }
 

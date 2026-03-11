@@ -60,11 +60,11 @@ func TestMain(m *testing.M) {
 func TestTables(t *testing.T) {
 
 	tables := db.Tables()
-	if len(tables) != 6 {
-		t.Fatalf("too many(6) = %d", len(tables))
+	if len(tables) != 5 {
+		t.Fatalf("too many(5) = %d", len(tables))
 	}
 
-	keys := []string{db.ConfigTableName, db.NoteTableName,
+	keys := []string{db.NoteTableName,
 		db.DiagramTableName, db.AssetTableName, db.TemplateTableName, db.StructureTableName}
 	for _, v := range keys {
 		want := v + ".csv"

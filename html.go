@@ -364,7 +364,7 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 		return nil, EmptyError
 	}
 
-	config, err := b.db.GetConfig()
+	config, err := b.GetConfig()
 	if err != nil {
 		return nil, xerrors.Errorf("GetConfig() error: %w", err)
 	}

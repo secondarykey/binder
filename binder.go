@@ -20,6 +20,7 @@ import (
 var EmptyError = fmt.Errorf("Binder is empty")
 
 type Binder struct {
+	dir               string
 	fileSystem        *fs.FileSystem
 	db                *db.Instance
 	httpServer        *http.Server
@@ -85,6 +86,13 @@ func Load(dir string, ver *Version) (*Binder, error) {
 
 	//変換処理を開く前に入れておく
 	dbDir := dir + "/db"
+
+	// 0.4.5: config.csvをbinder.jsonに移行する前に値を読み込む
+	var configName, configDetail string
+	if ver != nil && ov.Lt(v045migrate) {
+		configName, configDetail = readConfigCSV(dbDir)
+	}
+
 	err = convert.Run(dbDir, ov, ver)
 	if err != nil {
 		return nil, xerrors.Errorf("db Convert() error: %w", err)
@@ -99,10 +107,17 @@ func Load(dir string, ver *Version) (*Binder, error) {
 
 	// binder.jsonを更新（スキーマ変換後、または初回作成）
 	// 0.3.2マイグレーション: schemaフィールドを空にしてappバージョンのみで管理する。
-	// 0.3.2未満のbinder.jsonにはschemaフィールドが存在するが、保存時にomitemptyで除去される。
+	// 0.4.5マイグレーション: config.csvのname/detailをbinder.jsonに移行する。
 	if ver != nil {
 		meta.Schema = ""
 		meta.Version = ver.String()
+		if ov.Lt(v045migrate) && meta.Name == "" {
+			if configName == "" {
+				configName = "Binder"
+			}
+			meta.Name = configName
+			meta.Detail = configDetail
+		}
 		if err = saveMeta(dir, meta); err != nil {
 			return nil, xerrors.Errorf("saveMeta() error: %w", err)
 		}
@@ -146,6 +161,7 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	}
 
 	var b Binder
+	b.dir = dir
 	b.fileSystem = bfs
 	b.db = inst
 	b.op = createUserOp("user")
