@@ -7,7 +7,7 @@ import {
 
 import {
   GetUnpublishedTree,
-  GetNote, GetDiagram,
+  OpenNote, OpenDiagram,
   ParseNote, Generate,
 } from '../../../bindings/binder/api/app';
 
@@ -85,13 +85,13 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
       for (const leaf of selected) {
         try {
           if (leaf.type === "note") {
-            const note = await GetNote(leaf.id);
-            const parsed = await ParseNote(leaf.id, false, note.content);
+            const text = await OpenNote(leaf.id);
+            const parsed = await ParseNote(leaf.id, false, text);
             const html = await Marked.parse(parsed);
             await Generate("note", leaf.id, html);
           } else if (leaf.type === "diagram") {
-            const diag = await GetDiagram(leaf.id);
-            const obj = await Mermaid.parse(diag.content);
+            const text = await OpenDiagram(leaf.id);
+            const obj = await Mermaid.parse(text);
             await Generate("diagram", leaf.id, obj.svg);
           } else {
             // asset
