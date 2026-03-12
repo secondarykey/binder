@@ -286,10 +286,12 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 
 	// publish/republish タイムスタンプを設定
 	if s.Publish.IsZero() {
-		// 初回公開
-		s.Publish = time.Now()
+		// 初回公開: publish/republish 両方に現在時刻を設定
+		now := time.Now()
+		s.Publish = now
+		s.Republish = now
 	} else {
-		// 再公開
+		// 再公開: republish のみ更新
 		s.Republish = time.Now()
 	}
 	err = b.db.UpdateStructure(s, b.op)
