@@ -78,6 +78,16 @@ class Event {
     static OpenPublishModal = "publish.modal.open"
 
     /**
+     * GenerateForm へコメントを伝達
+     */
+    static PublishComment = "publish.comment"
+
+    /**
+     * Generate実行（GenerateFormからUnpublishedMenu側に伝達）
+     */
+    static PublishGenerate = "publish.generate"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();

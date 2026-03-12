@@ -4,12 +4,14 @@ import { Dialog, Toolbar, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 import UnpublishedMenu from './contents/LeftMenu/UnpublishedMenu';
+import GenerateForm from './contents/GenerateForm';
 
 import './assets/CommitApp.css';
 
 /**
  * 未公開一覧モーダル
- * Generate を行っていないファイルの一覧を表示する
+ * CommitModal と同じ構成で、Generate を行っていないファイルの一覧を表示し、
+ * 選択したファイルをまとめて Generate できる。
  */
 function PublishModal({ open, onClose }) {
 
@@ -22,11 +24,6 @@ function PublishModal({ open, onClose }) {
     }
   }, [open]);
 
-  const handleNavigate = (path) => {
-    // エディタへ遷移したらモーダルを閉じる
-    onClose();
-  };
-
   return (
     <Dialog
       open={open}
@@ -34,7 +31,7 @@ function PublishModal({ open, onClose }) {
       maxWidth={false}
       PaperProps={{
         sx: {
-          width: '640px',
+          width: '900px',
           height: '600px',
           maxWidth: '90vw',
           maxHeight: '85vh',
@@ -57,19 +54,12 @@ function PublishModal({ open, onClose }) {
       <div id="commitArea">
 
         <div id="commitLeft">
-          <UnpublishedMenu
-            date={date}
-            onNavigate={handleNavigate}
-          />
+          <UnpublishedMenu date={date} />
         </div>
 
         <div id="commitRight">
-          <div id="commitForm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <Typography variant="body2" sx={{ color: '#888', textAlign: 'center', px: 3 }}>
-              ファイルをクリックするとエディタで開きます。
-              <br /><br />
-              エディタの Generate ボタンで公開できます。
-            </Typography>
+          <div id="commitForm">
+            <GenerateForm date={date} />
           </div>
         </div>
 

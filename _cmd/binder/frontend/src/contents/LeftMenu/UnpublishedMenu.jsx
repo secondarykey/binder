@@ -1,101 +1,196 @@
-import { useEffect, useState, useContext } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useRef, useState, forwardRef, useContext, useImperativeHandle } from 'react';
 
 import {
-  List, ListSubheader, ListItemButton, ListItemText,
+  List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
+  Checkbox,
 } from '@mui/material';
 
-import { GetUnpublishedTree } from '../../../bindings/binder/api/app';
+import {
+  GetUnpublishedTree,
+  GetNote, GetDiagram,
+  ParseNote, Generate,
+} from '../../../bindings/binder/api/app';
 
-import { EventContext } from '../../Event';
+import Marked from '../Editor/engines/Marked';
+import Mermaid from '../Editor/engines/Mermaid';
+
+import Event, { EventContext } from '../../Event';
 
 /**
  * 未公開一覧
- * @param {*} props
- * date       - 再取得トリガー用
- * onNavigate - モーダル内での疑似ナビゲーション（省略時は react-router）
- * @returns
+ * ModifiedMenu と同じ構造で Note/Diagram/Asset を表示し、
+ * PublishGenerate イベントを受け取ったら選択済みファイルを順次 Generate する。
  */
 function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
 
   const evt = useContext(EventContext);
-  const routerNav = useNavigate();
-  const nav = onNavigate ?? routerNav;
 
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
   const [assets, setAssets] = useState([]);
 
-  useEffect(() => {
+  const noteRef = useRef(null);
+  const diagramRef = useRef(null);
+  const assetRef = useRef(null);
 
+  const loadTree = () => {
     GetUnpublishedTree().then((tree) => {
 
       const data = tree.data ?? [];
+      var comment = "Generate:";
+
+      const writeComment = (prefix, children) => {
+        if (children.length === 0) return;
+        comment += "\n  " + prefix + ":";
+        children.forEach((l) => { comment += "\n    " + l.name; });
+      };
 
       data.forEach((leaf) => {
         const leafs = leaf.children ?? [];
         if (leaf.id === "DIR_Note") {
           setNotes(leafs);
+          writeComment("Note", leafs);
         } else if (leaf.id === "DIR_Diagram") {
           setDiagrams(leafs);
+          writeComment("Diagram", leafs);
         } else if (leaf.id === "DIR_Asset") {
           setAssets(leafs);
+          writeComment("Asset", leafs);
         }
       });
+
+      evt.raise(Event.PublishComment, comment);
 
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
+  };
+
+  useEffect(() => {
+
+    // GenerateForm からの Generate 実行イベント
+    evt.register("UnpublishedMenu", Event.PublishGenerate, async function () {
+
+      const selected = [
+        ...(noteRef.current?.checked() ?? []),
+        ...(diagramRef.current?.checked() ?? []),
+        ...(assetRef.current?.checked() ?? []),
+      ];
+
+      if (selected.length === 0) {
+        evt.showWarningMessage("ファイルが選択されていません。");
+        return;
+      }
+
+      for (const leaf of selected) {
+        try {
+          if (leaf.type === "note") {
+            const note = await GetNote(leaf.id);
+            const parsed = await ParseNote(leaf.id, false, note.content);
+            const html = await Marked.parse(parsed);
+            await Generate("note", leaf.id, html);
+          } else if (leaf.type === "diagram") {
+            const diag = await GetDiagram(leaf.id);
+            const obj = await Mermaid.parse(diag.content);
+            await Generate("diagram", leaf.id, obj.svg);
+          } else {
+            // asset
+            await Generate("assets", leaf.id, "");
+          }
+        } catch (err) {
+          evt.showErrorMessage(`${leaf.name}: ${err}`);
+          return;
+        }
+      }
+
+      evt.showSuccessMessage("Generate.");
+      // 一覧を再取得
+      setTimeout(() => {
+        loadTree();
+      }, 800);
+    });
+
+    loadTree();
 
   }, [dateProp]);
-
-  const handleOpen = (e, leaf) => {
-    nav(`/editor/${leaf.type}/${leaf.id}`);
-  };
 
   return (
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <UnpublishedList name="Note"    data={notes}    onClick={handleOpen} />
-      <UnpublishedList name="Diagram" data={diagrams} onClick={handleOpen} />
-      <UnpublishedList name="Asset"   data={assets}   onClick={handleOpen} />
+      <UnpublishedList name="Note"    data={notes}    ref={noteRef} />
+      <UnpublishedList name="Diagram" data={diagrams} ref={diagramRef} />
+      <UnpublishedList name="Asset"   data={assets}   ref={assetRef} />
     </List>
   );
 }
 
 /**
- * セクション単位の一覧
+ * セクション単位の一覧（チェックボックス付き）
  */
-function UnpublishedList({ name, data, onClick }) {
+const UnpublishedList = forwardRef((props, ref) => {
+
+  const [data, setData] = useState([]);
+  const [all, setAll] = useState(false);
+
+  const disabled = data.length === 0;
+
+  useEffect(() => {
+    const wk = props.data.map((leaf) => ({ ...leaf, checked: true }));
+    setAll(props.data.length > 0);
+    setData(wk);
+  }, [props.data]);
+
+  const checked = () => data.filter((v) => v.checked);
+
+  useImperativeHandle(ref, () => ({ checked }), [data]);
+
+  const handleChecked = (e, l) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setData(data.map((leaf) => leaf.id === l.id ? { ...leaf, checked: !leaf.checked } : leaf));
+  };
+
+  const handleCheckedAll = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const ans = !all;
+    setAll(ans);
+    setData(data.map((leaf) => ({ ...leaf, checked: ans })));
+  };
 
   return (<>
     <ListSubheader disableSticky
       sx={{
         display: 'flex', alignItems: 'center',
-        lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5,
+        lineHeight: '28px', pt: 0, pb: 0, pl: 0.5, pr: 0.5,
         fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em',
         textTransform: 'uppercase', opacity: 0.6,
         backgroundColor: '#222222', color: 'inherit',
       }}>
-      {name}
+      <Checkbox
+        size="small"
+        checked={all}
+        disabled={disabled}
+        onClick={handleCheckedAll}
+        sx={{ p: 0.5 }}
+      />
+      {props.name}
     </ListSubheader>
-
-    {data.length === 0 && (
-      <ListItemButton disabled sx={{ pl: 2, py: 0.25 }}>
-        <ListItemText
-          primary="なし"
-          primaryTypographyProps={{ noWrap: true, fontSize: '0.8rem', opacity: 0.4 }}
-        />
-      </ListItemButton>
-    )}
 
     {data.map((leaf) => (
       <ListItemButton key={leaf.id}
         sx={{
           pl: 2, py: 0.25, borderRadius: '2px',
           '&:hover': { backgroundColor: '#2a3f6f' },
-        }}
-        onClick={(e) => onClick(e, leaf)}>
+        }}>
+        <ListItemIcon sx={{ minWidth: 32 }}>
+          <Checkbox
+            size="small"
+            checked={leaf.checked}
+            onClick={(e) => handleChecked(e, leaf)}
+            sx={{ p: 0.5 }}
+          />
+        </ListItemIcon>
         <ListItemText
           primary={leaf.name}
           primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }}
@@ -103,6 +198,6 @@ function UnpublishedList({ name, data, onClick }) {
       </ListItemButton>
     ))}
   </>);
-}
+});
 
 export default UnpublishedMenu;
