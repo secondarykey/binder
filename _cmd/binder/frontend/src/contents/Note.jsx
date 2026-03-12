@@ -6,7 +6,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
-import { GetNote, GetHTMLTemplates } from "../../bindings/binder/api/app";
+import { GetNote, GetHTMLTemplates, GetNoteImageURL } from "../../bindings/binder/api/app";
 import { EditNote, RemoveNote,Address } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png'
@@ -79,7 +79,12 @@ function Note(props) {
       evt.showErrorMessage(err);
     })
 
-    setViewImage(address + "/assets/meta");
+    // メタ画像URLを取得（存在しない場合は noImage にフォールバック）
+    GetNoteImageURL(currentId).then((url) => {
+      setViewImage(url || "");
+    }).catch(() => {
+      setViewImage("");
+    });
 
   }, [currentId]);
 
