@@ -5,6 +5,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"io"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -282,12 +283,22 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 	}
 
 	rtn := n.To()
+
+	// publish/republish タイムスタンプを設定
+	if s.Publish.IsZero() {
+		// 初回公開
+		s.Publish = time.Now()
+	} else {
+		// 再公開
+		s.Republish = time.Now()
+	}
+	err = b.db.UpdateStructure(s, b.op)
+	if err != nil {
+		return nil, xerrors.Errorf("db.UpdateStructure() error: %w", err)
+	}
 	rtn.ApplyStructure(s.To())
 
-	if rtn.Publish.IsZero() {
-		//TODO Publish dateがない場合
-		// filesにも追加
-	}
+	files = append(files, fs.StructureTableFile())
 
 	fn, err := b.fileSystem.PublishNote(data, rtn)
 	if err != nil {
