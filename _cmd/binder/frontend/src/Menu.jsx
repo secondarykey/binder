@@ -129,10 +129,10 @@ function Menu(props) {
   }
 
   /**
-   * 公開一覧
+   * 公開一覧（モーダルで開く）
    */
   const handleClickPublish = () => {
-    nav("/status/published/" + dateString());
+    evt.openPublishModal();
   }
 
   /**

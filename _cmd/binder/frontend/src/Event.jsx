@@ -73,6 +73,11 @@ class Event {
     static OpenBinderModal = "binder.modal.open"
 
     /**
+     * 公開一覧モーダルを開く
+     */
+    static OpenPublishModal = "publish.modal.open"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();
@@ -146,6 +151,10 @@ class Event {
 
     openBinderModal() {
         this.raise(Event.OpenBinderModal);
+    }
+
+    openPublishModal() {
+        this.raise(Event.OpenPublishModal);
     }
 
     showMessage(obj) {

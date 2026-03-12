@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 import CommitModal from './CommitModal.jsx';
+import PublishModal from './PublishModal.jsx';
 import SettingModal from './SettingModal.jsx';
 import BinderModal from './BinderModal.jsx';
 
@@ -61,6 +62,7 @@ function App() {
   const [pin, setPin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
 
@@ -103,6 +105,11 @@ function App() {
     //バインダー編集モーダルを開く
     evt.register("App", Event.OpenBinderModal, function () {
       setBinderModalOpen(true);
+    });
+
+    //公開一覧モーダルを開く
+    evt.register("App", Event.OpenPublishModal, function () {
+      setPublishModalOpen(true);
     });
 
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
@@ -266,6 +273,9 @@ function App() {
 
       {/** コミットモーダル */}
       <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
+
+      {/** 公開一覧モーダル */}
+      <PublishModal open={publishModalOpen} onClose={() => setPublishModalOpen(false)} />
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />
