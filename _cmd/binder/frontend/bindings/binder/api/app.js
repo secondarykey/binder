@@ -294,6 +294,16 @@ export function GetNote(id) {
 }
 
 /**
+ * GetNoteImageURL はノートのメタ画像URLを返す。
+ * assets/meta/{noteId} が存在する場合は HTTP URL を返し、存在しない場合は空文字を返す。
+ * @param {string} noteId
+ * @returns {$CancellablePromise<string>}
+ */
+export function GetNoteImageURL(noteId) {
+    return $Call.ByID(3782366495, noteId);
+}
+
+/**
  * @param {string} typ
  * @param {string} id
  * @returns {$CancellablePromise<binder$0.Patch | null>}

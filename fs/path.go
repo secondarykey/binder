@@ -139,8 +139,9 @@ func publicAssetFile(alias string) string {
 //   - templates/
 //     {template_id}.tmpl
 //   - assets/
-//      {note_id}/meta
-//      {note_id}/{assets_id}
+//      meta/
+//        {note_id}
+//      {assets_id}
 
 func NoteFile(id string) string {
 	return noteFile(id)
@@ -163,9 +164,10 @@ func diagramFile(id string) string {
 }
 
 const AssetDir = "assets"
+const MetaSubDir = "meta"
 
 func MetaFile(n *json.Note) string {
-	return filepath.Join(AssetDir, n.Id+"-meta")
+	return filepath.Join(AssetDir, MetaSubDir, n.Id)
 }
 
 func AssetFile(a *json.Asset) string {

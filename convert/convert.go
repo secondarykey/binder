@@ -16,13 +16,14 @@ import (
 	convert034 "binder/db/convert/034"
 	convert045 "binder/db/convert/045"
 	convert047 "binder/db/convert/047"
+	convert048 "binder/db/convert/048"
 	"binder/fs"
 	fsconvert "binder/fs/convert"
 
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045, v047 *Version
+var v010, v020, v021, v022, v033, v034, v045, v047, v048 *Version
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
@@ -78,6 +79,10 @@ func init() {
 	if err != nil {
 		panic("v047 version parse error: " + err.Error())
 	}
+	v048, err = NewVersion("0.4.8")
+	if err != nil {
+		panic("v048 version parse error: " + err.Error())
+	}
 
 	migrations = []migration{
 		// 0.1.0: assets.csv に binary 列を追加
@@ -122,6 +127,13 @@ func init() {
 			}
 			state.docsMigrated = true
 			return fsconvert.MigrateV047(dir)
+		}},
+		// 0.4.8: メタファイルのパスを assets/{noteId}-meta → assets/meta/{noteId} に変更
+		{v048, func(dir, dbDir string, _ *migrateState) error {
+			if err := applyDB(dbDir, convert048.Convert048); err != nil {
+				return err
+			}
+			return fsconvert.MigrateV048(dir)
 		}},
 	}
 }

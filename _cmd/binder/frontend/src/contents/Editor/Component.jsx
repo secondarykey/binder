@@ -3,7 +3,7 @@ import { useParams, useLocation } from "react-router";
 
 import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
-import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
+import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML, GetNoteImageURL } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../bindings/binder/api/app";
 import { GetAsset,Generate,Commit,DropAsset } from "../../../bindings/binder/api/app";
@@ -63,6 +63,8 @@ function Editor(props) {
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
+  // ノートメタ画像URL（assets/meta/{noteId} が存在する場合）
+  const [noteImageURL, setNoteImageURL] = useState("");
   //更新状態のアイコン
   const [updated, setUpdated] = useState(false);
 
@@ -160,6 +162,13 @@ function Editor(props) {
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
+
+      // メタ画像URLを取得（存在しない場合は空文字）
+      GetNoteImageURL(id).then((url) => {
+        setNoteImageURL(url || "");
+      }).catch(() => {
+        setNoteImageURL("");
+      });
 
     } else if ( mode === Mode.template ) {
 
@@ -799,6 +808,13 @@ function Editor(props) {
               </Container>
 
               <Container className="buttonBarRight">
+
+                {/** ノートメタ画像 */}
+                {(mode === Mode.note && noteImageURL) &&
+                  <img src={noteImageURL} alt="note image"
+                       style={{ height: "24px", width: "auto", objectFit: "contain",
+                                borderRadius: "3px", marginRight: "8px", verticalAlign: "middle" }} />
+                }
 
                 {/** フォント設定 */}
                 <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">

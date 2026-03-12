@@ -111,6 +111,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// プレビュー用プライベートアセット配信
 		id := strings.TrimPrefix(path, "/binder-assets/")
 		h.servePrivateAsset(w, r, id)
+	case strings.HasPrefix(path, "/binder-meta/"):
+		// ノートメタ画像配信
+		noteId := strings.TrimPrefix(path, "/binder-meta/")
+		h.serveNoteMetaImage(w, r, noteId)
 	default:
 		h.fileServer.ServeHTTP(w, r)
 	}
@@ -131,6 +135,23 @@ func (h *handler) servePrivateAsset(w http.ResponseWriter, r *http.Request, id s
 
 	// ファイル名からContent-Typeを自動判定して配信
 	http.ServeContent(w, r, meta.Name, time.Time{}, bytes.NewReader(data))
+}
+
+// serveNoteMetaImage はノートのメタ画像（assets/meta/{noteId}）を配信する（エディタ表示用）
+func (h *handler) serveNoteMetaImage(w http.ResponseWriter, r *http.Request, noteId string) {
+	if h.binder == nil || noteId == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	data, err := h.binder.ReadMetaBytes(noteId)
+	if err != nil || data == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// ノートIDをファイル名として Content-Type を自動判定して配信
+	http.ServeContent(w, r, noteId, time.Time{}, bytes.NewReader(data))
 }
 
 func (b *Binder) Serve() error {

@@ -195,6 +195,31 @@ func (b *Binder) ReadNote(w io.Writer, noteId string) error {
 	return nil
 }
 
+// ReadMetaBytes はノートのメタ画像ファイル（assets/meta/{noteId}）をバイト列で返す。
+// ファイルが存在しない場合は nil を返す。
+func (b *Binder) ReadMetaBytes(noteId string) ([]byte, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	n := &json.Note{Id: noteId}
+	fn := fs.MetaFile(n)
+
+	f, err := b.fileSystem.Open(fn)
+	if err != nil {
+		// ファイルが存在しない場合は nil を返す（エラーではない）
+		return nil, nil
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, xerrors.Errorf("io.ReadAll() error: %w", err)
+	}
+
+	return data, nil
+}
+
 func (b *Binder) SaveNote(noteId string, data []byte) error {
 	if b == nil {
 		return EmptyError

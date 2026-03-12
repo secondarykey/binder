@@ -163,8 +163,8 @@ func TestMetaFile(t *testing.T) {
 		id   string
 		want string
 	}{
-		{"index", "assets\\index-meta"},
-		{"test", "assets\\test-meta"},
+		{"index", "assets\\meta\\index"},
+		{"test", "assets\\meta\\test"},
 	}
 
 	for _, v := range vals {
