@@ -296,6 +296,19 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 
 	files = append(files, fn)
 
+	// メタ画像が存在する場合は docs/images/meta/{alias} にコピー
+	metaData, err := b.ReadMetaBytes(id)
+	if err != nil {
+		return nil, xerrors.Errorf("ReadMetaBytes() error: %w", err)
+	}
+	if metaData != nil {
+		mf, err := b.fileSystem.PublishNoteMeta(metaData, rtn)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.PublishNoteMeta() error: %w", err)
+		}
+		files = append(files, mf)
+	}
+
 	err = b.fileSystem.Commit(fs.M("Publish Note", rtn.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)

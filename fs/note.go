@@ -131,6 +131,19 @@ func (f *FileSystem) PublishNote(data []byte, n *json.Note) (string, error) {
 	return pub, nil
 }
 
+// PublishNoteMeta はメタ画像を docs/images/meta/{alias} にコピーする。
+func (f *FileSystem) PublishNoteMeta(data []byte, n *json.Note) (string, error) {
+	pub := PublicMetaFile(n)
+	r := bytes.NewReader(data)
+
+	err := f.copyReader(pub, r)
+	if err != nil {
+		return "", xerrors.Errorf("copyReader() error: %w", err)
+	}
+
+	return pub, nil
+}
+
 func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
 
 	//公開ファイルを取得

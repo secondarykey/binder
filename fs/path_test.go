@@ -78,8 +78,8 @@ func TestPublicMetaFile(t *testing.T) {
 		alias string
 		want  string
 	}{
-		{"index", "alias", "docs\\assets\\alias-meta"},
-		{"test", "alias_x", "docs\\assets\\alias_x-meta"},
+		{"index", "alias", "docs\\images\\meta\\alias"},
+		{"test", "alias_x", "docs\\images\\meta\\alias_x"},
 	}
 
 	for _, v := range vals {
