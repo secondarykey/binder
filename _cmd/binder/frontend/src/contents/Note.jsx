@@ -81,9 +81,9 @@ function Note(props) {
 
     // メタ画像URLを取得（存在しない場合は noImage にフォールバック）
     GetNoteImageURL(currentId).then((url) => {
-      setViewImage(url || "");
+      setViewImage(url || noImage);
     }).catch(() => {
-      setViewImage("");
+      setViewImage(noImage);
     });
 
   }, [currentId]);
