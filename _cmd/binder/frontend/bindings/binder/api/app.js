@@ -21,10 +21,6 @@ import * as json$0 from "./json/models.js";
 // @ts-ignore: Unused imports
 import * as settings$0 from "../settings/models.js";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: Unused imports
-import * as $models from "./models.js";
-
 /**
  * @param {string} name
  * @param {string} url
@@ -374,34 +370,11 @@ export function MoveNode(parentId, childIds) {
 }
 
 /**
- * @returns {$CancellablePromise<void>}
- */
-export function OpenBinderSite() {
-    return $Call.ByID(1956034536);
-}
-
-/**
  * @param {string} id
  * @returns {$CancellablePromise<string>}
  */
 export function OpenDiagram(id) {
     return $Call.ByID(2938807272, id);
-}
-
-/**
- * @param {string} typ
- * @param {string} id
- * @returns {$CancellablePromise<void>}
- */
-export function OpenHistoryWindow(typ, id) {
-    return $Call.ByID(1061989645, typ, id);
-}
-
-/**
- * @returns {$CancellablePromise<void>}
- */
-export function OpenModifiedWindow() {
-    return $Call.ByID(2805916852);
 }
 
 /**
@@ -501,13 +474,6 @@ export function SaveNote(noteId, data) {
 }
 
 /**
- * @returns {$CancellablePromise<void>}
- */
-export function SavePosition() {
-    return $Call.ByID(1737332589);
-}
-
-/**
  * @param {settings$0.Setting | null} s
  * @returns {$CancellablePromise<void>}
  */
@@ -525,38 +491,11 @@ export function SaveTemplate(id, data) {
 }
 
 /**
- * @param {boolean} create
- * @returns {$CancellablePromise<string>}
- */
-export function SelectDirectory(create) {
-    return $Call.ByID(1225829662, create);
-}
-
-/**
- * @param {string} name
- * @param {string} ptn
- * @returns {$CancellablePromise<string>}
- */
-export function SelectFile(name, ptn) {
-    return $Call.ByID(158382265, name, ptn);
-}
-
-/**
  * @param {binder$0.Binder | null} c
  * @returns {$CancellablePromise<void>}
  */
 export function SetCurrent(c) {
     return $Call.ByID(1900983858, c);
-}
-
-/**
- * SetRuntime は AppRuntime の実装を注入する。
- * Wails v3 を使う場合は _cmd/binder/main.go 内で呼び出す。
- * @param {$models.AppRuntime} r
- * @returns {$CancellablePromise<void>}
- */
-export function SetRuntime(r) {
-    return $Call.ByID(1076124227, r);
 }
 
 /**
@@ -566,13 +505,6 @@ export function SetRuntime(r) {
  */
 export function Startup() {
     return $Call.ByID(1457916904);
-}
-
-/**
- * @returns {$CancellablePromise<boolean>}
- */
-export function Terminate() {
-    return $Call.ByID(4145435618);
 }
 
 /**

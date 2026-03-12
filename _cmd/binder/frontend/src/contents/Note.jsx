@@ -7,7 +7,8 @@ import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
 import { GetNote, GetHTMLTemplates } from "../../bindings/binder/api/app";
-import { SelectFile, EditNote, RemoveNote,Address } from "../../bindings/binder/api/app";
+import { EditNote, RemoveNote,Address } from "../../bindings/binder/api/app";
+import { SelectFile } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png'
 
 import Event,{EventContext} from "../Event";

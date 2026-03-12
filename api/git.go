@@ -12,13 +12,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (a *App) OpenModifiedWindow() error {
-
-	defer log.PrintTrace(log.Func("OpenModifiedWindow()"))
-
-	return a.runtime.OpenModifiedWindow()
-}
-
 func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
 
 	files := make([]string, len(leafs))
@@ -97,13 +90,6 @@ func (a *App) GetNowPatch(typ string, id string) (*binder.Patch, error) {
 		return nil, fmt.Errorf("GetLatestPath() error: %+v", err)
 	}
 	return p, nil
-}
-
-func (a *App) OpenHistoryWindow(typ string, id string) error {
-
-	defer log.PrintTrace(log.Func("OpenHistoryWindow()", typ, id))
-
-	return a.runtime.OpenHistoryWindow(typ, id)
 }
 
 func (a *App) RestoreHistory(typ string, id string, hash string) error {

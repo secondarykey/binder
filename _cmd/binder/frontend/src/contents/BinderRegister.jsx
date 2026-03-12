@@ -1,7 +1,8 @@
 import { useState,useContext } from "react";
 import { useNavigate } from "react-router";
 
-import { SelectDirectory, CreateBinder } from "../../bindings/binder/api/app";
+import { SelectDirectory } from "../../bindings/main/window";
+import { CreateBinder } from "../../bindings/binder/api/app";
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
 

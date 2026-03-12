@@ -15,7 +15,8 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { SavePosition, GetSetting, LoadBinder, Terminate, GetConfig, CloseBinder } from '../bindings/binder/api/app';
+import { GetSetting, GetConfig, CloseBinder,LoadBinder } from '../bindings/binder/api/app';
+import { SavePosition,Terminate } from '../bindings/main/window';
 
 import Event, { EventContext } from "./Event";
 import { SystemMessage } from './Message';

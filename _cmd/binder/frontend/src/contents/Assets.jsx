@@ -1,7 +1,8 @@
 import { useEffect, useState,useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { SelectFile, EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
+import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
+import { SelectFile } from "../../bindings/main/window";
 import { copyClipboard } from "../App";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";

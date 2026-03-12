@@ -189,55 +189,6 @@ export class Config {
              */
             this["detail"] = "";
         }
-        if (!("remote" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["remote"] = "";
-        }
-        if (!("markedUrl" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["markedUrl"] = "";
-        }
-        if (!("mermaidUrl" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["mermaidUrl"] = "";
-        }
-        if (!("created" in $$source)) {
-            /**
-             * @member
-             * @type {time$0.Time}
-             */
-            this["created"] = null;
-        }
-        if (!("createdUser" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["createdUser"] = "";
-        }
-        if (!("updated" in $$source)) {
-            /**
-             * @member
-             * @type {time$0.Time}
-             */
-            this["updated"] = null;
-        }
-        if (!("updatedUser" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["updatedUser"] = "";
-        }
 
         Object.assign(this, $$source);
     }
@@ -300,6 +251,13 @@ export class Diagram {
              * @type {time$0.Time}
              */
             this["publish"] = null;
+        }
+        if (!("republish" in $$source)) {
+            /**
+             * @member
+             * @type {time$0.Time}
+             */
+            this["republish"] = null;
         }
         if (!("created" in $$source)) {
             /**
@@ -540,6 +498,13 @@ export class Note {
              */
             this["publish"] = null;
         }
+        if (!("republish" in $$source)) {
+            /**
+             * @member
+             * @type {time$0.Time}
+             */
+            this["republish"] = null;
+        }
         if (!("created" in $$source)) {
             /**
              * @member
@@ -606,14 +571,14 @@ export class Note {
      * @returns {Note}
      */
     static createFrom($$source = {}) {
-        const $$createField14_0 = $$createType5;
         const $$createField15_0 = $$createType5;
+        const $$createField16_0 = $$createType5;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layouts" in $$parsedSource) {
-            $$parsedSource["layouts"] = $$createField14_0($$parsedSource["layouts"]);
+            $$parsedSource["layouts"] = $$createField15_0($$parsedSource["layouts"]);
         }
         if ("contents" in $$parsedSource) {
-            $$parsedSource["contents"] = $$createField15_0($$parsedSource["contents"]);
+            $$parsedSource["contents"] = $$createField16_0($$parsedSource["contents"]);
         }
         return new Note(/** @type {Partial<Note>} */($$parsedSource));
     }

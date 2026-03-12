@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"flag"
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -55,133 +54,21 @@ func parseVersion(data []byte) string {
 	return s[:end]
 }
 
-// wailsRuntime は api.AppRuntime の Wails v3 実装。
-// Wails v3 の依存はこの構造体および main() 内に閉じており、
-// ルートの binder パッケージには持ち込まない。
-type wailsRuntime struct {
-	app            *application.App
-	window         *application.WebviewWindow
-	commitWindow   *application.WebviewWindow
-	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
-}
-
-func (r *wailsRuntime) Quit() {
-	r.app.Quit()
-}
-
-func (r *wailsRuntime) OpenURL(url string) {
-	r.app.Browser.OpenURL(url)
-}
-
-func (r *wailsRuntime) OpenFileDialog(create bool, defaultDir string) (string, error) {
-	dialog := r.app.Dialog.OpenFile().
-		CanChooseDirectories(true).
-		CanChooseFiles(false).
-		CanCreateDirectories(create).
-		SetTitle("Select Binder Directory")
-	if defaultDir != "" {
-		dialog.SetDirectory(defaultDir)
-	}
-	result, err := dialog.PromptForSingleSelection()
-	if err != nil {
-		return "", fmt.Errorf("OpenFileDialog() error\n%+v", err)
-	}
-	return result, nil
-}
-
-func (r *wailsRuntime) OpenFilePicker(name, ptn string) (string, error) {
-	result, err := r.app.Dialog.OpenFile().
-		SetTitle("Select File").
-		AddFilter(name, ptn).
-		PromptForSingleSelection()
-	if err != nil {
-		return "", fmt.Errorf("OpenFilePicker() error\n%+w", err)
-	}
-	return result, nil
-}
-
-func (r *wailsRuntime) WindowSize() (int, int) {
-	return r.window.Size()
-}
-
-func (r *wailsRuntime) WindowPosition() (int, int) {
-	return r.window.Position()
-}
-
-func (r *wailsRuntime) OpenHistoryWindow(typ, id string) error {
-	key := typ + ":" + id
-
-	if r.historyWindows == nil {
-		r.historyWindows = make(map[string]*application.WebviewWindow)
-	}
-
-	// 既に開いていれば前面に出すだけ
-	if w, ok := r.historyWindows[key]; ok {
-		w.Focus()
-		return nil
-	}
-
-	w := r.app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "Binder - History",
-		Width:            900,
-		Height:           600,
-		MinWidth:         600,
-		MinHeight:        400,
-		Frameless:        true,
-		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
-		URL:              "/?history=1&type=" + typ + "&id=" + id,
-	})
-
-	r.historyWindows[key] = w
-
-	// ウィンドウが閉じられたらリセット
-	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		delete(r.historyWindows, key)
-	})
-
-	return nil
-}
-
-func (r *wailsRuntime) OpenModifiedWindow() error {
-	// 既に開いていれば前面に出すだけ
-	if r.commitWindow != nil {
-		r.commitWindow.Focus()
-		return nil
-	}
-
-	w := r.app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "Binder - Commit",
-		Width:            900,
-		Height:           600,
-		MinWidth:         600,
-		MinHeight:        400,
-		Frameless:        true,
-		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
-		URL:              "/?commit=1",
-	})
-
-	r.commitWindow = w
-
-	// ウィンドウが閉じられたらリセット
-	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		r.commitWindow = nil
-	})
-
-	return nil
-}
-
 func main() {
 
 	flag.Parse()
 
 	app := api.New(ver)
+	win := NewWindow(app)
 	set := settings.Get()
 
 	// 1. アプリケーション作成
+	// wails3 に依存するサービスはWindowに設定する
 	wailsApp := application.New(application.Options{
 		Name: "Binder",
 		Services: []application.Service{
 			application.NewService(app),
+			application.NewService(win),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -201,9 +88,9 @@ func main() {
 	})
 
 	// 3. Wails ランタイムを注入して起動処理を実行
-	// （Wails v3 の ServiceStartup は使用せず、直接 main() で初期化する）
-	rt := &wailsRuntime{app: wailsApp, window: window}
-	app.SetRuntime(rt)
+	win.runtime = wailsApp
+	win.window = window
+
 	if err := app.Startup(); err != nil {
 		log.PrintStackTrace(err)
 	}

@@ -10,8 +10,9 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { Events } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, SelectFile, GetHTMLTemplates,
-         OpenHistoryWindow } from '../../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset,  GetHTMLTemplates } from '../../../bindings/binder/api/app';
+
+import { OpenHistoryWindow ,SelectFile } from '../../../bindings/main/window';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
