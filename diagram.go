@@ -5,6 +5,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"io"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -229,12 +230,24 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 	}
 
 	m := d.To()
+
+	// publish/republish タイムスタンプを設定
+	if s.Publish.IsZero() {
+		// 初回公開: publish/republish 両方に現在時刻を設定
+		now := time.Now()
+		s.Publish = now
+		s.Republish = now
+	} else {
+		// 再公開: republish のみ更新
+		s.Republish = time.Now()
+	}
+	err = b.db.UpdateStructure(s, b.op)
+	if err != nil {
+		return nil, xerrors.Errorf("db.UpdateStructure() error: %w", err)
+	}
 	m.ApplyStructure(s.To())
 
-	if m.Publish.IsZero() {
-		//TODO Publish dateがない場合
-		// files にデータベースを追加
-	}
+	files = append(files, fs.StructureTableFile())
 
 	fn, err := b.fileSystem.PublishDiagram(data, m)
 	if err != nil {
