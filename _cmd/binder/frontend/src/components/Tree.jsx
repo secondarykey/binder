@@ -13,8 +13,10 @@ const TreeContainer = styled.div`
 
 const NodeWrapper = styled.div`
   margin-left: ${props => props.$isRoot ? '0' : '20px'};
-  border-top: ${props => props.$isBefore ? '2px solid #1a73e8' : 'none'};
-  border-bottom: ${props => props.$isAfter ? '2px solid #1a73e8' : 'none'};
+  box-shadow: ${props =>
+    props.$isBefore ? 'inset 0 2px 0 0 #1a73e8' :
+    props.$isAfter  ? 'inset 0 -2px 0 0 #1a73e8' :
+    'none'};
 `;
 
 const NodeContentContainer = styled.div`
