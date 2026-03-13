@@ -200,8 +200,8 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     const y = e.clientY - rect.top;
     const height = rect.height;
     let position;
-    if (y < height / 3) position = 'before';
-    else if (y > height * 2 / 3) position = 'after';
+    if (y < height * 0.4) position = 'before';
+    else if (y > height * 0.6) position = 'after';
     else position = 'inside';
     if (isRoot && (position === 'before' || position === 'after')) {
         setDropTargetInfo(null);
