@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'react-router';
 import { Button } from '@mui/material';
 
-import { GetAsset, GetAssetContent, Generate } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, Generate, GetSetting } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 
 /** 画像拡張子の判定セット */
@@ -137,6 +137,20 @@ function AssetViewer() {
   const [assetName, setAssetName] = useState('');
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
+  // ソースエディタと同じフォント設定
+  const [editorStyle, setEditorStyle] = useState({});
+
+  useEffect(() => {
+    GetSetting().then((s) => {
+      const t = s.lookAndFeel.editor.text;
+      setEditorStyle({
+        fontFamily: t.name,
+        fontSize: t.size + 'px',
+        color: t.color,
+        backgroundColor: t.backgroundColor,
+      });
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -217,19 +231,28 @@ function AssetViewer() {
       } catch {
         text = atob(fileContent);
       }
+      // ソースエディタ（textarea#editor）と同じスタイルで読み取り専用表示
       content = (
-        <div style={{ padding: '16px', overflow: 'auto', height: '100%', boxSizing: 'border-box' }}>
-          <pre style={{
+        <textarea
+          readOnly
+          value={text}
+          style={{
+            ...editorStyle,
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            boxSizing: 'border-box',
+            padding: '5px',
             margin: 0,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            fontFamily: 'monospace',
-            fontSize: '13px',
-            lineHeight: '1.5',
-          }}>
-            {text}
-          </pre>
-        </div>
+            border: 0,
+            resize: 'none',
+            outline: 'none',
+          }}
+        />
       );
     } else {
       // その他バイナリ
