@@ -255,8 +255,8 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 		//fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
 		mod, err := getModelType(f)
 		if err != nil {
-			slog.Warn(err.Error())
-			//return xerrors.Errorf("getModelType() error: %w", err)
+			// db/・binder.json など管理外のファイルは無視（Debugレベル）
+			slog.Debug(err.Error())
 		} else {
 			mod.Status = s
 			rtn = append(rtn, mod)

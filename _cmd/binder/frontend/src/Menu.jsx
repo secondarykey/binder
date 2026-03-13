@@ -230,9 +230,9 @@ function Menu(props) {
 
       </Paper>
 
-      {/** 非テンプレートエディタルートでは Editor 内部でツリーを管理するため非表示 */}
-      {!isNonTemplateEditor && (
-        <Paper id="menu" className={menuClasses}>
+      {/** 非テンプレートエディタルートでは Editor 内部でツリーを管理するため非表示。
+           アンマウントせず display:none で隠すことで BinderTree のステートを保持する */}
+        <Paper id="menu" className={menuClasses} style={{ display: isNonTemplateEditor ? 'none' : undefined }}>
 
           {/** メニューの中身 */}
           <Paper id="leftContent">
@@ -254,7 +254,6 @@ function Menu(props) {
           </Paper>
 
         </Paper>
-      )}
     </>
   );
 }
