@@ -126,6 +126,11 @@ function BinderTree(props) {
   const treeRef = useRef([]);
   useEffect(() => { treeRef.current = tree; }, [tree]);
 
+  // 現在のバインダーアドレスを追跡する ref。
+  // ChangeAddress 発火時に「本当に別バインダーへ切り替わったか」を判定するために使う。
+  // 別バインダーのときだけ expandTop=true（トップ展開リセット）を呼ぶ。
+  const currentAddressRef = useRef(null);
+
   // ツリーデータを取得する。
   // expandTop=true の場合、取得後にトップ階層のノードをすべて展開する。
   // expandTop=false（ReloadTree 等）の場合は展開状態を維持する。
@@ -152,9 +157,13 @@ function BinderTree(props) {
     evt.register("BinderTree", Event.ReloadTree, () => {
       viewTree();
     });
-    // バインダーを開いたとき（LoadBinder 成功後）に再取得してトップ展開
-    evt.register("BinderTree", Event.ChangeAddress, () => {
-      viewTree(true);
+    // バインダーを開いたとき（LoadBinder 成功後）に再取得。
+    // アドレスが変わった（別バインダー）ときだけトップ展開リセット。
+    // 同じバインダーの再ロードや画面遷移では展開状態を維持する。
+    evt.register("BinderTree", Event.ChangeAddress, (addr) => {
+      const isNewBinder = addr !== currentAddressRef.current;
+      currentAddressRef.current = addr;
+      viewTree(isNewBinder);
     });
     // 履歴復元などでツリーのノード選択を外部から更新する
     evt.register("BinderTree", Event.SelectTree, (id) => {
