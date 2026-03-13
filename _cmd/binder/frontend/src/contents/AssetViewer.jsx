@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'react-router';
+import { Button } from '@mui/material';
 
-import { GetAsset, GetAssetContent } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, Generate } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 
 /** 画像拡張子の判定セット */
@@ -123,6 +124,7 @@ function ImageViewer({ src, alt }) {
  * - テキストファイル: テキスト表示
  * - その他バイナリ: 非表示通知
  * - ファイルが見つからない場合: メッセージ表示
+ * - ヘッダーに Generate ボタンを表示
  */
 function AssetViewer() {
   const evt = useContext(EventContext);
@@ -134,6 +136,7 @@ function AssetViewer() {
   const [assetContent, setAssetContent] = useState(null);
   const [assetName, setAssetName] = useState('');
   const [error, setError] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -164,9 +167,24 @@ function AssetViewer() {
     });
   }, [id]);
 
-  // エラー状態
+  /** Generate ボタン押下: アセットを公開する */
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      await Generate("assets", id, "");
+      evt.showSuccessMessage("Generate が完了しました。");
+    } catch (e) {
+      evt.showErrorMessage("Generate に失敗しました: " + e);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // コンテンツ部分を変数で組み立てる（早期returnを避けてヘッダーと共通化）
+  let content;
+
   if (error) {
-    return (
+    content = (
       <div style={{ padding: '16px' }}>
         {assetName && (
           <div style={{ marginBottom: '8px', color: '#ccc', fontSize: '13px' }}>{assetName}</div>
@@ -174,58 +192,79 @@ function AssetViewer() {
         <div style={{ color: '#f88' }}>{error}</div>
       </div>
     );
-  }
-
-  // ロード中
-  if (!assetContent) {
-    return (
+  } else if (!assetContent) {
+    content = (
       <div style={{ padding: '16px', color: '#aaa' }}>Loading...</div>
     );
-  }
+  } else {
+    const { name, binary, content: fileContent } = assetContent;
+    const ext     = name.split('.').pop()?.toLowerCase() ?? '';
+    const isImage = binary && imageExts.has(ext);
 
-  const { name, binary, content } = assetContent;
-  const ext     = name.split('.').pop()?.toLowerCase() ?? '';
-  const isImage = binary && imageExts.has(ext);
-
-  // 画像: ImageViewer でドラッグ・ズーム表示
-  if (isImage) {
-    const mime = getMimeType(name);
-    return (
-      <ImageViewer
-        src={`data:${mime};base64,${content}`}
-        alt={name}
-      />
-    );
-  }
-
-  // テキストファイル: base64 → UTF-8 テキスト
-  if (!binary) {
-    let text = '';
-    try {
-      text = decodeURIComponent(escape(atob(content)));
-    } catch {
-      text = atob(content);
+    if (isImage) {
+      const mime = getMimeType(name);
+      content = (
+        <ImageViewer
+          src={`data:${mime};base64,${fileContent}`}
+          alt={name}
+        />
+      );
+    } else if (!binary) {
+      // テキストファイル: base64 → UTF-8 テキスト
+      let text = '';
+      try {
+        text = decodeURIComponent(escape(atob(fileContent)));
+      } catch {
+        text = atob(fileContent);
+      }
+      content = (
+        <div style={{ padding: '16px', overflow: 'auto', height: '100%', boxSizing: 'border-box' }}>
+          <pre style={{
+            margin: 0,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            fontFamily: 'monospace',
+            fontSize: '13px',
+            lineHeight: '1.5',
+          }}>
+            {text}
+          </pre>
+        </div>
+      );
+    } else {
+      // その他バイナリ
+      content = (
+        <div style={{ padding: '16px', color: '#aaa' }}>
+          バイナリファイルのため表示できません: {name}
+        </div>
+      );
     }
-    return (
-      <div style={{ padding: '16px', overflow: 'auto', height: '100%', boxSizing: 'border-box' }}>
-        <pre style={{
-          margin: 0,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          fontFamily: 'monospace',
-          fontSize: '13px',
-          lineHeight: '1.5',
-        }}>
-          {text}
-        </pre>
-      </div>
-    );
   }
 
-  // その他バイナリ
   return (
-    <div style={{ padding: '16px', color: '#aaa' }}>
-      バイナリファイルのため表示できません: {name}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* ヘッダー: Generate ボタン */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        padding: '6px 12px',
+        borderBottom: '1px solid #333',
+        flexShrink: 0,
+      }}>
+        <Button
+          variant="contained"
+          size="small"
+          onClick={handleGenerate}
+          disabled={generating || !id}
+        >
+          {generating ? 'Generating...' : 'Generate'}
+        </Button>
+      </div>
+      {/* コンテンツ */}
+      <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+        {content}
+      </div>
     </div>
   );
 }
