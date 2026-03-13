@@ -30,10 +30,20 @@ import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import FontDialog from "../FontDialog.jsx";
 
+import BinderTree from "../LeftMenu/BinderTree.jsx";
+
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
  * スプリッターでコントロールを可能にする
- * TODO : 表示ビューをフローティングにすることを可能にする？
+ *
+ * レイアウト:
+ *   #splitScreen (flex row)
+ *     ├── #editorTreePanel   ← BinderTree（template以外）
+ *     ├── #treeSplitter      ← ツリー幅調整
+ *     └── #editorContent (flex row)
+ *           ├── #editorWrapper   ← テキスト編集エリア
+ *           ├── #splitter        ← エディタ/ビューア幅調整
+ *           └── #dataViewer      ← HTML/Mermaidプレビュー
  */
 function Editor(props) {
 
@@ -49,8 +59,12 @@ function Editor(props) {
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
 
+  // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
-  const [menuWidth, setMenuWidth] = useState(293);
+  // ツリーパネルの表示状態と幅
+  const [treeVisible, setTreeVisible] = useState(true);
+  const [treeWidth, setTreeWidth] = useState(250);
+
   const [fontDialog, setShowFontDialog] = useState(false);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
@@ -132,7 +146,6 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
-        //console.log(resp.publishStatus);
 
         setName(resp.name);
       }).catch((err) => {
@@ -169,9 +182,6 @@ function Editor(props) {
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
         setText(resp);
-        //指定ノートだった場合、最新ノートから値を取得してきて埋め込む
-        //TODO: HTML をどのように作成するかを考える
-        //createNoteElement();
       }).catch((err) => {
         evt.showErrorMessage(err);
       });
@@ -289,14 +299,11 @@ function Editor(props) {
     if ( val ) {
       return val;
     }
-    //return marked.marked(p);
     return "";
   }
 
   /**
    * HTMLの表示
-   * @param {*} txt 
-   * @param {*} embNoteElm 
    */
   const viewHTML = async (txt, embNoteElm) => {
 
@@ -320,7 +327,6 @@ function Editor(props) {
 
   /**
    * ダイアグラムの表示
-   * @param {*} txt 
    */
   const viewDiagram = async (txt) => {
 
@@ -364,13 +370,12 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
-      //console.log(txt)
       evt.showWarningMessage("Diagram parse error:" + err);
     });
   }
 
-  // スプリッタードラッグ: HTML5 DnD の代わりに Pointer Capture を使用
-  // → ブラウザの禁止カーソルが出なくなり、iframeをまたいでもイベントが途切れない
+  // ---- エディタ/ビューア間スプリッタードラッグ ----
+  // Pointer Capture を使用: iframeをまたいでもイベントが途切れない
   const splitterRef = useRef(null);
   const splitStartRef = useRef(null);
 
@@ -396,9 +401,34 @@ function Editor(props) {
     document.body.style.userSelect = '';
   };
 
+  // ---- ツリー/エディタ間スプリッタードラッグ ----
+  const treeSplitterRef = useRef(null);
+  const treeSplitStartRef = useRef(null);
+
+  const handleTreeSplitterPointerDown = (e) => {
+    e.preventDefault();
+    treeSplitStartRef.current = { startX: e.clientX, startWidth: treeWidth };
+    treeSplitterRef.current.setPointerCapture(e.pointerId);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleTreeSplitterPointerMove = (e) => {
+    if (!treeSplitStartRef.current) return;
+    const delta = e.clientX - treeSplitStartRef.current.startX;
+    const newWidth = Math.max(80, treeSplitStartRef.current.startWidth + delta);
+    setTreeWidth(newWidth);
+  };
+
+  const handleTreeSplitterPointerUp = () => {
+    if (!treeSplitStartRef.current) return;
+    treeSplitStartRef.current = null;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  };
+
   /**
    * テキストの変更
-   * @param {*} txt 
    */
   const handleChangeText = (e) => {
 
@@ -543,8 +573,6 @@ function Editor(props) {
 
   /**
    * 文字列挿入
-   * @param {*} s
-   * @param {*} e
    */
   const handleInsert = (s,e) => {
     var textarea = document.querySelector("#editor");
@@ -567,8 +595,6 @@ function Editor(props) {
 
   /**
    * Enter時にインデントを挿入
-   * @param {*} e 
-   * @returns 
    */
   const handleKeyDown = (e) => {
 
@@ -634,9 +660,6 @@ function Editor(props) {
    */
   const handleRunEditor = () => {
 
-    //TODO 画面抑制を開始
-
-    //ファイルを監視
     const sec = 2;
     var interval = setInterval(function() {
       // ファイルの内容を取得
@@ -661,7 +684,6 @@ function Editor(props) {
   }
   /**
    * フォントダイアログを終了
-   * @param {*} change 
    */
   const handleFontDialogClose = (font) => {
     if ( font !== undefined) {
@@ -672,8 +694,6 @@ function Editor(props) {
 
   /**
    * フォントの設定
-   * @param {*} set 
-   * @param {*} save 
    */
   const settingFont = (set,save) => {
 
@@ -682,16 +702,12 @@ function Editor(props) {
     style.fontSize = set.size + "px";
     style.color = set.color;
     style.backgroundColor = set.backgroundColor;
-    //エディタのスタイルを設定
     setEditorStyle(style);
-    
+
     var f = set;
-    //ダイアログに設定
     setEditorFont(f)
 
-    //更新の場合
     if ( save ) {
-      //設定を取得
       GetSetting().then( (s) => {
         s.lookAndFeel.editor.text = set;
         SaveSetting(s).then( () => {
@@ -699,26 +715,16 @@ function Editor(props) {
       }).catch( (err) => {
         evt.showErrorMessage(err);
       });
-    } else {
     }
   }
+
   /**
    * 初回起動のみのエフェクト
    */
   useEffect(() => {
-    //メニューを開いているかのイベント
-    evt.register("Editor",Event.ShowMenu,function(flag) {
-      // メニューアニメーション中だけ transition クラスを付与する
-      const el = document.querySelector("#splitScreen");
-      if (el) {
-        el.classList.add("menu-animating");
-        setTimeout(() => el.classList.remove("menu-animating"), 500);
-      }
-      if ( flag ) {
-        setMenuWidth(293);
-      } else {
-        setMenuWidth(43);
-      }
+    // サイドバートグルでツリーパネルの表示/非表示を切り替える
+    evt.register("Editor", Event.ShowMenu, function(flag) {
+      setTreeVisible(flag);
     });
 
     //設定を取得
@@ -730,17 +736,6 @@ function Editor(props) {
     });
 
   },[]);
-
-  var splitterW = 10;
-  {/** スプリッター部分をコンポーネント化するか？ */ }
-  var editWrapperStyle = {};
-  editWrapperStyle.left = menuWidth + "px";
-  editWrapperStyle.width = (width - 4) + "px";
-
-  var splitterStyle = {};
-  splitterStyle.left = (menuWidth + width - 3) + "px";
-  var viewerStyle = {};
-  viewerStyle.left = (menuWidth + width + splitterW -4) + "px";
 
   var commentStyle = {};
   commentStyle.fontSize = "12px";
@@ -754,141 +749,160 @@ function Editor(props) {
 
   //コミット用のアイコン(コメント欄の横)
   const commitIcon = (
-    <InputAdornment position="end" className="linkBtn"> 
-      <CommitIcon fontSize="small" style={{ color: color }}  onClick={handleCommit}> </CommitIcon> 
+    <InputAdornment position="end" className="linkBtn">
+      <CommitIcon fontSize="small" style={{ color: color }}  onClick={handleCommit}> </CommitIcon>
     </InputAdornment>
   )
 
-  {/** 表示するものをビュワーに渡す段階で、表示用のものに変更する 
-      * 表示処理を行わないっていう選択肢
-      */}
+  // template 以外のエディタルートではツリーパネルを表示する
+  const showTree = mode !== Mode.template;
+
   return (
     <>
-
-      {/** エディタ */}
       <Paper id="splitScreen">
 
-{/** エディタ */}
-{editor && 
-        <div id="editorWrapper" style={editWrapperStyle}>
+        {/** ツリーパネル（template モード以外） */}
+        {showTree && treeVisible && (
+          <div id="editorTreePanel" style={{ width: treeWidth + 'px' }}>
+            <BinderTree />
+          </div>
+        )}
 
-          {/** テキスト用のメニュー */}
-          <Container id="editorMenu">
-              <Container className="buttonBarLeft">
+        {/** ツリー/エディタ間スプリッター */}
+        {showTree && treeVisible && (
+          <div
+            ref={treeSplitterRef}
+            id="treeSplitter"
+            onPointerDown={handleTreeSplitterPointerDown}
+            onPointerMove={handleTreeSplitterPointerMove}
+            onPointerUp={handleTreeSplitterPointerUp}
+          />
+        )}
 
-                {/** 強調 */}
-                <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**","**")} className="editorBtn">
-                  <FormatBoldIcon fontSize="small" />
-                </IconButton>
+        {/** エディタ + ビューアのコンテンツエリア */}
+        <div id="editorContent">
 
-                {/** イタリック */}
-                <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*","*")} className="editorBtn">
-                  <FormatItalicIcon fontSize="small" />
-                </IconButton>
+          {/** エディタ */}
+          {editor &&
+            <div id="editorWrapper" style={{ width: (width - 4) + 'px' }}>
 
-                {/** 打ち消し線 */}
-                <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~","~~")} className="editorBtn">
-                  <FormatStrikethroughIcon fontSize="small" />
-                </IconButton>
+              {/** テキスト用のメニュー */}
+              <Container id="editorMenu">
+                  <Container className="buttonBarLeft">
 
-                {/** コードブロック */}
-                <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n","\n```\n")} className="editorBtn">
-                  <CodeIcon fontSize="small" />
-                </IconButton>
+                    {/** 強調 */}
+                    <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**","**")} className="editorBtn">
+                      <FormatBoldIcon fontSize="small" />
+                    </IconButton>
 
+                    {/** イタリック */}
+                    <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*","*")} className="editorBtn">
+                      <FormatItalicIcon fontSize="small" />
+                    </IconButton>
+
+                    {/** 打ち消し線 */}
+                    <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~","~~")} className="editorBtn">
+                      <FormatStrikethroughIcon fontSize="small" />
+                    </IconButton>
+
+                    {/** コードブロック */}
+                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n","\n```\n")} className="editorBtn">
+                      <CodeIcon fontSize="small" />
+                    </IconButton>
+
+                  </Container>
+
+                  <Container className="buttonBarRight">
+
+                    {/** フォント設定 */}
+                    <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
+                      <FontDownloadIcon fontSize="small" />
+                    </IconButton>
+
+                    {/** プログラム起動 */}
+                    <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
+                      <LaunchIcon fontSize="small" />
+                    </IconButton>
+
+                  </Container>
               </Container>
 
-              <Container className="buttonBarRight">
+              {/** テキスト編集 */}
+              <textarea id="editor" style={editorStyle}
+                                    value={text}
+                                    onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
+                                    onDragOver={handleDragOver} onDrop={handleDrop}/>
 
-                {/** フォント設定 */}
-                <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
-                  <FontDownloadIcon fontSize="small" />
-                </IconButton>
-
-                {/** プログラム起動 */}
-                <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
-                  <LaunchIcon fontSize="small" />
-                </IconButton>
-
-              </Container>
-          </Container>
-
-          {/** テキスト編集 */}
-          <textarea id="editor" style={editorStyle}
-                                value={text}
-                                onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
-                                onDragOver={handleDragOver} onDrop={handleDrop}/>
-
-          {/** 左側の操作用位置 */}
-          <Toolbar className="buttonBar">
-            <Container className="buttonBarLeft">
-              {/** コミットコメント */}
-              <TextField value={comment} onChange={(e) => setComment(e.target.value)}
-                         size="small"
-                         variant="outlined"
-                         style={{marginLeft:"0px",paddingLeft:"0px"}}
-                         inputProps={{style:commentStyle}}
-                         InputProps={{endAdornment:commitIcon}}
-
-                ></TextField>
-            </Container>
-          </Toolbar>
-        </div>
-}
-
-{/** セパレータ */}
-{editor && viewer && 
-        <div ref={splitterRef} id="splitter" style={splitterStyle}
-             onPointerDown={handleSplitterPointerDown}
-             onPointerMove={handleSplitterPointerMove}
-             onPointerUp={handleSplitterPointerUp}
-        />
-}
-
-{/** 表示側 */}
-{viewer && 
-<>
-        {/** 表示するコンポーネントを変更 */}
-        <div id="dataViewer" style={viewerStyle}>
-
-          {( mode === Mode.note ) &&
-            <HTMLFrame html={html}/>
-          }
-          {mode === Mode.diagram &&
-            <div id="mermaidViewer"></div>
+              {/** 左側の操作用位置 */}
+              <Toolbar className="buttonBar">
+                <Container className="buttonBarLeft">
+                  {/** コミットコメント */}
+                  <TextField value={comment} onChange={(e) => setComment(e.target.value)}
+                             size="small"
+                             variant="outlined"
+                             style={{marginLeft:"0px",paddingLeft:"0px"}}
+                             inputProps={{style:commentStyle}}
+                             InputProps={{endAdornment:commitIcon}}
+                  ></TextField>
+                </Container>
+              </Toolbar>
+            </div>
           }
 
-          {/** 右側の操作用位置 */}
-          <Toolbar className="buttonBar">
-            <Container className="buttonBarLeft">
+          {/** セパレータ（エディタ/ビューア間） */}
+          {editor && viewer &&
+            <div ref={splitterRef} id="splitter"
+                 onPointerDown={handleSplitterPointerDown}
+                 onPointerMove={handleSplitterPointerMove}
+                 onPointerUp={handleSplitterPointerUp}
+            />
+          }
 
-{mode !== Mode.template &&
-<>
-              {/** 公開位置への転送 */}
-              <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handlePublish}>
-                <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-              </IconButton>
-</>
-}
+          {/** 表示側 */}
+          {viewer &&
+            <div id="dataViewer">
 
-            </Container>
+              {/** 表示するコンポーネントを変更 */}
+              {( mode === Mode.note ) &&
+                <HTMLFrame html={html}/>
+              }
+              {mode === Mode.diagram &&
+                <div id="mermaidViewer"></div>
+              }
 
-            <Container className="buttonBarRight">
-{mode === Mode.diagram &&
-<>
-              {/** 表示しているSVGのダウンロード */}
-              <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="download" sx={{ mr: 2 }} onClick={handleDownload}>
-                <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-              </IconButton>
-</>
-}
-            </Container>
+              {/** 右側の操作用位置 */}
+              <Toolbar className="buttonBar">
+                <Container className="buttonBarLeft">
 
-          </Toolbar>
+                  {mode !== Mode.template &&
+                    <>
+                      {/** 公開位置への転送 */}
+                      <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handlePublish}>
+                        <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                      </IconButton>
+                    </>
+                  }
+
+                </Container>
+
+                <Container className="buttonBarRight">
+                  {mode === Mode.diagram &&
+                    <>
+                      {/** 表示しているSVGのダウンロード */}
+                      <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="download" sx={{ mr: 2 }} onClick={handleDownload}>
+                        <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                      </IconButton>
+                    </>
+                  }
+                </Container>
+
+              </Toolbar>
+
+            </div>
+          }
 
         </div>
-</>
-}
+
       </Paper>
 
       {/** フォント設定 */}

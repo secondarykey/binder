@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useContext } from 'react';
-import { Routes, Route, useNavigate } from "react-router";
+import { Routes, Route, useNavigate, useLocation } from "react-router";
 
 import { Address } from '../bindings/binder/api/app';
 
@@ -58,6 +58,11 @@ function Menu(props) {
   //使い方
   const evt = useContext(EventContext)
   const nav = useNavigate();
+  const location = useLocation();
+
+  // /editor/note/:id, /editor/diagram/:id, /editor/assets/:id など
+  // template 以外のエディタルートは Editor 内部でツリーを管理するため #menu を非表示にする
+  const isNonTemplateEditor = /^\/editor\/(?!template)/.test(location.pathname);
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
@@ -215,28 +220,31 @@ function Menu(props) {
 
       </Paper>
 
-      <Paper id="menu" className={menuClasses}>
+      {/** 非テンプレートエディタルートでは Editor 内部でツリーを管理するため非表示 */}
+      {!isNonTemplateEditor && (
+        <Paper id="menu" className={menuClasses}>
 
-        {/** メニューの中身 */}
-        <Paper id="leftContent">
+          {/** メニューの中身 */}
+          <Paper id="leftContent">
 
-          <Routes>
+            <Routes>
 
-            {/** 複数指定のコンポーネントを作成 */}
-            <Route path={"/"} element={<> <FileMenu /> </>} />
-            <Route path={"/file/*"} element={<> <FileMenu /> </>} />
-            <Route path={"/template/*"} element={tempTree} />
-            <Route path={"/editor/template/:id"} element={tempTree} />
+              {/** 複数指定のコンポーネントを作成 */}
+              <Route path={"/"} element={<> <FileMenu /> </>} />
+              <Route path={"/file/*"} element={<> <FileMenu /> </>} />
+              <Route path={"/template/*"} element={tempTree} />
+              <Route path={"/editor/template/:id"} element={tempTree} />
 
-            <Route path="*" element={<>
-              <BinderTree />
-            </>} />
+              <Route path="*" element={<>
+                <BinderTree />
+              </>} />
 
-          </Routes>
+            </Routes>
+
+          </Paper>
 
         </Paper>
-
-      </Paper>
+      )}
     </>
   );
 }

@@ -1,20 +1,69 @@
+/* =====================================================================
+ * エディタページ専用レイアウト
+ * splitScreen を flex row にし、ツリー / エディタ / ビューアを並べる
+ * ===================================================================== */
+
+/* splitScreen をフルハイト flex row に設定（Content.css の display:flex を上書き） */
+#splitScreen {
+  height: 100%;
+  overflow: hidden;
+  flex-direction: row;
+}
+
+/* =====================================================================
+ * ツリーパネル（BinderTree を内包）
+ * ===================================================================== */
+#editorTreePanel {
+  flex-shrink: 0;
+  overflow: auto;
+  height: 100%;
+  white-space: nowrap;
+  box-sizing: border-box;
+  font-size: 14px;
+
+  background-color: #292929;
+  color: #f1f1f1;
+  border-right: 1px solid #343434;
+  --wails-draggable: no-drag;
+}
+
+/* ツリー/エディタ間スプリッター */
+#treeSplitter {
+  --wails-draggable: no-drag;
+
+  flex-shrink: 0;
+  width: 8px;
+  align-self: stretch;
+  cursor: col-resize;
+
+  border: 4px solid #222222;
+}
+
+#treeSplitter:hover {
+  z-index: 100;
+  transition: border-color 0.4s;
+  border: 4px solid #3333ff;
+}
+
+/* =====================================================================
+ * エディタ + ビューアのコンテンツエリア
+ * ===================================================================== */
+#editorContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative;
+}
+
+/* =====================================================================
+ * エディタパネル
+ * ===================================================================== */
 #editorWrapper {
-  position: absolute;
-  top: 42px;
-  bottom: 0;
-}
-
-/* メニュー開閉時のみエディタ要素をアニメーションさせる（スプリッタードラッグ時は無効） */
-.menu-animating #editorWrapper {
-  transition: left 0.5s, width 0.5s;
-}
-
-.menu-animating #splitter {
-  transition: left 0.5s;
-}
-
-.menu-animating #dataViewer {
-  transition: left 0.5s;
+  position: relative;   /* 内部の absolute 要素の基準 */
+  flex-shrink: 0;
+  height: 100%;
 }
 
 #editorMenu {
@@ -45,12 +94,15 @@
   padding-right: 0px !important;
 }
 
+/* =====================================================================
+ * エディタ/ビューア間スプリッター
+ * ===================================================================== */
 #splitter {
   --wails-draggable: no-drag;
 
-  position: absolute;
-  top: 42px;
-  bottom: 0;
+  flex-shrink: 0;
+  width: 8px;
+  align-self: stretch;
   cursor: col-resize;
 
   border: 4px solid #222222;
@@ -84,14 +136,17 @@
   background-image: radial-gradient(circle, #ccccff 1.5px, transparent 1.5px) !important;
 }
 
+/* =====================================================================
+ * ビューアパネル
+ * ===================================================================== */
 #dataViewer {
   --wails-draggable: no-drag;
 
-  position: absolute;
-  top: 42px;
-  right: 0;
-  bottom: 0px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
   display: flex;
+  overflow: hidden;
 }
 
 iframe.htmlViewer {
@@ -139,6 +194,9 @@ iframe.htmlViewer.show {
   overflow: auto;
 }
 
+/* =====================================================================
+ * テキストエリア
+ * ===================================================================== */
 #editor {
   --wails-draggable: no-drag;
 
@@ -163,6 +221,9 @@ iframe.htmlViewer.show {
   outline: 1px solid #444444;
 }
 
+/* =====================================================================
+ * ボタンバー（エディタ・ビューア両方の下部）
+ * ===================================================================== */
 .buttonBar {
   display: flex !important;
   justify-content: left !important;
