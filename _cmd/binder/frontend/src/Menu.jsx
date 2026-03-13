@@ -69,6 +69,16 @@ function Menu(props) {
   // イベントハンドラ内で最新の開閉状態を参照するための ref
   const menuOpenRef = useRef(true);
 
+  // 非テンプレートエディタルートから離脱した際に #menu を開いた状態へリセットする。
+  // エディタルートでは #menu が DOM から除外されるため、menuClasses が "hideMenu" のまま
+  // 残ると他の画面（テンプレート等）で #menu が非表示になってしまうのを防ぐ。
+  useEffect(() => {
+    if (!isNonTemplateEditor) {
+      setMenuClasses("");
+      menuOpenRef.current = true;
+    }
+  }, [isNonTemplateEditor]);
+
   const [url, setURL] = useState("");
 
   /**
