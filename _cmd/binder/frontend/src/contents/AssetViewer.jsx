@@ -285,7 +285,7 @@ function AssetViewer() {
         </Button>
       </div>
       {/* コンテンツ */}
-      <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ flex: 1, overflow: 'hidden', minHeight: 0, position: 'relative' }}>
         {content}
       </div>
     </div>
