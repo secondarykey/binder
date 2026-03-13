@@ -260,7 +260,8 @@ function BinderTree(props) {
   const handleClick = (node) => {
     const type = node.nodeType || node.type;
     if (type === 'asset') {
-      nav("/assets/view/" + node.id);
+      // エディタルート経由で表示し、BinderTree インスタンスを editor と統一する
+      nav("/editor/assets/" + node.id);
     } else {
       nav("/editor/" + type + "/" + node.id);
     }

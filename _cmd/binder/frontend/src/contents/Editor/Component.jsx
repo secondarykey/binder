@@ -31,6 +31,7 @@ import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
+import AssetViewer from "../AssetViewer.jsx";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -198,23 +199,16 @@ function Editor(props) {
         evt.showErrorMessage(err);
       })
     } else if ( mode === "assets" ) {
-      // assets に合わせる
-
+      // AssetViewer コンポーネントが表示・操作を担うため editor/viewer は不要
+      setEditor(false);
+      setViewer(false);
       GetAsset(id).then((resp) => {
-
-        setEditor(!resp.binary);
-        setViewer(resp.binary);
-
         if ( resp.updatedStatus > 0 ) {
           setUpdated(true);
         } else {
           setUpdated(false);
         }
         setName(resp.name);
-
-        if (!resp.binary) {
-          //アセットを開く
-        }
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
@@ -781,6 +775,13 @@ function Editor(props) {
 
         {/** エディタ + ビューアのコンテンツエリア */}
         <div id="editorContent">
+
+          {/** アセットモード: AssetViewer がすべての表示・操作を担う */}
+          {mode === 'assets' && (
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <AssetViewer />
+            </div>
+          )}
 
           {/** エディタ */}
           {editor &&
