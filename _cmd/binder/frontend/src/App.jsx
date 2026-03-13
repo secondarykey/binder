@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
 import CommitModal from './CommitModal.jsx';
@@ -54,6 +54,10 @@ function App() {
 
   const evt = useContext(EventContext)
   const nav = useNavigate();
+  const location = useLocation();
+
+  // 非テンプレートエディタルートでのみサイドバートグルを表示する
+  const isNonTemplateEditor = /^\/editor\/(?!template)/.test(location.pathname);
 
   //文書名（ページタイトル: ノート名・画面名など）
   const [pageTitle, setPageTitle] = useState("");
@@ -230,10 +234,12 @@ function App() {
           <Typography variant="body1" component="div" noWrap>
             {binderName}
           </Typography>
-          {/** サイドバー開閉: Binder名の横 */}
-          <IconButton id="sidebarBtn" className={sidebarClass} size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
-            <ViewSidebarIcon fontSize="small" />
-          </IconButton>
+          {/** サイドバー開閉: ツリー画面（非テンプレートエディタ）のみ表示 */}
+          {isNonTemplateEditor && (
+            <IconButton id="sidebarBtn" className={sidebarClass} size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
+              <ViewSidebarIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
 
         {/** 中央セクション: 文書名（ノート名・画面名） */}
