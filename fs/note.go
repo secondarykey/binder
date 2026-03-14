@@ -19,7 +19,7 @@ func (f *FileSystem) CreateNoteFile(n *json.Note) (string, error) {
 	}
 	defer fp.Close()
 
-	_, err = fp.Write([]byte("# " + n.Name))
+	_, err = fp.Write([]byte("# "))
 	if err != nil {
 		return "", xerrors.Errorf("Note Write() error: %w", err)
 	}
