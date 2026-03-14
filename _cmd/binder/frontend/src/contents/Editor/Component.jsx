@@ -73,8 +73,6 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
-  // メニューを開く直前のカーソル位置を退避（メニュー開放でfocusが外れるため）
-  const snippetCursorRef = useRef({ start: 0, end: 0 });
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
   // handleChangeText だけが true にセットする。ファイルオープン時はセットされないので即時描画になる。
@@ -238,32 +236,20 @@ function Editor(props) {
   })();
 
   /**
-   * スニペットメニューを開く（カーソル位置を退避してからメニューを表示）
-   */
-  const handleSnippetButtonClick = (e) => {
-    const textarea = document.querySelector("#editor");
-    if (textarea) {
-      snippetCursorRef.current = { start: textarea.selectionStart, end: textarea.selectionEnd };
-    }
-    setSnippetAnchor(e.currentTarget);
-  };
-
-  /**
-   * スニペットをカーソル位置に挿入（退避した位置を使用）
-   * setSnippetAnchor(null) が React 再レンダリングを起こして textarea.value を
-   * 旧ステートで上書きするため、先に textarea.value と setText を確定させてから閉じる。
-   * カーソル復元は handleKeyDown と同様に requestAnimationFrame で行う。
+   * スニペットをカーソル位置に挿入
+   * ボタン・MenuItem の onMouseDown で preventDefault することでフォーカスを
+   * textarea に保持したまま selectionStart/End を直接読み取る。
    */
   const handleInsertSnippet = (body) => {
     const textarea = document.querySelector("#editor");
     if (!textarea) return;
-    const { start, end } = snippetCursorRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
     const newVal = textarea.value.substring(0, start) + body + textarea.value.substring(end);
     const newPos = start + body.length;
     textarea.value = newVal;
     setText(newVal);
     setSnippetAnchor(null);
-    textarea.focus();
     requestAnimationFrame(() => {
       textarea.selectionStart = newPos;
       textarea.selectionEnd = newPos;
@@ -876,17 +862,25 @@ function Editor(props) {
 
                     {/** スニペット挿入 */}
                     {snippetList.length > 0 && (<>
-                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }} onClick={handleSnippetButtonClick} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
+                        className="editorBtn">
                         <PlaylistAddIcon fontSize="small" />
                       </IconButton>
                       <Menu
                         anchorEl={snippetAnchor}
                         open={Boolean(snippetAnchor)}
                         onClose={() => setSnippetAnchor(null)}
+                        disableAutoFocus
+                        disableEnforceFocus
+                        disableRestoreFocus
                         PaperProps={{ sx: { backgroundColor: '#2a2a2a', color: '#f1f1f1', border: '1px solid #444' } }}
                       >
                         {snippetList.map((s) => (
-                          <MenuItem key={s.id} onClick={() => handleInsertSnippet(s.body)}
+                          <MenuItem key={s.id}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleInsertSnippet(s.body)}
                             sx={{ fontSize: '13px', '&:hover': { backgroundColor: '#3a3a3a' } }}>
                             {s.name}
                           </MenuItem>
