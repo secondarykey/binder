@@ -118,6 +118,20 @@ func (f *FileSystem) WriteTemplate(t *json.Template, data []byte) (string, error
 	return fn, nil
 }
 
+func (f *FileSystem) DeleteTemplateFile(t *json.Template) ([]string, error) {
+
+	fn := TemplateFile(t.Id)
+	if !f.isExist(fn) {
+		return nil, xerrors.Errorf("template file not exist : %s", fn)
+	}
+
+	err := f.remove(fn)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.remove(%s) error: %w", fn, err)
+	}
+	return []string{fn}, nil
+}
+
 func (f *FileSystem) SetTemplateStatus(t *json.Template) error {
 
 	//元ファイルを作成

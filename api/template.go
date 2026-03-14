@@ -19,6 +19,18 @@ func (a *App) EditTemplate(t *json.Template) (*json.Template, error) {
 	return tmp, nil
 }
 
+func (a *App) RemoveTemplate(id string) error {
+
+	defer log.PrintTrace(log.Func("RemoveTemplate()"))
+
+	_, err := a.current.RemoveTemplate(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("RemoveTemplate() error\n%+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetTemplate(id string) (*json.Template, error) {
 
 	defer log.PrintTrace(log.Func("GetTemplate()"))

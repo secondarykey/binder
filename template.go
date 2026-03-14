@@ -66,6 +66,39 @@ func (b *Binder) createTemplate(t *json.Template) (string, error) {
 	return fn, nil
 }
 
+func (b *Binder) RemoveTemplate(id string) (*json.Template, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	t, err := b.db.GetTemplate(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetTemplate() error: %w", err)
+	}
+
+	j := t.To()
+
+	files, err := b.fileSystem.DeleteTemplateFile(j)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.DeleteTemplateFile() error: %w", err)
+	}
+
+	err = b.db.DeleteTemplate(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteTemplate() error: %w", err)
+	}
+
+	files = append(files, fs.TemplateTableFile())
+
+	err = b.fileSystem.Commit(fs.M("Remove Template", j.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return j, nil
+}
+
 func (b *Binder) GetTemplate(id string) (*json.Template, error) {
 
 	if b == nil {

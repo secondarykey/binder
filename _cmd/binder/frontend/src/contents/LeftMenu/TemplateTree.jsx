@@ -5,11 +5,11 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import AddIcon from '@mui/icons-material/Add';
 
-import { GetTemplateTree, UpdateTemplateSeqs } from '../../../bindings/binder/api/app';
+import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../../Event';
 
@@ -66,6 +66,7 @@ function TemplateTree(props) {
 
   const [templateEl, setTemplateEl] = useState(null);
   const templateMenu = Boolean(templateEl);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: undefined, name: undefined });
 
   // ドラッグ開始までの距離（px）: クリックとドラッグを区別する
   const sensors = useSensors(
@@ -128,6 +129,32 @@ function TemplateTree(props) {
   // テンプレート新規作成（セクションヘッダーの + ボタン）
   const handleRegisterTemplate = (dirId) => {
     nav("/template/register/" + dirId);
+  };
+
+  // 削除確認ダイアログを開く
+  const handleDeleteRequest = () => {
+    const targetId = id;
+    const item = [...layoutItems, ...contentItems].find(i => i.id === targetId);
+    closeMenu();
+    setDeleteConfirm({ open: true, id: targetId, name: item?.name });
+  };
+
+  // 削除確認後の実行
+  const handleDeleteConfirm = () => {
+    const { id: targetId } = deleteConfirm;
+    setDeleteConfirm({ open: false, id: undefined, name: undefined });
+    RemoveTemplate(targetId).then(() => {
+      setLayoutItems(prev => prev.filter(i => i.id !== targetId));
+      setContentItems(prev => prev.filter(i => i.id !== targetId));
+      evt.showSuccessMessage("Deleted.");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  // 削除をキャンセル
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ open: false, id: undefined, name: undefined });
   };
 
   // DnD終了: 並び替えてバックエンドに seq を保存
@@ -209,8 +236,20 @@ function TemplateTree(props) {
     <Menu anchorEl={templateEl}
       open={templateMenu}
       onClose={closeMenu}>
-      <MenuItem onClick={handleEditTemplate}>Edit</MenuItem>
+      <MenuItem onClick={handleEditTemplate} divider>Edit</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
     </Menu>
+
+    {/** 削除確認ダイアログ */}
+    <Dialog open={deleteConfirm.open} onClose={handleDeleteCancel}>
+      <DialogTitle>
+        「{deleteConfirm.name}」を削除しますか？
+      </DialogTitle>
+      <DialogActions>
+        <Button onClick={handleDeleteCancel}>Cancel</Button>
+        <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
+      </DialogActions>
+    </Dialog>
 
   </div>);
 }
