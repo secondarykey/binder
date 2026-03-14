@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 
-import { Box, IconButton, InputAdornment, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
+import { Box, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
 
 import { EventContext } from "../Event";
 
@@ -22,17 +20,12 @@ const CATEGORIES = [
 function SnippetSetting() {
 
   const evt = useContext(EventContext);
-  const newNameRef = useRef(null);
 
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [category, setCategory] = useState("markdowns");
   const [selectedId, setSelectedId] = useState(null);
   const [editName, setEditName] = useState("");
   const [body, setBody] = useState("");
-
-  // 追加用
-  const [isAdding, setIsAdding] = useState(false);
-  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     GetSnippets().then((s) => {
@@ -42,13 +35,6 @@ function SnippetSetting() {
     });
   }, []);
 
-  // 追加入力欄が表示されたらフォーカス
-  useEffect(() => {
-    if (isAdding && newNameRef.current) {
-      newNameRef.current.focus();
-    }
-  }, [isAdding]);
-
   const currentList = snippets[category] ?? [];
 
   const handleSelectCategory = (key) => {
@@ -56,8 +42,6 @@ function SnippetSetting() {
     setSelectedId(null);
     setEditName("");
     setBody("");
-    setIsAdding(false);
-    setNewName("");
   };
 
   const handleSelectSnippet = (id) => {
@@ -70,7 +54,6 @@ function SnippetSetting() {
 
   const handleSave = () => {
     if (selectedId === null) return;
-
     const updated = {
       ...snippets,
       [category]: currentList.map((s) =>
@@ -85,30 +68,21 @@ function SnippetSetting() {
     });
   };
 
-  /** 追加確定 */
-  const handleAddConfirm = () => {
-    const name = newName.trim();
-    if (!name) return;
-    const newSnippet = { id: crypto.randomUUID(), name, body: "" };
+  /** + ボタン: "NewSnippet" という名前で即時追加して選択 */
+  const handleAdd = () => {
+    const newSnippet = { id: crypto.randomUUID(), name: "NewSnippet", body: "" };
     const updated = {
       ...snippets,
       [category]: [...currentList, newSnippet],
     };
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
-      setIsAdding(false);
-      setNewName("");
       setSelectedId(newSnippet.id);
+      setEditName(newSnippet.name);
       setBody("");
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
-  };
-
-  /** 追加キャンセル */
-  const handleAddCancel = () => {
-    setIsAdding(false);
-    setNewName("");
   };
 
   /** 削除 */
@@ -130,7 +104,7 @@ function SnippetSetting() {
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>
 
-      {/** スニペット名リスト（上部にカテゴリセレクト） */}
+      {/** スニペット名リスト */}
       <Box sx={{
         width: 200,
         flexShrink: 0,
@@ -162,45 +136,10 @@ function SnippetSetting() {
               </MenuItem>
             ))}
           </Select>
-          <IconButton size="small" onClick={() => setIsAdding(true)} disabled={isAdding} sx={{ color: '#aaa', '&:hover': { color: '#90caf9' }, flexShrink: 0 }}>
+          <IconButton size="small" onClick={handleAdd} sx={{ color: '#aaa', '&:hover': { color: '#90caf9' }, flexShrink: 0 }}>
             <AddIcon fontSize="small" />
           </IconButton>
         </Box>
-
-        {/** 新規名称入力欄 */}
-        {isAdding && (
-          <Box sx={{ px: 1, py: 0.8, borderBottom: '1px solid #333', flexShrink: 0 }}>
-            <TextField
-              inputRef={newNameRef}
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddConfirm();
-                if (e.key === 'Escape') handleAddCancel();
-              }}
-              size="small"
-              fullWidth
-              placeholder="名称を入力"
-              inputProps={{ style: { fontSize: '13px', color: '#f1f1f1' } }}
-              sx={{
-                '& .MuiOutlinedInput-root': { backgroundColor: '#1a1a1a' },
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end" sx={{ gap: 0 }}>
-                    <IconButton size="small" onClick={handleAddConfirm} sx={{ color: '#90caf9', p: 0.3 }}>
-                      <CheckIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" onClick={handleAddCancel} sx={{ color: '#888', p: 0.3 }}>
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-        )}
 
         {/** スニペット名リスト */}
         <Box sx={{ flex: 1, overflowY: 'auto' }}>
@@ -212,14 +151,12 @@ function SnippetSetting() {
                 secondaryAction={
                   <IconButton
                     size="small"
-                    className="deleteBtn"
                     onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}
                     sx={{ color: '#888', '&:hover': { color: '#f44336' }, mr: -1 }}
                   >
                     <DeleteIcon sx={{ fontSize: '15px' }} />
                   </IconButton>
                 }
-                sx={{
               >
                 <ListItemButton
                   selected={selectedId === s.id}
