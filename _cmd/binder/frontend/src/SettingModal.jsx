@@ -18,6 +18,8 @@ function SettingModal({ open, onClose }) {
           backgroundColor: '#252525',
           color: '#f1f1f1',
           maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
         }
       }}
     >
@@ -35,7 +37,9 @@ function SettingModal({ open, onClose }) {
           <CloseIcon fontSize="small" />
         </IconButton>
       </Toolbar>
-      <Setting isModal />
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <Setting isModal />
+      </div>
     </Dialog>
   );
 }

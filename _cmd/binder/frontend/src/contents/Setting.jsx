@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Accordion, AccordionDetails, AccordionSummary, FormControl, FormLabel, Grid2, Switch, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, FormControl, FormLabel, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
 import { GetSetting, SaveSetting } from "../../bindings/binder/api/app";
 
 import { IconButton } from '@mui/material';
@@ -11,12 +11,14 @@ import { EventContext } from "../Event";
 
 /**
  * アプリ設定
- * @param {*} props 
- * @returns 
+ * @param {*} props
+ * @returns
  */
 function Setting({ isModal, ...props }) {
 
   const evt = useContext(EventContext)
+
+  const [activeSection, setActiveSection] = useState("basic");
 
   const [pathDefault, setPathDefault] = useState("");
   const [pathRunWith, setPathRunWith] = useState(true);
@@ -76,78 +78,135 @@ function Setting({ isModal, ...props }) {
     caller(e.target.checked);
   }
 
-  return (<>
+  const menuItems = [
+    { key: "basic", label: "基本設定" },
+    { key: "snippet", label: "スニペット" },
+  ];
 
-    <Grid2 className="formGrid">
+  return (
+    <Box sx={{ display: 'flex', height: '100%' }}>
 
-      {/** ファイル処理全般 */}
-      <Accordion defaultExpanded={true}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1-content" id="panel1-header"> Files </AccordionSummary>
-        <AccordionDetails className="formContainer">
-          {/** デフォルトパス保存先 */}
-          <FormControl>
-            <FormLabel>Default Path</FormLabel>
-            <TextField value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
-          </FormControl>
-          {/** 最後に開いたBinderを開くか */}
-          <FormControl>
-            <FormLabel>Run with open Binder</FormLabel>
-            <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
-          </FormControl>
-          {/** 起動時に最後に開いたファイルを開くか？ */}
-          <FormControl>
-            <FormLabel>Open with note(or data)</FormLabel>
-            <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
-          </FormControl>
-        </AccordionDetails>
-      </Accordion>
+      {/** 左サイドナビ */}
+      <List disablePadding sx={{
+        width: 120,
+        flexShrink: 0,
+        borderRight: '1px solid #333',
+        backgroundColor: '#1e1e1e',
+        pt: 1,
+      }}>
+        {menuItems.map((item) => (
+          <ListItemButton
+            key={item.key}
+            selected={activeSection === item.key}
+            onClick={() => setActiveSection(item.key)}
+            sx={{
+              py: 1,
+              px: 1.5,
+              fontSize: '13px',
+              '&.Mui-selected': {
+                backgroundColor: '#2d3a4a',
+                color: '#90caf9',
+              },
+              '&.Mui-selected:hover': {
+                backgroundColor: '#2d3a4a',
+              },
+              '&:hover': {
+                backgroundColor: '#2a2a2a',
+              },
+            }}
+          >
+            <ListItemText
+              primary={item.label}
+              primaryTypographyProps={{ fontSize: '13px' }}
+            />
+          </ListItemButton>
+        ))}
+      </List>
 
-      {/** エディタ設定 */}
-      <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1-content">Editor</AccordionSummary>
-        <AccordionDetails className="formContainer">
-          {/** エディタパス */}
-          <FormControl>
-            <FormLabel>
-            Editor Program
-            </FormLabel>
-            <TextField value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)}></TextField>
-          </FormControl>
-        </AccordionDetails>
-      </Accordion>
+      {/** 右コンテンツ */}
+      <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
 
-      {/** 認証情報 */}
-      <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1-content">Git</AccordionSummary>
-        <AccordionDetails className="formContainer">
-          {/** デフォルトのブランチ名 */}
-          <FormControl>
-            <FormLabel>Default Branch Name</FormLabel>
-            <TextField value={gitBranch} onChange={(e) => setGitBranch(e.target.value)}></TextField>
-          </FormControl>
-          {/** ユーザ名 */}
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField value={gitName} onChange={(e) => setGitName(e.target.value)}></TextField>
-          </FormControl>
-          {/** メールアドレス */}
-          <FormControl>
-            <FormLabel>Mail</FormLabel>
-            <TextField value={gitMail} onChange={(e) => setGitMail(e.target.value)}></TextField>
-          </FormControl>
-        </AccordionDetails>
-      </Accordion>
+        {activeSection === "basic" && (
+          <div className="formGrid" style={{ margin: '20px 24px' }}>
 
-      {/** 保存 */}
-      <IconButton className="saveBtn" onClick={handleSave} aria-label="save">
-        <SaveIcon fontSize="large" color="primary" />
-      </IconButton>
+            {/** ファイル処理全般 */}
+            <Accordion defaultExpanded={true}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content" id="panel1-header"> Files </AccordionSummary>
+              <AccordionDetails className="formContainer">
+                {/** デフォルトパス保存先 */}
+                <FormControl>
+                  <FormLabel>Default Path</FormLabel>
+                  <TextField value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
+                </FormControl>
+                {/** 最後に開いたBinderを開くか */}
+                <FormControl>
+                  <FormLabel>Run with open Binder</FormLabel>
+                  <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
+                </FormControl>
+                {/** 起動時に最後に開いたファイルを開くか？ */}
+                <FormControl>
+                  <FormLabel>Open with note(or data)</FormLabel>
+                  <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
+                </FormControl>
+              </AccordionDetails>
+            </Accordion>
 
-    </Grid2>
+            {/** エディタ設定 */}
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content">Editor</AccordionSummary>
+              <AccordionDetails className="formContainer">
+                {/** エディタパス */}
+                <FormControl>
+                  <FormLabel>
+                  Editor Program
+                  </FormLabel>
+                  <TextField value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)}></TextField>
+                </FormControl>
+              </AccordionDetails>
+            </Accordion>
 
-  </>);
+            {/** 認証情報 */}
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content">Git</AccordionSummary>
+              <AccordionDetails className="formContainer">
+                {/** デフォルトのブランチ名 */}
+                <FormControl>
+                  <FormLabel>Default Branch Name</FormLabel>
+                  <TextField value={gitBranch} onChange={(e) => setGitBranch(e.target.value)}></TextField>
+                </FormControl>
+                {/** ユーザ名 */}
+                <FormControl>
+                  <FormLabel>Name</FormLabel>
+                  <TextField value={gitName} onChange={(e) => setGitName(e.target.value)}></TextField>
+                </FormControl>
+                {/** メールアドレス */}
+                <FormControl>
+                  <FormLabel>Mail</FormLabel>
+                  <TextField value={gitMail} onChange={(e) => setGitMail(e.target.value)}></TextField>
+                </FormControl>
+              </AccordionDetails>
+            </Accordion>
+
+            {/** 保存 */}
+            <IconButton className="saveBtn" onClick={handleSave} aria-label="save">
+              <SaveIcon fontSize="large" color="primary" />
+            </IconButton>
+
+          </div>
+        )}
+
+        {activeSection === "snippet" && (
+          <Box sx={{ p: 3, color: '#888', fontSize: '14px' }}>
+            スニペット設定（準備中）
+          </Box>
+        )}
+
+      </Box>
+
+    </Box>
+  );
 }
 export default Setting;
