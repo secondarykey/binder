@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'react-router';
-import { Button } from '@mui/material';
+import { IconButton } from '@mui/material';
+import PublishIcon from '@mui/icons-material/Publish';
 
 import { GetAsset, GetAssetContent, Generate, GetSetting } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
@@ -265,29 +266,18 @@ function AssetViewer() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* ヘッダー: Generate ボタン */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        padding: '6px 12px',
-        borderBottom: '1px solid #333',
-        flexShrink: 0,
-      }}>
-        <Button
-          variant="contained"
-          size="small"
-          onClick={handleGenerate}
-          disabled={generating || !id}
-        >
-          {generating ? 'Generating...' : 'Generate'}
-        </Button>
-      </div>
-      {/* コンテンツ */}
-      <div style={{ flex: 1, overflow: 'hidden', minHeight: 0, position: 'relative' }}>
-        {content}
-      </div>
+    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+      {content}
+      {/* フローティング公開ボタン（右下） */}
+      <IconButton
+        className="floatPublishBtn"
+        size="small"
+        aria-label="publish"
+        onClick={handleGenerate}
+        disabled={generating || !id}
+      >
+        <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+      </IconButton>
     </div>
   );
 }

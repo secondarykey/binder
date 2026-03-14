@@ -158,7 +158,7 @@ iframe.htmlViewer {
   left: 0;
   top: 0;
   width: calc(100% - 5px);
-  height: calc(100% - 48px);
+  height: 100%;
 
   opacity: 1;
   visibility: visible;
@@ -192,7 +192,7 @@ iframe.htmlViewer.show {
 #mermaidViewer {
   display: flex;
   width: calc(100% - 5px);
-  height: calc(100% - 48px);
+  height: 100%;
   justify-content: center;
   align-items: center;
   overflow: auto;
@@ -226,7 +226,24 @@ iframe.htmlViewer.show {
 }
 
 /* =====================================================================
- * ボタンバー（エディタ・ビューア両方の下部）
+ * フローティング公開ボタン（プレビュー右下）
+ * ===================================================================== */
+.floatPublishBtn {
+  position: absolute !important;
+  bottom: 16px !important;
+  right: 16px !important;
+  z-index: 10;
+  background-color: rgba(34, 34, 34, 0.85) !important;
+  backdrop-filter: blur(4px);
+  border: 1px solid #444 !important;
+}
+
+.floatPublishBtn:hover {
+  background-color: rgba(70, 70, 70, 0.95) !important;
+}
+
+/* =====================================================================
+ * ボタンバー（エディタ左側の下部）
  * ===================================================================== */
 .buttonBar {
   display: flex !important;

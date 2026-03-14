@@ -871,33 +871,17 @@ function Editor(props) {
                 <div id="mermaidViewer"></div>
               }
 
-              {/** 右側の操作用位置 */}
-              <Toolbar className="buttonBar">
-                <Container className="buttonBarLeft">
-
-                  {mode !== Mode.template &&
-                    <>
-                      {/** 公開位置への転送 */}
-                      <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="publish" sx={{ mr: 2 }} onClick={handlePublish}>
-                        <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-                      </IconButton>
-                    </>
-                  }
-
-                </Container>
-
-                <Container className="buttonBarRight">
-                  {mode === Mode.diagram &&
-                    <>
-                      {/** 表示しているSVGのダウンロード */}
-                      <IconButton className="buttonBarRightButton" size="small" edge="start" color="inherit" aria-label="download" sx={{ mr: 2 }} onClick={handleDownload}>
-                        <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
-                      </IconButton>
-                    </>
-                  }
-                </Container>
-
-              </Toolbar>
+              {/** フローティング操作ボタン（右下） */}
+              {mode !== Mode.template &&
+                <IconButton className="floatPublishBtn" size="small" aria-label="publish" onClick={handlePublish}>
+                  <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                </IconButton>
+              }
+              {mode === Mode.diagram &&
+                <IconButton className="floatPublishBtn" size="small" aria-label="download" onClick={handleDownload} sx={{ bottom: '64px' }}>
+                  <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                </IconButton>
+              }
 
             </div>
           }
