@@ -250,20 +250,24 @@ function Editor(props) {
 
   /**
    * スニペットをカーソル位置に挿入（退避した位置を使用）
+   * setSnippetAnchor(null) が React 再レンダリングを起こして textarea.value を
+   * 旧ステートで上書きするため、先に textarea.value と setText を確定させてから閉じる。
+   * カーソル復元は handleKeyDown と同様に requestAnimationFrame で行う。
    */
   const handleInsertSnippet = (body) => {
-    setSnippetAnchor(null);
     const textarea = document.querySelector("#editor");
-    const val = textarea.value;
+    if (!textarea) return;
     const { start, end } = snippetCursorRef.current;
-    const before = val.substring(0, start);
-    const after = val.substring(end);
-    textarea.value = before + body + after;
+    const newVal = textarea.value.substring(0, start) + body + textarea.value.substring(end);
     const newPos = start + body.length;
+    textarea.value = newVal;
+    setText(newVal);
+    setSnippetAnchor(null);
     textarea.focus();
-    textarea.selectionStart = newPos;
-    textarea.selectionEnd = newPos;
-    setTimeout(() => { setText(textarea.value); }, 500);
+    requestAnimationFrame(() => {
+      textarea.selectionStart = newPos;
+      textarea.selectionEnd = newPos;
+    });
   };
 
   // エディタへのテキスト挿入イベントを購読
