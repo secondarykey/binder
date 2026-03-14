@@ -165,7 +165,7 @@ FSマイグレーション (`fs/convert/`):
 
 ### 設定
 
-ユーザー設定はホームディレクトリの`.binder.json`に保存（ウィンドウ位置、git設定、外観）。`settings/`パッケージで管理。
+ユーザー設定はホームディレクトリの`binder/setting.json`に保存（ウィンドウ位置、git設定、外観）。`settings/`パッケージで管理。
 
 ## コーディング規約
 
@@ -179,3 +179,11 @@ FSマイグレーション (`fs/convert/`):
 - DAOファイルは`_dao.go`サフィックスを使用（自動生成、手動編集不可）
 - `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
 - セマンティックバージョン操作は`internal.Version`を使用（直接文字列比較は不可）
+
+## バージョン
+
+指示のあった数値で以下を編集
+
+- _cmd/binder/build/config.yml info.version
+- _cmd/binder/frontend/package.json version
+
