@@ -27,6 +27,7 @@ function SnippetSetting() {
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [category, setCategory] = useState("markdowns");
   const [selectedId, setSelectedId] = useState(null);
+  const [editName, setEditName] = useState("");
   const [body, setBody] = useState("");
 
   // 追加用
@@ -53,6 +54,7 @@ function SnippetSetting() {
   const handleSelectCategory = (key) => {
     setCategory(key);
     setSelectedId(null);
+    setEditName("");
     setBody("");
     setIsAdding(false);
     setNewName("");
@@ -62,6 +64,7 @@ function SnippetSetting() {
     const item = currentList.find((s) => s.id === id);
     if (!item) return;
     setSelectedId(id);
+    setEditName(item.name);
     setBody(item.body);
   };
 
@@ -71,7 +74,7 @@ function SnippetSetting() {
     const updated = {
       ...snippets,
       [category]: currentList.map((s) =>
-        s.id === selectedId ? { ...s, body } : s
+        s.id === selectedId ? { ...s, name: editName, body } : s
       ),
     };
     SaveSnippets(updated).then(() => {
@@ -118,6 +121,7 @@ function SnippetSetting() {
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
       setSelectedId(null);
+      setEditName("");
       setBody("");
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -233,8 +237,18 @@ function SnippetSetting() {
       {/** テキスト編集エリア */}
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', p: 1.5, gap: 1 }}>
         <TextField
+          size="small"
+          fullWidth
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          variant="outlined"
+          disabled={selectedId === null}
+          placeholder="名称"
+          inputProps={{ style: { fontSize: '13px', color: '#f1f1f1' } }}
+        />
+        <TextField
           multiline
-          rows={12}
+          rows={11}
           fullWidth
           value={body}
           onChange={(e) => setBody(e.target.value)}
