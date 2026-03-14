@@ -8,6 +8,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SaveIcon from '@mui/icons-material/Save';
 
 import { EventContext } from "../Event";
+import SnippetSetting from "./SnippetSetting";
 
 /**
  * アプリ設定
@@ -199,9 +200,7 @@ function Setting({ isModal, ...props }) {
         )}
 
         {activeSection === "snippet" && (
-          <Box sx={{ p: 3, color: '#888', fontSize: '14px' }}>
-            スニペット設定（準備中）
-          </Box>
+          <SnippetSetting />
         )}
 
       </Box>

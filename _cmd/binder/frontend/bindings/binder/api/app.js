@@ -20,6 +20,9 @@ import * as json$0 from "./json/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as settings$0 from "../settings/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as snippet$0 from "../snippet/models.js";
 
 /**
  * @param {string} name
@@ -324,6 +327,15 @@ export function GetSetting() {
 }
 
 /**
+ * @returns {$CancellablePromise<snippet$0.Snippets | null>}
+ */
+export function GetSnippets() {
+    return $Call.ByID(2641722043).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType25($result);
+    }));
+}
+
+/**
  * @param {string} id
  * @returns {$CancellablePromise<json$0.Template | null>}
  */
@@ -492,6 +504,14 @@ export function SaveSetting(s) {
 }
 
 /**
+ * @param {snippet$0.Snippets | null} s
+ * @returns {$CancellablePromise<void>}
+ */
+export function SaveSnippets(s) {
+    return $Call.ByID(3829487800, s);
+}
+
+/**
  * @param {string} id
  * @param {string} data
  * @returns {$CancellablePromise<void>}
@@ -559,3 +579,5 @@ const $$createType20 = binder$0.Patch.createFrom;
 const $$createType21 = $Create.Nullable($$createType20);
 const $$createType22 = settings$0.Setting.createFrom;
 const $$createType23 = $Create.Nullable($$createType22);
+const $$createType24 = snippet$0.Snippets.createFrom;
+const $$createType25 = $Create.Nullable($$createType24);
