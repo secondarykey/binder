@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useContext } from "react";
 
-import { Box, IconButton, InputAdornment, List, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
+import { Box, IconButton, InputAdornment, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
@@ -112,11 +112,10 @@ function SnippetSetting() {
   };
 
   /** 削除 */
-  const handleDelete = () => {
-    if (selectedId === null) return;
+  const handleDelete = (id) => {
     const updated = {
       ...snippets,
-      [category]: currentList.filter((s) => s.id !== selectedId),
+      [category]: currentList.filter((s) => s.id !== id),
     };
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
@@ -207,23 +206,42 @@ function SnippetSetting() {
         <Box sx={{ flex: 1, overflowY: 'auto' }}>
           <List disablePadding>
             {currentList.map((s) => (
-              <ListItemButton
+              <ListItem
                 key={s.id}
-                selected={selectedId === s.id}
-                onClick={() => handleSelectSnippet(s.id)}
+                disablePadding
+                secondaryAction={
+                  <IconButton
+                    size="small"
+                    className="deleteBtn"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}
+                    sx={{ color: '#888', '&:hover': { color: '#f44336' }, mr: -1 }}
+                  >
+                    <DeleteIcon sx={{ fontSize: '15px' }} />
+                  </IconButton>
+                }
                 sx={{
-                  py: 0.6,
-                  px: 1.5,
-                  '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
-                  '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
-                  '&:hover': { backgroundColor: '#2a2a2a' },
+                  '& .deleteBtn': { opacity: 0 },
+                  '&:hover .deleteBtn': { opacity: 1 },
                 }}
               >
-                <ListItemText
-                  primary={s.name}
-                  primaryTypographyProps={{ fontSize: '13px', noWrap: true }}
-                />
-              </ListItemButton>
+                <ListItemButton
+                  selected={selectedId === s.id}
+                  onClick={() => handleSelectSnippet(s.id)}
+                  sx={{
+                    py: 0.6,
+                    pl: 1.5,
+                    pr: 4,
+                    '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
+                    '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
+                    '&:hover': { backgroundColor: '#2a2a2a' },
+                  }}
+                >
+                  <ListItemText
+                    primary={s.name}
+                    primaryTypographyProps={{ fontSize: '13px', noWrap: true }}
+                  />
+                </ListItemButton>
+              </ListItem>
             ))}
             {currentList.length === 0 && (
               <Box sx={{ px: 1.5, py: 1, color: '#555', fontSize: '12px' }}>
@@ -257,10 +275,7 @@ function SnippetSetting() {
           placeholder={selectedId === null ? "スニペットを選択してください" : ""}
           inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: '#f1f1f1', resize: 'none' } }}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-          <IconButton onClick={handleDelete} aria-label="delete" disabled={selectedId === null}>
-            <DeleteIcon fontSize="medium" color={selectedId !== null ? "error" : "disabled"} />
-          </IconButton>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <IconButton onClick={handleSave} aria-label="save" disabled={selectedId === null}>
             <SaveIcon fontSize="medium" color={selectedId !== null ? "primary" : "disabled"} />
           </IconButton>
