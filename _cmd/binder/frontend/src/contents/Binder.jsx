@@ -1,28 +1,31 @@
-import { useEffect, useState ,useContext} from "react";
+import { useEffect, useState, useContext } from "react";
 
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormLabel, Grid, InputAdornment, MenuItem, Select, TextField } from "@mui/material";
+import {
+  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  FormControl, FormLabel, List, ListItemButton, ListItemText, MenuItem, Select, TextField,
+} from "@mui/material";
 import { GetConfig, EditConfig, Remotes, AddRemote } from "../../bindings/binder/api/app";
 
-import Event,{EventContext} from "../Event";
+import { EventContext } from "../Event";
+
+const MENU_ITEMS = [
+  { key: "basic", label: "基本設定" },
+];
 
 /**
- * バインダーのメタデータを表示,編集
- * @param {*} props 
- * @returns 
+ * バインダーのメタデータを表示・編集
  */
 function Binder({ isModal, ...props }) {
 
-  const evt = useContext(EventContext)
+  const evt = useContext(EventContext);
+
+  const [activeSection, setActiveSection] = useState("basic");
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
-  const [listNum, setListNum] = useState(0);
-
   const [remote, setRemote] = useState("origin");
   const [remoteList, setRemoteList] = useState([]);
-
   const [branch, setBranch] = useState("main");
-  const [auto, setAuto] = useState(0);
 
   const [remoteDialog, showRemoteDialog] = useState(false);
   const [remoteName, setRemoteName] = useState("");
@@ -34,19 +37,15 @@ function Binder({ isModal, ...props }) {
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
-  }
+  };
 
   useEffect(() => {
-
     if (!isModal) evt.changeTitle("Edit Binder");
     GetConfig().then((conf) => {
-
       setName(conf.name);
       setDetail(conf.detail);
-      setListNum(conf.listNum);
       setRemote(conf.remote);
       setBranch(conf.branch);
-      setAuto(conf.autoCommit);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -54,150 +53,155 @@ function Binder({ isModal, ...props }) {
   }, []);
 
   const handleSave = () => {
-    var config = {};
-    config.name = name;
-    config.detail = detail;
-    config.listNum = Number(listNum);
-    config.remote = remote;
-    config.branch = branch;
-    config.autoCommit = Number(auto);
-    EditConfig(config).then((resp) => {
+    const config = {
+      name,
+      detail,
+      remote,
+      branch,
+    };
+    EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage("update binder.");
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
-  }
+  };
 
-  const setNumeric = (oldV, newV, caller) => {
-    var res = Number(newV)
-
-    console.log(res)
-    if (isNaN(res)) {
-      res = Number(oldV)
-    }
-    caller(res);
-  }
+  const handleChangeRemote = (e, val) => {
+    setRemote(val !== undefined ? val : e.target.value);
+  };
 
   const createRemoteDialog = () => {
-    console.log(remoteList)
-    if ( remoteList.length === 0 ) {
-      setRemoteName(remote);
-    }
+    if (remoteList.length === 0) setRemoteName(remote);
     showRemoteDialog(true);
-  }
+  };
 
-  const handleDialogClose = () => {
-    showRemoteDialog(false);
-  }
+  const handleDialogClose = () => showRemoteDialog(false);
 
-  const handleChangeRemote = (e,name) => {
-    var val = name;
-    if ( name === undefined ) {
-      val = e.target.value;
-    }
-    setRemote(val);
-  }
+  return (
+    <Box sx={{ display: 'flex', height: '100%' }}>
 
-  return (<>
-    <Grid className="formGrid">
+      {/** 左サイドナビ */}
+      <List disablePadding sx={{
+        width: 120,
+        flexShrink: 0,
+        borderRight: '1px solid #333',
+        backgroundColor: '#1e1e1e',
+        pt: 1,
+      }}>
+        {MENU_ITEMS.map((item) => (
+          <ListItemButton
+            key={item.key}
+            selected={activeSection === item.key}
+            onClick={() => setActiveSection(item.key)}
+            sx={{
+              py: 1,
+              px: 1.5,
+              '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
+              '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
+              '&:hover': { backgroundColor: '#2a2a2a' },
+            }}
+          >
+            <ListItemText
+              primary={item.label}
+              primaryTypographyProps={{ fontSize: '13px' }}
+            />
+          </ListItemButton>
+        ))}
+      </List>
 
-      <FormControl>
-        <FormLabel>Name</FormLabel>
-        <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
-      </FormControl>
+      {/** 右コンテンツ */}
+      <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
 
-      <FormControl>
-        <FormLabel>Detail</FormLabel>
-        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
-      </FormControl>
+        {activeSection === "basic" && (
+          <div className="formGrid" style={{ margin: '20px 24px' }}>
 
-      <FormControl>
-        <FormLabel>{"List Num(= 0 is no limit)"}</FormLabel>
-        <TextField value={listNum} onChange={(e) => setNumeric(listNum, e.target.value, setListNum)}>
-        </TextField>
-      </FormControl>
+            <FormControl>
+              <FormLabel>Name</FormLabel>
+              <TextField value={name} onChange={(e) => setName(e.target.value)} />
+            </FormControl>
 
-      <FormControl>
-        <FormLabel>{"Auto Commit(= 0 is manual)"}</FormLabel>
-        <TextField value={auto} onChange={(e) => setNumeric(auto, e.target.value, setAuto)}>
-        </TextField>
-      </FormControl>
+            <FormControl>
+              <FormLabel>Detail</FormLabel>
+              <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+            </FormControl>
 
-      <FormControl>
-        <FormLabel>
-          Remote Name
-          <Button onClick={createRemoteDialog}>Add</Button>
-        </FormLabel>
-        <Select labelId="select-remote"
-                label="remote"
+            <FormControl>
+              <FormLabel>
+                Remote Name
+                <Button onClick={createRemoteDialog}>Add</Button>
+              </FormLabel>
+              <Select
                 value={remote}
-                onChange={(e) => handleChangeRemote(e)}>
-{remoteList.map((v) => {
-          return ( <MenuItem key={"Select" + v}value={v}>{v}</MenuItem>)
-})}
-        </Select>
-      </FormControl>
+                onChange={(e) => handleChangeRemote(e)}
+                sx={{ color: '#f1f1f1' }}
+                MenuProps={{ PaperProps: { sx: { backgroundColor: '#1a1a1a', color: '#f1f1f1' } } }}
+              >
+                {remoteList.map((v) => (
+                  <MenuItem key={"Select" + v} value={v}>{v}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-      <FormControl>
-        <FormLabel>Branch Name(It is only used for PR Links will not be updated.)</FormLabel>
-        <TextField value={branch} onChange={(e) => setBranch(e.target.value)}></TextField>
-      </FormControl>
+            <FormControl>
+              <FormLabel>Branch Name</FormLabel>
+              <TextField value={branch} onChange={(e) => setBranch(e.target.value)} />
+            </FormControl>
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleSave}>Save</Button>
-      </FormControl>
+            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+              <Button variant="contained" onClick={handleSave}>Save</Button>
+            </FormControl>
 
-    </Grid>
+          </div>
+        )}
 
-    <Dialog
-      open={remoteDialog} onClose={handleDialogClose}
-      PaperProps={{
-        component: 'form',
-        onSubmit: (event) => {
-          event.preventDefault();
-          AddRemote(remoteName,remoteURL).then(() =>{
-            getRemoteList();
-            handleChangeRemote(undefined,remoteName);
-            handleDialogClose();
-          }).catch((err) => {
-            evt.showErrorMessage(err);
-          });
-        },
-        style: {
-          backgroundColor: "#333333",
-        },
-      }}
-    >
-      <DialogTitle style={{ color: "#eeeeee" }}>Setting Remote</DialogTitle>
+      </Box>
 
-      <DialogContent>
+      {/** リモート追加ダイアログ */}
+      <Dialog
+        open={remoteDialog}
+        onClose={handleDialogClose}
+        PaperProps={{
+          component: 'form',
+          onSubmit: (event) => {
+            event.preventDefault();
+            AddRemote(remoteName, remoteURL).then(() => {
+              getRemoteList();
+              handleChangeRemote(undefined, remoteName);
+              handleDialogClose();
+            }).catch((err) => {
+              evt.showErrorMessage(err);
+            });
+          },
+          style: { backgroundColor: "#333333" },
+        }}
+      >
+        <DialogTitle style={{ color: "#eeeeee" }}>Setting Remote</DialogTitle>
+        <DialogContent>
+          <DialogContentText style={{ color: "#eeeeee" }}>
+            You can add, but please use git to edit.
+          </DialogContentText>
+          <TextField
+            required margin="dense" label="Remote Name"
+            value={remoteName}
+            onChange={(e) => setRemoteName(e.target.value)}
+            fullWidth variant="standard"
+          />
+          <TextField
+            autoFocus required margin="dense" label="Remote URL"
+            value={remoteURL}
+            onChange={(e) => setRemoteURL(e.target.value)}
+            fullWidth variant="standard"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose}>Cancel</Button>
+          <Button type="submit">Set</Button>
+        </DialogActions>
+      </Dialog>
 
-        <DialogContentText style={{ color: "#eeeeee" }}>
-          You can add, but please use git to edit.
-        </DialogContentText>
-
-        <TextField
-          required margin="dense" label="Remote Name"
-          value={remoteName}
-          onChange={(e) => setRemoteName(e.target.value)}
-          fullWidth variant="standard"
-        />
-        <TextField
-          autoFocus required margin="dense" label="Remote URL"
-          value={remoteURL}
-          onChange={(e) => setRemoteURL(e.target.value)}
-          fullWidth variant="standard"
-        />
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleDialogClose}>Cancel</Button>
-        <Button type="submit">Set</Button>
-      </DialogActions>
-    </Dialog>
-
-
-  </>);
+    </Box>
+  );
 }
+
 export default Binder;

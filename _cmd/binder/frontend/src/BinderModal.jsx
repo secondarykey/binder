@@ -11,13 +11,16 @@ function BinderModal({ open, onClose }) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
+      maxWidth={false}
       PaperProps={{
         sx: {
           backgroundColor: '#252525',
           color: '#f1f1f1',
-          maxHeight: '85vh',
+          width: '1000px',
+          height: '75vh',
+          maxHeight: '75vh',
+          display: 'flex',
+          flexDirection: 'column',
         }
       }}
     >
@@ -35,7 +38,9 @@ function BinderModal({ open, onClose }) {
           <CloseIcon fontSize="small" />
         </IconButton>
       </Toolbar>
-      <Binder isModal />
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <Binder isModal />
+      </div>
     </Dialog>
   );
 }
