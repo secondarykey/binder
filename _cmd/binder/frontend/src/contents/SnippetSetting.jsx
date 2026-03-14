@@ -5,6 +5,11 @@ import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 import { EventContext } from "../Event";
 
@@ -13,6 +18,62 @@ const CATEGORIES = [
   { key: "diagrams", label: "Diagrams" },
   { key: "templates", label: "Templates" },
 ];
+
+/**
+ * ドラッグ可能なスニペット行
+ */
+function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: snippet.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <ListItem
+      ref={setNodeRef}
+      style={style}
+      disablePadding
+      secondaryAction={
+        <IconButton
+          size="small"
+          onClick={(e) => { e.stopPropagation(); onDelete(snippet.id); }}
+          sx={{ color: '#888', '&:hover': { color: '#f44336' }, mr: -1 }}
+        >
+          <DeleteIcon sx={{ fontSize: '15px' }} />
+        </IconButton>
+      }
+    >
+      <ListItemButton
+        selected={selected}
+        onClick={() => onSelect(snippet.id)}
+        sx={{
+          py: 0.6,
+          pl: 0.5,
+          pr: 4,
+          '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
+          '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
+          '&:hover': { backgroundColor: '#2a2a2a' },
+        }}
+      >
+        {/** ドラッグハンドル */}
+        <Box
+          {...attributes}
+          {...listeners}
+          sx={{ display: 'flex', alignItems: 'center', color: '#555', cursor: 'grab', mr: 0.5, flexShrink: 0, '&:active': { cursor: 'grabbing' } }}
+        >
+          <DragIndicatorIcon sx={{ fontSize: '16px' }} />
+        </Box>
+        <ListItemText
+          primary={snippet.name}
+          primaryTypographyProps={{ fontSize: '13px', noWrap: true }}
+        />
+      </ListItemButton>
+    </ListItem>
+  );
+}
 
 /**
  * スニペット設定
@@ -26,6 +87,8 @@ function SnippetSetting() {
   const [selectedId, setSelectedId] = useState(null);
   const [editName, setEditName] = useState("");
   const [body, setBody] = useState("");
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
     GetSnippets().then((s) => {
@@ -68,7 +131,7 @@ function SnippetSetting() {
     });
   };
 
-  /** + ボタン: "NewSnippet" という名前で即時追加して選択 */
+  /** + ボタン: "NewSnippet" で即時追加して選択 */
   const handleAdd = () => {
     const newSnippet = { id: crypto.randomUUID(), name: "NewSnippet", body: "" };
     const updated = {
@@ -96,6 +159,21 @@ function SnippetSetting() {
       setSelectedId(null);
       setEditName("");
       setBody("");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  /** ドラッグ終了: 並び替えて保存 */
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = currentList.findIndex((s) => s.id === active.id);
+    const newIndex = currentList.findIndex((s) => s.id === over.id);
+    const reordered = arrayMove(currentList, oldIndex, newIndex);
+    const updated = { ...snippets, [category]: reordered };
+    SaveSnippets(updated).then(() => {
+      setSnippets(updated);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -141,48 +219,28 @@ function SnippetSetting() {
           </IconButton>
         </Box>
 
-        {/** スニペット名リスト */}
+        {/** ドラッグ＆ドロップ対応スニペット名リスト */}
         <Box sx={{ flex: 1, overflowY: 'auto' }}>
-          <List disablePadding>
-            {currentList.map((s) => (
-              <ListItem
-                key={s.id}
-                disablePadding
-                secondaryAction={
-                  <IconButton
-                    size="small"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}
-                    sx={{ color: '#888', '&:hover': { color: '#f44336' }, mr: -1 }}
-                  >
-                    <DeleteIcon sx={{ fontSize: '15px' }} />
-                  </IconButton>
-                }
-              >
-                <ListItemButton
-                  selected={selectedId === s.id}
-                  onClick={() => handleSelectSnippet(s.id)}
-                  sx={{
-                    py: 0.6,
-                    pl: 1.5,
-                    pr: 4,
-                    '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
-                    '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
-                    '&:hover': { backgroundColor: '#2a2a2a' },
-                  }}
-                >
-                  <ListItemText
-                    primary={s.name}
-                    primaryTypographyProps={{ fontSize: '13px', noWrap: true }}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={currentList.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+              <List disablePadding>
+                {currentList.map((s) => (
+                  <SortableSnippetItem
+                    key={s.id}
+                    snippet={s}
+                    selected={selectedId === s.id}
+                    onSelect={handleSelectSnippet}
+                    onDelete={handleDelete}
                   />
-                </ListItemButton>
-              </ListItem>
-            ))}
-            {currentList.length === 0 && (
-              <Box sx={{ px: 1.5, py: 1, color: '#555', fontSize: '12px' }}>
-                (なし)
-              </Box>
-            )}
-          </List>
+                ))}
+                {currentList.length === 0 && (
+                  <Box sx={{ px: 1.5, py: 1, color: '#555', fontSize: '12px' }}>
+                    (なし)
+                  </Box>
+                )}
+              </List>
+            </SortableContext>
+          </DndContext>
         </Box>
       </Box>
 
