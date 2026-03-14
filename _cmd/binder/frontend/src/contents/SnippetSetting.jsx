@@ -134,30 +134,22 @@ function SnippetSetting() {
 
       {/** テキスト編集エリア */}
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', p: 1.5, gap: 1 }}>
-        {selectedId !== null ? (<>
-          <TextField
-            multiline
-            fullWidth
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            variant="outlined"
-            inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: '#f1f1f1' } }}
-            sx={{
-              flex: 1,
-              '& .MuiOutlinedInput-root': { height: '100%', alignItems: 'flex-start' },
-              '& .MuiInputBase-root': { height: '100%' },
-            }}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <IconButton onClick={handleSave} aria-label="save">
-              <SaveIcon fontSize="medium" color="primary" />
-            </IconButton>
-          </Box>
-        </>) : (
-          <Box sx={{ color: '#555', fontSize: '13px', pt: 1 }}>
-            スニペットを選択してください
-          </Box>
-        )}
+        <TextField
+          multiline
+          rows={12}
+          fullWidth
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          variant="outlined"
+          disabled={selectedId === null}
+          placeholder={selectedId === null ? "スニペットを選択してください" : ""}
+          inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: '#f1f1f1', resize: 'none' } }}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton onClick={handleSave} aria-label="save" disabled={selectedId === null}>
+            <SaveIcon fontSize="medium" color={selectedId !== null ? "primary" : "disabled"} />
+          </IconButton>
+        </Box>
       </Box>
 
     </Box>

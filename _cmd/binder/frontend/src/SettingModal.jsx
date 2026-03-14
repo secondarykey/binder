@@ -17,7 +17,8 @@ function SettingModal({ open, onClose }) {
         sx: {
           backgroundColor: '#252525',
           color: '#f1f1f1',
-          maxHeight: '85vh',
+          height: '75vh',
+          maxHeight: '75vh',
           display: 'flex',
           flexDirection: 'column',
         }
