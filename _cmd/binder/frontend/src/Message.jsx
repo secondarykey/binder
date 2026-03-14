@@ -70,7 +70,7 @@ export function SystemMessage(props) {
 
     //ポップアップ処理
     function SlideTransition(props) {
-        return <Slide {...props} direction="left" />;
+        return <Slide {...props} direction="down" />;
     }
 
     /**
@@ -110,7 +110,7 @@ export function SystemMessage(props) {
         <>
             {/** ポップアップ表示 */}
             <Snackbar open={msgObj.show && !msgDlg}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 TransitionComponent={SlideTransition}
                 onDoubleClick={showMessageDialog}
                 onClose={hideSlideMessage}
