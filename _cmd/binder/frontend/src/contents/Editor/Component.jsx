@@ -1,18 +1,18 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
+import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
-import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../bindings/binder/api/app";
-import { GetAsset,Generate,Unpublish,Commit,DropAsset } from "../../../bindings/binder/api/app";
-import { RunEditor,GetSetting,SaveSetting,GetSnippets } from "../../../bindings/binder/api/app";
+import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
+import { RunEditor, GetSetting, SaveSetting, GetSnippets } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 
-import Event, {EventContext} from "../../Event.jsx";
+import Event, { EventContext } from "../../Event.jsx";
 
 import HTMLFrame from "./HTMLFrame.jsx";
 import '../../assets/Editor.css'
@@ -30,10 +30,36 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
 import AssetViewer from "../AssetViewer.jsx";
+
+//指定秒数での実行処理
+const debouncePromiss = (fn, delay) => {
+  var timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    return new Promise((resolve) => {
+      timer = setTimeout(() => {
+        resolve(fn.apply(this, args));
+      }, delay);
+    });
+  }
+}
+
+//テキストの保存処理（デバウンス）
+const writeFn = debouncePromiss((mode, id, txt) => {
+  if (mode === Mode.note) {
+    return SaveNote(id, txt);
+  } else if (mode === Mode.diagram) {
+    return SaveDiagram(id, txt);
+  } else if (mode === Mode.template) {
+    return SaveTemplate(id, txt);
+  }
+  //TODO 例外
+}, 1500);
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -50,7 +76,7 @@ import AssetViewer from "../AssetViewer.jsx";
  */
 function Editor(props) {
 
-  var {mode,id} = useParams();
+  var { mode, id } = useParams();
   const location = useLocation();
   const restoredAt = location.state?.restoredAt;
   const evt = useContext(EventContext)
@@ -90,7 +116,7 @@ function Editor(props) {
   //テキストにセンタリング用のタグを埋め込む
   const insertCenterTag = (txt) => {
 
-    if ( txt== null || txt === "" ) {
+    if (txt == null || txt === "") {
       return txt;
     }
 
@@ -98,35 +124,35 @@ function Editor(props) {
     var e = document.querySelector("#editor");
     var pos = e.selectionStart;
 
-    const lines = txt.split(/\n/,-1);
+    const lines = txt.split(/\n/, -1);
 
     var now = 0;
     var start = false;
     var b = false;
 
-    for ( const line of lines ) {
+    for (const line of lines) {
       now += line.length + 1;
 
-      if ( line.indexOf("```") === 0 ) {
-        if ( start ) {
+      if (line.indexOf("```") === 0) {
+        if (start) {
           start = false;
         } else {
           start = true;
         }
       }
 
-      if ( now > pos ) {
+      if (now > pos) {
         b = true;
       }
 
-      if ( b && !start && line === "" ) {
+      if (b && !start && line === "") {
         pos = now;
         break;
       }
     }
 
-    var before   = txt.substr(0, pos);
-    var after    = txt.substr(pos, len);
+    var before = txt.substr(0, pos);
+    var after = txt.substr(pos, len);
     var tag = '\n\n<div id="binder_focus_id"></div>\n\n';
     return before + tag + after;
   }
@@ -136,7 +162,7 @@ function Editor(props) {
 
     evt.clearMessage();
 
-    if ( mode === Mode.diagram ) {
+    if (mode === Mode.diagram) {
 
       setEditor(true);
       setViewer(true);
@@ -148,7 +174,7 @@ function Editor(props) {
       })
 
       GetDiagram(id).then((resp) => {
-        if ( resp.updatedStatus > 0 ) {
+        if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
           setUpdated(false);
@@ -159,7 +185,7 @@ function Editor(props) {
         evt.showErrorMessage(err);
       })
 
-    } else if (mode === Mode.note ) {
+    } else if (mode === Mode.note) {
 
       setEditor(true);
       setViewer(true);
@@ -171,7 +197,7 @@ function Editor(props) {
       });
 
       GetNote(id).then((resp) => {
-        if ( resp.updatedStatus > 0 ) {
+        if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
           setUpdated(false);
@@ -181,7 +207,7 @@ function Editor(props) {
         evt.showErrorMessage(err);
       })
 
-    } else if ( mode === Mode.template ) {
+    } else if (mode === Mode.template) {
 
       setEditor(true);
       setViewer(false);
@@ -194,7 +220,7 @@ function Editor(props) {
       });
 
       GetTemplate(id).then((resp) => {
-        if ( resp.updatedStatus > 0 ) {
+        if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
           setUpdated(false);
@@ -204,12 +230,12 @@ function Editor(props) {
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
-    } else if ( mode === "assets" ) {
+    } else if (mode === "assets") {
       // AssetViewer コンポーネントが表示・操作を担うため editor/viewer は不要
       setEditor(false);
       setViewer(false);
       GetAsset(id).then((resp) => {
-        if ( resp.updatedStatus > 0 ) {
+        if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
           setUpdated(false);
@@ -224,7 +250,7 @@ function Editor(props) {
 
   // スニペットを一度だけロード
   useEffect(() => {
-    GetSnippets().then((s) => setSnippets(s)).catch(() => {});
+    GetSnippets().then((s) => setSnippets(s)).catch(() => { });
   }, []);
 
   // モードに対応するスニペット一覧
@@ -287,16 +313,16 @@ function Editor(props) {
   }, [name]);
 
   const parseText = async () => {
-    if ( text === "" ) {
+    if (text === "") {
       return;
     }
 
-    if ( mode === Mode.diagram ) {
+    if (mode === Mode.diagram) {
       viewDiagram(text);
-    } else if ( mode === Mode.note ) {
+    } else if (mode === Mode.note) {
       //公開時にここが入らないようにする
       viewHTML(insertCenterTag(text));
-    } else if ( mode === Mode.template ) {
+    } else if (mode === Mode.template) {
       //viewHTML(text, noteElm);
     } else {
       //初回時の実行があるか
@@ -322,7 +348,7 @@ function Editor(props) {
   //データをマークダウンからHTMLに変換
   const createMarked = async (id, txt, local) => {
     var p = ""
-    await ParseNote(id,local,txt).then((resp) => {
+    await ParseNote(id, local, txt).then((resp) => {
       p = resp;
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -330,7 +356,7 @@ function Editor(props) {
     });
 
     var val = await Marked.parse(p);
-    if ( val ) {
+    if (val) {
       return val;
     }
     return "";
@@ -343,7 +369,7 @@ function Editor(props) {
 
     if (mode === "note") {
 
-      var embed = await createMarked(id,txt,true);
+      var embed = await createMarked(id, txt, true);
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
@@ -352,9 +378,9 @@ function Editor(props) {
 
     } else if (mode === "template") {
       //CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
-        //setHTML(resp);
+      //setHTML(resp);
       //}).catch((err) => {
-        //Event.showError(err);
+      //Event.showError(err);
       //})
     }
   }
@@ -364,7 +390,7 @@ function Editor(props) {
    */
   const viewDiagram = async (txt) => {
 
-    Mermaid.parse(txt).then( (data) => {
+    Mermaid.parse(txt).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
@@ -374,15 +400,15 @@ function Editor(props) {
       var top = 0;
       var scale = 1.0;
 
-      var transform = function()  {
+      var transform = function () {
         var px = left + 'px';
         var py = top + 'px';
         svg.style.transform = `translate(${px},${py}) scale(${scale})`;
       }
 
       //ドラッグ
-      svg.addEventListener("pointermove",function( event ) {
-        if ( !event.buttons ) {
+      svg.addEventListener("pointermove", function (event) {
+        if (!event.buttons) {
           return;
         }
         left = (left + event.movementX);
@@ -391,10 +417,10 @@ function Editor(props) {
       });
 
       //Wheelによる拡大
-      svg.addEventListener("wheel", function( event ) {
+      svg.addEventListener("wheel", function (event) {
         var dy = event.deltaY;
         var s = 0.1;
-        if ( dy > 0 ) {
+        if (dy > 0) {
           s *= -1;
         }
         scale += s;
@@ -461,6 +487,7 @@ function Editor(props) {
     document.body.style.userSelect = '';
   };
 
+
   /**
    * テキストの変更
    */
@@ -471,42 +498,29 @@ function Editor(props) {
     var txt = e.target.value;
     setText(txt);
 
-    if ( mode === Mode.note ) {
-      SaveNote(id, txt).then( () => {
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
-    } else if ( mode === Mode.diagram ) {
-      SaveDiagram(id, txt).then(() => {
-        console.debug("ok");
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
-    } else if ( mode === Mode.template ) {
-      SaveTemplate(id, txt).then(() => {
-        console.debug("ok");
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
-    }
+    writeFn(mode, id, txt).then(() => {
+      console.log("Write!");
+    }).catch((err) => {;
+      evt.showErrorMessage(err);
+    });
   }
 
   //出力処理
   const handlePublish = async () => {
     var elm = "";
-    if ( mode === Mode.note ) {
-      elm = await createMarked(id,text,false);
-    } else if (mode === Mode.diagram ) {
+    if (mode === Mode.note) {
+      elm = await createMarked(id, text, false);
+    } else if (mode === Mode.diagram) {
       var obj = await Mermaid.parse(text);
       elm = obj.svg
-    } else if (mode === Mode.template ) {
+    } else if (mode === Mode.template) {
       elm = text;
-    } else if (mode === Mode.asset ) {
+    } else if (mode === Mode.asset) {
       elm = text;
     }
 
     //出力処理を行う
-    Generate(mode,id,elm).then(() => {
+    Generate(mode, id, elm).then(() => {
       evt.showSuccessMessage("Generate.")
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -524,7 +538,7 @@ function Editor(props) {
 
   //個別コミットを行う
   const handleCommit = () => {
-    Commit(mode,id,comment).then(() => {
+    Commit(mode, id, comment).then(() => {
       setUpdated(false);
       evt.showSuccessMessage("Commit.")
     }).catch((err) => {
@@ -534,13 +548,13 @@ function Editor(props) {
 
   //SVG のダウンロードを行う
   const handleDownload = async () => {
-      var elm = document.querySelector('#mermaidViewer');
-      var data = new Blob([elm.innerHTML], {type: 'image/svg+xml'});
-      var dataURL = window.URL.createObjectURL(data);
-      var tempLink = document.createElement('a');
-      tempLink.href = dataURL;
-      tempLink.setAttribute('download', name + '.svg');
-      tempLink.click();
+    var elm = document.querySelector('#mermaidViewer');
+    var data = new Blob([elm.innerHTML], { type: 'image/svg+xml' });
+    var dataURL = window.URL.createObjectURL(data);
+    var tempLink = document.createElement('a');
+    tempLink.href = dataURL;
+    tempLink.setAttribute('download', name + '.svg');
+    tempLink.click();
   }
 
   /**
@@ -616,23 +630,42 @@ function Editor(props) {
 
   /**
    * 文字列挿入
+   * <pre>
+   * s,e に挟んでテキストを挿入します。
+   * sのみが指定された場合、改行前にその文字列を挿入します。
+   * </pre>
    */
-  const handleInsert = (s,e) => {
+  const handleInsert = (s, e) => {
     var textarea = document.querySelector("#editor");
     const val = textarea.value;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
+    var rtn = val;
 
-    const before = val.substring(0,start)
-    const text = val.substring(start,end)
+    const before = val.substring(0, start)
+    const text = val.substring(start, end)
     const after = val.substring(end)
 
-    textarea.value =  before + s + text + e + after;
+    //終了の指示がある場合、
+    if (e !== undefined) {
+      rtn = before + s + text + e + after;
+    } else {
+      var buf = "\n";
 
-    setTimeout(function() {
+      const lines = text.split("\n");
+      lines.forEach(line => {
+        buf += s + line + "\n";
+      });
+
+      buf += "\n";
+      rtn = before + buf + after;
+    }
+
+    textarea.value = rtn;
+    setTimeout(function () {
       setText(textarea.value);
-    },500)
+    }, 500)
 
   }
 
@@ -644,7 +677,7 @@ function Editor(props) {
     const textarea = e.target;
     const val = textarea.value;
 
-    if (e.key !== "Enter" ) {
+    if (e.key !== "Enter") {
       return;
     }
     e.preventDefault();
@@ -652,25 +685,25 @@ function Editor(props) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    const before = val.substring(0,start)
+    const before = val.substring(0, start)
     const after = val.substring(end)
 
     var indent = "";
     var char = "";
     //文字列の前方の状態を確認
     const last = before.lastIndexOf('\n')
-    if ( last !== -1 ) {
-      const line = before.substring(last+1);
-      for ( let idx = 0; idx < line.length; ++idx ) {
+    if (last !== -1) {
+      const line = before.substring(last + 1);
+      for (let idx = 0; idx < line.length; ++idx) {
         var c = line[idx]
-        if ( c !== " " ) {
-          if ( c === "-" ) {
+        if (c !== " ") {
+          if (c === "-") {
             char = "- ";
-          } else if ( c === ">" ) {
+          } else if (c === ">") {
             char = "> ";
-          } else if ( c === "1" ) {
+          } else if (c === "1") {
             var c2 = line[idx + 1];
-            if ( c2 === "." ) {
+            if (c2 === ".") {
               char = "1. ";
             }
           }
@@ -683,7 +716,7 @@ function Editor(props) {
     var at = "\n" + indent + char;
     const newCursor = start + at.length;
 
-    textarea.value =  before + at + after;
+    textarea.value = before + at + after;
     textarea.selectionStart = newCursor;
     textarea.selectionEnd = newCursor;
 
@@ -704,16 +737,16 @@ function Editor(props) {
   const handleRunEditor = () => {
 
     const sec = 2;
-    var interval = setInterval(function() {
+    var interval = setInterval(function () {
       // ファイルの内容を取得
-    },1000 * sec)
+    }, 1000 * sec)
 
-    RunEditor(mode,id).then( () => {
+    RunEditor(mode, id).then(() => {
       clearInterval(interval)
-    }).catch( (err) => {
+    }).catch((err) => {
       evt.showErrorMessage(err);
       clearInterval(interval)
-    }).finally( () => {
+    }).finally(() => {
       console.log("finally");
       clearInterval(interval)
     })
@@ -729,8 +762,8 @@ function Editor(props) {
    * フォントダイアログを終了
    */
   const handleFontDialogClose = (font) => {
-    if ( font !== undefined) {
-      settingFont(font,true);
+    if (font !== undefined) {
+      settingFont(font, true);
     }
     setShowFontDialog(false);
   }
@@ -738,7 +771,7 @@ function Editor(props) {
   /**
    * フォントの設定
    */
-  const settingFont = (set,save) => {
+  const settingFont = (set, save) => {
 
     var style = {};
     style.fontFamily = set.name;
@@ -750,12 +783,12 @@ function Editor(props) {
     var f = set;
     setEditorFont(f)
 
-    if ( save ) {
-      GetSetting().then( (s) => {
+    if (save) {
+      GetSetting().then((s) => {
         s.lookAndFeel.editor.text = set;
-        SaveSetting(s).then( () => {
+        SaveSetting(s).then(() => {
         })
-      }).catch( (err) => {
+      }).catch((err) => {
         evt.showErrorMessage(err);
       });
     }
@@ -766,19 +799,19 @@ function Editor(props) {
    */
   useEffect(() => {
     // サイドバートグルでツリーパネルの表示/非表示を切り替える
-    evt.register("Editor", Event.ShowMenu, function(flag) {
+    evt.register("Editor", Event.ShowMenu, function (flag) {
       setTreeVisible(flag);
     });
 
     //設定を取得
-    GetSetting().then( (s) => {
+    GetSetting().then((s) => {
       var set = s.lookAndFeel.editor.text;
       settingFont(set);
-    }).catch( (err) => {
+    }).catch((err) => {
       evt.showErrorMessage(err);
     });
 
-  },[]);
+  }, []);
 
   var commentStyle = {};
   commentStyle.fontSize = "12px";
@@ -786,14 +819,14 @@ function Editor(props) {
   commentStyle.width = (width - 98) + "px";
 
   var color = "#f1f1f1";
-  if ( updated ) {
+  if (updated) {
     color = "#f5a623";
   }
 
   //コミット用のアイコン(コメント欄の横)
   const commitIcon = (
     <InputAdornment position="end" className="linkBtn">
-      <CommitIcon fontSize="small" style={{ color: color }}  onClick={handleCommit}> </CommitIcon>
+      <CommitIcon fontSize="small" style={{ color: color }} onClick={handleCommit}> </CommitIcon>
     </InputAdornment>
   )
 
@@ -838,89 +871,97 @@ function Editor(props) {
 
               {/** テキスト用のメニュー */}
               <Container id="editorMenu">
-                  <Container className="buttonBarLeft">
+                <Container className="buttonBarLeft">
 
-                    {/** 強調 */}
-                    <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**","**")} className="editorBtn">
-                      <FormatBoldIcon fontSize="small" />
+                  {/** 強調 */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                    <FormatBoldIcon fontSize="small" />
+                  </IconButton>
+
+                  {/** イタリック */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                    <FormatItalicIcon fontSize="small" />
+                  </IconButton>
+
+                  {/** 打ち消し線 */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                    <FormatStrikethroughIcon fontSize="small" />
+                  </IconButton>
+
+                  {/** コードブロック */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                    <CodeIcon fontSize="small" />
+                  </IconButton>
+
+                  {/** 引用 */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                    <FormatQuoteIcon fontSize="small" />
+                  </IconButton>
+
+                  {/** 区切り */}
+                  <Divider style={{ width: "10px", display: "inline-flex" }} orientation="vertical" flexItem alignItems="center" />
+
+                  {/** スニペット挿入 */}
+                  {snippetList.length > 0 && (<>
+                    <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => setSnippetAnchor(e.currentTarget)}
+                      className="editorBtn">
+                      <PlaylistAddIcon fontSize="small" />
                     </IconButton>
+                    <Menu
+                      anchorEl={snippetAnchor}
+                      open={Boolean(snippetAnchor)}
+                      onClose={() => setSnippetAnchor(null)}
+                      disableAutoFocus
+                      disableEnforceFocus
+                      disableRestoreFocus
+                      PaperProps={{ sx: { backgroundColor: '#2a2a2a', color: '#f1f1f1', border: '1px solid #444' } }}
+                    >
+                      {snippetList.map((s) => (
+                        <MenuItem key={s.id}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleInsertSnippet(s.body)}
+                          sx={{ fontSize: '13px', '&:hover': { backgroundColor: '#3a3a3a' } }}>
+                          {s.name}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </>)}
 
-                    {/** イタリック */}
-                    <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*","*")} className="editorBtn">
-                      <FormatItalicIcon fontSize="small" />
-                    </IconButton>
+                </Container>
 
-                    {/** 打ち消し線 */}
-                    <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~","~~")} className="editorBtn">
-                      <FormatStrikethroughIcon fontSize="small" />
-                    </IconButton>
+                <Container className="buttonBarRight">
 
-                    {/** コードブロック */}
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n","\n```\n")} className="editorBtn">
-                      <CodeIcon fontSize="small" />
-                    </IconButton>
+                  {/** フォント設定 */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
+                    <FontDownloadIcon fontSize="small" />
+                  </IconButton>
 
-                    {/** スニペット挿入 */}
-                    {snippetList.length > 0 && (<>
-                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
-                        className="editorBtn">
-                        <PlaylistAddIcon fontSize="small" />
-                      </IconButton>
-                      <Menu
-                        anchorEl={snippetAnchor}
-                        open={Boolean(snippetAnchor)}
-                        onClose={() => setSnippetAnchor(null)}
-                        disableAutoFocus
-                        disableEnforceFocus
-                        disableRestoreFocus
-                        PaperProps={{ sx: { backgroundColor: '#2a2a2a', color: '#f1f1f1', border: '1px solid #444' } }}
-                      >
-                        {snippetList.map((s) => (
-                          <MenuItem key={s.id}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => handleInsertSnippet(s.body)}
-                            sx={{ fontSize: '13px', '&:hover': { backgroundColor: '#3a3a3a' } }}>
-                            {s.name}
-                          </MenuItem>
-                        ))}
-                      </Menu>
-                    </>)}
+                  {/** プログラム起動 */}
+                  <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
+                    <LaunchIcon fontSize="small" />
+                  </IconButton>
 
-                  </Container>
-
-                  <Container className="buttonBarRight">
-
-                    {/** フォント設定 */}
-                    <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
-                      <FontDownloadIcon fontSize="small" />
-                    </IconButton>
-
-                    {/** プログラム起動 */}
-                    <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
-                      <LaunchIcon fontSize="small" />
-                    </IconButton>
-
-                  </Container>
+                </Container>
               </Container>
 
               {/** テキスト編集 */}
               <textarea id="editor" style={editorStyle}
-                                    value={text}
-                                    onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
-                                    onDragOver={handleDragOver} onDrop={handleDrop}/>
+                value={text}
+                onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
+                onDragOver={handleDragOver} onDrop={handleDrop} />
 
               {/** 左側の操作用位置 */}
               <Toolbar className="buttonBar">
                 <Container className="buttonBarLeft">
                   {/** コミットコメント */}
                   <TextField value={comment} onChange={(e) => setComment(e.target.value)}
-                             size="small"
-                             variant="outlined"
-                             style={{marginLeft:"0px",paddingLeft:"0px"}}
-                             inputProps={{style:commentStyle}}
-                             InputProps={{endAdornment:commitIcon}}
+                    size="small"
+                    variant="outlined"
+                    style={{ marginLeft: "0px", paddingLeft: "0px" }}
+                    inputProps={{ style: commentStyle }}
+                    InputProps={{ endAdornment: commitIcon }}
                   ></TextField>
                 </Container>
               </Toolbar>
@@ -930,9 +971,9 @@ function Editor(props) {
           {/** セパレータ（エディタ/ビューア間） */}
           {editor && viewer &&
             <div ref={splitterRef} id="splitter"
-                 onPointerDown={handleSplitterPointerDown}
-                 onPointerMove={handleSplitterPointerMove}
-                 onPointerUp={handleSplitterPointerUp}
+              onPointerDown={handleSplitterPointerDown}
+              onPointerMove={handleSplitterPointerMove}
+              onPointerUp={handleSplitterPointerUp}
             />
           }
 
@@ -941,8 +982,8 @@ function Editor(props) {
             <div id="dataViewer">
 
               {/** 表示するコンポーネントを変更 */}
-              {( mode === Mode.note ) &&
-                <HTMLFrame html={html}/>
+              {(mode === Mode.note) &&
+                <HTMLFrame html={html} />
               }
               {mode === Mode.diagram &&
                 <div id="mermaidViewer"></div>
@@ -975,7 +1016,7 @@ function Editor(props) {
       </Paper>
 
       {/** フォント設定 */}
-      <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose}/>
+      <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose} />
     </>
   );
 }
