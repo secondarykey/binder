@@ -4,6 +4,7 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"errors"
 	"io"
 	"time"
 
@@ -262,4 +263,31 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 	}
 
 	return m, nil
+}
+
+func (b *Binder) UnpublishDiagram(id string) error {
+
+	d, err := b.db.GetDiagram(id)
+	if err != nil {
+		return xerrors.Errorf("db.GetDiagram() error: %w", err)
+	}
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
+	m := d.To()
+	m.ApplyStructure(s.To())
+
+	fn, err := b.fileSystem.UnpublishDiagram(m)
+	if err != nil {
+		return xerrors.Errorf("fs.UnpublishDiagram() error: %w", err)
+	}
+
+	err = b.fileSystem.Commit(fs.M("Unpublish Diagram", m.Name), fn)
+	if err != nil && !errors.Is(err, fs.UpdatedFilesError) {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
 }

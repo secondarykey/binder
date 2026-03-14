@@ -145,6 +145,28 @@ func (a *App) Generate(mode string, id string, data string) error {
 	return nil
 }
 
+func (a *App) Unpublish(mode string, id string) error {
+
+	defer log.PrintTrace(log.Func("Unpublish()", mode, id))
+
+	var err error
+	switch mode {
+	case "note":
+		err = a.current.UnpublishNote(id)
+	case "diagram":
+		err = a.current.UnpublishDiagram(id)
+	case "assets":
+		err = a.current.UnpublishAsset(id)
+	default:
+		slog.Warn("Unknown Mode:" + mode)
+	}
+
+	if err != nil {
+		return xerrors.Errorf("Unpublish() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) RunEditor(mode, id string) error {
 
 	defer log.PrintTrace(log.Func("RunEditor()", mode, id))

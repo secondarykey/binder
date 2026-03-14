@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'react-router';
 import { IconButton } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
+import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
-import { GetAsset, GetAssetContent, Generate, GetSetting } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, Generate, Unpublish, GetSetting } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 
 /** 画像拡張子の判定セット */
@@ -195,6 +196,15 @@ function AssetViewer() {
     }
   };
 
+  /** Unpublish ボタン押下: docs からアセットを削除する */
+  const handleUnpublish = () => {
+    Unpublish("assets", id).then(() => {
+      evt.showSuccessMessage("Unpublish が完了しました。");
+    }).catch((e) => {
+      evt.showErrorMessage("Unpublish に失敗しました: " + e);
+    });
+  };
+
   // コンテンツ部分を変数で組み立てる（早期returnを避けてヘッダーと共通化）
   let content;
 
@@ -277,6 +287,16 @@ function AssetViewer() {
         disabled={generating || !id}
       >
         <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+      </IconButton>
+      {/* フローティング非公開ボタン（左下） */}
+      <IconButton
+        className="floatUnpublishBtn"
+        size="small"
+        aria-label="unpublish"
+        onClick={handleUnpublish}
+        disabled={!id}
+      >
+        <UnpublishedIcon fontSize="small" style={{ color: "#f1f1f1" }} />
       </IconButton>
     </div>
   );

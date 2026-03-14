@@ -155,3 +155,15 @@ func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
 
 	return pub, nil
 }
+
+// UnpublishNoteMeta はメタ画像 docs/images/meta/{alias} を削除する。
+// ファイルが存在しない場合は何もしない。
+func (f *FileSystem) UnpublishNoteMeta(n *json.Note) (string, bool) {
+
+	pub := PublicMetaFile(n)
+	if !f.isExist(pub) {
+		return pub, false
+	}
+	f.remove(pub) //nolint: errcheck
+	return pub, true
+}

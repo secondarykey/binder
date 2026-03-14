@@ -243,6 +243,23 @@ iframe.htmlViewer.show {
 }
 
 /* =====================================================================
+ * フローティング非公開ボタン（プレビュー左下）
+ * ===================================================================== */
+.floatUnpublishBtn {
+  position: absolute !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  z-index: 10;
+  background-color: rgba(34, 34, 34, 0.85) !important;
+  backdrop-filter: blur(4px);
+  border: 1px solid #444 !important;
+}
+
+.floatUnpublishBtn:hover {
+  background-color: rgba(100, 40, 40, 0.95) !important;
+}
+
+/* =====================================================================
  * ボタンバー（エディタ左側の下部）
  * ===================================================================== */
 .buttonBar {

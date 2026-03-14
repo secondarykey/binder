@@ -6,7 +6,7 @@ import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../bindings/binder/api/app";
-import { GetAsset,Generate,Commit,DropAsset } from "../../../bindings/binder/api/app";
+import { GetAsset,Generate,Unpublish,Commit,DropAsset } from "../../../bindings/binder/api/app";
 import { RunEditor,GetSetting,SaveSetting } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
@@ -21,6 +21,7 @@ import { Mode } from "../../App.jsx";
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import PublishIcon from '@mui/icons-material/Publish';
+import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import LaunchIcon from '@mui/icons-material/Launch';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
@@ -473,6 +474,15 @@ function Editor(props) {
     })
   }
 
+  //非公開処理
+  const handleUnpublish = () => {
+    Unpublish(mode, id).then(() => {
+      evt.showSuccessMessage("Unpublish.")
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    })
+  }
+
   //個別コミットを行う
   const handleCommit = () => {
     Commit(mode,id,comment).then(() => {
@@ -871,7 +881,7 @@ function Editor(props) {
                 <div id="mermaidViewer"></div>
               }
 
-              {/** フローティング操作ボタン（右下） */}
+              {/** フローティング操作ボタン（右下: 公開 / ダイアグラムダウンロード） */}
               {mode !== Mode.template &&
                 <IconButton className="floatPublishBtn" size="small" aria-label="publish" onClick={handlePublish}>
                   <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
@@ -880,6 +890,13 @@ function Editor(props) {
               {mode === Mode.diagram &&
                 <IconButton className="floatPublishBtn" size="small" aria-label="download" onClick={handleDownload} sx={{ bottom: '64px' }}>
                   <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                </IconButton>
+              }
+
+              {/** フローティング操作ボタン（左下: 非公開） */}
+              {mode !== Mode.template &&
+                <IconButton className="floatUnpublishBtn" size="small" aria-label="unpublish" onClick={handleUnpublish}>
+                  <UnpublishedIcon fontSize="small" style={{ color: "#f1f1f1" }} />
                 </IconButton>
               }
 

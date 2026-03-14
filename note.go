@@ -4,6 +4,7 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"errors"
 	"io"
 	"time"
 
@@ -328,4 +329,39 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 	}
 
 	return rtn, nil
+}
+
+func (b *Binder) UnpublishNote(id string) error {
+
+	n, err := b.db.GetNote(id)
+	if err != nil {
+		return xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
+	rtn := n.To()
+	rtn.ApplyStructure(s.To())
+
+	var files []string
+
+	fn, err := b.fileSystem.UnpublishNote(rtn)
+	if err != nil {
+		return xerrors.Errorf("fs.UnpublishNote() error: %w", err)
+	}
+	files = append(files, fn)
+
+	// メタ画像が存在する場合も docs/images/meta/{alias} を削除
+	if mf, ok := b.fileSystem.UnpublishNoteMeta(rtn); ok {
+		files = append(files, mf)
+	}
+
+	err = b.fileSystem.Commit(fs.M("Unpublish Note", rtn.Name), files...)
+	if err != nil && !errors.Is(err, fs.UpdatedFilesError) {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
 }

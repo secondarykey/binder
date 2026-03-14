@@ -518,6 +518,15 @@ export function Startup() {
 }
 
 /**
+ * @param {string} mode
+ * @param {string} id
+ * @returns {$CancellablePromise<void>}
+ */
+export function Unpublish(mode, id) {
+    return $Call.ByID(1980012947, mode, id);
+}
+
+/**
  * @param {string[]} ids
  * @returns {$CancellablePromise<void>}
  */

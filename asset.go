@@ -6,7 +6,7 @@ import (
 	"binder/fs"
 	"bytes"
 	"encoding/base64"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -232,13 +232,32 @@ func (b *Binder) PublishAsset(id string) (*json.Asset, error) {
 		return nil, xerrors.Errorf("fs.PublishAsset() error: %w", err)
 	}
 
-	//TODO コミット
-	fmt.Println(fn)
+	err = b.fileSystem.Commit(fs.M("Publish Asset", a.Name), fn)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
 
 	return a, nil
 }
 
-//TODO 個別非公開
+func (b *Binder) UnpublishAsset(id string) error {
+
+	a, err := b.db.GetAssetWithParent(id)
+	if err != nil {
+		return xerrors.Errorf("db.GetAsset() error: %w", err)
+	}
+
+	fn, err := b.fileSystem.UnpublishAsset(a)
+	if err != nil {
+		return xerrors.Errorf("fs.UnpublishAsset() error: %w", err)
+	}
+
+	err = b.fileSystem.Commit(fs.M("Unpublish Asset", a.Name), fn)
+	if err != nil && !errors.Is(err, fs.UpdatedFilesError) {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
 
 func (b *Binder) GetUnpublishedAssets() ([]*json.Asset, error) {
 
