@@ -220,9 +220,6 @@ function SnippetSetting() {
                   </IconButton>
                 }
                 sx={{
-                  '& .deleteBtn': { opacity: 0 },
-                  '&:hover .deleteBtn': { opacity: 1 },
-                }}
               >
                 <ListItemButton
                   selected={selectedId === s.id}
