@@ -1,13 +1,13 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
+import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar ,InputAdornment} from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate,OpenTemplate, SaveTemplate} from "../../../bindings/binder/api/app";
 import { GetAsset,Generate,Unpublish,Commit,DropAsset } from "../../../bindings/binder/api/app";
-import { RunEditor,GetSetting,SaveSetting } from "../../../bindings/binder/api/app";
+import { RunEditor,GetSetting,SaveSetting,GetSnippets } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -29,6 +29,7 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
@@ -68,6 +69,10 @@ function Editor(props) {
   const [treeWidth, setTreeWidth] = useState(250);
 
   const [fontDialog, setShowFontDialog] = useState(false);
+
+  // スニペット
+  const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
+  const [snippetAnchor, setSnippetAnchor] = useState(null);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
   // handleChangeText だけが true にセットする。ファイルオープン時はセットされないので即時描画になる。
@@ -216,6 +221,37 @@ function Editor(props) {
     }
 
   }, [id, restoredAt]);
+
+  // スニペットを一度だけロード
+  useEffect(() => {
+    GetSnippets().then((s) => setSnippets(s)).catch(() => {});
+  }, []);
+
+  // モードに対応するスニペット一覧
+  const snippetList = (() => {
+    if (mode === Mode.note) return snippets.markdowns ?? [];
+    if (mode === Mode.diagram) return snippets.diagrams ?? [];
+    if (mode === Mode.template) return snippets.templates ?? [];
+    return [];
+  })();
+
+  /**
+   * スニペットをカーソル位置に挿入
+   */
+  const handleInsertSnippet = (body) => {
+    setSnippetAnchor(null);
+    const textarea = document.querySelector("#editor");
+    const val = textarea.value;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = val.substring(0, start);
+    const after = val.substring(end);
+    textarea.value = before + body + after;
+    const newPos = start + body.length;
+    textarea.selectionStart = newPos;
+    textarea.selectionEnd = newPos;
+    setTimeout(() => { setText(textarea.value); }, 500);
+  };
 
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
@@ -820,6 +856,26 @@ function Editor(props) {
                     <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n","\n```\n")} className="editorBtn">
                       <CodeIcon fontSize="small" />
                     </IconButton>
+
+                    {/** スニペット挿入 */}
+                    {snippetList.length > 0 && (<>
+                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }} onClick={(e) => setSnippetAnchor(e.currentTarget)} className="editorBtn">
+                        <PlaylistAddIcon fontSize="small" />
+                      </IconButton>
+                      <Menu
+                        anchorEl={snippetAnchor}
+                        open={Boolean(snippetAnchor)}
+                        onClose={() => setSnippetAnchor(null)}
+                        PaperProps={{ sx: { backgroundColor: '#2a2a2a', color: '#f1f1f1', border: '1px solid #444' } }}
+                      >
+                        {snippetList.map((s) => (
+                          <MenuItem key={s.id} onClick={() => handleInsertSnippet(s.body)}
+                            sx={{ fontSize: '13px', '&:hover': { backgroundColor: '#3a3a3a' } }}>
+                            {s.name}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>)}
 
                   </Container>
 
