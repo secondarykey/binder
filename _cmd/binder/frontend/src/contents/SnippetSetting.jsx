@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, IconButton, List, ListItemButton, ListItemText, TextField } from "@mui/material";
+import { Box, IconButton, List, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 
@@ -67,43 +67,40 @@ function SnippetSetting() {
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>
 
-      {/** 種別リスト */}
+      {/** スニペット名リスト（上部にカテゴリセレクト） */}
       <Box sx={{
-        width: 110,
-        flexShrink: 0,
-        borderRight: '1px solid #333',
-        backgroundColor: '#1a1a1a',
-        pt: 1,
-      }}>
-        <List disablePadding>
-          {CATEGORIES.map((c) => (
-            <ListItemButton
-              key={c.key}
-              selected={category === c.key}
-              onClick={() => handleSelectCategory(c.key)}
-              sx={{
-                py: 0.8,
-                px: 1.5,
-                '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
-                '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
-                '&:hover': { backgroundColor: '#2a2a2a' },
-              }}
-            >
-              <ListItemText primary={c.label} primaryTypographyProps={{ fontSize: '13px' }} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Box>
-
-      {/** スニペット名リスト */}
-      <Box sx={{
-        width: 150,
+        width: 180,
         flexShrink: 0,
         borderRight: '1px solid #333',
         backgroundColor: '#202020',
-        overflowY: 'auto',
-        pt: 1,
+        display: 'flex',
+        flexDirection: 'column',
       }}>
+        {/** カテゴリセレクトボックス */}
+        <Box sx={{ px: 1, py: 0.8, borderBottom: '1px solid #333', flexShrink: 0 }}>
+          <Select
+            value={category}
+            onChange={(e) => handleSelectCategory(e.target.value)}
+            size="small"
+            fullWidth
+            sx={{
+              fontSize: '13px',
+              color: '#f1f1f1',
+              backgroundColor: '#1a1a1a',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#666' },
+              '& .MuiSvgIcon-root': { color: '#aaa' },
+            }}
+            MenuProps={{ PaperProps: { sx: { backgroundColor: '#1a1a1a', color: '#f1f1f1' } } }}
+          >
+            {CATEGORIES.map((c) => (
+              <MenuItem key={c.key} value={c.key} sx={{ fontSize: '13px' }}>
+                {c.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+        <Box sx={{ flex: 1, overflowY: 'auto' }}>
         <List disablePadding>
           {currentList.map((s) => (
             <ListItemButton
@@ -130,6 +127,7 @@ function SnippetSetting() {
             </Box>
           )}
         </List>
+        </Box>
       </Box>
 
       {/** テキスト編集エリア */}
