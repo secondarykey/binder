@@ -11,12 +11,12 @@ function SettingModal({ open, onClose }) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
+      maxWidth={false}
       PaperProps={{
         sx: {
           backgroundColor: '#252525',
           color: '#f1f1f1',
+          width: '1000px',
           height: '75vh',
           maxHeight: '75vh',
           display: 'flex',
