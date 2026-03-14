@@ -778,7 +778,7 @@ function Editor(props) {
 
           {/** アセットモード: AssetViewer がすべての表示・操作を担う */}
           {mode === 'assets' && (
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
               <AssetViewer />
             </div>
           )}

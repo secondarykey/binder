@@ -266,7 +266,7 @@ function AssetViewer() {
   }
 
   return (
-    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
       {content}
       {/* フローティング公開ボタン（右下） */}
       <IconButton
