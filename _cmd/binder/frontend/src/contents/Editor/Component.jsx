@@ -73,6 +73,8 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
+  // メニューを開く直前のカーソル位置を退避（メニュー開放でfocusが外れるため）
+  const snippetCursorRef = useRef({ start: 0, end: 0 });
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
   // handleChangeText だけが true にセットする。ファイルオープン時はセットされないので即時描画になる。
@@ -236,18 +238,29 @@ function Editor(props) {
   })();
 
   /**
-   * スニペットをカーソル位置に挿入
+   * スニペットメニューを開く（カーソル位置を退避してからメニューを表示）
+   */
+  const handleSnippetButtonClick = (e) => {
+    const textarea = document.querySelector("#editor");
+    if (textarea) {
+      snippetCursorRef.current = { start: textarea.selectionStart, end: textarea.selectionEnd };
+    }
+    setSnippetAnchor(e.currentTarget);
+  };
+
+  /**
+   * スニペットをカーソル位置に挿入（退避した位置を使用）
    */
   const handleInsertSnippet = (body) => {
     setSnippetAnchor(null);
     const textarea = document.querySelector("#editor");
     const val = textarea.value;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    const { start, end } = snippetCursorRef.current;
     const before = val.substring(0, start);
     const after = val.substring(end);
     textarea.value = before + body + after;
     const newPos = start + body.length;
+    textarea.focus();
     textarea.selectionStart = newPos;
     textarea.selectionEnd = newPos;
     setTimeout(() => { setText(textarea.value); }, 500);
@@ -859,7 +872,7 @@ function Editor(props) {
 
                     {/** スニペット挿入 */}
                     {snippetList.length > 0 && (<>
-                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }} onClick={(e) => setSnippetAnchor(e.currentTarget)} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }} onClick={handleSnippetButtonClick} className="editorBtn">
                         <PlaylistAddIcon fontSize="small" />
                       </IconButton>
                       <Menu
