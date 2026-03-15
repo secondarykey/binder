@@ -40,6 +40,19 @@ cd _cmd/binder && wails3 task common:generate:bindings
 go run ./_cmd/gen/main.go
 ```
 
+### バージョン変更
+
+指定されたバージョンにする
+
+```
+go run ./_cmd/version.go 0.0.0
+```
+
+- ./_cmd/binder/build/config.yml
+- ./_cmd/binder/frontend/package.json
+
+２つのファイルのバージョンが引数のバージョンに変更されます。
+
 ### テスト
 ```bash
 # 全Goテスト実行
@@ -179,11 +192,4 @@ FSマイグレーション (`fs/convert/`):
 - DAOファイルは`_dao.go`サフィックスを使用（自動生成、手動編集不可）
 - `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
 - セマンティックバージョン操作は`internal.Version`を使用（直接文字列比較は不可）
-
-## バージョン
-
-指示のあった数値で以下を編集
-
-- _cmd/binder/build/config.yml info.version
-- _cmd/binder/frontend/package.json version
 
