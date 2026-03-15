@@ -196,6 +196,7 @@ function SnippetSetting() {
   };
 
   return (
+    <>
     <Box sx={{ display: 'flex', height: '100%' }}>
 
       {/** スニペット名リスト */}
@@ -313,6 +314,7 @@ function SnippetSetting() {
         </Button>
       </DialogActions>
     </Dialog>
+    </>
   );
 }
 
