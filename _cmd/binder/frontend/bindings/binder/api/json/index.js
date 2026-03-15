@@ -12,6 +12,7 @@ export {
     Note,
     Status,
     Template,
+    TemplateType,
     Templates,
     Tree
 } from "./models.js";

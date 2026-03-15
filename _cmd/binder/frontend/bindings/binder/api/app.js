@@ -95,12 +95,14 @@ export function CreateRemoteBinder(url, dir) {
 
 /**
  * @param {string} id
- * @param {string} data
+ * @param {json$0.TemplateType} typ
+ * @param {string} oId
+ * @param {string} noteId
  * @param {string} elm
  * @returns {$CancellablePromise<string>}
  */
-export function CreateTemplateHTML(id, data, elm) {
-    return $Call.ByID(3655212360, id, data, elm);
+export function CreateTemplateHTML(id, typ, oId, noteId, elm) {
+    return $Call.ByID(3655212360, id, typ, oId, noteId, elm);
 }
 
 /**
@@ -456,6 +458,14 @@ export function RemoveDiagram(id) {
  */
 export function RemoveNote(id) {
     return $Call.ByID(1574566763, id);
+}
+
+/**
+ * @param {string} id
+ * @returns {$CancellablePromise<void>}
+ */
+export function RemoveTemplate(id) {
+    return $Call.ByID(602365113, id);
 }
 
 /**

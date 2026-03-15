@@ -679,6 +679,20 @@ export class Template {
     }
 }
 
+/**
+ * @readonly
+ * @enum {string}
+ */
+export const TemplateType = {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero: "",
+
+    LayoutTemplateType: "layout",
+    ContentTemplateType: "content",
+};
+
 export class Templates {
     /**
      * Creates a new Templates instance.

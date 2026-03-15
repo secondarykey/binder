@@ -3,3 +3,4 @@ testing_work
 work
 *.exe
 *.db
+_cmd/binder/frontend/bindings/**

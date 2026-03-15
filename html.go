@@ -273,7 +273,7 @@ func (b *Binder) parseTemplateFile(tmpl *template.Template, path string, typ jso
 // text が指定してある場合、テンプレート編集時になる為、
 // 指定してあるテンプレートではなく、文字列を使用して描画を行う
 // TODO 現在テンプレート編集時の描画を止めている為、再度実装する際に考慮する
-func (b *Binder) createHTMLTemplate(w *wrapper, typ json.TemplateType, text string) (*template.Template, error) {
+func (b *Binder) createHTMLTemplate(w *wrapper) (*template.Template, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -283,47 +283,19 @@ func (b *Binder) createHTMLTemplate(w *wrapper, typ json.TemplateType, text stri
 	//FuncMapを準備
 	tmpl := template.New(fs.TemplatePageRoot).Funcs(defineFuncMap(w))
 
-	//TODO Note指定がない場合の描画を考える
-	layId := "layout"
-	conId := "content"
+	layId := w.note.LayoutTemplate
+	conId := w.note.ContentTemplate
 
-	if w.note != nil {
-		layId = w.note.LayoutTemplate
-		conId = w.note.ContentTemplate
+	layoutFile := fs.ConvertHTTPPath(fs.TemplateFile(layId))
+	tmpl, err = b.parseTemplateFile(tmpl, layoutFile, json.LayoutTemplateType)
+	if err != nil {
+		return nil, xerrors.Errorf("layout parseTemplateFile() error: %w", err)
 	}
 
-	//TODO 同等の処理になるはずなので、適当にまとめる
-	if typ == json.LayoutTemplateType && text != "" {
-
-		// Layoutはルートテンプレートの本体として直接パース（{{ define "Pages" }} は不要）
-		_, err = tmpl.Parse(text)
-		if err != nil {
-			return nil, xerrors.Errorf("layout Parse() error: %w", err)
-		}
-	} else {
-
-		layoutFile := fs.ConvertHTTPPath(fs.TemplateFile(layId))
-		tmpl, err = b.parseTemplateFile(tmpl, layoutFile, json.LayoutTemplateType)
-		if err != nil {
-			return nil, xerrors.Errorf("layout parseTemplateFile() error: %w", err)
-		}
-	}
-
-	if typ == json.ContentTemplateType && text != "" {
-
-		data := fs.AddTemplateFrame(json.ContentTemplateType, []byte(text))
-		_, err = tmpl.Parse(string(data))
-		if err != nil {
-			return nil, xerrors.Errorf("Parse() error: %w", err)
-		}
-
-	} else {
-
-		tmpFile := fs.ConvertHTTPPath(fs.TemplateFile(conId))
-		tmpl, err = b.parseTemplateFile(tmpl, tmpFile, json.ContentTemplateType)
-		if err != nil {
-			return nil, xerrors.Errorf("content parseTemplateFile() error: %w", err)
-		}
+	tmpFile := fs.ConvertHTTPPath(fs.TemplateFile(conId))
+	tmpl, err = b.parseTemplateFile(tmpl, tmpFile, json.ContentTemplateType)
+	if err != nil {
+		return nil, xerrors.Errorf("content parseTemplateFile() error: %w", err)
 	}
 
 	return tmpl, nil
@@ -385,6 +357,7 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 
 	return dto, nil
 }
+
 func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}) error {
 
 	if b == nil {
@@ -400,7 +373,7 @@ func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}
 }
 
 // HTMLファイル出力用
-func (b *Binder) generateHTML(w *wrapper) error {
+func (b *Binder) testgenerateHTML(w *wrapper) error {
 
 	if b == nil {
 		return EmptyError
@@ -415,7 +388,7 @@ func (b *Binder) generateHTML(w *wrapper) error {
 	}
 	defer fp.Close()
 
-	tmpl, err := b.createHTMLTemplate(w, "", "")
+	tmpl, err := b.createHTMLTemplate(w)
 	if err != nil {
 		return xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}
@@ -444,7 +417,7 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
-	tmpl, err := b.createHTMLTemplate(w, "", "")
+	tmpl, err := b.createHTMLTemplate(w)
 	if err != nil {
 		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}
@@ -462,32 +435,20 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	return builder.String(), nil
 }
 
-func (b *Binder) CreateTemplateHTML(temp *json.Template, note *json.Note, data string, elm string) (string, error) {
+func (b *Binder) CreateTemplateHTML(id string, typ json.TemplateType, oId string, note *json.Note, elm string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
 	}
 
-	w, err := newWrapper(b, true, note)
-	if err != nil {
-		return "", xerrors.Errorf("newWrapper() error: %w", err)
+	//ノートのテンプレートを書き換える
+	if typ == json.LayoutTemplateType {
+		note.LayoutTemplate = id
+		note.ContentTemplate = oId
+	} else {
+		note.LayoutTemplate = oId
+		note.ContentTemplate = id
 	}
 
-	tmpl, err := b.createHTMLTemplate(w, json.TemplateType(temp.Typ), data)
-	if err != nil {
-		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
-	}
-
-	dto, err := b.createDto(w, elm)
-	if err != nil {
-		return "", xerrors.Errorf("creteDto() error: %w", err)
-	}
-
-	var builder strings.Builder
-	err = b.writeHTML(&builder, tmpl, dto)
-	if err != nil {
-		return "", xerrors.Errorf("writeHTML() error: %w", err)
-	}
-
-	return builder.String(), nil
+	return b.CreateNoteHTML(note, true, elm)
 }
