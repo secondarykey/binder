@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { IconButton } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
@@ -142,6 +142,7 @@ function AssetViewer() {
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
 
@@ -199,8 +200,12 @@ function AssetViewer() {
     }
   };
 
-  /** Migrate ボタン押下: テキストアセットをノートに移行する */
-  const handleMigrate = async () => {
+  /** Migrate ボタン押下: 確認ダイアログを開く */
+  const handleMigrate = () => setConfirmOpen(true);
+
+  /** 確認ダイアログで「移行」を選択した場合 */
+  const handleMigrateConfirm = async () => {
+    setConfirmOpen(false);
     setMigrating(true);
     try {
       const note = await MigrateAssetToNote(id);
@@ -328,6 +333,20 @@ function AssetViewer() {
       >
         <UnpublishedIcon fontSize="small" style={{ color: "#f1f1f1" }} />
       </IconButton>
+
+      {/* ノート移行確認ダイアログ */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>ノートに移行</DialogTitle>
+        <DialogContent>
+          <DialogContentText style={{ color: "#eeeeee" }}>
+            「{assetName}」をノートに移行します。元のアセットは削除されます。よろしいですか？
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>キャンセル</Button>
+          <Button onClick={handleMigrateConfirm} color="primary">移行</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
