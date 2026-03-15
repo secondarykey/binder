@@ -58,8 +58,7 @@ const writeFn = debouncePromiss((mode, id, txt) => {
   } else if (mode === Mode.template) {
     return SaveTemplate(id, txt);
   }
-  //TODO 例外
-}, 1500);
+}, 1000);
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
