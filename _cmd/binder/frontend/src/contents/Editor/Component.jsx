@@ -958,13 +958,13 @@ function Editor(props) {
                       disableAutoFocus
                       disableEnforceFocus
                       disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: '#2a2a2a', color: '#f1f1f1', border: '1px solid #444' } }}
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
                     >
                       {snippetList.map((s) => (
                         <MenuItem key={s.id}
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => handleInsertSnippet(s.body)}
-                          sx={{ fontSize: '13px', '&:hover': { backgroundColor: '#3a3a3a' } }}>
+                          sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                           {s.name}
                         </MenuItem>
                       ))}
@@ -1052,13 +1052,13 @@ function Editor(props) {
                 const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                 return (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 4px", borderBottom: "1px solid #333", flexShrink: 0, backgroundColor: "#2a2a2a" }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 4px", borderBottom: "1px solid var(--border-primary)", flexShrink: 0, backgroundColor: "var(--bg-elevated)" }}>
                       <Select
                         value={previewOtherTemplateId}
                         onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
                         size="small"
                         displayEmpty
-                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
                       >
                         {previewOtherTemplates.map((t) => (
                           <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
@@ -1069,7 +1069,7 @@ function Editor(props) {
                         onChange={(e) => setPreviewNoteId(e.target.value)}
                         size="small"
                         displayEmpty
-                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
                       >
                         {previewNotes.map((n) => (
                           <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
@@ -1086,19 +1086,19 @@ function Editor(props) {
               {/** フローティング操作ボタン（右下: 公開 / ダイアグラムダウンロード） */}
               {mode !== Mode.template &&
                 <IconButton className="floatPublishBtn" size="small" aria-label="publish" onClick={handlePublish}>
-                  <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                  <PublishIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
                 </IconButton>
               }
               {mode === Mode.diagram &&
                 <IconButton className="floatPublishBtn" size="small" aria-label="download" onClick={handleDownload} sx={{ bottom: '64px' }}>
-                  <DownloadIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                  <DownloadIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
                 </IconButton>
               }
 
               {/** フローティング操作ボタン（左下: 非公開） */}
               {mode !== Mode.template &&
                 <IconButton className="floatUnpublishBtn" size="small" aria-label="unpublish" onClick={handleUnpublish}>
-                  <UnpublishedIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+                  <UnpublishedIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
                 </IconButton>
               }
 

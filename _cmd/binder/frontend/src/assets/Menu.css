@@ -7,9 +7,9 @@
     justify-content: flex-start;
     gap: 4px;
 
-    border-right: 1px solid #343434;
-    background-color: #191919;
-    color: #e9e9e9;
+    border-right: 1px solid var(--border-primary);
+    background-color: var(--bg-sidebar);
+    color: var(--text-secondary);
 }
 
 
@@ -21,8 +21,8 @@
     overflow: auto;
     transition: width 0.5s,min-width 0.5s;
 
-    background-color: #292929;
-    color: #e9e9e9;
+    background-color: var(--bg-panel);
+    color: var(--text-secondary);
 }
 
 #menu.hideMenu {
@@ -47,9 +47,9 @@
     box-sizing: border-box;
     font-size: 14px;
 
-    background-color: #292929;
+    background-color: var(--bg-panel);
     background-image: none !important;
-    color: #f1f1f1;
+    color: var(--text-primary);
     --wails-draggable:no-drag;
 }
 
@@ -60,7 +60,7 @@ button.leftButton {
 }
 
 button.leftButton:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--hover-overlay) !important;
 }
 
 #settingButton {
@@ -68,7 +68,7 @@ button.leftButton:hover {
 }
 
 div.leftButton.active {
-  border-left: 4px solid #00ff00;
+  border-left: 4px solid var(--accent-active);
   border-radius: 0px !important;
 }
 
@@ -79,11 +79,11 @@ div.leftButton.active {
 }
 
 #tree div.content:hover {
-  background-color: rgba(0,0,255,0.2);
+  background-color: var(--hover-tree);
 }
 
 #tree div.content.selected {
-  background-color: rgba(0,0,255,0.4);
+  background-color: var(--hover-tree-sel);
 }
 
 #tree div.content > div:first-child {

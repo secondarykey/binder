@@ -14,13 +14,13 @@ const TreeContainer = styled.div`
 const NodeWrapper = styled.div`
   margin-left: ${props => props.$isRoot ? '0' : '20px'};
   box-shadow: ${props =>
-    props.$isBefore ? 'inset 0 2px 0 0 #1a73e8' :
-    props.$isAfter  ? 'inset 0 -2px 0 0 #1a73e8' :
+    props.$isBefore ? 'inset 0 2px 0 0 var(--accent-drag)' :
+    props.$isAfter  ? 'inset 0 -2px 0 0 var(--accent-drag)' :
     'none'};
 `;
 
 const NodeContentContainer = styled.div`
-  background-color: ${props => props.$isInside ? 'rgb(41, 43, 48)' : 'transparent'};
+  background-color: ${props => props.$isInside ? 'var(--tree-inside-bg)' : 'transparent'};
   opacity: ${props => props.$isDragging ? 0.4 : 1};
   transition: opacity 0.1s;
 `;
@@ -43,7 +43,7 @@ const ExpandButton = styled.span`
   font-family: monospace;
   font-size: 10px;
   line-height: 1;
-  color: #aaa;
+  color: var(--text-muted);
   z-index: 1;
 `;
 
@@ -52,7 +52,7 @@ const NodeContent = styled.div`
   position: relative;
   padding: 2px 2px 2px 18px;
   border-radius: 2px;
-  background-color: ${props => props.$isSelected ? '#2a3f6f' : 'transparent'};
+  background-color: ${props => props.$isSelected ? 'var(--selected-bg)' : 'transparent'};
   flex-grow: 1;
   cursor: pointer;
   display: flex;
@@ -65,8 +65,8 @@ const IconWrapper = styled.span`
   display: flex;
   align-items: center;
   ${({ $modified }) => $modified ? `
-    color: #f5a623;
-    & .MuiSvgIcon-root { fill: #f5a623; }
+    color: var(--accent-orange);
+    & .MuiSvgIcon-root { fill: var(--accent-orange); }
   ` : ''}
 `;
 
@@ -368,7 +368,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     }}
                   />
                 ) : (
-                  <span style={node.modified ? { color: '#f5a623' } : undefined}>{node.name}</span>
+                  <span style={node.modified ? { color: 'var(--accent-orange)' } : undefined}>{node.name}</span>
                 )}
               </NodeContent>
             </Row>

@@ -3,13 +3,13 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    background-color: #252525;
-    color: #f1f1f1;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
 }
 
 #content {
   --wails-draggable:no-drag;
-  background-color: #252525;
+  background-color: var(--bg-surface);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -21,7 +21,7 @@
 }
 
 div.linkBtn input , div.linkBtn svg {
-  cursor: pointer !important; 
+  cursor: pointer !important;
 }
 
 #splitScreen {
@@ -34,6 +34,6 @@ div.linkBtn input , div.linkBtn svg {
   margin: 40px;
   margin-top: 20px;
 
-  background-color: #252525;
-  color: #f1f1f1;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
 }

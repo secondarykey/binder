@@ -497,7 +497,7 @@ function BinderTree(props) {
         <span>Add</span><span>▶</span>
       </MenuItem>
       <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
@@ -525,7 +525,7 @@ function BinderTree(props) {
       <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
       <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
       <MenuItem onClick={handleHistoryDiagram} divider>History</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
     </Menu>
 
     {/** アセットメニュー: Edit / Delete */}
@@ -538,7 +538,7 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
       <MenuItem onClick={handleEditAsset} divider>Edit</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
     </Menu>
 
     {/** 削除確認ダイアログ */}

@@ -121,14 +121,14 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
     var pos = (fontSize *  digit) + "px";
 
     var lineStyle = {
-        backgroundColor: "#222222",
+        backgroundColor: "var(--bg-overlay)",
         border: "0",
         borderRight: "1px double #cccccc",
         boxSizing: "border-box",
         position: "absolute",
         width: "calc(" + pos + ")",
         zIndex: 10,
-        color: "#eeeeee",
+        color: "var(--text-secondary)",
         paddingRight: "5px",
         fontSize: fontSize + "px",
         fontFamily: fontName,
@@ -139,8 +139,8 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
     }
 
     var textStyle = {
-        backgroundColor: "#222222",
-        color: "#eeeeee",
+        backgroundColor: "var(--bg-overlay)",
+        color: "var(--text-secondary)",
         whiteSpace: "pre",
         fontSize: fontSize + "px",
         fontFamily: fontName,

@@ -64,8 +64,8 @@ function CommitModal({ open, onClose }) {
           height: '600px',
           maxWidth: '90vw',
           maxHeight: '85vh',
-          backgroundColor: '#252525',
-          color: '#f1f1f1',
+          backgroundColor: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -102,7 +102,7 @@ function CommitModal({ open, onClose }) {
                   size="small"
                   startIcon={<ArrowBackIcon fontSize="small" />}
                   onClick={handleBack}
-                  sx={{ color: '#aaaaaa', textTransform: 'none' }}
+                  sx={{ color: 'var(--text-muted)', textTransform: 'none' }}
                 >
                   コメントに戻る
                 </Button>

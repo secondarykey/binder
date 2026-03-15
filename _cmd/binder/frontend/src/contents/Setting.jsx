@@ -91,8 +91,8 @@ function Setting({ isModal, ...props }) {
       <List disablePadding sx={{
         width: 120,
         flexShrink: 0,
-        borderRight: '1px solid #333',
-        backgroundColor: '#1e1e1e',
+        borderRight: '1px solid var(--border-primary)',
+        backgroundColor: 'var(--bg-dialog)',
         pt: 1,
       }}>
         {menuItems.map((item) => (
@@ -105,14 +105,14 @@ function Setting({ isModal, ...props }) {
               px: 1.5,
               fontSize: '13px',
               '&.Mui-selected': {
-                backgroundColor: '#2d3a4a',
-                color: '#90caf9',
+                backgroundColor: 'var(--selected-menu)',
+                color: 'var(--selected-text)',
               },
               '&.Mui-selected:hover': {
-                backgroundColor: '#2d3a4a',
+                backgroundColor: 'var(--selected-menu)',
               },
               '&:hover': {
-                backgroundColor: '#2a2a2a',
+                backgroundColor: 'var(--bg-elevated)',
               },
             }}
           >

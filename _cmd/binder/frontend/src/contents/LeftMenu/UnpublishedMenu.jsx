@@ -165,7 +165,7 @@ const UnpublishedList = forwardRef((props, ref) => {
         lineHeight: '28px', pt: 0, pb: 0, pl: 0.5, pr: 0.5,
         fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em',
         textTransform: 'uppercase', opacity: 0.6,
-        backgroundColor: '#222222', color: 'inherit',
+        backgroundColor: 'var(--bg-overlay)', color: 'inherit',
       }}>
       <Checkbox
         size="small"
@@ -181,7 +181,7 @@ const UnpublishedList = forwardRef((props, ref) => {
       <ListItemButton key={leaf.id}
         sx={{
           pl: 2, py: 0.25, borderRadius: '2px',
-          '&:hover': { backgroundColor: '#2a3f6f' },
+          '&:hover': { backgroundColor: 'var(--selected-bg)' },
         }}>
         <ListItemIcon sx={{ minWidth: 32 }}>
           <Checkbox

@@ -35,8 +35,8 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
         pl: 3,
         py: 0.25,
         borderRadius: '2px',
-        '&.Mui-selected': { backgroundColor: '#2a3f6f' },
-        '&.Mui-selected:hover': { backgroundColor: '#2a3f6f' },
+        '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
+        '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
       }}>
 
       {/** ドラッグハンドル: クリックイベントが親に伝播しないようにする */}
@@ -184,7 +184,7 @@ function TemplateTree(props) {
 
       {/** Layout セクション */}
       <ListSubheader disableSticky
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: '#222222', color: 'inherit' }}>
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Layout
         <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Layout")}>
           <AddIcon fontSize="small" />
@@ -208,7 +208,7 @@ function TemplateTree(props) {
 
       {/** Content セクション */}
       <ListSubheader disableSticky
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: '#222222', color: 'inherit' }}>
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Content
         <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Content")}>
           <AddIcon fontSize="small" />
@@ -237,7 +237,7 @@ function TemplateTree(props) {
       open={templateMenu}
       onClose={closeMenu}>
       <MenuItem onClick={handleEditTemplate} divider>Edit</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: '#f44336' }}>Delete</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
     </Menu>
 
     {/** 削除確認ダイアログ */}

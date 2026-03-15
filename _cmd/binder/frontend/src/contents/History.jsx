@@ -38,12 +38,12 @@ function History(props) {
   }
 
   return (<>
-    <h3 style={{ margin: "10px", color: "#f1f1f1" }}>History</h3>
+    <h3 style={{ margin: "10px", color: "var(--text-primary)" }}>History</h3>
     <List key="historyList">
       {histories.map((p) => {
         return (
           <ListItemButton key={p} onClick={() => handleSelect(p)} >
-            <ListItemText style={{ color: "#f1f1f1" }} primary={p} />
+            <ListItemText style={{ color: "var(--text-primary)" }} primary={p} />
           </ListItemButton>
         )
       })}

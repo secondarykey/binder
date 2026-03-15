@@ -2,6 +2,7 @@ import React from 'react'
 import {createRoot} from 'react-dom/client'
 import { HashRouter } from "react-router";
 
+import './assets/theme.css'
 import './assets/style.css'
 import App from './App'
 import CommitApp from './CommitApp'

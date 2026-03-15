@@ -33,7 +33,7 @@ function PatchView() {
           size="small"
           startIcon={<ArrowBackIcon fontSize="small" />}
           onClick={handleBack}
-          sx={{ color: '#aaaaaa', textTransform: 'none' }}
+          sx={{ color: 'var(--text-muted)', textTransform: 'none' }}
         >
           コメントに戻る
         </Button>

@@ -8,7 +8,7 @@
 
 .treeText {
     text-align:left;
-    color: #f1f1f1;
+    color: var(--text-primary);
     border:0;
 }
 
@@ -26,8 +26,8 @@
 .formContainer {
   display: flex;
   flex-flow: column;
-  background-color: #292929;
-  color: #f1f1f1;
+  background-color: var(--bg-panel);
+  color: var(--text-primary);
 }
 
 .messageTxt {
@@ -36,15 +36,15 @@
 
 
 .MuiSvgIcon-root {
-    color:#f9f9f9;
+    color: var(--icon-color);
 }
 
 .MuiFormLabel-root {
-  color: #f1f1f1 !important;
+  color: var(--text-primary) !important;
 }
 
 .MuiInputBase-input {
-  color: #f1f1f1 !important;
+  color: var(--text-primary) !important;
 }
 
 .MuiDialog-container {
@@ -53,52 +53,52 @@
 
 /* ダイアログのダークモード */
 .MuiDialog-paper {
-  background-color: #1e1e1e !important;
-  color: #f1f1f1 !important;
+  background-color: var(--bg-dialog) !important;
+  color: var(--text-primary) !important;
 }
 
 .MuiDialogTitle-root {
-  color: #f1f1f1 !important;
+  color: var(--text-primary) !important;
 }
 
 .MuiDialogContentText-root {
-  color: #c0c0c0 !important;
+  color: var(--text-tertiary) !important;
 }
 
 .MuiOutlinedInput-root {
-  background-color: #2a2a2a !important;
+  background-color: var(--bg-elevated) !important;
 }
 
 .MuiOutlinedInput-notchedOutline {
-  border-color: #444 !important;
+  border-color: var(--border-input) !important;
 }
 
 .MuiSelect-icon {
-  color: #c0c0c0 !important;
+  color: var(--text-tertiary) !important;
 }
 
 /* セレクトボックスのドロップダウンメニュー */
 .MuiPopover-paper, .MuiMenu-paper {
-  background-color: #2a2a2a !important;
-  color: #f1f1f1 !important;
+  background-color: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
 }
 
 .MuiMenuItem-root {
-  color: #f1f1f1 !important;
+  color: var(--text-primary) !important;
   font-size: 14px !important;
 }
 
 .MuiMenuItem-root:hover {
-  background-color: #3a3a3a !important;
+  background-color: var(--hover-menuitem) !important;
 }
 
 .MuiMenuItem-root.Mui-selected {
-  background-color: #333a4a !important;
+  background-color: var(--selected-menu) !important;
 }
 
 .MuiAccordion-root {
-  background-color: #202020 !important;
-  color: #f1f1f1 !important;
+  background-color: var(--bg-overlay) !important;
+  color: var(--text-primary) !important;
 }
 
 .input-box .btn {
@@ -114,7 +114,7 @@
 
 .input-box .btn:hover {
     background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-    color: #333333;
+    color: var(--input-btn-hover-text);
 }
 
 .input-box .input {
@@ -124,18 +124,18 @@
     height: 30px;
     line-height: 30px;
     padding: 0 10px;
-    background-color: rgba(240, 240, 240, 1);
+    background-color: var(--input-bg);
     -webkit-font-smoothing: antialiased;
 }
 
 .input-box .input:hover {
     border: none;
-    background-color: rgba(255, 255, 255, 1);
+    background-color: var(--input-bg-focus);
 }
 
 .input-box .input:focus {
     border: none;
-    background-color: rgba(255, 255, 255, 1);
+    background-color: var(--input-bg-focus);
 }
 
 div.MuiAccordionSummary-content {
@@ -150,18 +150,18 @@ div.Mui-expanded {
 
 ::-webkit-scrollbar {
     cursor: auto;
-    width: 14px; 
+    width: 14px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #555; 
+    background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
     cursor: auto;
-    background: #999; 
+    background: var(--scrollbar-thumb);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #777;
+    background: var(--scrollbar-hover);
 }

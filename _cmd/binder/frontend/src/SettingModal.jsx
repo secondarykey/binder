@@ -14,8 +14,8 @@ function SettingModal({ open, onClose }) {
       maxWidth={false}
       PaperProps={{
         sx: {
-          backgroundColor: '#252525',
-          color: '#f1f1f1',
+          backgroundColor: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
           width: '1000px',
           height: '75vh',
           maxHeight: '75vh',
@@ -28,9 +28,9 @@ function SettingModal({ open, onClose }) {
         minHeight: '40px !important',
         paddingLeft: '16px !important',
         paddingRight: '0px',
-        color: '#f1f1f1',
-        borderBottom: '1px solid #262626',
-        backgroundColor: '#1c1c1c',
+        color: 'var(--text-primary)',
+        borderBottom: '1px solid var(--border-subtle)',
+        backgroundColor: 'var(--bg-titlebar)',
         flexShrink: 0,
       }}>
         <Typography variant="body1" sx={{ flex: 1 }}>Setting</Typography>

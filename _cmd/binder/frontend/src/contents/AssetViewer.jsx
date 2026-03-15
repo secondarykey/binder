@@ -235,14 +235,14 @@ function AssetViewer() {
     content = (
       <div style={{ padding: '16px' }}>
         {assetName && (
-          <div style={{ marginBottom: '8px', color: '#ccc', fontSize: '13px' }}>{assetName}</div>
+          <div style={{ marginBottom: '8px', color: 'var(--text-tertiary)', fontSize: '13px' }}>{assetName}</div>
         )}
-        <div style={{ color: '#f88' }}>{error}</div>
+        <div style={{ color: 'var(--accent-error)' }}>{error}</div>
       </div>
     );
   } else if (!assetContent) {
     content = (
-      <div style={{ padding: '16px', color: '#aaa' }}>Loading...</div>
+      <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Loading...</div>
     );
   } else {
     const { name, binary, content: fileContent } = assetContent;
@@ -291,7 +291,7 @@ function AssetViewer() {
     } else {
       // その他バイナリ
       content = (
-        <div style={{ padding: '16px', color: '#aaa' }}>
+        <div style={{ padding: '16px', color: 'var(--text-muted)' }}>
           バイナリファイルのため表示できません: {name}
         </div>
       );
@@ -310,7 +310,7 @@ function AssetViewer() {
           onClick={handleMigrate}
           disabled={migrating || !id}
         >
-          <NoteAddIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+          <NoteAddIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
         </IconButton>
       )}
       {/* フローティング公開ボタン（右下） */}
@@ -321,7 +321,7 @@ function AssetViewer() {
         onClick={handleGenerate}
         disabled={generating || !id}
       >
-        <PublishIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+        <PublishIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
       </IconButton>
       {/* フローティング非公開ボタン（左下） */}
       <IconButton
@@ -331,14 +331,14 @@ function AssetViewer() {
         onClick={handleUnpublish}
         disabled={!id}
       >
-        <UnpublishedIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+        <UnpublishedIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
       </IconButton>
 
       {/* ノート移行確認ダイアログ */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>ノートに移行</DialogTitle>
         <DialogContent>
-          <DialogContentText style={{ color: "#eeeeee" }}>
+          <DialogContentText style={{ color: "var(--text-secondary)" }}>
             「{assetName}」をノートに移行します。元のアセットは削除されます。よろしいですか？
           </DialogContentText>
         </DialogContent>

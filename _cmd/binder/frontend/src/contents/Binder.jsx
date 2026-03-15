@@ -85,8 +85,8 @@ function Binder({ isModal, ...props }) {
       <List disablePadding sx={{
         width: 120,
         flexShrink: 0,
-        borderRight: '1px solid #333',
-        backgroundColor: '#1e1e1e',
+        borderRight: '1px solid var(--border-primary)',
+        backgroundColor: 'var(--bg-dialog)',
         pt: 1,
       }}>
         {MENU_ITEMS.map((item) => (
@@ -97,9 +97,9 @@ function Binder({ isModal, ...props }) {
             sx={{
               py: 1,
               px: 1.5,
-              '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
-              '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
-              '&:hover': { backgroundColor: '#2a2a2a' },
+              '&.Mui-selected': { backgroundColor: 'var(--selected-menu)', color: 'var(--selected-text)' },
+              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-menu)' },
+              '&:hover': { backgroundColor: 'var(--bg-elevated)' },
             }}
           >
             <ListItemText
@@ -134,8 +134,8 @@ function Binder({ isModal, ...props }) {
               <Select
                 value={remote}
                 onChange={(e) => handleChangeRemote(e)}
-                sx={{ color: '#f1f1f1' }}
-                MenuProps={{ PaperProps: { sx: { backgroundColor: '#1a1a1a', color: '#f1f1f1' } } }}
+                sx={{ color: 'var(--text-primary)' }}
+                MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
               >
                 {remoteList.map((v) => (
                   <MenuItem key={"Select" + v} value={v}>{v}</MenuItem>
@@ -173,12 +173,12 @@ function Binder({ isModal, ...props }) {
               evt.showErrorMessage(err);
             });
           },
-          style: { backgroundColor: "#333333" },
+          style: { backgroundColor: "var(--bg-button)" },
         }}
       >
-        <DialogTitle style={{ color: "#eeeeee" }}>Setting Remote</DialogTitle>
+        <DialogTitle style={{ color: "var(--text-secondary)" }}>Setting Remote</DialogTitle>
         <DialogContent>
-          <DialogContentText style={{ color: "#eeeeee" }}>
+          <DialogContentText style={{ color: "var(--text-secondary)" }}>
             You can add, but please use git to edit.
           </DialogContentText>
           <TextField

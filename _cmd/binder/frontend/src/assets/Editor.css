@@ -21,9 +21,9 @@
   box-sizing: border-box;
   font-size: 14px;
 
-  background-color: #292929;
-  color: #f1f1f1;
-  border-right: 1px solid #343434;
+  background-color: var(--bg-panel);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-primary);
   --wails-draggable: no-drag;
 }
 
@@ -37,13 +37,13 @@
   cursor: col-resize;
 
   border: 0;
-  background-color: #222222;
+  background-color: var(--bg-overlay);
   transition: background-color 0.4s;
 }
 
 #treeSplitter:hover {
   z-index: 100;
-  background-color: #3333ff;
+  background-color: var(--accent-blue);
 }
 
 /* =====================================================================
@@ -56,7 +56,7 @@
   flex-direction: row;
   overflow: hidden;
   position: relative;
-  background-color: #2a2a2a;
+  background-color: var(--bg-elevated);
   padding-right:5px;
   padding-bottom:5px;
 }
@@ -80,7 +80,7 @@
   padding-left: 4px !important;
   padding-right: 4px !important;
 
-  background-color: #2a2a2a;
+  background-color: var(--bg-elevated);
 }
 
 .editorBtn {
@@ -111,7 +111,7 @@
   position: relative;
 
   border: 0;
-  background-color: #222222;
+  background-color: var(--bg-overlay);
   transition: background-color 0.4s;
 }
 
@@ -124,7 +124,7 @@
   transform: translate(-50%, -50%) !important;
   width: 4px !important;
   height: 32px !important;
-  background-image: radial-gradient(circle, #555 1.5px, transparent 1.5px) !important;
+  background-image: radial-gradient(circle, var(--splitter-dot) 1.5px, transparent 1.5px) !important;
   background-size: 4px 8px !important;
   background-repeat: repeat-y !important;
   opacity: 0 !important;
@@ -134,12 +134,12 @@
 
 #splitter:hover {
   z-index: 100;
-  background-color: #3333ff;
+  background-color: var(--accent-blue);
 }
 
 #splitter:hover::before {
   opacity: 1 !important;
-  background-image: radial-gradient(circle, #ccccff 1.5px, transparent 1.5px) !important;
+  background-image: radial-gradient(circle, var(--splitter-dot-hover) 1.5px, transparent 1.5px) !important;
 }
 
 /* =====================================================================
@@ -161,7 +161,7 @@ iframe.htmlViewer {
   top: 0;
   width: 100%;
   height: 100%;
-  border: 0px solid #444444 !important;
+  border: 0px solid var(--border-input) !important;
 }
 
 #mermaidViewer {
@@ -197,9 +197,9 @@ iframe.htmlViewer {
   overflow: hidden;
   text-align: right;
   padding: 5px 6px 5px 0;
-  color: #555;
-  background-color: #252525;
-  border-right: 1px solid #333;
+  color: var(--text-faint);
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-primary);
   user-select: none;
   pointer-events: none;
   line-height: 1.5;
@@ -218,8 +218,8 @@ iframe.htmlViewer {
   min-width: 0;
   height: 100%;
 
-  background-color: #252525;
-  caret-color: #ffffff;
+  background-color: var(--bg-surface);
+  caret-color: var(--text-primary);
 
   border: 0 solid #000000;
 
@@ -232,7 +232,7 @@ iframe.htmlViewer {
 }
 
 #editor:focus {
-  outline: 1px solid #444444;
+  outline: 1px solid var(--border-input);
 }
 
 /* =====================================================================
@@ -243,13 +243,13 @@ iframe.htmlViewer {
   bottom: 16px !important;
   right: 16px !important;
   z-index: 10;
-  background-color: rgba(34, 34, 34, 0.85) !important;
+  background-color: var(--float-bg) !important;
   backdrop-filter: blur(4px);
-  border: 1px solid #444 !important;
+  border: 1px solid var(--border-input) !important;
 }
 
 .floatPublishBtn:hover {
-  background-color: rgba(70, 70, 70, 0.95) !important;
+  background-color: var(--float-bg-hover) !important;
 }
 
 /* =====================================================================
@@ -260,13 +260,13 @@ iframe.htmlViewer {
   bottom: 16px !important;
   left: 16px !important;
   z-index: 10;
-  background-color: rgba(34, 34, 34, 0.85) !important;
+  background-color: var(--float-bg) !important;
   backdrop-filter: blur(4px);
-  border: 1px solid #444 !important;
+  border: 1px solid var(--border-input) !important;
 }
 
 .floatUnpublishBtn:hover {
-  background-color: rgba(100, 40, 40, 0.95) !important;
+  background-color: var(--float-danger) !important;
 }
 
 /* =====================================================================
@@ -277,13 +277,13 @@ iframe.htmlViewer {
   top: 16px !important;
   right: 16px !important;
   z-index: 10;
-  background-color: rgba(34, 34, 34, 0.85) !important;
+  background-color: var(--float-bg) !important;
   backdrop-filter: blur(4px);
-  border: 1px solid #444 !important;
+  border: 1px solid var(--border-input) !important;
 }
 
 .floatTopRightBtn:hover {
-  background-color: rgba(70, 70, 70, 0.95) !important;
+  background-color: var(--float-bg-hover) !important;
 }
 
 /* =====================================================================
@@ -293,7 +293,7 @@ iframe.htmlViewer {
   display: flex !important;
   justify-content: left !important;
   align-items: baseline !important;
-  background-color: #222222;
+  background-color: var(--bg-overlay);
   position: absolute !important;
   padding-left: 0px !important;
   margin-left: 5px !important;

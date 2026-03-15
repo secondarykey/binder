@@ -141,14 +141,14 @@ function TextPanel({ rows, html, fontName, fontSize, scrollRef, lineRef }) {
     const pos = (fontSize * 3) + "px";
 
     const lineStyle = {
-        backgroundColor: "#222222",
+        backgroundColor: "var(--bg-overlay)",
         border: "0",
         borderRight: "1px double #cccccc",
         boxSizing: "border-box",
         position: "absolute",
         width: pos,
         zIndex: 10,
-        color: "#eeeeee",
+        color: "var(--text-secondary)",
         paddingRight: "5px",
         fontSize: fontSize + "px",
         fontFamily: fontName,
@@ -159,8 +159,8 @@ function TextPanel({ rows, html, fontName, fontSize, scrollRef, lineRef }) {
     };
 
     const textStyle = {
-        backgroundColor: "#222222",
-        color: "#eeeeee",
+        backgroundColor: "var(--bg-overlay)",
+        color: "var(--text-secondary)",
         whiteSpace: "pre",
         fontSize: fontSize + "px",
         fontFamily: fontName,
@@ -271,12 +271,12 @@ function HistoryPatch({ typ, id }) {
 
     const panelLabelStyle = {
         fontSize: "0.7rem",
-        color: "#888",
+        color: "var(--text-disabled)",
         letterSpacing: "0.08em",
         textTransform: "uppercase",
         padding: "2px 8px",
-        borderBottom: "1px solid #333",
-        backgroundColor: "#1c1c1c",
+        borderBottom: "1px solid var(--border-primary)",
+        backgroundColor: "var(--bg-titlebar)",
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
@@ -293,9 +293,9 @@ function HistoryPatch({ typ, id }) {
 
     const btnSx = {
         fontSize: "0.65rem", py: 0, px: 1,
-        color: "#aaa", borderColor: "#555",
+        color: "var(--text-muted)", borderColor: "var(--border-strong)",
         textTransform: "none",
-        "&:hover": { borderColor: "#aaa", color: "#fff" },
+        "&:hover": { borderColor: "var(--text-muted)", color: "var(--text-primary)" },
     };
 
     return (
@@ -303,7 +303,7 @@ function HistoryPatch({ typ, id }) {
         <div style={{ display: "flex", width: "100%", height: "100%" }}>
 
             {/* 履歴ファイル表示パネル */}
-            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid #333" : "none" }}>
+            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid var(--border-primary)" : "none" }}>
                 <div style={panelLabelStyle}>
                     {/* 左: Historical ラベル + Restore ボタン */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -328,8 +328,8 @@ function HistoryPatch({ typ, id }) {
                         disabled={!hash || !patch}
                         sx={{
                             ...btnSx,
-                            ...(showDiff ? { color: "#fff", backgroundColor: "#2a3f6f", borderColor: "#2a3f6f",
-                                "&:hover": { backgroundColor: "#3a5080" } } : {}),
+                            ...(showDiff ? { color: "var(--text-primary)", backgroundColor: "var(--selected-bg)", borderColor: "var(--selected-bg)",
+                                "&:hover": { backgroundColor: "var(--selected-hover)" } } : {}),
                         }}
                     >
                         Diff

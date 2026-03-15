@@ -40,7 +40,7 @@ function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
         <IconButton
           size="small"
           onClick={(e) => { e.stopPropagation(); onDelete(snippet.id); }}
-          sx={{ color: '#888', '&:hover': { color: '#f44336' }, mr: -1 }}
+          sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' }, mr: -1 }}
         >
           <DeleteIcon sx={{ fontSize: '15px' }} />
         </IconButton>
@@ -53,16 +53,16 @@ function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
           py: 0.6,
           pl: 0.5,
           pr: 4,
-          '&.Mui-selected': { backgroundColor: '#2d3a4a', color: '#90caf9' },
-          '&.Mui-selected:hover': { backgroundColor: '#2d3a4a' },
-          '&:hover': { backgroundColor: '#2a2a2a' },
+          '&.Mui-selected': { backgroundColor: 'var(--selected-menu)', color: 'var(--selected-text)' },
+          '&.Mui-selected:hover': { backgroundColor: 'var(--selected-menu)' },
+          '&:hover': { backgroundColor: 'var(--bg-elevated)' },
         }}
       >
         {/** ドラッグハンドル */}
         <Box
           {...attributes}
           {...listeners}
-          sx={{ display: 'flex', alignItems: 'center', color: '#555', cursor: 'grab', mr: 0.5, flexShrink: 0, '&:active': { cursor: 'grabbing' } }}
+          sx={{ display: 'flex', alignItems: 'center', color: 'var(--text-faint)', cursor: 'grab', mr: 0.5, flexShrink: 0, '&:active': { cursor: 'grabbing' } }}
         >
           <DragIndicatorIcon sx={{ fontSize: '16px' }} />
         </Box>
@@ -203,13 +203,13 @@ function SnippetSetting() {
       <Box sx={{
         width: 200,
         flexShrink: 0,
-        borderRight: '1px solid #333',
-        backgroundColor: '#202020',
+        borderRight: '1px solid var(--border-primary)',
+        backgroundColor: 'var(--bg-overlay)',
         display: 'flex',
         flexDirection: 'column',
       }}>
         {/** カテゴリセレクト + 追加ボタン */}
-        <Box sx={{ px: 1, py: 0.8, borderBottom: '1px solid #333', flexShrink: 0, display: 'flex', gap: 0.5, alignItems: 'center' }}>
+        <Box sx={{ px: 1, py: 0.8, borderBottom: '1px solid var(--border-primary)', flexShrink: 0, display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <Select
             value={category}
             onChange={(e) => handleSelectCategory(e.target.value)}
@@ -217,13 +217,13 @@ function SnippetSetting() {
             fullWidth
             sx={{
               fontSize: '13px',
-              color: '#f1f1f1',
-              backgroundColor: '#1a1a1a',
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
-              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#666' },
-              '& .MuiSvgIcon-root': { color: '#aaa' },
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-dropdown)',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+              '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
             }}
-            MenuProps={{ PaperProps: { sx: { backgroundColor: '#1a1a1a', color: '#f1f1f1' } } }}
+            MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
           >
             {CATEGORIES.map((c) => (
               <MenuItem key={c.key} value={c.key} sx={{ fontSize: '13px' }}>
@@ -231,7 +231,7 @@ function SnippetSetting() {
               </MenuItem>
             ))}
           </Select>
-          <IconButton size="small" onClick={handleAdd} sx={{ color: '#aaa', '&:hover': { color: '#90caf9' }, flexShrink: 0 }}>
+          <IconButton size="small" onClick={handleAdd} sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--selected-text)' }, flexShrink: 0 }}>
             <AddIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -251,7 +251,7 @@ function SnippetSetting() {
                   />
                 ))}
                 {currentList.length === 0 && (
-                  <Box sx={{ px: 1.5, py: 1, color: '#555', fontSize: '12px' }}>
+                  <Box sx={{ px: 1.5, py: 1, color: 'var(--text-faint)', fontSize: '12px' }}>
                     (なし)
                   </Box>
                 )}
@@ -271,7 +271,7 @@ function SnippetSetting() {
           variant="outlined"
           disabled={selectedId === null}
           placeholder="名称"
-          inputProps={{ style: { fontSize: '13px', color: '#f1f1f1' } }}
+          inputProps={{ style: { fontSize: '13px', color: 'var(--text-primary)' } }}
         />
         <TextField
           multiline
@@ -282,7 +282,7 @@ function SnippetSetting() {
           variant="outlined"
           disabled={selectedId === null}
           placeholder={selectedId === null ? "スニペットを選択してください" : ""}
-          inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: '#f1f1f1', resize: 'none' } }}
+          inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-primary)', resize: 'none' } }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <IconButton onClick={handleSave} aria-label="save" disabled={selectedId === null}>
@@ -297,16 +297,16 @@ function SnippetSetting() {
     <Dialog
       open={deleteConfirm.open}
       onClose={handleDeleteCancel}
-      PaperProps={{ sx: { backgroundColor: '#1e1e1e', color: '#f1f1f1', minWidth: 320 } }}
+      PaperProps={{ sx: { backgroundColor: 'var(--bg-dialog)', color: 'var(--text-primary)', minWidth: 320 } }}
     >
       <DialogTitle sx={{ fontSize: '14px', pb: 1 }}>スニペットの削除</DialogTitle>
       <DialogContent>
-        <DialogContentText sx={{ color: '#ccc', fontSize: '13px' }}>
+        <DialogContentText sx={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>
           「{deleteConfirm.name}」を削除しますか？
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ px: 2, pb: 1.5 }}>
-        <Button onClick={handleDeleteCancel} size="small" sx={{ color: '#aaa', fontSize: '12px' }}>
+        <Button onClick={handleDeleteCancel} size="small" sx={{ color: 'var(--text-muted)', fontSize: '12px' }}>
           キャンセル
         </Button>
         <Button onClick={handleDeleteConfirm} size="small" color="error" variant="contained" sx={{ fontSize: '12px' }}>

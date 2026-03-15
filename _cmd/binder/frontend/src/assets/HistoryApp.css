@@ -12,9 +12,9 @@
     padding-left: 8px !important;
     padding-right: 0px;
     padding-top: 2px !important;
-    color: #f1f1f1 !important;
-    border-bottom: 1px solid #262626;
-    background-color: #1c1c1c !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-titlebar) !important;
     --wails-draggable: drag;
 }
 
@@ -23,7 +23,7 @@
 }
 
 #historyTitle button:hover {
-    background-color: #2a2a2a;
+    background-color: var(--bg-elevated);
 }
 
 #historyArea {
@@ -36,16 +36,16 @@
 #historyLeft {
     width: 280px;
     min-width: 280px;
-    background-color: #292929;
+    background-color: var(--bg-panel);
     overflow-y: auto;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--border-primary);
 }
 
 #historyRight {
     flex: 1;
     position: relative;
     overflow: hidden;
-    background-color: #252525;
+    background-color: var(--bg-surface);
 }
 
 #historyEmpty {

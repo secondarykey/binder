@@ -50,7 +50,7 @@ function HistoryMenu({ typ, id }) {
         lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5,
         fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em',
         textTransform: 'uppercase', opacity: 0.6,
-        backgroundColor: '#222222', color: 'inherit',
+        backgroundColor: 'var(--bg-overlay)', color: 'inherit',
         display: 'flex', alignItems: 'center', gap: '4px',
       }}>
         <HistoryIcon sx={{ fontSize: '0.9rem' }} />
@@ -68,8 +68,8 @@ function HistoryMenu({ typ, id }) {
           selected={entry.hash === hash}
           sx={{
             pl: 2, py: 0.5, borderRadius: '2px',
-            '&.Mui-selected': { backgroundColor: '#2a3f6f' },
-            '&.Mui-selected:hover': { backgroundColor: '#2a3f6f' },
+            '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
+            '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
           }}
           onClick={() => handleClick(entry)}>
           <ListItemText
@@ -84,7 +84,7 @@ function HistoryMenu({ typ, id }) {
               </span>
             }
             primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }}
-            secondaryTypographyProps={{ component: 'span', fontSize: '0.75rem', color: '#888' }}
+            secondaryTypographyProps={{ component: 'span', fontSize: '0.75rem', color: 'var(--text-disabled)' }}
           />
         </ListItemButton>
       ))}
