@@ -45,6 +45,19 @@ func (inst *Instance) FindDefaultContentTemplate() (*model.Template, error) {
 	return results[0], nil
 }
 
+// FindDefaultLayoutTemplate はseqが最小のlayoutテンプレートを返す。
+// ノート新規作成時のデフォルトテンプレート選択に使用する。
+func (inst *Instance) FindDefaultLayoutTemplate() (*model.Template, error) {
+	results, err := inst.findTemplate("type = ?", "seq asc", 1, 0, string(json.LayoutTemplateType))
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil
+	}
+	return results[0], nil
+}
+
 func (inst *Instance) FindTemplates() ([]*model.Template, error) {
 	return inst.findTemplate("", "seq asc, updated_date desc", -1, -1)
 }

@@ -295,7 +295,7 @@ function AssetViewer() {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
       {content}
-      {/* フローティングノート移行ボタン（テキストアセットのみ表示、右下より上） */}
+      {/* フローティングノート移行ボタン（テキストアセットのみ表示、右上） */}
       {assetContent && !assetContent.binary && (
         <IconButton
           className="floatPublishBtn"
@@ -303,7 +303,7 @@ function AssetViewer() {
           aria-label="migrate to note"
           onClick={handleMigrate}
           disabled={migrating || !id}
-          style={{ bottom: '64px' }}
+          style={{ bottom: 'auto', top: '16px' }}
         >
           <NoteAddIcon fontSize="small" style={{ color: "#f1f1f1" }} />
         </IconButton>

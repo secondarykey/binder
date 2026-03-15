@@ -315,6 +315,15 @@ func (b *Binder) MigrateAssetToNote(assetId string) (*json.Note, error) {
 	n.Id = b.generateId()
 	n.Alias = n.Id
 
+	// デフォルトレイアウトテンプレートを設定
+	lt, err := b.db.FindDefaultLayoutTemplate()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindDefaultLayoutTemplate() error: %w", err)
+	}
+	if lt != nil {
+		n.LayoutTemplate = lt.Id
+	}
+
 	// デフォルトコンテンツテンプレートを設定
 	dt, err := b.db.FindDefaultContentTemplate()
 	if err != nil {
