@@ -180,6 +180,24 @@ FSマイグレーション (`fs/convert/`):
 
 ユーザー設定はホームディレクトリの`binder/setting.json`に保存（ウィンドウ位置、git設定、外観）。`settings/`パッケージで管理。
 
+### テーマ（ダーク/ライトモード）
+
+UIの色は `_cmd/binder/frontend/src/assets/theme.css` のCSS custom propertiesで一元管理している。
+
+- **ダーク（デフォルト）**: `:root` に定義された変数値が適用される
+- **ライト**: `<html data-theme="light">` を設定すると `[data-theme="light"]` セレクタの値に切り替わる
+- 色の追加・変更は `theme.css` の変数を編集する。CSSやJSXにハードコードしないこと
+- `var(--変数名)` をsx prop / inline style / CSS いずれでも使用可能
+- **対象外**: エディタtextareaのフォント色・背景色（FontDialog設定で上書き）、プレビューiframe内のHTML、Mermaidテーマ
+
+**テーマ切り替え（JS）**:
+```js
+// ライトモードに切り替え
+document.documentElement.dataset.theme = 'light';
+// ダークモードに戻す
+delete document.documentElement.dataset.theme;
+```
+
 ## コーディング規約
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）
