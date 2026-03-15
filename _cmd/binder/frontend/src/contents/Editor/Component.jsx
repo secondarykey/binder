@@ -1,11 +1,12 @@
 import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Divider } from "@mui/material";
+import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Divider, Select } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
+import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
 import { RunEditor, GetSetting, SaveSetting, GetSnippets } from "../../../bindings/binder/api/app";
 
@@ -25,6 +26,7 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import LaunchIcon from '@mui/icons-material/Launch';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
+import PreviewIcon from '@mui/icons-material/Preview';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
@@ -35,6 +37,32 @@ import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
 import AssetViewer from "../AssetViewer.jsx";
+
+/**
+ * ツリーからノートのみを再帰的に抽出する
+ */
+function flattenNotes(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    if (node.type === "note") {
+      result.push({ id: node.id, name: node.name });
+    }
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenNotes(node.children));
+    }
+  }
+  return result;
+}
+
+/**
+ * テンプレートプレビューHTMLを生成する
+ */
+async function runTemplatePreview(templateId, templateType, otherTemplateId, noteId) {
+  const content = await OpenNote(noteId);
+  const parsed = await ParseNote(noteId, true, content);
+  const marked = await Marked.parse(parsed);
+  return await CreateTemplateHTML(templateId, templateType, otherTemplateId, noteId, marked);
+}
 
 //指定秒数での実行処理
 const debouncePromiss = (fn, delay) => {
@@ -117,6 +145,14 @@ function Editor(props) {
   const [html, setHTML] = useState("");
   //更新状態のアイコン
   const [updated, setUpdated] = useState(false);
+
+  // テンプレートプレビュー用
+  const [templateType, setTemplateType] = useState("");
+  const [previewLayouts, setPreviewLayouts] = useState([]);
+  const [previewContents, setPreviewContents] = useState([]);
+  const [previewNotes, setPreviewNotes] = useState([]);
+  const [previewNoteId, setPreviewNoteId] = useState("");
+  const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
 
   //テキストにセンタリング用のタグを埋め込む
   const insertCenterTag = (txt) => {
@@ -215,7 +251,11 @@ function Editor(props) {
     } else if (mode === Mode.template) {
 
       setEditor(true);
-      setViewer(false);
+      setViewer(true);
+
+      // プレビュー設定をリセット
+      setPreviewOtherTemplateId("");
+      setHTML("");
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
@@ -230,11 +270,30 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
-
         setName(resp.name);
+        setTemplateType(resp.type);
       }).catch((err) => {
         evt.showErrorMessage(err);
-      })
+      });
+
+      // プレビュー用テンプレート一覧を取得
+      GetHTMLTemplates().then((tmpls) => {
+        setPreviewLayouts(tmpls.layouts ?? []);
+        setPreviewContents(tmpls.contents ?? []);
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      });
+
+      // プレビュー用ノート一覧を取得
+      GetBinderTree().then((tree) => {
+        const notes = flattenNotes(tree.data ?? []);
+        setPreviewNotes(notes);
+        if (notes.length > 0) {
+          setPreviewNoteId(notes[0].id);
+        }
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      });
     } else if (mode === "assets") {
       // AssetViewer コンポーネントが表示・操作を担うため editor/viewer は不要
       setEditor(false);
@@ -257,6 +316,23 @@ function Editor(props) {
   useEffect(() => {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
   }, []);
+
+  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定
+  useEffect(() => {
+    if (!templateType) return;
+    const others = templateType === "layout" ? previewContents : previewLayouts;
+    if (others.length > 0) {
+      setPreviewOtherTemplateId(others[0].id);
+    }
+  }, [templateType, previewLayouts, previewContents]);
+
+  // プレビュー設定が揃ったら自動プレビュー
+  useEffect(() => {
+    if (mode !== Mode.template || !previewNoteId || !previewOtherTemplateId || !templateType) return;
+    runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+      .then((result) => setHTML(result))
+      .catch((err) => evt.showErrorMessage(err));
+  }, [previewNoteId, previewOtherTemplateId]);
 
   // モードに対応するスニペット一覧
   const snippetList = (() => {
@@ -997,6 +1073,20 @@ function Editor(props) {
                     <LaunchIcon fontSize="small" />
                   </IconButton>
 
+                  {/** テンプレートプレビューリフレッシュ */}
+                  {mode === Mode.template &&
+                    <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
+                      onClick={() => {
+                        if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
+                        runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+                          .then((result) => setHTML(result))
+                          .catch((err) => evt.showErrorMessage(err));
+                      }}
+                      className="editorBtn">
+                      <PreviewIcon fontSize="small" />
+                    </IconButton>
+                  }
+
                 </Container>
               </Container>
 
@@ -1056,6 +1146,40 @@ function Editor(props) {
               {mode === Mode.diagram &&
                 <div id="mermaidViewer"></div>
               }
+              {mode === Mode.template && (() => {
+                const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 8px", borderBottom: "1px solid #333", flexShrink: 0 }}>
+                      <Select
+                        value={previewOtherTemplateId}
+                        onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                        size="small"
+                        displayEmpty
+                        sx={{ minWidth: 120, fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" } }}
+                      >
+                        {previewOtherTemplates.map((t) => (
+                          <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
+                        ))}
+                      </Select>
+                      <Select
+                        value={previewNoteId}
+                        onChange={(e) => setPreviewNoteId(e.target.value)}
+                        size="small"
+                        displayEmpty
+                        sx={{ minWidth: 120, fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" } }}
+                      >
+                        {previewNotes.map((n) => (
+                          <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
+                        ))}
+                      </Select>
+                    </div>
+                    <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+                      <HTMLFrame html={html} />
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/** フローティング操作ボタン（右下: 公開 / ダイアグラムダウンロード） */}
               {mode !== Mode.template &&
