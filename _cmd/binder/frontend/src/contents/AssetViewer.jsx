@@ -204,6 +204,7 @@ function AssetViewer() {
     setMigrating(true);
     try {
       const note = await MigrateAssetToNote(id);
+      evt.refreshTree();
       evt.showSuccessMessage("ノートに移行しました。");
       nav(`/editor/note/${note.id}`);
     } catch (e) {
