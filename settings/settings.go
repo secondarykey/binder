@@ -68,6 +68,7 @@ type Git struct {
 
 type Look struct {
 	DarkMode    bool    `json:"darkMode"`
+	Theme       string  `json:"theme"`
 	WholeText   *Font   `json:"whole"`
 	TreeNoteNum int     `json:"treeNoteNum"`
 	Editor      *Editor `json:"editor"`
@@ -142,6 +143,8 @@ func def() *Setting {
 	//最後に開いていたバインダーを開く
 
 	var look Look
+	look.DarkMode = true
+	look.Theme = "dark"
 	var editor Editor
 	var ef Font
 
