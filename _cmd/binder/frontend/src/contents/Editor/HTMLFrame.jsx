@@ -1,30 +1,19 @@
 import React from "react";
-
-import { useContext } from "react";
-
 import Mermaid from "./engines/Mermaid";
 
-import { EventContext } from '../../Event';
-
 /**
- * IFrame更新のちらつきを抑えるコンポーネント
- * あくまでIframeのちらつきを抑える為の切り替え処理に集中して
- * 更新タイミングなどは上流で行うこと
+ * HTMLプレビュー用 iframe コンポーネント
+ *
+ * 初回のみ srcdoc でドキュメントをロードし、以降の更新は
+ * contentDocument.body.innerHTML を直接差し替えることでドキュメントリロードを
+ * 回避する。リロードがないため白フラッシュが発生しない。
  */
 class HTMLFrame extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.components = [];
-    this.components.push(React.createRef());
-    this.components.push(React.createRef());
-    this.number = 1;
-
-    this.current = undefined;
-
-    this.interval = -1;
-
+    this.iframeRef = React.createRef();
+    this.initialized = false;
     this.view = this.view.bind(this);
   }
 
@@ -32,94 +21,83 @@ class HTMLFrame extends React.Component {
     this.view();
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    if (nextProps.html != this.props.html) {
-      return true;
-    }
-    return false;
+  shouldComponentUpdate(nextProps) {
+    return nextProps.html !== this.props.html;
   }
 
   componentDidUpdate() {
-    var sec = 0.7;
-    if ( this.interval > 0 ) {
-      clearTimeout(this.interval);
-      this.interval = setTimeout(this.view,sec * 1000);
-    } else {
-      this.interval = setTimeout(function() {},sec * 1000);
-      this.view();
-    }
+    this.view();
   }
 
   view() {
+    const html = this.props.html;
+    const iframe = this.iframeRef.current;
+    if (!iframe) return;
 
-    var html = this.props.html;
+    const iDoc = iframe.contentDocument;
 
-    var current = this.components[0];
-    var hide = this.components[1];
-    if (current === this.current) {
-      current = this.components[1];
-      hide = this.components[0];
-      this.number = 2;
-    } else {
-      this.number = 1;
+    // 初回またはドキュメントが未初期化の場合は srcdoc でロード
+    if (!this.initialized || !iDoc || !iDoc.body) {
+      this.initialized = false;
+      iframe.onload = () => {
+        this.initialized = true;
+        this.postProcess(iframe.contentDocument);
+      };
+      iframe.srcdoc = html;
+      return;
     }
 
-    var c = current.current;
-    var h = hide.current;
+    // 2回目以降: ドキュメントリロードなしで DOM を差し替え
+    const parser = new DOMParser();
+    const newDoc = parser.parseFromString(html, 'text/html');
 
-    //新しく表示する側にHTMLを設定
-    c.srcdoc = html
+    // body を差し替え
+    iDoc.body.innerHTML = newDoc.body.innerHTML;
 
-    //表示箇所を真ん中にする
-    setTimeout(function () {
+    // <style> タグを同期（外観が変わった場合に対応）
+    const newStyles = Array.from(newDoc.head.querySelectorAll('style'))
+      .map(s => s.textContent).join('\n');
+    let styleEl = iDoc.head.querySelector('#_binder_preview_styles');
+    if (!styleEl) {
+      styleEl = iDoc.createElement('style');
+      styleEl.id = '_binder_preview_styles';
+      iDoc.head.appendChild(styleEl);
+    }
+    styleEl.textContent = newStyles;
 
-      var doc = c.contentDocument || c.contentWindow.document;
-      //クリック禁止を行う
-      doc.addEventListener("click", function (e) {
-        e.preventDefault();
+    this.postProcess(iDoc);
+  }
+
+  postProcess(doc) {
+    if (!doc) return;
+
+    // クリックを禁止（重複登録しない）
+    if (!doc._binderClickBlocked) {
+      doc._binderClickBlocked = true;
+      doc.addEventListener('click', (e) => e.preventDefault());
+    }
+
+    // ノート内の Mermaid ダイアグラムを描画
+    doc.querySelectorAll('div.binderSVG').forEach((elm) => {
+      const txt = elm.textContent;
+      Mermaid.parse(txt).then((data) => {
+        elm.innerHTML = data.svg;
+      }).catch((err) => {
+        console.error(err);
       });
+    });
 
-      var f = doc.querySelector("#binder_focus_id");
-      var diagrams = doc.querySelectorAll("div.binderSVG");
-
-      if (diagrams !== null) {
-        //ノート内の描画について
-        diagrams.forEach((elm) => {
-          var txt = elm.textContent;
-          Mermaid.parse(txt).then((data) => {
-            elm.innerHTML = data.svg;
-          }).catch((err) => {
-            console.error(err);
-            //evt.showWarningMessage("Diagram parse error:" + err);
-          });
-        })
-      }
-
-      if (f !== undefined && f !== null) {
-        f.scrollIntoView({ behavior: 'instant', block: "center" })
-
-      }
-
-      h.classList.remove("show");
-      h.classList.add("hide");
-
-      c.classList.remove("hide");
-      c.classList.add("show");
-
-      this.interval = -1;
-
-    }, 100);
-
-    //現在の表示側を設定
-    this.current = current;
+    // フォーカス位置へスクロール
+    const f = doc.querySelector('#binder_focus_id');
+    if (f) {
+      f.scrollIntoView({ behavior: 'instant', block: 'center' });
+    }
   }
 
   render() {
-    return (<>
-      <div id="bufferd"> {this.number} </div>
-      <iframe className="htmlViewer" ref={this.components[0]}></iframe>
-      <iframe className="htmlViewer" ref={this.components[1]}></iframe>
-    </>)
+    return (
+      <iframe className="htmlViewer" ref={this.iframeRef} />
+    );
   }
 }
 
