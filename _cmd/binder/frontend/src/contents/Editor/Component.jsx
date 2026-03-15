@@ -133,6 +133,9 @@ function Editor(props) {
   const isEditingRef = useRef(false);
   const parseTimerRef = useRef(null);
 
+  // カーソル行（1始まり）- handleChangeText で更新し parseText で HTMLFrame に渡す
+  const cursorLineRef = useRef(1);
+  const [cursorLine, setCursorLine] = useState(1);
 
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
@@ -149,50 +152,6 @@ function Editor(props) {
   const [previewNotes, setPreviewNotes] = useState([]);
   const [previewNoteId, setPreviewNoteId] = useState("");
   const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
-
-  //テキストにセンタリング用のタグを埋め込む
-  const insertCenterTag = (txt) => {
-
-    if (txt == null || txt === "") {
-      return txt;
-    }
-
-    var len = txt.length;
-    var e = document.querySelector("#editor");
-    var pos = e.selectionStart;
-
-    const lines = txt.split(/\n/, -1);
-
-    var now = 0;
-    var start = false;
-    var b = false;
-
-    for (const line of lines) {
-      now += line.length + 1;
-
-      if (line.indexOf("```") === 0) {
-        if (start) {
-          start = false;
-        } else {
-          start = true;
-        }
-      }
-
-      if (now > pos) {
-        b = true;
-      }
-
-      if (b && !start && line === "") {
-        pos = now;
-        break;
-      }
-    }
-
-    var before = txt.substr(0, pos);
-    var after = txt.substr(pos, len);
-    var tag = '\n\n<div id="binder_focus_id"></div>\n\n';
-    return before + tag + after;
-  }
 
   //開いた時の初期処理
   useEffect(() => {
@@ -397,8 +356,9 @@ function Editor(props) {
     if (mode === Mode.diagram) {
       viewDiagram(text);
     } else if (mode === Mode.note) {
-      //公開時にここが入らないようにする
-      viewHTML(insertCenterTag(text));
+      // カーソル行を確定してから描画
+      setCursorLine(cursorLineRef.current);
+      viewHTML(text);
     } else if (mode === Mode.template) {
       //viewHTML(text, noteElm);
     } else {
@@ -423,7 +383,8 @@ function Editor(props) {
   }, [text]);
 
   //データをマークダウンからHTMLに変換
-  const createMarked = async (id, txt, local) => {
+  // lineNumbers=true のとき parseWithSourceLines を使い data-src-line 属性を付与する（プレビュー用）
+  const createMarked = async (id, txt, local, lineNumbers = false) => {
     var p = ""
     await ParseNote(id, local, txt).then((resp) => {
       p = resp;
@@ -432,7 +393,7 @@ function Editor(props) {
       p = txt;
     });
 
-    var val = await Marked.parse(p);
+    var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
     if (val) {
       return val;
     }
@@ -446,7 +407,7 @@ function Editor(props) {
 
     if (mode === "note") {
 
-      var embed = await createMarked(id, txt, true);
+      var embed = await createMarked(id, txt, true, true);
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
       }).catch((err) => {
@@ -573,6 +534,8 @@ function Editor(props) {
     // ユーザー入力フラグを立てる（useEffect[text] でデバウンスを選択させる）
     isEditingRef.current = true;
     var txt = e.target.value;
+    // カーソル行を記録（デバウンス後の parseText で使用する）
+    cursorLineRef.current = txt.substring(0, e.target.selectionStart).split('\n').length;
     setText(txt);
 
     writeFn(mode, id, txt).then(() => {
@@ -1080,7 +1043,7 @@ function Editor(props) {
 
               {/** 表示するコンポーネントを変更 */}
               {(mode === Mode.note) &&
-                <HTMLFrame html={html} />
+                <HTMLFrame html={html} cursorLine={cursorLine} />
               }
               {mode === Mode.diagram &&
                 <div id="mermaidViewer"></div>
@@ -1114,7 +1077,7 @@ function Editor(props) {
                       </Select>
                     </div>
                     <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
-                      <HTMLFrame html={html} />
+                      <HTMLFrame html={html} cursorLine={cursorLine} />
                     </div>
                   </div>
                 );

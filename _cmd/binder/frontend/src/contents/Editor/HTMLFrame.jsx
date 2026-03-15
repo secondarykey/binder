@@ -7,6 +7,10 @@ import Mermaid from "./engines/Mermaid";
  * 初回のみ srcdoc でドキュメントをロードし、以降の更新は
  * contentDocument.body.innerHTML を直接差し替えることでドキュメントリロードを
  * 回避する。リロードがないため白フラッシュが発生しない。
+ *
+ * Props:
+ *   html       - 表示する HTML 文字列
+ *   cursorLine - エディタのカーソル行（1始まり）。プレビューのスクロール位置に使用
  */
 class HTMLFrame extends React.Component {
 
@@ -22,7 +26,7 @@ class HTMLFrame extends React.Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    return nextProps.html !== this.props.html;
+    return nextProps.html !== this.props.html || nextProps.cursorLine !== this.props.cursorLine;
   }
 
   componentDidUpdate() {
@@ -68,6 +72,53 @@ class HTMLFrame extends React.Component {
     this.postProcess(iDoc);
   }
 
+  /**
+   * <!-- binder-line:N --> コメントを走査し、次の要素に
+   * data-src-line="N" 属性を付与してコメントを除去する
+   */
+  attachSourceLines(doc) {
+    if (!doc?.body) return;
+
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_COMMENT);
+    const toRemove = [];
+    let node;
+
+    while ((node = walker.nextNode())) {
+      const m = node.nodeValue?.trim().match(/^binder-line:(\d+)$/);
+      if (m) {
+        const line = parseInt(m[1], 10);
+        const el = node.nextElementSibling;
+        if (el) el.setAttribute('data-src-line', line);
+        toRemove.push(node);
+      }
+    }
+
+    for (const n of toRemove) n.parentNode?.removeChild(n);
+  }
+
+  /**
+   * カーソル行に最も近い（直前の）ブロック要素をプレビュー中央にスクロールする
+   */
+  scrollToSourceLine(doc, cursorLine) {
+    if (!doc?.body || cursorLine == null) return;
+
+    const elements = doc.querySelectorAll('[data-src-line]');
+    if (elements.length === 0) return;
+
+    let target = elements[0];
+    let bestLine = -1;
+
+    for (const el of elements) {
+      const srcLine = parseInt(el.getAttribute('data-src-line'), 10);
+      if (srcLine <= cursorLine && srcLine > bestLine) {
+        bestLine = srcLine;
+        target = el;
+      }
+    }
+
+    target.scrollIntoView({ behavior: 'instant', block: 'center' });
+  }
+
   postProcess(doc) {
     if (!doc) return;
 
@@ -87,11 +138,11 @@ class HTMLFrame extends React.Component {
       });
     });
 
-    // フォーカス位置へスクロール
-    const f = doc.querySelector('#binder_focus_id');
-    if (f) {
-      f.scrollIntoView({ behavior: 'instant', block: 'center' });
-    }
+    // ソース行コメントを data-src-line 属性に変換
+    this.attachSourceLines(doc);
+
+    // カーソル行の近傍要素へスクロール
+    this.scrollToSourceLine(doc, this.props.cursorLine);
   }
 
   render() {
