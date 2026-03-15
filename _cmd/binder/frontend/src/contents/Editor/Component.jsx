@@ -1150,13 +1150,13 @@ function Editor(props) {
                 const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                 return (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 8px", borderBottom: "1px solid #333", flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 4px", borderBottom: "1px solid #333", flexShrink: 0, backgroundColor: "#2a2a2a" }}>
                       <Select
                         value={previewOtherTemplateId}
                         onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
                         size="small"
                         displayEmpty
-                        sx={{ minWidth: 120, fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" } }}
+                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
                       >
                         {previewOtherTemplates.map((t) => (
                           <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
@@ -1167,7 +1167,7 @@ function Editor(props) {
                         onChange={(e) => setPreviewNoteId(e.target.value)}
                         size="small"
                         displayEmpty
-                        sx={{ minWidth: 120, fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" } }}
+                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "#f1f1f1", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
                       >
                         {previewNotes.map((n) => (
                           <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
