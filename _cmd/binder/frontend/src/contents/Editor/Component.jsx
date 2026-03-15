@@ -1149,7 +1149,7 @@ function Editor(props) {
               {mode === Mode.template && (() => {
                 const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                 return (
-                  <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 8px", borderBottom: "1px solid #333", flexShrink: 0 }}>
                       <Select
                         value={previewOtherTemplateId}
