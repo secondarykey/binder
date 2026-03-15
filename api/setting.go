@@ -30,6 +30,23 @@ func (a *App) SaveSetting(s *settings.Setting) error {
 	return nil
 }
 
+func (a *App) SetTheme(theme string) error {
+
+	defer log.PrintTrace(log.Func("SetTheme()"))
+
+	s := settings.Get()
+	if s.Look == nil {
+		s.Look = &settings.Look{}
+	}
+	s.Look.Theme = theme
+	err := s.Save()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("SetTheme() error:\n%+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetFontNames() ([]string, error) {
 	names := binder.FontNames()
 	return names, nil

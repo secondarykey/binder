@@ -11,12 +11,14 @@ import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetSetting, GetConfig, CloseBinder,LoadBinder } from '../bindings/binder/api/app';
+import { GetSetting, GetConfig, CloseBinder, LoadBinder, SetTheme } from '../bindings/binder/api/app';
 import { SavePosition,Terminate } from '../bindings/main/window';
 
 import Event, { EventContext } from "./Event";
@@ -69,6 +71,7 @@ function App() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
+  const [isDark, setIsDark] = useState(document.documentElement.getAttribute('data-theme') !== 'light');
 
   // Binder名を GetConfig() から取得してセット
   const loadBinderName = () => {
@@ -216,6 +219,17 @@ function App() {
     });
   }
 
+  const handleToggleTheme = () => {
+    const next = isDark ? 'light' : 'dark';
+    if (next === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    setIsDark(!isDark);
+    SetTheme(next).catch((err) => evt.showErrorMessage(err));
+  };
+
   var pinClass = pin ? "top" : "";
   var sidebarClass = sidebarOpen ? "open" : "";
 
@@ -249,6 +263,10 @@ function App() {
 
         {/** 右セクション: ウィンドウ操作ボタン */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 2, mr: 0.5 }}>
+          {/** テーマ切り替え */}
+          <IconButton size="small" color="inherit" aria-label="toggle theme" onClick={handleToggleTheme}>
+            {isDark ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+          </IconButton>
           {/** ピン留め */}
           <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
             <PushPinIcon fontSize="small" />
