@@ -858,7 +858,7 @@ function Editor(props) {
   var commentStyle = {};
   commentStyle.fontSize = "12px";
   commentStyle.paddingTop = "12px";
-  commentStyle.width = (width - 98) + "px";
+  commentStyle.width = (width - 70) + "px";
 
   var color = "#f1f1f1";
   if (updated) {

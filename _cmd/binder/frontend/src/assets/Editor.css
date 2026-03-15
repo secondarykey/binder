@@ -58,6 +58,7 @@
   position: relative;
   background-color: #2a2a2a;
   padding-right:5px;
+  padding-bottom:5px;
 }
 
 /* =====================================================================
@@ -294,7 +295,7 @@ iframe.htmlViewer {
   align-items: baseline !important;
   background-color: #222222;
   position: absolute !important;
-  padding-left: 10px !important;
+  padding-left: 0px !important;
   margin-left: 5px !important;
   padding-right: 5px !important;
   margin-right: 5px !important;
