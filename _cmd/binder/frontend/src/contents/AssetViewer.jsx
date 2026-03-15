@@ -299,12 +299,11 @@ function AssetViewer() {
       {/* フローティングノート移行ボタン（テキストアセットのみ表示、右上） */}
       {assetContent && !assetContent.binary && (
         <IconButton
-          className="floatPublishBtn"
+          className="floatTopRightBtn"
           size="small"
           aria-label="migrate to note"
           onClick={handleMigrate}
           disabled={migrating || !id}
-          style={{ bottom: 'auto', top: '16px' }}
         >
           <NoteAddIcon fontSize="small" style={{ color: "#f1f1f1" }} />
         </IconButton>

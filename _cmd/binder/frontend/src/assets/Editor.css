@@ -296,6 +296,23 @@ iframe.htmlViewer.show {
 }
 
 /* =====================================================================
+ * フローティングアクションボタン（プレビュー右上）
+ * ===================================================================== */
+.floatTopRightBtn {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  z-index: 10;
+  background-color: rgba(34, 34, 34, 0.85) !important;
+  backdrop-filter: blur(4px);
+  border: 1px solid #444 !important;
+}
+
+.floatTopRightBtn:hover {
+  background-color: rgba(70, 70, 70, 0.95) !important;
+}
+
+/* =====================================================================
  * ボタンバー（エディタ左側の下部）
  * ===================================================================== */
 .buttonBar {
