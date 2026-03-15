@@ -960,11 +960,7 @@ function Editor(props) {
               {/** テキスト編集（行番号ガター + textarea） */}
               <div className="editorArea">
                 <div className="editorLineNumbers" ref={lineNumbersRef}
-                  style={{
-                    fontFamily: editorStyle.fontFamily,
-                    fontSize: editorStyle.fontSize,
-                    backgroundColor: editorStyle.backgroundColor,
-                  }}>
+                  style={editorStyle}>
                   {text.split('\n').map((_, i) => (
                     <div key={i} className="editorLineNumber">{i + 1}</div>
                   ))}
