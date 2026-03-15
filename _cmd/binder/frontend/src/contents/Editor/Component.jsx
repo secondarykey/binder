@@ -915,7 +915,9 @@ function Editor(props) {
 
     if (save) {
       GetSetting().then((s) => {
+
         s.lookAndFeel.editor.text = set;
+        console.log(set)
         SaveSetting(s).then(() => {
         })
       }).catch((err) => {

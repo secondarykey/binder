@@ -173,19 +173,6 @@ func (b *Binder) Close() error {
 	return rtnErr
 }
 
-func (b *Binder) SaveSetting(s *settings.Setting) error {
-
-	if b == nil {
-		return EmptyError
-	}
-
-	err := s.Save()
-	if err != nil {
-		return xerrors.Errorf("settings.Save() error: %w", err)
-	}
-	return nil
-}
-
 func (b *Binder) GetRemotes() ([]string, error) {
 
 	if b == nil {

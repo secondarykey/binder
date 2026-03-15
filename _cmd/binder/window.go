@@ -160,6 +160,16 @@ func (win *Window) OpenBinderSite() error {
 }
 
 func (win *Window) Terminate() bool {
+
+	//TODO ログに出力
+	err := win.SavePosition()
+	if err != nil {
+	}
+
+	err = win.app.CloseBinder()
+	if err != nil {
+	}
+
 	win.runtime.Quit()
 	return false
 }

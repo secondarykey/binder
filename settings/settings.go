@@ -175,6 +175,7 @@ func def() *Setting {
 }
 
 func (s *Setting) Save() error {
+
 	fn := getFilePath()
 	fp, err := os.Create(fn)
 	if err != nil {
@@ -190,6 +191,8 @@ func (s *Setting) Save() error {
 	if err != nil {
 		return xerrors.Errorf("fp.Write() error: %w", err)
 	}
+
+	pSet = s
 	return nil
 }
 
@@ -214,7 +217,7 @@ func load() (*Setting, error) {
 }
 
 func getFilePath() string {
-	return filepath.Join(Home(), ".binder.json")
+	return filepath.Join(Home(), ".binder", "setting.json")
 }
 
 func Home() string {

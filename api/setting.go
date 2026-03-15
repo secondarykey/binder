@@ -22,7 +22,7 @@ func (a *App) SaveSetting(s *settings.Setting) error {
 
 	defer log.PrintTrace(log.Func("SaveSettings()"))
 
-	err := a.current.SaveSetting(s)
+	err := s.Save()
 	if err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("SaveSetting() error:\n%+v", err)
