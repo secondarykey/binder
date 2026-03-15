@@ -311,6 +311,7 @@ func (b *Binder) MigrateAssetToNote(assetId string) (*json.Note, error) {
 	// 新規ノートを作成
 	n := &json.Note{
 		Name:     a.Name,
+		Detail:   a.Detail,
 		ParentId: a.ParentId,
 	}
 	n.Id = b.generateId()
