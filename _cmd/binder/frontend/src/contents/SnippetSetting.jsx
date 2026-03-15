@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
@@ -87,6 +87,7 @@ function SnippetSetting() {
   const [selectedId, setSelectedId] = useState(null);
   const [editName, setEditName] = useState("");
   const [body, setBody] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: "" });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -148,20 +149,35 @@ function SnippetSetting() {
     });
   };
 
-  /** 削除 */
-  const handleDelete = (id) => {
+  /** 削除ボタン押下: 確認ダイアログを開く */
+  const handleDeleteRequest = (id) => {
+    const item = currentList.find((s) => s.id === id);
+    setDeleteConfirm({ open: true, id, name: item?.name ?? "" });
+  };
+
+  /** 削除確認後の実行 */
+  const handleDeleteConfirm = () => {
+    const { id } = deleteConfirm;
+    setDeleteConfirm({ open: false, id: null, name: "" });
     const updated = {
       ...snippets,
       [category]: currentList.filter((s) => s.id !== id),
     };
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
-      setSelectedId(null);
-      setEditName("");
-      setBody("");
+      if (selectedId === id) {
+        setSelectedId(null);
+        setEditName("");
+        setBody("");
+      }
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
+  };
+
+  /** 削除キャンセル */
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ open: false, id: null, name: "" });
   };
 
   /** ドラッグ終了: 並び替えて保存 */
@@ -230,7 +246,7 @@ function SnippetSetting() {
                     snippet={s}
                     selected={selectedId === s.id}
                     onSelect={handleSelectSnippet}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteRequest}
                   />
                 ))}
                 {currentList.length === 0 && (
@@ -275,6 +291,28 @@ function SnippetSetting() {
       </Box>
 
     </Box>
+
+    {/** 削除確認ダイアログ */}
+    <Dialog
+      open={deleteConfirm.open}
+      onClose={handleDeleteCancel}
+      PaperProps={{ sx: { backgroundColor: '#1e1e1e', color: '#f1f1f1', minWidth: 320 } }}
+    >
+      <DialogTitle sx={{ fontSize: '14px', pb: 1 }}>スニペットの削除</DialogTitle>
+      <DialogContent>
+        <DialogContentText sx={{ color: '#ccc', fontSize: '13px' }}>
+          「{deleteConfirm.name}」を削除しますか？
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions sx={{ px: 2, pb: 1.5 }}>
+        <Button onClick={handleDeleteCancel} size="small" sx={{ color: '#aaa', fontSize: '12px' }}>
+          キャンセル
+        </Button>
+        <Button onClick={handleDeleteConfirm} size="small" color="error" variant="contained" sx={{ fontSize: '12px' }}>
+          削除
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
