@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/xerrors"
 )
@@ -313,7 +314,8 @@ func (b *Binder) MigrateAssetToNote(assetId string) (*json.Note, error) {
 		ParentId: a.ParentId,
 	}
 	n.Id = b.generateId()
-	n.Alias = n.Id
+	// エイリアスは元アセットのエイリアスから拡張子を除いたものを使用
+	n.Alias = strings.TrimSuffix(a.Alias, filepath.Ext(a.Alias))
 
 	// デフォルトレイアウトテンプレートを設定
 	lt, err := b.db.FindDefaultLayoutTemplate()
