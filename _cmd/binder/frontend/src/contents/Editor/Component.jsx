@@ -104,6 +104,9 @@ function Editor(props) {
   const isEditingRef = useRef(false);
   const parseTimerRef = useRef(null);
 
+  // 行番号ガター
+  const lineNumbersRef = useRef(null);
+
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
 
@@ -669,6 +672,15 @@ function Editor(props) {
   }
 
   /**
+   * テキストエリアのスクロールに合わせて行番号ガターを同期
+   */
+  const handleEditorScroll = (e) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.target.scrollTop;
+    }
+  };
+
+  /**
    * Enter時にインデントを挿入
    */
   const handleKeyDown = (e) => {
@@ -945,11 +957,24 @@ function Editor(props) {
                 </Container>
               </Container>
 
-              {/** テキスト編集 */}
-              <textarea id="editor" style={editorStyle}
-                value={text}
-                onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
-                onDragOver={handleDragOver} onDrop={handleDrop} />
+              {/** テキスト編集（行番号ガター + textarea） */}
+              <div className="editorArea">
+                <div className="editorLineNumbers" ref={lineNumbersRef}
+                  style={{
+                    fontFamily: editorStyle.fontFamily,
+                    fontSize: editorStyle.fontSize,
+                    backgroundColor: editorStyle.backgroundColor,
+                  }}>
+                  {text.split('\n').map((_, i) => (
+                    <div key={i} className="editorLineNumber">{i + 1}</div>
+                  ))}
+                </div>
+                <textarea id="editor" style={editorStyle}
+                  value={text}
+                  onKeyDown={(e) => handleKeyDown(e)} onChange={handleChangeText}
+                  onDragOver={handleDragOver} onDrop={handleDrop}
+                  onScroll={handleEditorScroll} />
+              </div>
 
               {/** 左側の操作用位置 */}
               <Toolbar className="buttonBar">

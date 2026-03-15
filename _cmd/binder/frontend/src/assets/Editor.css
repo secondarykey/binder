@@ -200,16 +200,49 @@ iframe.htmlViewer.show {
 }
 
 /* =====================================================================
- * テキストエリア
+ * テキストエリア（行番号ガター + textarea）
  * ===================================================================== */
-#editor {
-  --wails-draggable: no-drag;
 
+/* 行番号ガターと textarea を横並びにする外側コンテナ */
+.editorArea {
   position: absolute;
   left: 0;
   right: 0;
   top: 38px;
   bottom: 48px;
+
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* 行番号ガター */
+.editorLineNumbers {
+  flex-shrink: 0;
+  width: 3.5em;
+  overflow: hidden;
+  text-align: right;
+  padding: 5px 6px 5px 0;
+  color: #555;
+  background-color: #252525;
+  border-right: 1px solid #333;
+  user-select: none;
+  pointer-events: none;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.editorLineNumber {
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+#editor {
+  --wails-draggable: no-drag;
+
+  flex: 1;
+  min-width: 0;
+  height: 100%;
 
   background-color: #252525;
   caret-color: #ffffff;
@@ -218,7 +251,9 @@ iframe.htmlViewer.show {
 
   padding: 5px;
   margin: 0px;
+  box-sizing: border-box;
 
+  line-height: 1.5;
   resize: none;
 }
 
