@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react"
+import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { useParams, useLocation } from "react-router";
 
 import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Divider } from "@mui/material";
@@ -106,6 +106,9 @@ function Editor(props) {
 
   // 行番号ガター
   const lineNumbersRef = useRef(null);
+  const canvasRef = useRef(null);
+  // 各論理行が折り返して占める visual 行数
+  const [lineHeights, setLineHeights] = useState([]);
 
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
@@ -672,6 +675,46 @@ function Editor(props) {
   }
 
   /**
+   * Canvas でテキスト幅を計測し、各論理行の折り返し visual 行数を算出
+   */
+  const calcLineHeights = useCallback(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+
+    if (!canvasRef.current) {
+      canvasRef.current = document.createElement('canvas');
+    }
+    const ctx = canvasRef.current.getContext('2d');
+    const style = window.getComputedStyle(textarea);
+    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+    const availWidth = textarea.clientWidth - paddingLeft - paddingRight;
+    if (availWidth <= 0) return;
+
+    const heights = text.split('\n').map(line => {
+      if (line === '') return 1;
+      return Math.max(1, Math.ceil(ctx.measureText(line).width / availWidth));
+    });
+    setLineHeights(heights);
+  }, [text, editorStyle]);
+
+  // テキスト・フォント変更時に再計算
+  useEffect(() => {
+    calcLineHeights();
+  }, [calcLineHeights]);
+
+  // textarea のリサイズ時に再計算（スプリッター操作など）
+  useEffect(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    const observer = new ResizeObserver(calcLineHeights);
+    observer.observe(textarea);
+    return () => observer.disconnect();
+  }, [calcLineHeights]);
+
+  /**
    * テキストエリアのスクロールに合わせて行番号ガターを同期
    */
   const handleEditorScroll = (e) => {
@@ -961,9 +1004,14 @@ function Editor(props) {
               <div className="editorArea">
                 <div className="editorLineNumbers" ref={lineNumbersRef}
                   style={editorStyle}>
-                  {text.split('\n').map((_, i) => (
-                    <div key={i} className="editorLineNumber">{i + 1}</div>
-                  ))}
+                  {text.split('\n').map((_, i) => {
+                    const wraps = lineHeights[i] || 1;
+                    return (
+                      <div key={i} className="editorLineNumber" style={{ height: `${wraps * 1.5}em` }}>
+                        {i + 1}
+                      </div>
+                    );
+                  })}
                 </div>
                 <textarea id="editor" style={editorStyle}
                   value={text}
