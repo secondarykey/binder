@@ -349,6 +349,8 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     autoFocus
                     value={renamingValue ?? node.name}
                     onChange={(e) => onRenameChange && onRenameChange(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onBlur={() => onRenameCommit && onRenameCommit()}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') { e.preventDefault(); onRenameCommit && onRenameCommit(); }
                       if (e.key === 'Escape') { e.preventDefault(); onRenameCancel && onRenameCancel(); }
