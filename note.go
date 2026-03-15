@@ -43,6 +43,11 @@ func (b *Binder) RemoveNote(id string) (*json.Note, error) {
 		return nil, EmptyError
 	}
 
+	// index ノートは削除不可
+	if id == "index" {
+		return nil, xerrors.Errorf("index note cannot be deleted")
+	}
+
 	// 子要素が存在する場合は削除不可
 	children, err := b.db.FindStructuresByParent(id)
 	if err != nil {
