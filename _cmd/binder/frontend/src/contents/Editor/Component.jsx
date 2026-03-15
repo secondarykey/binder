@@ -941,7 +941,7 @@ function Editor(props) {
                   </IconButton>
 
                   {/** 区切り */}
-                  <Divider style={{ width: "10px", display: "inline-flex" }} orientation="vertical" flexItem alignItems="center" />
+                  <Divider style={{ width: "10px", display: "inline-flex" }} orientation="vertical" flexItem />
 
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
