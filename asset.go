@@ -282,6 +282,94 @@ func (b *Binder) GetUnpublishedAssets() ([]*json.Asset, error) {
 	return pr, nil
 }
 
+// MigrateAssetToNote はテキストアセットをノートに移行する。
+// アセットの内容をノートのMarkdownとして登録し、元のアセットを削除する。
+func (b *Binder) MigrateAssetToNote(assetId string) (*json.Note, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	// アセット情報を取得
+	a, err := b.db.GetAssetWithParent(assetId)
+	if err != nil {
+		return nil, xerrors.Errorf("db.GetAssetWithParent() error: %w", err)
+	}
+
+	// バイナリアセットは移行不可
+	if a.Binary {
+		return nil, xerrors.Errorf("cannot migrate binary asset to note: %s", a.Name)
+	}
+
+	// アセットの内容を読み込む
+	data, _, err := b.ReadAssetBytes(assetId)
+	if err != nil {
+		return nil, xerrors.Errorf("ReadAssetBytes() error: %w", err)
+	}
+
+	// 新規ノートを作成
+	n := &json.Note{
+		Name:     a.Name,
+		ParentId: a.ParentId,
+	}
+	n.Id = b.generateId()
+	n.Alias = n.Id
+
+	// デフォルトコンテンツテンプレートを設定
+	dt, err := b.db.FindDefaultContentTemplate()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindDefaultContentTemplate() error: %w", err)
+	}
+	if dt != nil {
+		n.ContentTemplate = dt.Id
+	}
+
+	// ノートを作成してDBに登録
+	fn, err := b.createNote(n)
+	if err != nil {
+		return nil, xerrors.Errorf("createNote() error: %w", err)
+	}
+
+	// アセット内容をノートファイルに書き込む
+	err = b.fileSystem.WriteNoteText(n.Id, data)
+	if err != nil {
+		return nil, xerrors.Errorf("WriteNoteText() error: %w", err)
+	}
+
+	// Structure作成
+	err = b.createStructure(n.Id, n.ParentId, "note", n.Name, n.Detail, n.Alias)
+	if err != nil {
+		return nil, xerrors.Errorf("createStructure() error: %w", err)
+	}
+
+	// アセットをDBから削除
+	err = b.db.DeleteAsset(assetId)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
+	}
+	err = b.db.DeleteStructure(assetId)
+	if err != nil {
+		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
+	// アセットファイルを削除
+	assetFiles, err := b.fileSystem.DeleteAsset(a)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.DeleteAsset() error: %w", err)
+	}
+
+	// 全変更をコミット
+	files := []string{fn}
+	files = append(files, assetFiles...)
+	files = append(files, fs.NoteTableFile(), fs.AssetTableFile(), fs.StructureTableFile())
+	err = b.fileSystem.Commit(fs.M("Migrate Asset to Note", n.Name), files...)
+	if err != nil {
+		return nil, xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return n, nil
+}
+
 func (b *Binder) AssetFile(id string) string {
 	a, err := b.db.GetAssetWithParent(id)
 	if err != nil {

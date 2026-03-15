@@ -112,3 +112,15 @@ func (a *App) RemoveAsset(id string) error {
 	}
 	return nil
 }
+
+// MigrateAssetToNote はテキストアセットをノートに移行する。
+// 移行先のノート情報を返す。
+func (a *App) MigrateAssetToNote(id string) (*json.Note, error) {
+	defer log.PrintTrace(log.Func("MigrateAssetToNote()", id))
+	n, err := a.current.MigrateAssetToNote(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("MigrateAssetToNote() error\n%+v", err)
+	}
+	return n, nil
+}

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useContext } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useNavigate } from 'react-router';
 import { IconButton } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 
-import { GetAsset, GetAssetContent, Generate, Unpublish, GetSetting } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, Generate, Unpublish, GetSetting, MigrateAssetToNote } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 
 /** 画像拡張子の判定セット */
@@ -131,6 +132,7 @@ function ImageViewer({ src, alt }) {
 function AssetViewer() {
   const evt = useContext(EventContext);
   const { id } = useParams();
+  const nav = useNavigate();
 
   // ロード中: assetContent=null, error=null
   // 成功:     assetContent=object, error=null
@@ -139,6 +141,7 @@ function AssetViewer() {
   const [assetName, setAssetName] = useState('');
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
 
@@ -193,6 +196,20 @@ function AssetViewer() {
       evt.showErrorMessage("Generate に失敗しました: " + e);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  /** Migrate ボタン押下: テキストアセットをノートに移行する */
+  const handleMigrate = async () => {
+    setMigrating(true);
+    try {
+      const note = await MigrateAssetToNote(id);
+      evt.showSuccessMessage("ノートに移行しました。");
+      nav(`/editor/note/${note.id}`);
+    } catch (e) {
+      evt.showErrorMessage("移行に失敗しました: " + e);
+    } finally {
+      setMigrating(false);
     }
   };
 
@@ -278,6 +295,19 @@ function AssetViewer() {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
       {content}
+      {/* フローティングノート移行ボタン（テキストアセットのみ表示、右下より上） */}
+      {assetContent && !assetContent.binary && (
+        <IconButton
+          className="floatPublishBtn"
+          size="small"
+          aria-label="migrate to note"
+          onClick={handleMigrate}
+          disabled={migrating || !id}
+          style={{ bottom: '64px' }}
+        >
+          <NoteAddIcon fontSize="small" style={{ color: "#f1f1f1" }} />
+        </IconButton>
+      )}
       {/* フローティング公開ボタン（右下） */}
       <IconButton
         className="floatPublishBtn"
