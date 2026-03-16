@@ -28,14 +28,14 @@ function Commit({ date: dateProp, ...props }) {
     evt.raise(Event.ModifiedCommit,comment);
   }
 
-  var rowNum = comment.split("\n").length + 1;
+  var rowNum = Math.min(comment.split("\n").length + 1, 10);
   return (<>
     <Grid className="formGrid">
 
       <FormControl>
         <FormLabel>Commit Comment</FormLabel>
       {/** コミットコメント */}
-      <TextField 
+      <TextField
         multiline={true}
         rows={rowNum}
         value={comment} 
