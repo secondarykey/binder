@@ -24,7 +24,7 @@ function GenerateForm({ date }) {
     evt.raise(Event.PublishGenerate, comment);
   };
 
-  const rowNum = comment.split("\n").length + 1;
+  const rowNum = Math.min(comment.split("\n").length + 1, 10);
 
   return (
     <Grid className="formGrid">
