@@ -2,7 +2,6 @@ import { useState, useEffect,useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
@@ -32,7 +31,7 @@ function Note(props) {
   const [imageFile, setImageFile] = useState("");
 
   const [address, setAddress] = useState("");
-  const [viewImage, setViewImage] = useState("");
+  const [viewImage, setViewImage] = useState(noImage);
   const [detail, setDetail] = useState("");
 
   const [layout, setLayout] = useState("");
@@ -291,20 +290,21 @@ function Note(props) {
 
       <FormControl>
         <FormLabel>Note Image</FormLabel>
-        <TextField size="small" value={imageFile} className="linkBtn" onClick={selectFile}
-          InputProps={{
-            startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
-          }}>
-        </TextField>
+        <Container style={{ marginTop: "4px", textAlign: "center" }}>
+          <img
+            src={viewImage}
+            onError={setNoImage}
+            onClick={selectFile}
+            style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85 }}
+            title="クリックして画像を選択"
+          />
+          {imageFile && (
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", wordBreak: "break-all" }}>
+              {imageFile.split(/[\\/]/).pop()}
+            </div>
+          )}
+        </Container>
       </FormControl>
-
-      {(mode === "edit" && viewImage !== "") &&
-        <>
-          <Container style={{ marginTop: "10px", textAlign: "center" }}>
-            <img src={viewImage} onError={setNoImage} style={{ height: "200px", width: "fit-content" }}></img>
-          </Container>
-        </>
-      }
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>
