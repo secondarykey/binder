@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, Grid, InputAdornment, TextField,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  FormControl, FormLabel, Grid, IconButton, InputAdornment, TextField, Typography,
 } from "@mui/material";
 import { ContentCopy } from "@mui/icons-material";
 
@@ -74,11 +74,14 @@ function AssetMetaDialog({ open, id, onClose }) {
       <DialogTitle>Edit Assets</DialogTitle>
       <DialogContent>
         <Grid className="formGrid" style={{ margin: "8px 0" }}>
-          <FormControl>
-            <FormLabel>ID</FormLabel>
-            <TextField size="small" value={id ?? ""} className="linkBtn" onClick={handleCopyId}
-              InputProps={{ startAdornment: (<InputAdornment position="start"><ContentCopy /></InputAdornment>) }} />
-          </FormControl>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography variant="body2" sx={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
+              ID: {id}
+            </Typography>
+            <IconButton size="small" onClick={handleCopyId} title="Copy ID">
+              <ContentCopy fontSize="small" />
+            </IconButton>
+          </Box>
 
           <FormControl>
             <FormLabel>Alias</FormLabel>
