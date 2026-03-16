@@ -31,6 +31,7 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [viewImage, setViewImage] = useState(noImage);
   const [hasImage, setHasImage] = useState(false);
   const [confirmDeleteImage, setConfirmDeleteImage] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [detail, setDetail] = useState("");
   const [layout, setLayout] = useState("");
   const [content, setContent] = useState("");
@@ -79,7 +80,10 @@ function NoteMetaDialog({ open, id, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleDelete = () => {
+  const handleDelete = () => setConfirmDelete(true);
+
+  const handleDeleteConfirm = () => {
+    setConfirmDelete(false);
     RemoveNote(id).then(() => {
       evt.refreshTree();
       evt.showSuccessMessage("Remove Note.");
@@ -204,6 +208,22 @@ function NoteMetaDialog({ open, id, onClose }) {
         <Button onClick={handleDelete} color="error" disabled={isIndex}>Delete</Button>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSave} variant="contained">Save</Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* 削除確認ダイアログ */}
+    <Dialog
+      open={confirmDelete}
+      onClose={() => setConfirmDelete(false)}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    >
+      <DialogTitle>ノートの削除</DialogTitle>
+      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        「{name}」を削除しますか？
+      </DialogContentText>
+      <DialogActions>
+        <Button onClick={() => setConfirmDelete(false)}>キャンセル</Button>
+        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
       </DialogActions>
     </Dialog>
 

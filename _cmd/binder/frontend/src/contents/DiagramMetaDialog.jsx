@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormLabel, Grid, InputAdornment, TextField,
 } from "@mui/material";
 import { ContentCopy } from "@mui/icons-material";
@@ -22,6 +22,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!open || !id) return;
@@ -46,7 +47,10 @@ function DiagramMetaDialog({ open, id, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleDelete = () => {
+  const handleDelete = () => setConfirmDelete(true);
+
+  const handleDeleteConfirm = () => {
+    setConfirmDelete(false);
     RemoveDiagram(id).then(() => {
       evt.refreshTree();
       evt.showSuccessMessage("Remove Diagram.");
@@ -60,7 +64,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
     evt.showSuccessMessage("Copied.");
   };
 
-  return (
+  return (<>
     <Dialog
       open={open}
       onClose={onClose}
@@ -106,7 +110,23 @@ function DiagramMetaDialog({ open, id, onClose }) {
         <Button onClick={handleSave} variant="contained">Save</Button>
       </DialogActions>
     </Dialog>
-  );
+
+    {/* 削除確認ダイアログ */}
+    <Dialog
+      open={confirmDelete}
+      onClose={() => setConfirmDelete(false)}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    >
+      <DialogTitle>ダイアグラムの削除</DialogTitle>
+      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        「{name}」を削除しますか？
+      </DialogContentText>
+      <DialogActions>
+        <Button onClick={() => setConfirmDelete(false)}>キャンセル</Button>
+        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
+      </DialogActions>
+    </Dialog>
+  </>);
 }
 
 export default DiagramMetaDialog;
