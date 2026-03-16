@@ -43,7 +43,7 @@
 
 #treeSplitter:hover {
   z-index: 100;
-  background-color: var(--accent-blue);
+  background-color: var(--splitter-hover-bg);
 }
 
 /* =====================================================================
@@ -134,7 +134,7 @@
 
 #splitter:hover {
   z-index: 100;
-  background-color: var(--accent-blue);
+  background-color: var(--splitter-hover-bg);
 }
 
 #splitter:hover::before {
