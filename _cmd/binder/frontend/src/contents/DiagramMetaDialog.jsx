@@ -85,6 +85,16 @@ function DiagramMetaDialog({ open, id, onClose }) {
           </Box>
 
           <FormControl>
+            <FormLabel>Name</FormLabel>
+            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Detail</FormLabel>
+            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+          </FormControl>
+
+          <FormControl>
             <FormLabel>Alias</FormLabel>
             <TextField
               size="small"
@@ -94,16 +104,6 @@ function DiagramMetaDialog({ open, id, onClose }) {
                 startAdornment: <InputAdornment position="start"><FormLabel>/images/</FormLabel></InputAdornment>,
                 endAdornment: <InputAdornment position="end"><FormLabel>.svg</FormLabel></InputAdornment>,
               }} />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
           </FormControl>
         </Grid>
       </DialogContent>

@@ -142,6 +142,16 @@ function NoteMetaDialog({ open, id, onClose }) {
           </Box>
 
           <FormControl>
+            <FormLabel>Name</FormLabel>
+            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Detail</FormLabel>
+            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+          </FormControl>
+
+          <FormControl>
             <FormLabel>Alias</FormLabel>
             <TextField
               size="small"
@@ -151,16 +161,6 @@ function NoteMetaDialog({ open, id, onClose }) {
                 startAdornment: <InputAdornment position="start"><FormLabel>{aliasStart}</FormLabel></InputAdornment>,
                 endAdornment: <InputAdornment position="end"><FormLabel>.html</FormLabel></InputAdornment>,
               }} />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
           </FormControl>
 
           <FormControl>

@@ -84,6 +84,16 @@ function AssetMetaDialog({ open, id, onClose }) {
           </Box>
 
           <FormControl>
+            <FormLabel>Name</FormLabel>
+            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Detail</FormLabel>
+            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+          </FormControl>
+
+          <FormControl>
             <FormLabel>Alias</FormLabel>
             <TextField
               size="small"
@@ -92,16 +102,6 @@ function AssetMetaDialog({ open, id, onClose }) {
               InputProps={{
                 startAdornment: <InputAdornment position="start"><FormLabel>/assets/</FormLabel></InputAdornment>,
               }} />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
           </FormControl>
         </Grid>
       </DialogContent>

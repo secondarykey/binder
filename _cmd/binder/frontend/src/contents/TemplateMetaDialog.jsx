@@ -94,11 +94,6 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
           )}
 
           <FormControl>
-            <FormLabel>Type</FormLabel>
-            <TextField size="small" value={resolvedType} slotProps={{ input: { readOnly: true } }} />
-          </FormControl>
-
-          <FormControl>
             <FormLabel>Name</FormLabel>
             <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
           </FormControl>
@@ -106,6 +101,11 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
           <FormControl>
             <FormLabel>Detail</FormLabel>
             <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Type</FormLabel>
+            <TextField size="small" value={resolvedType} slotProps={{ input: { readOnly: true } }} />
           </FormControl>
         </Grid>
       </DialogContent>
