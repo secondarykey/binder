@@ -66,7 +66,7 @@
   /* --- スプリッター --- */
   --splitter-dot:       #555555;
   --splitter-dot-hover: #ccccff;
-  --splitter-hover-bg:  #3333ff;
+  --splitter-hover-bg:  #0000cc;
 
   /* --- Tree DnD --- */
   --tree-inside-bg:   rgb(41, 43, 48);
@@ -134,6 +134,8 @@
   --splitter-dot:       #bbbbbb;
   --splitter-dot-hover: #6666ff;
   --splitter-hover-bg:  #6666ff;
+
+  --accent-orange:    #cc5511;
 
   /* --- Tree DnD --- */
   --tree-inside-bg:   rgb(220, 225, 230);
