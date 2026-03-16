@@ -8,7 +8,6 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"binder/settings"
-	"binder/snippet"
 	"embed"
 	"fmt"
 	"os"
@@ -348,12 +347,12 @@ func (b *Binder) initializeTemplate(m *installManifest) error {
 // ファイルが既に存在する場合はスキップする（ユーザーの編集を上書きしない）。
 func InstallSnippets() error {
 
-	dir := snippet.DirPath()
+	dir := settings.DirPath()
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
 	}
 
-	p := snippet.FilePath()
+	p := settings.SnippetsFilePath()
 	if _, err := os.Stat(p); err == nil {
 		// 既に存在する場合はスキップ
 		return nil

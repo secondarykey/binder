@@ -10,6 +10,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	DirName          = ".binder"
+	SettingsFileName = "setting.json"
+	SnippetsFileName = "snippets.json"
+)
+
 type Setting struct {
 	Position *Position `json:"position"`
 	Path     *Path     `json:"path"`
@@ -219,8 +225,12 @@ func load() (*Setting, error) {
 	return &obj, nil
 }
 
+func DirPath() string {
+	return filepath.Join(Home(), DirName)
+}
+
 func getFilePath() string {
-	return filepath.Join(Home(), ".binder", "setting.json")
+	return filepath.Join(DirPath(), SettingsFileName)
 }
 
 func Home() string {

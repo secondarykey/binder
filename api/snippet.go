@@ -2,15 +2,15 @@ package api
 
 import (
 	"binder/log"
-	"binder/snippet"
+	"binder/settings"
 	"fmt"
 )
 
-func (a *App) GetSnippets() (*snippet.Snippets, error) {
+func (app *App) GetSnippets() (*settings.Snippets, error) {
 
 	defer log.PrintTrace(log.Func("GetSnippets()"))
 
-	s, err := snippet.Load()
+	s, err := settings.LoadSnippets()
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetSnippets() error:\n%+v", err)
@@ -18,11 +18,11 @@ func (a *App) GetSnippets() (*snippet.Snippets, error) {
 	return s, nil
 }
 
-func (a *App) SaveSnippets(s *snippet.Snippets) error {
+func (app *App) SaveSnippets(s *settings.Snippets) error {
 
 	defer log.PrintTrace(log.Func("SaveSnippets()"))
 
-	if err := snippet.Save(s); err != nil {
+	if err := settings.SaveSnippets(s); err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("SaveSnippets() error:\n%+v", err)
 	}
