@@ -235,7 +235,7 @@ function Note(props) {
         <>
           <FormControl>
             <FormLabel>ID</FormLabel>
-            <TextField value={id} className="linkBtn" onClick={handleCopyId}
+            <TextField size="small" value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
                 startAdornment: (<InputAdornment position="start"><ContentCopy /></InputAdornment>)
               }}>
@@ -245,6 +245,7 @@ function Note(props) {
           <FormControl>
             <FormLabel>Alias</FormLabel>
             <TextField
+              size="small"
               value={alias}
               onChange={(e) => changeFunc(e.target.value)}
               InputProps={{
@@ -262,18 +263,17 @@ function Note(props) {
 
       <FormControl>
         <FormLabel>Name</FormLabel>
-        <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
+        <TextField size="small" value={name} onChange={(e) => setName(e.target.value)}></TextField>
       </FormControl>
 
       <FormControl>
         <FormLabel>Detail</FormLabel>
-        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
+        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
       </FormControl>
 
       <FormControl>
         <FormLabel> Layout Template </FormLabel>
-
-        <Select value={layout} onChange={(e) => handleChangeLayout(e)}>
+        <Select size="small" value={layout} onChange={(e) => handleChangeLayout(e)}>
           {layouts.map((v) => {
             return (<MenuItem key={"Layout-" + v.id} value={v.id}>{v.name}</MenuItem>)
           })}
@@ -282,7 +282,7 @@ function Note(props) {
 
       <FormControl>
         <FormLabel> Content Template </FormLabel>
-        <Select value={content} onChange={(e) => handleChangeContent(e)}>
+        <Select size="small" value={content} onChange={(e) => handleChangeContent(e)}>
           {contents.map((v) => {
             return (<MenuItem key={"Content-" + v.id} value={v.id}>{v.name}</MenuItem>)
           })}
@@ -291,7 +291,7 @@ function Note(props) {
 
       <FormControl>
         <FormLabel>Note Image</FormLabel>
-        <TextField value={imageFile} className="linkBtn" onClick={selectFile}
+        <TextField size="small" value={imageFile} className="linkBtn" onClick={selectFile}
           InputProps={{
             startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
           }}>
