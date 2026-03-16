@@ -185,9 +185,7 @@ function Note(props) {
       if (f != "") {
         setImageFile(f);
       }
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    });
+    }).catch(() => {});
   }
 
   const setNoImage = (e) => {
