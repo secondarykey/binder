@@ -72,6 +72,19 @@ func (a *App) GetNoteImageURL(noteId string) (string, error) {
 	return fmt.Sprintf("http://%s/binder-meta/%s", addr, noteId), nil
 }
 
+// DeleteNoteImage はノートのメタ画像ファイルを削除する。
+func (a *App) DeleteNoteImage(noteId string) error {
+
+	defer log.PrintTrace(log.Func("DeleteNoteImage()"))
+
+	err := a.current.DeleteNoteImage(noteId)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DeleteNoteImage() error\n%+v", err)
+	}
+	return nil
+}
+
 func (a *App) OpenNote(noteId string) (string, error) {
 
 	defer log.PrintTrace(log.Func("OpenNote()"))

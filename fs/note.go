@@ -156,6 +156,17 @@ func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
 	return pub, nil
 }
 
+// DeleteMetaFile は assets/meta/{noteId} を削除する。
+// ファイルが存在しない場合は何もしない。
+func (f *FileSystem) DeleteMetaFile(n *json.Note) (string, bool) {
+	mf := MetaFile(n)
+	if !f.isExist(mf) {
+		return mf, false
+	}
+	f.remove(mf) //nolint: errcheck
+	return mf, true
+}
+
 // UnpublishNoteMeta はメタ画像 docs/images/meta/{alias} を削除する。
 // ファイルが存在しない場合は何もしない。
 func (f *FileSystem) UnpublishNoteMeta(n *json.Note) (string, bool) {

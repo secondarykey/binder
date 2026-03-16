@@ -1,11 +1,11 @@
 import { useState, useEffect,useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Button, Container, FormControl, FormLabel, Grid, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
-import { ContentCopy } from "@mui/icons-material";
+import { Button, Container, FormControl, FormLabel, Grid, IconButton, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
+import { ContentCopy, DeleteOutline } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
-import { GetNote, GetHTMLTemplates, GetNoteImageURL } from "../../bindings/binder/api/app";
+import { GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage } from "../../bindings/binder/api/app";
 import { EditNote, RemoveNote,Address } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png'
@@ -32,6 +32,7 @@ function Note(props) {
 
   const [address, setAddress] = useState("");
   const [viewImage, setViewImage] = useState(noImage);
+  const [hasImage, setHasImage] = useState(false);
   const [detail, setDetail] = useState("");
 
   const [layout, setLayout] = useState("");
@@ -52,6 +53,8 @@ function Note(props) {
     setAlias("");
     setDetail("");
     setImageFile("");
+    setViewImage(noImage);
+    setHasImage(false);
 
     if (mode === "register") {
       setId("");
@@ -81,8 +84,10 @@ function Note(props) {
     // メタ画像URLを取得（存在しない場合は noImage にフォールバック）
     GetNoteImageURL(currentId).then((url) => {
       setViewImage(url || noImage);
+      setHasImage(!!url);
     }).catch(() => {
       setViewImage(noImage);
+      setHasImage(false);
     });
 
   }, [currentId]);
@@ -188,6 +193,21 @@ function Note(props) {
     }).catch(() => {});
   }
 
+  /**
+   * 画像削除
+   */
+  const handleDeleteImage = (e) => {
+    e.stopPropagation();
+    DeleteNoteImage(id).then(() => {
+      setViewImage(noImage);
+      setHasImage(false);
+      setImageFile("");
+      evt.showSuccessMessage("Image removed.");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  }
+
   const setNoImage = (e) => {
     e.target.src = noImage;
   }
@@ -289,13 +309,29 @@ function Note(props) {
       <FormControl>
         <FormLabel>Note Image</FormLabel>
         <Container style={{ marginTop: "4px", textAlign: "center" }}>
-          <img
-            src={viewImage}
-            onError={setNoImage}
-            onClick={selectFile}
-            style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85 }}
-            title="クリックして画像を選択"
-          />
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <img
+              src={viewImage}
+              onError={setNoImage}
+              onClick={selectFile}
+              style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
+              title="クリックして画像を選択"
+            />
+            {(hasImage || imageFile) && mode === "edit" && (
+              <IconButton
+                size="small"
+                onClick={handleDeleteImage}
+                style={{
+                  position: "absolute", top: 2, right: 2,
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  color: "#fff",
+                  padding: "2px",
+                }}
+              >
+                <DeleteOutline fontSize="small" />
+              </IconButton>
+            )}
+          </div>
           {imageFile && (
             <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", wordBreak: "break-all" }}>
               {imageFile.split(/[\\/]/).pop()}

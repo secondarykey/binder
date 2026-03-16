@@ -236,6 +236,26 @@ func (b *Binder) ReadMetaBytes(noteId string) ([]byte, error) {
 	return data, nil
 }
 
+// DeleteNoteImage はノートのメタ画像ファイルを削除する。
+// ファイルが存在しない場合は何もしない。
+func (b *Binder) DeleteNoteImage(noteId string) error {
+	if b == nil {
+		return EmptyError
+	}
+
+	n := &json.Note{Id: noteId}
+	mf, ok := b.fileSystem.DeleteMetaFile(n)
+	if !ok {
+		return nil
+	}
+
+	err := b.fileSystem.Commit(fs.M("Delete Note Image", noteId), mf)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
+
 func (b *Binder) SaveNote(noteId string, data []byte) error {
 	if b == nil {
 		return EmptyError
