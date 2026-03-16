@@ -65,8 +65,7 @@ function TemplateTree(props) {
   const [id, setId] = useState(undefined);
   const [selectedId, setSelectedId] = useState(undefined);
 
-  const [templateEl, setTemplateEl] = useState(null);
-  const templateMenu = Boolean(templateEl);
+  const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0 });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: undefined, name: undefined });
 
   // ドラッグ開始までの距離（px）: クリックとドラッグを区別する
@@ -103,7 +102,7 @@ function TemplateTree(props) {
 
   const closeMenu = () => {
     setId(undefined);
-    setTemplateEl(null);
+    setContextMenu({ open: false, x: 0, y: 0 });
   };
 
   // テンプレート本文を開く（シングルクリック）
@@ -116,15 +115,14 @@ function TemplateTree(props) {
   const handleContextMenu = (e, leafId) => {
     e.preventDefault();
     setId(leafId);
-    setTemplateEl(e.currentTarget);
+    setContextMenu({ open: true, x: e.clientX, y: e.clientY });
     e.stopPropagation();
   };
 
   // テンプレートメタ情報編集（右クリックメニューから）
   const handleEditTemplate = () => {
-    setTemplateEl(null);
+    closeMenu();
     nav("/template/edit/" + id);
-    setId(undefined);
   };
 
   // テンプレート履歴ウィンドウを開く（右クリックメニューから）
@@ -241,9 +239,13 @@ function TemplateTree(props) {
     </List>
 
     {/** テンプレートメニュー（右クリック） */}
-    <Menu anchorEl={templateEl}
-      open={templateMenu}
-      onClose={closeMenu}>
+    <Menu
+      open={contextMenu.open}
+      onClose={closeMenu}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
+    >
       <MenuItem onClick={handleEditTemplate} divider>Edit</MenuItem>
       <MenuItem onClick={handleHistoryTemplate} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
