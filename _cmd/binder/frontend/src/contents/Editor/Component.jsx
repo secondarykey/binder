@@ -860,9 +860,9 @@ function Editor(props) {
   commentStyle.paddingTop = "12px";
   commentStyle.width = (width - 70) + "px";
 
-  var color = "#f1f1f1";
+  var color = "var(--text-primary)";
   if (updated) {
-    color = "#f5a623";
+    color = "var(--accent-orange)";
   }
 
   //コミット用のアイコン(コメント欄の横)
