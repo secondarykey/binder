@@ -78,6 +78,8 @@ func main() {
 	// 2. ウィンドウ作成
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:                  "Binder",
+		X:                      set.Position.Left,
+		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
 		Height:                 set.Position.Height,
 		Frameless:              true,
@@ -86,6 +88,11 @@ func main() {
 		OpenInspectorOnStartup: true,
 		EnableFileDrop:         true,
 	})
+
+	if (set.Position.Left < 0 && set.Position.Top < 0) ||
+		resetPosition {
+		window.Center()
+	}
 
 	// 3. Wails ランタイムを注入して起動処理を実行
 	win.runtime = wailsApp
