@@ -10,6 +10,7 @@ import DragHandleIcon from '@mui/icons-material/DragHandle';
 import AddIcon from '@mui/icons-material/Add';
 
 import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../../bindings/binder/api/app';
+import { OpenHistoryWindow } from '../../../bindings/main/window';
 
 import Event, { EventContext } from '../../Event';
 
@@ -126,6 +127,13 @@ function TemplateTree(props) {
     setId(undefined);
   };
 
+  // テンプレート履歴ウィンドウを開く（右クリックメニューから）
+  const handleHistoryTemplate = () => {
+    const targetId = id;
+    closeMenu();
+    OpenHistoryWindow('template', targetId).catch(err => evt.showErrorMessage(err));
+  };
+
   // テンプレート新規作成（セクションヘッダーの + ボタン）
   const handleRegisterTemplate = (dirId) => {
     nav("/template/register/" + dirId);
@@ -237,6 +245,7 @@ function TemplateTree(props) {
       open={templateMenu}
       onClose={closeMenu}>
       <MenuItem onClick={handleEditTemplate} divider>Edit</MenuItem>
+      <MenuItem onClick={handleHistoryTemplate} divider>History</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
     </Menu>
 
