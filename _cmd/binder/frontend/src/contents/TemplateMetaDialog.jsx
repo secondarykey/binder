@@ -83,17 +83,14 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
       <DialogContent>
         <Grid className="formGrid" style={{ margin: "8px 0" }}>
           {!isCreate && (
-            <FormControl>
-              <FormLabel>ID</FormLabel>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Typography variant="body2" sx={{ flex: 1, fontFamily: "monospace", color: "var(--text-secondary)", wordBreak: "break-all" }}>
-                  {id}
-                </Typography>
-                <IconButton size="small" onClick={handleCopyId} title="Copy ID">
-                  <ContentCopy fontSize="small" />
-                </IconButton>
-              </Box>
-            </FormControl>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Typography variant="body2" sx={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
+                ID: {id}
+              </Typography>
+              <IconButton size="small" onClick={handleCopyId} title="Copy ID">
+                <ContentCopy fontSize="small" />
+              </IconButton>
+            </Box>
           )}
 
           <FormControl>
