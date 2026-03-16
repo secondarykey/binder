@@ -67,6 +67,16 @@ func (f *FileSystem) DeleteNote(n *json.Note) ([]string, error) {
 		return nil, xerrors.Errorf("note file not exist : %s", fn)
 	}
 
+	// メタ画像 (assets/meta/{noteId}) が存在すれば削除対象に追加
+	if mf := MetaFile(n); f.isExist(mf) {
+		files = append(files, mf)
+	}
+
+	// 公開済みメタ画像 (docs/images/meta/{alias}) が存在すれば削除対象に追加
+	if pub := PublicMetaFile(n); f.isExist(pub) {
+		files = append(files, pub)
+	}
+
 	err := f.remove(files...)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.remove(%s) error: %w", fn, err)
