@@ -4,8 +4,10 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 
-import { GetAsset, GetAssetContent, Generate, Unpublish, GetSetting, MigrateAssetToNote } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, GetSetting, MigrateAssetToNote } from '../../bindings/binder/api/app';
+import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
 
 /** 画像拡張子の判定セット */
@@ -139,9 +141,11 @@ function AssetViewer() {
   // エラー:   assetContent=null, error=string, assetName=string
   const [assetContent, setAssetContent] = useState(null);
   const [assetName, setAssetName] = useState('');
+  const [assetMeta, setAssetMeta] = useState(null);
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
@@ -162,10 +166,12 @@ function AssetViewer() {
     if (!id) return;
     setAssetContent(null);
     setAssetName('');
+    setAssetMeta(null);
     setError(null);
 
     // メタデータ取得（タイトルはファイルが見つからなくても表示したい）
     GetAsset(id).then((meta) => {
+      setAssetMeta(meta);
       if (meta?.name) {
         setAssetName(meta.name);
         evt.changeTitle(meta.name);
@@ -217,6 +223,35 @@ function AssetViewer() {
     } finally {
       setMigrating(false);
     }
+  };
+
+  /** ファイル更新ボタン押下: ファイルを選択してアセットを更新する */
+  const handleUpdateFile = () => {
+    SelectFile("Any File", "*").then((f) => {
+      if (!f) return;
+      setUpdating(true);
+      const data = {
+        id: assetMeta?.id ?? id,
+        parentId: assetMeta?.parentId ?? '',
+        name: assetMeta?.name ?? '',
+        alias: assetMeta?.alias ?? '',
+        detail: assetMeta?.detail ?? '',
+        binary: assetMeta?.binary ?? false,
+      };
+      EditAsset(data, f).then(() => {
+        // コンテンツを再読み込み
+        GetAssetContent(id).then((resp) => {
+          setAssetContent(resp);
+          evt.showSuccessMessage("ファイルを更新しました。");
+        }).catch(() => {
+          evt.showSuccessMessage("ファイルを更新しました。");
+        });
+      }).catch((e) => {
+        evt.showErrorMessage("ファイルの更新に失敗しました: " + e);
+      }).finally(() => {
+        setUpdating(false);
+      });
+    }).catch(() => {});
   };
 
   /** Unpublish ボタン押下: docs からアセットを削除する */
@@ -313,6 +348,16 @@ function AssetViewer() {
           <NoteAddIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
         </IconButton>
       )}
+      {/* フローティングファイル更新ボタン（右上、移行ボタンの左） */}
+      <IconButton
+        className="floatTopRightBtn2"
+        size="small"
+        aria-label="update file"
+        onClick={handleUpdateFile}
+        disabled={updating || !id}
+      >
+        <FileUploadIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
+      </IconButton>
       {/* フローティング公開ボタン（右下） */}
       <IconButton
         className="floatPublishBtn"

@@ -162,14 +162,16 @@ function Assets(props) {
         </>
       }
 
-      <FormControl>
-        <FormLabel>Assets</FormLabel>
-        <TextField size="small" value={file} onClick={selectFile} className="linkBtn"
-          InputProps={{
-            startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
-          }}>
-        </TextField>
-      </FormControl>
+      {mode === "register" &&
+        <FormControl>
+          <FormLabel>Assets</FormLabel>
+          <TextField size="small" value={file} onClick={selectFile} className="linkBtn"
+            InputProps={{
+              startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
+            }}>
+          </TextField>
+        </FormControl>
+      }
 
       <FormControl>
         <FormLabel>Detail</FormLabel>
