@@ -34,7 +34,7 @@ dev_mode:
       type: once
     - cmd: wails3 task common:dev:frontend
       type: background
-    - cmd: go build -o bin/binder.exe
+    - cmd: go build -o bin/binder_dev.exe
       type: blocking
-    - cmd: bin/binder.exe
+    - cmd: bin/binder_dev.exe
       type: primary
