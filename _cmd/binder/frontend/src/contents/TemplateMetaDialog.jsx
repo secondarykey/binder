@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, Grid, InputAdornment, TextField,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  FormControl, FormLabel, Grid, IconButton, TextField, Typography,
 } from "@mui/material";
 import { ContentCopy } from "@mui/icons-material";
 
@@ -85,8 +85,14 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
           {!isCreate && (
             <FormControl>
               <FormLabel>ID</FormLabel>
-              <TextField size="small" value={id ?? ""} className="linkBtn" onClick={handleCopyId}
-                InputProps={{ startAdornment: (<InputAdornment position="start"><ContentCopy /></InputAdornment>) }} />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Typography variant="body2" sx={{ flex: 1, fontFamily: "monospace", color: "var(--text-secondary)", wordBreak: "break-all" }}>
+                  {id}
+                </Typography>
+                <IconButton size="small" onClick={handleCopyId} title="Copy ID">
+                  <ContentCopy fontSize="small" />
+                </IconButton>
+              </Box>
             </FormControl>
           )}
 
