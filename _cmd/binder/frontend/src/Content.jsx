@@ -9,7 +9,6 @@ import BinderRemote from "./contents/BinderRemote";
 
 import { Routes, Route } from "react-router";
 
-import Template from "./contents/Template";
 import { Hidden } from "./App";
 
 import "./assets/Content.css"
@@ -38,9 +37,6 @@ function Content(props) {
           <Route path="/file/remote" element={<BinderRemote />} />
 
           <Route path="/assets/view/:id" element={<AssetViewer />} />
-          <Route path="/template/:mode/:currentId" element={<Template />} />
-
-          <Route path="/template/view" element={<Hidden />} />
 
           <Route path="/editor/:mode/:id" element={<Editor />} />
 
