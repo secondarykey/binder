@@ -134,7 +134,7 @@ function Assets(props) {
         <>
           <FormControl>
             <FormLabel>ID</FormLabel>
-            <TextField value={id} className="linkBtn" onClick={handleCopyId}
+            <TextField size="small" value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
                 startAdornment: (<InputAdornment position="start" className="linkBtn"> <ContentCopy /> </InputAdornment>)
               }}>
@@ -144,6 +144,7 @@ function Assets(props) {
           <FormControl>
             <FormLabel>Alias</FormLabel>
             <TextField
+              size="small"
               value={alias}
               onChange={(e) => setAlias(e.target.value)}
               InputProps={{
@@ -156,14 +157,14 @@ function Assets(props) {
 
           <FormControl>
             <FormLabel>Name</FormLabel>
-            <TextField value={name} onChange={(e) => setName(e.target.value)}></TextField>
+            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)}></TextField>
           </FormControl>
         </>
       }
 
       <FormControl>
         <FormLabel>Assets</FormLabel>
-        <TextField value={file} onClick={selectFile} className="linkBtn"
+        <TextField size="small" value={file} onClick={selectFile} className="linkBtn"
           InputProps={{
             startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
           }}>
@@ -172,7 +173,7 @@ function Assets(props) {
 
       <FormControl>
         <FormLabel>Detail</FormLabel>
-        <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
+        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline={true}></TextField>
       </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
