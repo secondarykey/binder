@@ -13,19 +13,17 @@ tasks:
   build:
     summary: Builds the application
     cmds:
-      - task: common:build:frontend
-      - task: common:generate:bindings
-      - task: "windows:build"
+      - task: "{{OS}}:build"
 
   package:
     summary: Packages a production build of the application
     cmds:
-      - task: "windows:build"
+      - task: "{{OS}}:package"
 
   run:
     summary: Runs the application
     cmds:
-      - task: "windows:run"
+      - task: "{{OS}}:run"
 
   dev:
     summary: Runs the application in development mode
