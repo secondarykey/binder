@@ -4,7 +4,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, GetSetting, MigrateAssetToNote } from '../../bindings/binder/api/app';
 import { SelectFile } from '../../bindings/main/window';
@@ -356,7 +356,7 @@ function AssetViewer() {
         onClick={handleUpdateFile}
         disabled={updating || !id}
       >
-        <FileUploadIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
+        <AttachFileIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
       </IconButton>
       {/* フローティング公開ボタン（右下） */}
       <IconButton
