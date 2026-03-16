@@ -118,12 +118,12 @@ function Binder({ isModal, ...props }) {
 
             <FormControl>
               <FormLabel>Name</FormLabel>
-              <TextField value={name} onChange={(e) => setName(e.target.value)} />
+              <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
             </FormControl>
 
             <FormControl>
               <FormLabel>Detail</FormLabel>
-              <TextField value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+              <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
             </FormControl>
 
             <FormControl>
@@ -132,6 +132,7 @@ function Binder({ isModal, ...props }) {
                 <Button onClick={createRemoteDialog}>Add</Button>
               </FormLabel>
               <Select
+                size="small"
                 value={remote}
                 onChange={(e) => handleChangeRemote(e)}
                 sx={{ color: 'var(--text-primary)' }}
@@ -145,7 +146,7 @@ function Binder({ isModal, ...props }) {
 
             <FormControl>
               <FormLabel>Branch Name</FormLabel>
-              <TextField value={branch} onChange={(e) => setBranch(e.target.value)} />
+              <TextField size="small" value={branch} onChange={(e) => setBranch(e.target.value)} />
             </FormControl>
 
             <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
