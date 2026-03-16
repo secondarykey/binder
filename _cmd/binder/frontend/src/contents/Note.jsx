@@ -1,7 +1,7 @@
 import { useState, useEffect,useContext } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Button, Container, FormControl, FormLabel, Grid, IconButton, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
+import { Button, Container, Dialog, DialogActions, DialogContentText, DialogTitle, FormControl, FormLabel, Grid, IconButton, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
 import { ContentCopy, DeleteOutline } from "@mui/icons-material";
 
 import { copyClipboard } from "../App";
@@ -33,6 +33,7 @@ function Note(props) {
   const [address, setAddress] = useState("");
   const [viewImage, setViewImage] = useState(noImage);
   const [hasImage, setHasImage] = useState(false);
+  const [confirmDeleteImage, setConfirmDeleteImage] = useState(false);
   const [detail, setDetail] = useState("");
 
   const [layout, setLayout] = useState("");
@@ -194,10 +195,18 @@ function Note(props) {
   }
 
   /**
-   * 画像削除
+   * 画像削除（確認ダイアログを開く）
    */
   const handleDeleteImage = (e) => {
     e.stopPropagation();
+    setConfirmDeleteImage(true);
+  }
+
+  /**
+   * 画像削除確定
+   */
+  const handleDeleteImageConfirm = () => {
+    setConfirmDeleteImage(false);
     DeleteNoteImage(id).then(() => {
       setViewImage(noImage);
       setHasImage(false);
@@ -353,6 +362,22 @@ function Note(props) {
       </FormControl>
 
     </Grid>
+
+    <Dialog
+      open={confirmDeleteImage}
+      onClose={() => setConfirmDeleteImage(false)}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    >
+      <DialogTitle>画像の削除</DialogTitle>
+      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        メタ画像を削除しますか？
+      </DialogContentText>
+      <DialogActions>
+        <Button onClick={() => setConfirmDeleteImage(false)}>キャンセル</Button>
+        <Button color="error" onClick={handleDeleteImageConfirm}>削除</Button>
+      </DialogActions>
+    </Dialog>
+
   </>);
 }
 export default Note;
