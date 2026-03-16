@@ -16,6 +16,9 @@ import { OpenHistoryWindow ,SelectFile } from '../../../bindings/main/window';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
+import NoteMetaDialog from '../NoteMetaDialog';
+import DiagramMetaDialog from '../DiagramMetaDialog';
+import AssetMetaDialog from '../AssetMetaDialog';
 
 /**
  * Mermaid アイコン
@@ -113,6 +116,9 @@ function BinderTree(props) {
 
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
+
+  // メタ編集ダイアログの状態
+  const [editDialog, setEditDialog] = useState({ open: false, type: null, id: null });
 
   // インラインリネームの状態
   const [renaming, setRenaming] = useState(null); // リネーム中のノードID
@@ -301,9 +307,10 @@ function BinderTree(props) {
 
   // ---- コンテキストメニューのナビゲーションハンドラ ----
 
-  const handleEditNote        = () => { closeAllMenus(); nav("/note/edit/"        + contextMenu.node.id); };
-  const handleEditDiagram     = () => { closeAllMenus(); nav("/diagram/edit/"     + contextMenu.node.id); };
-  const handleEditAsset       = () => { closeAllMenus(); nav("/assets/edit/"      + contextMenu.node.id); };
+  const handleEditNote    = () => { closeAllMenus(); setEditDialog({ open: true, type: 'note',    id: contextMenu.node.id }); };
+  const handleEditDiagram = () => { closeAllMenus(); setEditDialog({ open: true, type: 'diagram', id: contextMenu.node.id }); };
+  const handleEditAsset   = () => { closeAllMenus(); setEditDialog({ open: true, type: 'asset',   id: contextMenu.node.id }); };
+  const closeEditDialog   = () => setEditDialog({ open: false, type: null, id: null });
 
   const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
@@ -551,6 +558,23 @@ function BinderTree(props) {
         <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
       </DialogActions>
     </Dialog>
+
+    {/** メタ編集ダイアログ */}
+    <NoteMetaDialog
+      open={editDialog.open && editDialog.type === 'note'}
+      id={editDialog.id}
+      onClose={closeEditDialog}
+    />
+    <DiagramMetaDialog
+      open={editDialog.open && editDialog.type === 'diagram'}
+      id={editDialog.id}
+      onClose={closeEditDialog}
+    />
+    <AssetMetaDialog
+      open={editDialog.open && editDialog.type === 'asset'}
+      id={editDialog.id}
+      onClose={closeEditDialog}
+    />
 
   </>);
 }

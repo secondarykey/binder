@@ -3,9 +3,6 @@ import { Paper } from "@mui/material";
 import BinderRegister from "./contents/BinderRegister";
 
 import Editor from "./contents/Editor/Component";
-import Note from "./contents/Note";
-import Diagram from "./contents/Diagram";
-import Assets from "./contents/Assets";
 import AssetViewer from "./contents/AssetViewer";
 import History from "./contents/History";
 import BinderRemote from "./contents/BinderRemote";
@@ -40,10 +37,7 @@ function Content(props) {
           <Route path="/file/new" element={<BinderRegister />} />
           <Route path="/file/remote" element={<BinderRemote />} />
 
-          <Route path="/note/:mode/:currentId" element={<Note />} />
-          <Route path="/diagram/:mode/:currentId" element={<Diagram />} />
           <Route path="/assets/view/:id" element={<AssetViewer />} />
-          <Route path="/assets/:mode/:currentId" element={<Assets />} />
           <Route path="/template/:mode/:currentId" element={<Template />} />
 
           <Route path="/template/view" element={<Hidden />} />
