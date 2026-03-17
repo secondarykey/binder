@@ -559,6 +559,7 @@ function BinderTree(props) {
           onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openMoreMenu(r.left, r.bottom); }}
           sx={{
             position: 'absolute', top: 4, right: 4, zIndex: 10,
+            padding: '5px 0px',
             color: 'var(--text-muted)',
             backgroundColor: 'var(--bg-panel)',
             '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-elevated)' },

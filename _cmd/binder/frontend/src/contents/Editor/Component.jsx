@@ -1075,9 +1075,6 @@ function Editor(props) {
                     </Tooltip>
                   </>}
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
                   {/** プレビュー表示トグル */}
                   <Tooltip title={viewer ? "プレビュー: ON" : "プレビュー: OFF"} placement="bottom">
                     <ToggleButton
@@ -1110,7 +1107,7 @@ function Editor(props) {
                     <IconButton
                       size="small"
                       onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openEditorMoreMenu(r.left, r.bottom); }}
-                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
                       className="editorBtn"
                     >
                       <MoreVertIcon sx={{ fontSize: '18px' }} />
