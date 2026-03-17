@@ -64,10 +64,12 @@ const IconWrapper = styled.span`
   margin-right: 5px;
   display: flex;
   align-items: center;
-  ${({ $modified }) => $modified ? `
-    color: var(--accent-orange);
-    & .MuiSvgIcon-root { fill: var(--accent-orange); }
-  ` : ''}
+  ${({ $modified, $publishStatus }) => {
+    if ($publishStatus === 1) return 'color: var(--accent-green); & .MuiSvgIcon-root { fill: var(--accent-green); }';
+    if ($publishStatus === 2) return 'color: var(--accent-orange); & .MuiSvgIcon-root { fill: var(--accent-orange); }';
+    if ($modified) return 'color: var(--accent-orange); & .MuiSvgIcon-root { fill: var(--accent-orange); }';
+    return '';
+  }}
 `;
 
 // Helper functions to manipulate the tree data structure
@@ -341,7 +343,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     {isExpanded ? '−' : '+'}
                   </ExpandButton>
                 )}
-                <IconWrapper $modified={node.modified}>
+                <IconWrapper $modified={node.modified} $publishStatus={node.publishStatus ?? 0}>
                     {typeof icon === 'string' ? icon : React.isValidElement(icon) ? icon : icon ? React.createElement(icon) : null}
                 </IconWrapper>
                 {isRenaming ? (
@@ -368,7 +370,11 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     }}
                   />
                 ) : (
-                  <span style={node.modified ? { color: 'var(--accent-orange)' } : undefined}>{node.name}</span>
+                  <span style={
+                    node.publishStatus === 1 ? { color: 'var(--accent-green)' } :
+                    node.publishStatus === 2 ? { color: 'var(--accent-orange)' } :
+                    node.modified ? { color: 'var(--accent-orange)' } : undefined
+                  }>{node.name}</span>
                 )}
               </NodeContent>
             </Row>

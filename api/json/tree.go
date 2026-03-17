@@ -7,13 +7,14 @@ type Tree struct {
 }
 
 type Leaf struct {
-	Id       string  `json:"id"`
-	ParentId string  `json:"parentId"`
-	Seq      int     `json:"seq"`
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	Modified bool    `json:"modified"`
-	Children []*Leaf `json:"children"`
+	Id            string  `json:"id"`
+	ParentId      string  `json:"parentId"`
+	Seq           int     `json:"seq"`
+	Name          string  `json:"name"`
+	Type          string  `json:"type"`
+	Modified      bool    `json:"modified"`
+	PublishStatus int     `json:"publishStatus"` // 0:最新 1:未公開(新規) 2:更新あり
+	Children      []*Leaf `json:"children"`
 }
 
 func NewLeaf(id, name string) *Leaf {

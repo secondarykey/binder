@@ -209,7 +209,7 @@ func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 	}
 
 	for _, n := range notes {
-		l := &json.Leaf{Id: n.Id, ParentId: n.ParentId, Name: n.Name, Type: "note"}
+		l := &json.Leaf{Id: n.Id, ParentId: n.ParentId, Name: n.Name, Type: "note", PublishStatus: int(n.PublishStatus)}
 		dirNote.AddChild(l)
 	}
 
@@ -220,7 +220,7 @@ func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("UnpublishDiagrams() error: %w", err)
 	}
 	for _, d := range diagrams {
-		l := &json.Leaf{Id: d.Id, ParentId: d.ParentId, Name: d.Name, Type: "diagram"}
+		l := &json.Leaf{Id: d.Id, ParentId: d.ParentId, Name: d.Name, Type: "diagram", PublishStatus: int(d.PublishStatus)}
 		dirDiagram.AddChild(l)
 	}
 
@@ -232,7 +232,7 @@ func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("UnpublishAssets() error: %w", err)
 	}
 	for _, a := range assets {
-		l := &json.Leaf{Id: a.Id, ParentId: a.ParentId, Name: a.Name, Type: "asset"}
+		l := &json.Leaf{Id: a.Id, ParentId: a.ParentId, Name: a.Name, Type: "asset", PublishStatus: int(a.PublishStatus)}
 		dirAsset.AddChild(l)
 	}
 

@@ -7,10 +7,11 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import { Events } from '@wailsio/runtime';
 
-import { GetBinderTree, GetModifiedIds, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
+import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
          EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset,  GetHTMLTemplates } from '../../../bindings/binder/api/app';
 
 import { OpenHistoryWindow ,SelectFile } from '../../../bindings/main/window';
@@ -72,10 +73,10 @@ const findNodeInTree = (nodes, id) => {
  * - 子を持つ note → displayType を "folder" に変換
  * - nodeType に元の type を保持（コンテキストメニュー判定用）
  */
-const processTreeData = (leafs, modifiedIds, showModified) => {
+const processTreeData = (leafs, modifiedIds, showModified, unpublishedMap, showPublishStatus) => {
   if (!leafs) return [];
   return leafs.map(leaf => {
-    const children = leaf.children ? processTreeData(leaf.children, modifiedIds, showModified) : undefined;
+    const children = leaf.children ? processTreeData(leaf.children, modifiedIds, showModified, unpublishedMap, showPublishStatus) : undefined;
     const hasChildren = children && children.length > 0;
 
     const displayType = (leaf.type === "note" && hasChildren) ? "folder" : leaf.type;
@@ -83,9 +84,10 @@ const processTreeData = (leafs, modifiedIds, showModified) => {
     return {
       id: leaf.id,
       name: leaf.name,
-      type: displayType,                                                                  // アイコン表示用（folder/note/diagram/asset）
-      nodeType: leaf.type,                                                                // コンテキストメニュー判定用（元のtype）
-      modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,          // Git未コミット変更フラグ（トグルOFF時は強制false）
+      type: displayType,                                                                          // アイコン表示用（folder/note/diagram/asset）
+      nodeType: leaf.type,                                                                        // コンテキストメニュー判定用（元のtype）
+      modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,                  // Git未コミット変更フラグ（トグルOFF時は強制false）
+      publishStatus: showPublishStatus && unpublishedMap ? (unpublishedMap.get(leaf.id) ?? 0) : 0, // 未公開ステータス（0:最新 1:未公開新規 2:更新あり）
       children: hasChildren ? children : undefined,
     };
   });
@@ -105,6 +107,12 @@ function BinderTree(props) {
 
   // 未コミット表示トグル（trueで橙色ハイライト有効）
   const [showModified, setShowModified] = useState(true);
+
+  // 未公開表示トグルと未公開IDマップ（id → publishStatus）
+  const [showPublishStatus, setShowPublishStatus] = useState(false);
+  const [unpublishedMap, setUnpublishedMap] = useState(null);
+  const showPublishStatusRef = useRef(false);
+  useEffect(() => { showPublishStatusRef.current = showPublishStatus; }, [showPublishStatus]);
 
   // 展開しているノードのID配列
   const [expand, setExpand] = useState([]);
@@ -144,6 +152,21 @@ function BinderTree(props) {
   // ツリーデータを取得する。
   // expandTop=true の場合、取得後にトップ階層のノードをすべて展開する。
   // expandTop=false（ReloadTree 等）の場合は展開状態を維持する。
+  // 未公開ステータスマップを構築する（id → publishStatus）
+  const loadUnpublished = () => {
+    GetUnpublishedTree().then((tree) => {
+      const map = new Map();
+      (tree.data ?? []).forEach((dir) => {
+        (dir.children ?? []).forEach((leaf) => {
+          if (leaf.publishStatus) map.set(leaf.id, leaf.publishStatus);
+        });
+      });
+      setUnpublishedMap(map);
+    }).catch((err) => {
+      console.error('[BinderTree] GetUnpublishedTree error:', err);
+    });
+  };
+
   const viewTree = (expandTop = false) => {
     GetBinderTree().then((resp) => {
       setTree(resp.data);
@@ -157,6 +180,8 @@ function BinderTree(props) {
       }).catch((err) => {
         console.error('[BinderTree] GetModifiedIds error:', err);
       });
+      // 未公開表示ONの場合は未公開データも再取得
+      if (showPublishStatusRef.current) loadUnpublished();
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -254,8 +279,20 @@ function BinderTree(props) {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
+  // 未公開表示トグルON→データ取得 / OFF→マップクリア
+  useEffect(() => {
+    if (showPublishStatus) {
+      loadUnpublished();
+    } else {
+      setUnpublishedMap(null);
+    }
+  }, [showPublishStatus]);
+
   // Treeコンポーネント用データ（メモ化）
-  const treeData = useMemo(() => processTreeData(tree, modifiedIds, showModified), [tree, modifiedIds, showModified]);
+  const treeData = useMemo(
+    () => processTreeData(tree, modifiedIds, showModified, unpublishedMap, showPublishStatus),
+    [tree, modifiedIds, showModified, unpublishedMap, showPublishStatus]
+  );
 
   // ---- ハンドラ ----
 
@@ -474,6 +511,14 @@ function BinderTree(props) {
   // 現在右クリックされているノードの元type
   const contextNodeType = contextMenu.node?.nodeType;
 
+  // 未公開ボタンの色: 未公開新規(緑) > 更新あり(橙) > トグルON中(グレー) > OFF(ミュート)
+  const publishBtnColor = (() => {
+    if (!showPublishStatus) return 'var(--text-muted)';
+    if (!unpublishedMap || unpublishedMap.size === 0) return 'var(--text-secondary)';
+    for (const v of unpublishedMap.values()) { if (v === 1) return 'var(--accent-green)'; }
+    return 'var(--accent-orange)';
+  })();
+
   return (<>
 
     {/** ツリーパネル上部メニューバー */}
@@ -482,6 +527,12 @@ function BinderTree(props) {
         <IconButton size="small" onClick={() => setShowModified(v => !v)}
           sx={{ color: showModified ? 'var(--accent-orange)' : 'var(--text-muted)' }}>
           <FiberManualRecordIcon sx={{ fontSize: '14px' }} />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title={showPublishStatus ? "未公開表示: ON" : "未公開表示: OFF"} placement="bottom">
+        <IconButton size="small" onClick={() => setShowPublishStatus(v => !v)}
+          sx={{ color: publishBtnColor }}>
+          <UnpublishedIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Tooltip>
     </div>
