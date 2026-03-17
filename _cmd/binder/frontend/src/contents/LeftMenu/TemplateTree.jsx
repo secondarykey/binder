@@ -37,7 +37,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
       sx={{
         pl: '5px',
         py: 0.25,
-        pr: '10px',
+        pr: '5px',
         borderRadius: '2px',
         '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
         '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
