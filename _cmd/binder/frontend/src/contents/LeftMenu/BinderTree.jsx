@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, ToggleButton } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, ToggleButton, IconButton } from '@mui/material';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import { Events } from '@wailsio/runtime';
+import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset,  GetHTMLTemplates } from '../../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../../bindings/binder/api/app';
 
 import { OpenHistoryWindow ,SelectFile } from '../../../bindings/main/window';
 
@@ -112,6 +113,9 @@ function BinderTree(props) {
   const [showPublishStatus, setShowPublishStatus] = useState(false);
   const [unpublishedMap, setUnpublishedMap] = useState(null);
   const showPublishStatusRef = useRef(false);
+
+  // バインダーのサイトURL（ブラウザで開くボタン用）
+  const [siteUrl, setSiteUrl] = useState("");
   useEffect(() => { showPublishStatusRef.current = showPublishStatus; }, [showPublishStatus]);
 
   // 展開しているノードのID配列
@@ -196,10 +200,13 @@ function BinderTree(props) {
     // アドレスが変わった（別バインダー）ときだけトップ展開リセット。
     // 同じバインダーの再ロードや画面遷移では展開状態を維持する。
     evt.register("BinderTree", Event.ChangeAddress, (addr) => {
+      setSiteUrl(addr);
       const isNewBinder = addr !== currentAddressRef.current;
       currentAddressRef.current = addr;
       viewTree(isNewBinder);
     });
+    // 初期URLを取得
+    Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
     // 履歴復元などでツリーのノード選択を外部から更新する
     evt.register("BinderTree", Event.SelectTree, (id) => {
       setSelectedId(id);
@@ -574,6 +581,20 @@ function BinderTree(props) {
         >
           <UnpublishedIcon sx={{ fontSize: '16px' }} />
         </ToggleButton>
+      </Tooltip>
+
+      {/** スペーサー: ブラウザボタンを右端に寄せる */}
+      <div style={{ flex: 1 }} />
+
+      {/** ブラウザで開くボタン */}
+      <Tooltip title="ブラウザで開く" placement="bottom">
+        <IconButton
+          size="small"
+          onClick={() => Browser.OpenURL(siteUrl)}
+          sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+        >
+          <OpenInBrowserIcon sx={{ fontSize: '18px' }} />
+        </IconButton>
       </Tooltip>
     </div>
 

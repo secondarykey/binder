@@ -1,16 +1,11 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate, useLocation } from "react-router";
 
-import { Address } from '../bindings/binder/api/app';
-
 import { IconButton, Paper } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CommitIcon from '@mui/icons-material/Commit';
 import PublishIcon from '@mui/icons-material/Publish';
-import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
-
-import { Browser } from '@wailsio/runtime';
 import FileMenu from './contents/LeftMenu/FileMenu';
 import BinderTree from './contents/LeftMenu/BinderTree';
 
@@ -79,8 +74,6 @@ function Menu(props) {
     }
   }, [isNonTemplateEditor]);
 
-  const [url, setURL] = useState("");
-
   /**
    * メニューを開く
    */
@@ -103,11 +96,6 @@ function Menu(props) {
    */
   useEffect(() => {
 
-    //アドレス変更時の処理
-    evt.register("Menu", Event.ChangeAddress, function (arg) {
-      setURL(arg);
-    });
-
     // サイドバー開閉トグル
     evt.register("Menu", Event.ToggleSidebar, function () {
       if (menuOpenRef.current) {
@@ -116,12 +104,6 @@ function Menu(props) {
         handleMenuOpen();
       }
     });
-
-    Address().then((arg) => {
-      setURL(arg);
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    })
 
   }, []);
 
@@ -164,13 +146,6 @@ function Menu(props) {
     evt.openSettingModal();
   }
 
-  /**
-   * ブラウザで開く
-   */
-  const handleClickBrowser = () => {
-    Browser.OpenURL(url);
-  }
-
   //router の定義用に書いておく
   var tempTree = <TemplateTree />
 
@@ -196,11 +171,6 @@ function Menu(props) {
         {/** Template */}
         <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
           <ContentPasteIcon fill="white" className="leftIcon" />
-        </IconButton>
-
-        {/** Browser */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="browser" onClick={handleClickBrowser}>
-          <OpenInBrowserIcon fill="white" className="leftIcon" />
         </IconButton>
 
         {/** Binder Setting */}
