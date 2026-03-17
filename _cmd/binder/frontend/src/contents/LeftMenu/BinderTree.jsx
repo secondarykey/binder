@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, ToggleButton, IconButton } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, IconButton, Divider, ListItemIcon, ListItemText } from '@mui/material';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -9,6 +9,9 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -106,17 +109,23 @@ function BinderTree(props) {
   // Git変更済みIDのSet（ツリー表示後に非同期で取得）
   const [modifiedIds, setModifiedIds] = useState(null);
 
-  // 未コミット表示トグル（trueで橙色ハイライト有効）
-  const [showModified, setShowModified] = useState(true);
+  // 表示モード: 'none' | 'commit' | 'publish'
+  const [displayMode, setDisplayMode] = useState('commit');
+  const displayModeRef = useRef('commit');
 
-  // 未公開表示トグルと未公開IDマップ（id → publishStatus）
-  const [showPublishStatus, setShowPublishStatus] = useState(false);
+  // 表示モードから派生するフラグ
+  const showModified = displayMode === 'commit';
+  const showPublishStatus = displayMode === 'publish';
+
+  // 未公開IDマップ（id → publishStatus）
   const [unpublishedMap, setUnpublishedMap] = useState(null);
-  const showPublishStatusRef = useRef(false);
+
+  // MoreVert メニューのアンカー要素
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState(null);
 
   // バインダーのサイトURL（ブラウザで開くボタン用）
   const [siteUrl, setSiteUrl] = useState("");
-  useEffect(() => { showPublishStatusRef.current = showPublishStatus; }, [showPublishStatus]);
+  useEffect(() => { displayModeRef.current = displayMode; }, [displayMode]);
 
   // 展開しているノードのID配列
   const [expand, setExpand] = useState([]);
@@ -185,7 +194,7 @@ function BinderTree(props) {
         console.error('[BinderTree] GetModifiedIds error:', err);
       });
       // 未公開表示ONの場合は未公開データも再取得
-      if (showPublishStatusRef.current) loadUnpublished();
+      if (displayModeRef.current === 'publish') loadUnpublished();
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -518,8 +527,8 @@ function BinderTree(props) {
   // 現在右クリックされているノードの元type
   const contextNodeType = contextMenu.node?.nodeType;
 
-  // 未公開ボタンの色: 未公開新規(緑) > 更新あり(橙) > トグルON中(グレー) > OFF(ミュート)
-  const publishBtnColor = (() => {
+  // 未公開アイコン色: 未公開新規(緑) > 更新あり(橙) > publish モード中(グレー) > OFF(ミュート)
+  const publishIconColor = (() => {
     if (!showPublishStatus) return 'var(--text-muted)';
     if (!unpublishedMap || unpublishedMap.size === 0) return 'var(--text-secondary)';
     for (const v of unpublishedMap.values()) { if (v === 1) return 'var(--accent-green)'; }
@@ -530,73 +539,60 @@ function BinderTree(props) {
 
     {/** ツリーパネル上部メニューバー */}
     <div id="treeMenuBar">
-      <Tooltip title={showModified ? "未コミット表示: ON" : "未コミット表示: OFF"} placement="bottom">
-        <ToggleButton
-          value="modified"
-          selected={showModified}
-          size="small"
-          onChange={() => {
-            const next = !showModified;
-            setShowModified(next);
-            if (next) setShowPublishStatus(false);
-          }}
-          sx={{
-            border: 'none',
-            borderRadius: '4px',
-            padding: '4px',
-            color: showModified ? 'var(--accent-orange)' : 'var(--text-muted)',
-            '&.Mui-selected': {
-              backgroundColor: 'rgba(245, 166, 35, 0.15)',
-              color: 'var(--accent-orange)',
-              '&:hover': { backgroundColor: 'rgba(245, 166, 35, 0.25)' },
-            },
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
-          }}
-        >
-          <FiberManualRecordIcon sx={{ fontSize: '14px' }} />
-        </ToggleButton>
-      </Tooltip>
-      <Tooltip title={showPublishStatus ? "未公開表示: ON" : "未公開表示: OFF"} placement="bottom">
-        <ToggleButton
-          value="publish"
-          selected={showPublishStatus}
-          size="small"
-          onChange={() => {
-            const next = !showPublishStatus;
-            setShowPublishStatus(next);
-            if (next) setShowModified(false);
-          }}
-          sx={{
-            border: 'none',
-            borderRadius: '4px',
-            padding: '4px',
-            color: showPublishStatus ? publishBtnColor : 'var(--text-muted)',
-            '&.Mui-selected': {
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              color: publishBtnColor,
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
-            },
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
-          }}
-        >
-          <UnpublishedIcon sx={{ fontSize: '16px' }} />
-        </ToggleButton>
-      </Tooltip>
-
-      {/** スペーサー: ブラウザボタンを右端に寄せる */}
+      {/** スペーサー: MoreVert ボタンを右端に寄せる */}
       <div style={{ flex: 1 }} />
 
-      {/** ブラウザで開くボタン */}
-      <Tooltip title="ブラウザで開く" placement="bottom">
+      {/** MoreVert メニューボタン */}
+      <Tooltip title="メニュー" placement="bottom">
         <IconButton
           size="small"
-          onClick={() => Browser.OpenURL(siteUrl)}
+          onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
           sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
         >
-          <OpenInBrowserIcon sx={{ fontSize: '18px' }} />
+          <MoreVertIcon sx={{ fontSize: '18px' }} />
         </IconButton>
       </Tooltip>
     </div>
+
+    {/** MoreVert ドロップダウンメニュー */}
+    <Menu
+      open={Boolean(moreMenuAnchor)}
+      anchorEl={moreMenuAnchor}
+      onClose={() => setMoreMenuAnchor(null)}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      slotProps={{ paper: { sx: { minWidth: 160 } } }}
+    >
+      {/** ブラウザで開く */}
+      <MenuItem onClick={() => { setMoreMenuAnchor(null); Browser.OpenURL(siteUrl); }}>
+        <ListItemIcon><OpenInBrowserIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} /></ListItemIcon>
+        <ListItemText>OpenBrowser</ListItemText>
+      </MenuItem>
+      <Divider />
+      {/** None: ステータス非表示 */}
+      <MenuItem onClick={() => { setDisplayMode('none'); setMoreMenuAnchor(null); }}>
+        <ListItemIcon>
+          {displayMode === 'none'
+            ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
+            : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'var(--text-muted)' }} />}
+        </ListItemIcon>
+        <ListItemText sx={{ color: displayMode === 'none' ? 'var(--text-primary)' : 'var(--text-muted)' }}>None</ListItemText>
+      </MenuItem>
+      {/** Commit: 未コミット表示 */}
+      <MenuItem onClick={() => { setDisplayMode('commit'); setMoreMenuAnchor(null); }}>
+        <ListItemIcon>
+          <FiberManualRecordIcon fontSize="small" sx={{ color: displayMode === 'commit' ? 'var(--accent-orange)' : 'var(--text-muted)', fontSize: '14px' }} />
+        </ListItemIcon>
+        <ListItemText sx={{ color: displayMode === 'commit' ? 'var(--accent-orange)' : 'var(--text-muted)' }}>Commit</ListItemText>
+      </MenuItem>
+      {/** Publish: 未公開表示 */}
+      <MenuItem onClick={() => { setDisplayMode('publish'); setMoreMenuAnchor(null); }}>
+        <ListItemIcon>
+          <UnpublishedIcon fontSize="small" sx={{ color: publishIconColor }} />
+        </ListItemIcon>
+        <ListItemText sx={{ color: displayMode === 'publish' ? publishIconColor : 'var(--text-muted)' }}>Publish</ListItemText>
+      </MenuItem>
+    </Menu>
 
     {/** ツリースクロールエリア */}
     <div id="treeScrollArea">
