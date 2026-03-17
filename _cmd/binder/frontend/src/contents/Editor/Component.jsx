@@ -539,7 +539,7 @@ function Editor(props) {
     setText(txt);
 
     writeFn(mode, id, txt).then(() => {
-      console.log("Write!");
+      console.debug("Write!");
     }).catch((err) => {;
       evt.showErrorMessage(err);
     });
@@ -746,6 +746,8 @@ function Editor(props) {
             if (c2 === ".") {
               char = "1. ";
             }
+          } else if (c === "- [ ] " || c === "- [x] ") {
+              char = "- [ ] ";
           }
           break;
         }
