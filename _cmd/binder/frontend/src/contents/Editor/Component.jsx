@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Divider, Select } from "@mui/material";
+import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -941,7 +941,7 @@ function Editor(props) {
                   </IconButton>
 
                   {/** 区切り */}
-                  <Divider orientation="vertical" flexItem sx={{ mx: '4px', borderColor: 'var(--border-primary)' }} />
+                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
