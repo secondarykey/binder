@@ -5,18 +5,19 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
+import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton, Dialog, DialogTitle, DialogContentText, DialogActions, Button } from '@mui/material';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
-import { GetTemplateTree, UpdateTemplateSeqs } from '../../../bindings/binder/api/app';
+import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../../bindings/binder/api/app';
 import { OpenHistoryWindow } from '../../../bindings/main/window';
 
 import Event, { EventContext } from '../../Event';
 import TemplateMetaDialog from '../TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
-function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
+function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelete }) {
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -36,6 +37,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
       sx={{
         pl: 3,
         py: 0.25,
+        pr: 0.5,
         borderRadius: '2px',
         '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
         '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
@@ -51,6 +53,14 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu }) {
       </ListItemIcon>
 
       <ListItemText primary={item.name} primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }} />
+
+      <IconButton
+        size="small"
+        onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.name); }}
+        sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' }, mr: -0.5 }}
+      >
+        <DeleteIcon sx={{ fontSize: '15px' }} />
+      </IconButton>
     </ListItemButton>
   );
 }
@@ -68,6 +78,7 @@ function TemplateTree(props) {
 
   const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0 });
   const [metaDialog, setMetaDialog] = useState({ open: false, id: null, type: null });
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, name: '' });
 
   // ドラッグ開始までの距離（px）: クリックとドラッグを区別する
   const sensors = useSensors(
@@ -140,6 +151,21 @@ function TemplateTree(props) {
     setMetaDialog({ open: true, id: null, type });
   };
 
+  // 削除アイコンクリック: 確認ダイアログを表示
+  const handleDeleteClick = (itemId, itemName) => {
+    setConfirmDelete({ open: true, id: itemId, name: itemName });
+  };
+
+  // 削除確認: テンプレートを削除してツリーを更新
+  const handleDeleteConfirm = () => {
+    const targetId = confirmDelete.id;
+    setConfirmDelete({ open: false, id: null, name: '' });
+    RemoveTemplate(targetId).then(() => {
+      evt.showSuccessMessage("Remove Template.");
+      viewTree();
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   // DnD終了: 並び替えてバックエンドに seq を保存
   const handleDragEnd = (event, setItems) => {
     const { active, over } = event;
@@ -184,6 +210,7 @@ function TemplateTree(props) {
               selectedId={selectedId}
               onOpen={handleTemplateOpen}
               onContextMenu={handleContextMenu}
+              onDelete={handleDeleteClick}
             />
           ))}
         </SortableContext>
@@ -208,6 +235,7 @@ function TemplateTree(props) {
               selectedId={selectedId}
               onOpen={handleTemplateOpen}
               onContextMenu={handleContextMenu}
+              onDelete={handleDeleteClick}
             />
           ))}
         </SortableContext>
@@ -234,6 +262,22 @@ function TemplateTree(props) {
       type={metaDialog.type}
       onClose={() => setMetaDialog({ open: false, id: null, type: null })}
     />
+
+    {/** 削除確認ダイアログ */}
+    <Dialog
+      open={confirmDelete.open}
+      onClose={() => setConfirmDelete({ open: false, id: null, name: '' })}
+      PaperProps={{ style: { backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' } }}
+    >
+      <DialogTitle>テンプレートの削除</DialogTitle>
+      <DialogContentText style={{ padding: '0 24px 8px', color: 'var(--text-secondary)' }}>
+        「{confirmDelete.name}」を削除しますか？
+      </DialogContentText>
+      <DialogActions>
+        <Button onClick={() => setConfirmDelete({ open: false, id: null, name: '' })}>キャンセル</Button>
+        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
+      </DialogActions>
+    </Dialog>
 
   </div>);
 }
