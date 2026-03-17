@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, IconButton, Divider, ListItemIcon, ListItemText } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, IconButton, Divider } from '@mui/material';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -579,36 +579,29 @@ function BinderTree(props) {
     >
       {/** ブラウザで開く */}
       <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
-        <ListItemIcon><OpenInBrowserIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} /></ListItemIcon>
-        <ListItemText>OpenBrowser</ListItemText>
+        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />OpenBrowser
       </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}
       <MenuItem onClick={() => { setDisplayMode('none'); closeMoreMenu(); }}>
-        <ListItemIcon>
-          {displayMode === 'none'
-            ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
-            : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'var(--text-muted)' }} />}
-        </ListItemIcon>
-        <ListItemText sx={{ color: displayMode === 'none' ? 'var(--text-primary)' : 'var(--text-muted)' }}>None</ListItemText>
+        {displayMode === 'none'
+          ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
+          : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
+        None
       </MenuItem>
       {/** Commit: 未コミット表示 */}
       <MenuItem onClick={() => { setDisplayMode('commit'); closeMoreMenu(); }}>
-        <ListItemIcon>
-          {displayMode === 'commit'
-            ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
-            : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'var(--text-muted)' }} />}
-        </ListItemIcon>
-        <ListItemText sx={{ color: displayMode === 'commit' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Commit</ListItemText>
+        {displayMode === 'commit'
+          ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
+          : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
+        Commit
       </MenuItem>
       {/** Publish: 未公開表示 */}
       <MenuItem onClick={() => { setDisplayMode('publish'); closeMoreMenu(); }}>
-        <ListItemIcon>
-          {displayMode === 'publish'
-            ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
-            : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'var(--text-muted)' }} />}
-        </ListItemIcon>
-        <ListItemText sx={{ color: displayMode === 'publish' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Publish</ListItemText>
+        {displayMode === 'publish'
+          ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
+          : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
+        Publish
       </MenuItem>
     </Menu>
 
