@@ -6,8 +6,6 @@ import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, Ic
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -527,13 +525,6 @@ function BinderTree(props) {
   // 現在右クリックされているノードの元type
   const contextNodeType = contextMenu.node?.nodeType;
 
-  // 未公開アイコン色: 未公開新規(緑) > 更新あり(橙) > publish モード中(グレー) > OFF(ミュート)
-  const publishIconColor = (() => {
-    if (!showPublishStatus) return 'var(--text-muted)';
-    if (!unpublishedMap || unpublishedMap.size === 0) return 'var(--text-secondary)';
-    for (const v of unpublishedMap.values()) { if (v === 1) return 'var(--accent-green)'; }
-    return 'var(--accent-orange)';
-  })();
 
   return (<>
 
@@ -602,16 +593,20 @@ function BinderTree(props) {
       {/** Commit: 未コミット表示 */}
       <MenuItem onClick={() => { setDisplayMode('commit'); setMoreMenuAnchor(null); }}>
         <ListItemIcon>
-          <FiberManualRecordIcon fontSize="small" sx={{ color: displayMode === 'commit' ? 'var(--accent-orange)' : 'var(--text-muted)', fontSize: '14px' }} />
+          {displayMode === 'commit'
+            ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
+            : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'var(--text-muted)' }} />}
         </ListItemIcon>
-        <ListItemText sx={{ color: displayMode === 'commit' ? 'var(--accent-orange)' : 'var(--text-muted)' }}>Commit</ListItemText>
+        <ListItemText sx={{ color: displayMode === 'commit' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Commit</ListItemText>
       </MenuItem>
       {/** Publish: 未公開表示 */}
       <MenuItem onClick={() => { setDisplayMode('publish'); setMoreMenuAnchor(null); }}>
         <ListItemIcon>
-          <UnpublishedIcon fontSize="small" sx={{ color: publishIconColor }} />
+          {displayMode === 'publish'
+            ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
+            : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'var(--text-muted)' }} />}
         </ListItemIcon>
-        <ListItemText sx={{ color: displayMode === 'publish' ? publishIconColor : 'var(--text-muted)' }}>Publish</ListItemText>
+        <ListItemText sx={{ color: displayMode === 'publish' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Publish</ListItemText>
       </MenuItem>
     </Menu>
 
