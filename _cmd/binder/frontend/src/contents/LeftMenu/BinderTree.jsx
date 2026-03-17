@@ -472,23 +472,29 @@ function BinderTree(props) {
 
   return (<>
 
-    {/** カスタムツリー */}
-    <div style={{ marginTop: '4px' }}><Tree
-      data={treeData}
-      selected={selectedId}
-      onSelect={(id) => setSelectedId(id)}
-      onClick={handleClick}
-      expand={expand}
-      onExpand={handleExpand}
-      onChange={handleChange}
-      onNodeContextMenu={handleContextMenu}
-      icons={binderIcons}
-      renaming={renaming}
-      renamingValue={renamingValue}
-      onRenameChange={setRenamingValue}
-      onRenameCommit={handleRenameCommit}
-      onRenameCancel={handleRenameCancel}
-    /></div>
+    {/** ツリーパネル上部メニューバー */}
+    <div id="treeMenuBar">
+    </div>
+
+    {/** ツリースクロールエリア */}
+    <div id="treeScrollArea">
+      <div style={{ marginTop: '4px' }}><Tree
+        data={treeData}
+        selected={selectedId}
+        onSelect={(id) => setSelectedId(id)}
+        onClick={handleClick}
+        expand={expand}
+        onExpand={handleExpand}
+        onChange={handleChange}
+        onNodeContextMenu={handleContextMenu}
+        icons={binderIcons}
+        renaming={renaming}
+        renamingValue={renamingValue}
+        onRenameChange={setRenamingValue}
+        onRenameCommit={handleRenameCommit}
+        onRenameCancel={handleRenameCancel}
+      /></div>
+    </div>
 
     {/** ノートメニュー: Edit / Add ▶ / History / Delete */}
     <Menu
