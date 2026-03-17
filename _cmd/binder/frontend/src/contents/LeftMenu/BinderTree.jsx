@@ -578,8 +578,8 @@ function BinderTree(props) {
       anchorEl={moreMenu.el ?? undefined}
       anchorReference={moreMenu.el ? 'anchorEl' : 'anchorPosition'}
       anchorPosition={moreMenu.el ? undefined : { top: moreMenu.y, left: moreMenu.x }}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: moreMenu.el ? 'right' : 'left' }}
+      transformOrigin={{ vertical: 'top', horizontal: moreMenu.el ? 'right' : 'left' }}
       onClose={closeMoreMenu}
       slotProps={{ paper: { sx: { minWidth: 160 } } }}
     >
