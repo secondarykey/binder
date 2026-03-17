@@ -119,9 +119,11 @@ function BinderTree(props) {
   const [unpublishedMap, setUnpublishedMap] = useState(null);
 
   // MoreVert メニューの状態（ボタンクリック・エリア右クリック共用）
-  const [moreMenu, setMoreMenu] = useState({ open: false, x: 0, y: 0 });
-  const openMoreMenu = (x, y) => setMoreMenu({ open: true, x, y });
-  const closeMoreMenu = () => setMoreMenu({ open: false, x: 0, y: 0 });
+  // el が非null のときは anchorEl 基準（ボタン右下寄せ）、null のときは anchorPosition 基準（カーソル位置）
+  const [moreMenu, setMoreMenu] = useState({ open: false, el: null, x: 0, y: 0 });
+  const openMoreMenuAt = (x, y) => setMoreMenu({ open: true, el: null, x, y });
+  const openMoreMenuEl = (el) => setMoreMenu({ open: true, el, x: 0, y: 0 });
+  const closeMoreMenu = () => setMoreMenu({ open: false, el: null, x: 0, y: 0 });
 
   // バインダーのサイトURL（ブラウザで開くボタン用）
   const [siteUrl, setSiteUrl] = useState("");
@@ -533,7 +535,7 @@ function BinderTree(props) {
 
     {/** ツリースクロールエリア（MoreVert ボタンをフローティングで右上に配置） */}
     <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenu(e.clientX, e.clientY); }}>
+      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }}>
       <div style={{ marginTop: '4px' }}><Tree
         data={treeData}
         selected={selectedId}
@@ -556,7 +558,7 @@ function BinderTree(props) {
       <Tooltip title="メニュー" placement="bottom">
         <IconButton
           size="small"
-          onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openMoreMenu(r.left, r.bottom); }}
+          onClick={(e) => openMoreMenuEl(e.currentTarget)}
           sx={{
             position: 'absolute', top: 4, right: 4, zIndex: 10,
             padding: '5px 0px',
@@ -573,8 +575,11 @@ function BinderTree(props) {
     {/** MoreVert ドロップダウンメニュー（ボタンクリック・エリア右クリック共用） */}
     <Menu
       open={moreMenu.open}
-      anchorReference="anchorPosition"
-      anchorPosition={{ top: moreMenu.y, left: moreMenu.x }}
+      anchorEl={moreMenu.el ?? undefined}
+      anchorReference={moreMenu.el ? 'anchorEl' : 'anchorPosition'}
+      anchorPosition={moreMenu.el ? undefined : { top: moreMenu.y, left: moreMenu.x }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       onClose={closeMoreMenu}
       slotProps={{ paper: { sx: { minWidth: 160 } } }}
     >

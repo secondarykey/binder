@@ -134,9 +134,9 @@ function Editor(props) {
   const [fontDialog, setShowFontDialog] = useState(false);
 
   // エディタメニュー MoreVert
-  const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, x: 0, y: 0 });
-  const openEditorMoreMenu = (x, y) => setEditorMoreMenu({ open: true, x, y });
-  const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, x: 0, y: 0 });
+  const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, el: null });
+  const openEditorMoreMenu = (el) => setEditorMoreMenu({ open: true, el });
+  const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, el: null });
 
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
@@ -1106,7 +1106,7 @@ function Editor(props) {
                   <Tooltip title="メニュー" placement="bottom">
                     <IconButton
                       size="small"
-                      onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openEditorMoreMenu(r.left, r.bottom); }}
+                      onClick={(e) => openEditorMoreMenu(e.currentTarget)}
                       sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
                       className="editorBtn"
                     >
@@ -1120,8 +1120,9 @@ function Editor(props) {
               {/** エディタ MoreVert ドロップダウンメニュー */}
               <Menu
                 open={editorMoreMenu.open}
-                anchorReference="anchorPosition"
-                anchorPosition={{ top: editorMoreMenu.y, left: editorMoreMenu.x }}
+                anchorEl={editorMoreMenu.el ?? undefined}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 onClose={closeEditorMoreMenu}
                 slotProps={{ paper: { sx: { minWidth: 160 } } }}
               >
