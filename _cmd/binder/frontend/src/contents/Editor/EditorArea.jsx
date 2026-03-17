@@ -5,14 +5,15 @@ import PropTypes from "prop-types";
  * 行番号ガター + textarea を一体化したエディタエリアコンポーネント
  *
  * Props:
- *   text        - 表示・編集するテキスト
- *   style       - textarea / 行番号に適用するスタイル（フォント・色など）
- *   onKeyDown   - キーダウンハンドラ
- *   onChange    - テキスト変更ハンドラ
- *   onDragOver  - ドラッグオーバーハンドラ
- *   onDrop      - ドロップハンドラ
+ *   text            - 表示・編集するテキスト
+ *   style           - textarea / 行番号に適用するスタイル（フォント・色など）
+ *   showLineNumbers - 行番号ガターを表示するか（デフォルト: true）
+ *   onKeyDown       - キーダウンハンドラ
+ *   onChange        - テキスト変更ハンドラ
+ *   onDragOver      - ドラッグオーバーハンドラ
+ *   onDrop          - ドロップハンドラ
  */
-function EditorArea({ text, style, onKeyDown, onChange, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, onKeyDown, onChange, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   const canvasRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
@@ -68,16 +69,18 @@ function EditorArea({ text, style, onKeyDown, onChange, onDragOver, onDrop }) {
 
   return (
     <div className="editorArea">
-      <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
-        {text.split('\n').map((_, i) => {
-          const wraps = lineHeights[i] || 1;
-          return (
-            <div key={i} className="editorLineNumber" style={{ height: `${wraps * 1.5}em` }}>
-              {i + 1}
-            </div>
-          );
-        })}
-      </div>
+      {showLineNumbers && (
+        <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
+          {text.split('\n').map((_, i) => {
+            const wraps = lineHeights[i] || 1;
+            return (
+              <div key={i} className="editorLineNumber" style={{ height: `${wraps * 1.5}em` }}>
+                {i + 1}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <textarea
         id="editor"
         style={style}
@@ -95,6 +98,7 @@ function EditorArea({ text, style, onKeyDown, onChange, onDragOver, onDrop }) {
 EditorArea.propTypes = {
   text: PropTypes.string.isRequired,
   style: PropTypes.object,
+  showLineNumbers: PropTypes.bool,
   onKeyDown: PropTypes.func,
   onChange: PropTypes.func,
   onDragOver: PropTypes.func,
