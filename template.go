@@ -10,6 +10,15 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// ErrTemplateInUse はテンプレートがノートで使用中のため削除できない場合のエラー
+type ErrTemplateInUse struct {
+	NoteCount int
+}
+
+func (e *ErrTemplateInUse) Error() string {
+	return fmt.Sprintf("このテンプレートは %d 件のノートで使用されているため削除できません", e.NoteCount)
+}
+
 func (b *Binder) EditTemplate(t *json.Template) (*json.Template, error) {
 
 	if b == nil {
@@ -70,6 +79,15 @@ func (b *Binder) RemoveTemplate(id string) (*json.Template, error) {
 
 	if b == nil {
 		return nil, EmptyError
+	}
+
+	// 利用中のノートが存在する場合は削除不可
+	notes, err := b.db.FindNotesByTemplate(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindNotesByTemplate() error: %w", err)
+	}
+	if len(notes) > 0 {
+		return nil, &ErrTemplateInUse{NoteCount: len(notes)}
 	}
 
 	t, err := b.db.GetTemplate(id)

@@ -62,3 +62,9 @@ func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, er
 func (inst *Instance) FindInNoteId(ids ...interface{}) ([]*model.Note, error) {
 	return inst.findNote("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
 }
+
+// FindNotesByTemplate はlayout_templateまたはcontent_templateに指定IDを持つノートを返す。
+// テンプレート削除前の参照チェックに使用する。
+func (inst *Instance) FindNotesByTemplate(templateId string) ([]*model.Note, error) {
+	return inst.findNote("layout_template = ? OR content_template = ?", "", -1, -1, templateId, templateId)
+}
