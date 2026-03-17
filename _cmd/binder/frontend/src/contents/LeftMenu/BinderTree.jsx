@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, IconButton, Tooltip } from '@mui/material';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 import { Events } from '@wailsio/runtime';
 
@@ -71,10 +72,10 @@ const findNodeInTree = (nodes, id) => {
  * - 子を持つ note → displayType を "folder" に変換
  * - nodeType に元の type を保持（コンテキストメニュー判定用）
  */
-const processTreeData = (leafs, modifiedIds) => {
+const processTreeData = (leafs, modifiedIds, showModified) => {
   if (!leafs) return [];
   return leafs.map(leaf => {
-    const children = leaf.children ? processTreeData(leaf.children, modifiedIds) : undefined;
+    const children = leaf.children ? processTreeData(leaf.children, modifiedIds, showModified) : undefined;
     const hasChildren = children && children.length > 0;
 
     const displayType = (leaf.type === "note" && hasChildren) ? "folder" : leaf.type;
@@ -82,9 +83,9 @@ const processTreeData = (leafs, modifiedIds) => {
     return {
       id: leaf.id,
       name: leaf.name,
-      type: displayType,                                           // アイコン表示用（folder/note/diagram/asset）
-      nodeType: leaf.type,                                         // コンテキストメニュー判定用（元のtype）
-      modified: modifiedIds ? modifiedIds.has(leaf.id) : false,   // Git未コミット変更フラグ
+      type: displayType,                                                                  // アイコン表示用（folder/note/diagram/asset）
+      nodeType: leaf.type,                                                                // コンテキストメニュー判定用（元のtype）
+      modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,          // Git未コミット変更フラグ（トグルOFF時は強制false）
       children: hasChildren ? children : undefined,
     };
   });
@@ -101,6 +102,9 @@ function BinderTree(props) {
 
   // Git変更済みIDのSet（ツリー表示後に非同期で取得）
   const [modifiedIds, setModifiedIds] = useState(null);
+
+  // 未コミット表示トグル（trueで橙色ハイライト有効）
+  const [showModified, setShowModified] = useState(true);
 
   // 展開しているノードのID配列
   const [expand, setExpand] = useState([]);
@@ -251,7 +255,7 @@ function BinderTree(props) {
   }, []);
 
   // Treeコンポーネント用データ（メモ化）
-  const treeData = useMemo(() => processTreeData(tree, modifiedIds), [tree, modifiedIds]);
+  const treeData = useMemo(() => processTreeData(tree, modifiedIds, showModified), [tree, modifiedIds, showModified]);
 
   // ---- ハンドラ ----
 
@@ -474,6 +478,12 @@ function BinderTree(props) {
 
     {/** ツリーパネル上部メニューバー */}
     <div id="treeMenuBar">
+      <Tooltip title={showModified ? "未コミット表示: ON" : "未コミット表示: OFF"} placement="bottom">
+        <IconButton size="small" onClick={() => setShowModified(v => !v)}
+          sx={{ color: showModified ? 'var(--accent-orange)' : 'var(--text-muted)' }}>
+          <FiberManualRecordIcon sx={{ fontSize: '14px' }} />
+        </IconButton>
+      </Tooltip>
     </div>
 
     {/** ツリースクロールエリア */}
