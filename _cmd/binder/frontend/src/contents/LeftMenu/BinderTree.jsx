@@ -118,8 +118,10 @@ function BinderTree(props) {
   // 未公開IDマップ（id → publishStatus）
   const [unpublishedMap, setUnpublishedMap] = useState(null);
 
-  // MoreVert メニューのアンカー要素
-  const [moreMenuAnchor, setMoreMenuAnchor] = useState(null);
+  // MoreVert メニューの状態（ボタンクリック・エリア右クリック共用）
+  const [moreMenu, setMoreMenu] = useState({ open: false, x: 0, y: 0 });
+  const openMoreMenu = (x, y) => setMoreMenu({ open: true, x, y });
+  const closeMoreMenu = () => setMoreMenu({ open: false, x: 0, y: 0 });
 
   // バインダーのサイトURL（ブラウザで開くボタン用）
   const [siteUrl, setSiteUrl] = useState("");
@@ -331,6 +333,7 @@ function BinderTree(props) {
   /** コンテキストメニューを開く */
   const handleContextMenu = (e, node) => {
     e.preventDefault();
+    e.stopPropagation(); // エリア右クリックへのバブリングを防ぐ
     setContextMenu({ open: true, x: e.clientX, y: e.clientY, node });
   };
 
@@ -530,7 +533,7 @@ function BinderTree(props) {
 
     {/** ツリースクロールエリア（MoreVert ボタンをフローティングで右上に配置） */}
     <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      <div id="treeScrollArea">
+      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenu(e.clientX, e.clientY); }}>
       <div style={{ marginTop: '4px' }}><Tree
         data={treeData}
         selected={selectedId}
@@ -553,7 +556,7 @@ function BinderTree(props) {
       <Tooltip title="メニュー" placement="bottom">
         <IconButton
           size="small"
-          onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
+          onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openMoreMenu(r.left, r.bottom); }}
           sx={{
             position: 'absolute', top: 4, right: 4, zIndex: 10,
             color: 'var(--text-muted)',
@@ -566,23 +569,22 @@ function BinderTree(props) {
       </Tooltip>
     </div>
 
-    {/** MoreVert ドロップダウンメニュー */}
+    {/** MoreVert ドロップダウンメニュー（ボタンクリック・エリア右クリック共用） */}
     <Menu
-      open={Boolean(moreMenuAnchor)}
-      anchorEl={moreMenuAnchor}
-      onClose={() => setMoreMenuAnchor(null)}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      open={moreMenu.open}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: moreMenu.y, left: moreMenu.x }}
+      onClose={closeMoreMenu}
       slotProps={{ paper: { sx: { minWidth: 160 } } }}
     >
       {/** ブラウザで開く */}
-      <MenuItem onClick={() => { setMoreMenuAnchor(null); Browser.OpenURL(siteUrl); }}>
+      <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
         <ListItemIcon><OpenInBrowserIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} /></ListItemIcon>
         <ListItemText>OpenBrowser</ListItemText>
       </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}
-      <MenuItem onClick={() => { setDisplayMode('none'); setMoreMenuAnchor(null); }}>
+      <MenuItem onClick={() => { setDisplayMode('none'); closeMoreMenu(); }}>
         <ListItemIcon>
           {displayMode === 'none'
             ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
@@ -591,7 +593,7 @@ function BinderTree(props) {
         <ListItemText sx={{ color: displayMode === 'none' ? 'var(--text-primary)' : 'var(--text-muted)' }}>None</ListItemText>
       </MenuItem>
       {/** Commit: 未コミット表示 */}
-      <MenuItem onClick={() => { setDisplayMode('commit'); setMoreMenuAnchor(null); }}>
+      <MenuItem onClick={() => { setDisplayMode('commit'); closeMoreMenu(); }}>
         <ListItemIcon>
           {displayMode === 'commit'
             ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
@@ -600,7 +602,7 @@ function BinderTree(props) {
         <ListItemText sx={{ color: displayMode === 'commit' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Commit</ListItemText>
       </MenuItem>
       {/** Publish: 未公開表示 */}
-      <MenuItem onClick={() => { setDisplayMode('publish'); setMoreMenuAnchor(null); }}>
+      <MenuItem onClick={() => { setDisplayMode('publish'); closeMoreMenu(); }}>
         <ListItemIcon>
           {displayMode === 'publish'
             ? <RadioButtonCheckedIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
