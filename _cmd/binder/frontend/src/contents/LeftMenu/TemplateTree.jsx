@@ -35,9 +35,9 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
       onClick={(e) => onOpen(e, item.id)}
       onContextMenu={(e) => onContextMenu(e, item.id)}
       sx={{
-        pl: 3,
+        pl: '5px',
         py: 0.25,
-        pr: 0.5,
+        pr: '10px',
         borderRadius: '2px',
         '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
         '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
@@ -57,7 +57,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
       <IconButton
         size="small"
         onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.name); }}
-        sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' }, mr: -0.5 }}
+        sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' } }}
       >
         <DeleteIcon sx={{ fontSize: '15px' }} />
       </IconButton>
