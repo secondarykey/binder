@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate, useLocation } from "react-router";
 
-import { IconButton, Paper, Divider } from '@mui/material';
+import { IconButton, Paper, Divider, Tooltip } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CommitIcon from '@mui/icons-material/Commit';
@@ -154,32 +154,42 @@ function Menu(props) {
     return (
       <>
         {/** BinderTree */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
-          <LibraryBooksIcon fill="white" className="leftIcon" />
-        </IconButton>
+        <Tooltip title="ノートツリー" placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
+            <LibraryBooksIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
 
         {/** Modified  */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
-          <CommitIcon fill="white" className="leftIcon" />
-        </IconButton>
+        <Tooltip title="未コミット一覧" placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
+            <CommitIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
 
         {/** Publish  */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
-          <PublishIcon fill="white" className="leftIcon" />
-        </IconButton>
+        <Tooltip title="未公開一覧" placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
+            <PublishIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
 
         {/** Divider: ナビ系と設定系を分離 */}
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
 
         {/** Template */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
-          <ContentPasteIcon fill="white" className="leftIcon" />
-        </IconButton>
+        <Tooltip title="テンプレート" placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+            <ContentPasteIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
 
         {/** Binder Setting */}
-        <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
-          <SettingsApplications fill="white" className="leftIcon" />
-        </IconButton>
+        <Tooltip title="バインダー設定" placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
+            <SettingsApplications fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
       </>);
   }
 
@@ -197,9 +207,11 @@ function Menu(props) {
         </Routes>
 
         {/** Settingsのボタン */}
-        <IconButton id="settingButton" className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleSettingClick}>
-          <SettingsIcon className="leftIcon" />
-        </IconButton>
+        <Tooltip title="アプリ設定" placement="right">
+          <IconButton id="settingButton" className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleSettingClick}>
+            <SettingsIcon className="leftIcon" />
+          </IconButton>
+        </Tooltip>
 
       </Paper>
 
