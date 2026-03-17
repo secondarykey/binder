@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select } from "@mui/material";
+import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -34,6 +34,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
@@ -115,6 +116,9 @@ function Editor(props) {
   const [text, setText] = useState("");
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
+
+  // 行番号表示トグル
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
 
   // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
@@ -919,6 +923,34 @@ function Editor(props) {
               <Container id="editorMenu">
                 <Container className="buttonBarLeft">
 
+                  {/** 行番号表示トグル */}
+                  <Tooltip title={showLineNumbers ? "行番号: ON" : "行番号: OFF"} placement="bottom">
+                    <ToggleButton
+                      value="lineNumbers"
+                      selected={showLineNumbers}
+                      size="small"
+                      onChange={() => setShowLineNumbers(v => !v)}
+                      sx={{
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        color: showLineNumbers ? 'var(--text-primary)' : 'var(--text-muted)',
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(255,255,255,0.08)',
+                          color: 'var(--text-primary)',
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
+                        },
+                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+                        mr: '2px',
+                      }}
+                    >
+                      <FormatListNumberedIcon sx={{ fontSize: '16px' }} />
+                    </ToggleButton>
+                  </Tooltip>
+
+                  {/** 区切り */}
+                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+
                   {/** 強調 */}
                   <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                     <FormatBoldIcon fontSize="small" />
@@ -1010,6 +1042,7 @@ function Editor(props) {
               <EditorArea
                 text={text}
                 style={editorStyle}
+                showLineNumbers={showLineNumbers}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onDragOver={handleDragOver}
