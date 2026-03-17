@@ -952,41 +952,53 @@ function Editor(props) {
                   <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                   {/** 強調 */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
-                    <FormatBoldIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="太字" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                      <FormatBoldIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** イタリック */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
-                    <FormatItalicIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="斜体" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                      <FormatItalicIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** 打ち消し線 */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
-                    <FormatStrikethroughIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="打ち消し線" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                      <FormatStrikethroughIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** コードブロック */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
-                    <CodeIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="コードブロック" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                      <CodeIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** 引用 */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
-                    <FormatQuoteIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="引用" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                      <FormatQuoteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** 区切り */}
                   <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
-                    <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={(e) => setSnippetAnchor(e.currentTarget)}
-                      className="editorBtn">
-                      <PlaylistAddIcon fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="スニペット挿入" placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
+                        className="editorBtn">
+                        <PlaylistAddIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Menu
                       anchorEl={snippetAnchor}
                       open={Boolean(snippetAnchor)}
@@ -1040,27 +1052,33 @@ function Editor(props) {
                   <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                   {/** フォント設定 */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
-                    <FontDownloadIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="フォント設定" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
+                      <FontDownloadIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** プログラム起動 */}
-                  <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
-                    <LaunchIcon fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="外部エディタで開く" placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
+                      <LaunchIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {/** テンプレートプレビューリフレッシュ */}
                   {mode === Mode.template &&
-                    <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
-                      onClick={() => {
-                        if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
-                        runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-                          .then((result) => setHTML(result))
-                          .catch((err) => evt.showErrorMessage(err));
-                      }}
-                      className="editorBtn">
-                      <PreviewIcon fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="プレビュー更新" placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
+                        onClick={() => {
+                          if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
+                          runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+                            .then((result) => setHTML(result))
+                            .catch((err) => evt.showErrorMessage(err));
+                        }}
+                        className="editorBtn">
+                        <PreviewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   }
 
                   {/** 区切り */}
