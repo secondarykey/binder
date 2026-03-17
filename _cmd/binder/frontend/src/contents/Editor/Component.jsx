@@ -917,7 +917,7 @@ function Editor(props) {
 
           {/** エディタ */}
           {editor &&
-            <div id="editorWrapper" style={{ width: (width - 4) + 'px' }}>
+            <div id="editorWrapper" style={viewer ? { width: (width - 4) + 'px' } : { flex: 1, minWidth: 0 }}>
 
               {/** テキスト用のメニュー */}
               <Container id="editorMenu">
