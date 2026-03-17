@@ -6,7 +6,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton, Dialog, DialogTitle, DialogContentText, DialogActions, Button } from '@mui/material';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -49,7 +49,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
         {...attributes}
         {...listeners}
         onClick={(e) => e.stopPropagation()}>
-        <DragHandleIcon fontSize="small" sx={{ opacity: 0.35 }} />
+        <DragIndicatorIcon sx={{ fontSize: '16px', opacity: 0.35 }} />
       </ListItemIcon>
 
       <ListItemText primary={item.name} primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }} />
