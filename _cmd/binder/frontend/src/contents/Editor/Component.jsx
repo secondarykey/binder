@@ -35,6 +35,7 @@ import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import WrapTextIcon from '@mui/icons-material/WrapText';
 import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
@@ -119,6 +120,8 @@ function Editor(props) {
 
   // 行番号表示トグル
   const [showLineNumbers, setShowLineNumbers] = useState(true);
+  // テキスト折り返しトグル
+  const [wordWrap, setWordWrap] = useState(true);
 
   // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
@@ -1011,6 +1014,34 @@ function Editor(props) {
 
                 <Container className="buttonBarRight">
 
+                  {/** テキスト折り返しトグル */}
+                  <Tooltip title={wordWrap ? "折り返し: ON" : "折り返し: OFF"} placement="bottom">
+                    <ToggleButton
+                      value="wordWrap"
+                      selected={wordWrap}
+                      size="small"
+                      onChange={() => setWordWrap(v => !v)}
+                      sx={{
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        color: wordWrap ? 'var(--text-primary)' : 'var(--text-muted)',
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(255,255,255,0.08)',
+                          color: 'var(--text-primary)',
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
+                        },
+                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+                        mr: '2px',
+                      }}
+                    >
+                      <WrapTextIcon sx={{ fontSize: '16px' }} />
+                    </ToggleButton>
+                  </Tooltip>
+
+                  {/** 区切り */}
+                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+
                   {/** フォント設定 */}
                   <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
                     <FontDownloadIcon fontSize="small" />
@@ -1043,6 +1074,7 @@ function Editor(props) {
                 text={text}
                 style={editorStyle}
                 showLineNumbers={showLineNumbers}
+                wordWrap={wordWrap}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onDragOver={handleDragOver}
