@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate, useLocation } from "react-router";
 
-import { IconButton, Paper } from '@mui/material';
+import { IconButton, Paper, Divider } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CommitIcon from '@mui/icons-material/Commit';
@@ -167,6 +167,9 @@ function Menu(props) {
         <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
           <PublishIcon fill="white" className="leftIcon" />
         </IconButton>
+
+        {/** Divider: ナビ系と設定系を分離 */}
+        <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
 
         {/** Template */}
         <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
