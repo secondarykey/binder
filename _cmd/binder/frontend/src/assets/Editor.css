@@ -30,22 +30,9 @@
   --wails-draggable: no-drag;
 }
 
-/* ツリーパネル上部メニューバー（エディタの #editorMenu と同じ高さ） */
-#treeMenuBar {
-  flex-shrink: 0;
-  height: 38px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  padding: 0 4px;
-  border-bottom: 1px solid var(--border-primary);
-  background-color: var(--bg-elevated);
-}
-
 /* ツリースクロールエリア */
 #treeScrollArea {
-  flex: 1;
-  min-height: 0;
+  height: 100%;
   overflow: auto;
 }
 

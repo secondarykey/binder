@@ -537,19 +537,40 @@ function BinderTree(props) {
 
   return (<>
 
-    {/** ツリーパネル上部メニューバー */}
-    <div id="treeMenuBar">
-      {/** スペーサー: MoreVert ボタンを右端に寄せる */}
-      <div style={{ flex: 1 }} />
+    {/** ツリースクロールエリア（MoreVert ボタンをフローティングで右上に配置） */}
+    <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div id="treeScrollArea">
+      <div style={{ marginTop: '4px' }}><Tree
+        data={treeData}
+        selected={selectedId}
+        onSelect={(id) => setSelectedId(id)}
+        onClick={handleClick}
+        expand={expand}
+        onExpand={handleExpand}
+        onChange={handleChange}
+        onNodeContextMenu={handleContextMenu}
+        icons={binderIcons}
+        renaming={renaming}
+        renamingValue={renamingValue}
+        onRenameChange={setRenamingValue}
+        onRenameCommit={handleRenameCommit}
+        onRenameCancel={handleRenameCancel}
+      /></div>
+      </div>
 
-      {/** MoreVert メニューボタン */}
+      {/** MoreVert フローティングボタン（右上固定） */}
       <Tooltip title="メニュー" placement="bottom">
         <IconButton
           size="small"
           onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
-          sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+          sx={{
+            position: 'absolute', top: 4, right: 4, zIndex: 10,
+            color: 'var(--text-muted)',
+            backgroundColor: 'var(--bg-panel)',
+            '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-elevated)' },
+          }}
         >
-          <MoreVertIcon sx={{ fontSize: '18px' }} />
+          <MoreVertIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Tooltip>
     </div>
@@ -593,26 +614,6 @@ function BinderTree(props) {
         <ListItemText sx={{ color: displayMode === 'publish' ? publishIconColor : 'var(--text-muted)' }}>Publish</ListItemText>
       </MenuItem>
     </Menu>
-
-    {/** ツリースクロールエリア */}
-    <div id="treeScrollArea">
-      <div style={{ marginTop: '4px' }}><Tree
-        data={treeData}
-        selected={selectedId}
-        onSelect={(id) => setSelectedId(id)}
-        onClick={handleClick}
-        expand={expand}
-        onExpand={handleExpand}
-        onChange={handleChange}
-        onNodeContextMenu={handleContextMenu}
-        icons={binderIcons}
-        renaming={renaming}
-        renamingValue={renamingValue}
-        onRenameChange={setRenamingValue}
-        onRenameCommit={handleRenameCommit}
-        onRenameCancel={handleRenameCancel}
-      /></div>
-    </div>
 
     {/** ノートメニュー: Edit / Add ▶ / History / Delete */}
     <Menu
