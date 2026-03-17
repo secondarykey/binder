@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip } from "@mui/material";
+import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -37,6 +37,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FontDialog from "../FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
@@ -131,6 +132,11 @@ function Editor(props) {
   const [treeWidth, setTreeWidth] = useState(250);
 
   const [fontDialog, setShowFontDialog] = useState(false);
+
+  // エディタメニュー MoreVert
+  const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, x: 0, y: 0 });
+  const openEditorMoreMenu = (x, y) => setEditorMoreMenu({ open: true, x, y });
+  const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, x: 0, y: 0 });
 
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
@@ -1052,25 +1058,9 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
-                  {/** フォント設定 */}
-                  <Tooltip title="フォント設定" placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="font" sx={{ mr: 2 }} onClick={handleFontDialog} className="editorBtn">
-                      <FontDownloadIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
-                  {/** プログラム起動 */}
-                  <Tooltip title="外部エディタで開く" placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="process" sx={{ mr: 2 }} onClick={handleRunEditor} className="editorBtn">
-                      <LaunchIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
                   {/** テンプレートプレビューリフレッシュ */}
-                  {mode === Mode.template &&
+                  {mode === Mode.template && <>
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
                     <Tooltip title="プレビュー更新" placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
                         onClick={() => {
@@ -1083,7 +1073,7 @@ function Editor(props) {
                         <PreviewIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                  }
+                  </>}
 
                   {/** 区切り */}
                   <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
@@ -1112,8 +1102,40 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
+                  {/** 区切り */}
+                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+
+                  {/** MoreVert メニューボタン */}
+                  <Tooltip title="メニュー" placement="bottom">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openEditorMoreMenu(r.left, r.bottom); }}
+                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+                      className="editorBtn"
+                    >
+                      <MoreVertIcon sx={{ fontSize: '18px' }} />
+                    </IconButton>
+                  </Tooltip>
+
                 </Container>
               </Container>
+
+              {/** エディタ MoreVert ドロップダウンメニュー */}
+              <Menu
+                open={editorMoreMenu.open}
+                anchorReference="anchorPosition"
+                anchorPosition={{ top: editorMoreMenu.y, left: editorMoreMenu.x }}
+                onClose={closeEditorMoreMenu}
+                slotProps={{ paper: { sx: { minWidth: 160 } } }}
+              >
+                <MenuItem onClick={() => { closeEditorMoreMenu(); handleFontDialog(); }}>
+                  <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />フォント設定
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
+                  <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />外部エディタで開く
+                </MenuItem>
+              </Menu>
 
               {/** テキスト編集（行番号ガター + textarea） */}
               <EditorArea
