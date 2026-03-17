@@ -739,6 +739,10 @@ function Editor(props) {
         if (c !== " ") {
           if (c === "-") {
             char = "- ";
+            var txt = line.substring(idx);
+            if (txt.startsWith("- [ ]") || txt.startsWith("- [x]")) {
+              char = "- [ ] ";
+            }
           } else if (c === ">") {
             char = "> ";
           } else if (c === "1") {
@@ -746,8 +750,6 @@ function Editor(props) {
             if (c2 === ".") {
               char = "1. ";
             }
-          } else if (c === "- [ ] " || c === "- [x] ") {
-              char = "- [ ] ";
           }
           break;
         }
