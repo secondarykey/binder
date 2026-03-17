@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, IconButton, Tooltip } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, ToggleButton } from '@mui/material';
 
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -524,16 +524,56 @@ function BinderTree(props) {
     {/** ツリーパネル上部メニューバー */}
     <div id="treeMenuBar">
       <Tooltip title={showModified ? "未コミット表示: ON" : "未コミット表示: OFF"} placement="bottom">
-        <IconButton size="small" onClick={() => setShowModified(v => !v)}
-          sx={{ color: showModified ? 'var(--accent-orange)' : 'var(--text-muted)' }}>
+        <ToggleButton
+          value="modified"
+          selected={showModified}
+          size="small"
+          onChange={() => {
+            const next = !showModified;
+            setShowModified(next);
+            if (next) setShowPublishStatus(false);
+          }}
+          sx={{
+            border: 'none',
+            borderRadius: '4px',
+            padding: '4px',
+            color: showModified ? 'var(--accent-orange)' : 'var(--text-muted)',
+            '&.Mui-selected': {
+              backgroundColor: 'rgba(245, 166, 35, 0.15)',
+              color: 'var(--accent-orange)',
+              '&:hover': { backgroundColor: 'rgba(245, 166, 35, 0.25)' },
+            },
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+          }}
+        >
           <FiberManualRecordIcon sx={{ fontSize: '14px' }} />
-        </IconButton>
+        </ToggleButton>
       </Tooltip>
       <Tooltip title={showPublishStatus ? "未公開表示: ON" : "未公開表示: OFF"} placement="bottom">
-        <IconButton size="small" onClick={() => setShowPublishStatus(v => !v)}
-          sx={{ color: publishBtnColor }}>
+        <ToggleButton
+          value="publish"
+          selected={showPublishStatus}
+          size="small"
+          onChange={() => {
+            const next = !showPublishStatus;
+            setShowPublishStatus(next);
+            if (next) setShowModified(false);
+          }}
+          sx={{
+            border: 'none',
+            borderRadius: '4px',
+            padding: '4px',
+            color: showPublishStatus ? publishBtnColor : 'var(--text-muted)',
+            '&.Mui-selected': {
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              color: publishBtnColor,
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
+            },
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+          }}
+        >
           <UnpublishedIcon sx={{ fontSize: '16px' }} />
-        </IconButton>
+        </ToggleButton>
       </Tooltip>
     </div>
 
