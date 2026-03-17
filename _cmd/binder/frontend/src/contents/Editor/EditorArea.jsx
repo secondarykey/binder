@@ -8,20 +8,27 @@ import PropTypes from "prop-types";
  *   text            - 表示・編集するテキスト
  *   style           - textarea / 行番号に適用するスタイル（フォント・色など）
  *   showLineNumbers - 行番号ガターを表示するか（デフォルト: true）
+ *   wordWrap        - テキスト折り返しを有効にするか（デフォルト: true）
  *   onKeyDown       - キーダウンハンドラ
  *   onChange        - テキスト変更ハンドラ
  *   onDragOver      - ドラッグオーバーハンドラ
  *   onDrop          - ドロップハンドラ
  */
-function EditorArea({ text, style, showLineNumbers = true, onKeyDown, onChange, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, onKeyDown, onChange, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   const canvasRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
 
   /**
-   * Canvas でテキスト幅を計測し、各論理行の折り返し visual 行数を算出
+   * Canvas でテキスト幅を計測し、各論理行の折り返し visual 行数を算出。
+   * wordWrap が OFF の場合は折り返しなしなので全行 1 とする。
    */
   const calcLineHeights = useCallback(() => {
+    if (!wordWrap) {
+      setLineHeights(text.split('\n').map(() => 1));
+      return;
+    }
+
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
 
@@ -42,9 +49,9 @@ function EditorArea({ text, style, showLineNumbers = true, onKeyDown, onChange, 
       return Math.max(1, Math.ceil(ctx.measureText(line).width / availWidth));
     });
     setLineHeights(heights);
-  }, [text, style]);
+  }, [text, style, wordWrap]);
 
-  // テキスト・フォント変更時に再計算
+  // テキスト・フォント・折り返し変更時に再計算
   useEffect(() => {
     calcLineHeights();
   }, [calcLineHeights]);
@@ -67,6 +74,10 @@ function EditorArea({ text, style, showLineNumbers = true, onKeyDown, onChange, 
     }
   };
 
+  const textareaStyle = wordWrap
+    ? style
+    : { ...style, overflowX: 'auto' };
+
   return (
     <div className="editorArea">
       {showLineNumbers && (
@@ -83,7 +94,8 @@ function EditorArea({ text, style, showLineNumbers = true, onKeyDown, onChange, 
       )}
       <textarea
         id="editor"
-        style={style}
+        style={textareaStyle}
+        wrap={wordWrap ? 'soft' : 'off'}
         value={text}
         onKeyDown={onKeyDown}
         onChange={onChange}
@@ -99,6 +111,7 @@ EditorArea.propTypes = {
   text: PropTypes.string.isRequired,
   style: PropTypes.object,
   showLineNumbers: PropTypes.bool,
+  wordWrap: PropTypes.bool,
   onKeyDown: PropTypes.func,
   onChange: PropTypes.func,
   onDragOver: PropTypes.func,
