@@ -28,6 +28,7 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import LaunchIcon from '@mui/icons-material/Launch';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import PreviewIcon from '@mui/icons-material/Preview';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
@@ -1061,6 +1062,33 @@ function Editor(props) {
                       <PreviewIcon fontSize="small" />
                     </IconButton>
                   }
+
+                  {/** 区切り */}
+                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+
+                  {/** プレビュー表示トグル */}
+                  <Tooltip title={viewer ? "プレビュー: ON" : "プレビュー: OFF"} placement="bottom">
+                    <ToggleButton
+                      value="viewer"
+                      selected={viewer}
+                      size="small"
+                      onChange={() => setViewer(v => !v)}
+                      sx={{
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        color: viewer ? 'var(--text-primary)' : 'var(--text-muted)',
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(255,255,255,0.08)',
+                          color: 'var(--text-primary)',
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
+                        },
+                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+                      }}
+                    >
+                      <VisibilityIcon sx={{ fontSize: '16px' }} />
+                    </ToggleButton>
+                  </Tooltip>
 
                 </Container>
               </Container>
