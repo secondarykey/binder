@@ -795,6 +795,14 @@ function Editor(props) {
 
     RunEditor(mode, id).then(() => {
       clearInterval(interval)
+      // プロセス終了後にファイルを再読み込み
+      if (mode === Mode.note) {
+        OpenNote(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
+      } else if (mode === Mode.diagram) {
+        OpenDiagram(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
+      } else if (mode === Mode.template) {
+        OpenTemplate(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
+      }
     }).catch((err) => {
       evt.showErrorMessage(err);
       clearInterval(interval)
