@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Backdrop, CircularProgress, Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -1251,7 +1251,7 @@ function Editor(props) {
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <CircularProgress color="inherit" />
+        <span style={{ color: '#fff', fontSize: '14px' }}>外部エディタで開いています。</span>
       </Backdrop>
     </>
   );
