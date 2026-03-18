@@ -143,6 +143,12 @@ function Editor(props) {
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
 
+  // useEffect([]) 内など古いクロージャから最新の mode/id を参照するための ref
+  const modeRef = useRef(mode);
+  const idRef = useRef(id);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { idRef.current = id; }, [id]);
+
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
   // handleChangeText だけが true にセットする。ファイルオープン時はセットされないので即時描画になる。
   const isEditingRef = useRef(false);
@@ -350,8 +356,10 @@ function Editor(props) {
       textarea.selectionStart = start + text.length;
       textarea.selectionEnd = start + text.length;
 
+      const newVal = textarea.value;
       setTimeout(() => {
-        setText(textarea.value);
+        setText(newVal);
+        writeFn(modeRef.current, idRef.current, newVal);
       }, 500);
     });
   }, []);
