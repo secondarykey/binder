@@ -1,0 +1,14 @@
+{
+    "code": "English",
+    "app" : {
+        "home" : "Go to Binder List"
+    },
+    "menu" : {
+        "binder" : "Binder Tree",
+        "commit" : "Uncommitted Notes",
+        "publish" : "Unpublished Notes",
+        "template" : "Template Settings",
+        "config" : "Binder Settings",
+        "setting" : "App Settings"
+    }
+}

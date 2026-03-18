@@ -14,6 +14,8 @@ import TemplateTree from './TemplateTree';
 
 import Event, { EventContext } from '../Event';
 
+import "../i18n/config";
+import { useTranslation } from 'react-i18next'
 import "../assets/Menu.css";
 
 {/** Binderのアイコン */ }
@@ -49,6 +51,8 @@ function BinderSVGIcon(props) {
  * @returns
  */
 function Menu(props) {
+
+  const {t} = useTranslation();
 
   //使い方
   const evt = useContext(EventContext)
@@ -154,21 +158,21 @@ function Menu(props) {
     return (
       <>
         {/** BinderTree */}
-        <Tooltip title="ノートツリー" placement="right">
+        <Tooltip title={t("menu.binder")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
             <LibraryBooksIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
         {/** Modified  */}
-        <Tooltip title="未コミット一覧" placement="right">
+        <Tooltip title={t("menu.commit")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
             <CommitIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
         {/** Publish  */}
-        <Tooltip title="未公開一覧" placement="right">
+        <Tooltip title={t("menu.publish")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
             <PublishIcon fill="white" className="leftIcon" />
           </IconButton>
@@ -178,14 +182,14 @@ function Menu(props) {
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
 
         {/** Template */}
-        <Tooltip title="テンプレート" placement="right">
+        <Tooltip title={t("menu.template")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
             <ContentPasteIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
         {/** Binder Setting */}
-        <Tooltip title="バインダー設定" placement="right">
+        <Tooltip title={t("menu.config")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickBinderSetting}>
             <SettingsApplications fill="white" className="leftIcon" />
           </IconButton>
@@ -207,7 +211,7 @@ function Menu(props) {
         </Routes>
 
         {/** Settingsのボタン */}
-        <Tooltip title="アプリ設定" placement="right">
+        <Tooltip title={t("menu.setting")} placement="right">
           <IconButton id="settingButton" className="leftButton" edge="start" color="inherit" aria-label="setting" onClick={handleSettingClick}>
             <SettingsIcon className="leftIcon" />
           </IconButton>

@@ -7,7 +7,7 @@ import PublishModal from '../dialogs/PublishModal.jsx';
 import SettingModal from '../dialogs/SettingModal.jsx';
 import BinderModal from '../dialogs/BinderModal.jsx';
 
-import { Box, Toolbar, Typography, IconButton } from '@mui/material';
+import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import PushPinIcon from '@mui/icons-material/PushPin';
@@ -25,6 +25,8 @@ import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
 
 import '../assets/App.css';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next'
 
 /**
  * クリップボードのコピー
@@ -53,6 +55,8 @@ var intervalId = undefined;
  * @returns
  */
 function App() {
+
+  const {t} = useTranslation();
 
   const evt = useContext(EventContext)
   const nav = useNavigate();
@@ -241,10 +245,14 @@ function App() {
 
         {/** 左セクション: ホームボタン + Binder名 + サイドバー開閉 */}
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
-          {/** ホームボタン: バインダーを閉じてトップへ戻る */}
+
+          {/** ストレージボタン: バインダーを閉じてトップへ戻る */}
+          <Tooltip title={t("app.home")} placement="right">
           <IconButton size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
             <StorageIcon fontSize="small" />
           </IconButton>
+          </Tooltip>
+
           <Typography variant="body1" component="div" noWrap>
             {binderName}
           </Typography>
