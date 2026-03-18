@@ -181,6 +181,8 @@ function Editor(props) {
 
     if (mode === Mode.diagram) {
 
+      setEditor(true);
+      setViewer(true);
       OpenDiagram(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -201,6 +203,8 @@ function Editor(props) {
 
     } else if (mode === Mode.note) {
 
+      setEditor(true);
+      setViewer(true);
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -220,6 +224,8 @@ function Editor(props) {
 
     } else if (mode === Mode.template) {
 
+      setEditor(true);
+      setViewer(true);
       // プレビュー設定をリセット
       setPreviewOtherTemplateId("");
       setHTML("");
