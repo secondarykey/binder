@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, CircularProgress, Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -115,6 +115,7 @@ function Editor(props) {
 
   const [editor, setEditor] = useState(true);
   const [viewer, setViewer] = useState(true);
+  const [editorLocked, setEditorLocked] = useState(false);
 
   const [text, setText] = useState("");
   const [name, setName] = useState("");
@@ -785,6 +786,8 @@ function Editor(props) {
    */
   const handleRunEditor = () => {
 
+    setEditorLocked(true);
+
     const sec = 2;
     var interval = setInterval(function () {
       // ファイルの内容を取得
@@ -796,8 +799,8 @@ function Editor(props) {
       evt.showErrorMessage(err);
       clearInterval(interval)
     }).finally(() => {
-      console.log("finally");
       clearInterval(interval)
+      setEditorLocked(false);
     })
   }
 
@@ -1237,6 +1240,11 @@ function Editor(props) {
 
       {/** フォント設定 */}
       <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose} />
+
+      {/** 外部エディタ実行中ロック */}
+      <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </>
   );
 }
