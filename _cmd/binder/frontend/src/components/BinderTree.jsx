@@ -449,6 +449,7 @@ function BinderTree(props) {
         contentTemplate: tmpls.contents[0].id,
       };
       const resp = await EditNote(note, "");
+      setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
       navAfterRenameRef.current = "/editor/note/" + resp.id;
       setTimeout(() => {
@@ -468,6 +469,7 @@ function BinderTree(props) {
     try {
       const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "" };
       const resp = await EditDiagram(diagram);
+      setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
       navAfterRenameRef.current = "/editor/diagram/" + resp.id;
       setTimeout(() => {
@@ -490,6 +492,7 @@ function BinderTree(props) {
       const name = filePath.split(/[/\\]/).pop() || "New Asset";
       const asset = { id: "", parentId, name, alias: "", detail: "", binary: false };
       const resp = await EditAsset(asset, filePath);
+      setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
       setSelectedId(resp.id);
       nav("/editor/assets/" + resp.id);
