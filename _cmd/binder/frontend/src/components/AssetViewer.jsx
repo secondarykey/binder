@@ -6,7 +6,7 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, GetSetting, MigrateAssetToNote } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, GetFont } from '../../bindings/binder/api/app';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
 
@@ -151,13 +151,12 @@ function AssetViewer() {
   const [editorStyle, setEditorStyle] = useState({});
 
   useEffect(() => {
-    GetSetting().then((s) => {
-      const t = s.lookAndFeel.editor.text;
+    GetFont().then((s) => {
       setEditorStyle({
-        fontFamily: t.name,
-        fontSize: t.size + 'px',
-        color: t.color,
-        backgroundColor: t.backgroundColor,
+        fontFamily: s.name,
+        fontSize: s.size + 'px',
+        color: s.color,
+        backgroundColor: s.backgroundColor,
       });
     }).catch(() => {});
   }, []);

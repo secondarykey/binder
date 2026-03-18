@@ -45,7 +45,6 @@ type Path struct {
 	OpenWithItem bool     `json:"openWithItem"`
 	Histories    []string `json:"histories"`
 	LastNoteId   string   `json:"lastNoteId"`
-	LastDataId   string   `json:"lastDataId"`
 }
 
 func (p *Path) AddHistory(h string) {
@@ -81,9 +80,14 @@ type Look struct {
 }
 
 type Editor struct {
-	Program string `json:"program"`
-	GitBash bool   `json: "gitbash"`
-	Text    *Font  `json:"text"`
+	Program    string       `json:"program"`
+	GitBash    bool         `json: "gitbash"`
+	ThemeFonts []*ThemeFont `json:"themeFont"`
+}
+
+type ThemeFont struct {
+	Theme string `json:"theme"`
+	Font  *Font
 }
 
 type Font struct {
@@ -151,15 +155,31 @@ func def() *Setting {
 	var look Look
 	look.DarkMode = true
 	look.Theme = "dark"
+
+	var darkf Font
+
+	darkf.Name = "Araial"
+	darkf.Size = 16
+	darkf.Color = "#111111"
+	darkf.BackgroundColor = "#eeeeee"
+
+	var lightf Font
+	lightf.Name = "Araial"
+	lightf.Size = 16
+	lightf.Color = "#eeeeee"
+	lightf.BackgroundColor = "#111111"
+
+	var dtf ThemeFont
+	dtf.Theme = "dark"
+	dtf.Font = &darkf
+
+	var ltf ThemeFont
+	ltf.Theme = "light"
+	ltf.Font = &lightf
+
 	var editor Editor
-	var ef Font
+	editor.ThemeFonts = append(editor.ThemeFonts, &dtf, &ltf)
 
-	ef.Name = "Araial"
-	ef.Size = 16
-	ef.Color = "#000000"
-	ef.BackgroundColor = "#FFFFFF"
-
-	editor.Text = &ef
 	look.Editor = &editor
 	set.Look = &look
 
@@ -183,7 +203,74 @@ func def() *Setting {
 	return &set
 }
 
-func (s *Setting) Save() error {
+func GetFont() *Font {
+	obj := Get()
+	tfs := obj.Look.Editor.ThemeFonts
+	for _, tf := range tfs {
+		if tf.Theme == obj.Look.Theme {
+			return tf.Font
+		}
+	}
+	return nil
+}
+
+func SaveFont(f *Font) error {
+	obj := Get()
+	tfs := obj.Look.Editor.ThemeFonts
+	for _, tf := range tfs {
+		if tf.Theme == obj.Look.Theme {
+			tf.Font = f
+		}
+	}
+	return obj.save()
+}
+
+func GetPath() *Path {
+	obj := Get()
+	return obj.Path
+}
+
+func SaveBasePath(p *Path) error {
+
+	obj := Get()
+
+	obj.Path.Default = p.Default
+	obj.Path.RunWithOpen = p.RunWithOpen
+	obj.Path.OpenWithItem = p.OpenWithItem
+
+	return obj.save()
+}
+
+func GetHistories() []string {
+	obj := Get()
+	return obj.Path.Histories
+}
+
+func SaveHistory(h string) error {
+	obj := Get()
+	list := []string{h}
+	for _, v := range obj.Path.Histories {
+		if h != v {
+			list = append(list, v)
+		}
+	}
+	obj.Path.Histories = list
+	return obj.save()
+}
+
+func SaveTheme(theme string) error {
+	obj := Get()
+	obj.Look.Theme = theme
+	return obj.save()
+}
+
+func SavePosition(pos *Position) error {
+	obj := Get()
+	obj.Position = pos
+	return obj.save()
+}
+
+func (s *Setting) save() error {
 
 	fn := getFilePath()
 	fp, err := os.Create(fn)

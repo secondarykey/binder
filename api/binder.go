@@ -3,7 +3,6 @@ package api
 import (
 	"binder"
 	"binder/log"
-	"binder/settings"
 	"fmt"
 	"log/slog"
 
@@ -29,7 +28,6 @@ func (a *App) load(dir string) (string, error) {
 		return "", xerrors.Errorf("empty directory error")
 	}
 
-	s := settings.Get()
 	b, err := binder.Load(dir, a.version)
 	if err != nil {
 		return "", xerrors.Errorf("Binder Load() error: %w", err)
@@ -44,13 +42,6 @@ func (a *App) load(dir string) (string, error) {
 	address, err := a.Address()
 	if err != nil {
 		return "", xerrors.Errorf("Binder Address() error: %w", err)
-	}
-
-	//履歴に追加
-	s.Path.AddHistory(dir)
-	err = s.Save()
-	if err != nil {
-		log.PrintStackTrace(err)
 	}
 
 	return address, nil

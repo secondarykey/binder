@@ -7,44 +7,55 @@ import (
 	"fmt"
 )
 
-func (a *App) GetSetting() *settings.Setting {
-
-	defer log.PrintTrace(log.Func("GetSetting()"))
-
-	obj := settings.Get()
-	if obj == nil {
-		log.PrintStackTrace(fmt.Errorf("setting is nil"))
-	}
-	return obj
+func (a *App) SavePosition(pos *settings.Position) error {
+	return settings.SavePosition(pos)
 }
 
-func (a *App) SaveSetting(s *settings.Setting) error {
+func (a *App) SaveFont(f *settings.Font) error {
+	return settings.SaveFont(f)
+}
 
-	defer log.PrintTrace(log.Func("SaveSettings()"))
+func (a *App) GetFont() *settings.Font {
 
-	err := s.Save()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return fmt.Errorf("SaveSetting() error:\n%+v", err)
+	defer log.PrintTrace(log.Func("GetSetting()"))
+	font := settings.GetFont()
+	if font == nil {
+		log.PrintStackTrace(fmt.Errorf("font is nil"))
 	}
-	return nil
+	return font
+}
+
+func (a *App) GetHistories() []string {
+	defer log.PrintTrace(log.Func("GetHistories()"))
+	histories := settings.GetHistories()
+	if histories == nil {
+		log.PrintStackTrace(fmt.Errorf("histories is nil"))
+	}
+	return histories
+}
+
+func (a *App) SaveHistory(h string) error {
+	defer log.PrintTrace(log.Func("SaveHistory()"))
+	return settings.SaveHistory(h)
+}
+
+func (a *App) GetPath() *settings.Path {
+	return settings.GetPath()
+}
+
+func (a *App) SavePath(p *settings.Path) error {
+	return settings.SaveBasePath(p)
+}
+
+func (a *App) GetTheme(theme string) string {
+	defer log.PrintTrace(log.Func("GetTheme()"))
+	s := settings.Get()
+	return s.Look.Theme
 }
 
 func (a *App) SetTheme(theme string) error {
-
 	defer log.PrintTrace(log.Func("SetTheme()"))
-
-	s := settings.Get()
-	if s.Look == nil {
-		s.Look = &settings.Look{}
-	}
-	s.Look.Theme = theme
-	err := s.Save()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return fmt.Errorf("SetTheme() error:\n%+v", err)
-	}
-	return nil
+	return settings.SaveTheme(theme)
 }
 
 func (a *App) GetFontNames() ([]string, error) {

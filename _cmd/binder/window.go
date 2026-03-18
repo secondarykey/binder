@@ -106,22 +106,17 @@ func (win *Window) SavePosition() error {
 	w, h := win.window.Size()
 	x, y := win.window.Position()
 
-	obj := settings.Get()
-	if obj == nil {
-		log.PrintStackTrace(fmt.Errorf("setting is nil"))
-	} else {
+	var pos settings.Position
 
-		pos := obj.Position
-		pos.Left = x
-		pos.Top = y
-		pos.Width = w
-		pos.Height = h
+	pos.Left = x
+	pos.Top = y
+	pos.Width = w
+	pos.Height = h
 
-		err := win.app.SaveSetting(obj)
-		if err != nil {
-			log.PrintStackTrace(err)
-			return fmt.Errorf("SaveSetting() error:\n%+v", err)
-		}
+	err := win.app.SavePosition(&pos)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("SaveSetting() error:\n%+v", err)
 	}
 
 	return nil

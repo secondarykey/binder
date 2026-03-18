@@ -7,7 +7,7 @@ import DiffIcon from "@mui/icons-material/Difference";
 
 import { Events, Window } from "@wailsio/runtime";
 
-import { GetHistoryPatch, GetModifiedIds, GetSetting, RestoreHistory } from "../../bindings/binder/api/app";
+import { GetFont,GetHistoryPatch, GetModifiedIds, RestoreHistory } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
 
@@ -221,8 +221,7 @@ function HistoryPatch({ typ, id }) {
     }, [showDiff]);
 
     useEffect(() => {
-        GetSetting().then((s) => {
-            const f = s?.lookAndFeel?.editor?.text;
+        GetFont().then((f) => {
             if (f) {
                 if (f.name) setFontName(f.name);
                 if (f.size) setFontSize(f.size);

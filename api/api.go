@@ -47,6 +47,7 @@ func (a *App) Startup() error {
 	}
 
 	set := settings.Get()
+	//起動時にひらく設定
 	if set.Path.RunWithOpen {
 		his := set.Path.Histories
 		if len(his) > 0 {

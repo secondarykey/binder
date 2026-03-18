@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
 import { Accordion, AccordionDetails, AccordionSummary, Box, FormControl, FormLabel, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
-import { GetSetting, SaveSetting } from "../../bindings/binder/api/app";
+import { GetPath, SavePath } from "../../bindings/binder/api/app";
 
 import { IconButton } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -35,18 +35,21 @@ function Setting({ isModal, ...props }) {
   const [gitCode, setGitCode] = useState("");
 
   useEffect(() => {
-    if (!isModal) evt.changeTitle("Setting")
-    GetSetting().then((set) => {
-      setPathDefault(set.path.default);
-      setPathRunWith(set.path.runWithOpen);
-      setPathOpenWith(set.path.openWithItem);
-      setGitBranch(set.git.branch);
-      setGitName(set.git.name);
-      setGitMail(set.git.mail);
-      setGitCode(set.git.code);
 
-      setEditorProgram(set.lookAndFeel.editor.program);
-      setEditorGitBash(set.lookAndFeel.editor.gitBash);
+    if (!isModal) evt.changeTitle("Setting")
+    GetPath().then((p) => {
+
+      setPathDefault(p.default);
+      setPathRunWith(p.runWithOpen);
+      setPathOpenWith(p.openWithItem);
+
+      //setGitBranch(set.git.branch);
+      //setGitName(set.git.name);
+      //setGitMail(set.git.mail);
+      //setGitCode(set.git.code);
+      //setEditorProgram(set.lookAndFeel.editor.program);
+      //setEditorGitBash(set.lookAndFeel.editor.gitBash);
+
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -54,21 +57,20 @@ function Setting({ isModal, ...props }) {
 
   const handleSave = () => {
 
-    var setting = {};
     var path = {};
     path.default = pathDefault;
     path.runWithOpen = pathRunWith;
     path.openWithItem = pathOpenWith;
-    setting.path = path;
+    //setting.path = path;
 
-    var git = {};
-    git.branch = gitBranch;
-    git.name = gitName;
-    git.mail = gitMail;
-    git.code = gitCode;
-    setting.git = git;
+    //var git = {};
+    //git.branch = gitBranch;
+    //git.name = gitName;
+    //git.mail = gitMail;
+    //git.code = gitCode;
+    //setting.git = git;
 
-    SaveSetting(setting).then((resp) => {
+    SavePath(path).then((resp) => {
       evt.showSuccessMessage("Updated");
     }).catch((err) => {
       evt.showErrorMessage(err);

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef ,useContext} from "react";
 import { useParams } from "react-router";
 
-import { GetNowPatch, GetSetting } from "../../bindings/binder/api/app";
+import { GetNowPatch, GetFont } from "../../bindings/binder/api/app";
 
 import {EventContext} from "../Event";
 
@@ -92,8 +92,7 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
             lineViewer.current.scrollTop = viewer.current.scrollTop;
         })
         //エディタのフォント設定を取得
-        GetSetting().then((s) => {
-            const f = s?.lookAndFeel?.editor?.text;
+        GetFont().then((f) => {
             if (f) {
                 if (f.name) setFontName(f.name);
                 if (f.size) setFontSize(f.size);

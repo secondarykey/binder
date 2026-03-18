@@ -8,7 +8,7 @@ import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/a
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
-import { RunEditor, GetSetting, SaveSetting, GetSnippets } from "../../../bindings/binder/api/app";
+import { RunEditor, GetFont,SaveFont, GetSnippets } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -842,14 +842,9 @@ function Editor(props) {
 
     var f = set;
     setEditorFont(f)
-
-    if (save) {
-      GetSetting().then((s) => {
-
-        s.lookAndFeel.editor.text = set;
-        console.log(set)
-        SaveSetting(s).then(() => {
-        })
+    if ( save ) {
+      // フォント設定を保存
+      SaveFont(set).then(() => {
       }).catch((err) => {
         evt.showErrorMessage(err);
       });
@@ -866,9 +861,8 @@ function Editor(props) {
     });
 
     //設定を取得
-    GetSetting().then((s) => {
-      var set = s.lookAndFeel.editor.text;
-      settingFont(set);
+    GetFont().then((s) => {
+      settingFont(s);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });

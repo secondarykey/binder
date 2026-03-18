@@ -18,7 +18,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetSetting, GetConfig, CloseBinder, LoadBinder, SetTheme } from '../../bindings/binder/api/app';
+import { GetHistories, GetConfig, CloseBinder, LoadBinder, SetTheme } from '../../bindings/binder/api/app';
 import { SavePosition,Terminate } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -138,9 +138,9 @@ function App() {
     loadBinderName();
 
     //設定を取得し、履歴があれば最後のバインダーをエディタで自動的に開く
-    GetSetting().then((s) => {
-      if (s.path.histories && s.path.histories.length > 0) {
-        LoadBinder(s.path.histories[0]).then((href) => {
+    GetHistories().then((h) => {
+      if (h && h.length > 0) {
+        LoadBinder(h[0]).then((href) => {
           evt.changeAddress(href);
           nav("/editor/note/index");
         }).catch((err) => {

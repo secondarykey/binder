@@ -7,7 +7,7 @@ import './assets/style.css'
 import App from './app/App'
 import HistoryApp from './app/HistoryApp'
 
-import { GetSetting } from '../bindings/binder/api/app'
+import { GetTheme } from '../bindings/binder/api/app'
 
 const container = document.getElementById('root')
 const root = createRoot(container)
@@ -18,11 +18,8 @@ const isHistoryWindow = params.get('history') === '1';
 
 // 設定からテーマを適用（全ウィンドウ共通）
 // theme が未設定 or "dark" → ダーク（デフォルト）、"light" → ライト
-GetSetting().then((s) => {
-  const theme = s?.lookAndFeel?.theme;
-  if (theme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
-  }
+GetTheme().then((t) => {
+  document.documentElement.setAttribute('data-theme', t);
 }).catch(() => {});
 
 root.render(

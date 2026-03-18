@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 
-import { LoadBinder, GetSetting } from "../../bindings/binder/api/app";
+import { LoadBinder, GetHistories } from "../../bindings/binder/api/app";
 import { List, ListItemButton, ListItemText } from "@mui/material";
 import { useNavigate } from "react-router";
 
@@ -18,8 +18,8 @@ function History(props) {
   const [histories, setHistories] = useState([]);
 
   useEffect(() => {
-    GetSetting().then((s) => {
-      setHistories(s.path.histories);
+    GetHistories().then((s) => {
+      setHistories(s);
     });
   }, [])
 
