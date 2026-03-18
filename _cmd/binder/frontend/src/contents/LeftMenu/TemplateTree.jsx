@@ -14,7 +14,7 @@ import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../../bi
 import { OpenHistoryWindow } from '../../../bindings/main/window';
 
 import Event, { EventContext } from '../../Event';
-import TemplateMetaDialog from '../TemplateMetaDialog';
+import TemplateMetaDialog from '../../Dialog/TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
 function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelete }) {

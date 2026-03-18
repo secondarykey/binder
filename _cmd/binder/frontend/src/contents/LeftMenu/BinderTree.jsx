@@ -20,9 +20,9 @@ import { OpenHistoryWindow ,SelectFile } from '../../../bindings/main/window';
 
 import Event, { EventContext } from '../../Event';
 import Tree from '../../components/Tree';
-import NoteMetaDialog from '../NoteMetaDialog';
-import DiagramMetaDialog from '../DiagramMetaDialog';
-import AssetMetaDialog from '../AssetMetaDialog';
+import NoteMetaDialog from '../../Dialog/NoteMetaDialog';
+import DiagramMetaDialog from '../../Dialog/DiagramMetaDialog';
+import AssetMetaDialog from '../../Dialog/AssetMetaDialog';
 
 /**
  * Mermaid アイコン

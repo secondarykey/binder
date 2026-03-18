@@ -1,12 +1,12 @@
 import { Dialog, Toolbar, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import Binder from './contents/Binder';
+import Setting from '../contents/Setting';
 
 /**
- * バインダー編集モーダル
+ * 設定モーダル
  */
-function BinderModal({ open, onClose }) {
+function SettingModal({ open, onClose }) {
   return (
     <Dialog
       open={open}
@@ -33,16 +33,16 @@ function BinderModal({ open, onClose }) {
         backgroundColor: 'var(--bg-titlebar)',
         flexShrink: 0,
       }}>
-        <Typography variant="body1" sx={{ flex: 1 }}>Edit Binder</Typography>
+        <Typography variant="body1" sx={{ flex: 1 }}>Setting</Typography>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={onClose}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </Toolbar>
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <Binder isModal />
+        <Setting isModal />
       </div>
     </Dialog>
   );
 }
 
-export default BinderModal;
+export default SettingModal;

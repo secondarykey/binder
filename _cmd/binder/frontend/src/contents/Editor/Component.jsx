@@ -38,7 +38,7 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import FontDialog from "../FontDialog.jsx";
+import FontDialog from "../../Dialog/FontDialog.jsx";
 
 import BinderTree from "../LeftMenu/BinderTree.jsx";
 import AssetViewer from "../AssetViewer.jsx";

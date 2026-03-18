@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 import { Dialog, Toolbar, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import UnpublishedMenu from './contents/LeftMenu/UnpublishedMenu';
-import GenerateForm from './contents/GenerateForm';
+import UnpublishedMenu from '../contents/LeftMenu/UnpublishedMenu';
+import GenerateForm from '../contents/GenerateForm';
 
-import './assets/CommitApp.css';
+import '../assets/CommitApp.css';
 
 /**
  * 未公開一覧モーダル

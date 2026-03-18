@@ -4,11 +4,11 @@ import { Dialog, Toolbar, Typography, IconButton, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-import ModifiedMenu from './contents/LeftMenu/ModifiedMenu';
-import Commit from './contents/Commit';
-import Patch from './contents/Patch';
+import ModifiedMenu from '../contents/LeftMenu/ModifiedMenu';
+import Commit from '../contents/Commit';
+import Patch from '../contents/Patch';
 
-import './assets/CommitApp.css';
+import '../assets/CommitApp.css';
 
 /**
  * コミットモーダル
