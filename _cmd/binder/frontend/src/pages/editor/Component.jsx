@@ -324,6 +324,7 @@ function Editor(props) {
     const newPos = start + body.length;
     textarea.value = newVal;
     setText(newVal);
+    writeFn(mode, id, newVal);
     setSnippetAnchor(null);
     requestAnimationFrame(() => {
       textarea.selectionStart = newPos;
@@ -781,7 +782,9 @@ function Editor(props) {
     // setTimeout を使うと次の Enter 連打時に React 再レンダリングでカーソルが末尾に飛ぶため、
     // requestAnimationFrame で再レンダリング後にカーソル位置を復元する。
     isEditingRef.current = true;
-    setText(textarea.value);
+    const newVal = textarea.value;
+    setText(newVal);
+    writeFn(mode, id, newVal);
     requestAnimationFrame(() => {
       textarea.selectionStart = newCursor;
       textarea.selectionEnd = newCursor;
