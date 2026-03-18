@@ -1,22 +1,19 @@
-import { useEffect, useState,useContext } from "react";
-import { useNavigate, useParams } from "react-router";
-
-import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
-import { SelectFile } from "../../bindings/main/window";
-import { copyClipboard } from "../App";
+import { useState, useEffect ,useContext} from "react";
+import { useParams,useNavigate } from "react-router";
 
 import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import ContentCopy from '@mui/icons-material/ContentCopy';
 
-import Event,{EventContext} from "../Event";
+import { ContentCopy } from "@mui/icons-material";
+import { EditDiagram, GetDiagram, RemoveDiagram } from "../../bindings/binder/api/app";
+import { copyClipboard } from "../app/App";
 
+import {EventContext} from "../Event";
 /**
- * ノートのアッセット情報を表示、編集
+ * データのメタ情報を表示、編集
  * @param {*} props 
  * @returns 
  */
-function Assets(props) {
+function Diagram(props) {
 
   const evt = useContext(EventContext)
   const nav = useNavigate();
@@ -29,8 +26,6 @@ function Assets(props) {
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
-  const [binary, setBinary] = useState(false);
-  const [file, setFile] = useState("");
 
   useEffect(() => {
 
@@ -39,83 +34,70 @@ function Assets(props) {
     }
 
     setName("");
-    setDetail("")
-    setAlias("")
-    setFile("")
-    setBinary(false)
+    setDetail("");
+    setAlias("");
 
     if (mode === "register") {
       setId("");
       setParentId(currentId);
-      evt.changeTitle("Register Assets");
+      evt.changeTitle("Register Diagram");
       return;
     } else {
-      setId(currentId)
+      setId(currentId);
     }
 
-    GetAsset(currentId).then((data) => {
+    GetDiagram(currentId).then((data) => {
       setName(data.name);
       setAlias(data.alias);
-      setDetail(data.detail)
+      setDetail(data.detail);
       setParentId(data.parentId);
-      setBinary(data.binary);
-      evt.changeTitle("Edit Assets:" + data.name);
+      evt.changeTitle("Edit Diagram:" + data.name);
     }).catch((err) => {
       evt.showErrorMessage(err);
     })
+
   }, [currentId]);
 
-  //保存
   const handleSave = () => {
 
-    if (mode === "register") {
-      if (file == "") {
-        evt.showWarningMessage("Choose a File")
-        return;
-      }
-    }
     var data = {};
     data.id = id
     data.parentId = parentId
-
     data.name = name
-    data.alias = alias
     data.detail = detail
-    data.binary = binary
+    data.alias = alias;
 
-    EditAsset(data, file).then((resp) => {
+    if ( name === "" ) {
+      evt.showWarningMessage("name is required")
+      return;
+    }
+
+    if ( mode !== "register" && alias === "" ) {
+      evt.showWarningMessage("alias is required")
+      return;
+    }
+
+    EditDiagram(data).then((resp) => {
+
       evt.refreshTree();
+      //新規作成時は移動
       if (mode === "register") {
-        nav("/assets/edit/" + resp.id);
+        nav("/diagram/edit/" + resp.id);
         return;
       }
-      evt.showSuccessMessage("Update Assets.");
+      evt.showSuccessMessage("Update Diagram.");
+
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      evt.showErrorMessage(err)
     });
   }
 
-  /**
-   * ファイル設定
-   */
-  const selectFile = () => {
-    SelectFile("Any File", "*").then((f) => {
-      if (f != "") {
-        setFile(f);
-      }
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    });
-  }
-
-  /**
-   * 削除
-   */
   const handleDelete = () => {
-    RemoveAsset(id).then((resp) => {
+
+    RemoveDiagram(id).then((resp) => {
       evt.refreshTree();
       // 遷移する
-      evt.showSuccessMessage("Remove Assets.")
+      evt.showSuccessMessage("Remove Diagram.")
       nav("/note/edit/" + parentId);
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -123,10 +105,12 @@ function Assets(props) {
   }
 
   const handleCopyId = (e) => {
-    copyClipboard(props.id);
+    copyClipboard(id);
     evt.showSuccessMessage("Copied.");
   }
 
+  var start = "/images/"
+  var end = ".svg";
   return (<>
     <Grid className="formGrid">
 
@@ -136,7 +120,7 @@ function Assets(props) {
             <FormLabel>ID</FormLabel>
             <TextField size="small" value={id} className="linkBtn" onClick={handleCopyId}
               InputProps={{
-                startAdornment: (<InputAdornment position="start" className="linkBtn"> <ContentCopy /> </InputAdornment>)
+                startAdornment: (<InputAdornment position="start"> <ContentCopy /> </InputAdornment>)
               }}>
             </TextField>
           </FormControl>
@@ -149,29 +133,21 @@ function Assets(props) {
               onChange={(e) => setAlias(e.target.value)}
               InputProps={{
                 startAdornment: <InputAdornment position="start">
-                  <FormLabel>/assets/</FormLabel>
+                  <FormLabel>{start}</FormLabel>
+                </InputAdornment>,
+                endAdornment: <InputAdornment position="end">
+                  <FormLabel>{end}</FormLabel>
                 </InputAdornment>,
               }}>
             </TextField>
           </FormControl>
-
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)}></TextField>
-          </FormControl>
         </>
       }
 
-      {mode === "register" &&
-        <FormControl>
-          <FormLabel>Assets</FormLabel>
-          <TextField size="small" value={file} onClick={selectFile} className="linkBtn"
-            InputProps={{
-              startAdornment: (<InputAdornment position="start"> <AttachFileIcon /> </InputAdornment>)
-            }}>
-          </TextField>
-        </FormControl>
-      }
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField size="small" value={name} onChange={(e) => setName(e.target.value)}></TextField>
+      </FormControl>
 
       <FormControl>
         <FormLabel>Detail</FormLabel>
@@ -179,6 +155,7 @@ function Assets(props) {
       </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+
         <Button variant="contained" onClick={handleSave}>
           {mode === "register" && <> Create </>}
           {mode === "edit" && <> Save </>}
@@ -189,7 +166,8 @@ function Assets(props) {
             variant="contained" color="error" onClick={handleDelete}>Delete</Button>
         }
       </FormControl>
+
     </Grid>
   </>);
 }
-export default Assets;
+export default Diagram;

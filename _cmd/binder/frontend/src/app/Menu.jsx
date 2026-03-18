@@ -6,15 +6,15 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CommitIcon from '@mui/icons-material/Commit';
 import PublishIcon from '@mui/icons-material/Publish';
-import FileMenu from './contents/LeftMenu/FileMenu';
-import BinderTree from './contents/LeftMenu/BinderTree';
+import FileMenu from './FileMenu';
+import BinderTree from '../components/BinderTree';
 
 import { SettingsApplications, LibraryBooks as LibraryBooksIcon } from '@mui/icons-material';
-import TemplateTree from './contents/LeftMenu/TemplateTree';
+import TemplateTree from './TemplateTree';
 
-import Event, { EventContext } from './Event';
+import Event, { EventContext } from '../Event';
 
-import "./assets/Menu.css";
+import "../assets/Menu.css";
 
 {/** Binderのアイコン */ }
 function BinderSVGIcon(props) {

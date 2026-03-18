@@ -6,9 +6,9 @@ import {
   Checkbox,
 } from '@mui/material';
 
-import { GetModifiedTree, CommitFiles } from '../../../bindings/binder/api/app';
+import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
 
-import Event, { EventContext } from '../../Event';
+import Event, { EventContext } from '../Event';
 
 /**
  * 変更一覧

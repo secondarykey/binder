@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-import ModifiedMenu from '../contents/LeftMenu/ModifiedMenu';
-import Commit from '../contents/Commit';
-import Patch from '../contents/Patch';
+import ModifiedMenu from '../components/ModifiedMenu';
+import Commit from '../components/Commit';
+import Patch from '../components/Patch';
 import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';

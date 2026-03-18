@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
-import UnpublishedMenu from '../contents/LeftMenu/UnpublishedMenu';
-import GenerateForm from '../contents/GenerateForm';
+import UnpublishedMenu from './UnpublishedMenu';
+import GenerateForm from './GenerateForm';
 import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';

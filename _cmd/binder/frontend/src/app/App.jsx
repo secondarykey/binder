@@ -2,10 +2,10 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import Menu from './Menu.jsx';
 import Content from './Content.jsx';
-import CommitModal from './Dialog/CommitModal.jsx';
-import PublishModal from './Dialog/PublishModal.jsx';
-import SettingModal from './Dialog/SettingModal.jsx';
-import BinderModal from './Dialog/BinderModal.jsx';
+import CommitModal from '../dialogs/CommitModal.jsx';
+import PublishModal from '../dialogs/PublishModal.jsx';
+import SettingModal from '../dialogs/SettingModal.jsx';
+import BinderModal from '../dialogs/BinderModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -18,13 +18,13 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetSetting, GetConfig, CloseBinder, LoadBinder, SetTheme } from '../bindings/binder/api/app';
-import { SavePosition,Terminate } from '../bindings/main/window';
+import { GetSetting, GetConfig, CloseBinder, LoadBinder, SetTheme } from '../../bindings/binder/api/app';
+import { SavePosition,Terminate } from '../../bindings/main/window';
 
-import Event, { EventContext } from "./Event";
-import { SystemMessage } from './Message';
+import Event, { EventContext } from "../Event";
+import { SystemMessage } from '../Message';
 
-import './assets/App.css';
+import '../assets/App.css';
 
 /**
  * クリップボードのコピー

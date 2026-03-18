@@ -1,17 +1,17 @@
 import { Paper } from "@mui/material";
 
-import BinderRegister from "./contents/BinderRegister";
+import BinderRegister from "../pages/BinderRegister";
 
-import Editor from "./contents/Editor/Component";
-import AssetViewer from "./contents/AssetViewer";
-import History from "./contents/History";
-import BinderRemote from "./contents/BinderRemote";
+import Editor from "../pages/editor/Component";
+import AssetViewer from "../components/AssetViewer";
+import History from "../pages/History";
+import BinderRemote from "../pages/BinderRemote";
 
 import { Routes, Route } from "react-router";
 
 import { Hidden } from "./App";
 
-import "./assets/Content.css"
+import "../assets/Content.css"
 
 /**
  * コンテンツ表示部分

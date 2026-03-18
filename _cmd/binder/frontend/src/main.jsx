@@ -4,9 +4,9 @@ import { HashRouter } from "react-router";
 
 import './assets/theme.css'
 import './assets/style.css'
-import App from './App'
-import CommitApp from './CommitApp'
-import HistoryApp from './HistoryApp'
+import App from './app/App'
+import CommitApp from './app/CommitApp'
+import HistoryApp from './app/HistoryApp'
 
 import { GetSetting } from '../bindings/binder/api/app'
 

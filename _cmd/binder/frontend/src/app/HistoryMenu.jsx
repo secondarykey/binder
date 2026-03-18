@@ -4,9 +4,9 @@ import { useNavigate, useParams } from 'react-router';
 import { List, ListSubheader, ListItemButton, ListItemText, Typography } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 
-import { GetHistory } from '../../../bindings/binder/api/app';
+import { GetHistory } from '../../bindings/binder/api/app';
 
-import { EventContext } from '../../Event';
+import { EventContext } from '../Event';
 
 /**
  * 履歴一覧

@@ -18,7 +18,7 @@ import Event, { EventContext } from "../../Event.jsx";
 
 import HTMLFrame from "./HTMLFrame.jsx";
 import '../../assets/Editor.css'
-import { Mode } from "../../App.jsx";
+import { Mode } from "../../app/App.jsx";
 
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -38,10 +38,10 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import FontDialog from "../../Dialog/FontDialog.jsx";
+import FontDialog from "../../dialogs/FontDialog.jsx";
 
-import BinderTree from "../LeftMenu/BinderTree.jsx";
-import AssetViewer from "../AssetViewer.jsx";
+import BinderTree from "../../components/BinderTree.jsx";
+import AssetViewer from "../../components/AssetViewer.jsx";
 
 /**
  * ツリーからノートのみを再帰的に抽出する

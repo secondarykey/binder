@@ -5,7 +5,7 @@ import {
 } from "@mui/material";
 import { ContentCopy } from "@mui/icons-material";
 
-import { copyClipboard } from "../../App";
+import { copyClipboard } from "../../app/App";
 import { EventContext } from "../../Event";
 
 /**

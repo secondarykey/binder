@@ -14,15 +14,15 @@ import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow ,SelectFile } from '../../../bindings/main/window';
+import { OpenHistoryWindow ,SelectFile } from '../../bindings/main/window';
 
-import Event, { EventContext } from '../../Event';
-import Tree from '../../components/Tree';
-import NoteMetaDialog from '../../Dialog/NoteMetaDialog';
-import DiagramMetaDialog from '../../Dialog/DiagramMetaDialog';
-import AssetMetaDialog from '../../Dialog/AssetMetaDialog';
+import Event, { EventContext } from '../Event';
+import Tree from './Tree';
+import NoteMetaDialog from '../dialogs/NoteMetaDialog';
+import DiagramMetaDialog from '../dialogs/DiagramMetaDialog';
+import AssetMetaDialog from '../dialogs/AssetMetaDialog';
 
 /**
  * Mermaid アイコン

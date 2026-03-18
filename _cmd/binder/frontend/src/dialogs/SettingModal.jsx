@@ -1,4 +1,4 @@
-import Setting from '../contents/Setting';
+import Setting from './Setting';
 import ModalWrapper from './components/ModalWrapper';
 
 /**

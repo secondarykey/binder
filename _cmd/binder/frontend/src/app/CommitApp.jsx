@@ -7,14 +7,14 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { Window } from '@wailsio/runtime';
 
-import { EventContext } from './Event';
-import { SystemMessage } from './Message';
-import ModifiedMenu from './contents/LeftMenu/ModifiedMenu';
-import Commit from './contents/Commit';
-import Patch from './contents/Patch';
+import { EventContext } from '../Event';
+import { SystemMessage } from '../Message';
+import ModifiedMenu from '../components/ModifiedMenu';
+import Commit from '../components/Commit';
+import Patch from '../components/Patch';
 
-import './assets/App.css';
-import './assets/CommitApp.css';
+import '../assets/App.css';
+import '../assets/CommitApp.css';
 
 /**
  * 差分表示 + コメントに戻るボタン

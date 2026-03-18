@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router';
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
-import { SelectDirectory } from '../../../bindings/main/window';
-import { LoadBinder } from '../../../bindings/binder/api/app';
+import { SelectDirectory } from '../../bindings/main/window';
+import { LoadBinder } from '../../bindings/binder/api/app';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 
-import Event,{EventContext} from '../../Event';
+import Event,{EventContext} from '../Event';
 
 /**
  * Binderを開く画面

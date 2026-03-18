@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { Button, Container, Dialog, DialogActions, DialogContentText, DialogTitle, FormControl, FormLabel, Grid, IconButton, InputAdornment, Select, TextField, MenuItem } from "@mui/material";
 import { ContentCopy, DeleteOutline } from "@mui/icons-material";
 
-import { copyClipboard } from "../App";
+import { copyClipboard } from "../app/App";
 import { GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage } from "../../bindings/binder/api/app";
 import { EditNote, RemoveNote,Address } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";

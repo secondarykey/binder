@@ -6,13 +6,13 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { Window } from '@wailsio/runtime';
 
-import { EventContext } from './Event';
-import { SystemMessage } from './Message';
-import HistoryMenu from './contents/LeftMenu/HistoryMenu';
-import HistoryPatch from './contents/HistoryPatch';
+import { EventContext } from '../Event';
+import { SystemMessage } from '../Message';
+import HistoryMenu from './HistoryMenu';
+import HistoryPatch from './HistoryPatch';
 
-import './assets/App.css';
-import './assets/HistoryApp.css';
+import '../assets/App.css';
+import '../assets/HistoryApp.css';
 
 /**
  * 履歴表示ウィンドウ

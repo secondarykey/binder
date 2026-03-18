@@ -1,4 +1,4 @@
-import Binder from '../contents/Binder';
+import Binder from './Binder';
 import ModalWrapper from './components/ModalWrapper';
 
 /**

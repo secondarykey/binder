@@ -10,11 +10,11 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../../bindings/binder/api/app';
-import { OpenHistoryWindow } from '../../../bindings/main/window';
+import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../bindings/binder/api/app';
+import { OpenHistoryWindow } from '../../bindings/main/window';
 
-import Event, { EventContext } from '../../Event';
-import TemplateMetaDialog from '../../Dialog/TemplateMetaDialog';
+import Event, { EventContext } from '../Event';
+import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
 function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelete }) {

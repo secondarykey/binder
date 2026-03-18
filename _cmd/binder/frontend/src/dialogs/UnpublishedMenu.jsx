@@ -9,12 +9,12 @@ import {
   GetUnpublishedTree,
   OpenNote, OpenDiagram,
   ParseNote, Generate,
-} from '../../../bindings/binder/api/app';
+} from '../../bindings/binder/api/app';
 
-import Marked from '../Editor/engines/Marked';
-import Mermaid from '../Editor/engines/Mermaid';
+import Marked from '../pages/editor/engines/Marked';
+import Mermaid from '../pages/editor/engines/Mermaid';
 
-import Event, { EventContext } from '../../Event';
+import Event, { EventContext } from '../Event';
 
 /**
  * 未公開一覧
