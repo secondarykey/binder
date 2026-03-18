@@ -1251,7 +1251,7 @@ function Editor(props) {
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <span style={{ color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '8px 16px', borderRadius: '4px' }}>外部エディタで開いています。</span>
+        <span style={{ color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>外部エディタで開いています。</span>
       </Backdrop>
     </>
   );
