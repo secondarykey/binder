@@ -1,14 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
-import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, Grid, IconButton, InputAdornment, TextField, Typography,
-} from "@mui/material";
-import { ContentCopy } from "@mui/icons-material";
+import { FormControl, FormLabel, InputAdornment, TextField } from "@mui/material";
 
 import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
-import { copyClipboard } from "../App";
 import { EventContext } from "../Event";
+import MetaDialog from "./components/MetaDialog";
+import ConfirmDialog from "./components/ConfirmDialog";
 
 /**
  * アセットのメタデータ編集ダイアログ
@@ -46,8 +43,6 @@ function AssetMetaDialog({ open, id, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleDelete = () => setConfirmDelete(true);
-
   const handleDeleteConfirm = () => {
     setConfirmDelete(false);
     RemoveAsset(id).then(() => {
@@ -58,75 +53,40 @@ function AssetMetaDialog({ open, id, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleCopyId = () => {
-    copyClipboard(id);
-    evt.showSuccessMessage("Copied.");
-  };
-
   return (<>
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    <MetaDialog
+      open={open} onClose={onClose} title="Edit Assets"
+      id={id} onSave={handleSave} onDelete={() => setConfirmDelete(true)}
     >
-      <DialogTitle>Edit Assets</DialogTitle>
-      <DialogContent>
-        <Grid className="formGrid" style={{ margin: "8px 0" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography variant="body2" sx={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
-              ID: {id}
-            </Typography>
-            <IconButton size="small" onClick={handleCopyId} title="Copy ID">
-              <ContentCopy fontSize="small" />
-            </IconButton>
-          </Box>
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Detail</FormLabel>
+        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Alias</FormLabel>
+        <TextField
+          size="small"
+          value={alias}
+          onChange={(e) => setAlias(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="start"><FormLabel>/assets/</FormLabel></InputAdornment>,
+          }} />
+      </FormControl>
+    </MetaDialog>
 
-          <FormControl>
-            <FormLabel>Alias</FormLabel>
-            <TextField
-              size="small"
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-              InputProps={{
-                startAdornment: <InputAdornment position="start"><FormLabel>/assets/</FormLabel></InputAdornment>,
-              }} />
-          </FormControl>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleDelete} color="error">Delete</Button>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">Save</Button>
-      </DialogActions>
-    </Dialog>
-
-    {/* 削除確認ダイアログ */}
-    <Dialog
+    <ConfirmDialog
       open={confirmDelete}
-      onClose={() => setConfirmDelete(false)}
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
-    >
-      <DialogTitle>アセットの削除</DialogTitle>
-      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
-        「{name}」を削除しますか？
-      </DialogContentText>
-      <DialogActions>
-        <Button onClick={() => setConfirmDelete(false)}>キャンセル</Button>
-        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
-      </DialogActions>
-    </Dialog>
+      title="アセットの削除"
+      message={`「${name}」を削除しますか？`}
+      onCancel={() => setConfirmDelete(false)}
+      onConfirm={handleDeleteConfirm}
+    />
   </>);
 }
 

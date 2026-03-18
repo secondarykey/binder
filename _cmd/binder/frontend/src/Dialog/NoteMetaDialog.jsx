@@ -1,13 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Box, Button, Container, Dialog, DialogActions, DialogContent,
-  DialogContentText, DialogTitle,
-  FormControl, FormLabel, Grid, IconButton, InputAdornment, Select, TextField, MenuItem, Typography,
+  Container, FormControl, FormLabel, IconButton, InputAdornment,
+  Select, TextField, MenuItem,
 } from "@mui/material";
-import { ContentCopy, DeleteOutline } from "@mui/icons-material";
+import { DeleteOutline } from "@mui/icons-material";
 
-import { copyClipboard } from "../App";
 import {
   GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage,
   EditNote, RemoveNote,
@@ -15,6 +13,8 @@ import {
 import { SelectFile } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png';
 import { EventContext } from "../Event";
+import MetaDialog from "./components/MetaDialog";
+import ConfirmDialog from "./components/ConfirmDialog";
 
 /**
  * ノートのメタデータ編集ダイアログ
@@ -80,8 +80,6 @@ function NoteMetaDialog({ open, id, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleDelete = () => setConfirmDelete(true);
-
   const handleDeleteConfirm = () => {
     setConfirmDelete(false);
     RemoveNote(id).then(() => {
@@ -113,138 +111,96 @@ function NoteMetaDialog({ open, id, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleCopyId = () => {
-    copyClipboard(id);
-    evt.showSuccessMessage("Copied.");
-  };
-
   const isIndex = id === "index";
   const aliasStart = isIndex ? "/" : "/pages/";
 
   return (<>
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    <MetaDialog
+      open={open} onClose={onClose} title="Edit Note"
+      id={id} onSave={handleSave}
+      onDelete={() => setConfirmDelete(true)} deleteDisabled={isIndex}
     >
-      <DialogTitle>Edit Note</DialogTitle>
-      <DialogContent>
-        <Grid className="formGrid" style={{ margin: "8px 0" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography variant="body2" sx={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
-              ID: {id}
-            </Typography>
-            <IconButton size="small" onClick={handleCopyId} title="Copy ID">
-              <ContentCopy fontSize="small" />
-            </IconButton>
-          </Box>
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Detail</FormLabel>
+        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Alias</FormLabel>
+        <TextField
+          size="small"
+          value={alias}
+          onChange={(e) => { if (!isIndex) setAlias(e.target.value); }}
+          InputProps={{
+            startAdornment: <InputAdornment position="start"><FormLabel>{aliasStart}</FormLabel></InputAdornment>,
+            endAdornment: <InputAdornment position="end"><FormLabel>.html</FormLabel></InputAdornment>,
+          }} />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Alias</FormLabel>
-            <TextField
-              size="small"
-              value={alias}
-              onChange={(e) => { if (!isIndex) setAlias(e.target.value); }}
-              InputProps={{
-                startAdornment: <InputAdornment position="start"><FormLabel>{aliasStart}</FormLabel></InputAdornment>,
-                endAdornment: <InputAdornment position="end"><FormLabel>.html</FormLabel></InputAdornment>,
-              }} />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Layout Template</FormLabel>
+        <Select size="small" value={layout} onChange={(e) => setLayout(e.target.value)}>
+          {layouts.map((v) => <MenuItem key={"Layout-" + v.id} value={v.id}>{v.name}</MenuItem>)}
+        </Select>
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Layout Template</FormLabel>
-            <Select size="small" value={layout} onChange={(e) => setLayout(e.target.value)}>
-              {layouts.map((v) => <MenuItem key={"Layout-" + v.id} value={v.id}>{v.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+      <FormControl>
+        <FormLabel>Content Template</FormLabel>
+        <Select size="small" value={content} onChange={(e) => setContent(e.target.value)}>
+          {contents.map((v) => <MenuItem key={"Content-" + v.id} value={v.id}>{v.name}</MenuItem>)}
+        </Select>
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Content Template</FormLabel>
-            <Select size="small" value={content} onChange={(e) => setContent(e.target.value)}>
-              {contents.map((v) => <MenuItem key={"Content-" + v.id} value={v.id}>{v.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+      <FormControl>
+        <FormLabel>Note Image</FormLabel>
+        <Container style={{ marginTop: "4px", textAlign: "center" }}>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <img
+              src={viewImage}
+              onError={(e) => { e.target.src = noImage; }}
+              onClick={selectFile}
+              style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
+              title="クリックして画像を選択"
+            />
+            {(hasImage || imageFile) && (
+              <IconButton
+                size="small"
+                onClick={handleDeleteImage}
+                style={{ position: "absolute", top: 2, right: 2, backgroundColor: "rgba(0,0,0,0.5)", color: "#fff", padding: "2px" }}
+              >
+                <DeleteOutline fontSize="small" />
+              </IconButton>
+            )}
+          </div>
+          {imageFile && (
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", wordBreak: "break-all" }}>
+              {imageFile.split(/[\\/]/).pop()}
+            </div>
+          )}
+        </Container>
+      </FormControl>
+    </MetaDialog>
 
-          <FormControl>
-            <FormLabel>Note Image</FormLabel>
-            <Container style={{ marginTop: "4px", textAlign: "center" }}>
-              <div style={{ position: "relative", display: "inline-block" }}>
-                <img
-                  src={viewImage}
-                  onError={(e) => { e.target.src = noImage; }}
-                  onClick={selectFile}
-                  style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
-                  title="クリックして画像を選択"
-                />
-                {(hasImage || imageFile) && (
-                  <IconButton
-                    size="small"
-                    onClick={handleDeleteImage}
-                    style={{ position: "absolute", top: 2, right: 2, backgroundColor: "rgba(0,0,0,0.5)", color: "#fff", padding: "2px" }}
-                  >
-                    <DeleteOutline fontSize="small" />
-                  </IconButton>
-                )}
-              </div>
-              {imageFile && (
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", wordBreak: "break-all" }}>
-                  {imageFile.split(/[\\/]/).pop()}
-                </div>
-              )}
-            </Container>
-          </FormControl>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleDelete} color="error" disabled={isIndex}>Delete</Button>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">Save</Button>
-      </DialogActions>
-    </Dialog>
-
-    {/* 削除確認ダイアログ */}
-    <Dialog
+    <ConfirmDialog
       open={confirmDelete}
-      onClose={() => setConfirmDelete(false)}
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
-    >
-      <DialogTitle>ノートの削除</DialogTitle>
-      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
-        「{name}」を削除しますか？
-      </DialogContentText>
-      <DialogActions>
-        <Button onClick={() => setConfirmDelete(false)}>キャンセル</Button>
-        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
-      </DialogActions>
-    </Dialog>
+      title="ノートの削除"
+      message={`「${name}」を削除しますか？`}
+      onCancel={() => setConfirmDelete(false)}
+      onConfirm={handleDeleteConfirm}
+    />
 
-    {/* 画像削除確認ダイアログ */}
-    <Dialog
+    <ConfirmDialog
       open={confirmDeleteImage}
-      onClose={() => setConfirmDeleteImage(false)}
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
-    >
-      <DialogTitle>画像の削除</DialogTitle>
-      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
-        メタ画像を削除しますか？
-      </DialogContentText>
-      <DialogActions>
-        <Button onClick={() => setConfirmDeleteImage(false)}>キャンセル</Button>
-        <Button color="error" onClick={handleDeleteImageConfirm}>削除</Button>
-      </DialogActions>
-    </Dialog>
+      title="画像の削除"
+      message="メタ画像を削除しますか？"
+      onCancel={() => setConfirmDeleteImage(false)}
+      onConfirm={handleDeleteImageConfirm}
+    />
   </>);
 }
 

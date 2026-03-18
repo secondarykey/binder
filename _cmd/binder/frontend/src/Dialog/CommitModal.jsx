@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-
-import { Dialog, Toolbar, Typography, IconButton, Button } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ModifiedMenu from '../contents/LeftMenu/ModifiedMenu';
 import Commit from '../contents/Commit';
 import Patch from '../contents/Patch';
+import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';
 
@@ -37,8 +36,6 @@ function CommitModal({ open, onClose }) {
   }, [open]);
 
   // ModifiedMenu からの疑似ナビゲーション
-  // "/status/modified/:date" → コミットビュー
-  // "/status/modified/:type/:id" → 差分ビュー
   const handleNavigate = (path) => {
     const suffix = path.replace('/status/modified/', '');
     const parts = suffix.split('/');
@@ -54,34 +51,11 @@ function CommitModal({ open, onClose }) {
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth={false}
-      PaperProps={{
-        sx: {
-          width: '900px',
-          height: '600px',
-          maxWidth: '90vw',
-          maxHeight: '85vh',
-          backgroundColor: 'var(--bg-surface)',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          borderRadius: '4px',
-        }
-      }}
+    <ModalWrapper
+      open={open} onClose={onClose} title="Commit"
+      width="900px" height="600px" maxWidth="90vw" maxHeight="85vh"
     >
-      <Toolbar id="commitTitle" className="binderTitle">
-        <Typography variant="body1" sx={{ flex: 1 }}>Commit</Typography>
-        <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Toolbar>
-
       <div id="commitArea">
-
         <div id="commitLeft">
           <ModifiedMenu
             date={modalState.date}
@@ -89,7 +63,6 @@ function CommitModal({ open, onClose }) {
             onNavigate={handleNavigate}
           />
         </div>
-
         <div id="commitRight">
           {modalState.view === 'commit' ? (
             <div id="commitForm">
@@ -113,9 +86,8 @@ function CommitModal({ open, onClose }) {
             </div>
           )}
         </div>
-
       </div>
-    </Dialog>
+    </ModalWrapper>
   );
 }
 

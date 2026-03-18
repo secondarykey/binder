@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 
-import { Dialog, Toolbar, Typography, IconButton } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-
 import UnpublishedMenu from '../contents/LeftMenu/UnpublishedMenu';
 import GenerateForm from '../contents/GenerateForm';
+import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';
 
@@ -25,46 +23,21 @@ function PublishModal({ open, onClose }) {
   }, [open]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth={false}
-      PaperProps={{
-        sx: {
-          width: '900px',
-          height: '600px',
-          maxWidth: '90vw',
-          maxHeight: '85vh',
-          backgroundColor: 'var(--bg-surface)',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          borderRadius: '4px',
-        }
-      }}
+    <ModalWrapper
+      open={open} onClose={onClose} title="Unpublished Files"
+      width="900px" height="600px" maxWidth="90vw" maxHeight="85vh"
     >
-      <Toolbar id="commitTitle" className="binderTitle">
-        <Typography variant="body1" sx={{ flex: 1 }}>Unpublished Files</Typography>
-        <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Toolbar>
-
       <div id="commitArea">
-
         <div id="commitLeft">
           <UnpublishedMenu date={date} />
         </div>
-
         <div id="commitRight">
           <div id="commitForm">
             <GenerateForm date={date} />
           </div>
         </div>
-
       </div>
-    </Dialog>
+    </ModalWrapper>
   );
 }
 

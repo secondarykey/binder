@@ -1,14 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
-import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, Grid, IconButton, TextField, Typography,
-} from "@mui/material";
-import { ContentCopy } from "@mui/icons-material";
+import { FormControl, FormLabel, TextField } from "@mui/material";
 
 import { EditTemplate, GetTemplate, RemoveTemplate } from "../../bindings/binder/api/app";
-import { copyClipboard } from "../App";
 import { EventContext } from "../Event";
+import MetaDialog from "./components/MetaDialog";
+import ConfirmDialog from "./components/ConfirmDialog";
 
 /**
  * テンプレートのメタデータ編集ダイアログ
@@ -55,8 +52,6 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleDelete = () => setConfirmDelete(true);
-
   const handleDeleteConfirm = () => {
     setConfirmDelete(false);
     RemoveTemplate(id).then(() => {
@@ -66,71 +61,37 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleCopyId = () => {
-    copyClipboard(id);
-    evt.showSuccessMessage("Copied.");
-  };
-
   return (<>
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    <MetaDialog
+      open={open} onClose={onClose}
+      title={isCreate ? "Create Template" : "Edit Template"}
+      id={id} showId={!isCreate}
+      onSave={handleSave} saveLabel={isCreate ? "Create" : "Save"}
+      onDelete={() => setConfirmDelete(true)} showDelete={!isCreate}
     >
-      <DialogTitle>{isCreate ? "Create Template" : "Edit Template"}</DialogTitle>
-      <DialogContent>
-        <Grid className="formGrid" style={{ margin: "8px 0" }}>
-          {!isCreate && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Typography variant="body2" sx={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
-                ID: {id}
-              </Typography>
-              <IconButton size="small" onClick={handleCopyId} title="Copy ID">
-                <ContentCopy fontSize="small" />
-              </IconButton>
-            </Box>
-          )}
+      <FormControl>
+        <FormLabel>Name</FormLabel>
+        <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Name</FormLabel>
-            <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Detail</FormLabel>
+        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+      </FormControl>
 
-          <FormControl>
-            <FormLabel>Detail</FormLabel>
-            <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
-          </FormControl>
+      <FormControl>
+        <FormLabel>Type</FormLabel>
+        <TextField size="small" value={resolvedType} slotProps={{ input: { readOnly: true } }} />
+      </FormControl>
+    </MetaDialog>
 
-          <FormControl>
-            <FormLabel>Type</FormLabel>
-            <TextField size="small" value={resolvedType} slotProps={{ input: { readOnly: true } }} />
-          </FormControl>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        {!isCreate && <Button onClick={handleDelete} color="error">Delete</Button>}
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">{isCreate ? "Create" : "Save"}</Button>
-      </DialogActions>
-    </Dialog>
-
-    {/* 削除確認ダイアログ */}
-    <Dialog
+    <ConfirmDialog
       open={confirmDelete}
-      onClose={() => setConfirmDelete(false)}
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
-    >
-      <DialogTitle>テンプレートの削除</DialogTitle>
-      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
-        「{name}」を削除しますか？
-      </DialogContentText>
-      <DialogActions>
-        <Button onClick={() => setConfirmDelete(false)}>キャンセル</Button>
-        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
-      </DialogActions>
-    </Dialog>
+      title="テンプレートの削除"
+      message={`「${name}」を削除しますか？`}
+      onCancel={() => setConfirmDelete(false)}
+      onConfirm={handleDeleteConfirm}
+    />
   </>);
 }
 

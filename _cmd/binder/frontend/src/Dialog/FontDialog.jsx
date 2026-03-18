@@ -109,14 +109,7 @@ func main() {
   return (
 
     <Dialog open={show} onClose={handleClose}
-      sx={{
-        "& .MuiDialog-container": {
-          "& .MuiPaper-root": {
-            width: "100%",
-            maxWidth: "500px",
-          },
-        },
-      }}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "500px" } }}
     >
       <DialogTitle>Font Setting</DialogTitle>
       <DialogContent>
