@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-import ModifiedMenu from '../components/ModifiedMenu';
+import ModifiedMenu from './ModifiedMenu';
 import Commit from '../components/Commit';
 import Patch from '../components/Patch';
 import ModalWrapper from './components/ModalWrapper';

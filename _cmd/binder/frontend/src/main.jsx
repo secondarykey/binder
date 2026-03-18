@@ -5,7 +5,6 @@ import { HashRouter } from "react-router";
 import './assets/theme.css'
 import './assets/style.css'
 import App from './app/App'
-import CommitApp from './app/CommitApp'
 import HistoryApp from './app/HistoryApp'
 
 import { GetSetting } from '../bindings/binder/api/app'
@@ -29,7 +28,7 @@ GetSetting().then((s) => {
 root.render(
     <React.StrictMode>
       <HashRouter>
-        {isHistoryWindow ? <HistoryApp /> : isCommitWindow ? <CommitApp /> : <App />}
+        {isHistoryWindow ? <HistoryApp /> : <App />}
       </HashRouter>
     </React.StrictMode>
 )
