@@ -452,6 +452,7 @@ function BinderTree(props) {
       evt.refreshTree();
       navAfterRenameRef.current = "/editor/note/" + resp.id;
       setTimeout(() => {
+        setSelectedId(resp.id);
         setRenamingValue("New Note");
         setRenaming(resp.id);
       }, 150);
@@ -470,6 +471,7 @@ function BinderTree(props) {
       evt.refreshTree();
       navAfterRenameRef.current = "/editor/diagram/" + resp.id;
       setTimeout(() => {
+        setSelectedId(resp.id);
         setRenamingValue("New Diagram");
         setRenaming(resp.id);
       }, 150);
@@ -489,6 +491,7 @@ function BinderTree(props) {
       const asset = { id: "", parentId, name, alias: "", detail: "", binary: false };
       const resp = await EditAsset(asset, filePath);
       evt.refreshTree();
+      setSelectedId(resp.id);
       nav("/editor/assets/" + resp.id);
     } catch (err) {
       evt.showErrorMessage(err);

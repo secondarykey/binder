@@ -271,6 +271,13 @@ function Editor(props) {
       })
     }
 
+    // note/diagram/template ではエディタ textarea にフォーカスを移す
+    if (mode === Mode.note || mode === Mode.diagram || mode === Mode.template) {
+      setTimeout(() => {
+        document.querySelector('#editor')?.focus();
+      }, 200);
+    }
+
   }, [id, restoredAt]);
 
   // スニペットを一度だけロード
