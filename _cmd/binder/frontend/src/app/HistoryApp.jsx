@@ -23,10 +23,11 @@ function HistoryApp() {
   const evt = useContext(EventContext);
   const nav = useNavigate();
 
-  // URL search params から type と id を取得
+  // URL search params から type・id・name を取得
   const params = new URLSearchParams(window.location.search);
-  const typ = params.get('type') ?? '';
-  const id  = params.get('id')   ?? '';
+  const typ  = params.get('type') ?? '';
+  const id   = params.get('id')   ?? '';
+  const name = params.get('name') ?? '';
 
   useEffect(() => {
     nav('/history/list');
@@ -41,7 +42,9 @@ function HistoryApp() {
 
       {/** タイトルバー（ドラッグ可能・フレームレス対応） */}
       <Toolbar id="historyTitle" className="binderTitle" onDoubleClick={() => Window.ToggleMaximise()}>
-        <Typography variant="body1" sx={{ flex: 1 }}>History</Typography>
+        <Typography variant="body1" sx={{ flex: 1 }} noWrap>
+          History{name ? ` — ${name}` : ''}
+        </Typography>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>

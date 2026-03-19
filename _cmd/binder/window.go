@@ -5,6 +5,7 @@ import (
 	"binder/log"
 	"binder/settings"
 	"fmt"
+	"net/url"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -66,7 +67,7 @@ func (r *Window) WindowPosition() (int, int) {
 	return r.window.Position()
 }
 
-func (r *Window) OpenHistoryWindow(typ, id string) error {
+func (r *Window) OpenHistoryWindow(typ, id, name string) error {
 	key := typ + ":" + id
 
 	if r.historyWindows == nil {
@@ -87,7 +88,7 @@ func (r *Window) OpenHistoryWindow(typ, id string) error {
 		MinHeight:        400,
 		Frameless:        true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
-		URL:              "/?history=1&type=" + typ + "&id=" + id,
+		URL:              "/?history=1&type=" + typ + "&id=" + id + "&name=" + url.QueryEscape(name),
 	})
 
 	r.historyWindows[key] = w

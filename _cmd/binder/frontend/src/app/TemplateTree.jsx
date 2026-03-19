@@ -36,7 +36,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
       style={style}
       selected={selectedId === item.id}
       onClick={(e) => onOpen(e, item.id)}
-      onContextMenu={(e) => onContextMenu(e, item.id)}
+      onContextMenu={(e) => onContextMenu(e, item.id, item.name)}
       sx={{
         pl: '5px',
         py: 0.25,
@@ -78,6 +78,7 @@ function TemplateTree(props) {
   const [layoutItems, setLayoutItems] = useState([]);
   const [contentItems, setContentItems] = useState([]);
   const [id, setId] = useState(undefined);
+  const [name, setName] = useState('');
   const [selectedId, setSelectedId] = useState(undefined);
 
   const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0 });
@@ -128,9 +129,10 @@ function TemplateTree(props) {
   };
 
   // テンプレート右クリックでコンテキストメニューを表示
-  const handleContextMenu = (e, leafId) => {
+  const handleContextMenu = (e, leafId, leafName) => {
     e.preventDefault();
     setId(leafId);
+    setName(leafName ?? '');
     setContextMenu({ open: true, x: e.clientX, y: e.clientY });
     e.stopPropagation();
   };
@@ -145,8 +147,9 @@ function TemplateTree(props) {
   // テンプレート履歴ウィンドウを開く（右クリックメニューから）
   const handleHistoryTemplate = () => {
     const targetId = id;
+    const targetName = name;
     closeMenu();
-    OpenHistoryWindow('template', targetId).catch(err => evt.showErrorMessage(err));
+    OpenHistoryWindow('template', targetId, targetName).catch(err => evt.showErrorMessage(err));
   };
 
   // テンプレート新規作成ダイアログを開く（セクションヘッダーの + ボタン）

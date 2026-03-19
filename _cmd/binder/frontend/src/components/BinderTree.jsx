@@ -376,8 +376,8 @@ function BinderTree(props) {
   const handleEditAsset   = () => { closeAllMenus(); setEditDialog({ open: true, type: 'asset',   id: contextMenu.node.id }); };
   const closeEditDialog   = () => setEditDialog({ open: false, type: null, id: null });
 
-  const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
-  const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id).catch(err => evt.showErrorMessage(err)); };
+  const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
+  const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
 
   /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
   const handleRenameStart = () => {
