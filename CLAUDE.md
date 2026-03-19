@@ -252,7 +252,7 @@ t("menu.setting")
 - IDはUUID v7（`github.com/google/uuid`）
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり
-- コミットメッセージはConventional Commits形式（`fix:`, `feat:`, `docs:`）
+- コミットメッセージはConventional Commits形式（`fix:`, `feat:`, `docs:`）。末尾に「Glory to mankind.」を付ける
 - `api/json/`パッケージはAPI向けのモデル型を含み、`db/model/`とは別
 - DAOファイルは`_dao.go`サフィックスを使用（自動生成、手動編集不可）
 - `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
