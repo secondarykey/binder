@@ -1,8 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, FormControlLabel, IconButton, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
+import { Box, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
 import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage } from "../../bindings/binder/api/app";
+import { OpenFileDialog } from "../../bindings/main/window";
 import SaveIcon from '@mui/icons-material/Save';
+import FolderIcon from '@mui/icons-material/Folder';
 
 import { EventContext } from "../Event";
 import SnippetSetting from "./SnippetSetting";
@@ -82,6 +84,14 @@ function Setting({ isModal, ...props }) {
     });
   }
 
+  const handleSelectDefaultPath = () => {
+    OpenFileDialog(false, pathDefault).then((dir) => {
+      if (dir) setPathDefault(dir);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
   const handleSwitch = (e, caller) => {
     caller(e.target.checked);
   }
@@ -140,10 +150,66 @@ function Setting({ isModal, ...props }) {
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
               <div className="formContainer">
+                {/** 言語選択 */}
+                <FormControl>
+                  <FormLabel>{t("setting.language")}</FormLabel>
+                  <Select
+                    value={i18n.language}
+                    onChange={handleLanguageChange}
+                    size="small"
+                    sx={{
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'var(--bg-dropdown)',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
+                    }}
+                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+                  >
+                    {locals.languages.map((lang) => (
+                      <MenuItem key={lang.code} value={lang.code} sx={{ fontSize: '13px' }}>{lang.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {/** テーマ選択 */}
+                <FormControl>
+                  <FormLabel>{t("setting.theme")}</FormLabel>
+                  <Select
+                    value={theme}
+                    onChange={handleThemeChange}
+                    size="small"
+                    sx={{
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'var(--bg-dropdown)',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
+                    }}
+                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+                  >
+                    <MenuItem value="dark" sx={{ fontSize: '13px' }}>{t("setting.themeDark")}</MenuItem>
+                    <MenuItem value="light" sx={{ fontSize: '13px' }}>{t("setting.themeLight")}</MenuItem>
+                  </Select>
+                </FormControl>
                 {/** デフォルトパス保存先 */}
                 <FormControl>
                   <FormLabel>{t("setting.defaultPath")}</FormLabel>
-                  <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
+                  <TextField
+                    size="small"
+                    value={pathDefault}
+                    onClick={handleSelectDefaultPath}
+                    InputProps={{
+                      readOnly: true,
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <FolderIcon sx={{ color: 'var(--text-muted)', fontSize: '20px' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ cursor: 'pointer', '& input': { cursor: 'pointer' } }}
+                  />
                 </FormControl>
                 {/** 起動時の動作 */}
                 <Paper variant="outlined" sx={{
@@ -174,49 +240,6 @@ function Setting({ isModal, ...props }) {
                     }}
                   />
                 </Paper>
-                {/** テーマ選択 */}
-                <FormControl>
-                  <FormLabel>{t("setting.theme")}</FormLabel>
-                  <Select
-                    value={theme}
-                    onChange={handleThemeChange}
-                    size="small"
-                    sx={{
-                      fontSize: '13px',
-                      color: 'var(--text-primary)',
-                      backgroundColor: 'var(--bg-dropdown)',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
-                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
-                    }}
-                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
-                  >
-                    <MenuItem value="dark" sx={{ fontSize: '13px' }}>{t("setting.themeDark")}</MenuItem>
-                    <MenuItem value="light" sx={{ fontSize: '13px' }}>{t("setting.themeLight")}</MenuItem>
-                  </Select>
-                </FormControl>
-                {/** 言語選択 */}
-                <FormControl>
-                  <FormLabel>{t("setting.language")}</FormLabel>
-                  <Select
-                    value={i18n.language}
-                    onChange={handleLanguageChange}
-                    size="small"
-                    sx={{
-                      fontSize: '13px',
-                      color: 'var(--text-primary)',
-                      backgroundColor: 'var(--bg-dropdown)',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
-                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
-                    }}
-                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
-                  >
-                    {locals.languages.map((lang) => (
-                      <MenuItem key={lang.code} value={lang.code} sx={{ fontSize: '13px' }}>{lang.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               </div>
             </div>
 
