@@ -217,6 +217,34 @@ document.documentElement.dataset.theme = 'light';
 delete document.documentElement.dataset.theme;
 ```
 
+## テキストの設定
+
+画面表示を行うテキストは、`_cmd/binder/frontend/src/i18n/locales`の各言語(ja,en)のjsonでIDを追加する。
+
+IDは表示を行うコンポーネントの名称、区分などで発行する
+
+利用するコンポーネントでは
+
+```
+import "../i18n/config";
+import { useTranslation } from 'react-i18next'
+```
+
+で読み込み
+
+```
+ const {t} = useTranslation();
+```
+
+を行い
+
+```
+t("menu.setting")
+```
+
+のように取得する
+
+
 ## コーディング規約
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）

@@ -1,6 +1,14 @@
 {
     "code": "日本語",
+    "app" : {
+        "home" : "Binder選択へ"
+    },
     "menu" : {
-        "home" : "Binder選択に戻る"
+        "binder" : "Binder表示",
+        "commit" : "未コミット一覧",
+        "publish" : "未公開一覧",
+        "template" : "テンプレート設定",
+        "config" : "テンプレート設定",
+        "setting" : "アプリ設定"
     }
 }
