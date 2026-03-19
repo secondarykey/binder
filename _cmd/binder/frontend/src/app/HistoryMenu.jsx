@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { List, ListSubheader, ListItemButton, ListItemText, Typography, CircularProgress, Box, Button } from '@mui/material';
+import { List, ListSubheader, ListItemButton, ListItemText, Typography, CircularProgress, Box, Button, Tooltip } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -101,29 +101,37 @@ function HistoryMenu({ typ, id }) {
       )}
 
       {entries.map((entry) => (
-        <ListItemButton key={entry.hash}
-          selected={entry.hash === hash}
-          sx={{
-            pl: 2, py: 0.5, borderRadius: '2px',
-            '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
-            '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
-          }}
-          onClick={() => handleClick(entry)}>
-          <ListItemText
-            sx={{ my: 0 }}
-            primary={entry.message.split('\n')[0]}
-            secondary={
-              <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{formatDate(entry.when)}</span>
-                <span style={{ fontFamily: 'monospace', flexShrink: 0, marginLeft: '8px' }}>
-                  {entry.hash.slice(0, 7)}
+        <Tooltip
+          key={entry.hash}
+          title={<span style={{ whiteSpace: 'pre-wrap' }}>{entry.message.trim()}</span>}
+          placement="right"
+          enterDelay={600}
+          arrow
+        >
+          <ListItemButton
+            selected={entry.hash === hash}
+            sx={{
+              pl: 2, py: 0.5, borderRadius: '2px',
+              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
+              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
+            }}
+            onClick={() => handleClick(entry)}>
+            <ListItemText
+              sx={{ my: 0 }}
+              primary={entry.message.split('\n')[0]}
+              secondary={
+                <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{formatDate(entry.when)}</span>
+                  <span style={{ fontFamily: 'monospace', flexShrink: 0, marginLeft: '8px' }}>
+                    {entry.hash.slice(0, 7)}
+                  </span>
                 </span>
-              </span>
-            }
-            primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }}
-            secondaryTypographyProps={{ component: 'span', fontSize: '0.75rem', color: 'var(--text-disabled)' }}
-          />
-        </ListItemButton>
+              }
+              primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }}
+              secondaryTypographyProps={{ component: 'span', fontSize: '0.75rem', color: 'var(--text-disabled)' }}
+            />
+          </ListItemButton>
+        </Tooltip>
       ))}
 
       {loading && entries.length > 0 && (
