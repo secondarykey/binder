@@ -6,6 +6,7 @@ import (
 	"binder/settings"
 	"fmt"
 	"net/url"
+	"os"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -38,11 +39,17 @@ func (r *Window) OpenFileDialog(create bool, defaultDir string) (string, error) 
 		CanCreateDirectories(create).
 		SetTitle("Select Binder Directory")
 	if defaultDir != "" {
-		dialog.SetDirectory(defaultDir)
+		if _, err := os.Stat(defaultDir); err == nil {
+			dialog.SetDirectory(defaultDir)
+		}
 	}
 
 	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
+		// ダイアログがキャンセルされた場合はエラーではなく空文字を返す
+		if result == "" {
+			return "", nil
+		}
 		return "", fmt.Errorf("OpenFileDialog() error\n%+v", err)
 	}
 	return result, nil
@@ -54,7 +61,11 @@ func (r *Window) OpenFilePicker(name, ptn string) (string, error) {
 		AddFilter(name, ptn).
 		PromptForSingleSelection()
 	if err != nil {
-		return "", fmt.Errorf("OpenFilePicker() error\n%+w", err)
+		// ダイアログがキャンセルされた場合はエラーではなく空文字を返す
+		if result == "" {
+			return "", nil
+		}
+		return "", fmt.Errorf("OpenFilePicker() error\n%+v", err)
 	}
 	return result, nil
 }
