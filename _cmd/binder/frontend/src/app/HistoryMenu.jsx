@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { List, ListSubheader, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { List, ListSubheader, ListItemButton, ListItemText, Typography, CircularProgress, Box } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 
 import { GetHistory } from '../../bindings/binder/api/app';
@@ -19,14 +19,18 @@ function HistoryMenu({ typ, id }) {
   const nav = useNavigate();
 
   const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!typ || !id) return;
 
+    setLoading(true);
     GetHistory(typ, id).then((list) => {
       setEntries(list ?? []);
     }).catch((err) => {
       evt.showErrorMessage(err);
+    }).finally(() => {
+      setLoading(false);
     });
   }, [typ, id]);
 
@@ -57,7 +61,13 @@ function HistoryMenu({ typ, id }) {
         Commits
       </ListSubheader>
 
-      {entries.length === 0 && (
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={20} thickness={4} sx={{ color: 'var(--text-disabled)' }} />
+        </Box>
+      )}
+
+      {!loading && entries.length === 0 && (
         <Typography variant="caption" sx={{ display: 'block', pl: 2, py: 1, opacity: 0.5 }}>
           No history found
         </Typography>

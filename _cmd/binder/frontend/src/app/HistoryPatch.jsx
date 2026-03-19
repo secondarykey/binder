@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router";
 
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
 import RestoreIcon from "@mui/icons-material/Restore";
 import DiffIcon from "@mui/icons-material/Difference";
 
@@ -199,6 +199,7 @@ function HistoryPatch({ typ, id }) {
     const [confirmOpen, setConfirmOpen] = useState(false);
     // デフォルトは履歴ファイルのみ表示。Diff ボタンで差分パネルをトグル
     const [showDiff, setShowDiff] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const histScrollRef = useRef();
     const histLineRef   = useRef();
@@ -234,12 +235,15 @@ function HistoryPatch({ typ, id }) {
 
     useEffect(() => {
         if (!typ || !id || !hash) return;
+        setLoading(true);
         GetHistoryPatch(typ, id, hash).then((resp) => {
             setSource(resp.source);
             setHistorical(resp.historical);
             setPatch(resp.patch);
         }).catch((err) => {
             evt.showErrorMessage(err);
+        }).finally(() => {
+            setLoading(false);
         });
     }, [typ, id, hash]);
 
@@ -338,6 +342,15 @@ function HistoryPatch({ typ, id }) {
                     </Button>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                    {loading && (
+                        <div style={{
+                            position: "absolute", inset: 0, zIndex: 20,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            backgroundColor: "var(--bg-overlay)",
+                        }}>
+                            <CircularProgress size={24} thickness={4} sx={{ color: "var(--text-disabled)" }} />
+                        </div>
+                    )}
                     <TextPanel
                         rows={histNums}
                         html={histHtml}
