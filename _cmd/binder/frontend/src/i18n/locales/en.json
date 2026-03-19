@@ -83,7 +83,7 @@
         "defaultPath" : "Default Path",
         "runWithOpen" : "Run with open Binder",
         "openWithNote" : "Open with note (or data)",
-        "editor" : "Editor",
+        "editor" : "Text Input",
         "editorProgram" : "Editor Program",
         "git" : "Git",
         "defaultBranch" : "Default Branch Name",

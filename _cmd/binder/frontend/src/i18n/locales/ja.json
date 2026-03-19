@@ -83,7 +83,7 @@
         "defaultPath" : "デフォルトパス",
         "runWithOpen" : "最後に開いたBinderで起動",
         "openWithNote" : "最後に開いたノート(またはデータ)を開く",
-        "editor" : "エディタ",
+        "editor" : "テキスト入力",
         "editorProgram" : "エディタプログラム",
         "git" : "Git",
         "defaultBranch" : "デフォルトブランチ名",

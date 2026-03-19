@@ -1,14 +1,15 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Accordion, AccordionDetails, AccordionSummary, Box, FormControl, FormLabel, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
+import { Box, FormControl, FormLabel, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
 import { GetPath, SavePath } from "../../bindings/binder/api/app";
 
 import { IconButton } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SaveIcon from '@mui/icons-material/Save';
 
 import { EventContext } from "../Event";
 import SnippetSetting from "./SnippetSetting";
+import EditorSetting from "./EditorSetting";
+import GitSetting from "./GitSetting";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 
@@ -28,15 +29,6 @@ function Setting({ isModal, ...props }) {
   const [pathRunWith, setPathRunWith] = useState(true);
   const [pathOpenWith, setPathOpenWith] = useState(false);
 
-  const [editorProgram, setEditorProgram] = useState("notepad {file}");
-  const [editorGitBash, setEditorGitBash] = useState(false);
-  const [editorFont, setEditorFont] = useState({});
-
-  const [gitBranch, setGitBranch] = useState("");
-  const [gitName, setGitName] = useState("");
-  const [gitMail, setGitMail] = useState("");
-  const [gitCode, setGitCode] = useState("");
-
   useEffect(() => {
 
     if (!isModal) evt.changeTitle(t("setting.title"))
@@ -45,13 +37,6 @@ function Setting({ isModal, ...props }) {
       setPathDefault(p.default);
       setPathRunWith(p.runWithOpen);
       setPathOpenWith(p.openWithItem);
-
-      //setGitBranch(set.git.branch);
-      //setGitName(set.git.name);
-      //setGitMail(set.git.mail);
-      //setGitCode(set.git.code);
-      //setEditorProgram(set.lookAndFeel.editor.program);
-      //setEditorGitBash(set.lookAndFeel.editor.gitBash);
 
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -64,14 +49,6 @@ function Setting({ isModal, ...props }) {
     path.default = pathDefault;
     path.runWithOpen = pathRunWith;
     path.openWithItem = pathOpenWith;
-    //setting.path = path;
-
-    //var git = {};
-    //git.branch = gitBranch;
-    //git.name = gitName;
-    //git.mail = gitMail;
-    //git.code = gitCode;
-    //setting.git = git;
 
     SavePath(path).then((resp) => {
       evt.showSuccessMessage(t("common.updated"));
@@ -86,6 +63,8 @@ function Setting({ isModal, ...props }) {
 
   const menuItems = [
     { key: "basic", label: t("setting.basic") },
+    { key: "editor", label: t("setting.editor") },
+    { key: "git", label: t("setting.git") },
     { key: "snippet", label: t("setting.snippet") },
   ];
 
@@ -134,74 +113,37 @@ function Setting({ isModal, ...props }) {
 
         {activeSection === "basic" && (
           <div className="formGrid" style={{ margin: '20px 24px' }}>
-
-            {/** ファイル処理全般 */}
-            <Accordion defaultExpanded={true}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content" id="panel1-header"> {t("setting.files")} </AccordionSummary>
-              <AccordionDetails className="formContainer">
-                {/** デフォルトパス保存先 */}
-                <FormControl>
-                  <FormLabel>{t("setting.defaultPath")}</FormLabel>
-                  <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
-                </FormControl>
-                {/** 最後に開いたBinderを開くか */}
-                <FormControl>
-                  <FormLabel>{t("setting.runWithOpen")}</FormLabel>
-                  <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
-                </FormControl>
-                {/** 起動時に最後に開いたファイルを開くか？ */}
-                <FormControl>
-                  <FormLabel>{t("setting.openWithNote")}</FormLabel>
-                  <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
-                </FormControl>
-              </AccordionDetails>
-            </Accordion>
-
-            {/** エディタ設定 */}
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content">{t("setting.editor")}</AccordionSummary>
-              <AccordionDetails className="formContainer">
-                {/** エディタパス */}
-                <FormControl>
-                  <FormLabel>
-                  {t("setting.editorProgram")}
-                  </FormLabel>
-                  <TextField size="small" value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)}></TextField>
-                </FormControl>
-              </AccordionDetails>
-            </Accordion>
-
-            {/** 認証情報 */}
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content">{t("setting.git")}</AccordionSummary>
-              <AccordionDetails className="formContainer">
-                {/** デフォルトのブランチ名 */}
-                <FormControl>
-                  <FormLabel>{t("setting.defaultBranch")}</FormLabel>
-                  <TextField size="small" value={gitBranch} onChange={(e) => setGitBranch(e.target.value)}></TextField>
-                </FormControl>
-                {/** ユーザ名 */}
-                <FormControl>
-                  <FormLabel>{t("setting.gitName")}</FormLabel>
-                  <TextField size="small" value={gitName} onChange={(e) => setGitName(e.target.value)}></TextField>
-                </FormControl>
-                {/** メールアドレス */}
-                <FormControl>
-                  <FormLabel>{t("setting.gitMail")}</FormLabel>
-                  <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)}></TextField>
-                </FormControl>
-              </AccordionDetails>
-            </Accordion>
+            <div className="formContainer">
+              {/** デフォルトパス保存先 */}
+              <FormControl>
+                <FormLabel>{t("setting.defaultPath")}</FormLabel>
+                <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
+              </FormControl>
+              {/** 最後に開いたBinderを開くか */}
+              <FormControl>
+                <FormLabel>{t("setting.runWithOpen")}</FormLabel>
+                <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
+              </FormControl>
+              {/** 起動時に最後に開いたファイルを開くか？ */}
+              <FormControl>
+                <FormLabel>{t("setting.openWithNote")}</FormLabel>
+                <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
+              </FormControl>
+            </div>
 
             {/** 保存 */}
             <IconButton className="saveBtn" onClick={handleSave} aria-label="save">
               <SaveIcon fontSize="large" color="primary" />
             </IconButton>
-
           </div>
+        )}
+
+        {activeSection === "editor" && (
+          <EditorSetting />
+        )}
+
+        {activeSection === "git" && (
+          <GitSetting />
         )}
 
         {activeSection === "snippet" && (
