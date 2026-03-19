@@ -41,7 +41,10 @@ function MetaDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={(_, reason) => {
+        if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+        onClose();
+      }}
       maxWidth="sm"
       fullWidth
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
