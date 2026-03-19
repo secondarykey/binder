@@ -88,7 +88,10 @@
         "git" : "Git",
         "defaultBranch" : "デフォルトブランチ名",
         "gitName" : "名前",
-        "gitMail" : "メールアドレス"
+        "gitMail" : "メールアドレス",
+        "theme" : "テーマ",
+        "themeDark" : "ダーク",
+        "themeLight" : "ライト"
     },
     "binder" : {
         "editTitle" : "Binder編集",

@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, FormControlLabel, IconButton, List, ListItemButton, ListItemText, Paper, Switch, TextField } from "@mui/material";
-import { GetPath, SavePath } from "../../bindings/binder/api/app";
+import { Box, FormControl, FormLabel, FormControlLabel, IconButton, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
+import { GetPath, SavePath, GetTheme, SetTheme } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 
 import { EventContext } from "../Event";
@@ -26,6 +26,9 @@ function Setting({ isModal, ...props }) {
   const [pathDefault, setPathDefault] = useState("");
   const [pathRunWith, setPathRunWith] = useState(true);
   const [pathOpenWith, setPathOpenWith] = useState(false);
+  const [theme, setThemeState] = useState(
+    document.documentElement.getAttribute('data-theme') || 'dark'
+  );
 
   useEffect(() => {
 
@@ -39,7 +42,19 @@ function Setting({ isModal, ...props }) {
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
+    GetTheme().then((t) => {
+      setThemeState(t || 'dark');
+    }).catch(() => {});
   }, []);
+
+  const handleThemeChange = (e) => {
+    const next = e.target.value;
+    setThemeState(next);
+    document.documentElement.setAttribute('data-theme', next);
+    SetTheme(next).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
 
   const handleSave = () => {
 
@@ -147,6 +162,27 @@ function Setting({ isModal, ...props }) {
                     }}
                   />
                 </Paper>
+                {/** テーマ選択 */}
+                <FormControl>
+                  <FormLabel>{t("setting.theme")}</FormLabel>
+                  <Select
+                    value={theme}
+                    onChange={handleThemeChange}
+                    size="small"
+                    sx={{
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'var(--bg-dropdown)',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
+                    }}
+                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+                  >
+                    <MenuItem value="dark" sx={{ fontSize: '13px' }}>{t("setting.themeDark")}</MenuItem>
+                    <MenuItem value="light" sx={{ fontSize: '13px' }}>{t("setting.themeLight")}</MenuItem>
+                  </Select>
+                </FormControl>
               </div>
             </div>
 
