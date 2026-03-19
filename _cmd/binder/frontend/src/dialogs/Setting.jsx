@@ -1,9 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
+import { Box, FormControl, FormLabel, IconButton, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
 import { GetPath, SavePath } from "../../bindings/binder/api/app";
-
-import { IconButton } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 
 import { EventContext } from "../Event";
@@ -112,30 +110,34 @@ function Setting({ isModal, ...props }) {
       <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
 
         {activeSection === "basic" && (
-          <div className="formGrid" style={{ margin: '20px 24px' }}>
-            <div className="formContainer">
-              {/** デフォルトパス保存先 */}
-              <FormControl>
-                <FormLabel>{t("setting.defaultPath")}</FormLabel>
-                <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
-              </FormControl>
-              {/** 最後に開いたBinderを開くか */}
-              <FormControl>
-                <FormLabel>{t("setting.runWithOpen")}</FormLabel>
-                <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
-              </FormControl>
-              {/** 起動時に最後に開いたファイルを開くか？ */}
-              <FormControl>
-                <FormLabel>{t("setting.openWithNote")}</FormLabel>
-                <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
-              </FormControl>
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
+              <div className="formContainer">
+                {/** デフォルトパス保存先 */}
+                <FormControl>
+                  <FormLabel>{t("setting.defaultPath")}</FormLabel>
+                  <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
+                </FormControl>
+                {/** 最後に開いたBinderを開くか */}
+                <FormControl>
+                  <FormLabel>{t("setting.runWithOpen")}</FormLabel>
+                  <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
+                </FormControl>
+                {/** 起動時に最後に開いたファイルを開くか？ */}
+                <FormControl>
+                  <FormLabel>{t("setting.openWithNote")}</FormLabel>
+                  <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
+                </FormControl>
+              </div>
             </div>
 
             {/** 保存 */}
-            <IconButton className="saveBtn" onClick={handleSave} aria-label="save">
-              <SaveIcon fontSize="large" color="primary" />
-            </IconButton>
-          </div>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <IconButton onClick={handleSave} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+                <SaveIcon fontSize="large" />
+              </IconButton>
+            </Box>
+          </Box>
         )}
 
         {activeSection === "editor" && (

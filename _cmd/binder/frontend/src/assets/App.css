@@ -90,8 +90,3 @@ body {
     background-color: var(--bg-elevated);
 }
 
-.saveBtn {
-    position: absolute !important;
-    top: 55px;
-    left: calc(320px);
-}
