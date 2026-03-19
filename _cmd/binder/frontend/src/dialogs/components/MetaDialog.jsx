@@ -3,14 +3,14 @@ import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Typography,
 } from "@mui/material";
-import { ContentCopy } from "@mui/icons-material";
+import { Close, ContentCopy } from "@mui/icons-material";
 
 import { copyClipboard } from "../../app/App";
 import { EventContext } from "../../Event";
 
 /**
  * メタデータ編集ダイアログの共通ラッパー
- * ID表示+コピー、フォームGrid、Delete/Cancel/Saveボタンを共通化
+ * ID表示+コピー、フォームGrid、Delete/Saveボタン、閉じるボタンを共通化
  * @param {{
  *   open: boolean,
  *   onClose: () => void,
@@ -47,7 +47,12 @@ function MetaDialog({
       fullWidth
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
     >
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
+        <span style={{ flex: 1 }}>{title}</span>
+        <IconButton size="small" onClick={onClose} aria-label="close">
+          <Close fontSize="small" />
+        </IconButton>
+      </DialogTitle>
       <DialogContent>
         <Grid className="formGrid" style={{ margin: "8px 0" }}>
           {showId && id && (
@@ -67,7 +72,6 @@ function MetaDialog({
         {showDelete && onDelete && (
           <Button onClick={onDelete} color="error" disabled={deleteDisabled}>Delete</Button>
         )}
-        <Button onClick={onClose}>Cancel</Button>
         <Button onClick={onSave} variant="contained">{saveLabel}</Button>
       </DialogActions>
     </Dialog>
