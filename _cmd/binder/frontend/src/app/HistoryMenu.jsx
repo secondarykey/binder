@@ -88,7 +88,7 @@ function HistoryMenu({ typ, id }) {
         Commits
       </ListSubheader>
 
-      {loading && (
+      {loading && entries.length === 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <CircularProgress size={20} thickness={4} sx={{ color: 'var(--text-disabled)' }} />
         </Box>
@@ -126,7 +126,13 @@ function HistoryMenu({ typ, id }) {
         </ListItemButton>
       ))}
 
-      {hasMore && (
+      {loading && entries.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+          <CircularProgress size={20} thickness={4} sx={{ color: 'var(--text-disabled)' }} />
+        </Box>
+      )}
+
+      {!loading && hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
           <Button
             size="small"
