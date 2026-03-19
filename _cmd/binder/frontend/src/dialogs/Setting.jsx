@@ -124,8 +124,8 @@ function Setting({ isModal, ...props }) {
                   backgroundColor: 'var(--bg-overlay)',
                   borderColor: 'var(--border-primary)',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
+                  flexDirection: 'row',
+                  gap: 3,
                 }}>
                   <FormControlLabel
                     control={
@@ -140,7 +140,6 @@ function Setting({ isModal, ...props }) {
                     }
                     label={t("setting.openWithNote")}
                     sx={{
-                      pl: 2,
                       '& .MuiFormControlLabel-label': {
                         fontSize: '13px',
                         color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
