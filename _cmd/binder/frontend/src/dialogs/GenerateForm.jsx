@@ -2,6 +2,8 @@ import { useEffect, useState, useContext } from "react";
 import { Grid, TextField, FormControl, FormLabel, Button } from "@mui/material";
 
 import Event, { EventContext } from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * Generateフォーム（PublishModalの右パネル）
@@ -12,6 +14,7 @@ import Event, { EventContext } from '../Event';
 function GenerateForm({ date }) {
 
   const evt = useContext(EventContext);
+  const {t} = useTranslation();
   const [comment, setComment] = useState("Generate:");
 
   useEffect(() => {
@@ -30,7 +33,7 @@ function GenerateForm({ date }) {
     <Grid className="formGrid">
 
       <FormControl>
-        <FormLabel>Generate Comment</FormLabel>
+        <FormLabel>{t("publishModal.generateComment")}</FormLabel>
         <TextField
           multiline={true}
           rows={rowNum}
@@ -41,7 +44,7 @@ function GenerateForm({ date }) {
       </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleGenerate}>Generate</Button>
+        <Button variant="contained" onClick={handleGenerate}>{t("publishModal.generate")}</Button>
       </FormControl>
 
     </Grid>

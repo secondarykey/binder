@@ -10,5 +10,176 @@
         "template" : "Template Settings",
         "config" : "Binder Settings",
         "setting" : "App Settings"
+    },
+    "common" : {
+        "name" : "Name",
+        "detail" : "Detail",
+        "alias" : "Alias",
+        "save" : "Save",
+        "cancel" : "Cancel",
+        "delete" : "Delete",
+        "close" : "Close",
+        "add" : "Add",
+        "edit" : "Edit",
+        "rename" : "Rename",
+        "history" : "History",
+        "ok" : "OK",
+        "set" : "Set",
+        "create" : "Create",
+        "updated" : "Updated.",
+        "deleted" : "Deleted."
+    },
+    "tree" : {
+        "menu" : "Menu",
+        "openBrowser" : "Open Browser",
+        "none" : "None",
+        "commit" : "Commit",
+        "publish" : "Publish",
+        "note" : "Note",
+        "diagram" : "Diagram",
+        "assets" : "Assets",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "clipboardEmpty" : "Clipboard image data is empty."
+    },
+    "note" : {
+        "editTitle" : "Edit Note",
+        "layoutTemplate" : "Layout Template",
+        "contentTemplate" : "Content Template",
+        "noteImage" : "Note Image",
+        "clickToSelectImage" : "Click to select image",
+        "nameRequired" : "Name is required.",
+        "chooseTemplate" : "Choose a Template.",
+        "aliasRequired" : "Alias is required.",
+        "updateSuccess" : "Note updated.",
+        "removeSuccess" : "Note removed.",
+        "imageRemoved" : "Image removed.",
+        "deleteTitle" : "Delete Note",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "deleteImageTitle" : "Delete Image",
+        "deleteImageConfirm" : "Delete the meta image?"
+    },
+    "diagram" : {
+        "editTitle" : "Edit Diagram",
+        "nameRequired" : "Name is required.",
+        "aliasRequired" : "Alias is required.",
+        "updateSuccess" : "Diagram updated.",
+        "removeSuccess" : "Diagram removed.",
+        "deleteTitle" : "Delete Diagram",
+        "deleteConfirm" : "Delete \"{{name}}\"?"
+    },
+    "asset" : {
+        "editTitle" : "Edit Assets",
+        "updateSuccess" : "Assets updated.",
+        "removeSuccess" : "Assets removed.",
+        "deleteTitle" : "Delete Assets",
+        "deleteConfirm" : "Delete \"{{name}}\"?"
+    },
+    "setting" : {
+        "title" : "Setting",
+        "basic" : "Basic Settings",
+        "snippet" : "Snippet",
+        "files" : "Files",
+        "defaultPath" : "Default Path",
+        "runWithOpen" : "Run with open Binder",
+        "openWithNote" : "Open with note (or data)",
+        "editor" : "Editor",
+        "editorProgram" : "Editor Program",
+        "git" : "Git",
+        "defaultBranch" : "Default Branch Name",
+        "gitName" : "Name",
+        "gitMail" : "Mail"
+    },
+    "binder" : {
+        "editTitle" : "Edit Binder",
+        "remoteName" : "Remote Name",
+        "branchName" : "Branch Name",
+        "settingRemote" : "Setting Remote",
+        "remoteHint" : "You can add, but please use git to edit.",
+        "remoteUrl" : "Remote URL",
+        "updateSuccess" : "Binder updated."
+    },
+    "commitModal" : {
+        "title" : "Commit",
+        "backToComment" : "Back to Comment",
+        "commitComment" : "Commit Comment",
+        "commit" : "Commit",
+        "commitSuccess" : "Committed.",
+        "modifiedFiles" : "Modified Files"
+    },
+    "publishModal" : {
+        "title" : "Unpublished Files",
+        "generateComment" : "Generate Comment",
+        "generate" : "Generate",
+        "generateSuccess" : "Generated.",
+        "noFilesSelected" : "No files selected."
+    },
+    "snippetSetting" : {
+        "markdowns" : "Markdowns",
+        "diagrams" : "Diagrams",
+        "templates" : "Templates",
+        "empty" : "(None)",
+        "namePlaceholder" : "Name",
+        "selectSnippet" : "Select a snippet",
+        "deleteTitle" : "Delete Snippet",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "newSnippet" : "NewSnippet"
+    },
+    "font" : {
+        "title" : "Font Setting"
+    },
+    "binderRegister" : {
+        "binderDirectory" : "Binder Directory",
+        "requiredDirectory" : "Please select a directory."
+    },
+    "template" : {
+        "editTitle" : "Edit Template",
+        "createTitle" : "Create Template",
+        "nameRequired" : "Name is required.",
+        "createSuccess" : "Template created.",
+        "updateSuccess" : "Template updated.",
+        "removeSuccess" : "Template removed.",
+        "deleteTitle" : "Delete Template",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "type" : "Type"
+    },
+    "history" : {
+        "restoreTitle" : "Restore file?",
+        "restoreWarning" : "The current file has uncommitted changes. Restoring will discard those changes.",
+        "restore" : "Restore"
+    },
+    "assetViewer" : {
+        "loadError" : "Could not load file content. The file may not exist on disk.",
+        "generateSuccess" : "Generate completed.",
+        "generateError" : "Generate failed: {{error}}",
+        "migrateSuccess" : "Migrated to note.",
+        "migrateError" : "Migration failed: {{error}}",
+        "updateFileSuccess" : "File updated.",
+        "updateFileError" : "File update failed: {{error}}",
+        "unpublishSuccess" : "Unpublish completed.",
+        "unpublishError" : "Unpublish failed: {{error}}",
+        "binaryNotSupported" : "Cannot display binary file: {{name}}",
+        "migrateTitle" : "Migrate to Note",
+        "migrateConfirm" : "Migrate \"{{name}}\" to a note. The original asset will be deleted. Continue?",
+        "migrate" : "Migrate"
+    },
+    "editor" : {
+        "fileDataEmpty" : "File data is empty.",
+        "lineNumberOn" : "Line Numbers: ON",
+        "lineNumberOff" : "Line Numbers: OFF",
+        "bold" : "Bold",
+        "italic" : "Italic",
+        "strikethrough" : "Strikethrough",
+        "codeBlock" : "Code Block",
+        "quote" : "Quote",
+        "insertSnippet" : "Insert Snippet",
+        "wordWrapOn" : "Word Wrap: ON",
+        "wordWrapOff" : "Word Wrap: OFF",
+        "refreshPreview" : "Refresh Preview",
+        "previewOn" : "Preview: ON",
+        "previewOff" : "Preview: OFF",
+        "menu" : "Menu",
+        "fontSetting" : "Font Setting",
+        "openExternalEditor" : "Open in External Editor",
+        "externalEditorLocked" : "Opened in external editor."
     }
 }

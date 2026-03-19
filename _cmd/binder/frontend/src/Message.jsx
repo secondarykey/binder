@@ -3,6 +3,8 @@ import { useEffect, useState,useContext } from "react";
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
 import Event,{EventContext} from "./Event";
+import "./i18n/config";
+import { useTranslation } from 'react-i18next';
 
 class Message {
 
@@ -54,6 +56,7 @@ const createSlideMessage = (obj) => {
 export function SystemMessage(props) {
 
     const evt = useContext(EventContext)
+    const {t} = useTranslation();
 
     //現在の設定を取得(最初に画面表示を選ぶ)
     var initMsg = createSlideMessage({ type: "success", message: "" });
@@ -134,7 +137,7 @@ export function SystemMessage(props) {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={closeDialog}>Close</Button>
+                    <Button onClick={closeDialog}>{t("common.close")}</Button>
                 </DialogActions>
             </Dialog>
         </>

@@ -3,6 +3,8 @@ import { useParams } from "react-router";
 import { Grid, TextField, FormControl,FormLabel,Button} from "@mui/material";
 
 import Event,{EventContext} from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * 編集を行っているファイルのコミットを行うコンポーネント
@@ -12,6 +14,7 @@ import Event,{EventContext} from '../Event';
 function Commit({ date: dateProp, ...props }) {
 
   const evt = useContext(EventContext)
+  const {t} = useTranslation();
   const [comment, setComment] = useState("Updated:");
   const { date: paramDate } = useParams();
   const date = dateProp ?? paramDate;
@@ -33,7 +36,7 @@ function Commit({ date: dateProp, ...props }) {
     <Grid className="formGrid">
 
       <FormControl>
-        <FormLabel>Commit Comment</FormLabel>
+        <FormLabel>{t("commitModal.commitComment")}</FormLabel>
       {/** コミットコメント */}
       <TextField
         multiline={true}
@@ -45,7 +48,7 @@ function Commit({ date: dateProp, ...props }) {
        </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleCommit}>Commit</Button>
+        <Button variant="contained" onClick={handleCommit}>{t("commitModal.commit")}</Button>
        </FormControl>
     </Grid>
   </>);

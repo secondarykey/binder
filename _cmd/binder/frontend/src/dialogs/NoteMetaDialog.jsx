@@ -15,6 +15,8 @@ import noImage from '../assets/images/noimage.png';
 import { EventContext } from "../Event";
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * ノートのメタデータ編集ダイアログ
@@ -23,6 +25,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 function NoteMetaDialog({ open, id, onClose }) {
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const {t} = useTranslation();
 
   const [parentId, setParentId] = useState("");
   const [name, setName] = useState("");
@@ -68,14 +71,14 @@ function NoteMetaDialog({ open, id, onClose }) {
   }, [open, id]);
 
   const handleSave = () => {
-    if (!name) { evt.showWarningMessage("name is required."); return; }
-    if (!layout || !content) { evt.showWarningMessage("Choose a Template."); return; }
-    if (!alias && id !== "index") { evt.showWarningMessage("alias is required."); return; }
+    if (!name) { evt.showWarningMessage(t("note.nameRequired")); return; }
+    if (!layout || !content) { evt.showWarningMessage(t("note.chooseTemplate")); return; }
+    if (!alias && id !== "index") { evt.showWarningMessage(t("note.aliasRequired")); return; }
 
     const note = { id, parentId, name, alias, detail, layoutTemplate: layout, contentTemplate: content };
     EditNote(note, imageFile).then(() => {
       evt.refreshTree();
-      evt.showSuccessMessage("Update Note.");
+      evt.showSuccessMessage(t("note.updateSuccess"));
       onClose();
     }).catch((err) => evt.showErrorMessage(err));
   };
@@ -84,7 +87,7 @@ function NoteMetaDialog({ open, id, onClose }) {
     setConfirmDelete(false);
     RemoveNote(id).then(() => {
       evt.refreshTree();
-      evt.showSuccessMessage("Remove Note.");
+      evt.showSuccessMessage(t("note.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
     }).catch((err) => evt.showErrorMessage(err));
@@ -107,7 +110,7 @@ function NoteMetaDialog({ open, id, onClose }) {
       setViewImage(noImage);
       setHasImage(false);
       setImageFile("");
-      evt.showSuccessMessage("Image removed.");
+      evt.showSuccessMessage(t("note.imageRemoved"));
     }).catch((err) => evt.showErrorMessage(err));
   };
 
@@ -116,22 +119,22 @@ function NoteMetaDialog({ open, id, onClose }) {
 
   return (<>
     <MetaDialog
-      open={open} onClose={onClose} title="Edit Note"
+      open={open} onClose={onClose} title={t("note.editTitle")}
       id={id} onSave={handleSave}
       onDelete={() => setConfirmDelete(true)} deleteDisabled={isIndex}
     >
       <FormControl>
-        <FormLabel>Name</FormLabel>
+        <FormLabel>{t("common.name")}</FormLabel>
         <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
       </FormControl>
 
       <FormControl>
-        <FormLabel>Detail</FormLabel>
+        <FormLabel>{t("common.detail")}</FormLabel>
         <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
       </FormControl>
 
       <FormControl>
-        <FormLabel>Alias</FormLabel>
+        <FormLabel>{t("common.alias")}</FormLabel>
         <TextField
           size="small"
           value={alias}
@@ -143,21 +146,21 @@ function NoteMetaDialog({ open, id, onClose }) {
       </FormControl>
 
       <FormControl>
-        <FormLabel>Layout Template</FormLabel>
+        <FormLabel>{t("note.layoutTemplate")}</FormLabel>
         <Select size="small" value={layout} onChange={(e) => setLayout(e.target.value)}>
           {layouts.map((v) => <MenuItem key={"Layout-" + v.id} value={v.id}>{v.name}</MenuItem>)}
         </Select>
       </FormControl>
 
       <FormControl>
-        <FormLabel>Content Template</FormLabel>
+        <FormLabel>{t("note.contentTemplate")}</FormLabel>
         <Select size="small" value={content} onChange={(e) => setContent(e.target.value)}>
           {contents.map((v) => <MenuItem key={"Content-" + v.id} value={v.id}>{v.name}</MenuItem>)}
         </Select>
       </FormControl>
 
       <FormControl>
-        <FormLabel>Note Image</FormLabel>
+        <FormLabel>{t("note.noteImage")}</FormLabel>
         <Container style={{ marginTop: "4px", textAlign: "center" }}>
           <div style={{ position: "relative", display: "inline-block" }}>
             <img
@@ -165,7 +168,7 @@ function NoteMetaDialog({ open, id, onClose }) {
               onError={(e) => { e.target.src = noImage; }}
               onClick={selectFile}
               style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
-              title="クリックして画像を選択"
+              title={t("note.clickToSelectImage")}
             />
             {(hasImage || imageFile) && (
               <IconButton
@@ -188,16 +191,16 @@ function NoteMetaDialog({ open, id, onClose }) {
 
     <ConfirmDialog
       open={confirmDelete}
-      title="ノートの削除"
-      message={`「${name}」を削除しますか？`}
+      title={t("note.deleteTitle")}
+      message={t("note.deleteConfirm", { name })}
       onCancel={() => setConfirmDelete(false)}
       onConfirm={handleDeleteConfirm}
     />
 
     <ConfirmDialog
       open={confirmDeleteImage}
-      title="画像の削除"
-      message="メタ画像を削除しますか？"
+      title={t("note.deleteImageTitle")}
+      message={t("note.deleteImageConfirm")}
       onCancel={() => setConfirmDeleteImage(false)}
       onConfirm={handleDeleteImageConfirm}
     />

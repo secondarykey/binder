@@ -7,9 +7,11 @@ import {
 import { GetConfig, EditConfig, Remotes, AddRemote } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
-const MENU_ITEMS = [
-  { key: "basic", label: "基本設定" },
+const MENU_ITEMS_KEYS = [
+  { key: "basic", labelKey: "setting.basic" },
 ];
 
 /**
@@ -18,6 +20,7 @@ const MENU_ITEMS = [
 function Binder({ isModal, ...props }) {
 
   const evt = useContext(EventContext);
+  const {t} = useTranslation();
 
   const [activeSection, setActiveSection] = useState("basic");
 
@@ -40,7 +43,7 @@ function Binder({ isModal, ...props }) {
   };
 
   useEffect(() => {
-    if (!isModal) evt.changeTitle("Edit Binder");
+    if (!isModal) evt.changeTitle(t("binder.editTitle"));
     GetConfig().then((conf) => {
       setName(conf.name);
       setDetail(conf.detail);
@@ -61,7 +64,7 @@ function Binder({ isModal, ...props }) {
     };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
-      evt.showSuccessMessage("update binder.");
+      evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -89,7 +92,7 @@ function Binder({ isModal, ...props }) {
         backgroundColor: 'var(--bg-dialog)',
         pt: 1,
       }}>
-        {MENU_ITEMS.map((item) => (
+        {MENU_ITEMS_KEYS.map((item) => (
           <ListItemButton
             key={item.key}
             selected={activeSection === item.key}
@@ -103,7 +106,7 @@ function Binder({ isModal, ...props }) {
             }}
           >
             <ListItemText
-              primary={item.label}
+              primary={t(item.labelKey)}
               primaryTypographyProps={{ fontSize: '13px' }}
             />
           </ListItemButton>
@@ -117,19 +120,19 @@ function Binder({ isModal, ...props }) {
           <div className="formGrid" style={{ margin: '20px 24px' }}>
 
             <FormControl>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>{t("common.name")}</FormLabel>
               <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
             </FormControl>
 
             <FormControl>
-              <FormLabel>Detail</FormLabel>
+              <FormLabel>{t("common.detail")}</FormLabel>
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
             </FormControl>
 
             <FormControl>
               <FormLabel>
-                Remote Name
-                <Button onClick={createRemoteDialog}>Add</Button>
+                {t("binder.remoteName")}
+                <Button onClick={createRemoteDialog}>{t("common.add")}</Button>
               </FormLabel>
               <Select
                 size="small"
@@ -145,12 +148,12 @@ function Binder({ isModal, ...props }) {
             </FormControl>
 
             <FormControl>
-              <FormLabel>Branch Name</FormLabel>
+              <FormLabel>{t("binder.branchName")}</FormLabel>
               <TextField size="small" value={branch} onChange={(e) => setBranch(e.target.value)} />
             </FormControl>
 
             <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-              <Button variant="contained" onClick={handleSave}>Save</Button>
+              <Button variant="contained" onClick={handleSave}>{t("common.save")}</Button>
             </FormControl>
 
           </div>
@@ -177,27 +180,27 @@ function Binder({ isModal, ...props }) {
           style: { backgroundColor: "var(--bg-button)" },
         }}
       >
-        <DialogTitle style={{ color: "var(--text-secondary)" }}>Setting Remote</DialogTitle>
+        <DialogTitle style={{ color: "var(--text-secondary)" }}>{t("binder.settingRemote")}</DialogTitle>
         <DialogContent>
           <DialogContentText style={{ color: "var(--text-secondary)" }}>
-            You can add, but please use git to edit.
+            {t("binder.remoteHint")}
           </DialogContentText>
           <TextField
-            required margin="dense" label="Remote Name"
+            required margin="dense" label={t("binder.remoteName")}
             value={remoteName}
             onChange={(e) => setRemoteName(e.target.value)}
             fullWidth variant="standard"
           />
           <TextField
-            autoFocus required margin="dense" label="Remote URL"
+            autoFocus required margin="dense" label={t("binder.remoteUrl")}
             value={remoteURL}
             onChange={(e) => setRemoteURL(e.target.value)}
             fullWidth variant="standard"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogClose}>Cancel</Button>
-          <Button type="submit">Set</Button>
+          <Button onClick={handleDialogClose}>{t("common.cancel")}</Button>
+          <Button type="submit">{t("common.set")}</Button>
         </DialogActions>
       </Dialog>
 

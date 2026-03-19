@@ -10,5 +10,176 @@
         "template" : "テンプレート設定",
         "config" : "テンプレート設定",
         "setting" : "アプリ設定"
+    },
+    "common" : {
+        "name" : "名前",
+        "detail" : "詳細",
+        "alias" : "エイリアス",
+        "save" : "保存",
+        "cancel" : "キャンセル",
+        "delete" : "削除",
+        "close" : "閉じる",
+        "add" : "追加",
+        "edit" : "編集",
+        "rename" : "リネーム",
+        "history" : "履歴",
+        "ok" : "OK",
+        "set" : "設定",
+        "create" : "作成",
+        "updated" : "更新しました",
+        "deleted" : "削除しました"
+    },
+    "tree" : {
+        "menu" : "メニュー",
+        "openBrowser" : "ブラウザで開く",
+        "none" : "なし",
+        "commit" : "コミット",
+        "publish" : "公開",
+        "note" : "ノート",
+        "diagram" : "ダイアグラム",
+        "assets" : "アセット",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "clipboardEmpty" : "クリップボード画像のデータが空です"
+    },
+    "note" : {
+        "editTitle" : "ノート編集",
+        "layoutTemplate" : "レイアウトテンプレート",
+        "contentTemplate" : "コンテンツテンプレート",
+        "noteImage" : "ノート画像",
+        "clickToSelectImage" : "クリックして画像を選択",
+        "nameRequired" : "名前は必須です",
+        "chooseTemplate" : "テンプレートを選択してください",
+        "aliasRequired" : "エイリアスは必須です",
+        "updateSuccess" : "ノートを更新しました",
+        "removeSuccess" : "ノートを削除しました",
+        "imageRemoved" : "画像を削除しました",
+        "deleteTitle" : "ノートの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "deleteImageTitle" : "画像の削除",
+        "deleteImageConfirm" : "メタ画像を削除しますか？"
+    },
+    "diagram" : {
+        "editTitle" : "ダイアグラム編集",
+        "nameRequired" : "名前は必須です",
+        "aliasRequired" : "エイリアスは必須です",
+        "updateSuccess" : "ダイアグラムを更新しました",
+        "removeSuccess" : "ダイアグラムを削除しました",
+        "deleteTitle" : "ダイアグラムの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？"
+    },
+    "asset" : {
+        "editTitle" : "アセット編集",
+        "updateSuccess" : "アセットを更新しました",
+        "removeSuccess" : "アセットを削除しました",
+        "deleteTitle" : "アセットの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？"
+    },
+    "setting" : {
+        "title" : "設定",
+        "basic" : "基本設定",
+        "snippet" : "スニペット",
+        "files" : "ファイル",
+        "defaultPath" : "デフォルトパス",
+        "runWithOpen" : "最後に開いたBinderで起動",
+        "openWithNote" : "最後に開いたノート(またはデータ)を開く",
+        "editor" : "エディタ",
+        "editorProgram" : "エディタプログラム",
+        "git" : "Git",
+        "defaultBranch" : "デフォルトブランチ名",
+        "gitName" : "名前",
+        "gitMail" : "メールアドレス"
+    },
+    "binder" : {
+        "editTitle" : "Binder編集",
+        "remoteName" : "リモート名",
+        "branchName" : "ブランチ名",
+        "settingRemote" : "リモート設定",
+        "remoteHint" : "追加は可能ですが、編集にはgitを使用してください。",
+        "remoteUrl" : "リモートURL",
+        "updateSuccess" : "Binderを更新しました"
+    },
+    "commitModal" : {
+        "title" : "コミット",
+        "backToComment" : "コメントに戻る",
+        "commitComment" : "コミットコメント",
+        "commit" : "コミット",
+        "commitSuccess" : "コミットしました",
+        "modifiedFiles" : "変更ファイル"
+    },
+    "publishModal" : {
+        "title" : "未公開ファイル",
+        "generateComment" : "Generateコメント",
+        "generate" : "Generate",
+        "generateSuccess" : "Generate完了",
+        "noFilesSelected" : "ファイルが選択されていません。"
+    },
+    "snippetSetting" : {
+        "markdowns" : "マークダウン",
+        "diagrams" : "ダイアグラム",
+        "templates" : "テンプレート",
+        "empty" : "(なし)",
+        "namePlaceholder" : "名称",
+        "selectSnippet" : "スニペットを選択してください",
+        "deleteTitle" : "スニペットの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "newSnippet" : "NewSnippet"
+    },
+    "font" : {
+        "title" : "フォント設定"
+    },
+    "binderRegister" : {
+        "binderDirectory" : "Binderディレクトリ",
+        "requiredDirectory" : "ディレクトリを選択してください"
+    },
+    "template" : {
+        "editTitle" : "テンプレート編集",
+        "createTitle" : "テンプレート作成",
+        "nameRequired" : "名前は必須です",
+        "createSuccess" : "テンプレートを作成しました",
+        "updateSuccess" : "テンプレートを更新しました",
+        "removeSuccess" : "テンプレートを削除しました",
+        "deleteTitle" : "テンプレートの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "type" : "タイプ"
+    },
+    "history" : {
+        "restoreTitle" : "ファイルを復元しますか？",
+        "restoreWarning" : "現在のファイルにコミットされていない変更があります。復元すると、その変更は失われます。",
+        "restore" : "復元する"
+    },
+    "assetViewer" : {
+        "loadError" : "ファイルの内容を読み込めませんでした。ファイルがディスク上に存在しない可能性があります。",
+        "generateSuccess" : "Generateが完了しました。",
+        "generateError" : "Generateに失敗しました: {{error}}",
+        "migrateSuccess" : "ノートに移行しました。",
+        "migrateError" : "移行に失敗しました: {{error}}",
+        "updateFileSuccess" : "ファイルを更新しました。",
+        "updateFileError" : "ファイルの更新に失敗しました: {{error}}",
+        "unpublishSuccess" : "Unpublishが完了しました。",
+        "unpublishError" : "Unpublishに失敗しました: {{error}}",
+        "binaryNotSupported" : "バイナリファイルのため表示できません: {{name}}",
+        "migrateTitle" : "ノートに移行",
+        "migrateConfirm" : "「{{name}}」をノートに移行します。元のアセットは削除されます。よろしいですか？",
+        "migrate" : "移行"
+    },
+    "editor" : {
+        "fileDataEmpty" : "ファイルデータが空です",
+        "lineNumberOn" : "行番号: ON",
+        "lineNumberOff" : "行番号: OFF",
+        "bold" : "太字",
+        "italic" : "斜体",
+        "strikethrough" : "打ち消し線",
+        "codeBlock" : "コードブロック",
+        "quote" : "引用",
+        "insertSnippet" : "スニペット挿入",
+        "wordWrapOn" : "折り返し: ON",
+        "wordWrapOff" : "折り返し: OFF",
+        "refreshPreview" : "プレビュー更新",
+        "previewOn" : "プレビュー: ON",
+        "previewOff" : "プレビュー: OFF",
+        "menu" : "メニュー",
+        "fontSetting" : "フォント設定",
+        "openExternalEditor" : "外部エディタで開く",
+        "externalEditorLocked" : "外部エディタで開いています。"
     }
 }

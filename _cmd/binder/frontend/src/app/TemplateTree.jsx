@@ -13,6 +13,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../bindings/binder/api/app';
 import { OpenHistoryWindow } from '../../bindings/main/window';
 
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
+
 import Event, { EventContext } from '../Event';
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
@@ -70,6 +73,7 @@ function TemplateTree(props) {
 
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const {t} = useTranslation();
 
   const [layoutItems, setLayoutItems] = useState([]);
   const [contentItems, setContentItems] = useState([]);
@@ -161,7 +165,7 @@ function TemplateTree(props) {
     const targetId = confirmDelete.id;
     setConfirmDelete({ open: false, id: null, name: '' });
     RemoveTemplate(targetId).then(() => {
-      evt.showSuccessMessage("Remove Template.");
+      evt.showSuccessMessage(t("template.removeSuccess"));
       viewTree();
     }).catch((err) => evt.showErrorMessage(err));
   };
@@ -251,8 +255,8 @@ function TemplateTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleEditTemplate} divider>Edit</MenuItem>
-      <MenuItem onClick={handleHistoryTemplate}>History</MenuItem>
+      <MenuItem onClick={handleEditTemplate} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleHistoryTemplate}>{t("common.history")}</MenuItem>
     </Menu>
 
     {/** メタ編集ダイアログ */}
@@ -269,13 +273,13 @@ function TemplateTree(props) {
       onClose={() => setConfirmDelete({ open: false, id: null, name: '' })}
       PaperProps={{ style: { backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' } }}
     >
-      <DialogTitle>テンプレートの削除</DialogTitle>
+      <DialogTitle>{t("template.deleteTitle")}</DialogTitle>
       <DialogContentText style={{ padding: '0 24px 8px', color: 'var(--text-secondary)' }}>
-        「{confirmDelete.name}」を削除しますか？
+        {t("template.deleteConfirm", { name: confirmDelete.name })}
       </DialogContentText>
       <DialogActions>
-        <Button onClick={() => setConfirmDelete({ open: false, id: null, name: '' })}>キャンセル</Button>
-        <Button color="error" onClick={handleDeleteConfirm}>削除</Button>
+        <Button onClick={() => setConfirmDelete({ open: false, id: null, name: '' })}>{t("common.cancel")}</Button>
+        <Button color="error" onClick={handleDeleteConfirm}>{t("common.delete")}</Button>
       </DialogActions>
     </Dialog>
 

@@ -10,6 +10,8 @@ import { EventContext } from "../Event";
 import { MenuItem, Select } from "@mui/material";
 
 import { MuiColorInput } from 'mui-color-input'
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * フォント設定のダイアログ
@@ -18,6 +20,7 @@ import { MuiColorInput } from 'mui-color-input'
 export default function FontDialog({ show, font, onClose }) {
 
   const evt = useContext(EventContext)
+  const {t} = useTranslation();
   const [name, setName] = useState(font === undefined ? "Araial" : font.name);
   const [size, setSize] = useState(font === undefined ? 16:font.size);
   const [color, setColor] = useState(font === undefined ? "#fafafa": font.color);
@@ -111,7 +114,7 @@ func main() {
     <Dialog open={show} onClose={handleClose}
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "500px" } }}
     >
-      <DialogTitle>Font Setting</DialogTitle>
+      <DialogTitle>{t("font.title")}</DialogTitle>
       <DialogContent>
 
         {/** フォント一覧 */}
@@ -145,8 +148,8 @@ func main() {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleSubmit}>OK</Button>
+        <Button onClick={handleClose}>{t("common.cancel")}</Button>
+        <Button onClick={handleSubmit}>{t("common.ok")}</Button>
       </DialogActions>
     </Dialog>
   );

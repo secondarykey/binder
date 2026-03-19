@@ -8,6 +8,8 @@ import Patch from '../components/Patch';
 import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * コミットモーダル
@@ -15,6 +17,7 @@ import '../assets/CommitApp.css';
  * Router を使わず内部 state でナビゲーションを管理
  */
 function CommitModal({ open, onClose }) {
+  const {t} = useTranslation();
 
   const [modalState, setModalState] = useState({
     view: 'commit',
@@ -52,7 +55,7 @@ function CommitModal({ open, onClose }) {
 
   return (
     <ModalWrapper
-      open={open} onClose={onClose} title="Commit"
+      open={open} onClose={onClose} title={t("commitModal.title")}
       width="900px" height="600px" maxWidth="90vw" maxHeight="85vh"
     >
       <div id="commitArea">
@@ -77,7 +80,7 @@ function CommitModal({ open, onClose }) {
                   onClick={handleBack}
                   sx={{ color: 'var(--text-muted)', textTransform: 'none' }}
                 >
-                  コメントに戻る
+                  {t("commitModal.backToComment")}
                 </Button>
               </div>
               <div id="patchArea">

@@ -18,6 +18,9 @@ import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset,
 
 import { OpenHistoryWindow ,SelectFile } from '../../bindings/main/window';
 
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
+
 import Event, { EventContext } from '../Event';
 import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
@@ -100,6 +103,7 @@ function BinderTree(props) {
 
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const {t} = useTranslation();
 
   // ツリーデータ（APIから取得した生データ）
   const [tree, setTree] = useState([]);
@@ -269,7 +273,7 @@ function BinderTree(props) {
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(',')[1];
         if (!base64) {
-          evt.showWarningMessage('クリップボード画像のデータが空です');
+          evt.showWarningMessage(t("tree.clipboardEmpty"));
           return;
         }
         const asset = {
@@ -522,7 +526,7 @@ function BinderTree(props) {
 
     remove.then(() => {
       evt.refreshTree();
-      evt.showSuccessMessage("Deleted.");
+      evt.showSuccessMessage(t("common.deleted"));
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -561,7 +565,7 @@ function BinderTree(props) {
       </div>
 
       {/** MoreVert フローティングボタン（右上固定） */}
-      <Tooltip title="メニュー" placement="bottom">
+      <Tooltip title={t("tree.menu")} placement="bottom">
         <IconButton
           size="small"
           onClick={(e) => openMoreMenuEl(e.currentTarget)}
@@ -591,7 +595,7 @@ function BinderTree(props) {
     >
       {/** ブラウザで開く */}
       <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
-        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />OpenBrowser
+        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
       </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}
@@ -599,21 +603,21 @@ function BinderTree(props) {
         {displayMode === 'none'
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
-        None
+        {t("tree.none")}
       </MenuItem>
       {/** Commit: 未コミット表示 */}
       <MenuItem onClick={() => { setDisplayMode('commit'); closeMoreMenu(); }}>
         {displayMode === 'commit'
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
-        Commit
+        {t("tree.commit")}
       </MenuItem>
       {/** Publish: 未公開表示 */}
       <MenuItem onClick={() => { setDisplayMode('publish'); closeMoreMenu(); }}>
         {displayMode === 'publish'
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
-        Publish
+        {t("tree.publish")}
       </MenuItem>
     </Menu>
 
@@ -625,13 +629,13 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
-      <MenuItem onClick={handleEditNote} divider>Edit</MenuItem>
+      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleEditNote} divider>{t("common.edit")}</MenuItem>
       <MenuItem onClick={handleAddMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>Add</span><span>▶</span>
+        <span>{t("common.add")}</span><span>▶</span>
       </MenuItem>
-      <MenuItem onClick={handleHistoryNote} divider>History</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
+      <MenuItem onClick={handleHistoryNote} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
@@ -643,9 +647,9 @@ function BinderTree(props) {
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRegisterNote}>Note</MenuItem>
-      <MenuItem onClick={handleRegisterDiagram}>Diagram</MenuItem>
-      <MenuItem onClick={handleRegisterAssets}>Assets</MenuItem>
+      <MenuItem onClick={handleRegisterNote}>{t("tree.note")}</MenuItem>
+      <MenuItem onClick={handleRegisterDiagram}>{t("tree.diagram")}</MenuItem>
+      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets")}</MenuItem>
     </Menu>
 
     {/** ダイアグラムメニュー: Edit / History / Delete */}
@@ -656,10 +660,10 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
-      <MenuItem onClick={handleEditDiagram} divider>Edit</MenuItem>
-      <MenuItem onClick={handleHistoryDiagram} divider>History</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
+      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleEditDiagram} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleHistoryDiagram} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** アセットメニュー: Edit / Delete */}
@@ -670,19 +674,19 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>Rename</MenuItem>
-      <MenuItem onClick={handleEditAsset} divider>Edit</MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>Delete</MenuItem>
+      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleEditAsset} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** 削除確認ダイアログ */}
     <Dialog open={deleteConfirm.open} onClose={handleDeleteCancel}>
       <DialogTitle>
-        「{deleteConfirm.node?.name}」を削除しますか？
+        {t("tree.deleteConfirm", { name: deleteConfirm.node?.name })}
       </DialogTitle>
       <DialogActions>
-        <Button onClick={handleDeleteCancel}>Cancel</Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
+        <Button onClick={handleDeleteCancel}>{t("common.cancel")}</Button>
+        <Button onClick={handleDeleteConfirm} color="error" variant="contained">{t("common.delete")}</Button>
       </DialogActions>
     </Dialog>
 

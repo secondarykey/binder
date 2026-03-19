@@ -9,6 +9,8 @@ import SaveIcon from '@mui/icons-material/Save';
 
 import { EventContext } from "../Event";
 import SnippetSetting from "./SnippetSetting";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * アプリ設定
@@ -18,6 +20,7 @@ import SnippetSetting from "./SnippetSetting";
 function Setting({ isModal, ...props }) {
 
   const evt = useContext(EventContext)
+  const {t} = useTranslation();
 
   const [activeSection, setActiveSection] = useState("basic");
 
@@ -36,7 +39,7 @@ function Setting({ isModal, ...props }) {
 
   useEffect(() => {
 
-    if (!isModal) evt.changeTitle("Setting")
+    if (!isModal) evt.changeTitle(t("setting.title"))
     GetPath().then((p) => {
 
       setPathDefault(p.default);
@@ -71,7 +74,7 @@ function Setting({ isModal, ...props }) {
     //setting.git = git;
 
     SavePath(path).then((resp) => {
-      evt.showSuccessMessage("Updated");
+      evt.showSuccessMessage(t("common.updated"));
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -82,8 +85,8 @@ function Setting({ isModal, ...props }) {
   }
 
   const menuItems = [
-    { key: "basic", label: "基本設定" },
-    { key: "snippet", label: "スニペット" },
+    { key: "basic", label: t("setting.basic") },
+    { key: "snippet", label: t("setting.snippet") },
   ];
 
   return (
@@ -135,21 +138,21 @@ function Setting({ isModal, ...props }) {
             {/** ファイル処理全般 */}
             <Accordion defaultExpanded={true}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content" id="panel1-header"> Files </AccordionSummary>
+                aria-controls="panel1-content" id="panel1-header"> {t("setting.files")} </AccordionSummary>
               <AccordionDetails className="formContainer">
                 {/** デフォルトパス保存先 */}
                 <FormControl>
-                  <FormLabel>Default Path</FormLabel>
+                  <FormLabel>{t("setting.defaultPath")}</FormLabel>
                   <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
                 </FormControl>
                 {/** 最後に開いたBinderを開くか */}
                 <FormControl>
-                  <FormLabel>Run with open Binder</FormLabel>
+                  <FormLabel>{t("setting.runWithOpen")}</FormLabel>
                   <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
                 </FormControl>
                 {/** 起動時に最後に開いたファイルを開くか？ */}
                 <FormControl>
-                  <FormLabel>Open with note(or data)</FormLabel>
+                  <FormLabel>{t("setting.openWithNote")}</FormLabel>
                   <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
                 </FormControl>
               </AccordionDetails>
@@ -158,12 +161,12 @@ function Setting({ isModal, ...props }) {
             {/** エディタ設定 */}
             <Accordion>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content">Editor</AccordionSummary>
+                aria-controls="panel1-content">{t("setting.editor")}</AccordionSummary>
               <AccordionDetails className="formContainer">
                 {/** エディタパス */}
                 <FormControl>
                   <FormLabel>
-                  Editor Program
+                  {t("setting.editorProgram")}
                   </FormLabel>
                   <TextField size="small" value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)}></TextField>
                 </FormControl>
@@ -173,21 +176,21 @@ function Setting({ isModal, ...props }) {
             {/** 認証情報 */}
             <Accordion>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content">Git</AccordionSummary>
+                aria-controls="panel1-content">{t("setting.git")}</AccordionSummary>
               <AccordionDetails className="formContainer">
                 {/** デフォルトのブランチ名 */}
                 <FormControl>
-                  <FormLabel>Default Branch Name</FormLabel>
+                  <FormLabel>{t("setting.defaultBranch")}</FormLabel>
                   <TextField size="small" value={gitBranch} onChange={(e) => setGitBranch(e.target.value)}></TextField>
                 </FormControl>
                 {/** ユーザ名 */}
                 <FormControl>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t("setting.gitName")}</FormLabel>
                   <TextField size="small" value={gitName} onChange={(e) => setGitName(e.target.value)}></TextField>
                 </FormControl>
                 {/** メールアドレス */}
                 <FormControl>
-                  <FormLabel>Mail</FormLabel>
+                  <FormLabel>{t("setting.gitMail")}</FormLabel>
                   <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)}></TextField>
                 </FormControl>
               </AccordionDetails>

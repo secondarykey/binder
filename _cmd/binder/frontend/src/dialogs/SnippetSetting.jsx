@@ -12,11 +12,13 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { EventContext } from "../Event";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 const CATEGORIES = [
-  { key: "markdowns", label: "Markdowns" },
-  { key: "diagrams", label: "Diagrams" },
-  { key: "templates", label: "Templates" },
+  { key: "markdowns", labelKey: "snippetSetting.markdowns" },
+  { key: "diagrams", labelKey: "snippetSetting.diagrams" },
+  { key: "templates", labelKey: "snippetSetting.templates" },
 ];
 
 /**
@@ -81,6 +83,7 @@ function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
 function SnippetSetting() {
 
   const evt = useContext(EventContext);
+  const {t} = useTranslation();
 
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [category, setCategory] = useState("markdowns");
@@ -126,7 +129,7 @@ function SnippetSetting() {
     };
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
-      evt.showSuccessMessage("Updated");
+      evt.showSuccessMessage(t("common.updated"));
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -134,7 +137,7 @@ function SnippetSetting() {
 
   /** + ボタン: "NewSnippet" で即時追加して選択 */
   const handleAdd = () => {
-    const newSnippet = { id: crypto.randomUUID(), name: "NewSnippet", body: "" };
+    const newSnippet = { id: crypto.randomUUID(), name: t("snippetSetting.newSnippet"), body: "" };
     const updated = {
       ...snippets,
       [category]: [...currentList, newSnippet],
@@ -227,7 +230,7 @@ function SnippetSetting() {
           >
             {CATEGORIES.map((c) => (
               <MenuItem key={c.key} value={c.key} sx={{ fontSize: '13px' }}>
-                {c.label}
+                {t(c.labelKey)}
               </MenuItem>
             ))}
           </Select>
@@ -252,7 +255,7 @@ function SnippetSetting() {
                 ))}
                 {currentList.length === 0 && (
                   <Box sx={{ px: 1.5, py: 1, color: 'var(--text-faint)', fontSize: '12px' }}>
-                    (なし)
+                    {t("snippetSetting.empty")}
                   </Box>
                 )}
               </List>
@@ -270,7 +273,7 @@ function SnippetSetting() {
           onChange={(e) => setEditName(e.target.value)}
           variant="outlined"
           disabled={selectedId === null}
-          placeholder="名称"
+          placeholder={t("snippetSetting.namePlaceholder")}
           inputProps={{ style: { fontSize: '13px', color: 'var(--text-primary)' } }}
         />
         <TextField
@@ -281,7 +284,7 @@ function SnippetSetting() {
           onChange={(e) => setBody(e.target.value)}
           variant="outlined"
           disabled={selectedId === null}
-          placeholder={selectedId === null ? "スニペットを選択してください" : ""}
+          placeholder={selectedId === null ? t("snippetSetting.selectSnippet") : ""}
           inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-primary)', resize: 'none' } }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -299,18 +302,18 @@ function SnippetSetting() {
       onClose={handleDeleteCancel}
       PaperProps={{ sx: { backgroundColor: 'var(--bg-dialog)', color: 'var(--text-primary)', minWidth: 320 } }}
     >
-      <DialogTitle sx={{ fontSize: '14px', pb: 1 }}>スニペットの削除</DialogTitle>
+      <DialogTitle sx={{ fontSize: '14px', pb: 1 }}>{t("snippetSetting.deleteTitle")}</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>
-          「{deleteConfirm.name}」を削除しますか？
+          {t("snippetSetting.deleteConfirm", { name: deleteConfirm.name })}
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ px: 2, pb: 1.5 }}>
         <Button onClick={handleDeleteCancel} size="small" sx={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-          キャンセル
+          {t("common.cancel")}
         </Button>
         <Button onClick={handleDeleteConfirm} size="small" color="error" variant="contained" sx={{ fontSize: '12px' }}>
-          削除
+          {t("common.delete")}
         </Button>
       </DialogActions>
     </Dialog>

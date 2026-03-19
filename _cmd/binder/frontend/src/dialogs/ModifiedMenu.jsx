@@ -9,6 +9,8 @@ import {
 import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * 変更一覧
@@ -18,6 +20,7 @@ import Event, { EventContext } from '../Event';
 function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ...props }) {
 
   const evt = useContext(EventContext)
+  const {t} = useTranslation();
   const params = useParams();
   const routerNav = useNavigate();
 
@@ -47,7 +50,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
       files.push(...templateRef.current.checked());
 
       CommitFiles(files, comment).then(() => {
-        evt.showSuccessMessage("Commit");
+        evt.showSuccessMessage(t("commitModal.commitSuccess"));
         setTimeout(function () {
           nav("/status/modified/" + (new Date()).toISOString());
         }, 1000);
@@ -56,7 +59,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
       })
     });
 
-    evt.changeTitle("Modified Files");
+    evt.changeTitle(t("commitModal.modifiedFiles"));
 
     //更新一覧を取得
     GetModifiedTree().then((tree) => {

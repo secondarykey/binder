@@ -6,6 +6,8 @@ import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app"
 import { EventContext } from "../Event";
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * アセットのメタデータ編集ダイアログ
@@ -14,6 +16,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 function AssetMetaDialog({ open, id, onClose }) {
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const {t} = useTranslation();
 
   const [parentId, setParentId] = useState("");
   const [name, setName] = useState("");
@@ -38,7 +41,7 @@ function AssetMetaDialog({ open, id, onClose }) {
   const handleSave = () => {
     EditAsset({ id, parentId, name, alias, detail, binary }, "").then(() => {
       evt.refreshTree();
-      evt.showSuccessMessage("Update Assets.");
+      evt.showSuccessMessage(t("asset.updateSuccess"));
       onClose();
     }).catch((err) => evt.showErrorMessage(err));
   };
@@ -47,7 +50,7 @@ function AssetMetaDialog({ open, id, onClose }) {
     setConfirmDelete(false);
     RemoveAsset(id).then(() => {
       evt.refreshTree();
-      evt.showSuccessMessage("Remove Assets.");
+      evt.showSuccessMessage(t("asset.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
     }).catch((err) => evt.showErrorMessage(err));
@@ -55,21 +58,21 @@ function AssetMetaDialog({ open, id, onClose }) {
 
   return (<>
     <MetaDialog
-      open={open} onClose={onClose} title="Edit Assets"
+      open={open} onClose={onClose} title={t("asset.editTitle")}
       id={id} onSave={handleSave} onDelete={() => setConfirmDelete(true)}
     >
       <FormControl>
-        <FormLabel>Name</FormLabel>
+        <FormLabel>{t("common.name")}</FormLabel>
         <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
       </FormControl>
 
       <FormControl>
-        <FormLabel>Detail</FormLabel>
+        <FormLabel>{t("common.detail")}</FormLabel>
         <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
       </FormControl>
 
       <FormControl>
-        <FormLabel>Alias</FormLabel>
+        <FormLabel>{t("common.alias")}</FormLabel>
         <TextField
           size="small"
           value={alias}
@@ -82,8 +85,8 @@ function AssetMetaDialog({ open, id, onClose }) {
 
     <ConfirmDialog
       open={confirmDelete}
-      title="アセットの削除"
-      message={`「${name}」を削除しますか？`}
+      title={t("asset.deleteTitle")}
+      message={t("asset.deleteConfirm", { name })}
       onCancel={() => setConfirmDelete(false)}
       onConfirm={handleDeleteConfirm}
     />

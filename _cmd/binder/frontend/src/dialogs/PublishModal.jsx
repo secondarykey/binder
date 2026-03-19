@@ -5,6 +5,8 @@ import GenerateForm from './GenerateForm';
 import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * 未公開一覧モーダル
@@ -12,6 +14,7 @@ import '../assets/CommitApp.css';
  * 選択したファイルをまとめて Generate できる。
  */
 function PublishModal({ open, onClose }) {
+  const {t} = useTranslation();
 
   const [date, setDate] = useState(new Date().toISOString());
 
@@ -24,7 +27,7 @@ function PublishModal({ open, onClose }) {
 
   return (
     <ModalWrapper
-      open={open} onClose={onClose} title="Unpublished Files"
+      open={open} onClose={onClose} title={t("publishModal.title")}
       width="900px" height="600px" maxWidth="90vw" maxHeight="85vh"
     >
       <div id="commitArea">

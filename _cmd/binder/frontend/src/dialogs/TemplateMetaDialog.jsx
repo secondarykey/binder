@@ -3,6 +3,9 @@ import { useNavigate } from "react-router";
 import { FormControl, FormLabel, TextField } from "@mui/material";
 
 import { EditTemplate, GetTemplate, RemoveTemplate } from "../../bindings/binder/api/app";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
+
 import { EventContext } from "../Event";
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
@@ -15,6 +18,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 function TemplateMetaDialog({ open, id, type, onClose }) {
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const {t} = useTranslation();
 
   const isCreate = !id;
 
@@ -40,11 +44,11 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
   }, [open, id, type]);
 
   const handleSave = () => {
-    if (!name) { evt.showWarningMessage("name is required"); return; }
+    if (!name) { evt.showWarningMessage(t("template.nameRequired")); return; }
 
     EditTemplate({ id: id ?? "", name, detail, type: resolvedType }).then((resp) => {
       evt.refreshTree();
-      evt.showSuccessMessage(isCreate ? "Create Template." : "Update Template.");
+      evt.showSuccessMessage(isCreate ? t("template.createSuccess") : t("template.updateSuccess"));
       onClose();
       if (isCreate) {
         nav("/editor/template/" + resp.id);
@@ -56,7 +60,7 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
     setConfirmDelete(false);
     RemoveTemplate(id).then(() => {
       evt.refreshTree();
-      evt.showSuccessMessage("Remove Template.");
+      evt.showSuccessMessage(t("template.removeSuccess"));
       onClose();
     }).catch((err) => evt.showErrorMessage(err));
   };
@@ -64,31 +68,31 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
   return (<>
     <MetaDialog
       open={open} onClose={onClose}
-      title={isCreate ? "Create Template" : "Edit Template"}
+      title={isCreate ? t("template.createTitle") : t("template.editTitle")}
       id={id} showId={!isCreate}
-      onSave={handleSave} saveLabel={isCreate ? "Create" : "Save"}
+      onSave={handleSave} saveLabel={isCreate ? t("common.create") : t("common.save")}
       onDelete={() => setConfirmDelete(true)} showDelete={!isCreate}
     >
       <FormControl>
-        <FormLabel>Name</FormLabel>
+        <FormLabel>{t("common.name")}</FormLabel>
         <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
       </FormControl>
 
       <FormControl>
-        <FormLabel>Detail</FormLabel>
+        <FormLabel>{t("common.detail")}</FormLabel>
         <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
       </FormControl>
 
       <FormControl>
-        <FormLabel>Type</FormLabel>
+        <FormLabel>{t("template.type")}</FormLabel>
         <TextField size="small" value={resolvedType} slotProps={{ input: { readOnly: true } }} />
       </FormControl>
     </MetaDialog>
 
     <ConfirmDialog
       open={confirmDelete}
-      title="テンプレートの削除"
-      message={`「${name}」を削除しますか？`}
+      title={t("template.deleteTitle")}
+      message={t("template.deleteConfirm", { name })}
       onCancel={() => setConfirmDelete(false)}
       onConfirm={handleDeleteConfirm}
     />

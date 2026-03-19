@@ -15,6 +15,8 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
+import "../../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 import HTMLFrame from "./HTMLFrame.jsx";
 import '../../assets/Editor.css'
@@ -112,6 +114,7 @@ function Editor(props) {
   const location = useLocation();
   const restoredAt = location.state?.restoredAt;
   const evt = useContext(EventContext)
+  const {t} = useTranslation();
 
   const [editor, setEditor] = useState(true);
   const [viewer, setViewer] = useState(true);
@@ -658,7 +661,7 @@ function Editor(props) {
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(',')[1];
         if (!base64) {
-          evt.showWarningMessage('ファイルデータが空です');
+          evt.showWarningMessage(t('editor.fileDataEmpty'));
           return;
         }
 
@@ -954,7 +957,7 @@ function Editor(props) {
                 <Container className="buttonBarLeft">
 
                   {/** 行番号表示トグル */}
-                  <Tooltip title={showLineNumbers ? "行番号: ON" : "行番号: OFF"} placement="bottom">
+                  <Tooltip title={showLineNumbers ? t("editor.lineNumberOn") : t("editor.lineNumberOff")} placement="bottom">
                     <ToggleButton
                       value="lineNumbers"
                       selected={showLineNumbers}
@@ -982,35 +985,35 @@ function Editor(props) {
                   <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                   {/** 強調 */}
-                  <Tooltip title="太字" placement="bottom">
+                  <Tooltip title={t("editor.bold")} placement="bottom">
                     <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                       <FormatBoldIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
 
                   {/** イタリック */}
-                  <Tooltip title="斜体" placement="bottom">
+                  <Tooltip title={t("editor.italic")} placement="bottom">
                     <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
                       <FormatItalicIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
 
                   {/** 打ち消し線 */}
-                  <Tooltip title="打ち消し線" placement="bottom">
+                  <Tooltip title={t("editor.strikethrough")} placement="bottom">
                     <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
                       <FormatStrikethroughIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
 
                   {/** コードブロック */}
-                  <Tooltip title="コードブロック" placement="bottom">
+                  <Tooltip title={t("editor.codeBlock")} placement="bottom">
                     <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
                       <CodeIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
 
                   {/** 引用 */}
-                  <Tooltip title="引用" placement="bottom">
+                  <Tooltip title={t("editor.quote")} placement="bottom">
                     <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
                       <FormatQuoteIcon fontSize="small" />
                     </IconButton>
@@ -1021,7 +1024,7 @@ function Editor(props) {
 
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
-                    <Tooltip title="スニペット挿入" placement="bottom">
+                    <Tooltip title={t("editor.insertSnippet")} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => setSnippetAnchor(e.currentTarget)}
@@ -1054,7 +1057,7 @@ function Editor(props) {
                 <Container className="buttonBarRight">
 
                   {/** テキスト折り返しトグル */}
-                  <Tooltip title={wordWrap ? "折り返し: ON" : "折り返し: OFF"} placement="bottom">
+                  <Tooltip title={wordWrap ? t("editor.wordWrapOn") : t("editor.wordWrapOff")} placement="bottom">
                     <ToggleButton
                       value="wordWrap"
                       selected={wordWrap}
@@ -1081,7 +1084,7 @@ function Editor(props) {
                   {/** テンプレートプレビューリフレッシュ */}
                   {mode === Mode.template && <>
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                    <Tooltip title="プレビュー更新" placement="bottom">
+                    <Tooltip title={t("editor.refreshPreview")} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
                         onClick={() => {
                           if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
@@ -1096,7 +1099,7 @@ function Editor(props) {
                   </>}
 
                   {/** プレビュー表示トグル */}
-                  <Tooltip title={viewer ? "プレビュー: ON" : "プレビュー: OFF"} placement="bottom">
+                  <Tooltip title={viewer ? t("editor.previewOn") : t("editor.previewOff")} placement="bottom">
                     <ToggleButton
                       value="viewer"
                       selected={viewer}
@@ -1123,7 +1126,7 @@ function Editor(props) {
                   <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                   {/** MoreVert メニューボタン */}
-                  <Tooltip title="メニュー" placement="bottom">
+                  <Tooltip title={t("editor.menu")} placement="bottom">
                     <IconButton
                       size="small"
                       onClick={(e) => openEditorMoreMenu(e.currentTarget)}
@@ -1147,11 +1150,11 @@ function Editor(props) {
                 slotProps={{ paper: { sx: { minWidth: 160 } } }}
               >
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleFontDialog(); }}>
-                  <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />フォント設定
+                  <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
                 </MenuItem>
                 <Divider />
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
-                  <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />外部エディタで開く
+                  <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
                 </MenuItem>
               </Menu>
 
@@ -1269,7 +1272,7 @@ function Editor(props) {
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <span style={{ color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>外部エディタで開いています。</span>
+        <span style={{ color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>{t("editor.externalEditorLocked")}</span>
       </Backdrop>
     </>
   );

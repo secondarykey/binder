@@ -9,6 +9,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, GetFont } from '../../bindings/binder/api/app';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /** 画像拡張子の判定セット */
 const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico']);
@@ -135,6 +137,7 @@ function AssetViewer() {
   const evt = useContext(EventContext);
   const { id } = useParams();
   const nav = useNavigate();
+  const {t} = useTranslation();
 
   // ロード中: assetContent=null, error=null
   // 成功:     assetContent=object, error=null
@@ -188,7 +191,7 @@ function AssetViewer() {
       }
     }).catch(() => {
       // エラーポップアップではなくビューア内にメッセージを表示
-      setError('ファイルの内容を読み込めませんでした。ファイルがディスク上に存在しない可能性があります。');
+      setError(t('assetViewer.loadError'));
     });
   }, [id]);
 
@@ -197,9 +200,9 @@ function AssetViewer() {
     setGenerating(true);
     try {
       await Generate("assets", id, "");
-      evt.showSuccessMessage("Generate が完了しました。");
+      evt.showSuccessMessage(t("assetViewer.generateSuccess"));
     } catch (e) {
-      evt.showErrorMessage("Generate に失敗しました: " + e);
+      evt.showErrorMessage(t("assetViewer.generateError", { error: e }));
     } finally {
       setGenerating(false);
     }
@@ -215,10 +218,10 @@ function AssetViewer() {
     try {
       const note = await MigrateAssetToNote(id);
       evt.refreshTree();
-      evt.showSuccessMessage("ノートに移行しました。");
+      evt.showSuccessMessage(t("assetViewer.migrateSuccess"));
       nav(`/editor/note/${note.id}`);
     } catch (e) {
-      evt.showErrorMessage("移行に失敗しました: " + e);
+      evt.showErrorMessage(t("assetViewer.migrateError", { error: e }));
     } finally {
       setMigrating(false);
     }
@@ -241,12 +244,12 @@ function AssetViewer() {
         // コンテンツを再読み込み
         GetAssetContent(id).then((resp) => {
           setAssetContent(resp);
-          evt.showSuccessMessage("ファイルを更新しました。");
+          evt.showSuccessMessage(t("assetViewer.updateFileSuccess"));
         }).catch(() => {
-          evt.showSuccessMessage("ファイルを更新しました。");
+          evt.showSuccessMessage(t("assetViewer.updateFileSuccess"));
         });
       }).catch((e) => {
-        evt.showErrorMessage("ファイルの更新に失敗しました: " + e);
+        evt.showErrorMessage(t("assetViewer.updateFileError", { error: e }));
       }).finally(() => {
         setUpdating(false);
       });
@@ -256,9 +259,9 @@ function AssetViewer() {
   /** Unpublish ボタン押下: docs からアセットを削除する */
   const handleUnpublish = () => {
     Unpublish("assets", id).then(() => {
-      evt.showSuccessMessage("Unpublish が完了しました。");
+      evt.showSuccessMessage(t("assetViewer.unpublishSuccess"));
     }).catch((e) => {
-      evt.showErrorMessage("Unpublish に失敗しました: " + e);
+      evt.showErrorMessage(t("assetViewer.unpublishError", { error: e }));
     });
   };
 
@@ -326,7 +329,7 @@ function AssetViewer() {
       // その他バイナリ
       content = (
         <div style={{ padding: '16px', color: 'var(--text-muted)' }}>
-          バイナリファイルのため表示できません: {name}
+          {t("assetViewer.binaryNotSupported", { name })}
         </div>
       );
     }
@@ -380,15 +383,15 @@ function AssetViewer() {
 
       {/* ノート移行確認ダイアログ */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>ノートに移行</DialogTitle>
+        <DialogTitle>{t("assetViewer.migrateTitle")}</DialogTitle>
         <DialogContent>
           <DialogContentText style={{ color: "var(--text-secondary)" }}>
-            「{assetName}」をノートに移行します。元のアセットは削除されます。よろしいですか？
+            {t("assetViewer.migrateConfirm", { name: assetName })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>キャンセル</Button>
-          <Button onClick={handleMigrateConfirm} color="primary">移行</Button>
+          <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
+          <Button onClick={handleMigrateConfirm} color="primary">{t("assetViewer.migrate")}</Button>
         </DialogActions>
       </Dialog>
     </div>

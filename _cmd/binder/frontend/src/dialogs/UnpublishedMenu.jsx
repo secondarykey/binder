@@ -15,6 +15,8 @@ import Marked from '../pages/editor/engines/Marked';
 import Mermaid from '../pages/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * 未公開一覧
@@ -24,6 +26,7 @@ import Event, { EventContext } from '../Event';
 function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
 
   const evt = useContext(EventContext);
+  const {t} = useTranslation();
 
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
@@ -78,7 +81,7 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
       ];
 
       if (selected.length === 0) {
-        evt.showWarningMessage("ファイルが選択されていません。");
+        evt.showWarningMessage(t("publishModal.noFilesSelected"));
         return;
       }
 
@@ -103,7 +106,7 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
         }
       }
 
-      evt.showSuccessMessage("Generate.");
+      evt.showSuccessMessage(t("publishModal.generateSuccess"));
       // 一覧を再取得
       setTimeout(() => {
         loadTree();

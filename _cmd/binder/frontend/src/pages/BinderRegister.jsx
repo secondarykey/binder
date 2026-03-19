@@ -7,6 +7,8 @@ import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from 
 import FolderIcon from '@mui/icons-material/Folder';
 
 import Event,{EventContext} from "../Event";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * Binder新規作成
@@ -18,11 +20,12 @@ function BinderRegister(props) {
   const evt = useContext(EventContext);
   const nav = useNavigate();
   const [dir, setDir] = useState("");
+  const {t} = useTranslation();
 
   //保存
   const handleSave = () => {
     if ( dir == "" ) {
-      evt.showWarningMessage("reqired select directory");
+      evt.showWarningMessage(t("binderRegister.requiredDirectory"));
       return;
     }
 
@@ -52,7 +55,7 @@ function BinderRegister(props) {
     <Grid className="formGrid">
 
       <FormControl>
-        <FormLabel>Binder Directory</FormLabel>
+        <FormLabel>{t("binderRegister.binderDirectory")}</FormLabel>
         <TextField value={dir} onClick={selectDir}
           InputProps={{
             startAdornment: (
@@ -66,7 +69,7 @@ function BinderRegister(props) {
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
         <Button variant="contained" onClick={handleSave}>
-          <> Create </>
+          {t("common.create")}
         </Button>
       </FormControl>
     </Grid>

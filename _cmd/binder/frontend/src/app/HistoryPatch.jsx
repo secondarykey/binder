@@ -10,6 +10,8 @@ import { Events, Window } from "@wailsio/runtime";
 import { GetFont,GetHistoryPatch, GetModifiedIds, RestoreHistory } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * パッチの行数を解析
@@ -187,6 +189,7 @@ function HistoryPatch({ typ, id }) {
 
     const evt = useContext(EventContext);
     const { hash } = useParams();
+    const {t} = useTranslation();
 
     const [source,     setSource]     = useState("");
     const [historical, setHistorical] = useState("");
@@ -369,17 +372,16 @@ function HistoryPatch({ typ, id }) {
 
         {/* 未コミット変更がある場合の確認ダイアログ */}
         <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-            <DialogTitle>ファイルを復元しますか？</DialogTitle>
+            <DialogTitle>{t("history.restoreTitle")}</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    現在のファイルにコミットされていない変更があります。
-                    復元すると、その変更は失われます。
+                    {t("history.restoreWarning")}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={() => setConfirmOpen(false)}>キャンセル</Button>
+                <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
                 <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(); }}>
-                    復元する
+                    {t("history.restore")}
                 </Button>
             </DialogActions>
         </Dialog>

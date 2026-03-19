@@ -2,11 +2,15 @@ import {
   Button, Dialog, DialogActions, DialogContentText, DialogTitle,
 } from "@mui/material";
 
+import "../../i18n/config";
+import { useTranslation } from 'react-i18next';
+
 /**
  * 確認ダイアログ（削除確認などに使用）
  * @param {{ open: boolean, title: string, message: string, onCancel: () => void, onConfirm: () => void }} props
  */
 function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
+  const {t} = useTranslation();
   return (
     <Dialog
       open={open}
@@ -18,8 +22,8 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
         {message}
       </DialogContentText>
       <DialogActions>
-        <Button onClick={onCancel}>キャンセル</Button>
-        <Button color="error" onClick={onConfirm}>削除</Button>
+        <Button onClick={onCancel}>{t("common.cancel")}</Button>
+        <Button color="error" onClick={onConfirm}>{t("common.delete")}</Button>
       </DialogActions>
     </Dialog>
   );
