@@ -72,6 +72,19 @@ func (a *App) GetNoteImageURL(noteId string) (string, error) {
 	return fmt.Sprintf("http://%s/binder-meta/%s", addr, noteId), nil
 }
 
+// UploadNoteImage はノートのメタ画像ファイルをアップロードする。
+func (a *App) UploadNoteImage(noteId string, filePath string) error {
+
+	defer log.PrintTrace(log.Func("UploadNoteImage()"))
+
+	err := a.current.UploadNoteImage(noteId, filePath)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("UploadNoteImage() error\n%+v", err)
+	}
+	return nil
+}
+
 // DeleteNoteImage はノートのメタ画像ファイルを削除する。
 func (a *App) DeleteNoteImage(noteId string) error {
 

@@ -53,6 +53,7 @@
         "updateSuccess" : "ノートを更新しました",
         "removeSuccess" : "ノートを削除しました",
         "imageRemoved" : "画像を削除しました",
+        "imageUploaded" : "画像をアップロードしました",
         "deleteTitle" : "ノートの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "deleteImageTitle" : "画像の削除",

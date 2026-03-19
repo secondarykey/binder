@@ -7,7 +7,7 @@ import {
 import { DeleteOutline } from "@mui/icons-material";
 
 import {
-  GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage,
+  GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage, UploadNoteImage,
   EditNote, RemoveNote,
 } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
@@ -30,7 +30,6 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [parentId, setParentId] = useState("");
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
-  const [imageFile, setImageFile] = useState("");
   const [viewImage, setViewImage] = useState(noImage);
   const [hasImage, setHasImage] = useState(false);
   const [confirmDeleteImage, setConfirmDeleteImage] = useState(false);
@@ -53,7 +52,7 @@ function NoteMetaDialog({ open, id, onClose }) {
   useEffect(() => {
     if (!open || !id) return;
     setName(""); setAlias(""); setDetail("");
-    setImageFile(""); setViewImage(noImage); setHasImage(false);
+    setViewImage(noImage); setHasImage(false);
 
     GetNote(id).then((note) => {
       setName(note.name);
@@ -76,7 +75,7 @@ function NoteMetaDialog({ open, id, onClose }) {
     if (!alias && id !== "index") { evt.showWarningMessage(t("note.aliasRequired")); return; }
 
     const note = { id, parentId, name, alias, detail, layoutTemplate: layout, contentTemplate: content };
-    EditNote(note, imageFile).then(() => {
+    EditNote(note, "").then(() => {
       evt.refreshTree();
       evt.showSuccessMessage(t("note.updateSuccess"));
       onClose();
@@ -95,7 +94,15 @@ function NoteMetaDialog({ open, id, onClose }) {
 
   const selectFile = () => {
     SelectFile("Page Image File", "*.png;*.jpg;*.jpeg;*.webp;").then((f) => {
-      if (f) setImageFile(f);
+      if (!f) return;
+      UploadNoteImage(id, f).then(() => {
+        setHasImage(true);
+        // キャッシュ回避のためタイムスタンプ付きURLで再取得
+        GetNoteImageURL(id).then((url) => {
+          setViewImage(url ? url + "?t=" + Date.now() : noImage);
+        }).catch(() => {});
+        evt.showSuccessMessage(t("note.imageUploaded"));
+      }).catch((err) => evt.showErrorMessage(err));
     }).catch(() => {});
   };
 
@@ -109,7 +116,6 @@ function NoteMetaDialog({ open, id, onClose }) {
     DeleteNoteImage(id).then(() => {
       setViewImage(noImage);
       setHasImage(false);
-      setImageFile("");
       evt.showSuccessMessage(t("note.imageRemoved"));
     }).catch((err) => evt.showErrorMessage(err));
   };
@@ -170,7 +176,7 @@ function NoteMetaDialog({ open, id, onClose }) {
               style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
               title={t("note.clickToSelectImage")}
             />
-            {(hasImage || imageFile) && (
+            {hasImage && (
               <IconButton
                 size="small"
                 onClick={handleDeleteImage}
@@ -180,11 +186,6 @@ function NoteMetaDialog({ open, id, onClose }) {
               </IconButton>
             )}
           </div>
-          {imageFile && (
-            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", wordBreak: "break-all" }}>
-              {imageFile.split(/[\\/]/).pop()}
-            </div>
-          )}
         </Container>
       </FormControl>
     </MetaDialog>

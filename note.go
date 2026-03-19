@@ -236,6 +236,25 @@ func (b *Binder) ReadMetaBytes(noteId string) ([]byte, error) {
 	return data, nil
 }
 
+// UploadNoteImage はノートのメタ画像ファイルをアップロードする。
+func (b *Binder) UploadNoteImage(noteId string, filePath string) error {
+	if b == nil {
+		return EmptyError
+	}
+
+	n := &json.Note{Id: noteId}
+	mf, err := b.fileSystem.EditMetadata(n, filePath)
+	if err != nil {
+		return xerrors.Errorf("fs.EditMetadata() error: %w", err)
+	}
+
+	err = b.fileSystem.Commit(fs.M("Upload Note Image", noteId), mf)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
+
 // DeleteNoteImage はノートのメタ画像ファイルを削除する。
 // ファイルが存在しない場合は何もしない。
 func (b *Binder) DeleteNoteImage(noteId string) error {

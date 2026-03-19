@@ -53,6 +53,7 @@
         "updateSuccess" : "Note updated.",
         "removeSuccess" : "Note removed.",
         "imageRemoved" : "Image removed.",
+        "imageUploaded" : "Image uploaded.",
         "deleteTitle" : "Delete Note",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "deleteImageTitle" : "Delete Image",
