@@ -26,15 +26,13 @@ dev_mode:
       - .gitkeep
     watched_extension:
       - "*.go"
+      - "*.jsx"
+      - "*.ts"
     git_ignore: true
   executes:
-    - cmd: wails3 task common:install:frontend:deps
-      type: once
-    - cmd: wails3 task common:generate:bindings
-      type: once
+    - cmd: wails3 build DEV=true
+      type: blocking
     - cmd: wails3 task common:dev:frontend
       type: background
-    - cmd: go build -o bin/binder_dev.exe
-      type: blocking
-    - cmd: bin/binder_dev.exe
+    - cmd: wails3 task run
       type: primary
