@@ -111,18 +111,18 @@ func (b *Binder) RestoreHistory(typ, id, hash string) error {
 	return nil
 }
 
-func (b *Binder) GetHistory(typ, id string) ([]*fs.CommitInfo, error) {
+func (b *Binder) GetHistory(typ, id string, limit, offset int) ([]*fs.CommitInfo, bool, error) {
 
 	fn, err := b.getFilename(typ, id)
 	if err != nil {
-		return nil, xerrors.Errorf("getFilename() error: %w", err)
+		return nil, false, xerrors.Errorf("getFilename() error: %w", err)
 	}
 
-	result, err := b.fileSystem.GetFileHistory(fn)
+	result, hasMore, err := b.fileSystem.GetFileHistory(fn, limit, offset)
 	if err != nil {
-		return nil, xerrors.Errorf("GetFileHistory() error: %w", err)
+		return nil, false, xerrors.Errorf("GetFileHistory() error: %w", err)
 	}
-	return result, nil
+	return result, hasMore, nil
 }
 
 func (b *Binder) GetHistoryPatch(typ, id, hash string) (*Patch, error) {

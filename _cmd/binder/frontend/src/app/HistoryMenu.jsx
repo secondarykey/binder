@@ -25,22 +25,40 @@ function HistoryMenu({ typ, id }) {
   const { t } = useTranslation();
 
   const [entries, setEntries] = useState([]);
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // typ/id が変わったら初期化してから最初のページを取得
   useEffect(() => {
     if (!typ || !id) return;
-
+    setEntries([]);
+    setOffset(0);
+    setHasMore(false);
     setLoading(true);
-    setDisplayCount(PAGE_SIZE);
-    GetHistory(typ, id).then((list) => {
-      setEntries(list ?? []);
+    GetHistory(typ, id, PAGE_SIZE, 0).then((page) => {
+      setEntries(page?.entries ?? []);
+      setHasMore(page?.hasMore ?? false);
     }).catch((err) => {
       evt.showErrorMessage(err);
     }).finally(() => {
       setLoading(false);
     });
   }, [typ, id]);
+
+  // 「さらに読み込む」用: offset が増えたら追加取得
+  useEffect(() => {
+    if (!typ || !id || offset === 0) return;
+    setLoading(true);
+    GetHistory(typ, id, PAGE_SIZE, offset).then((page) => {
+      setEntries(prev => [...prev, ...(page?.entries ?? [])]);
+      setHasMore(page?.hasMore ?? false);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, [offset]);
 
   const handleClick = (entry) => {
     nav('/history/diff/' + entry.hash);
@@ -55,8 +73,6 @@ function HistoryMenu({ typ, id }) {
     }
   };
 
-  const visibleEntries = entries.slice(0, displayCount);
-  const hasMore = entries.length > displayCount;
 
   return (
     <List dense disablePadding className="treeText" sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
@@ -84,7 +100,7 @@ function HistoryMenu({ typ, id }) {
         </Typography>
       )}
 
-      {visibleEntries.map((entry) => (
+      {entries.map((entry) => (
         <ListItemButton key={entry.hash}
           selected={entry.hash === hash}
           sx={{
@@ -116,7 +132,7 @@ function HistoryMenu({ typ, id }) {
             size="small"
             variant="text"
             startIcon={<ExpandMoreIcon fontSize="small" />}
-            onClick={() => setDisplayCount(c => c + PAGE_SIZE)}
+            onClick={() => setOffset(prev => prev + PAGE_SIZE)}
             sx={{
               fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
               '&:hover': { color: 'var(--text-primary)' },

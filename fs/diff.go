@@ -76,11 +76,13 @@ func getCommitContent(c *object.Commit, n string) (string, error) {
 }
 
 // 指定ファイルの全コミット履歴を取得
-func (f *FileSystem) getFileHistory(n string) ([]*CommitInfo, error) {
+// getFileHistory は指定ファイルのコミット履歴を limit 件取得する。
+// offset でスキップ件数を指定する。hasMore は次のページが存在するかを示す。
+func (f *FileSystem) getFileHistory(n string, limit, offset int) ([]*CommitInfo, bool, error) {
 
 	ref, err := f.repo.Head()
 	if err != nil {
-		return nil, xerrors.Errorf("repo.Head() error: %w", err)
+		return nil, false, xerrors.Errorf("repo.Head() error: %w", err)
 	}
 
 	itr, err := f.repo.Log(&git.LogOptions{
@@ -90,9 +92,20 @@ func (f *FileSystem) getFileHistory(n string) ([]*CommitInfo, error) {
 		From: ref.Hash(),
 	})
 	if err != nil {
-		return nil, xerrors.Errorf("repo.Log() error: %w", err)
+		return nil, false, xerrors.Errorf("repo.Log() error: %w", err)
 	}
 
+	// offset 件スキップ
+	for i := 0; i < offset; i++ {
+		if _, err := itr.Next(); err != nil {
+			if err == io.EOF {
+				return nil, false, nil
+			}
+			return nil, false, xerrors.Errorf("itr.Next() error: %w", err)
+		}
+	}
+
+	// limit+1 件取得して hasMore を判定
 	var result []*CommitInfo
 	for {
 		c, err := itr.Next()
@@ -100,15 +113,23 @@ func (f *FileSystem) getFileHistory(n string) ([]*CommitInfo, error) {
 			break
 		}
 		if err != nil {
-			return nil, xerrors.Errorf("itr.Next() error: %w", err)
+			return nil, false, xerrors.Errorf("itr.Next() error: %w", err)
 		}
 		result = append(result, &CommitInfo{
 			Hash:    c.Hash.String(),
 			Message: c.Message,
 			When:    c.Author.When,
 		})
+		if len(result) == limit+1 {
+			break
+		}
 	}
-	return result, nil
+
+	hasMore := len(result) > limit
+	if hasMore {
+		result = result[:limit]
+	}
+	return result, hasMore, nil
 }
 
 // 指定ハッシュのコミット時点のファイルと現在ファイルのパッチを作成

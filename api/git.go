@@ -104,25 +104,25 @@ func (a *App) RestoreHistory(typ string, id string, hash string) error {
 	return nil
 }
 
-func (a *App) GetHistory(typ string, id string) ([]*json.HistoryEntry, error) {
+func (a *App) GetHistory(typ string, id string, limit int, offset int) (*json.HistoryPage, error) {
 
 	defer log.PrintTrace(log.Func("GetHistory()", typ, id))
 
-	commits, err := a.current.GetHistory(typ, id)
+	commits, hasMore, err := a.current.GetHistory(typ, id, limit, offset)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetHistory() error: %+v", err)
 	}
 
-	result := make([]*json.HistoryEntry, len(commits))
+	entries := make([]*json.HistoryEntry, len(commits))
 	for i, c := range commits {
-		result[i] = &json.HistoryEntry{
+		entries[i] = &json.HistoryEntry{
 			Hash:    c.Hash,
 			Message: c.Message,
 			When:    c.When.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
-	return result, nil
+	return &json.HistoryPage{Entries: entries, HasMore: hasMore}, nil
 }
 
 func (a *App) GetHistoryPatch(typ string, id string, hash string) (*binder.Patch, error) {

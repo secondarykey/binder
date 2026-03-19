@@ -430,16 +430,17 @@ func (f *FileSystem) GetNowPatch(file string) (string, string, error) {
 	return source, w.String(), nil
 }
 
-// GetFileHistory は指定ファイルのgit履歴を新しい順で返す
-func (f *FileSystem) GetFileHistory(file string) ([]*CommitInfo, error) {
+// GetFileHistory は指定ファイルのgit履歴を limit 件取得する。
+// offset でスキップ件数を指定する。hasMore は次のページが存在するかを示す。
+func (f *FileSystem) GetFileHistory(file string, limit, offset int) ([]*CommitInfo, bool, error) {
 
 	fn := convertPath(file)
 
-	result, err := f.getFileHistory(fn)
+	result, hasMore, err := f.getFileHistory(fn, limit, offset)
 	if err != nil {
-		return nil, xerrors.Errorf("getFileHistory() error: %w", err)
+		return nil, false, xerrors.Errorf("getFileHistory() error: %w", err)
 	}
-	return result, nil
+	return result, hasMore, nil
 }
 
 // RestoreFile は指定ハッシュのコミット時点のファイル内容で現在のファイルを上書きする。
