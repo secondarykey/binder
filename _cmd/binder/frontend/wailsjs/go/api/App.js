@@ -78,6 +78,14 @@ export function GetDiagram(arg1) {
   return window['go']['api']['App']['GetDiagram'](arg1);
 }
 
+export function GetEditor() {
+  return window['go']['api']['App']['GetEditor']();
+}
+
+export function GetFont() {
+  return window['go']['api']['App']['GetFont']();
+}
+
 export function GetFontNames() {
   return window['go']['api']['App']['GetFontNames']();
 }
@@ -160,6 +168,14 @@ export function RunEditor(arg1, arg2) {
 
 export function SaveDiagram(arg1, arg2) {
   return window['go']['api']['App']['SaveDiagram'](arg1, arg2);
+}
+
+export function SaveEditor(arg1) {
+  return window['go']['api']['App']['SaveEditor'](arg1);
+}
+
+export function SaveFont(arg1) {
+  return window['go']['api']['App']['SaveFont'](arg1);
 }
 
 export function SaveNote(arg1, arg2) {

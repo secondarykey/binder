@@ -69,6 +69,16 @@ func (a *App) SetLanguage(lang string) error {
 	return settings.SaveLanguage(lang)
 }
 
+func (a *App) GetEditor() *settings.Editor {
+	defer log.PrintTrace(log.Func("GetEditor()"))
+	return settings.GetEditor()
+}
+
+func (a *App) SaveEditor(e *settings.Editor) error {
+	defer log.PrintTrace(log.Func("SaveEditor()"))
+	return settings.SaveEditor(e)
+}
+
 func (a *App) GetFontNames() ([]string, error) {
 	names := binder.FontNames()
 	return names, nil

@@ -8,7 +8,7 @@ import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/a
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
-import { RunEditor, GetFont,SaveFont, GetSnippets } from "../../../bindings/binder/api/app";
+import { RunEditor, GetFont, SaveFont, GetSnippets, GetEditor } from "../../../bindings/binder/api/app";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -892,6 +892,16 @@ function Editor(props) {
       settingFont(s);
     }).catch((err) => {
       evt.showErrorMessage(err);
+    });
+
+    GetEditor().then((e) => {
+      if (e) {
+        setShowLineNumbers(e.showLineNumbers);
+        setWordWrap(e.wordWrap);
+        setViewer(e.showPreview);
+      }
+    }).catch((err) => {
+      console.log(err);
     });
 
   }, []);

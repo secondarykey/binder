@@ -1,11 +1,14 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
+import { Box, Button, FormControl, FormControlLabel, FormLabel, IconButton, Switch, TextField } from "@mui/material";
 import SaveIcon from '@mui/icons-material/Save';
+import FontDownloadIcon from '@mui/icons-material/FontDownload';
 
+import { GetEditor, SaveEditor, GetFont, SaveFont } from "../../bindings/binder/api/app";
 import { EventContext } from "../Event";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
+import FontDialog from "./FontDialog";
 
 /**
  * エディタ設定（テキスト入力）
@@ -15,26 +18,121 @@ function EditorSetting() {
   const evt = useContext(EventContext);
   const {t} = useTranslation();
 
-  const [editorProgram, setEditorProgram] = useState("notepad {file}");
+  const [editorProgram, setEditorProgram] = useState("");
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
+  const [wordWrap, setWordWrap] = useState(true);
+  const [showPreview, setShowPreview] = useState(true);
+
+  const [fontDialogOpen, setFontDialogOpen] = useState(false);
+  const [font, setFont] = useState(undefined);
 
   useEffect(() => {
-    // TODO: エディタ設定の読み込みAPI実装時に接続
+    GetEditor().then((e) => {
+      if (e) {
+        setEditorProgram(e.program || "");
+        setShowLineNumbers(e.showLineNumbers);
+        setWordWrap(e.wordWrap);
+        setShowPreview(e.showPreview);
+      }
+    }).catch((err) => {
+      console.log(err);
+    });
+
+    GetFont().then((f) => {
+      if (f) {
+        setFont(f);
+      }
+    }).catch((err) => {
+      console.log(err);
+    });
   }, []);
 
   const handleSave = () => {
-    // TODO: エディタ設定の保存API実装時に接続
-    evt.showSuccessMessage(t("common.updated"));
+    const editor = {
+      program: editorProgram,
+      showLineNumbers: showLineNumbers,
+      wordWrap: wordWrap,
+      showPreview: showPreview,
+    };
+    SaveEditor(editor).then(() => {
+      evt.showSuccessMessage(t("common.updated"));
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  const handleFontDialogClose = (result) => {
+    setFontDialogOpen(false);
+    if (result) {
+      setFont(result);
+      SaveFont(result).catch((err) => {
+        evt.showErrorMessage(err);
+      });
+    }
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
         <div className="formContainer">
-          {/** エディタパス */}
+
+          {/** フォント設定ボタン */}
+          <FormControl>
+            <Button
+              variant="outlined"
+              startIcon={<FontDownloadIcon />}
+              onClick={() => setFontDialogOpen(true)}
+              sx={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}
+            >
+              {t("setting.fontSetting")}
+            </Button>
+          </FormControl>
+
+          {/** 行番号表示 */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showLineNumbers}
+                  onChange={(e) => setShowLineNumbers(e.target.checked)}
+                />
+              }
+              label={t("setting.showLineNumbers")}
+            />
+          </FormControl>
+
+          {/** テキスト折り返し */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={wordWrap}
+                  onChange={(e) => setWordWrap(e.target.checked)}
+                />
+              }
+              label={t("setting.wordWrap")}
+            />
+          </FormControl>
+
+          {/** プレビュー表示 */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showPreview}
+                  onChange={(e) => setShowPreview(e.target.checked)}
+                />
+              }
+              label={t("setting.showPreview")}
+            />
+          </FormControl>
+
+          {/** エディタプログラム */}
           <FormControl>
             <FormLabel>{t("setting.editorProgram")}</FormLabel>
             <TextField size="small" value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)} />
           </FormControl>
+
         </div>
       </div>
 
@@ -44,6 +142,9 @@ function EditorSetting() {
           <SaveIcon fontSize="large" />
         </IconButton>
       </Box>
+
+      {/** フォントダイアログ */}
+      <FontDialog show={fontDialogOpen} font={font} onClose={handleFontDialogClose} />
     </Box>
   );
 }

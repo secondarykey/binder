@@ -81,9 +81,12 @@ type Look struct {
 }
 
 type Editor struct {
-	Program    string       `json:"program"`
-	GitBash    bool         `json: "gitbash"`
-	ThemeFonts []*ThemeFont `json:"themeFont"`
+	Program         string       `json:"program"`
+	GitBash         bool         `json: "gitbash"`
+	ShowLineNumbers bool         `json:"showLineNumbers"`
+	WordWrap        bool         `json:"wordWrap"`
+	ShowPreview     bool         `json:"showPreview"`
+	ThemeFonts      []*ThemeFont `json:"themeFont"`
 }
 
 type ThemeFont struct {
@@ -179,6 +182,9 @@ func def() *Setting {
 	ltf.Font = &lightf
 
 	var editor Editor
+	editor.ShowLineNumbers = true
+	editor.WordWrap = true
+	editor.ShowPreview = true
 	editor.ThemeFonts = append(editor.ThemeFonts, &dtf, &ltf)
 
 	look.Editor = &editor
@@ -262,6 +268,20 @@ func SaveHistory(h string) error {
 func SaveLanguage(lang string) error {
 	obj := Get()
 	obj.Language = lang
+	return obj.save()
+}
+
+func GetEditor() *Editor {
+	obj := Get()
+	return obj.Look.Editor
+}
+
+func SaveEditor(e *Editor) error {
+	obj := Get()
+	obj.Look.Editor.Program = e.Program
+	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
+	obj.Look.Editor.WordWrap = e.WordWrap
+	obj.Look.Editor.ShowPreview = e.ShowPreview
 	return obj.save()
 }
 

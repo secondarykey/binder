@@ -92,7 +92,11 @@
         "theme" : "Theme",
         "themeDark" : "Dark",
         "themeLight" : "Light",
-        "language" : "Language"
+        "language" : "Language",
+        "showLineNumbers" : "Show Line Numbers",
+        "wordWrap" : "Word Wrap",
+        "showPreview" : "Show Preview",
+        "fontSetting" : "Font Setting"
     },
     "binder" : {
         "editTitle" : "Edit Binder",

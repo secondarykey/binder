@@ -92,7 +92,11 @@
         "theme" : "テーマ",
         "themeDark" : "ダーク",
         "themeLight" : "ライト",
-        "language" : "言語"
+        "language" : "言語",
+        "showLineNumbers" : "行番号の表示",
+        "wordWrap" : "テキストの折り返し",
+        "showPreview" : "プレビューの表示",
+        "fontSetting" : "フォント設定"
     },
     "binder" : {
         "editTitle" : "Binder編集",
