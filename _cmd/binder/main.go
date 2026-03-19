@@ -85,7 +85,7 @@ func main() {
 		Frameless:              true,
 		BackgroundColour:       application.NewRGBA(27, 38, 54, 255),
 		URL:                    "/",
-		OpenInspectorOnStartup: true,
+		OpenInspectorOnStartup: false,
 		EnableFileDrop:         true,
 	})
 
