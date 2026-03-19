@@ -1,11 +1,19 @@
 import { useEffect, useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { List, ListSubheader, ListItemButton, ListItemText, Typography, CircularProgress, Box, Button, Tooltip } from '@mui/material';
+import {
+  List, ListSubheader, ListItemButton, ListItemText,
+  Typography, CircularProgress, Box, Button, Tooltip,
+  Menu, MenuItem, ListItemIcon,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+} from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import RestoreIcon from '@mui/icons-material/Restore';
 
-import { GetHistory } from '../../bindings/binder/api/app';
+import { Events, Window } from '@wailsio/runtime';
+
+import { GetHistory, GetModifiedIds, RestoreHistory } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import "../i18n/config";
@@ -28,6 +36,11 @@ function HistoryMenu({ typ, id }) {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // コンテキストメニュー用
+  const [ctxMenu, setCtxMenu] = useState(null);   // { mouseX, mouseY, entry }
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [restoreHash, setRestoreHash] = useState(null);
 
   // typ/id が変わったら初期化してから最初のページを取得
   useEffect(() => {
@@ -64,6 +77,40 @@ function HistoryMenu({ typ, id }) {
     nav('/history/diff/' + entry.hash);
   };
 
+  const handleContextMenu = (e, entry) => {
+    e.preventDefault();
+    setCtxMenu({ mouseX: e.clientX, mouseY: e.clientY, entry });
+  };
+
+  const handleCtxClose = () => setCtxMenu(null);
+
+  // コンテキストメニューから復元を開始
+  const handleCtxRestore = () => {
+    const entry = ctxMenu?.entry;
+    handleCtxClose();
+    if (!entry) return;
+    setRestoreHash(entry.hash);
+    GetModifiedIds().then((ids) => {
+      const modified = (ids ?? []).includes(id);
+      if (modified) {
+        setConfirmOpen(true);
+      } else {
+        doRestore(entry.hash);
+      }
+    }).catch(() => {
+      doRestore(entry.hash);
+    });
+  };
+
+  const doRestore = (targetHash) => {
+    RestoreHistory(typ, id, targetHash).then(() => {
+      Events.Emit("binder:restored", { typ, id });
+      Window.Close();
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
   const formatDate = (when) => {
     try {
       const d = new Date(when);
@@ -75,6 +122,7 @@ function HistoryMenu({ typ, id }) {
 
 
   return (
+    <>
     <List dense disablePadding className="treeText" sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
 
       <ListSubheader disableSticky sx={{
@@ -115,7 +163,8 @@ function HistoryMenu({ typ, id }) {
               '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
               '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
             }}
-            onClick={() => handleClick(entry)}>
+            onClick={() => handleClick(entry)}
+            onContextMenu={(e) => handleContextMenu(e, entry)}>
             <ListItemText
               sx={{ my: 0 }}
               primary={entry.message.split('\n')[0]}
@@ -158,6 +207,39 @@ function HistoryMenu({ typ, id }) {
       )}
 
     </List>
+
+    {/* 右クリックコンテキストメニュー */}
+    <Menu
+      open={ctxMenu !== null}
+      onClose={handleCtxClose}
+      anchorReference="anchorPosition"
+      anchorPosition={ctxMenu ? { top: ctxMenu.mouseY, left: ctxMenu.mouseX } : undefined}
+      slotProps={{ paper: { sx: { backgroundColor: 'var(--bg-overlay)', color: 'var(--text-primary)', minWidth: 180 } } }}
+    >
+      <MenuItem onClick={handleCtxRestore} dense sx={{ fontSize: '0.875rem' }}>
+        <ListItemIcon sx={{ minWidth: 32 }}>
+          <RestoreIcon fontSize="small" sx={{ color: 'var(--text-primary)' }} />
+        </ListItemIcon>
+        {t('history.restore')}
+      </MenuItem>
+    </Menu>
+
+    {/* 未コミット変更がある場合の確認ダイアログ */}
+    <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+      <DialogTitle>{t('history.restoreTitle')}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          {t('history.restoreWarning')}
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
+        <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }}>
+          {t('history.restore')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }
 
