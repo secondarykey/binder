@@ -13,6 +13,8 @@ import HistoryPatch from './HistoryPatch';
 
 import '../assets/App.css';
 import '../assets/HistoryApp.css';
+import '../i18n/config';
+import { useTranslation } from 'react-i18next';
 
 /**
  * 履歴表示ウィンドウ
@@ -22,6 +24,7 @@ function HistoryApp() {
 
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const { t } = useTranslation();
 
   // URL search params から type・id・name を取得
   const params = new URLSearchParams(window.location.search);
@@ -43,7 +46,7 @@ function HistoryApp() {
       {/** タイトルバー（ドラッグ可能・フレームレス対応） */}
       <Toolbar id="historyTitle" className="binderTitle" onDoubleClick={() => Window.ToggleMaximise()}>
         <Typography variant="body1" sx={{ flex: 1 }} noWrap>
-          History{name ? ` — ${name}` : ''}
+          {t('history.title')}{name ? ` — ${name}` : ''}
         </Typography>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />

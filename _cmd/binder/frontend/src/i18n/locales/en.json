@@ -144,6 +144,7 @@
         "type" : "Type"
     },
     "history" : {
+        "title" : "History",
         "restoreTitle" : "Restore file?",
         "restoreWarning" : "The current file has uncommitted changes. Restoring will discard those changes.",
         "restore" : "Restore",
