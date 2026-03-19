@@ -10,6 +10,7 @@ import EditorSetting from "./EditorSetting";
 import GitSetting from "./GitSetting";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
+import locals from "../i18n/locals.json";
 
 /**
  * アプリ設定
@@ -19,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 function Setting({ isModal, ...props }) {
 
   const evt = useContext(EventContext)
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
 
   const [activeSection, setActiveSection] = useState("basic");
 
@@ -54,6 +55,10 @@ function Setting({ isModal, ...props }) {
     SetTheme(next).catch((err) => {
       evt.showErrorMessage(err);
     });
+  };
+
+  const handleLanguageChange = (e) => {
+    i18n.changeLanguage(e.target.value);
   };
 
   const handleSave = () => {
@@ -181,6 +186,28 @@ function Setting({ isModal, ...props }) {
                   >
                     <MenuItem value="dark" sx={{ fontSize: '13px' }}>{t("setting.themeDark")}</MenuItem>
                     <MenuItem value="light" sx={{ fontSize: '13px' }}>{t("setting.themeLight")}</MenuItem>
+                  </Select>
+                </FormControl>
+                {/** 言語選択 */}
+                <FormControl>
+                  <FormLabel>{t("setting.language")}</FormLabel>
+                  <Select
+                    value={i18n.language}
+                    onChange={handleLanguageChange}
+                    size="small"
+                    sx={{
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'var(--bg-dropdown)',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
+                    }}
+                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+                  >
+                    {locals.languages.map((lang) => (
+                      <MenuItem key={lang.code} value={lang.code} sx={{ fontSize: '13px' }}>{lang.name}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </div>
