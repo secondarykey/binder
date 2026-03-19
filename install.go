@@ -31,6 +31,13 @@ var embFs embed.FS
 // サンプルとしていくつかデータを作成する
 func Install(dir string, ver *Version) error {
 
+	// ディレクトリが存在しない場合は作成する
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return xerrors.Errorf("os.MkdirAll() error: %w", err)
+		}
+	}
+
 	err := checkDirectory(dir, true)
 	if err != nil {
 		return xerrors.Errorf("checkDirectory() error: %w", err)
