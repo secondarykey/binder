@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
 import { SelectDirectory } from '../../bindings/main/window';
-import { LoadBinder, SaveHistory } from '../../bindings/binder/api/app';
+import { LoadBinder } from '../../bindings/binder/api/app';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 
@@ -35,9 +35,6 @@ function FileMenu(props) {
       if ( p == "" ) return;
 
       LoadBinder(p).then((href) => {
-
-        //TODO エラー処理
-        SaveHistory(p);
 
         evt.changeAddress(href);
         nav("/note/edit/index");

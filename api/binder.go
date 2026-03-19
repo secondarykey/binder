@@ -3,6 +3,7 @@ package api
 import (
 	"binder"
 	"binder/log"
+	"binder/settings"
 	"fmt"
 	"log/slog"
 
@@ -42,6 +43,11 @@ func (a *App) load(dir string) (string, error) {
 	address, err := a.Address()
 	if err != nil {
 		return "", xerrors.Errorf("Binder Address() error: %w", err)
+	}
+
+	// 履歴を保存（最近開いたバインダーを先頭にする）
+	if err := settings.SaveHistory(dir); err != nil {
+		slog.Warn("SaveHistory error", "err", err)
 	}
 
 	return address, nil
