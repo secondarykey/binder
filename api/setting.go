@@ -58,6 +58,17 @@ func (a *App) SetTheme(theme string) error {
 	return settings.SaveTheme(theme)
 }
 
+func (a *App) GetLanguage() string {
+	defer log.PrintTrace(log.Func("GetLanguage()"))
+	s := settings.Get()
+	return s.Language
+}
+
+func (a *App) SetLanguage(lang string) error {
+	defer log.PrintTrace(log.Func("SetLanguage()"))
+	return settings.SaveLanguage(lang)
+}
+
 func (a *App) GetFontNames() ([]string, error) {
 	names := binder.FontNames()
 	return names, nil

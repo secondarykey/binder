@@ -21,6 +21,7 @@ type Setting struct {
 	Path     *Path     `json:"path"`
 	Look     *Look     `json:"lookAndFeel"`
 	Git      *Git      `json:"git"`
+	Language string    `json:"language"`
 }
 
 func (s Setting) IsDefault() bool {
@@ -255,6 +256,12 @@ func SaveHistory(h string) error {
 		}
 	}
 	obj.Path.Histories = list
+	return obj.save()
+}
+
+func SaveLanguage(lang string) error {
+	obj := Get()
+	obj.Language = lang
 	return obj.save()
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
 import { Box, FormControl, FormLabel, FormControlLabel, IconButton, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
-import { GetPath, SavePath, GetTheme, SetTheme } from "../../bindings/binder/api/app";
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 
 import { EventContext } from "../Event";
@@ -46,6 +46,9 @@ function Setting({ isModal, ...props }) {
     GetTheme().then((t) => {
       setThemeState(t || 'dark');
     }).catch(() => {});
+    GetLanguage().then((lang) => {
+      if (lang) i18n.changeLanguage(lang);
+    }).catch(() => {});
   }, []);
 
   const handleThemeChange = (e) => {
@@ -58,7 +61,11 @@ function Setting({ isModal, ...props }) {
   };
 
   const handleLanguageChange = (e) => {
-    i18n.changeLanguage(e.target.value);
+    const lang = e.target.value;
+    i18n.changeLanguage(lang);
+    SetLanguage(lang).catch((err) => {
+      evt.showErrorMessage(err);
+    });
   };
 
   const handleSave = () => {
