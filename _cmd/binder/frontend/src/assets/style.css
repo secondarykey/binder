@@ -28,6 +28,7 @@
   flex-flow: column;
   background-color: var(--bg-panel);
   color: var(--text-primary);
+  padding: 8px;
 }
 
 .messageTxt {
