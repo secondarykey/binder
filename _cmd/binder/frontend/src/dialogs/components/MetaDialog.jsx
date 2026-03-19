@@ -69,12 +69,12 @@ function MetaDialog({
       </DialogContent>
       <DialogActions>
         {showDelete && onDelete && (
-          <IconButton onClick={onDelete} disabled={deleteDisabled} sx={{ mr: "auto", color: "var(--accent-red)" }} aria-label="delete">
-            <Delete />
+          <IconButton onClick={onDelete} disabled={deleteDisabled} sx={{ mr: "auto" }} aria-label="delete">
+            <Delete style={{ color: deleteDisabled ? undefined : "var(--accent-red)" }} />
           </IconButton>
         )}
-        <IconButton onClick={onSave} sx={{ color: "var(--accent-blue)" }} aria-label="save">
-          <Save />
+        <IconButton onClick={onSave} aria-label="save">
+          <Save style={{ color: "var(--accent-blue)" }} />
         </IconButton>
       </DialogActions>
     </Dialog>
