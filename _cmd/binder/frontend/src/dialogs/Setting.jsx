@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, IconButton, List, ListItemButton, ListItemText, Switch, TextField } from "@mui/material";
+import { Box, FormControl, FormLabel, FormControlLabel, IconButton, List, ListItemButton, ListItemText, Paper, Switch, TextField } from "@mui/material";
 import { GetPath, SavePath } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 
@@ -118,16 +118,36 @@ function Setting({ isModal, ...props }) {
                   <FormLabel>{t("setting.defaultPath")}</FormLabel>
                   <TextField size="small" value={pathDefault} onChange={(e) => setPathDefault(e.target.value)}></TextField>
                 </FormControl>
-                {/** 最後に開いたBinderを開くか */}
-                <FormControl>
-                  <FormLabel>{t("setting.runWithOpen")}</FormLabel>
-                  <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} inputProps={{ 'aria-label': 'controlled' }} />
-                </FormControl>
-                {/** 起動時に最後に開いたファイルを開くか？ */}
-                <FormControl>
-                  <FormLabel>{t("setting.openWithNote")}</FormLabel>
-                  <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} inputProps={{ 'aria-label': 'controlled' }} />
-                </FormControl>
+                {/** 起動時の動作 */}
+                <Paper variant="outlined" sx={{
+                  p: 2,
+                  backgroundColor: 'var(--bg-overlay)',
+                  borderColor: 'var(--border-primary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}>
+                  <FormControlLabel
+                    control={
+                      <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} size="small" />
+                    }
+                    label={t("setting.runWithOpen")}
+                    sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} size="small" />
+                    }
+                    label={t("setting.openWithNote")}
+                    sx={{
+                      pl: 2,
+                      '& .MuiFormControlLabel-label': {
+                        fontSize: '13px',
+                        color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
+                      },
+                    }}
+                  />
+                </Paper>
               </div>
             </div>
 
