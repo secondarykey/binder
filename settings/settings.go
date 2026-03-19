@@ -158,13 +158,13 @@ func def() *Setting {
 
 	var darkf Font
 
-	darkf.Name = "Araial"
+	darkf.Name = "Arial"
 	darkf.Size = 16
-	darkf.Color = "#111111"
-	darkf.BackgroundColor = "#eeeeee"
+	darkf.Color = "#cccccc"
+	darkf.BackgroundColor = "#333333"
 
 	var lightf Font
-	lightf.Name = "Araial"
+	lightf.Name = "Arial"
 	lightf.Size = 16
 	lightf.Color = "#eeeeee"
 	lightf.BackgroundColor = "#111111"

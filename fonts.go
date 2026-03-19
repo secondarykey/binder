@@ -13,7 +13,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var websafeFonts = []string{"Arial", "Verdana", "Tahoma", "Time New Roman", "Georgia", "Courier New"}
+//var websafeFonts = []string{"Arial", "Verdana", "Tahoma", "Time New Roman", "Georgia", "Courier New"}
 
 func FontNames() []string {
 
@@ -21,7 +21,7 @@ func FontNames() []string {
 	families := make(map[string]string)
 
 	var names []string
-	names = append(names, websafeFonts...)
+	//names = append(names, websafeFonts...)
 
 	for _, p := range paths {
 		n, err := getFontNames(p)
