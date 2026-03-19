@@ -3,7 +3,7 @@ import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Typography,
 } from "@mui/material";
-import { Close, ContentCopy } from "@mui/icons-material";
+import { Close, ContentCopy, Delete, Save } from "@mui/icons-material";
 
 import { copyClipboard } from "../../app/App";
 import { EventContext } from "../../Event";
@@ -18,7 +18,6 @@ import { EventContext } from "../../Event";
  *   id?: string,
  *   showId?: boolean,
  *   onSave: () => void,
- *   saveLabel?: string,
  *   onDelete?: () => void,
  *   showDelete?: boolean,
  *   deleteDisabled?: boolean,
@@ -28,7 +27,7 @@ import { EventContext } from "../../Event";
 function MetaDialog({
   open, onClose, title, id,
   showId = true,
-  onSave, saveLabel = "Save",
+  onSave,
   onDelete, showDelete = true, deleteDisabled = false,
   children,
 }) {
@@ -70,9 +69,13 @@ function MetaDialog({
       </DialogContent>
       <DialogActions>
         {showDelete && onDelete && (
-          <Button onClick={onDelete} color="error" disabled={deleteDisabled} sx={{ mr: "auto" }}>Delete</Button>
+          <IconButton onClick={onDelete} color="error" disabled={deleteDisabled} sx={{ mr: "auto" }} aria-label="delete">
+            <Delete />
+          </IconButton>
         )}
-        <Button onClick={onSave} variant="contained">{saveLabel}</Button>
+        <IconButton onClick={onSave} color="primary" aria-label="save">
+          <Save />
+        </IconButton>
       </DialogActions>
     </Dialog>
   );

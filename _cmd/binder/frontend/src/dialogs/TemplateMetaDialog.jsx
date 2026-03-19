@@ -70,7 +70,7 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
       open={open} onClose={onClose}
       title={isCreate ? t("template.createTitle") : t("template.editTitle")}
       id={id} showId={!isCreate}
-      onSave={handleSave} saveLabel={isCreate ? t("common.create") : t("common.save")}
+      onSave={handleSave}
       onDelete={() => setConfirmDelete(true)} showDelete={!isCreate}
     >
       <FormControl>
