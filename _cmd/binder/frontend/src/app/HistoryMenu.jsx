@@ -1,12 +1,17 @@
 import { useEffect, useState, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { List, ListSubheader, ListItemButton, ListItemText, Typography, CircularProgress, Box } from '@mui/material';
+import { List, ListSubheader, ListItemButton, ListItemText, Typography, CircularProgress, Box, Button } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { GetHistory } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
+
+const PAGE_SIZE = 10;
 
 /**
  * 履歴一覧
@@ -17,14 +22,17 @@ function HistoryMenu({ typ, id }) {
   const evt = useContext(EventContext);
   const { hash } = useParams();
   const nav = useNavigate();
+  const { t } = useTranslation();
 
   const [entries, setEntries] = useState([]);
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!typ || !id) return;
 
     setLoading(true);
+    setDisplayCount(PAGE_SIZE);
     GetHistory(typ, id).then((list) => {
       setEntries(list ?? []);
     }).catch((err) => {
@@ -46,6 +54,9 @@ function HistoryMenu({ typ, id }) {
       return when;
     }
   };
+
+  const visibleEntries = entries.slice(0, displayCount);
+  const hasMore = entries.length > displayCount;
 
   return (
     <List dense disablePadding className="treeText" sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
@@ -73,7 +84,7 @@ function HistoryMenu({ typ, id }) {
         </Typography>
       )}
 
-      {entries.map((entry) => (
+      {visibleEntries.map((entry) => (
         <ListItemButton key={entry.hash}
           selected={entry.hash === hash}
           sx={{
@@ -98,6 +109,23 @@ function HistoryMenu({ typ, id }) {
           />
         </ListItemButton>
       ))}
+
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<ExpandMoreIcon fontSize="small" />}
+            onClick={() => setDisplayCount(c => c + PAGE_SIZE)}
+            sx={{
+              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
+              '&:hover': { color: 'var(--text-primary)' },
+            }}
+          >
+            {t('history.loadMore')}
+          </Button>
+        </Box>
+      )}
 
     </List>
   );

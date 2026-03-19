@@ -146,7 +146,8 @@
     "history" : {
         "restoreTitle" : "Restore file?",
         "restoreWarning" : "The current file has uncommitted changes. Restoring will discard those changes.",
-        "restore" : "Restore"
+        "restore" : "Restore",
+        "loadMore" : "Load more"
     },
     "assetViewer" : {
         "loadError" : "Could not load file content. The file may not exist on disk.",
