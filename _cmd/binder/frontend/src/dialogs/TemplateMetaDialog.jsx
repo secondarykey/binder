@@ -80,7 +80,7 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
 
       <FormControl>
         <FormLabel>{t("common.detail")}</FormLabel>
-        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+        <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline maxRows={4} />
       </FormControl>
 
       <FormControl>
