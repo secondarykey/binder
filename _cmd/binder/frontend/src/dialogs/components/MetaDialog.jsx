@@ -70,7 +70,7 @@ function MetaDialog({
       </DialogContent>
       <DialogActions>
         {showDelete && onDelete && (
-          <Button onClick={onDelete} color="error" disabled={deleteDisabled}>Delete</Button>
+          <Button onClick={onDelete} color="error" disabled={deleteDisabled} sx={{ mr: "auto" }}>Delete</Button>
         )}
         <Button onClick={onSave} variant="contained">{saveLabel}</Button>
       </DialogActions>
