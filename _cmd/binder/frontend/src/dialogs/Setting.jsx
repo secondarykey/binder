@@ -99,8 +99,8 @@ function Setting({ isModal, ...props }) {
   const menuItems = [
     { key: "basic", label: t("setting.basic") },
     { key: "editor", label: t("setting.editor") },
-    { key: "git", label: t("setting.git") },
     { key: "snippet", label: t("setting.snippet") },
+    { key: "git", label: t("setting.git") },
   ];
 
   return (
