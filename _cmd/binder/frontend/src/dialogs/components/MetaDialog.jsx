@@ -54,7 +54,7 @@ function MetaDialog({
       </DialogTitle>
       <DialogContent>
         <Grid className="formGrid" style={{ margin: 0, padding: "8px" }}>
-          {showId && id && (
+          {showId && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <Typography variant="body2" sx={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>
                 ID: {id}
