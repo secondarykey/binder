@@ -1221,66 +1221,72 @@ function Editor(props) {
           {viewer &&
             <div id="dataViewer">
 
-              {/** 表示するコンポーネントを変更 */}
-              {(mode === Mode.note) &&
-                <HTMLFrame html={html} cursorLine={cursorLine} />
-              }
-              {mode === Mode.diagram &&
-                <div id="mermaidViewer"></div>
-              }
-              {mode === Mode.template && (() => {
-                const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
-                return (
-                  <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 4px", borderBottom: "1px solid var(--border-primary)", flexShrink: 0, backgroundColor: "var(--bg-elevated)" }}>
-                      <Select
-                        value={previewOtherTemplateId}
-                        onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
-                        size="small"
-                        displayEmpty
-                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                      >
-                        {previewOtherTemplates.map((t) => (
-                          <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
-                        ))}
-                      </Select>
-                      <Select
-                        value={previewNoteId}
-                        onChange={(e) => setPreviewNoteId(e.target.value)}
-                        size="small"
-                        displayEmpty
-                        sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                      >
-                        {previewNotes.map((n) => (
-                          <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
-                        ))}
-                      </Select>
-                    </div>
-                    <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
-                      <HTMLFrame html={html} cursorLine={cursorLine} />
-                    </div>
-                  </div>
-                );
-              })()}
+              {/** プレビューメニュー */}
+              <div id="previewMenu">
+                {mode !== Mode.template && <>
+                  <Tooltip title={t("preview.publish")} placement="bottom">
+                    <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
+                      <PublishIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t("preview.unpublish")} placement="bottom">
+                    <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="editorBtn">
+                      <UnpublishedIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </Tooltip>
+                </>}
+                {mode === Mode.diagram &&
+                  <Tooltip title={t("preview.download")} placement="bottom">
+                    <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
+                      <DownloadIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </Tooltip>
+                }
+              </div>
 
-              {/** フローティング操作ボタン（右下: 公開 / ダイアグラムダウンロード） */}
-              {mode !== Mode.template &&
-                <IconButton className="floatPublishBtn" size="small" aria-label="publish" onClick={handlePublish}>
-                  <PublishIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-                </IconButton>
-              }
-              {mode === Mode.diagram &&
-                <IconButton className="floatPublishBtn" size="small" aria-label="download" onClick={handleDownload} sx={{ bottom: '64px' }}>
-                  <DownloadIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-                </IconButton>
-              }
-
-              {/** フローティング操作ボタン（左下: 非公開） */}
-              {mode !== Mode.template &&
-                <IconButton className="floatUnpublishBtn" size="small" aria-label="unpublish" onClick={handleUnpublish}>
-                  <UnpublishedIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-                </IconButton>
-              }
+              {/** プレビューコンテンツ */}
+              <div id="previewContent">
+                {(mode === Mode.note) &&
+                  <HTMLFrame html={html} cursorLine={cursorLine} />
+                }
+                {mode === Mode.diagram &&
+                  <div id="mermaidViewer"></div>
+                }
+                {mode === Mode.template && (() => {
+                  const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 4px", borderBottom: "1px solid var(--border-primary)", flexShrink: 0, backgroundColor: "var(--bg-elevated)" }}>
+                        <Select
+                          value={previewOtherTemplateId}
+                          onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                          size="small"
+                          displayEmpty
+                          sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                        >
+                          {previewOtherTemplates.map((t) => (
+                            <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
+                          ))}
+                        </Select>
+                        <Select
+                          value={previewNoteId}
+                          onChange={(e) => setPreviewNoteId(e.target.value)}
+                          size="small"
+                          displayEmpty
+                          sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                        >
+                          {previewNotes.map((n) => (
+                            <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
+                          ))}
+                        </Select>
+                      </div>
+                      <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+                        <HTMLFrame html={html} cursorLine={cursorLine} />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
 
             </div>
           }

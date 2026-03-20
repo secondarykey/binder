@@ -160,6 +160,24 @@
   min-width: 0;
   position: relative;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#previewMenu {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding: 4px 4px 0 4px;
+  background-color: var(--bg-elevated);
+  min-height: 33px;
+}
+
+#previewContent {
+  flex: 1;
+  position: relative;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -244,7 +262,7 @@ iframe.htmlViewer {
 }
 
 /* =====================================================================
- * フローティング公開ボタン（プレビュー右下）
+ * フローティング公開ボタン（AssetViewer等で使用）
  * ===================================================================== */
 .floatPublishBtn {
   position: absolute !important;
@@ -261,7 +279,7 @@ iframe.htmlViewer {
 }
 
 /* =====================================================================
- * フローティング非公開ボタン（プレビュー左下）
+ * フローティング非公開ボタン（AssetViewer等で使用）
  * ===================================================================== */
 .floatUnpublishBtn {
   position: absolute !important;

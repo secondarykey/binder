@@ -176,6 +176,11 @@
         "migrateConfirm" : "「{{name}}」をノートに移行します。元のアセットは削除されます。よろしいですか？",
         "migrate" : "移行"
     },
+    "preview" : {
+        "publish" : "公開",
+        "unpublish" : "非公開",
+        "download" : "ダウンロード"
+    },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",
         "lineNumberOn" : "行番号: ON",

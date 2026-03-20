@@ -176,6 +176,11 @@
         "migrateConfirm" : "Migrate \"{{name}}\" to a note. The original asset will be deleted. Continue?",
         "migrate" : "Migrate"
     },
+    "preview" : {
+        "publish" : "Publish",
+        "unpublish" : "Unpublish",
+        "download" : "Download"
+    },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
         "lineNumberOn" : "Line Numbers: ON",
