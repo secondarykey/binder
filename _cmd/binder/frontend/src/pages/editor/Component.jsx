@@ -168,6 +168,7 @@ function Editor(props) {
 
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
+  const editorSettingRef = useRef(null);
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -937,6 +938,7 @@ function Editor(props) {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setViewer(e.showPreview);
+        editorSettingRef.current = e;
       }
     }).catch((err) => {
       console.log(err);
@@ -944,14 +946,16 @@ function Editor(props) {
 
   }, []);
 
-  // エディタ設定をsetting.jsonに保存するヘルパー
+  // エディタ設定をsetting.jsonに保存するヘルパー（既存のprogram等を保持）
   const saveEditorSetting = (overrides) => {
     const editor = {
+      ...editorSettingRef.current,
       showLineNumbers,
       wordWrap,
       showPreview: viewer,
       ...overrides,
     };
+    editorSettingRef.current = editor;
     SaveEditor(editor).catch((err) => console.log(err));
   };
 
