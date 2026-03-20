@@ -89,7 +89,9 @@ function EditorSetting() {
     setFontDialogOpen(false);
     if (result) {
       setFont(result);
-      SaveFont(result).catch((err) => {
+      SaveFont(result).then(() => {
+        Events.Emit('binder:editor:fontChanged', result);
+      }).catch((err) => {
         evt.showErrorMessage(err);
       });
     }

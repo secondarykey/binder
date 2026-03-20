@@ -139,18 +139,18 @@ function buildDiffView(source, patch) {
 /**
  * 行番号付きテキストパネル
  */
-function TextPanel({ rows, html, fontName, fontSize, scrollRef, lineRef }) {
+function TextPanel({ rows, html, fontName, fontSize, fontColor, fontBgColor, scrollRef, lineRef }) {
     const pos = (fontSize * 3) + "px";
 
     const lineStyle = {
-        backgroundColor: "var(--bg-overlay)",
+        backgroundColor: fontBgColor,
         border: "0",
         borderRight: "1px double #cccccc",
         boxSizing: "border-box",
         position: "absolute",
         width: pos,
         zIndex: 10,
-        color: "var(--text-secondary)",
+        color: fontColor,
         paddingRight: "5px",
         fontSize: fontSize + "px",
         fontFamily: fontName,
@@ -161,8 +161,8 @@ function TextPanel({ rows, html, fontName, fontSize, scrollRef, lineRef }) {
     };
 
     const textStyle = {
-        backgroundColor: "var(--bg-overlay)",
-        color: "var(--text-secondary)",
+        backgroundColor: fontBgColor,
+        color: fontColor,
         whiteSpace: "pre",
         fontSize: fontSize + "px",
         fontFamily: fontName,
@@ -196,6 +196,8 @@ function HistoryPatch({ typ, id }) {
     const [patch,      setPatch]      = useState("");
     const [fontName,   setFontName]   = useState("monospace");
     const [fontSize,   setFontSize]   = useState(14);
+    const [fontColor,  setFontColor]  = useState("var(--text-secondary)");
+    const [fontBgColor, setFontBgColor] = useState("var(--bg-overlay)");
     const [confirmOpen, setConfirmOpen] = useState(false);
     // デフォルトは履歴ファイルのみ表示。Diff ボタンで差分パネルをトグル
     const [showDiff, setShowDiff] = useState(false);
@@ -229,8 +231,20 @@ function HistoryPatch({ typ, id }) {
             if (f) {
                 if (f.name) setFontName(f.name);
                 if (f.size) setFontSize(f.size);
+                if (f.color) setFontColor(f.color);
+                if (f.backgroundColor) setFontBgColor(f.backgroundColor);
             }
         }).catch(() => {});
+
+        // フォント変更イベントを受信して同期
+        const cleanup = Events.On('binder:editor:fontChanged', (event) => {
+            const f = event.data?.[0] ?? event.data ?? {};
+            if (f.name) setFontName(f.name);
+            if (f.size) setFontSize(f.size);
+            if (f.color) setFontColor(f.color);
+            if (f.backgroundColor) setFontBgColor(f.backgroundColor);
+        });
+        return () => { cleanup(); };
     }, []);
 
     useEffect(() => {
@@ -356,6 +370,8 @@ function HistoryPatch({ typ, id }) {
                         html={histHtml}
                         fontName={fontName}
                         fontSize={fontSize}
+                        fontColor={fontColor}
+                        fontBgColor={fontBgColor}
                         scrollRef={histScrollRef}
                         lineRef={histLineRef}
                     />
@@ -374,6 +390,8 @@ function HistoryPatch({ typ, id }) {
                             html={diffHtml}
                             fontName={fontName}
                             fontSize={fontSize}
+                            fontColor={fontColor}
+                            fontBgColor={fontBgColor}
                             scrollRef={diffScrollRef}
                             lineRef={diffLineRef}
                         />

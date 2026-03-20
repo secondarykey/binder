@@ -2,6 +2,7 @@ import { useEffect, useState, useRef ,useContext} from "react";
 import { useParams } from "react-router";
 
 import { GetNowPatch, GetFont } from "../../bindings/binder/api/app";
+import { Events } from '@wailsio/runtime';
 
 import {EventContext} from "../Event";
 
@@ -84,6 +85,8 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
     const [rows, setRows] = useState("");
     const [fontName, setFontName] = useState("monospace");
     const [fontSize, setFontSize] = useState(14);
+    const [fontColor, setFontColor] = useState("var(--text-secondary)");
+    const [fontBgColor, setFontBgColor] = useState("var(--bg-overlay)");
     const viewer = useRef();
     const lineViewer = useRef();
     useEffect(() => {
@@ -96,8 +99,20 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
             if (f) {
                 if (f.name) setFontName(f.name);
                 if (f.size) setFontSize(f.size);
+                if (f.color) setFontColor(f.color);
+                if (f.backgroundColor) setFontBgColor(f.backgroundColor);
             }
         }).catch(() => {});
+
+        // フォント変更イベントを受信して同期
+        const cleanup = Events.On('binder:editor:fontChanged', (event) => {
+            const f = event.data?.[0] ?? event.data ?? {};
+            if (f.name) setFontName(f.name);
+            if (f.size) setFontSize(f.size);
+            if (f.color) setFontColor(f.color);
+            if (f.backgroundColor) setFontBgColor(f.backgroundColor);
+        });
+        return () => { cleanup(); };
     }, [])
 
     useEffect(() => {
@@ -120,14 +135,14 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
     var pos = (fontSize *  digit) + "px";
 
     var lineStyle = {
-        backgroundColor: "var(--bg-overlay)",
+        backgroundColor: fontBgColor,
         border: "0",
         borderRight: "1px double #cccccc",
         boxSizing: "border-box",
         position: "absolute",
         width: "calc(" + pos + ")",
         zIndex: 10,
-        color: "var(--text-secondary)",
+        color: fontColor,
         paddingRight: "5px",
         fontSize: fontSize + "px",
         fontFamily: fontName,
@@ -138,8 +153,8 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
     }
 
     var textStyle = {
-        backgroundColor: "var(--bg-overlay)",
-        color: "var(--text-secondary)",
+        backgroundColor: fontBgColor,
+        color: fontColor,
         whiteSpace: "pre",
         fontSize: fontSize + "px",
         fontFamily: fontName,

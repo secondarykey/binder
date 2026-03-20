@@ -8,6 +8,7 @@ import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, GetFont } from '../../bindings/binder/api/app';
+import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
 import "../i18n/config";
@@ -163,6 +164,18 @@ function AssetViewer() {
         backgroundColor: s.backgroundColor,
       });
     }).catch(() => {});
+
+    // フォント変更イベントを受信して同期
+    const cleanup = Events.On('binder:editor:fontChanged', (event) => {
+      const s = event.data?.[0] ?? event.data ?? {};
+      setEditorStyle({
+        fontFamily: s.name,
+        fontSize: s.size + 'px',
+        color: s.color,
+        backgroundColor: s.backgroundColor,
+      });
+    });
+    return () => { cleanup(); };
   }, []);
 
   useEffect(() => {

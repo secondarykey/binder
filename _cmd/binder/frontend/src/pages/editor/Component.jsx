@@ -327,6 +327,15 @@ function Editor(props) {
     return () => { cleanup(); };
   }, []);
 
+  // 設定画面からのフォント変更を同期
+  useEffect(() => {
+    const cleanup = Events.On('binder:editor:fontChanged', (event) => {
+      const data = event.data?.[0] ?? event.data ?? {};
+      settingFont(data, false);
+    });
+    return () => { cleanup(); };
+  }, []);
+
   // スニペットを一度だけロード
   useEffect(() => {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
@@ -926,6 +935,7 @@ function Editor(props) {
     if ( save ) {
       // フォント設定を保存
       SaveFont(set).then(() => {
+        Events.Emit('binder:editor:fontChanged', set);
       }).catch((err) => {
         evt.showErrorMessage(err);
       });
