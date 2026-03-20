@@ -96,7 +96,9 @@
         "showLineNumbers" : "行番号の表示",
         "wordWrap" : "テキストの折り返し",
         "showPreview" : "プレビューの表示",
-        "fontSetting" : "フォント設定"
+        "fontSetting" : "フォント設定",
+        "gitBash" : "Git Bashで実行",
+        "editorProgramError" : "エディタプログラムに {file} を含めてください"
     },
     "binder" : {
         "editTitle" : "Binder編集",

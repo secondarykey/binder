@@ -2,14 +2,20 @@ package main
 
 import (
 	"binder/api"
+	"binder/fs"
 	"binder/log"
 	"binder/settings"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+	"golang.org/x/xerrors"
 )
 
 type Window struct {
@@ -164,6 +170,101 @@ func (win *Window) OpenBinderSite() error {
 	win.runtime.Browser.OpenURL(address)
 
 	return nil
+}
+
+const editorFileMark = "{file}"
+
+func (win *Window) RunEditor(mode, id string) error {
+	defer log.PrintTrace(log.Func("RunEditor()", mode, id))
+
+	editor := settings.GetEditor()
+	entry := editor.Program
+	bash := editor.GitBash && runtime.GOOS == "windows"
+
+	fn := win.app.GetFullPath(mode, id)
+	slog.Info(fn)
+
+	ch, err := runEditor(entry, fn, bash)
+	if err != nil {
+		return xerrors.Errorf("runEditor() error: %w", err)
+	}
+
+	err = <-ch
+	if err != nil {
+		return xerrors.Errorf("editor channel error: %w", err)
+	}
+	return nil
+}
+
+func runEditor(entry, fn string, winBash bool) (chan error, error) {
+
+	if winBash {
+		fn = fs.ToGitBash(fn)
+	}
+
+	//区切り文字のスライスを作成
+	lines := splitDQSpace(entry)
+
+	cmd := ""
+	fm := false
+
+	var args []string
+	for idx, bk := range lines {
+		if idx == 0 {
+			cmd = bk
+		} else {
+			word := bk
+			idx := strings.Index(word, editorFileMark)
+			if idx != -1 {
+				word = strings.ReplaceAll(word, editorFileMark, fn)
+				fm = true
+			}
+			args = append(args, word)
+		}
+	}
+
+	if !fm {
+		return nil, xerrors.Errorf("file mark[%s] error", editorFileMark)
+	}
+
+	if len(args) <= 0 {
+		return nil, xerrors.Errorf("command arguments error")
+	}
+
+	exe := exec.Command(cmd, args...)
+	err := exe.Start()
+	if err != nil {
+		return nil, xerrors.Errorf("command start error: %w", err)
+	}
+
+	ch := make(chan error)
+	go func(ch chan error) {
+		err := exe.Wait()
+		ch <- err
+	}(ch)
+
+	return ch, nil
+}
+
+// splitDQSpace はダブルコーテーション込のスペース区切りを行う
+func splitDQSpace(v string) []string {
+
+	// ダブルコーテーションで分割
+	parts := strings.Split(v, "\"")
+	var result []string
+
+	for i, part := range parts {
+		if i%2 == 0 {
+			// ダブルコーテーション外の部分をスペースで分割
+			words := strings.Fields(part)
+			result = append(result, words...)
+		} else {
+			// ダブルコーテーション内の部分をそのまま追加
+			result = append(result, part)
+		}
+	}
+
+	return result
 }
 
 func (win *Window) Terminate() bool {

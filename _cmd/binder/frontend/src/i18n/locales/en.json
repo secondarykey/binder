@@ -96,7 +96,9 @@
         "showLineNumbers" : "Show Line Numbers",
         "wordWrap" : "Word Wrap",
         "showPreview" : "Show Preview",
-        "fontSetting" : "Font Setting"
+        "fontSetting" : "Font Setting",
+        "gitBash" : "Run with Git Bash",
+        "editorProgramError" : "Editor program must contain {file}"
     },
     "binder" : {
         "editTitle" : "Edit Binder",

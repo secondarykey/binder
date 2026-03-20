@@ -8,7 +8,8 @@ import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/a
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
-import { RunEditor, GetFont, SaveFont, GetSnippets, GetEditor } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
+import { RunEditor } from "../../../bindings/main/window";
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -906,6 +907,17 @@ function Editor(props) {
 
   }, []);
 
+  // エディタ設定をsetting.jsonに保存するヘルパー
+  const saveEditorSetting = (overrides) => {
+    const editor = {
+      showLineNumbers,
+      wordWrap,
+      showPreview: viewer,
+      ...overrides,
+    };
+    SaveEditor(editor).catch((err) => console.log(err));
+  };
+
   var commentStyle = {};
   commentStyle.fontSize = "12px";
   commentStyle.paddingTop = "12px";
@@ -972,7 +984,7 @@ function Editor(props) {
                       value="lineNumbers"
                       selected={showLineNumbers}
                       size="small"
-                      onChange={() => setShowLineNumbers(v => !v)}
+                      onChange={() => { setShowLineNumbers(v => !v); saveEditorSetting({ showLineNumbers: !showLineNumbers }); }}
                       sx={{
                         border: 'none',
                         borderRadius: '4px',
@@ -1072,7 +1084,7 @@ function Editor(props) {
                       value="wordWrap"
                       selected={wordWrap}
                       size="small"
-                      onChange={() => setWordWrap(v => !v)}
+                      onChange={() => { setWordWrap(v => !v); saveEditorSetting({ wordWrap: !wordWrap }); }}
                       sx={{
                         border: 'none',
                         borderRadius: '4px',
@@ -1114,7 +1126,7 @@ function Editor(props) {
                       value="viewer"
                       selected={viewer}
                       size="small"
-                      onChange={() => setViewer(v => !v)}
+                      onChange={() => { setViewer(v => !v); saveEditorSetting({ showPreview: !viewer }); }}
                       sx={{
                         border: 'none',
                         borderRadius: '4px',

@@ -164,13 +164,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	return nil
 }
 
-func (a *App) RunEditor(mode, id string) error {
-
-	defer log.PrintTrace(log.Func("RunEditor()", mode, id))
-
-	err := a.current.RunEditor(mode, id)
-	if err != nil {
-		return xerrors.Errorf("RunEditor() error: %+v", err)
-	}
-	return nil
+func (a *App) GetFullPath(mode, id string) string {
+	defer log.PrintTrace(log.Func("GetFullPath()", mode, id))
+	return a.current.GetFullPath(mode, id)
 }

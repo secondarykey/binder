@@ -19,9 +19,11 @@ function EditorSetting() {
   const {t} = useTranslation();
 
   const [editorProgram, setEditorProgram] = useState("");
+  const [gitBash, setGitBash] = useState(false);
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [wordWrap, setWordWrap] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
+  const [programError, setProgramError] = useState(false);
 
   const [fontDialogOpen, setFontDialogOpen] = useState(false);
   const [font, setFont] = useState(undefined);
@@ -30,6 +32,7 @@ function EditorSetting() {
     GetEditor().then((e) => {
       if (e) {
         setEditorProgram(e.program || "");
+        setGitBash(e.gitbash || false);
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setShowPreview(e.showPreview);
@@ -47,9 +50,24 @@ function EditorSetting() {
     });
   }, []);
 
+  const handleProgramChange = (e) => {
+    const val = e.target.value;
+    setEditorProgram(val);
+    if (val && !val.includes("{file}")) {
+      setProgramError(true);
+    } else {
+      setProgramError(false);
+    }
+  };
+
   const handleSave = () => {
+    if (editorProgram && !editorProgram.includes("{file}")) {
+      setProgramError(true);
+      return;
+    }
     const editor = {
       program: editorProgram,
+      gitbash: gitBash,
       showLineNumbers: showLineNumbers,
       wordWrap: wordWrap,
       showPreview: showPreview,
@@ -130,7 +148,26 @@ function EditorSetting() {
           {/** エディタプログラム */}
           <FormControl>
             <FormLabel>{t("setting.editorProgram")}</FormLabel>
-            <TextField size="small" value={editorProgram} onChange={(e) => setEditorProgram(e.target.value)} />
+            <TextField
+              size="small"
+              value={editorProgram}
+              onChange={handleProgramChange}
+              error={programError}
+              helperText={programError ? t("setting.editorProgramError") : ""}
+            />
+          </FormControl>
+
+          {/** Git Bash */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={gitBash}
+                  onChange={(e) => setGitBash(e.target.checked)}
+                />
+              }
+              label={t("setting.gitBash")}
+            />
           </FormControl>
 
         </div>

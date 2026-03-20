@@ -162,8 +162,8 @@ export function RemoveNote(arg1) {
   return window['go']['api']['App']['RemoveNote'](arg1);
 }
 
-export function RunEditor(arg1, arg2) {
-  return window['go']['api']['App']['RunEditor'](arg1, arg2);
+export function GetFullPath(arg1, arg2) {
+  return window['go']['api']['App']['GetFullPath'](arg1, arg2);
 }
 
 export function SaveDiagram(arg1, arg2) {
