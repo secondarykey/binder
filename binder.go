@@ -3,10 +3,10 @@ package binder
 import (
 	. "binder/internal"
 
-	"binder/convert"
 	"binder/db"
 	"binder/fs"
 	"binder/log"
+	"binder/setup"
 	"context"
 	"fmt"
 	"log/slog"
@@ -63,20 +63,28 @@ func CreateRemote(url, dir string, version *Version) error {
 	return nil
 }
 
-func Load(dir string, ver *Version) (*Binder, error) {
+func CheckConvert(dir string, ver *Version) (bool, error) {
+	convertFlag, err := setup.CheckConvert(dir, ver)
+	if err != nil {
+		return false, xerrors.Errorf("setup.Check() error: %w", err)
+	}
+	return convertFlag, nil
+}
+
+func Convert(dir string, ver *Version) error {
+	// CSVスキーマ変換 + ファイルシステム移行 + binder.json更新 + マイグレーションコミット
+	// （0.2.2 アセットフラット化 / 0.4.5 config.csv退避 / binder.jsonバージョン更新）
+	if err := setup.Convert(dir, ver); err != nil {
+		return xerrors.Errorf("convert.Run() error: %w", err)
+	}
+	return nil
+}
+
+func Load(dir string) (*Binder, error) {
 
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
-	}
-
-	//変換処理を開く前に入れておく
-	dbDir := dir + "/db"
-
-	// CSVスキーマ変換 + ファイルシステム移行 + binder.json更新 + マイグレーションコミット
-	// （0.2.2 アセットフラット化 / 0.4.5 config.csv退避 / binder.jsonバージョン更新）
-	if err = convert.Run(dir, dbDir, ver, bfs); err != nil {
-		return nil, xerrors.Errorf("convert.Run() error: %w", err)
 	}
 
 	err = checkDirectory(dir, false)
@@ -84,19 +92,11 @@ func Load(dir string, ver *Version) (*Binder, error) {
 		return nil, xerrors.Errorf("checkDirectory() error: %w", err)
 	}
 
-	/*
-		if nf != "" {
-			err = bfs.SchemaCommit(nf)
-			if err != nil {
-				return nil, xerrors.Errorf("fs.SchemaCommit() error: %w", err)
-			}
-		}
-	*/
-
-	inst, err := db.New(dbDir)
+	inst, err := db.New(bfs.DatabaseDir())
 	if err != nil {
 		return nil, xerrors.Errorf("db.New() error: %w", err)
 	}
+
 	err = inst.Open()
 	if err != nil {
 		return nil, xerrors.Errorf("db.Open() error: %w", err)
@@ -106,6 +106,8 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	b.dir = dir
 	b.fileSystem = bfs
 	b.db = inst
+
+	//TODO ユーザ情報から取得
 	b.op = createUserOp("user")
 
 	return &b, nil

@@ -41,26 +41,25 @@ func (a *App) Startup() error {
 
 	defer log.PrintTrace(log.Func("Startup()"))
 
-	// デフォルト snippets.json を ~/.binder/snippets.json に配置（初回起動時のみ）
-	if err := binder.InstallSnippets(); err != nil {
-		log.PrintStackTrace(err)
-	}
-
 	set := settings.Get()
 	//起動時にひらく設定
 	if set.Path.RunWithOpen {
 		his := set.Path.Histories
 		if len(his) > 0 {
-			b, err := binder.Load(his[0], a.version)
-			if err != nil {
-				log.PrintStackTrace(err)
-			} else {
-				a.SetCurrent(b)
-				err = b.Serve()
+
+			//コンバータが走る仕組み
+			/*
+				b, err := binder.LoadBinder(his[0])
 				if err != nil {
 					log.PrintStackTrace(err)
+				} else {
+					a.SetCurrent(b)
+					err = b.Serve()
+					if err != nil {
+						log.PrintStackTrace(err)
+					}
 				}
-			}
+			*/
 		}
 	}
 

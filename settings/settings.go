@@ -381,6 +381,9 @@ func getFilePath() string {
 }
 
 func Home() string {
+
+	//os/user .Current()が正しい？
+
 	if runtime.GOOS == "windows" {
 		return os.Getenv("USERPROFILE")
 	}

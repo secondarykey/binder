@@ -193,3 +193,7 @@ func templateFile(id string) string {
 }
 
 const DBDir = "db"
+
+func (f *FileSystem) DatabaseDir() string {
+	return filepath.Join(f.base, DBDir)
+}

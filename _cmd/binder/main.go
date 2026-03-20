@@ -102,10 +102,6 @@ func main() {
 	win.runtime = wailsApp
 	win.window = window
 
-	if err := app.Startup(); err != nil {
-		log.PrintStackTrace(err)
-	}
-
 	// 外部ファイルドロップ: OS からのファイルドロップを Wails ネイティブイベントで処理する。
 	// EnableFileDrop: true が前提。Wails runtime (window.ts) が drop を補足し、
 	// Go 側の WindowFilesDropped イベントとして通知する。
@@ -138,6 +134,15 @@ func main() {
 
 		wailsApp.Event.Emit("binder:filedrop:done")
 	})
+
+	//TODO 起動前にBinderを読み込む設定だが、
+	//初期化に対しておかしな挙動が考えられる為、
+	//処理場所を再度剣道
+
+	//起動前の動作
+	//if err := app.Startup(); err != nil {
+	//log.PrintStackTrace(err)
+	//}
 
 	// 4. 実行
 	err = wailsApp.Run()
