@@ -10,7 +10,7 @@ import {EventContext} from '../Event';
  * @param {*} props
  * @returns
  */
-function History(props) {
+function BinderHistory(props) {
 
   const evt = useContext(EventContext)
   const [histories, setHistories] = useState([]);
@@ -40,4 +40,4 @@ function History(props) {
 
   </>);
 }
-export default History;
+export default BinderHistory;

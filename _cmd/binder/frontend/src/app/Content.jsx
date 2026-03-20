@@ -4,7 +4,7 @@ import BinderRegister from "../pages/BinderRegister";
 
 import Editor from "../pages/editor/Component";
 import AssetViewer from "../components/AssetViewer";
-import History from "../pages/History";
+import BinderHistory from "../pages/BinderHistory";
 import BinderRemote from "../pages/BinderRemote";
 
 import { Routes, Route } from "react-router";
@@ -32,7 +32,7 @@ function Content(props) {
       <Paper id="content">
 
         <Routes>
-          <Route path="/" element={<History />} />
+          <Route path="/" element={<BinderHistory />} />
           <Route path="/file/new" element={<BinderRegister />} />
           <Route path="/file/remote" element={<BinderRemote />} />
 
