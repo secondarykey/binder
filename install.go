@@ -43,10 +43,11 @@ func Install(dir string, ver *Version) error {
 		return xerrors.Errorf("checkDirectory() error: %w", err)
 	}
 
-	//指定位置ににGitを作成
-	f, err := fs.New(dir)
+	//指定位置にGitを作成（デフォルトブランチ名で初期化）
+	s := settings.Get()
+	f, err := fs.NewWithBranch(dir, s.Git.Branch)
 	if err != nil {
-		return xerrors.Errorf("fs.New() error: %w", err)
+		return xerrors.Errorf("fs.NewWithBranch() error: %w", err)
 	}
 
 	return install(f, dir, ver)
@@ -129,10 +130,13 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		return xerrors.Errorf("CommitAll() error: %w", err)
 	}
 
+	// デフォルトブランチ上でコミット済み。作業ブランチが設定されていれば切り替え
 	s := settings.Get()
-	err = f.Branch(s.Git.Branch)
-	if err != nil {
-		return xerrors.Errorf("fs.Branch() error: %w", err)
+	if s.Git.WorkBranch != "" && s.Git.WorkBranch != s.Git.Branch {
+		err = f.Branch(s.Git.WorkBranch)
+		if err != nil {
+			return xerrors.Errorf("fs.Branch(WorkBranch) error: %w", err)
+		}
 	}
 
 	return nil

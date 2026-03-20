@@ -62,7 +62,11 @@ func CreateRemote(url, dir string, version *Version) error {
 	} else {
 		//ブランチの切替(install時は切り替わっている)
 		s := settings.Get()
-		err = f.Branch(s.Git.Branch)
+		branch := s.Git.Branch
+		if s.Git.WorkBranch != "" {
+			branch = s.Git.WorkBranch
+		}
+		err = f.Branch(branch)
 		if err != nil {
 			return xerrors.Errorf("fs.Branch() error: %w", err)
 		}
@@ -79,10 +83,14 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	}
 
 	s := settings.Get()
-	//ブランチを切り替え
-	err = bfs.Branch(s.Git.Branch)
+	//ブランチを切り替え（作業ブランチがあればそちらを使用）
+	branch := s.Git.Branch
+	if s.Git.WorkBranch != "" {
+		branch = s.Git.WorkBranch
+	}
+	err = bfs.Branch(branch)
 	if err != nil {
-		return nil, xerrors.Errorf("Branch -> %s error: %w", s.Git.Branch, err)
+		return nil, xerrors.Errorf("Branch -> %s error: %w", branch, err)
 	}
 
 	//変換処理を開く前に入れておく

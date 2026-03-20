@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"golang.org/x/xerrors"
@@ -35,8 +36,12 @@ func (f *FileSystem) GetPublic() string {
 }
 
 func New(dir string) (*FileSystem, error) {
+	return NewWithBranch(dir, "")
+}
+
+func NewWithBranch(dir string, defaultBranch string) (*FileSystem, error) {
 	fs := osfs.New(dir)
-	rtn, err := newFileSystem(fs)
+	rtn, err := newFileSystem(fs, defaultBranch)
 	if err != nil {
 		return nil, xerrors.Errorf("newFileSystem() error: %w", err)
 	}
@@ -48,7 +53,7 @@ func New(dir string) (*FileSystem, error) {
 // https://gist.github.com/rogerwelin/7b1d2718bfbd94ecdfef0b9854fff99d
 func NewMemory() (*FileSystem, error) {
 	fs := memfs.New()
-	return newFileSystem(fs)
+	return newFileSystem(fs, "")
 }
 
 func Load(dir string) (*FileSystem, error) {
@@ -85,7 +90,7 @@ func Clone(dir string, url string) (*FileSystem, error) {
 	return &b, nil
 }
 
-func newFileSystem(fs billy.Filesystem) (*FileSystem, error) {
+func newFileSystem(fs billy.Filesystem, defaultBranch string) (*FileSystem, error) {
 
 	dot, err := fs.Chroot(".git")
 	if err != nil {
@@ -93,7 +98,12 @@ func newFileSystem(fs billy.Filesystem) (*FileSystem, error) {
 	}
 	s := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
 
-	rep, err := git.Init(s, fs)
+	opts := git.InitOptions{}
+	if defaultBranch != "" {
+		opts.DefaultBranch = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", defaultBranch))
+	}
+
+	rep, err := git.InitWithOptions(s, fs, opts)
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}
