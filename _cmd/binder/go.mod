@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	binder v0.0.0-00010101000000-000000000000
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
+	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
 
 require (
@@ -55,7 +56,6 @@ require (
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
-	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
