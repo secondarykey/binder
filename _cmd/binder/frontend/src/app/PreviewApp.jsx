@@ -95,7 +95,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {typ === 'note' &&
-          <HTMLFrame html={html} cursorLine={0} />
+          <HTMLFrame html={html} cursorLine={null} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{
