@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 
 import { Box, Button, FormControl, FormControlLabel, FormLabel, IconButton, Switch, TextField } from "@mui/material";
 import SaveIcon from '@mui/icons-material/Save';
@@ -24,6 +24,7 @@ function EditorSetting() {
   const [wordWrap, setWordWrap] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
   const [programError, setProgramError] = useState(false);
+  const editorBaseRef = useRef(null);
 
   const [fontDialogOpen, setFontDialogOpen] = useState(false);
   const [font, setFont] = useState(undefined);
@@ -31,6 +32,7 @@ function EditorSetting() {
   useEffect(() => {
     GetEditor().then((e) => {
       if (e) {
+        editorBaseRef.current = e;
         setEditorProgram(e.program || "");
         setGitBash(e.gitbash || false);
         setShowLineNumbers(e.showLineNumbers);
@@ -66,6 +68,7 @@ function EditorSetting() {
       return;
     }
     const editor = {
+      ...editorBaseRef.current,
       program: editorProgram,
       gitbash: gitBash,
       showLineNumbers: showLineNumbers,
