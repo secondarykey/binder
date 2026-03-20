@@ -98,7 +98,7 @@ func CreateBinder(t *testing.T, dir string) *binder.Binder {
 
 	work := filepath.Join(Dir, dir)
 
-	err := setup.Install(work, LatestVersion)
+	err := setup.Install(work, LatestVersion, "simple")
 	if err != nil {
 		t.Fatalf("setup.Install error: %v", err)
 	}
@@ -106,11 +106,6 @@ func CreateBinder(t *testing.T, dir string) *binder.Binder {
 	b, err := binder.Load(work)
 	if err != nil {
 		t.Fatalf("binder.Load() error: %v", err)
-	}
-
-	err = b.Initialize("simple")
-	if err != nil {
-		t.Fatalf("binder.Initialize() error: %v", err)
 	}
 
 	return b

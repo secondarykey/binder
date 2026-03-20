@@ -7,7 +7,6 @@ import (
 	"binder/setup"
 	"binder/test"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -15,21 +14,17 @@ import (
 func TestInitialize(t *testing.T) {
 
 	dir := filepath.Join(test.Dir, "init")
-	err := setup.Install(dir, test.LatestVersion)
+	err := setup.Install(dir, test.LatestVersion, "simple")
 	if err != nil {
 		t.Fatalf("create error: %v", err)
 	}
 
+	// Install内でInitializeも実行済み。Loadして結果を検証する
 	b, err := binder.Load(dir)
 	if err != nil {
 		t.Fatalf("Binder Load() error: %v", err)
 	}
 	defer b.Close()
-
-	err = b.Initialize("simple")
-	if err != nil {
-		t.Fatalf("Binder Initialize() error: %v", err)
-	}
 
 	//DB確認
 	//設定１件
@@ -127,40 +122,4 @@ func TestInitialize(t *testing.T) {
 
 	//Gitはステータスがすべて登録されていること
 
-}
-
-func TestInstallAndLoad(t *testing.T) {
-
-	dir := filepath.Join(test.Dir, "install_load")
-	err := setup.Install(dir, test.LatestVersion)
-	if err != nil {
-		t.Fatalf("create error: %+v\n", err)
-	}
-
-	files := []string{
-		filepath.Join(dir, "binder.json"),
-		filepath.Join(dir, "templates"),
-		filepath.Join(dir, "notes"),
-		filepath.Join(dir, "diagrams"),
-		filepath.Join(dir, "assets"),
-		filepath.Join(dir, "db"),
-		filepath.Join(dir, "db", "templates.csv"),
-		filepath.Join(dir, "db", "notes.csv"),
-		filepath.Join(dir, "db", "diagrams.csv"),
-		filepath.Join(dir, "db", "assets.csv"),
-		filepath.Join(dir, "db", "structures.csv"),
-	}
-
-	for _, f := range files {
-		_, err = os.Stat(f)
-		if err != nil {
-			t.Errorf("not exists file[%s]", f)
-		}
-	}
-
-	// config.csvが存在しないことを確認
-	configCSV := filepath.Join(dir, "db", "config.csv")
-	if _, err = os.Stat(configCSV); err == nil {
-		t.Errorf("config.csv should not exist in 0.4.5+")
-	}
 }

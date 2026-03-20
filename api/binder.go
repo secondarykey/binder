@@ -63,7 +63,7 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateBinder()"))
 
-	err := setup.Install(dir, a.version)
+	err := setup.Install(dir, a.version, name)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("setup.Install error\n%+v", err)
@@ -73,12 +73,6 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("binder load error\n%+v", err)
-	}
-
-	err = a.current.Initialize(name)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return "", fmt.Errorf("binder Initialize() error\n%+v", err)
 	}
 
 	return address, nil

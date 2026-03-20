@@ -23,8 +23,8 @@ const (
 var embFs embed.FS
 
 // Install は指定パスに新しいBinderを作成する。
-// ディレクトリが存在しない場合は作成し、git初期化・DB作成・binder.json作成を行う。
-func Install(dir string, ver *Version) error {
+// ディレクトリが存在しない場合は作成し、git初期化・DB作成・binder.json作成・サンプルデータ初期化を行う。
+func Install(dir string, ver *Version, name string) error {
 
 	// ディレクトリが存在しない場合は作成する
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -48,6 +48,22 @@ func Install(dir string, ver *Version) error {
 	err = install(f, dir, ver)
 	if err != nil {
 		return xerrors.Errorf("install() error: %w", err)
+	}
+
+	// サンプルデータの初期化
+	inst, err := db.New(f.DatabaseDir())
+	if err != nil {
+		return xerrors.Errorf("db.New() error: %w", err)
+	}
+	err = inst.Open()
+	if err != nil {
+		return xerrors.Errorf("db.Open() error: %w", err)
+	}
+	defer inst.Close()
+
+	err = initialize(f, inst, name)
+	if err != nil {
+		return xerrors.Errorf("initialize() error: %w", err)
 	}
 
 	// デフォルトブランチ上でコミット済み。作業ブランチが設定されていれば切り替え
