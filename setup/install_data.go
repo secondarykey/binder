@@ -1,4 +1,4 @@
-package binder
+package setup
 
 import (
 	jsonenc "encoding/json"
@@ -8,23 +8,23 @@ import (
 
 const installDir = "_assets/install"
 
-// installManifest はインストール時に作成するデータの一覧を定義する。
+// InstallManifest はインストール時に作成するデータの一覧を定義する。
 // _assets/install/manifest.json から読み込む。
-type installManifest struct {
-	Templates []installTemplate `json:"templates"`
-	Notes     []installNote     `json:"notes"`
-	Diagrams  []installDiagram  `json:"diagrams"`
-	Assets    []installAsset    `json:"assets"`
+type InstallManifest struct {
+	Templates []InstallTemplate `json:"templates"`
+	Notes     []InstallNote     `json:"notes"`
+	Diagrams  []InstallDiagram  `json:"diagrams"`
+	Assets    []InstallAsset    `json:"assets"`
 }
 
-type installTemplate struct {
+type InstallTemplate struct {
 	Id   string `json:"id"`
 	Type string `json:"type"`
 	Name string `json:"name"`
 	File string `json:"file"`
 }
 
-type installNote struct {
+type InstallNote struct {
 	Id              string `json:"id"`
 	Alias           string `json:"alias"`
 	Name            string `json:"name"`
@@ -34,35 +34,35 @@ type installNote struct {
 	File            string `json:"file"`
 }
 
-type installDiagram struct {
+type InstallDiagram struct {
 	Name     string `json:"name"`
 	ParentId string `json:"parentId"`
 	File     string `json:"file"`
 }
 
-type installAsset struct {
+type InstallAsset struct {
 	Name     string `json:"name"`
 	Alias    string `json:"alias"`
 	ParentId string `json:"parentId"`
 	File     string `json:"file"`
 }
 
-// loadInstallManifest は _assets/install/manifest.json を読み込んで返す。
-func loadInstallManifest() (*installManifest, error) {
+// LoadInstallManifest は _assets/install/manifest.json を読み込んで返す。
+func LoadInstallManifest() (*InstallManifest, error) {
 	data, err := embFs.ReadFile(installDir + "/manifest.json")
 	if err != nil {
 		return nil, xerrors.Errorf("embFs.ReadFile(manifest.json) error: %w", err)
 	}
-	var m installManifest
+	var m InstallManifest
 	if err := jsonenc.Unmarshal(data, &m); err != nil {
 		return nil, xerrors.Errorf("json.Unmarshal(manifest.json) error: %w", err)
 	}
 	return &m, nil
 }
 
-// readFile は _assets/install/ 内のファイルを読み込む。
+// ReadFile は _assets/install/ 内のファイルを読み込む。
 // file が空の場合は nil を返す。
-func (m *installManifest) readFile(file string) ([]byte, error) {
+func (m *InstallManifest) ReadFile(file string) ([]byte, error) {
 	if file == "" {
 		return nil, nil
 	}

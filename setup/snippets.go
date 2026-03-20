@@ -2,16 +2,10 @@ package setup
 
 import (
 	"binder/settings"
-	"embed"
 	"os"
 
 	"golang.org/x/xerrors"
 )
-
-// TODO install.go を確認
-//
-//go:embed _assets
-var embFs embed.FS
 
 // InstallSnippets はデフォルトの snippets.json を ~/.binder/snippets.json に配置する。
 // ファイルが既に存在する場合はスキップする（ユーザーの編集を上書きしない）。

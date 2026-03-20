@@ -6,6 +6,7 @@ import (
 	"binder"
 	"binder/log"
 	"binder/settings"
+	"binder/setup"
 
 	"os"
 	"path/filepath"
@@ -97,9 +98,9 @@ func CreateBinder(t *testing.T, dir string) *binder.Binder {
 
 	work := filepath.Join(Dir, dir)
 
-	err := binder.Install(work, LatestVersion)
+	err := setup.Install(work, LatestVersion)
 	if err != nil {
-		t.Fatalf("binder.Install error: %v", err)
+		t.Fatalf("setup.Install error: %v", err)
 	}
 
 	b, err := binder.Load(work)

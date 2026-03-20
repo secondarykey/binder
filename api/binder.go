@@ -4,6 +4,7 @@ import (
 	"binder"
 	"binder/log"
 	"binder/settings"
+	"binder/setup"
 	"fmt"
 	"log/slog"
 
@@ -62,10 +63,10 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateBinder()"))
 
-	err := binder.Install(dir, a.version)
+	err := setup.Install(dir, a.version)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("binder Install error\n%+v", err)
+		return "", fmt.Errorf("setup.Install error\n%+v", err)
 	}
 
 	address, err := a.LoadBinder(dir)

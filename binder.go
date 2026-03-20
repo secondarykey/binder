@@ -43,40 +43,19 @@ func createUserOp(userId string) db.Op {
 
 func CreateRemote(url, dir string, version *Version) error {
 
-	f, err := fs.Clone(dir, url)
+	_, err := fs.Clone(dir, url)
 	if err != nil {
 		return xerrors.Errorf("fs.Clone() error: %w", err)
 	}
 
 	//TODO ブランチがリモートに存在する場合の確認方法
 
-	//ファイルシステムをチェック
-	err = checkDirectory(dir, false)
+	// リモートから取得した場合、既にBinderのファイルシステムであるはず
+	err = setup.CheckDirectory(dir, false)
 	if err != nil {
-		//インストール処理を行う
-		err := install(f, dir, version)
-		if err != nil {
-			return xerrors.Errorf("binder.install() error: %w", err)
-		}
+		return xerrors.Errorf("setup.CheckDirectory() error: %w", err)
 	}
 
-	return nil
-}
-
-func CheckConvert(dir string, ver *Version) (bool, error) {
-	convertFlag, err := setup.CheckConvert(dir, ver)
-	if err != nil {
-		return false, xerrors.Errorf("setup.Check() error: %w", err)
-	}
-	return convertFlag, nil
-}
-
-func Convert(dir string, ver *Version) error {
-	// CSVスキーマ変換 + ファイルシステム移行 + binder.json更新 + マイグレーションコミット
-	// （0.2.2 アセットフラット化 / 0.4.5 config.csv退避 / binder.jsonバージョン更新）
-	if err := setup.Convert(dir, ver); err != nil {
-		return xerrors.Errorf("convert.Run() error: %w", err)
-	}
 	return nil
 }
 
@@ -87,9 +66,9 @@ func Load(dir string) (*Binder, error) {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
 	}
 
-	err = checkDirectory(dir, false)
+	err = setup.CheckDirectory(dir, false)
 	if err != nil {
-		return nil, xerrors.Errorf("checkDirectory() error: %w", err)
+		return nil, xerrors.Errorf("setup.CheckDirectory() error: %w", err)
 	}
 
 	inst, err := db.New(bfs.DatabaseDir())
