@@ -6,9 +6,6 @@ import (
 
 	"binder/db"
 	"binder/fs"
-	. "binder/internal"
-
-	"golang.org/x/xerrors"
 )
 
 // loadMeta はbinder.jsonを読み込む。存在しない場合は旧バージョンのschema.versionから読み込む。
@@ -33,16 +30,6 @@ func loadMetaFromLegacy(dir string) (*fs.BinderMeta, error) {
 		return &fs.BinderMeta{Version: "0.0.0"}, nil
 	}
 	return &fs.BinderMeta{Version: ver.String()}, nil
-}
-
-// schemaVersion はメタ情報のバージョン文字列を Version として返す。
-// 0.3.2以降はappバージョン（Version）でスキーマも管理する。
-func schemaVersion(meta *fs.BinderMeta) (*Version, error) {
-	v, err := NewVersion(meta.Version)
-	if err != nil {
-		return nil, xerrors.Errorf("version parse error: %w", err)
-	}
-	return v, nil
 }
 
 // removeOldSchemaFiles はbinder.jsonへの移行後に不要になった旧スキーマファイルを削除する

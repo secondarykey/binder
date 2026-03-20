@@ -147,7 +147,7 @@ func applyDB(dbDir string, c dbconvert.Converter) error {
 // binder.json を読み込んで現在のスキーマバージョンを取得し、必要な移行を順番に適用する。
 // 移行後は binder.json を更新して保存し、git コミットまで完結させる。
 // 各移行は CSV スキーマ変換とファイルシステム移行を含む自己完結した処理単位。
-func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
+func Run(dir string, ver *Version) error {
 
 	if ver == nil {
 		return nil
@@ -158,13 +158,19 @@ func Run(dir, dbDir string, ver *Version, bfs *fs.FileSystem) error {
 		return xerrors.Errorf("loadMeta() error: %w", err)
 	}
 
-	ov, err := schemaVersion(meta)
+	ov, err := NewVersion(meta.Version)
 	if err != nil {
-		return xerrors.Errorf("schemaVersion() error: %w", err)
+		return xerrors.Errorf("NewVersion() error: %w", err)
 	}
 
-	state := &migrateState{}
+	bfs, err := fs.Load(dir)
+	if err != nil {
+		return xerrors.Errorf("Load() error: %w", err)
+	}
 
+	dbDir := bfs.DatabaseDir()
+
+	state := &migrateState{}
 	for _, m := range migrations {
 		if ov.Lt(m.ver) {
 			if err := m.run(dir, dbDir, state); err != nil {
