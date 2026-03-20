@@ -7,7 +7,6 @@ import (
 	"binder/db"
 	"binder/fs"
 	"binder/log"
-	"binder/settings"
 	"context"
 	"fmt"
 	"log/slog"
@@ -59,17 +58,6 @@ func CreateRemote(url, dir string, version *Version) error {
 		if err != nil {
 			return xerrors.Errorf("binder.install() error: %w", err)
 		}
-	} else {
-		//ブランチの切替(install時は切り替わっている)
-		s := settings.Get()
-		branch := s.Git.Branch
-		if s.Git.WorkBranch != "" {
-			branch = s.Git.WorkBranch
-		}
-		err = f.Branch(branch)
-		if err != nil {
-			return xerrors.Errorf("fs.Branch() error: %w", err)
-		}
 	}
 
 	return nil
@@ -80,17 +68,6 @@ func Load(dir string, ver *Version) (*Binder, error) {
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
-	}
-
-	s := settings.Get()
-	//ブランチを切り替え（作業ブランチがあればそちらを使用）
-	branch := s.Git.Branch
-	if s.Git.WorkBranch != "" {
-		branch = s.Git.WorkBranch
-	}
-	err = bfs.Branch(branch)
-	if err != nil {
-		return nil, xerrors.Errorf("Branch -> %s error: %w", branch, err)
 	}
 
 	//変換処理を開く前に入れておく
