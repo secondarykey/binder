@@ -1,6 +1,10 @@
 package setup
 
-import "golang.org/x/xerrors"
+import (
+	. "binder/internal"
+
+	"golang.org/x/xerrors"
+)
 
 // このパッケージは
 // 起動時にアプリ設定が存在するか？や移行処理が
@@ -16,10 +20,10 @@ func EnsureExists(ver *Version) error {
 	//theme
 
 	//暗号化キーが存在しない場合
-	if !isExistUserKey() {
-		err := createUserKey()
+	if !isExistsUserKey() {
+		err := setUserKey()
 		if err != nil {
-			return xerrors.Errorf("createUserKey() error: %w", err)
+			return xerrors.Errorf("setUserKey() error: %w", err)
 		}
 	}
 	return nil

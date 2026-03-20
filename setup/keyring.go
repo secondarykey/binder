@@ -44,13 +44,13 @@ func setUserKey() error {
 
 	// キーが存在しない → 新規生成
 	key := make([]byte, 32) // AES-256
-	if _, err = io.ReadFull(rand.Reader, key); err != nil {
+	if _, err := io.ReadFull(rand.Reader, key); err != nil {
 		return fmt.Errorf("キーの生成に失敗: %w", err)
 	}
 
 	// キーチェーンへ保存（16進数文字列として格納）
-	encoded = fmt.Sprintf("%x", key)
-	if err = keyring.Set(keyringService, keyringAccount, encoded); err != nil {
+	encoded := fmt.Sprintf("%x", key)
+	if err := keyring.Set(keyringService, keyringAccount, encoded); err != nil {
 		return fmt.Errorf("キーチェーンへの保存に失敗: %w", err)
 	}
 	return nil
