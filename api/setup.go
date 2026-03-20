@@ -9,7 +9,7 @@ import (
 
 func (a *App) Setup() (*settings.Setting, error) {
 
-	err := setup.EnsureExists()
+	err := setup.EnsureExists(a.Version)
 	if err != nil {
 		return nil, xerrors.Errorf("setup.EnsureExists() error: %w", err)
 	}
