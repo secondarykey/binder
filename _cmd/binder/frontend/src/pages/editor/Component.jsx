@@ -620,13 +620,22 @@ function Editor(props) {
 
   //SVG のダウンロードを行う
   const handleDownload = async () => {
-    var elm = document.querySelector('#mermaidViewer');
-    var data = new Blob([elm.innerHTML], { type: 'image/svg+xml' });
-    var dataURL = window.URL.createObjectURL(data);
-    var tempLink = document.createElement('a');
-    tempLink.href = dataURL;
-    tempLink.setAttribute('download', name + '.svg');
-    tempLink.click();
+    if (mode === Mode.diagram) {
+      var elm = document.querySelector('#mermaidViewer');
+      var data = new Blob([elm.innerHTML], { type: 'image/svg+xml' });
+      var dataURL = window.URL.createObjectURL(data);
+      var tempLink = document.createElement('a');
+      tempLink.href = dataURL;
+      tempLink.setAttribute('download', name + '.svg');
+      tempLink.click();
+    } else if (mode === Mode.note) {
+      var data = new Blob([html], { type: 'text/html' });
+      var dataURL = window.URL.createObjectURL(data);
+      var tempLink = document.createElement('a');
+      tempLink.href = dataURL;
+      tempLink.setAttribute('download', name + '.html');
+      tempLink.click();
+    }
   }
 
   /**
@@ -1263,13 +1272,11 @@ function Editor(props) {
                 })()}
                 {mode !== Mode.template &&
                   <div className="previewMenuRight">
-                    {mode === Mode.diagram &&
-                      <Tooltip title={t("preview.download")} placement="bottom">
-                        <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
-                          <DownloadIcon sx={{ fontSize: '16px' }} />
-                        </IconButton>
-                      </Tooltip>
-                    }
+                    <Tooltip title={t("preview.download")} placement="bottom">
+                      <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
+                        <DownloadIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title={t("preview.publish")} placement="bottom">
                       <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
                         <PublishIcon sx={{ fontSize: '16px' }} />
