@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext, useRef } from "react";
+import { Events } from '@wailsio/runtime';
 
 import { Box, Button, FormControl, FormControlLabel, FormLabel, IconButton, Switch, TextField } from "@mui/material";
 import SaveIcon from '@mui/icons-material/Save';
@@ -77,6 +78,8 @@ function EditorSetting() {
     };
     SaveEditor(editor).then(() => {
       evt.showSuccessMessage(t("common.updated"));
+      // エディタ側のstateを同期
+      Events.Emit('binder:editor:settingChanged', { showLineNumbers, wordWrap, showPreview });
     }).catch((err) => {
       evt.showErrorMessage(err);
     });

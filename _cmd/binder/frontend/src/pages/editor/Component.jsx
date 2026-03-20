@@ -312,6 +312,21 @@ function Editor(props) {
     return () => { cleanup(); };
   }, []);
 
+  // 設定画面からのエディタ設定変更を同期
+  useEffect(() => {
+    const cleanup = Events.On('binder:editor:settingChanged', (event) => {
+      const data = event.data?.[0] ?? event.data ?? {};
+      setShowLineNumbers(data.showLineNumbers);
+      setWordWrap(data.wordWrap);
+      setViewer(data.showPreview);
+      // editorSettingRef も更新
+      if (editorSettingRef.current) {
+        editorSettingRef.current = { ...editorSettingRef.current, ...data };
+      }
+    });
+    return () => { cleanup(); };
+  }, []);
+
   // スニペットを一度だけロード
   useEffect(() => {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });

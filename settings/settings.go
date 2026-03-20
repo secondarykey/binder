@@ -305,6 +305,7 @@ func SaveEditor(e *Editor) error {
 	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
 	obj.Look.Editor.WordWrap = e.WordWrap
 	obj.Look.Editor.ShowPreview = e.ShowPreview
+	obj.Look.Editor.ThemeFonts = e.ThemeFonts
 	return obj.save()
 }
 
