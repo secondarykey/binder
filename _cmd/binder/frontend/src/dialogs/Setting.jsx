@@ -1,7 +1,8 @@
 import { useEffect, useState, useContext } from "react";
 
 import { Box, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage } from "../../bindings/binder/api/app";
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont } from "../../bindings/binder/api/app";
+import { Events } from '@wailsio/runtime';
 import { OpenFileDialog } from "../../bindings/main/window";
 import SaveIcon from '@mui/icons-material/Save';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -57,7 +58,12 @@ function Setting({ isModal, ...props }) {
     const next = e.target.value;
     setThemeState(next);
     document.documentElement.setAttribute('data-theme', next);
-    SetTheme(next).catch((err) => {
+    SetTheme(next).then(() => {
+      // テーマ変更後にそのテーマのフォント設定を取得して全画面に通知
+      GetFont().then((f) => {
+        if (f) Events.Emit('binder:editor:fontChanged', f);
+      }).catch(() => {});
+    }).catch((err) => {
       evt.showErrorMessage(err);
     });
   };
