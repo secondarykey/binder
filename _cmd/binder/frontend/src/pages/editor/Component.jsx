@@ -148,11 +148,14 @@ function Editor(props) {
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
 
-  // useEffect([]) 内など古いクロージャから最新の mode/id を参照するための ref
+  // useEffect([]) 内など古いクロージャから最新の mode/id/name/html を参照するための ref
   const modeRef = useRef(mode);
   const idRef = useRef(id);
+  const nameRef = useRef(name);
+  const htmlRef = useRef("");
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { idRef.current = id; }, [id]);
+  useEffect(() => { nameRef.current = name; }, [name]);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
   // handleChangeText だけが true にセットする。ファイルオープン時はセットされないので即時描画になる。
@@ -168,6 +171,7 @@ function Editor(props) {
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
+  useEffect(() => { htmlRef.current = html; }, [html]);
   //更新状態のアイコン
   const [updated, setUpdated] = useState(false);
 
@@ -296,6 +300,16 @@ function Editor(props) {
     }
 
   }, [id, restoredAt]);
+
+  // プレビューウィンドウからの準備完了通知を受けて現在のHTMLを送信
+  useEffect(() => {
+    const cleanup = Events.On('binder:preview:ready', () => {
+      Events.Emit('binder:preview:update', {
+        typ: modeRef.current, id: idRef.current, name: nameRef.current, html: htmlRef.current,
+      });
+    });
+    return () => { cleanup(); };
+  }, []);
 
   // スニペットを一度だけロード
   useEffect(() => {
@@ -1190,7 +1204,7 @@ function Editor(props) {
                   <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
                 </MenuItem>
                 <Divider />
-                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name).then(() => { setTimeout(() => { Events.Emit('binder:preview:update', { typ: mode, id, name, html }); }, 2000); }); }}>
+                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name); }}>
                   <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openPreviewWindow")}
                 </MenuItem>
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>

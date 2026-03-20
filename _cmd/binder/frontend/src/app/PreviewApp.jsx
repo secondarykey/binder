@@ -54,6 +54,9 @@ function PreviewApp() {
       }
     });
 
+    // 起動完了をエディタに通知（初期コンテンツを要求）
+    Events.Emit('binder:preview:ready', { id });
+
     // ナビゲーション（ツリーでアイテム切替）イベント
     const cleanupNav = Events.On('binder:preview:navigate', (event) => {
       const data = event.data?.[0] ?? event.data ?? {};
