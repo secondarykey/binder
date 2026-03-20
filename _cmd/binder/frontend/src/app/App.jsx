@@ -16,11 +16,12 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetHistories, GetConfig, CloseBinder, LoadBinder } from '../../bindings/binder/api/app';
+import { Setup, GetConfig, CloseBinder, LoadBinder, CheckConvert, Convert } from '../../bindings/binder/api/app';
 import { SavePosition,Terminate } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
+import ConvertDialog from '../dialogs/components/ConvertDialog';
 
 import '../assets/App.css';
 import "../i18n/config";
@@ -73,6 +74,50 @@ function App() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [pendingDir, setPendingDir] = useState("");
+
+  // バインダーを開く共通処理（CheckConvert付き）
+  const openBinder = (dir) => {
+    CheckConvert(dir).then((needsConvert) => {
+      if (needsConvert) {
+        setPendingDir(dir);
+        setConvertOpen(true);
+      } else {
+        loadBinder(dir);
+      }
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  // LoadBinder を呼んでエディタに遷移する
+  const loadBinder = (dir) => {
+    LoadBinder(dir).then((href) => {
+      evt.changeAddress(href);
+      nav("/editor/note/index");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  const handleConvertConfirm = () => {
+    setConvertOpen(false);
+    const dir = pendingDir;
+    setPendingDir("");
+
+    Convert(dir).then(() => {
+      evt.showSuccessMessage(t("convert.success"));
+      loadBinder(dir);
+    }).catch((err) => {
+      evt.showErrorMessage(t("convert.error", { error: err }));
+    });
+  };
+
+  const handleConvertCancel = () => {
+    setConvertOpen(false);
+    setPendingDir("");
+  };
 
   // Binder名を GetConfig() から取得してセット
   const loadBinderName = () => {
@@ -120,6 +165,11 @@ function App() {
       setPublishModalOpen(true);
     });
 
+    //バインダーを開く（CheckConvert付き）
+    evt.register("App", Event.OpenBinder, function (dir) {
+      openBinder(dir);
+    });
+
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
     // 同じURLにいる場合でも強制再読み込みするため、state に restoredAt タイムスタンプを付与する
     const cleanupRestored = Events.On("binder:restored", (event) => {
@@ -138,15 +188,13 @@ function App() {
     //初回取得
     loadBinderName();
 
-    //設定を取得し、履歴があれば最後のバインダーをエディタで自動的に開く
-    GetHistories().then((h) => {
-      if (h && h.length > 0) {
-        LoadBinder(h[0]).then((href) => {
-          evt.changeAddress(href);
-          nav("/editor/note/index");
-        }).catch((err) => {
-          evt.showErrorMessage(err);
-        });
+    //設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
+    Setup().then((setting) => {
+      if (setting?.path?.runWithOpen) {
+        const h = setting.path.histories;
+        if (h && h.length > 0) {
+          openBinder(h[0]);
+        }
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -296,6 +344,13 @@ function App() {
 
       {/** バインダー編集モーダル */}
       <BinderModal open={binderModalOpen} onClose={() => setBinderModalOpen(false)} />
+
+      {/** データ移行確認ダイアログ */}
+      <ConvertDialog
+        open={convertOpen}
+        onCancel={handleConvertCancel}
+        onConfirm={handleConvertConfirm}
+      />
 
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />

@@ -1,20 +1,18 @@
 import { useEffect, useState, useContext } from "react";
 
-import { LoadBinder, GetHistories } from "../../bindings/binder/api/app";
+import { GetHistories } from "../../bindings/binder/api/app";
 import { List, ListItemButton, ListItemText } from "@mui/material";
-import { useNavigate } from "react-router";
 
 import {EventContext} from '../Event';
 
 /**
  * 履歴からバインダーの選択を行う
- * @param {*} props 
- * @returns 
+ * @param {*} props
+ * @returns
  */
 function History(props) {
 
   const evt = useContext(EventContext)
-  const nav = useNavigate();
   const [histories, setHistories] = useState([]);
 
   useEffect(() => {
@@ -25,16 +23,7 @@ function History(props) {
 
   //保存
   const handleSelect = (val) => {
-    LoadBinder(val).then((href) => {
-     
-      console.log(href)
-      evt.changeAddress(href);
-
-      nav("/editor/note/index");
-
-    }).catch((err) => {
-      evt.showErrorMessage(err)
-    })
+    evt.openBinder(val);
   }
 
   return (<>

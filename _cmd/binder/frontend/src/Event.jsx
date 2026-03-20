@@ -78,6 +78,11 @@ class Event {
     static OpenPublishModal = "publish.modal.open"
 
     /**
+     * バインダーを開く（CheckConvert付き）
+     */
+    static OpenBinder = "binder.open"
+
+    /**
      * GenerateForm へコメントを伝達
      */
     static PublishComment = "publish.comment"
@@ -165,6 +170,10 @@ class Event {
 
     openPublishModal() {
         this.raise(Event.OpenPublishModal);
+    }
+
+    openBinder(dir) {
+        this.raise(Event.OpenBinder, dir);
     }
 
     showMessage(obj) {
