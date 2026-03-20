@@ -16,12 +16,12 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, CloseBinder, LoadBinder, CheckConvert, Convert } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
 import { SavePosition,Terminate } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
-import ConvertDialog from '../dialogs/components/ConvertDialog';
+import ConvertDialog, { NeedUpdateDialog } from '../dialogs/components/ConvertDialog';
 
 import '../assets/App.css';
 import "../i18n/config";
@@ -75,16 +75,30 @@ function App() {
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
+  const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
+  const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "" });
 
-  // バインダーを開く共通処理（CheckConvert付き）
+  // CompatStatus 定数（Go 側の CompatStatus と一致）
+  const CompatOK = 0;
+  const CompatNeedConvert = 1;
+  const CompatNeedUpdate = 2;
+
+  // バインダーを開く共通処理（CheckCompat付き）
   const openBinder = (dir) => {
-    CheckConvert(dir).then((needsConvert) => {
-      if (needsConvert) {
-        setPendingDir(dir);
-        setConvertOpen(true);
-      } else {
-        loadBinder(dir);
+    CheckCompat(dir).then((result) => {
+      setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion });
+      switch (result.status) {
+        case CompatNeedConvert:
+          setPendingDir(dir);
+          setConvertOpen(true);
+          break;
+        case CompatNeedUpdate:
+          setNeedUpdateOpen(true);
+          break;
+        default:
+          loadBinder(dir);
+          break;
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -165,7 +179,7 @@ function App() {
       setPublishModalOpen(true);
     });
 
-    //バインダーを開く（CheckConvert付き）
+    //バインダーを開く（CheckCompat付き）
     evt.register("App", Event.OpenBinder, function (dir) {
       openBinder(dir);
     });
@@ -348,8 +362,18 @@ function App() {
       {/** データ移行確認ダイアログ */}
       <ConvertDialog
         open={convertOpen}
+        appVersion={compatVersions.appVersion}
+        binderVersion={compatVersions.binderVersion}
         onCancel={handleConvertCancel}
         onConfirm={handleConvertConfirm}
+      />
+
+      {/** アプリ更新が必要なダイアログ */}
+      <NeedUpdateDialog
+        open={needUpdateOpen}
+        appVersion={compatVersions.appVersion}
+        binderVersion={compatVersions.binderVersion}
+        onClose={() => setNeedUpdateOpen(false)}
       />
 
       {/** 別コンポーネントメッセージ */}

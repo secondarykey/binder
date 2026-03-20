@@ -78,7 +78,7 @@ class Event {
     static OpenPublishModal = "publish.modal.open"
 
     /**
-     * バインダーを開く（CheckConvert付き）
+     * バインダーを開く（CheckCompat付き）
      */
     static OpenBinder = "binder.open"
 

@@ -8,23 +8,54 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// CheckConvert はバインダーのスキーマ移行が必要かを判定する。
-// binder.json（または旧 schema.version）のバージョンと現在のアプリバージョンを比較し、
-// 移行が必要な場合に true を返す。
-func CheckConvert(dir string, ver *Version) (bool, error) {
+// CompatStatus はバインダーとアプリのバージョン互換性の状態を表す。
+type CompatStatus int
+
+const (
+	// CompatOK はバージョンが一致しており、そのまま開ける。
+	CompatOK CompatStatus = iota
+	// CompatNeedConvert はバインダーがアプリより古く、データ移行が必要。
+	CompatNeedConvert
+	// CompatNeedUpdate はバインダーがアプリより新しく、アプリの更新が必要。
+	CompatNeedUpdate
+)
+
+// CompatResult はバインダーとアプリのバージョン比較結果を返す。
+type CompatResult struct {
+	Status        CompatStatus `json:"status"`
+	AppVersion    string       `json:"appVersion"`
+	BinderVersion string       `json:"binderVersion"`
+}
+
+// CheckCompat はバインダーとアプリのバージョン互換性を判定する。
+// binder.json のバージョンとアプリバージョンを比較し、CompatResult を返す。
+func CheckCompat(dir string, ver *Version) (*CompatResult, error) {
 
 	meta, err := loadBinderMeta(dir)
 	if err != nil {
-		return false, xerrors.Errorf("loadBinderMeta() error: %w", err)
+		return nil, xerrors.Errorf("loadBinderMeta() error: %w", err)
 	}
 
 	ov, err := NewVersion(meta.Version)
 	if err != nil {
-		return false, xerrors.Errorf("version parse error: %w", err)
+		return nil, xerrors.Errorf("version parse error: %w", err)
 	}
 
-	// 旧バージョンがアプリバージョンより古ければ移行が必要
-	return ov.Lt(ver), nil
+	result := &CompatResult{
+		AppVersion:    ver.String(),
+		BinderVersion: ov.String(),
+	}
+
+	switch {
+	case ov.Lt(ver):
+		result.Status = CompatNeedConvert
+	case ov.Gt(ver):
+		result.Status = CompatNeedUpdate
+	default:
+		result.Status = CompatOK
+	}
+
+	return result, nil
 }
 
 // Convert はバインダーのスキーマ移行を実行する。
