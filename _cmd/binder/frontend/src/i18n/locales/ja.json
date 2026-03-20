@@ -174,7 +174,8 @@
         "binaryNotSupported" : "バイナリファイルのため表示できません: {{name}}",
         "migrateTitle" : "ノートに移行",
         "migrateConfirm" : "「{{name}}」をノートに移行します。元のアセットは削除されます。よろしいですか？",
-        "migrate" : "移行"
+        "migrate" : "移行",
+        "updateFile" : "ファイル更新"
     },
     "preview" : {
         "publish" : "公開",

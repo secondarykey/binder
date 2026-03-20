@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
+import DownloadIcon from '@mui/icons-material/Download';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
@@ -265,6 +266,24 @@ function AssetViewer() {
     });
   };
 
+  /** ダウンロードボタン押下: アセットファイルをダウンロードする */
+  const handleDownload = () => {
+    if (!assetContent) return;
+    const { name, binary, content: fileContent } = assetContent;
+    const byteChars = atob(fileContent);
+    const byteArray = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteArray[i] = byteChars.charCodeAt(i);
+    }
+    const mime = binary ? getMimeType(name) : 'text/plain';
+    const blob = new Blob([byteArray], { type: mime });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', name);
+    link.click();
+  };
+
   // コンテンツ部分を変数で組み立てる（早期returnを避けてヘッダーと共通化）
   let content;
 
@@ -336,50 +355,55 @@ function AssetViewer() {
   }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-      {content}
-      {/* フローティングノート移行ボタン（テキストアセットのみ表示、右上） */}
-      {assetContent && !assetContent.binary && (
-        <IconButton
-          className="floatTopRightBtn"
-          size="small"
-          aria-label="migrate to note"
-          onClick={handleMigrate}
-          disabled={migrating || !id}
-        >
-          <NoteAddIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-        </IconButton>
-      )}
-      {/* フローティングファイル更新ボタン（右上、移行ボタンの左） */}
-      <IconButton
-        className="floatTopRightBtn2"
-        size="small"
-        aria-label="update file"
-        onClick={handleUpdateFile}
-        disabled={updating || !id}
-      >
-        <AttachFileIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-      </IconButton>
-      {/* フローティング公開ボタン（右下） */}
-      <IconButton
-        className="floatPublishBtn"
-        size="small"
-        aria-label="publish"
-        onClick={handleGenerate}
-        disabled={generating || !id}
-      >
-        <PublishIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-      </IconButton>
-      {/* フローティング非公開ボタン（左下） */}
-      <IconButton
-        className="floatUnpublishBtn"
-        size="small"
-        aria-label="unpublish"
-        onClick={handleUnpublish}
-        disabled={!id}
-      >
-        <UnpublishedIcon fontSize="small" style={{ color: "var(--text-primary)" }} />
-      </IconButton>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {/* メニューバー */}
+      <div id="previewMenu">
+        <div className="previewMenuLeft">
+          <Tooltip title={t("preview.unpublish")} placement="bottom">
+            <span>
+              <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} disabled={!id} className="editorBtn">
+                <UnpublishedIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </div>
+        <div className="previewMenuRight">
+          <Tooltip title={t("assetViewer.updateFile")} placement="bottom">
+            <span>
+              <IconButton size="small" aria-label="update file" onClick={handleUpdateFile} disabled={updating || !id} className="editorBtn">
+                <AttachFileIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          {assetContent && !assetContent.binary && (
+            <Tooltip title={t("assetViewer.migrate")} placement="bottom">
+              <span>
+                <IconButton size="small" aria-label="migrate to note" onClick={handleMigrate} disabled={migrating || !id} className="editorBtn">
+                  <NoteAddIcon sx={{ fontSize: '16px' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
+          <Tooltip title={t("preview.download")} placement="bottom">
+            <span>
+              <IconButton size="small" aria-label="download" onClick={handleDownload} disabled={!assetContent || !id} className="editorBtn">
+                <DownloadIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={t("preview.publish")} placement="bottom">
+            <span>
+              <IconButton size="small" aria-label="publish" onClick={handleGenerate} disabled={generating || !id} className="editorBtn">
+                <PublishIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </div>
+      </div>
+      {/* コンテンツ */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+        {content}
+      </div>
 
       {/* ノート移行確認ダイアログ */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>

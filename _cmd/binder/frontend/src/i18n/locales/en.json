@@ -174,7 +174,8 @@
         "binaryNotSupported" : "Cannot display binary file: {{name}}",
         "migrateTitle" : "Migrate to Note",
         "migrateConfirm" : "Migrate \"{{name}}\" to a note. The original asset will be deleted. Continue?",
-        "migrate" : "Migrate"
+        "migrate" : "Migrate",
+        "updateFile" : "Update File"
     },
     "preview" : {
         "publish" : "Publish",
