@@ -1190,7 +1190,7 @@ function Editor(props) {
                   <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
                 </MenuItem>
                 <Divider />
-                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name); }}>
+                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name).then(() => { setTimeout(() => { Events.Emit('binder:preview:update', { typ: mode, id, name, html }); }, 500); }); }}>
                   <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openPreviewWindow")}
                 </MenuItem>
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
