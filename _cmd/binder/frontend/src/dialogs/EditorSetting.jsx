@@ -51,6 +51,22 @@ function EditorSetting() {
     }).catch((err) => {
       console.log(err);
     });
+
+    // エディタ側からの設定変更を同期
+    const cleanupSetting = Events.On('binder:editor:settingChanged', (event) => {
+      const data = event.data?.[0] ?? event.data ?? {};
+      if (data.showLineNumbers !== undefined) setShowLineNumbers(data.showLineNumbers);
+      if (data.wordWrap !== undefined) setWordWrap(data.wordWrap);
+      if (data.showPreview !== undefined) setShowPreview(data.showPreview);
+    });
+
+    // エディタ側からのフォント変更を同期
+    const cleanupFont = Events.On('binder:editor:fontChanged', (event) => {
+      const f = event.data?.[0] ?? event.data ?? {};
+      if (f) setFont(f);
+    });
+
+    return () => { cleanupSetting(); cleanupFont(); };
   }, []);
 
   const handleProgramChange = (e) => {

@@ -981,7 +981,13 @@ function Editor(props) {
       ...overrides,
     };
     editorSettingRef.current = editor;
-    SaveEditor(editor).catch((err) => console.log(err));
+    SaveEditor(editor).then(() => {
+      Events.Emit('binder:editor:settingChanged', {
+        showLineNumbers: editor.showLineNumbers,
+        wordWrap: editor.wordWrap,
+        showPreview: editor.showPreview,
+      });
+    }).catch((err) => console.log(err));
   };
 
   var commentStyle = {};
