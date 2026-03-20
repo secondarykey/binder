@@ -1222,7 +1222,26 @@ function Editor(props) {
             <div id="dataViewer">
 
               {/** プレビューメニュー */}
-              <div id="previewMenu">
+              <div id="previewMenu" style={mode === Mode.template ? { justifyContent: 'flex-start' } : undefined}>
+                {mode !== Mode.template && <>
+                  <Tooltip title={t("preview.publish")} placement="bottom">
+                    <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
+                      <PublishIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t("preview.unpublish")} placement="bottom">
+                    <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="editorBtn">
+                      <UnpublishedIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </Tooltip>
+                </>}
+                {mode === Mode.diagram &&
+                  <Tooltip title={t("preview.download")} placement="bottom">
+                    <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
+                      <DownloadIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </Tooltip>
+                }
                 {mode === Mode.template && (() => {
                   const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                   return (<>
@@ -1262,29 +1281,6 @@ function Editor(props) {
                 }
                 {mode === Mode.template &&
                   <HTMLFrame html={html} cursorLine={cursorLine} />
-                }
-
-                {/** 操作ボタン（右下） */}
-                {mode !== Mode.template &&
-                  <div className="previewActions">
-                    <Tooltip title={t("preview.unpublish")} placement="left">
-                      <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="previewActionBtn previewActionDanger">
-                        <UnpublishedIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                    {mode === Mode.diagram &&
-                      <Tooltip title={t("preview.download")} placement="left">
-                        <IconButton size="small" aria-label="download" onClick={handleDownload} className="previewActionBtn">
-                          <DownloadIcon sx={{ fontSize: '16px' }} />
-                        </IconButton>
-                      </Tooltip>
-                    }
-                    <Tooltip title={t("preview.publish")} placement="left">
-                      <IconButton size="small" aria-label="publish" onClick={handlePublish} className="previewActionBtn">
-                        <PublishIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
                 }
               </div>
 
