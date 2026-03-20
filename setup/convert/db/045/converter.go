@@ -1,7 +1,7 @@
 package convert045
 
 import (
-	"binder/db/convert/core"
+	"binder/setup/convert/db/core"
 )
 
 // Convert045 は0.4.5への移行。

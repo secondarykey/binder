@@ -18,8 +18,8 @@ func (a *App) Setup() (*settings.Setting, error) {
 	return set, nil
 }
 
-func (a *App) CheckConvert(dir string) (bool, error) {
-	return setup.CheckConvert(dir, a.version)
+func (a *App) CheckCompat(dir string) (*setup.CompatResult, error) {
+	return setup.CheckCompat(dir, a.version)
 }
 
 func (a *App) Convert(dir string) error {

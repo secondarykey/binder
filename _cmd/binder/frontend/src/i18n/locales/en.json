@@ -186,9 +186,13 @@
     "convert" : {
         "title" : "Data Migration",
         "message" : "This Binder requires data migration. Do you want to migrate?",
+        "versionInfo" : "Binder version: {{binderVersion}} → App version: {{appVersion}}",
         "confirm" : "Migrate",
         "success" : "Migration completed.",
-        "error" : "Migration failed: {{error}}"
+        "error" : "Migration failed: {{error}}",
+        "needUpdateTitle" : "App Update Required",
+        "needUpdateMessage" : "This Binder was created with a newer version. Please update the app to open it.",
+        "needUpdateVersionInfo" : "Binder version: {{binderVersion}} / App version: {{appVersion}}"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",

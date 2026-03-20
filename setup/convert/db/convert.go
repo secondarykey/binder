@@ -1,7 +1,7 @@
-package convert
+package dbconvert
 
 import (
-	"binder/db/convert/core"
+	"binder/setup/convert/db/core"
 	"log/slog"
 	"os"
 	"path/filepath"

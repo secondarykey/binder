@@ -1,7 +1,7 @@
 package convert033
 
 import (
-	"binder/db/convert/core"
+	"binder/setup/convert/db/core"
 	"bufio"
 	"os"
 	"path/filepath"

@@ -1,7 +1,7 @@
 package convert047
 
 import (
-	"binder/db/convert/core"
+	"binder/setup/convert/db/core"
 	"bufio"
 	"fmt"
 	"os"

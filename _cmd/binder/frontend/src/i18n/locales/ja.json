@@ -186,9 +186,13 @@
     "convert" : {
         "title" : "データ移行",
         "message" : "このBinderはデータの移行が必要です。移行しますか？",
+        "versionInfo" : "Binderバージョン: {{binderVersion}} → アプリバージョン: {{appVersion}}",
         "confirm" : "移行する",
         "success" : "移行が完了しました",
-        "error" : "移行に失敗しました: {{error}}"
+        "error" : "移行に失敗しました: {{error}}",
+        "needUpdateTitle" : "アプリの更新が必要",
+        "needUpdateMessage" : "このBinderはアプリより新しいバージョンで作成されています。開くにはアプリを更新してください。",
+        "needUpdateVersionInfo" : "Binderバージョン: {{binderVersion}} / アプリバージョン: {{appVersion}}"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",
