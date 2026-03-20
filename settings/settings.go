@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 
@@ -200,21 +201,32 @@ func def() *Setting {
 	look.Editor = &editor
 	set.Look = &look
 
-	//表示情報
+	//Git設定
 	var auth Git
+	auth.Branch = "main"
+
 	host, err := os.Hostname()
 	if err != nil {
 		log.Println(err)
 		host = "binder"
 	}
+	auth.WorkBranch = host
 
-	auth.Branch = host
-	auth.Name = ""
-	auth.Mail = ""
+	// os/user からユーザ名を取得
+	u, err := user.Current()
+	if err != nil {
+		log.Println(err)
+		auth.Name = ""
+	} else {
+		auth.Name = u.Name
+		if auth.Name == "" {
+			auth.Name = u.Username
+		}
+	}
+
+	auth.Mail = "noreply@localhost"
 	auth.Code = ""
-	//auth.File = "D:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt"
 	auth.File = ""
-	//認証情報
 	set.Git = &auth
 
 	return &set
