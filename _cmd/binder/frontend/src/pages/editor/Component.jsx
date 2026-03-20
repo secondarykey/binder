@@ -845,20 +845,28 @@ function Editor(props) {
 
     setEditorLocked(true);
 
+    // 外部エディタ起動中にファイル変更をポーリングして反映
+    const lastTextRef = { current: text };
     const sec = 2;
+    const openFn = mode === Mode.note ? OpenNote
+                 : mode === Mode.diagram ? OpenDiagram
+                 : mode === Mode.template ? OpenTemplate : null;
+
     var interval = setInterval(function () {
-      // ファイルの内容を取得
+      if (!openFn) return;
+      openFn(id).then((resp) => {
+        if (resp !== lastTextRef.current) {
+          lastTextRef.current = resp;
+          setText(resp);
+        }
+      }).catch(() => {});
     }, 1000 * sec)
 
     RunEditor(mode, id).then(() => {
       clearInterval(interval)
       // プロセス終了後にファイルを再読み込み
-      if (mode === Mode.note) {
-        OpenNote(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
-      } else if (mode === Mode.diagram) {
-        OpenDiagram(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
-      } else if (mode === Mode.template) {
-        OpenTemplate(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
+      if (openFn) {
+        openFn(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
