@@ -130,7 +130,7 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 	}
 
 	s := settings.Get()
-	err = f.Branch(s.Git.WorkBranch)
+	err = f.Branch(s.Git.Branch)
 	if err != nil {
 		return xerrors.Errorf("fs.Branch() error: %w", err)
 	}
