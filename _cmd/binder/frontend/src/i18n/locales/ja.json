@@ -180,7 +180,8 @@
     "preview" : {
         "publish" : "公開",
         "unpublish" : "非公開",
-        "download" : "ダウンロード"
+        "download" : "ダウンロード",
+        "windowTitle" : "プレビュー"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",
@@ -200,6 +201,7 @@
         "menu" : "メニュー",
         "fontSetting" : "フォント設定",
         "openExternalEditor" : "外部エディタで開く",
+        "openPreviewWindow" : "プレビューウィンドウで開く",
         "externalEditorLocked" : "外部エディタで開いています。"
     }
 }

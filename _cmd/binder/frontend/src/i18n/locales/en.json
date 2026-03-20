@@ -180,7 +180,8 @@
     "preview" : {
         "publish" : "Publish",
         "unpublish" : "Unpublish",
-        "download" : "Download"
+        "download" : "Download",
+        "windowTitle" : "Preview"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
@@ -200,6 +201,7 @@
         "menu" : "Menu",
         "fontSetting" : "Font Setting",
         "openExternalEditor" : "Open in External Editor",
+        "openPreviewWindow" : "Open in Preview Window",
         "externalEditorLocked" : "Opened in external editor."
     }
 }

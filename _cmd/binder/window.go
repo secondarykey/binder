@@ -25,6 +25,7 @@ type Window struct {
 	window         *application.WebviewWindow
 	commitWindow   *application.WebviewWindow
 	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
+	previewWindow  *application.WebviewWindow
 }
 
 func NewWindow(app *api.App) *Window {
@@ -113,6 +114,34 @@ func (r *Window) OpenHistoryWindow(typ, id, name string) error {
 	// ウィンドウが閉じられたらリセット
 	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		delete(r.historyWindows, key)
+	})
+
+	return nil
+}
+
+func (r *Window) OpenPreviewWindow(typ, id, name string) error {
+	// 既に開いていれば前面に出すだけ
+	if r.previewWindow != nil {
+		r.previewWindow.Focus()
+		return nil
+	}
+
+	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - Preview",
+		Width:            800,
+		Height:           600,
+		MinWidth:         400,
+		MinHeight:        300,
+		Frameless:        true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?preview=1&type=" + typ + "&id=" + id + "&name=" + url.QueryEscape(name),
+	})
+
+	r.previewWindow = w
+
+	// ウィンドウが閉じられたらリセット
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.previewWindow = nil
 	})
 
 	return nil

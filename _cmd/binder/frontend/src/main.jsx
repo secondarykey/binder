@@ -6,6 +6,7 @@ import './assets/theme.css'
 import './assets/style.css'
 import App from './app/App'
 import HistoryApp from './app/HistoryApp'
+import PreviewApp from './app/PreviewApp'
 
 import { GetTheme } from '../bindings/binder/api/app'
 
@@ -15,6 +16,7 @@ const root = createRoot(container)
 const params = new URLSearchParams(window.location.search);
 const isCommitWindow  = params.get('commit')  === '1';
 const isHistoryWindow = params.get('history') === '1';
+const isPreviewWindow = params.get('preview') === '1';
 
 // 設定からテーマを適用（全ウィンドウ共通）
 // theme が未設定 or "dark" → ダーク（デフォルト）、"light" → ライト
@@ -25,7 +27,7 @@ GetTheme().then((t) => {
 root.render(
     <React.StrictMode>
       <HashRouter>
-        {isHistoryWindow ? <HistoryApp /> : <App />}
+        {isPreviewWindow ? <PreviewApp /> : isHistoryWindow ? <HistoryApp /> : <App />}
       </HashRouter>
     </React.StrictMode>
 )

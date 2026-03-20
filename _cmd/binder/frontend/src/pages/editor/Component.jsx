@@ -9,7 +9,8 @@ import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binde
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
-import { RunEditor } from "../../../bindings/main/window";
+import { RunEditor, OpenPreviewWindow } from "../../../bindings/main/window";
+import { Events } from '@wailsio/runtime';
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -378,6 +379,9 @@ function Editor(props) {
   useEffect(() => {
     evt.changeTitle(name)
     setComment("Updated: " + name);
+    if (name && id && mode) {
+      Events.Emit('binder:preview:navigate', { typ: mode, id, name });
+    }
   }, [name]);
 
   const parseText = async () => {
@@ -442,6 +446,7 @@ function Editor(props) {
       var embed = await createMarked(id, txt, true, true);
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
+        Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
@@ -464,6 +469,7 @@ function Editor(props) {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
+      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt });
 
       var svg = document.querySelector('#mermaidViewer svg');
       var left = 0;
@@ -1184,6 +1190,9 @@ function Editor(props) {
                   <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
                 </MenuItem>
                 <Divider />
+                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name); }}>
+                  <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openPreviewWindow")}
+                </MenuItem>
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
                   <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
                 </MenuItem>
