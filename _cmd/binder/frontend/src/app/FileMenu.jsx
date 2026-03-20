@@ -8,7 +8,7 @@ import { CheckConvert, Convert, LoadBinder } from '../../bindings/binder/api/app
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 
-import "../../i18n/config";
+import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 
 import Event,{EventContext} from '../Event';
