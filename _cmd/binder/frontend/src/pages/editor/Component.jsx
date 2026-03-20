@@ -1222,53 +1222,61 @@ function Editor(props) {
             <div id="dataViewer">
 
               {/** プレビューメニュー */}
-              <div id="previewMenu" style={mode === Mode.template ? { justifyContent: 'flex-start' } : undefined}>
-                {mode !== Mode.template && <>
-                  <Tooltip title={t("preview.publish")} placement="bottom">
-                    <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
-                      <PublishIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t("preview.unpublish")} placement="bottom">
-                    <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="editorBtn">
-                      <UnpublishedIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                  </Tooltip>
-                </>}
-                {mode === Mode.diagram &&
-                  <Tooltip title={t("preview.download")} placement="bottom">
-                    <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
-                      <DownloadIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                  </Tooltip>
+              <div id="previewMenu">
+                {mode !== Mode.template &&
+                  <div className="previewMenuLeft">
+                    <Tooltip title={t("preview.unpublish")} placement="bottom">
+                      <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="editorBtn">
+                        <UnpublishedIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    </Tooltip>
+                  </div>
                 }
                 {mode === Mode.template && (() => {
                   const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
-                  return (<>
-                    <Select
-                      value={previewOtherTemplateId}
-                      onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
-                      size="small"
-                      displayEmpty
-                      sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
-                    >
-                      {previewOtherTemplates.map((t) => (
-                        <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
-                      ))}
-                    </Select>
-                    <Select
-                      value={previewNoteId}
-                      onChange={(e) => setPreviewNoteId(e.target.value)}
-                      size="small"
-                      displayEmpty
-                      sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                    >
-                      {previewNotes.map((n) => (
-                        <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
-                      ))}
-                    </Select>
-                  </>);
+                  return (
+                    <div className="previewMenuLeft">
+                      <Select
+                        value={previewOtherTemplateId}
+                        onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                        size="small"
+                        displayEmpty
+                        sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
+                      >
+                        {previewOtherTemplates.map((t) => (
+                          <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
+                        ))}
+                      </Select>
+                      <Select
+                        value={previewNoteId}
+                        onChange={(e) => setPreviewNoteId(e.target.value)}
+                        size="small"
+                        displayEmpty
+                        sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                      >
+                        {previewNotes.map((n) => (
+                          <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
+                        ))}
+                      </Select>
+                    </div>
+                  );
                 })()}
+                {mode !== Mode.template &&
+                  <div className="previewMenuRight">
+                    {mode === Mode.diagram &&
+                      <Tooltip title={t("preview.download")} placement="bottom">
+                        <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
+                          <DownloadIcon sx={{ fontSize: '16px' }} />
+                        </IconButton>
+                      </Tooltip>
+                    }
+                    <Tooltip title={t("preview.publish")} placement="bottom">
+                      <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
+                        <PublishIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    </Tooltip>
+                  </div>
+                }
               </div>
 
               {/** プレビューコンテンツ */}
