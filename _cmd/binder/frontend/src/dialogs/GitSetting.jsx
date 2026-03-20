@@ -3,7 +3,7 @@ import { useEffect, useState, useContext } from "react";
 import { Box, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
 import SaveIcon from '@mui/icons-material/Save';
 
-import { GetGit, SaveGit } from "../bindings/binder/api/app";
+import { GetGit, SaveGit } from "../../bindings/binder/api/app";
 import { EventContext } from "../Event";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
