@@ -1222,7 +1222,7 @@ function Editor(props) {
             <div id="dataViewer">
 
               {/** プレビューメニュー */}
-              <div id="previewMenu">
+              <div id="previewMenu" style={mode === Mode.template ? { justifyContent: 'flex-start' } : undefined}>
                 {mode !== Mode.template && <>
                   <Tooltip title={t("preview.publish")} placement="bottom">
                     <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
@@ -1242,6 +1242,33 @@ function Editor(props) {
                     </IconButton>
                   </Tooltip>
                 }
+                {mode === Mode.template && (() => {
+                  const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
+                  return (<>
+                    <Select
+                      value={previewOtherTemplateId}
+                      onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                      size="small"
+                      displayEmpty
+                      sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
+                    >
+                      {previewOtherTemplates.map((t) => (
+                        <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
+                      ))}
+                    </Select>
+                    <Select
+                      value={previewNoteId}
+                      onChange={(e) => setPreviewNoteId(e.target.value)}
+                      size="small"
+                      displayEmpty
+                      sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                    >
+                      {previewNotes.map((n) => (
+                        <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </>);
+                })()}
               </div>
 
               {/** プレビューコンテンツ */}
@@ -1252,40 +1279,9 @@ function Editor(props) {
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
                 }
-                {mode === Mode.template && (() => {
-                  const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
-                  return (
-                    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 4px", borderBottom: "1px solid var(--border-primary)", flexShrink: 0, backgroundColor: "var(--bg-elevated)" }}>
-                        <Select
-                          value={previewOtherTemplateId}
-                          onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
-                          size="small"
-                          displayEmpty
-                          sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                        >
-                          {previewOtherTemplates.map((t) => (
-                            <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
-                          ))}
-                        </Select>
-                        <Select
-                          value={previewNoteId}
-                          onChange={(e) => setPreviewNoteId(e.target.value)}
-                          size="small"
-                          displayEmpty
-                          sx={{ minWidth: 120, height: "30px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                        >
-                          {previewNotes.map((n) => (
-                            <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
-                          ))}
-                        </Select>
-                      </div>
-                      <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
-                        <HTMLFrame html={html} cursorLine={cursorLine} />
-                      </div>
-                    </div>
-                  );
-                })()}
+                {mode === Mode.template &&
+                  <HTMLFrame html={html} cursorLine={cursorLine} />
+                }
               </div>
 
             </div>
