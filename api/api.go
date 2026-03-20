@@ -6,7 +6,6 @@ import (
 
 	"binder"
 	"binder/log"
-	"binder/settings"
 
 	"fmt"
 )
@@ -35,36 +34,6 @@ func (app *App) SetCurrent(c *binder.Binder) {
 	app.current = c
 }
 
-// Startup は起動時の初期化処理を行う。
-// Wails v3 の ServiceStartup とは切り離されており、main() から直接呼び出せる。
-func (a *App) Startup() error {
-
-	defer log.PrintTrace(log.Func("Startup()"))
-
-	set := settings.Get()
-	//起動時にひらく設定
-	if set.Path.RunWithOpen {
-		his := set.Path.Histories
-		if len(his) > 0 {
-
-			//コンバータが走る仕組み
-			/*
-				b, err := binder.LoadBinder(his[0])
-				if err != nil {
-					log.PrintStackTrace(err)
-				} else {
-					a.SetCurrent(b)
-					err = b.Serve()
-					if err != nil {
-						log.PrintStackTrace(err)
-					}
-				}
-			*/
-		}
-	}
-
-	return nil
-}
 
 func (a *App) Address() (string, error) {
 	defer log.PrintTrace(log.Func("Address()"))

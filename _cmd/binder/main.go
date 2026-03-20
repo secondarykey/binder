@@ -135,15 +135,6 @@ func main() {
 		wailsApp.Event.Emit("binder:filedrop:done")
 	})
 
-	//TODO 起動前にBinderを読み込む設定だが、
-	//初期化に対しておかしな挙動が考えられる為、
-	//処理場所を再度剣道
-
-	//起動前の動作
-	//if err := app.Startup(); err != nil {
-	//log.PrintStackTrace(err)
-	//}
-
 	// 4. 実行
 	err = wailsApp.Run()
 	if err != nil {
