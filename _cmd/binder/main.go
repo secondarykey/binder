@@ -11,7 +11,6 @@ import (
 
 	"binder/api"
 	"binder/log"
-	"binder/settings"
 )
 
 //go:embed all:frontend/dist
@@ -59,8 +58,12 @@ func main() {
 	flag.Parse()
 
 	app := api.New(ver)
+	set, err := app.Setup()
+	if err != nil {
+		log.PrintStackTrace(err)
+	}
+
 	win := NewWindow(app)
-	set := settings.Get()
 
 	// 1. アプリケーション作成
 	// wails3 に依存するサービスはWindowに設定する
@@ -89,6 +92,7 @@ func main() {
 		EnableFileDrop:         true,
 	})
 
+	//位置がおかしい場合は真ん中に設定
 	if (set.Position.Left < 0 && set.Position.Top < 0) ||
 		resetPosition {
 		window.Center()
@@ -136,7 +140,7 @@ func main() {
 	})
 
 	// 4. 実行
-	err := wailsApp.Run()
+	err = wailsApp.Run()
 	if err != nil {
 		println("Error:", err.Error())
 	}
