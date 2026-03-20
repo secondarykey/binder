@@ -56,7 +56,7 @@ func TestInitialize(t *testing.T) {
 		t.Fatalf("create error: %v", err)
 	}
 
-	b, err := binder.Load(dir, test.LatestVersion)
+	b, err := binder.Load(dir)
 	if err != nil {
 		t.Fatalf("Binder Load() error: %v", err)
 	}

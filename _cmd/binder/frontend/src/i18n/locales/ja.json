@@ -183,6 +183,13 @@
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー"
     },
+    "convert" : {
+        "title" : "データ移行",
+        "message" : "このBinderはデータの移行が必要です。移行しますか？",
+        "confirm" : "移行する",
+        "success" : "移行が完了しました",
+        "error" : "移行に失敗しました: {{error}}"
+    },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",
         "lineNumberOn" : "行番号: ON",

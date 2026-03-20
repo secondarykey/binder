@@ -19,13 +19,7 @@ func (a *App) Setup() (*settings.Setting, error) {
 }
 
 func (a *App) CheckConvert(dir string) (bool, error) {
-
-	f, err := setup.CheckConvert(dir, a.version)
-	if err != nil {
-	}
-	if !f {
-	}
-	return false, nil
+	return setup.CheckConvert(dir, a.version)
 }
 
 func (a *App) Convert(dir string) error {

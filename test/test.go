@@ -102,7 +102,7 @@ func CreateBinder(t *testing.T, dir string) *binder.Binder {
 		t.Fatalf("binder.Install error: %v", err)
 	}
 
-	b, err := binder.Load(work, LatestVersion)
+	b, err := binder.Load(work)
 	if err != nil {
 		t.Fatalf("binder.Load() error: %v", err)
 	}

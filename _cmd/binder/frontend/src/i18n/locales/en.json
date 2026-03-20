@@ -183,6 +183,13 @@
         "download" : "Download",
         "windowTitle" : "Preview"
     },
+    "convert" : {
+        "title" : "Data Migration",
+        "message" : "This Binder requires data migration. Do you want to migrate?",
+        "confirm" : "Migrate",
+        "success" : "Migration completed.",
+        "error" : "Migration failed: {{error}}"
+    },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
         "lineNumberOn" : "Line Numbers: ON",

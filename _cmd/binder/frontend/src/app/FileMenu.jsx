@@ -1,24 +1,32 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
 import { SelectDirectory } from '../../bindings/main/window';
-import { LoadBinder } from '../../bindings/binder/api/app';
+import { CheckConvert, Convert, LoadBinder } from '../../bindings/binder/api/app';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 
+import "../../i18n/config";
+import { useTranslation } from 'react-i18next';
+
 import Event,{EventContext} from '../Event';
+import ConvertDialog from '../dialogs/components/ConvertDialog';
 
 /**
  * Binderを開く画面
- * @param {*} props 
- * @returns 
+ * @param {*} props
+ * @returns
  */
 function FileMenu(props) {
 
   const evt = useContext(EventContext)
   const nav = useNavigate();
+  const {t} = useTranslation();
+
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [pendingDir, setPendingDir] = useState("");
 
   const handleNew = () => {
     nav("/file/new");
@@ -28,18 +36,29 @@ function FileMenu(props) {
     //props.onChangeMode("remoteBinder")
   }
 
+  const openBinder = (dir) => {
+    LoadBinder(dir).then((href) => {
+      evt.changeAddress(href);
+      nav("/note/edit/index");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    })
+  }
+
   const handleOpen = () => {
 
     SelectDirectory(false).then( (p) => {
 
       if ( p == "" ) return;
 
-      LoadBinder(p).then((href) => {
-
-        evt.changeAddress(href);
-        nav("/note/edit/index");
-
-      }).catch( (err) => {
+      CheckConvert(p).then((needsConvert) => {
+        if (needsConvert) {
+          setPendingDir(p);
+          setConvertOpen(true);
+        } else {
+          openBinder(p);
+        }
+      }).catch((err) => {
         evt.showErrorMessage(err);
       })
 
@@ -47,6 +66,24 @@ function FileMenu(props) {
       evt.showErrorMessage(err);
     })
 
+  }
+
+  const handleConvertConfirm = () => {
+    setConvertOpen(false);
+    const dir = pendingDir;
+    setPendingDir("");
+
+    Convert(dir).then(() => {
+      evt.showSuccessMessage(t("convert.success"));
+      openBinder(dir);
+    }).catch((err) => {
+      evt.showErrorMessage(t("convert.error", { error: err }));
+    })
+  }
+
+  const handleConvertCancel = () => {
+    setConvertOpen(false);
+    setPendingDir("");
   }
 
   return (<>
@@ -76,6 +113,12 @@ function FileMenu(props) {
  */}
 
     </MenuList>
+
+    <ConvertDialog
+      open={convertOpen}
+      onCancel={handleConvertCancel}
+      onConfirm={handleConvertConfirm}
+    />
   </>);
 }
 export default FileMenu;
