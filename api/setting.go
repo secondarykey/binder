@@ -79,6 +79,16 @@ func (a *App) SaveEditor(e *settings.Editor) error {
 	return settings.SaveEditor(e)
 }
 
+func (a *App) GetGit() *settings.Git {
+	defer log.PrintTrace(log.Func("GetGit()"))
+	return settings.GetGit()
+}
+
+func (a *App) SaveGit(g *settings.Git) error {
+	defer log.PrintTrace(log.Func("SaveGit()"))
+	return settings.SaveGit(g)
+}
+
 func (a *App) GetFontNames() ([]string, error) {
 	names := binder.FontNames()
 	return names, nil

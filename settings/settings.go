@@ -65,11 +65,12 @@ func (p *Path) AddHistory(h string) {
 }
 
 type Git struct {
-	Branch string `json:"branch"`
-	Name   string `json:"name"`
-	Mail   string `json:"mail"`
-	Code   string `json:"code"`
-	File   string `json;"file"`
+	Branch     string `json:"branch"`
+	WorkBranch string `json:"workBranch"`
+	Name       string `json:"name"`
+	Mail       string `json:"mail"`
+	Code       string `json:"code"`
+	File       string `json:"file"`
 }
 
 type Look struct {
@@ -292,6 +293,20 @@ func SaveEditor(e *Editor) error {
 	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
 	obj.Look.Editor.WordWrap = e.WordWrap
 	obj.Look.Editor.ShowPreview = e.ShowPreview
+	return obj.save()
+}
+
+func GetGit() *Git {
+	obj := Get()
+	return obj.Git
+}
+
+func SaveGit(g *Git) error {
+	obj := Get()
+	obj.Git.Branch = g.Branch
+	obj.Git.WorkBranch = g.WorkBranch
+	obj.Git.Name = g.Name
+	obj.Git.Mail = g.Mail
 	return obj.save()
 }
 

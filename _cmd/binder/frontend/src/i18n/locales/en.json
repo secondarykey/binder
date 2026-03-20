@@ -87,6 +87,7 @@
         "editorProgram" : "Editor Program",
         "git" : "Git",
         "defaultBranch" : "Default Branch Name",
+        "workBranch" : "Working Branch Name",
         "gitName" : "Name",
         "gitMail" : "Mail",
         "theme" : "Theme",
