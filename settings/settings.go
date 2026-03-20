@@ -126,11 +126,6 @@ func Get() *Setting {
 	if pSet.Look.Editor == nil {
 		ds := def()
 		pSet.Look.Editor = ds.Look.Editor
-	} else if !pSet.Look.Editor.ShowLineNumbers && !pSet.Look.Editor.WordWrap && !pSet.Look.Editor.ShowPreview {
-		// 旧設定ファイルにはこれらのフィールドがないため、すべてfalseの場合はデフォルト値を適用
-		pSet.Look.Editor.ShowLineNumbers = true
-		pSet.Look.Editor.WordWrap = true
-		pSet.Look.Editor.ShowPreview = true
 	}
 	return pSet
 }
