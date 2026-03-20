@@ -16,7 +16,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { Setup, GetConfig, CloseBinder, LoadBinder, CheckConvert, Convert } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, CloseBinder, LoadBinder, CheckConvert, Convert } from '../../bindings/binder/api/app';
 import { SavePosition,Terminate } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -188,10 +188,10 @@ function App() {
     //初回取得
     loadBinderName();
 
-    //設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
-    Setup().then((setting) => {
-      if (setting?.path?.runWithOpen) {
-        const h = setting.path.histories;
+    //パス設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
+    GetPath().then((path) => {
+      if (path?.runWithOpen) {
+        const h = path.histories;
         if (h && h.length > 0) {
           openBinder(h[0]);
         }
