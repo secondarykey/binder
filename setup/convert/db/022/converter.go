@@ -1,6 +1,6 @@
 package convert022
 
-import "binder/db/convert/core"
+import "binder/setup/convert/db/core"
 
 // Convert022 は0.2.2への移行。
 // このバージョンではCSVスキーマの変更はなく、

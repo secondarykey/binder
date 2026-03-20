@@ -1,6 +1,6 @@
 package convert048
 
-import "binder/db/convert/core"
+import "binder/setup/convert/db/core"
 
 // Convert048 は0.4.8への移行。
 // このバージョンではCSVスキーマの変更はなく、
