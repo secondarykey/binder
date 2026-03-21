@@ -186,7 +186,7 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 func CheckDirectory(dir string, install bool) error {
 
 	//TODO ちょっと違うかも
-	dirs := []string{"db", "docs", "templates", "diagrams", "notes"}
+	dirs := []string{"db", "templates", "diagrams", "notes"}
 
 	for _, n := range dirs {
 		target := filepath.Join(dir, n)

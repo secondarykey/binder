@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -70,6 +72,14 @@ func Load(dir string) (*Binder, error) {
 	err = setup.CheckDirectory(dir, false)
 	if err != nil {
 		return nil, xerrors.Errorf("setup.CheckDirectory() error: %w", err)
+	}
+
+	// docsディレクトリが存在しない場合は作成する（リモートClone時など）
+	docsDir := filepath.Join(dir, bfs.GetPublic())
+	if _, err := os.Stat(docsDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(docsDir, 0755); err != nil {
+			return nil, xerrors.Errorf("os.MkdirAll(docs) error: %w", err)
+		}
 	}
 
 	inst, err := db.New(bfs.DatabaseDir())
