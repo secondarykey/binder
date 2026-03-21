@@ -11,6 +11,7 @@ import { EventContext } from "../Event";
 import SnippetSetting from "./SnippetSetting";
 import EditorSetting from "./EditorSetting";
 import GitSetting from "./GitSetting";
+import LicenseSetting from "./LicenseSetting";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 import locals from "../i18n/locals.json";
@@ -107,6 +108,7 @@ function Setting({ isModal, ...props }) {
     { key: "editor", label: t("setting.editor") },
     { key: "snippet", label: t("setting.snippet") },
     { key: "git", label: t("setting.git") },
+    { key: "license", label: t("setting.license") },
   ];
 
   return (
@@ -268,6 +270,10 @@ function Setting({ isModal, ...props }) {
 
         {activeSection === "snippet" && (
           <SnippetSetting />
+        )}
+
+        {activeSection === "license" && (
+          <LicenseSetting />
         )}
 
       </Box>
