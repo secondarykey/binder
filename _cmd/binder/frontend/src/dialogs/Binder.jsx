@@ -4,7 +4,6 @@ import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
 } from "@mui/material";
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo } from "../../bindings/binder/api/app";
 
@@ -194,6 +193,21 @@ function Binder({ isModal, ...props }) {
         {activeSection === "git" && (
           <div className="formGrid" style={{ margin: '20px 24px' }}>
 
+            {/** ユーザ情報 */}
+            <FormControl>
+              <FormLabel>{t("binder.userName")}</FormLabel>
+              <TextField size="small" value={gitName} onChange={(e) => setGitName(e.target.value)} />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>{t("binder.userEmail")}</FormLabel>
+              <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
+            </FormControl>
+
+            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+              <Button variant="contained" onClick={handleSaveUserInfo}>{t("common.save")}</Button>
+            </FormControl>
+
             {/** リモート一覧 */}
             <FormControl>
               <FormLabel>
@@ -230,21 +244,6 @@ function Binder({ isModal, ...props }) {
               </List>
             </FormControl>
 
-            {/** ユーザ情報 */}
-            <FormControl>
-              <FormLabel>{t("binder.userName")}</FormLabel>
-              <TextField size="small" value={gitName} onChange={(e) => setGitName(e.target.value)} />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>{t("binder.userEmail")}</FormLabel>
-              <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
-            </FormControl>
-
-            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-              <Button variant="contained" onClick={handleSaveUserInfo}>{t("common.save")}</Button>
-            </FormControl>
-
           </div>
         )}
 
@@ -264,9 +263,6 @@ function Binder({ isModal, ...props }) {
           {remoteDialogMode === "add" ? t("binder.settingRemote") : t("binder.editRemote")}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText style={{ color: "var(--text-secondary)" }}>
-            {t("binder.remoteHint")}
-          </DialogContentText>
           <TextField
             required margin="dense" label={t("binder.remoteName")}
             value={remoteName}

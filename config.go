@@ -98,5 +98,8 @@ func (b *Binder) EditUserInfo(u *json.UserInfo) error {
 		return xerrors.Errorf("fs.SaveUserInfo() error: %w", err)
 	}
 
+	// コミット署名を即時反映
+	b.fileSystem.SetUserSig(info)
+
 	return nil
 }

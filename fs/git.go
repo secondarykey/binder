@@ -189,6 +189,23 @@ func (f *FileSystem) Branch(name string) error {
 	return nil
 }
 
+// SetUserSig はバインダーごとのユーザ署名を設定する。
+func (f *FileSystem) SetUserSig(info *UserInfo) {
+	f.userSig = info
+}
+
+// userSigOrDefault はバインダーのユーザ署名があればそれを、なければアプリ設定を使用する。
+func (f *FileSystem) userSigOrDefault() *object.Signature {
+	if f.userSig != nil && f.userSig.Name != "" {
+		return &object.Signature{
+			Name:  f.userSig.Name,
+			Email: f.userSig.Email,
+			When:  time.Now(),
+		}
+	}
+	return UserSig()
+}
+
 func UserSig() *object.Signature {
 	set := settings.Get()
 	auth := set.Git
@@ -211,7 +228,7 @@ func SystemSig() *object.Signature {
 
 // ファイルをコミットする
 func (f *FileSystem) Commit(m string, files ...string) error {
-	return f.commit(m, UserSig(), false, files...)
+	return f.commit(m, f.userSigOrDefault(), false, files...)
 }
 
 func (f *FileSystem) AutoCommit(m string, files ...string) error {

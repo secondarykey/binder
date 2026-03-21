@@ -25,9 +25,10 @@ type FileSystem struct {
 	fs   billy.Filesystem
 	repo *git.Repository
 
-	branch string
-	remote string
-	base   string
+	branch  string
+	remote  string
+	base    string
+	userSig *UserInfo // バインダーごとのユーザ署名（nil の場合はアプリ設定を使用）
 }
 
 // TODO 早めに設定しておく必要あり
