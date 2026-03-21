@@ -9,3 +9,8 @@ type UserInfo struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
+
+type Remote struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}

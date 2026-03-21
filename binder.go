@@ -3,6 +3,7 @@ package binder
 import (
 	. "binder/internal"
 
+	"binder/api/json"
 	"binder/db"
 	"binder/fs"
 	"binder/log"
@@ -157,6 +158,31 @@ func (b *Binder) GetRemotes() ([]string, error) {
 	return names, nil
 }
 
+func (b *Binder) GetRemoteList() ([]*json.Remote, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	configs, err := b.fileSystem.GetRemotes()
+	if err != nil {
+		return nil, xerrors.Errorf("fs.GetRemotes() error: %w", err)
+	}
+
+	remotes := make([]*json.Remote, len(configs))
+	for idx, c := range configs {
+		url := ""
+		if len(c.URLs) > 0 {
+			url = c.URLs[0]
+		}
+		remotes[idx] = &json.Remote{
+			Name: c.Name,
+			URL:  url,
+		}
+	}
+	return remotes, nil
+}
+
 func (b *Binder) CreateRemote(name, url string) error {
 
 	if b == nil {
@@ -166,6 +192,32 @@ func (b *Binder) CreateRemote(name, url string) error {
 	err := b.fileSystem.CreateRemote(name, url)
 	if err != nil {
 		return xerrors.Errorf("CreateRemote() error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) EditRemote(name, url string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	err := b.fileSystem.EditRemote(name, url)
+	if err != nil {
+		return xerrors.Errorf("EditRemote() error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) DeleteRemote(name string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	err := b.fileSystem.DeleteRemote(name)
+	if err != nil {
+		return xerrors.Errorf("DeleteRemote() error: %w", err)
 	}
 	return nil
 }

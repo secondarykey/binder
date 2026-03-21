@@ -68,6 +68,42 @@ func (a *App) AddRemote(name string, url string) error {
 	return nil
 }
 
+func (a *App) RemoteList() ([]*json.Remote, error) {
+
+	defer log.PrintTrace(log.Func("RemoteList()"))
+
+	remotes, err := a.current.GetRemoteList()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetRemoteList() error: %+v", err)
+	}
+	return remotes, nil
+}
+
+func (a *App) EditRemote(name string, url string) error {
+
+	defer log.PrintTrace(log.Func("EditRemote()"))
+
+	err := a.current.EditRemote(name, url)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("EditRemote() error: %+v", err)
+	}
+	return nil
+}
+
+func (a *App) DeleteRemote(name string) error {
+
+	defer log.PrintTrace(log.Func("DeleteRemote()"))
+
+	err := a.current.DeleteRemote(name)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DeleteRemote() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetModifiedIds() ([]string, error) {
 
 	defer log.PrintTrace(log.Func("GetModifiedIds()"))
