@@ -22,3 +22,10 @@ func (f *FileSystem) PrintDebugStatus() {
 func (f *FileSystem) IsExist(fn string) bool {
 	return f.isExist(fn)
 }
+
+func Encrypt(key []byte, v any) ([]byte, error) {
+	return encrypt(key, v)
+}
+func Decrypt(key []byte, data []byte, v any) error {
+	return decrypt(key, data, v)
+}
