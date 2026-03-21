@@ -206,9 +206,6 @@ function App() {
       loadBinderName();
     });
 
-    //初回取得
-    loadBinderName();
-
     //パス設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
     GetPath().then((path) => {
       if (path?.runWithOpen) {
