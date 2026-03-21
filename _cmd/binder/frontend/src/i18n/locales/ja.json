@@ -103,6 +103,7 @@
     },
     "binder" : {
         "editTitle" : "Binder編集",
+        "git" : "Git",
         "remoteName" : "リモート名",
         "branchName" : "ブランチ名",
         "settingRemote" : "リモート設定",

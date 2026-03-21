@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
+  { key: "git", labelKey: "binder.git" },
 ];
 
 /**
@@ -128,6 +129,16 @@ function Binder({ isModal, ...props }) {
               <FormLabel>{t("common.detail")}</FormLabel>
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
             </FormControl>
+
+            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+              <Button variant="contained" onClick={handleSave}>{t("common.save")}</Button>
+            </FormControl>
+
+          </div>
+        )}
+
+        {activeSection === "git" && (
+          <div className="formGrid" style={{ margin: '20px 24px' }}>
 
             <FormControl>
               <FormLabel>
