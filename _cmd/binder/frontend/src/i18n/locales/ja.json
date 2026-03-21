@@ -111,6 +111,9 @@
         "remoteUrl" : "リモートURL",
         "userName" : "名前",
         "userEmail" : "メールアドレス",
+        "editRemote" : "リモート編集",
+        "deleteRemoteTitle" : "リモートの削除",
+        "deleteRemoteConfirm" : "「{{name}}」を削除しますか？",
         "updateSuccess" : "Binderを更新しました"
     },
     "commitModal" : {

@@ -2,9 +2,11 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, List, ListItemButton, ListItemText, MenuItem, Select, TextField,
+  FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
 } from "@mui/material";
-import { GetConfig, EditConfig, Remotes, AddRemote, GetUserInfo, EditUserInfo } from "../../bindings/binder/api/app";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
 import "../i18n/config";
@@ -27,20 +29,25 @@ function Binder({ isModal, ...props }) {
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
-  const [remote, setRemote] = useState("origin");
-  const [remoteList, setRemoteList] = useState([]);
-  const [branch, setBranch] = useState("main");
 
   const [gitName, setGitName] = useState("");
   const [gitMail, setGitMail] = useState("");
 
+  const [remoteList, setRemoteList] = useState([]);
+
+  // リモートダイアログ（追加・編集兼用）
   const [remoteDialog, showRemoteDialog] = useState(false);
+  const [remoteDialogMode, setRemoteDialogMode] = useState("add"); // "add" or "edit"
   const [remoteName, setRemoteName] = useState("");
   const [remoteURL, setRemoteURL] = useState("");
 
+  // 削除確認ダイアログ
+  const [deleteDialog, showDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState("");
+
   const getRemoteList = () => {
-    Remotes().then((res) => {
-      setRemoteList(res);
+    RemoteList().then((res) => {
+      setRemoteList(res || []);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -51,8 +58,6 @@ function Binder({ isModal, ...props }) {
     GetConfig().then((conf) => {
       setName(conf.name);
       setDetail(conf.detail);
-      setRemote(conf.remote);
-      setBranch(conf.branch);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -66,12 +71,7 @@ function Binder({ isModal, ...props }) {
   }, []);
 
   const handleSave = () => {
-    const config = {
-      name,
-      detail,
-      remote,
-      branch,
-    };
+    const config = { name, detail };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
@@ -88,16 +88,53 @@ function Binder({ isModal, ...props }) {
     });
   };
 
-  const handleChangeRemote = (e, val) => {
-    setRemote(val !== undefined ? val : e.target.value);
-  };
-
-  const createRemoteDialog = () => {
-    if (remoteList.length === 0) setRemoteName(remote);
+  // リモート追加ダイアログを開く
+  const openAddRemoteDialog = () => {
+    setRemoteDialogMode("add");
+    setRemoteName("");
+    setRemoteURL("");
     showRemoteDialog(true);
   };
 
-  const handleDialogClose = () => showRemoteDialog(false);
+  // リモート編集ダイアログを開く
+  const openEditRemoteDialog = (remote) => {
+    setRemoteDialogMode("edit");
+    setRemoteName(remote.name);
+    setRemoteURL(remote.url);
+    showRemoteDialog(true);
+  };
+
+  const handleRemoteDialogClose = () => showRemoteDialog(false);
+
+  const handleRemoteDialogSubmit = (event) => {
+    event.preventDefault();
+    const action = remoteDialogMode === "add"
+      ? AddRemote(remoteName, remoteURL)
+      : EditRemote(remoteName, remoteURL);
+    action.then(() => {
+      getRemoteList();
+      handleRemoteDialogClose();
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  // 削除確認ダイアログを開く
+  const openDeleteDialog = (name) => {
+    setDeleteTarget(name);
+    showDeleteDialog(true);
+  };
+
+  const handleDeleteDialogClose = () => showDeleteDialog(false);
+
+  const handleDeleteRemote = () => {
+    DeleteRemote(deleteTarget).then(() => {
+      getRemoteList();
+      handleDeleteDialogClose();
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
 
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>
@@ -157,31 +194,40 @@ function Binder({ isModal, ...props }) {
         {activeSection === "git" && (
           <div className="formGrid" style={{ margin: '20px 24px' }}>
 
+            {/** リモート一覧 */}
             <FormControl>
               <FormLabel>
-                {t("binder.remoteName")}
-                <Button onClick={createRemoteDialog}>{t("common.add")}</Button>
+                {t("binder.settingRemote")}
+                <Button onClick={openAddRemoteDialog}>{t("common.add")}</Button>
               </FormLabel>
-              <Select
-                size="small"
-                value={remote}
-                onChange={(e) => handleChangeRemote(e)}
-                sx={{ color: 'var(--text-primary)' }}
-                MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
-              >
-                {remoteList.map((v) => (
-                  <MenuItem key={"Select" + v} value={v}>{v}</MenuItem>
+              <List dense disablePadding>
+                {remoteList.map((r) => (
+                  <ListItemButton
+                    key={r.name}
+                    onClick={() => openEditRemoteDialog(r)}
+                    sx={{
+                      py: 0.5,
+                      '&:hover': { backgroundColor: 'var(--bg-elevated)' },
+                    }}
+                  >
+                    <ListItemText
+                      primary={r.name}
+                      secondary={r.url}
+                      primaryTypographyProps={{ fontSize: '13px' }}
+                      secondaryTypographyProps={{ fontSize: '11px', color: 'var(--text-secondary)' }}
+                    />
+                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
+                        sx={{ color: 'var(--text-secondary)' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </ListItemIcon>
+                  </ListItemButton>
                 ))}
-              </Select>
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>{t("binder.branchName")}</FormLabel>
-              <TextField size="small" value={branch} onChange={(e) => setBranch(e.target.value)} />
-            </FormControl>
-
-            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-              <Button variant="contained" onClick={handleSave}>{t("common.save")}</Button>
+              </List>
             </FormControl>
 
             {/** ユーザ情報 */}
@@ -204,26 +250,19 @@ function Binder({ isModal, ...props }) {
 
       </Box>
 
-      {/** リモート追加ダイアログ */}
+      {/** リモート追加・編集ダイアログ */}
       <Dialog
         open={remoteDialog}
-        onClose={handleDialogClose}
+        onClose={handleRemoteDialogClose}
         PaperProps={{
           component: 'form',
-          onSubmit: (event) => {
-            event.preventDefault();
-            AddRemote(remoteName, remoteURL).then(() => {
-              getRemoteList();
-              handleChangeRemote(undefined, remoteName);
-              handleDialogClose();
-            }).catch((err) => {
-              evt.showErrorMessage(err);
-            });
-          },
+          onSubmit: handleRemoteDialogSubmit,
           style: { backgroundColor: "var(--bg-button)" },
         }}
       >
-        <DialogTitle style={{ color: "var(--text-secondary)" }}>{t("binder.settingRemote")}</DialogTitle>
+        <DialogTitle style={{ color: "var(--text-secondary)" }}>
+          {remoteDialogMode === "add" ? t("binder.settingRemote") : t("binder.editRemote")}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText style={{ color: "var(--text-secondary)" }}>
             {t("binder.remoteHint")}
@@ -233,6 +272,7 @@ function Binder({ isModal, ...props }) {
             value={remoteName}
             onChange={(e) => setRemoteName(e.target.value)}
             fullWidth variant="standard"
+            disabled={remoteDialogMode === "edit"}
           />
           <TextField
             autoFocus required margin="dense" label={t("binder.remoteUrl")}
@@ -242,8 +282,26 @@ function Binder({ isModal, ...props }) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogClose}>{t("common.cancel")}</Button>
+          <Button onClick={handleRemoteDialogClose}>{t("common.cancel")}</Button>
           <Button type="submit">{t("common.set")}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/** リモート削除確認ダイアログ */}
+      <Dialog
+        open={deleteDialog}
+        onClose={handleDeleteDialogClose}
+        PaperProps={{ style: { backgroundColor: "var(--bg-button)" } }}
+      >
+        <DialogTitle style={{ color: "var(--text-secondary)" }}>{t("binder.deleteRemoteTitle")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText style={{ color: "var(--text-secondary)" }}>
+            {t("binder.deleteRemoteConfirm", { name: deleteTarget })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose}>{t("common.cancel")}</Button>
+          <Button onClick={handleDeleteRemote} color="error">{t("common.delete")}</Button>
         </DialogActions>
       </Dialog>
 

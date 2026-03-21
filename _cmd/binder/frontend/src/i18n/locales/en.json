@@ -111,6 +111,9 @@
         "remoteUrl" : "Remote URL",
         "userName" : "Name",
         "userEmail" : "Email",
+        "editRemote" : "Edit Remote",
+        "deleteRemoteTitle" : "Delete Remote",
+        "deleteRemoteConfirm" : "Delete \"{{name}}\"?",
         "updateSuccess" : "Binder updated."
     },
     "commitModal" : {

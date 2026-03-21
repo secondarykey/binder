@@ -85,6 +85,29 @@ func (f *FileSystem) CreateRemote(name, url string) error {
 	return nil
 }
 
+func (f *FileSystem) EditRemote(name, url string) error {
+	err := f.repo.DeleteRemote(name)
+	if err != nil {
+		return xerrors.Errorf("DeleteRemote(%s) error: %w", name, err)
+	}
+	_, err = f.repo.CreateRemote(&config.RemoteConfig{
+		Name: name,
+		URLs: []string{url},
+	})
+	if err != nil {
+		return xerrors.Errorf("CreateRemote(%s) error: %w", name, err)
+	}
+	return nil
+}
+
+func (f *FileSystem) DeleteRemote(name string) error {
+	err := f.repo.DeleteRemote(name)
+	if err != nil {
+		return xerrors.Errorf("DeleteRemote(%s) error: %w", name, err)
+	}
+	return nil
+}
+
 func (f *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
 	r, err := f.repo.Remotes()
 	if err != nil {
