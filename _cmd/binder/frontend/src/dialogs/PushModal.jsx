@@ -8,18 +8,12 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import ModalWrapper from './components/ModalWrapper';
+import AuthFields from '../components/AuthFields';
 import { GetUserInfo, RemoteList, Push, CurrentBranch } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import '../i18n/config';
 import { useTranslation } from 'react-i18next';
-
-const AUTH_TYPES = [
-  { value: 'basic', labelKey: 'push.authBasic' },
-  { value: 'token', labelKey: 'push.authToken' },
-  { value: 'ssh_file', labelKey: 'push.authSSHFile' },
-  { value: 'ssh_agent', labelKey: 'push.authSSHAgent' },
-];
 
 /**
  * Pushモーダル
@@ -166,56 +160,14 @@ function PushModal({ open, onClose }) {
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0 }}>
-            <FormControl size="small">
-              <Select
-                value={authType}
-                onChange={(e) => setAuthType(e.target.value)}
-                size="small"
-              >
-                <MenuItem value="">&nbsp;</MenuItem>
-                {AUTH_TYPES.map((at) => (
-                  <MenuItem key={at.value} value={at.value}>{t(at.labelKey)}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Basic認証フィールド */}
-            {authType === 'basic' && (
-              <>
-                <FormControl size="small">
-                  <FormLabel>{t('push.username')}</FormLabel>
-                  <TextField size="small" value={username} onChange={(e) => setUsername(e.target.value)} />
-                </FormControl>
-                <FormControl size="small">
-                  <FormLabel>{t('push.password')}</FormLabel>
-                  <TextField size="small" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </FormControl>
-              </>
-            )}
-
-            {/* トークン認証フィールド */}
-            {authType === 'token' && (
-              <FormControl size="small">
-                <FormLabel>{t('push.token')}</FormLabel>
-                <TextField size="small" type="password" value={token} onChange={(e) => setToken(e.target.value)} />
-              </FormControl>
-            )}
-
-            {/* SSH鍵ファイルフィールド */}
-            {authType === 'ssh_file' && (
-              <>
-                <FormControl size="small">
-                  <FormLabel>{t('push.filename')}</FormLabel>
-                  <TextField size="small" value={filename} onChange={(e) => setFilename(e.target.value)} />
-                </FormControl>
-                <FormControl size="small">
-                  <FormLabel>{t('push.passphrase')}</FormLabel>
-                  <TextField size="small" type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
-                </FormControl>
-              </>
-            )}
-
-            {/* SSHエージェント: 追加入力なし */}
+            <AuthFields
+              authType={authType} onAuthTypeChange={setAuthType}
+              username={username} onUsernameChange={setUsername}
+              password={password} onPasswordChange={setPassword}
+              token={token} onTokenChange={setToken}
+              passphrase={passphrase} onPassphraseChange={setPassphrase}
+              filename={filename} onFilenameChange={setFilename}
+            />
 
             {/* 保存チェックボックス */}
             <FormControlLabel

@@ -2,10 +2,11 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Select, TextField,
+  FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
+import AuthFields from "../components/AuthFields";
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
@@ -238,53 +239,14 @@ function Binder({ isModal, ...props }) {
             </FormControl>
 
             {/** 認証情報 */}
-            <FormControl size="small">
-              <FormLabel>{t("push.authType")}</FormLabel>
-              <Select
-                value={authType}
-                onChange={(e) => setAuthType(e.target.value)}
-                size="small"
-              >
-                <MenuItem value="">&nbsp;</MenuItem>
-                <MenuItem value="basic">{t("push.authBasic")}</MenuItem>
-                <MenuItem value="token">{t("push.authToken")}</MenuItem>
-                <MenuItem value="ssh_file">{t("push.authSSHFile")}</MenuItem>
-                <MenuItem value="ssh_agent">{t("push.authSSHAgent")}</MenuItem>
-              </Select>
-            </FormControl>
-
-            {authType === 'basic' && (
-              <>
-                <FormControl size="small">
-                  <FormLabel>{t("push.username")}</FormLabel>
-                  <TextField size="small" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} />
-                </FormControl>
-                <FormControl size="small">
-                  <FormLabel>{t("push.password")}</FormLabel>
-                  <TextField size="small" type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} />
-                </FormControl>
-              </>
-            )}
-
-            {authType === 'token' && (
-              <FormControl size="small">
-                <FormLabel>{t("push.token")}</FormLabel>
-                <TextField size="small" type="password" value={authToken} onChange={(e) => setAuthToken(e.target.value)} />
-              </FormControl>
-            )}
-
-            {authType === 'ssh_file' && (
-              <>
-                <FormControl size="small">
-                  <FormLabel>{t("push.filename")}</FormLabel>
-                  <TextField size="small" value={authFilename} onChange={(e) => setAuthFilename(e.target.value)} />
-                </FormControl>
-                <FormControl size="small">
-                  <FormLabel>{t("push.passphrase")}</FormLabel>
-                  <TextField size="small" type="password" value={authPassphrase} onChange={(e) => setAuthPassphrase(e.target.value)} />
-                </FormControl>
-              </>
-            )}
+            <AuthFields
+              authType={authType} onAuthTypeChange={setAuthType}
+              username={authUsername} onUsernameChange={setAuthUsername}
+              password={authPassword} onPasswordChange={setAuthPassword}
+              token={authToken} onTokenChange={setAuthToken}
+              passphrase={authPassphrase} onPassphraseChange={setAuthPassphrase}
+              filename={authFilename} onFilenameChange={setAuthFilename}
+            />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
               <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
