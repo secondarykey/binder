@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
 import {
-  Box, FormControl, FormLabel, TextField, Select, MenuItem,
-  FormControlLabel, Checkbox, IconButton,
+  Accordion, AccordionDetails, AccordionSummary,
+  Box, Button, FormControl, FormLabel, TextField, Select, MenuItem,
+  FormControlLabel, Checkbox, Typography,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import ModalWrapper from './components/ModalWrapper';
 import { GetUserInfo, RemoteList, Push, CurrentBranch } from '../../bindings/binder/api/app';
@@ -38,6 +40,7 @@ function PushModal({ open, onClose }) {
   const [filename, setFilename] = useState('');
   const [save, setSave] = useState(false);
   const [pushing, setPushing] = useState(false);
+  const [authExpanded, setAuthExpanded] = useState(true);
 
   // UserInfoのname/email（Push時にそのまま渡す）
   const [userName, setUserName] = useState('');
@@ -68,6 +71,14 @@ function PushModal({ open, onClose }) {
       setToken(info.token || '');
       setPassphrase(info.passphrase || '');
       setFilename(info.filename || '');
+      // 認証種別に関連する値が入力済みなら折りたたむ
+      const at = info.auth_type || '';
+      const hasValues =
+        (at === 'basic' && (info.username || info.password)) ||
+        (at === 'token' && info.token) ||
+        (at === 'ssh_file' && (info.filename || info.passphrase)) ||
+        (at === 'ssh_agent');
+      setAuthExpanded(!hasValues);
     }).catch((err) => evt.showErrorMessage(err));
 
   }, [open]);
@@ -119,81 +130,101 @@ function PushModal({ open, onClose }) {
           </Select>
         </FormControl>
 
+        {/* Pushボタン（中央表示） */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<CloudUploadIcon />}
+            onClick={handlePush}
+            disabled={pushing || !remoteName || !authType}
+            sx={{ textTransform: 'none' }}
+          >
+            {t('push.pushButton')}
+          </Button>
+        </Box>
+
         {/* ブランチ名（読み取り専用） */}
         <FormControl size="small">
           <FormLabel>{t('binder.currentBranch')}</FormLabel>
           <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
         </FormControl>
 
-        {/* 認証種別 */}
-        <FormControl size="small">
-          <FormLabel>{t('push.authType')}</FormLabel>
-          <Select
-            value={authType}
-            onChange={(e) => setAuthType(e.target.value)}
-            size="small"
-          >
-            <MenuItem value="">&nbsp;</MenuItem>
-            {AUTH_TYPES.map((at) => (
-              <MenuItem key={at.value} value={at.value}>{t(at.labelKey)}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {/* Basic認証フィールド */}
-        {authType === 'basic' && (
-          <>
+        {/* 認証情報（折りたたみ） */}
+        <Accordion
+          expanded={authExpanded}
+          onChange={(_, expanded) => setAuthExpanded(expanded)}
+          disableGutters
+          sx={{
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+            '&::before': { display: 'none' },
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-secondary)' }} />}>
+            <Typography sx={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              {t('push.authType')}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0 }}>
             <FormControl size="small">
-              <FormLabel>{t('push.username')}</FormLabel>
-              <TextField size="small" value={username} onChange={(e) => setUsername(e.target.value)} />
+              <Select
+                value={authType}
+                onChange={(e) => setAuthType(e.target.value)}
+                size="small"
+              >
+                <MenuItem value="">&nbsp;</MenuItem>
+                {AUTH_TYPES.map((at) => (
+                  <MenuItem key={at.value} value={at.value}>{t(at.labelKey)}</MenuItem>
+                ))}
+              </Select>
             </FormControl>
-            <FormControl size="small">
-              <FormLabel>{t('push.password')}</FormLabel>
-              <TextField size="small" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </FormControl>
-          </>
-        )}
 
-        {/* トークン認証フィールド */}
-        {authType === 'token' && (
-          <FormControl size="small">
-            <FormLabel>{t('push.token')}</FormLabel>
-            <TextField size="small" type="password" value={token} onChange={(e) => setToken(e.target.value)} />
-          </FormControl>
-        )}
+            {/* Basic認証フィールド */}
+            {authType === 'basic' && (
+              <>
+                <FormControl size="small">
+                  <FormLabel>{t('push.username')}</FormLabel>
+                  <TextField size="small" value={username} onChange={(e) => setUsername(e.target.value)} />
+                </FormControl>
+                <FormControl size="small">
+                  <FormLabel>{t('push.password')}</FormLabel>
+                  <TextField size="small" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </FormControl>
+              </>
+            )}
 
-        {/* SSH鍵ファイルフィールド */}
-        {authType === 'ssh_file' && (
-          <>
-            <FormControl size="small">
-              <FormLabel>{t('push.filename')}</FormLabel>
-              <TextField size="small" value={filename} onChange={(e) => setFilename(e.target.value)} />
-            </FormControl>
-            <FormControl size="small">
-              <FormLabel>{t('push.passphrase')}</FormLabel>
-              <TextField size="small" type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
-            </FormControl>
-          </>
-        )}
+            {/* トークン認証フィールド */}
+            {authType === 'token' && (
+              <FormControl size="small">
+                <FormLabel>{t('push.token')}</FormLabel>
+                <TextField size="small" type="password" value={token} onChange={(e) => setToken(e.target.value)} />
+              </FormControl>
+            )}
 
-        {/* SSHエージェント: 追加入力なし */}
+            {/* SSH鍵ファイルフィールド */}
+            {authType === 'ssh_file' && (
+              <>
+                <FormControl size="small">
+                  <FormLabel>{t('push.filename')}</FormLabel>
+                  <TextField size="small" value={filename} onChange={(e) => setFilename(e.target.value)} />
+                </FormControl>
+                <FormControl size="small">
+                  <FormLabel>{t('push.passphrase')}</FormLabel>
+                  <TextField size="small" type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
+                </FormControl>
+              </>
+            )}
 
-        {/* 保存チェックボックス + Pushボタン */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 1 }}>
-          <FormControlLabel
-            control={<Checkbox checked={save} onChange={(e) => setSave(e.target.checked)} size="small" />}
-            label={t('push.saveCredentials')}
-            sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
-          />
-          <IconButton
-            onClick={handlePush}
-            disabled={pushing || !remoteName || !authType}
-            aria-label="push"
-            sx={{ color: 'var(--accent-blue)' }}
-          >
-            <CloudUploadIcon fontSize="large" />
-          </IconButton>
-        </Box>
+            {/* SSHエージェント: 追加入力なし */}
+
+            {/* 保存チェックボックス */}
+            <FormControlLabel
+              control={<Checkbox checked={save} onChange={(e) => setSave(e.target.checked)} size="small" />}
+              label={t('push.saveCredentials')}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+            />
+          </AccordionDetails>
+        </Accordion>
 
       </Box>
     </ModalWrapper>
