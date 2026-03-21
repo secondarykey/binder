@@ -1,11 +1,13 @@
-import { FormControl, FormLabel, MenuItem, Select, TextField } from "@mui/material";
+import { Box, Button, FormControl, FormLabel, MenuItem, Select, TextField } from "@mui/material";
+import FileOpenIcon from '@mui/icons-material/FileOpen';
+import { SelectFileContent } from "../../bindings/main/window";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 
 const AUTH_TYPES = [
   { value: 'basic', labelKey: 'push.authBasic' },
   { value: 'token', labelKey: 'push.authToken' },
-  { value: 'ssh_file', labelKey: 'push.authSSHFile' },
+  { value: 'ssh_key', labelKey: 'push.authSSHKey' },
   { value: 'ssh_agent', labelKey: 'push.authSSHAgent' },
 ];
 
@@ -18,7 +20,7 @@ const AUTH_TYPES = [
  *   password, onPasswordChange,
  *   token, onTokenChange,
  *   passphrase, onPassphraseChange,
- *   filename, onFilenameChange,
+ *   sshKey, onSSHKeyChange,
  */
 function AuthFields({
   authType, onAuthTypeChange,
@@ -26,9 +28,17 @@ function AuthFields({
   password, onPasswordChange,
   token, onTokenChange,
   passphrase, onPassphraseChange,
-  filename, onFilenameChange,
+  sshKey, onSSHKeyChange,
 }) {
   const { t } = useTranslation();
+
+  const handleLoadKeyFile = () => {
+    SelectFileContent("SSH Key", "*").then((content) => {
+      if (content) {
+        onSSHKeyChange(content);
+      }
+    }).catch(() => {});
+  };
 
   return (<>
     <FormControl size="small">
@@ -67,12 +77,31 @@ function AuthFields({
       </FormControl>
     )}
 
-    {/* SSH鍵ファイルフィールド */}
-    {authType === 'ssh_file' && (
+    {/* SSH鍵フィールド */}
+    {authType === 'ssh_key' && (
       <>
         <FormControl size="small">
-          <FormLabel>{t('push.filename')}</FormLabel>
-          <TextField size="small" value={filename} onChange={(e) => onFilenameChange(e.target.value)} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FormLabel sx={{ mb: 0 }}>{t('push.sshKey')}</FormLabel>
+            <Button
+              size="small"
+              startIcon={<FileOpenIcon />}
+              onClick={handleLoadKeyFile}
+              sx={{ textTransform: 'none', fontSize: '12px', minWidth: 'auto' }}
+            >
+              {t('push.loadFromFile')}
+            </Button>
+          </Box>
+          <TextField
+            size="small"
+            multiline
+            minRows={3}
+            maxRows={6}
+            value={sshKey}
+            onChange={(e) => onSSHKeyChange(e.target.value)}
+            placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
+            sx={{ '& .MuiInputBase-input': { fontFamily: 'monospace', fontSize: '12px' } }}
+          />
         </FormControl>
         <FormControl size="small">
           <FormLabel>{t('push.passphrase')}</FormLabel>

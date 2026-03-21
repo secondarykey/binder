@@ -40,7 +40,7 @@ function BinderRemote(props) {
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [passphrase, setPassphrase] = useState('');
-  const [filename, setFilename] = useState('');
+  const [sshKey, setSSHKey] = useState('');
   const [save, setSave] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(false);
 
@@ -74,8 +74,8 @@ function BinderRemote(props) {
       password,
       token,
       passphrase,
-      filename,
-      bytes: null,
+      filename: '',
+      bytes: Array.from(new TextEncoder().encode(sshKey)),
     };
 
     CreateRemoteBinder(remote, dir, branch, workBranch, info, save).then(() => {
@@ -168,7 +168,7 @@ function BinderRemote(props) {
             password={password} onPasswordChange={setPassword}
             token={token} onTokenChange={setToken}
             passphrase={passphrase} onPassphraseChange={setPassphrase}
-            filename={filename} onFilenameChange={setFilename}
+            sshKey={sshKey} onSSHKeyChange={setSSHKey}
           />
 
           {/* 保存チェックボックス */}

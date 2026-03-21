@@ -162,22 +162,16 @@ func authMethod(info *UserInfo) (transport.AuthMethod, error) {
 		return &http.TokenAuth{
 			Token: info.Token,
 		}, nil
-	case AuthSSHFile:
-		key, err := ssh.NewPublicKeysFromFile("git", info.Filename, info.Passphrase)
+	case AuthSSHKey, AuthSSHFile, AuthSSHBytes:
+		key, err := ssh.NewPublicKeys("git", info.Bytes, info.Passphrase)
 		if err != nil {
-			return nil, xerrors.Errorf("ssh.NewPublicKeysFromFile() error: %w", err)
+			return nil, xerrors.Errorf("ssh.NewPublicKeys() error: %w", err)
 		}
 		return key, nil
 	case AuthSSHAgent:
 		key, err := ssh.NewSSHAgentAuth("git")
 		if err != nil {
 			return nil, xerrors.Errorf("ssh.NewSSHAgentAuth() error: %w", err)
-		}
-		return key, nil
-	case AuthSSHBytes:
-		key, err := ssh.NewPublicKeys("git", info.Bytes, info.Passphrase)
-		if err != nil {
-			return nil, xerrors.Errorf("ssh.NewPublicKeys() error: %w", err)
 		}
 		return key, nil
 	default:

@@ -192,6 +192,26 @@ func (win *Window) SelectFile(name string, ptn string) (string, error) {
 	return selection, nil
 }
 
+// SelectFileContent はファイル選択ダイアログを表示し、選択されたファイルの内容をテキストとして返す。
+func (win *Window) SelectFileContent(name string, ptn string) (string, error) {
+	defer log.PrintTrace(log.Func("SelectFileContent()"))
+
+	selection, err := win.OpenFilePicker(name, ptn)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("SelectFileContent() error\n%+v", err)
+	}
+	if selection == "" {
+		return "", nil
+	}
+
+	data, err := os.ReadFile(selection)
+	if err != nil {
+		return "", fmt.Errorf("ReadFile() error\n%+v", err)
+	}
+	return string(data), nil
+}
+
 func (win *Window) OpenBinderSite() error {
 	defer log.PrintTrace(log.Func("OpenBinderSite()"))
 

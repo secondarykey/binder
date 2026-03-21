@@ -19,9 +19,12 @@ const (
 	AuthNone     AuthType = ""
 	AuthBasic    AuthType = "basic"     // HTTP Basic (Username + Password)
 	AuthToken    AuthType = "token"     // HTTP Token
-	AuthSSHFile  AuthType = "ssh_file"  // SSH鍵ファイル (Filename + Passphrase)
+	AuthSSHKey   AuthType = "ssh_key"   // SSH鍵データ (Bytes + Passphrase)
 	AuthSSHAgent AuthType = "ssh_agent" // SSHエージェント
-	AuthSSHBytes AuthType = "ssh_bytes" // SSH鍵バイト列 (Bytes + Passphrase)
+
+	// 後方互換用（既存の暗号化データに含まれる可能性がある）
+	AuthSSHFile  AuthType = "ssh_file"
+	AuthSSHBytes AuthType = "ssh_bytes"
 )
 
 type UserInfo struct {

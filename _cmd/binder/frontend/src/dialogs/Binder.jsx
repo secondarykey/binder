@@ -43,7 +43,7 @@ function Binder({ isModal, ...props }) {
   const [authPassword, setAuthPassword] = useState("");
   const [authToken, setAuthToken] = useState("");
   const [authPassphrase, setAuthPassphrase] = useState("");
-  const [authFilename, setAuthFilename] = useState("");
+  const [authSSHKey, setAuthSSHKey] = useState("");
 
   // リモートダイアログ（追加・編集兼用）
   const [remoteDialog, showRemoteDialog] = useState(false);
@@ -79,7 +79,12 @@ function Binder({ isModal, ...props }) {
       setAuthPassword(info.password || "");
       setAuthToken(info.token || "");
       setAuthPassphrase(info.passphrase || "");
-      setAuthFilename(info.filename || "");
+      if (info.bytes) {
+        const decoder = new TextDecoder();
+        setAuthSSHKey(decoder.decode(new Uint8Array(info.bytes)));
+      } else {
+        setAuthSSHKey("");
+      }
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -105,7 +110,8 @@ function Binder({ isModal, ...props }) {
     EditUserInfo({
       name: gitName, email: gitMail,
       auth_type: authType, username: authUsername, password: authPassword,
-      token: authToken, passphrase: authPassphrase, filename: authFilename,
+      token: authToken, passphrase: authPassphrase, filename: '',
+      bytes: Array.from(new TextEncoder().encode(authSSHKey)),
     }).then(() => {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
@@ -245,7 +251,7 @@ function Binder({ isModal, ...props }) {
               password={authPassword} onPasswordChange={setAuthPassword}
               token={authToken} onTokenChange={setAuthToken}
               passphrase={authPassphrase} onPassphraseChange={setAuthPassphrase}
-              filename={authFilename} onFilenameChange={setAuthFilename}
+              sshKey={authSSHKey} onSSHKeyChange={setAuthSSHKey}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>

@@ -31,7 +31,7 @@ function PushModal({ open, onClose }) {
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [passphrase, setPassphrase] = useState('');
-  const [filename, setFilename] = useState('');
+  const [sshKey, setSSHKey] = useState('');
   const [save, setSave] = useState(false);
   const [pushing, setPushing] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(true);
@@ -64,13 +64,19 @@ function PushModal({ open, onClose }) {
       setPassword(info.password || '');
       setToken(info.token || '');
       setPassphrase(info.passphrase || '');
-      setFilename(info.filename || '');
+      // bytes を文字列に変換（保存済みSSH鍵データ）
+      if (info.bytes) {
+        const decoder = new TextDecoder();
+        setSSHKey(decoder.decode(new Uint8Array(info.bytes)));
+      } else {
+        setSSHKey('');
+      }
       // 認証種別に関連する値が入力済みなら折りたたむ
       const at = info.auth_type || '';
       const hasValues =
         (at === 'basic' && (info.username || info.password)) ||
         (at === 'token' && info.token) ||
-        (at === 'ssh_file' && (info.filename || info.passphrase)) ||
+        (at === 'ssh_key' && info.bytes) ||
         (at === 'ssh_agent');
       setAuthExpanded(!hasValues);
     }).catch((err) => evt.showErrorMessage(err));
@@ -89,8 +95,8 @@ function PushModal({ open, onClose }) {
       password,
       token,
       passphrase,
-      filename,
-      bytes: null,
+      filename: '',
+      bytes: Array.from(new TextEncoder().encode(sshKey)),
     };
 
     Push(remoteName, info, save).then(() => {
@@ -166,7 +172,7 @@ function PushModal({ open, onClose }) {
               password={password} onPasswordChange={setPassword}
               token={token} onTokenChange={setToken}
               passphrase={passphrase} onPassphraseChange={setPassphrase}
-              filename={filename} onFilenameChange={setFilename}
+              sshKey={sshKey} onSSHKeyChange={setSSHKey}
             />
 
             {/* 保存チェックボックス */}
