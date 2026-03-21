@@ -5,6 +5,7 @@ import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
 import { SelectDirectory } from '../../bindings/main/window';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import DownloadIcon from '@mui/icons-material/Download';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 
 import Event,{EventContext} from '../Event';
@@ -24,7 +25,7 @@ function FileMenu(props) {
   }
 
   const remoteBinder = () => {
-    //props.onChangeMode("remoteBinder")
+    nav("/file/remote");
   }
 
   const handleOpen = () => {
@@ -58,14 +59,12 @@ function FileMenu(props) {
         </ListItemIcon>
         <ListItemText>Open</ListItemText>
       </MenuItem>
-{/**
       <MenuItem onClick={remoteBinder}>
         <ListItemIcon>
           <DownloadIcon />
         </ListItemIcon>
         <ListItemText>Remote Import</ListItemText>
       </MenuItem>
- */}
 
     </MenuList>
   </>);

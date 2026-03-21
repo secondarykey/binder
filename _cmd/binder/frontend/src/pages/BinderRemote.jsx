@@ -1,4 +1,5 @@
 import { useEffect, useState ,useContext} from "react";
+import { useNavigate } from "react-router";
 
 import { CreateRemoteBinder } from "../../bindings/binder/api/app";
 import { SelectDirectory} from "../../bindings/main/window";
@@ -15,6 +16,7 @@ import Event,{EventContext} from "../Event";
 function BinderRemote(props) {
 
   const evt = useContext(EventContext)
+  const nav = useNavigate();
 
   const [remote, setRemote] = useState("");
   const [dir, setDir] = useState("");
