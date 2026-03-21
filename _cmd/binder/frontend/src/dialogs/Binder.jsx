@@ -2,11 +2,10 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
+  FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Select, TextField,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
@@ -37,6 +36,14 @@ function Binder({ isModal, ...props }) {
   const [branchName, setBranchName] = useState("");
   const [remoteList, setRemoteList] = useState([]);
 
+  // 認証情報
+  const [authType, setAuthType] = useState("");
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authToken, setAuthToken] = useState("");
+  const [authPassphrase, setAuthPassphrase] = useState("");
+  const [authFilename, setAuthFilename] = useState("");
+
   // リモートダイアログ（追加・編集兼用）
   const [remoteDialog, showRemoteDialog] = useState(false);
   const [remoteDialogMode, setRemoteDialogMode] = useState("add"); // "add" or "edit"
@@ -66,6 +73,12 @@ function Binder({ isModal, ...props }) {
     GetUserInfo().then((info) => {
       setGitName(info.name || "");
       setGitMail(info.email || "");
+      setAuthType(info.auth_type || "");
+      setAuthUsername(info.username || "");
+      setAuthPassword(info.password || "");
+      setAuthToken(info.token || "");
+      setAuthPassphrase(info.passphrase || "");
+      setAuthFilename(info.filename || "");
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -88,7 +101,11 @@ function Binder({ isModal, ...props }) {
   };
 
   const handleSaveUserInfo = () => {
-    EditUserInfo({ name: gitName, email: gitMail }).then(() => {
+    EditUserInfo({
+      name: gitName, email: gitMail,
+      auth_type: authType, username: authUsername, password: authPassword,
+      token: authToken, passphrase: authPassphrase, filename: authFilename,
+    }).then(() => {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -262,18 +279,53 @@ function Binder({ isModal, ...props }) {
               </List>
             </FormControl>
 
-            {/** Pushボタン */}
-            {remoteList.length > 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<CloudUploadIcon />}
-                  onClick={() => evt.openPushModal()}
-                  sx={{ textTransform: 'none' }}
-                >
-                  {t("push.pushButton")}
-                </Button>
-              </Box>
+            {/** 認証情報 */}
+            <FormControl size="small">
+              <FormLabel>{t("push.authType")}</FormLabel>
+              <Select
+                value={authType}
+                onChange={(e) => setAuthType(e.target.value)}
+                size="small"
+              >
+                <MenuItem value="">&nbsp;</MenuItem>
+                <MenuItem value="basic">{t("push.authBasic")}</MenuItem>
+                <MenuItem value="token">{t("push.authToken")}</MenuItem>
+                <MenuItem value="ssh_file">{t("push.authSSHFile")}</MenuItem>
+                <MenuItem value="ssh_agent">{t("push.authSSHAgent")}</MenuItem>
+              </Select>
+            </FormControl>
+
+            {authType === 'basic' && (
+              <>
+                <FormControl size="small">
+                  <FormLabel>{t("push.username")}</FormLabel>
+                  <TextField size="small" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} />
+                </FormControl>
+                <FormControl size="small">
+                  <FormLabel>{t("push.password")}</FormLabel>
+                  <TextField size="small" type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} />
+                </FormControl>
+              </>
+            )}
+
+            {authType === 'token' && (
+              <FormControl size="small">
+                <FormLabel>{t("push.token")}</FormLabel>
+                <TextField size="small" type="password" value={authToken} onChange={(e) => setAuthToken(e.target.value)} />
+              </FormControl>
+            )}
+
+            {authType === 'ssh_file' && (
+              <>
+                <FormControl size="small">
+                  <FormLabel>{t("push.filename")}</FormLabel>
+                  <TextField size="small" value={authFilename} onChange={(e) => setAuthFilename(e.target.value)} />
+                </FormControl>
+                <FormControl size="small">
+                  <FormLabel>{t("push.passphrase")}</FormLabel>
+                  <TextField size="small" type="password" value={authPassphrase} onChange={(e) => setAuthPassphrase(e.target.value)} />
+                </FormControl>
+              </>
             )}
 
           </div>

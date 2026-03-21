@@ -32,6 +32,7 @@
     "tree" : {
         "menu" : "Menu",
         "openBrowser" : "Open Browser",
+        "pushRemote" : "Push to Remote",
         "none" : "None",
         "commit" : "Commit",
         "publish" : "Publish",

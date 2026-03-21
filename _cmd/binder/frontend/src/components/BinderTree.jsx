@@ -7,6 +7,7 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
@@ -596,6 +597,11 @@ function BinderTree(props) {
       {/** ブラウザで開く */}
       <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
         <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+      </MenuItem>
+      <Divider />
+      {/** リモートにPush */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
+        <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
       </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}

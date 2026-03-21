@@ -32,6 +32,7 @@
     "tree" : {
         "menu" : "メニュー",
         "openBrowser" : "ブラウザで開く",
+        "pushRemote" : "リモートにPush",
         "none" : "なし",
         "commit" : "コミット",
         "publish" : "公開",
