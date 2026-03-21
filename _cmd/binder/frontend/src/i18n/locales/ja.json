@@ -117,6 +117,23 @@
         "deleteRemoteConfirm" : "「{{name}}」を削除しますか？",
         "updateSuccess" : "Binderを更新しました"
     },
+    "push" : {
+        "title" : "Push",
+        "remote" : "リモート",
+        "authType" : "認証方式",
+        "authBasic" : "Basic認証",
+        "authToken" : "トークン",
+        "authSSHFile" : "SSH鍵ファイル",
+        "authSSHAgent" : "SSHエージェント",
+        "username" : "ユーザー名",
+        "password" : "パスワード",
+        "token" : "トークン",
+        "passphrase" : "パスフレーズ",
+        "filename" : "鍵ファイルパス",
+        "saveCredentials" : "認証情報を保存する",
+        "pushSuccess" : "Pushしました",
+        "pushButton" : "Push"
+    },
     "commitModal" : {
         "title" : "コミット",
         "backToComment" : "コメントに戻る",

@@ -12,9 +12,28 @@ const (
 	GitIgnoreFile = ".gitignore"
 )
 
+// AuthType は認証方式の種別
+type AuthType string
+
+const (
+	AuthNone     AuthType = ""
+	AuthBasic    AuthType = "basic"     // HTTP Basic (Username + Password)
+	AuthToken    AuthType = "token"     // HTTP Token
+	AuthSSHFile  AuthType = "ssh_file"  // SSH鍵ファイル (Filename + Passphrase)
+	AuthSSHAgent AuthType = "ssh_agent" // SSHエージェント
+	AuthSSHBytes AuthType = "ssh_bytes" // SSH鍵バイト列 (Bytes + Passphrase)
+)
+
 type UserInfo struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Name       string   `json:"name"`
+	Email      string   `json:"email"`
+	AuthType   AuthType `json:"auth_type"`
+	Username   string   `json:"username"`
+	Password   string   `json:"password"`
+	Token      string   `json:"token"`
+	Passphrase string   `json:"passphrase"`
+	Filename   string   `json:"filename"`
+	Bytes      []byte   `json:"bytes"`
 }
 
 // SaveUserInfo はUserInfoを暗号化してバインダー直下に保存する。

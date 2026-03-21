@@ -117,6 +117,23 @@
         "deleteRemoteConfirm" : "Delete \"{{name}}\"?",
         "updateSuccess" : "Binder updated."
     },
+    "push" : {
+        "title" : "Push",
+        "remote" : "Remote",
+        "authType" : "Auth Type",
+        "authBasic" : "Basic Auth",
+        "authToken" : "Token",
+        "authSSHFile" : "SSH Key File",
+        "authSSHAgent" : "SSH Agent",
+        "username" : "Username",
+        "password" : "Password",
+        "token" : "Token",
+        "passphrase" : "Passphrase",
+        "filename" : "Key File Path",
+        "saveCredentials" : "Save credentials",
+        "pushSuccess" : "Pushed successfully.",
+        "pushButton" : "Push"
+    },
     "commitModal" : {
         "title" : "Commit",
         "backToComment" : "Back to Comment",

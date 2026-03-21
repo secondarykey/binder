@@ -78,6 +78,11 @@ class Event {
     static OpenPublishModal = "publish.modal.open"
 
     /**
+     * Pushモーダルを開く
+     */
+    static OpenPushModal = "push.modal.open"
+
+    /**
      * バインダーを開く（CheckCompat付き）
      */
     static OpenBinder = "binder.open"
@@ -170,6 +175,10 @@ class Event {
 
     openPublishModal() {
         this.raise(Event.OpenPublishModal);
+    }
+
+    openPushModal() {
+        this.raise(Event.OpenPushModal);
     }
 
     openBinder(dir) {

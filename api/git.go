@@ -116,6 +116,18 @@ func (a *App) DeleteRemote(name string) error {
 	return nil
 }
 
+func (a *App) Push(remoteName string, info *json.UserInfo, save bool) error {
+
+	defer log.PrintTrace(log.Func("Push()"))
+
+	err := a.current.Push(remoteName, info, save)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("Push() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetModifiedIds() ([]string, error) {
 
 	defer log.PrintTrace(log.Func("GetModifiedIds()"))

@@ -6,6 +6,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
@@ -260,6 +261,20 @@ function Binder({ isModal, ...props }) {
                 ))}
               </List>
             </FormControl>
+
+            {/** Pushボタン */}
+            {remoteList.length > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  onClick={() => evt.openPushModal()}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {t("push.pushButton")}
+                </Button>
+              </Box>
+            )}
 
           </div>
         )}

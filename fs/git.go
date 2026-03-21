@@ -14,7 +14,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/diff"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"golang.org/x/xerrors"
 )
 
@@ -121,18 +123,11 @@ func (f *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
 	return rtn, nil
 }
 
-func (f *FileSystem) Push(r, name string) error {
+func (f *FileSystem) Push(r, name string, info *UserInfo) error {
 
-	set := settings.Get()
-	auth := set.Git
-	/*
-		key, err := ssh.NewPublicKeysFromFile(auth.Name, auth.File, "")
-		if err != nil {
-			return xerrors.Errorf("repository Head() error: %w", err)
-	    }*/
-	key := &http.BasicAuth{
-		Username: auth.Name,
-		Password: auth.Code,
+	auth, err := authMethod(info)
+	if err != nil {
+		return xerrors.Errorf("authMethod() error: %w", err)
 	}
 
 	remote, err := f.repo.Remote(r)
@@ -140,13 +135,12 @@ func (f *FileSystem) Push(r, name string) error {
 		return xerrors.Errorf("Remote() error: %w", err)
 	}
 
-	//remotes/origin/- ではダメらしい
 	refSpec := config.RefSpec(
 		fmt.Sprintf("+refs/heads/%s:refs/heads/%s", name, name))
 	err = remote.Push(&git.PushOptions{
 		Progress: os.Stdout,
-		RefSpecs: []config.RefSpec{config.RefSpec(refSpec)},
-		Auth:     key,
+		RefSpecs: []config.RefSpec{refSpec},
+		Auth:     auth,
 	})
 
 	if err != nil {
@@ -154,6 +148,41 @@ func (f *FileSystem) Push(r, name string) error {
 	}
 
 	return nil
+}
+
+// authMethod はUserInfoの認証種別に応じたtransport.AuthMethodを返す。
+func authMethod(info *UserInfo) (transport.AuthMethod, error) {
+	switch info.AuthType {
+	case AuthBasic:
+		return &http.BasicAuth{
+			Username: info.Username,
+			Password: info.Password,
+		}, nil
+	case AuthToken:
+		return &http.TokenAuth{
+			Token: info.Token,
+		}, nil
+	case AuthSSHFile:
+		key, err := ssh.NewPublicKeysFromFile("git", info.Filename, info.Passphrase)
+		if err != nil {
+			return nil, xerrors.Errorf("ssh.NewPublicKeysFromFile() error: %w", err)
+		}
+		return key, nil
+	case AuthSSHAgent:
+		key, err := ssh.NewSSHAgentAuth("git")
+		if err != nil {
+			return nil, xerrors.Errorf("ssh.NewSSHAgentAuth() error: %w", err)
+		}
+		return key, nil
+	case AuthSSHBytes:
+		key, err := ssh.NewPublicKeys("git", info.Bytes, info.Passphrase)
+		if err != nil {
+			return nil, xerrors.Errorf("ssh.NewPublicKeys() error: %w", err)
+		}
+		return key, nil
+	default:
+		return nil, fmt.Errorf("unknown AuthType: %s", info.AuthType)
+	}
 }
 
 // CurrentBranch は現在のブランチ名を返す。

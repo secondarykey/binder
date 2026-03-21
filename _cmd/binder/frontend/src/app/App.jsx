@@ -6,6 +6,7 @@ import CommitModal from '../dialogs/CommitModal.jsx';
 import PublishModal from '../dialogs/PublishModal.jsx';
 import SettingModal from '../dialogs/SettingModal.jsx';
 import BinderModal from '../dialogs/BinderModal.jsx';
+import PushModal from '../dialogs/PushModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -74,6 +75,7 @@ function App() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
+  const [pushModalOpen, setPushModalOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
@@ -177,6 +179,11 @@ function App() {
     //公開一覧モーダルを開く
     evt.register("App", Event.OpenPublishModal, function () {
       setPublishModalOpen(true);
+    });
+
+    //Pushモーダルを開く
+    evt.register("App", Event.OpenPushModal, function () {
+      setPushModalOpen(true);
     });
 
     //バインダーを開く（CheckCompat付き）
@@ -358,6 +365,9 @@ function App() {
 
       {/** バインダー編集モーダル */}
       <BinderModal open={binderModalOpen} onClose={() => setBinderModalOpen(false)} />
+
+      {/** Pushモーダル */}
+      <PushModal open={pushModalOpen} onClose={() => setPushModalOpen(false)} />
 
       {/** データ移行確認ダイアログ */}
       <ConvertDialog

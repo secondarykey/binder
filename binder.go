@@ -248,6 +248,49 @@ func (b *Binder) DeleteRemote(name string) error {
 	return nil
 }
 
+// Push はリモートリポジトリにpushする。
+// save が true の場合、認証情報を user_data.enc に保存する。
+func (b *Binder) Push(remoteName string, info *json.UserInfo, save bool) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	fsInfo := &fs.UserInfo{
+		Name:       info.Name,
+		Email:      info.Email,
+		AuthType:   fs.AuthType(info.AuthType),
+		Username:   info.Username,
+		Password:   info.Password,
+		Token:      info.Token,
+		Passphrase: info.Passphrase,
+		Filename:   info.Filename,
+		Bytes:      info.Bytes,
+	}
+
+	if save {
+		key, err := setup.GetUserKey()
+		if err != nil {
+			return xerrors.Errorf("setup.GetUserKey() error: %w", err)
+		}
+		if err = fs.SaveUserInfo(b.dir, key, fsInfo); err != nil {
+			return xerrors.Errorf("fs.SaveUserInfo() error: %w", err)
+		}
+		b.fileSystem.SetUserSig(fsInfo)
+	}
+
+	branchName, err := b.fileSystem.CurrentBranch()
+	if err != nil {
+		return xerrors.Errorf("CurrentBranch() error: %w", err)
+	}
+
+	if err = b.fileSystem.Push(remoteName, branchName, fsInfo); err != nil {
+		return xerrors.Errorf("Push() error: %w", err)
+	}
+
+	return nil
+}
+
 func (b *Binder) generateId() string {
 
 	id, err := uuid.NewV7()

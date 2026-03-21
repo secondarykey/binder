@@ -75,8 +75,15 @@ func (b *Binder) GetUserInfo() (*json.UserInfo, error) {
 	}
 
 	return &json.UserInfo{
-		Name:  info.Name,
-		Email: info.Email,
+		Name:       info.Name,
+		Email:      info.Email,
+		AuthType:   string(info.AuthType),
+		Username:   info.Username,
+		Password:   info.Password,
+		Token:      info.Token,
+		Passphrase: info.Passphrase,
+		Filename:   info.Filename,
+		Bytes:      info.Bytes,
 	}, nil
 }
 
@@ -91,8 +98,15 @@ func (b *Binder) EditUserInfo(u *json.UserInfo) error {
 	}
 
 	info := &fs.UserInfo{
-		Name:  u.Name,
-		Email: u.Email,
+		Name:       u.Name,
+		Email:      u.Email,
+		AuthType:   fs.AuthType(u.AuthType),
+		Username:   u.Username,
+		Password:   u.Password,
+		Token:      u.Token,
+		Passphrase: u.Passphrase,
+		Filename:   u.Filename,
+		Bytes:      u.Bytes,
 	}
 	if err = fs.SaveUserInfo(b.dir, key, info); err != nil {
 		return xerrors.Errorf("fs.SaveUserInfo() error: %w", err)
