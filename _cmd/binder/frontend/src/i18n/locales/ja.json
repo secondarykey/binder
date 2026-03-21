@@ -8,7 +8,7 @@
         "commit" : "未コミット一覧",
         "publish" : "未公開一覧",
         "template" : "テンプレート設定",
-        "config" : "テンプレート設定",
+        "config" : "バインダー設定",
         "setting" : "アプリ設定"
     },
     "common" : {
