@@ -87,6 +87,19 @@ func Load(dir string) (*Binder, error) {
 	b.fileSystem = bfs
 	b.db = inst
 
+	// バインダーのユーザ情報をコミット署名に設定
+	key, err := setup.GetUserKey()
+	if err != nil {
+		slog.Warn("Load: GetUserKey", "Error", err)
+	} else {
+		info, err := fs.LoadUserInfo(dir, key)
+		if err != nil {
+			slog.Warn("Load: LoadUserInfo", "Error", err)
+		} else if info != nil {
+			bfs.SetUserSig(info)
+		}
+	}
+
 	//TODO ユーザ情報から取得
 	b.op = createUserOp("user")
 
