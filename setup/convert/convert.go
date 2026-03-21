@@ -3,6 +3,8 @@ package convert
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	. "binder/internal"
 
@@ -236,6 +238,14 @@ func Run(dir string, ver *Version) error {
 		}
 	}
 
+	// .gitignore が存在しない場合は作成する（既存バインダーへの後方互換）
+	ignorePath := filepath.Join(dir, fs.GitIgnoreFile)
+	if _, statErr := os.Stat(ignorePath); os.IsNotExist(statErr) {
+		if err = os.WriteFile(ignorePath, []byte(fs.UserFileName+"\n"), 0644); err != nil {
+			return xerrors.Errorf("os.WriteFile(.gitignore) error: %w", err)
+		}
+	}
+
 	// 汎用コミット: マイグレーション固有のコミットでカバーされなかった変更をコミットする。
 	// バージョンアップのみ（マイグレーション不要）の場合や、個別コミットを持たない
 	// マイグレーション（0.1.0, 0.2.0 等）でも binder.json と DB ファイルが確実にコミットされる。
@@ -245,6 +255,9 @@ func Run(dir string, ver *Version) error {
 	}
 	if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
 		return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+	}
+	if err = bfs.AddFile(fs.GitIgnoreFile); err != nil {
+		return xerrors.Errorf("AddFile(.gitignore) error: %w", err)
 	}
 	commitMsg := fmt.Sprintf("Update binder version (%s -> %s)", ov.String(), ver.String())
 	commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)

@@ -134,6 +134,13 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		}
 	}
 
+	// .gitignore を作成（ユーザデータファイルを除外）
+	ignorePath := filepath.Join(dir, fs.GitIgnoreFile)
+	err = os.WriteFile(ignorePath, []byte(fs.UserFileName+"\n"), 0644)
+	if err != nil {
+		return xerrors.Errorf("os.WriteFile(.gitignore) error: %w", err)
+	}
+
 	// Gitへの追加を行う
 	err = f.AddDBFiles()
 	if err != nil {
@@ -143,6 +150,11 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 	err = f.AddFile(fs.BinderMetaFile)
 	if err != nil {
 		return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+	}
+
+	err = f.AddFile(fs.GitIgnoreFile)
+	if err != nil {
+		return xerrors.Errorf("AddFile(.gitignore) error: %w", err)
 	}
 
 	err = f.CommitAll(fs.M("Install", "Database"))

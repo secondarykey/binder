@@ -23,7 +23,7 @@ func isExistsUserKey() bool {
 		if errors.Is(keyring.ErrNotFound, err) {
 			return false
 		}
-		slog.Warn("ExistKey", "Error", error)
+		slog.Warn("ExistKey", "Error", err)
 	}
 	return true
 }
