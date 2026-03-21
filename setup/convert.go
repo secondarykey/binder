@@ -3,7 +3,11 @@ package setup
 import (
 	"binder/fs"
 	. "binder/internal"
+	"binder/settings"
 	"binder/setup/convert"
+	"log/slog"
+	"os"
+	"path/filepath"
 
 	"golang.org/x/xerrors"
 )
@@ -63,6 +67,25 @@ func Convert(dir string, ver *Version) error {
 	if err := convert.Run(dir, ver); err != nil {
 		return xerrors.Errorf("convert.Run() error: %w", err)
 	}
+
+	// ユーザデータが存在しない場合は作成する（既存バインダーへの後方互換）
+	userPath := filepath.Join(dir, fs.UserFileName)
+	if _, err := os.Stat(userPath); os.IsNotExist(err) {
+		key, err := GetUserKey()
+		if err != nil {
+			slog.Warn("Convert: GetUserKey", "Error", err)
+		} else {
+			s := settings.Get()
+			info := &fs.UserInfo{
+				Name:  s.Git.Name,
+				Email: s.Git.Mail,
+			}
+			if err = fs.SaveUserInfo(dir, key, info); err != nil {
+				slog.Warn("Convert: SaveUserInfo", "Error", err)
+			}
+		}
+	}
+
 	return nil
 }
 
