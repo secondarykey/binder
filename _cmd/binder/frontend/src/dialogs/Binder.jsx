@@ -220,6 +220,12 @@ function Binder({ isModal, ...props }) {
         {activeSection === "git" && (
           <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
 
+            {/** ブランチ */}
+            <FormControl>
+              <FormLabel>{t("binder.currentBranch")}</FormLabel>
+              <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
+            </FormControl>
+
             {/** ユーザ情報 */}
             <FormControl>
               <FormLabel>{t("binder.userName")}</FormLabel>
@@ -229,54 +235,6 @@ function Binder({ isModal, ...props }) {
             <FormControl>
               <FormLabel>{t("binder.userEmail")}</FormLabel>
               <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
-            </FormControl>
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
-            </Box>
-
-            {/** ブランチ */}
-            <FormControl>
-              <FormLabel>{t("binder.currentBranch")}</FormLabel>
-              <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
-            </FormControl>
-
-            {/** リモート一覧 */}
-            <FormControl>
-              <FormLabel>
-                {t("binder.settingRemote")}
-                <Button onClick={openAddRemoteDialog}>{t("common.add")}</Button>
-              </FormLabel>
-              <List dense disablePadding>
-                {remoteList.map((r) => (
-                  <ListItemButton
-                    key={r.name}
-                    onClick={() => openEditRemoteDialog(r)}
-                    sx={{
-                      py: 0.5,
-                      '&:hover': { backgroundColor: 'var(--bg-elevated)' },
-                    }}
-                  >
-                    <ListItemText
-                      primary={r.name}
-                      secondary={r.url}
-                      primaryTypographyProps={{ fontSize: '13px' }}
-                      secondaryTypographyProps={{ fontSize: '11px', color: 'var(--text-secondary)' }}
-                    />
-                    <ListItemIcon sx={{ minWidth: 'auto' }}>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
-                        sx={{ color: 'var(--text-secondary)' }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </ListItemIcon>
-                  </ListItemButton>
-                ))}
-              </List>
             </FormControl>
 
             {/** 認証情報 */}
@@ -327,6 +285,48 @@ function Binder({ isModal, ...props }) {
                 </FormControl>
               </>
             )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+                <SaveIcon fontSize="large" />
+              </IconButton>
+            </Box>
+
+            {/** リモート一覧 */}
+            <FormControl>
+              <FormLabel>
+                {t("binder.settingRemote")}
+                <Button onClick={openAddRemoteDialog}>{t("common.add")}</Button>
+              </FormLabel>
+              <List dense disablePadding>
+                {remoteList.map((r) => (
+                  <ListItemButton
+                    key={r.name}
+                    onClick={() => openEditRemoteDialog(r)}
+                    sx={{
+                      py: 0.5,
+                      '&:hover': { backgroundColor: 'var(--bg-elevated)' },
+                    }}
+                  >
+                    <ListItemText
+                      primary={r.name}
+                      secondary={r.url}
+                      primaryTypographyProps={{ fontSize: '13px' }}
+                      secondaryTypographyProps={{ fontSize: '11px', color: 'var(--text-secondary)' }}
+                    />
+                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
+                        sx={{ color: 'var(--text-secondary)' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </ListItemIcon>
+                  </ListItemButton>
+                ))}
+              </List>
+            </FormControl>
 
           </div>
         )}
