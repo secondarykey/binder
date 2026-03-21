@@ -25,14 +25,15 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045, v047, v048 *Version
+var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072 *Version
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
-	configMigrated bool
-	configName     string
-	configDetail   string
-	docsMigrated   bool
+	configMigrated   bool
+	configName       string
+	configDetail     string
+	docsMigrated     bool
+	gitignorCreated  bool
 }
 
 // migration はひとつのバージョン移行を表す。
@@ -84,6 +85,10 @@ func init() {
 	v048, err = NewVersion("0.4.8")
 	if err != nil {
 		panic("v048 version parse error: " + err.Error())
+	}
+	v072, err = NewVersion("0.7.2")
+	if err != nil {
+		panic("v072 version parse error: " + err.Error())
 	}
 
 	migrations = []migration{
@@ -137,6 +142,17 @@ func init() {
 			}
 			return fsconvert.MigrateV048(dir)
 		}},
+		// 0.7.2: .gitignore を作成（user_data.enc を除外）
+		{v072, func(dir, _ string, state *migrateState) error {
+			ignorePath := filepath.Join(dir, fs.GitIgnoreFile)
+			if _, statErr := os.Stat(ignorePath); os.IsNotExist(statErr) {
+				if err := os.WriteFile(ignorePath, []byte(fs.UserFileName+"\n"), 0644); err != nil {
+					return xerrors.Errorf("os.WriteFile(.gitignore) error: %w", err)
+				}
+			}
+			state.gitignorCreated = true
+			return nil
+		}},
 	}
 }
 
@@ -145,29 +161,37 @@ func applyDB(dbDir string, c dbconvert.Converter) error {
 	return dbconvert.Apply(dbDir, []dbconvert.Converter{c})
 }
 
+// MigrateResult は移行処理の結果を呼び出し元に返す。
+type MigrateResult struct {
+	// UserDataRequired は 0.7.2 移行が適用され、ユーザデータの初期作成が必要であることを示す。
+	UserDataRequired bool
+}
+
 // Run はバインダーレベルの全移行処理を実行する。
 // binder.json を読み込んで現在のスキーマバージョンを取得し、必要な移行を順番に適用する。
 // 移行後は binder.json を更新して保存し、git コミットまで完結させる。
 // 各移行は CSV スキーマ変換とファイルシステム移行を含む自己完結した処理単位。
-func Run(dir string, ver *Version) error {
+func Run(dir string, ver *Version) (*MigrateResult, error) {
+
+	result := &MigrateResult{}
 
 	if ver == nil {
-		return nil
+		return result, nil
 	}
 
 	meta, err := loadMeta(dir)
 	if err != nil {
-		return xerrors.Errorf("loadMeta() error: %w", err)
+		return nil, xerrors.Errorf("loadMeta() error: %w", err)
 	}
 
 	ov, err := NewVersion(meta.Version)
 	if err != nil {
-		return xerrors.Errorf("NewVersion() error: %w", err)
+		return nil, xerrors.Errorf("NewVersion() error: %w", err)
 	}
 
 	bfs, err := fs.Load(dir)
 	if err != nil {
-		return xerrors.Errorf("Load() error: %w", err)
+		return nil, xerrors.Errorf("Load() error: %w", err)
 	}
 
 	dbDir := bfs.DatabaseDir()
@@ -176,7 +200,7 @@ func Run(dir string, ver *Version) error {
 	for _, m := range migrations {
 		if ov.Lt(m.ver) {
 			if err := m.run(dir, dbDir, state); err != nil {
-				return xerrors.Errorf("migration(%s) error: %w", m.ver.String(), err)
+				return nil, xerrors.Errorf("migration(%s) error: %w", m.ver.String(), err)
 			}
 		}
 	}
@@ -191,7 +215,7 @@ func Run(dir string, ver *Version) error {
 		meta.Detail = state.configDetail
 	}
 	if err = fs.SaveMeta(dir, meta); err != nil {
-		return xerrors.Errorf("fs.SaveMeta() error: %w", err)
+		return nil, xerrors.Errorf("fs.SaveMeta() error: %w", err)
 	}
 
 	// binder.jsonへの移行後に旧スキーマファイルを削除
@@ -205,12 +229,12 @@ func Run(dir string, ver *Version) error {
 		_ = bfs.RemoveFile(fs.DBDir + "/" + db.ConfigTableName + ".csv")
 		// binder.json をステージ
 		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
-			return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
 		}
 		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", ov.String(), ver.String())
 		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-			return xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
+			return nil, xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
 		}
 	}
 
@@ -221,28 +245,20 @@ func Run(dir string, ver *Version) error {
 	if state.docsMigrated {
 		// 変更されたCSVファイルをステージ
 		if err = bfs.AddDBFiles(); err != nil {
-			return xerrors.Errorf("AddDBFiles() error: %w", err)
+			return nil, xerrors.Errorf("AddDBFiles() error: %w", err)
 		}
 		// docs/ 配下の削除済みファイルをステージ（追跡済みのもののみ）
 		if err = bfs.StagePublishDirRemovals(); err != nil {
-			return xerrors.Errorf("StagePublishDirRemovals() error: %w", err)
+			return nil, xerrors.Errorf("StagePublishDirRemovals() error: %w", err)
 		}
 		// binder.json をステージ
 		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
-			return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
 		}
 		commitMsg := fmt.Sprintf("Migrate schema 0.4.7: move publish dates to structures, clear docs/ (%s -> %s)", ov.String(), ver.String())
 		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-			return xerrors.Errorf("AutoCommit(migrate 047) error: %w", commitErr)
-		}
-	}
-
-	// .gitignore が存在しない場合は作成する（既存バインダーへの後方互換）
-	ignorePath := filepath.Join(dir, fs.GitIgnoreFile)
-	if _, statErr := os.Stat(ignorePath); os.IsNotExist(statErr) {
-		if err = os.WriteFile(ignorePath, []byte(fs.UserFileName+"\n"), 0644); err != nil {
-			return xerrors.Errorf("os.WriteFile(.gitignore) error: %w", err)
+			return nil, xerrors.Errorf("AutoCommit(migrate 047) error: %w", commitErr)
 		}
 	}
 
@@ -251,19 +267,22 @@ func Run(dir string, ver *Version) error {
 	// マイグレーション（0.1.0, 0.2.0 等）でも binder.json と DB ファイルが確実にコミットされる。
 	// 既にコミット済みで変更がない場合は UpdatedFilesError を無視する。
 	if err = bfs.AddDBFiles(); err != nil {
-		return xerrors.Errorf("AddDBFiles() error: %w", err)
+		return nil, xerrors.Errorf("AddDBFiles() error: %w", err)
 	}
 	if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
-		return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+		return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
 	}
 	if err = bfs.AddFile(fs.GitIgnoreFile); err != nil {
-		return xerrors.Errorf("AddFile(.gitignore) error: %w", err)
+		return nil, xerrors.Errorf("AddFile(.gitignore) error: %w", err)
 	}
 	commitMsg := fmt.Sprintf("Update binder version (%s -> %s)", ov.String(), ver.String())
 	commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 	if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-		return xerrors.Errorf("AutoCommit(update version) error: %w", commitErr)
+		return nil, xerrors.Errorf("AutoCommit(update version) error: %w", commitErr)
 	}
 
-	return nil
+	// 移行結果を設定
+	result.UserDataRequired = state.gitignorCreated
+
+	return result, nil
 }

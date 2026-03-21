@@ -6,8 +6,6 @@ import (
 	"binder/settings"
 	"binder/setup/convert"
 	"log/slog"
-	"os"
-	"path/filepath"
 
 	"golang.org/x/xerrors"
 )
@@ -64,13 +62,13 @@ func CheckCompat(dir string, ver *Version) (*CompatResult, error) {
 
 // Convert はバインダーのスキーマ移行を実行する。
 func Convert(dir string, ver *Version) error {
-	if err := convert.Run(dir, ver); err != nil {
+	result, err := convert.Run(dir, ver)
+	if err != nil {
 		return xerrors.Errorf("convert.Run() error: %w", err)
 	}
 
-	// ユーザデータが存在しない場合は作成する（既存バインダーへの後方互換）
-	userPath := filepath.Join(dir, fs.UserFileName)
-	if _, err := os.Stat(userPath); os.IsNotExist(err) {
+	// 0.7.2 移行時: ユーザデータを初期作成する
+	if result.UserDataRequired {
 		key, err := GetUserKey()
 		if err != nil {
 			slog.Warn("Convert: GetUserKey", "Error", err)
