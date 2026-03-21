@@ -6,6 +6,7 @@ import (
 	. "binder/internal"
 	"binder/settings"
 	"embed"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -64,6 +65,20 @@ func Install(dir string, ver *Version, name string) error {
 	err = initialize(f, inst, name)
 	if err != nil {
 		return xerrors.Errorf("initialize() error: %w", err)
+	}
+
+	// ユーザデータを暗号化して保存（Git設定のユーザ名・メールアドレスを初期値とする）
+	key, err := GetUserKey()
+	if err != nil {
+		slog.Warn("Install: GetUserKey", "Error", err)
+	} else {
+		info := &fs.UserInfo{
+			Name:  s.Git.Name,
+			Email: s.Git.Mail,
+		}
+		if err = fs.SaveUserInfo(dir, key, info); err != nil {
+			slog.Warn("Install: SaveUserInfo", "Error", err)
+		}
 	}
 
 	// デフォルトブランチ上でコミット済み。作業ブランチが設定されていれば切り替え
