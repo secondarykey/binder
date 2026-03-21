@@ -72,7 +72,7 @@ func Load(dir string) (*FileSystem, error) {
 	return &b, nil
 }
 
-func Clone(dir string, url string, branch string) (*FileSystem, error) {
+func Clone(dir string, url string, branch string, info *UserInfo) (*FileSystem, error) {
 
 	opts := &git.CloneOptions{
 		URL:      url,
@@ -81,6 +81,13 @@ func Clone(dir string, url string, branch string) (*FileSystem, error) {
 	if branch != "" {
 		opts.ReferenceName = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
 		opts.SingleBranch = true
+	}
+	if info != nil && info.AuthType != AuthNone {
+		auth, err := authMethod(info)
+		if err != nil {
+			return nil, xerrors.Errorf("authMethod() error: %w", err)
+		}
+		opts.Auth = auth
 	}
 
 	r, err := git.PlainClone(dir, false, opts)

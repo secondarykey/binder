@@ -44,9 +44,25 @@ func createUserOp(userId string) db.Op {
 	return op
 }
 
-func CreateRemote(url, dir, branch, workBranch, gitName, gitMail string, version *Version) error {
+func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, save bool, version *Version) error {
 
-	bfs, err := fs.Clone(dir, url, branch)
+	// json.UserInfo → fs.UserInfo に変換（Clone認証用）
+	var fsInfo *fs.UserInfo
+	if userInfo != nil {
+		fsInfo = &fs.UserInfo{
+			Name:       userInfo.Name,
+			Email:      userInfo.Email,
+			AuthType:   fs.AuthType(userInfo.AuthType),
+			Username:   userInfo.Username,
+			Password:   userInfo.Password,
+			Token:      userInfo.Token,
+			Passphrase: userInfo.Passphrase,
+			Filename:   userInfo.Filename,
+			Bytes:      userInfo.Bytes,
+		}
+	}
+
+	bfs, err := fs.Clone(dir, url, branch, fsInfo)
 	if err != nil {
 		return xerrors.Errorf("fs.Clone() error: %w", err)
 	}
@@ -65,17 +81,13 @@ func CreateRemote(url, dir, branch, workBranch, gitName, gitMail string, version
 		}
 	}
 
-	// ユーザ情報を暗号化して保存
-	if gitName != "" || gitMail != "" {
+	// ユーザ情報を暗号化して保存（認証情報の保存 or ユーザ名/メールの保存）
+	if save && fsInfo != nil {
 		key, err := setup.GetUserKey()
 		if err != nil {
 			slog.Warn("CreateRemote: GetUserKey", "Error", err)
 		} else {
-			info := &fs.UserInfo{
-				Name:  gitName,
-				Email: gitMail,
-			}
-			if err = fs.SaveUserInfo(dir, key, info); err != nil {
+			if err = fs.SaveUserInfo(dir, key, fsInfo); err != nil {
 				slog.Warn("CreateRemote: SaveUserInfo", "Error", err)
 			}
 		}

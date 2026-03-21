@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder"
+	"binder/api/json"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -78,11 +79,11 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 	return address, nil
 }
 
-func (a *App) CreateRemoteBinder(url, dir, branch, workBranch, gitName, gitMail string) (string, error) {
+func (a *App) CreateRemoteBinder(url, dir, branch, workBranch string, info *json.UserInfo, save bool) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateRemoteBinder()"))
 
-	err := binder.CreateRemote(url, dir, branch, workBranch, gitName, gitMail, a.version)
+	err := binder.CreateRemote(url, dir, branch, workBranch, info, save, a.version)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateRemote() error\n%+v", err)
