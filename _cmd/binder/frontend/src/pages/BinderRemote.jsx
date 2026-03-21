@@ -1,12 +1,13 @@
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router";
 
-import { CreateRemoteBinder, GetGit } from "../../bindings/binder/api/app";
+import { CreateRemoteBinder, GetGit, ListRemoteBranches } from "../../bindings/binder/api/app";
 import { SelectDirectory } from "../../bindings/main/window";
 import {
   Accordion, AccordionDetails, AccordionSummary,
-  Button, Checkbox, FormControl, FormControlLabel, FormLabel,
-  Grid, InputAdornment, TextField, Typography,
+  Box, Button, Checkbox, CircularProgress,
+  FormControl, FormControlLabel, FormLabel,
+  Grid, InputAdornment, MenuItem, Select, TextField, Typography,
 } from "@mui/material";
 import FolderIcon from '@mui/icons-material/Folder';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -44,6 +45,10 @@ function BinderRemote(props) {
   const [save, setSave] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(false);
 
+  // ブランチ一覧
+  const [branches, setBranches] = useState([]);
+  const [connecting, setConnecting] = useState(false);
+
   useEffect(() => {
     evt.changeTitle("Remote Import");
     GetGit().then((git) => {
@@ -52,6 +57,40 @@ function BinderRemote(props) {
       setGitMail(git.mail || "");
     });
   }, [])
+
+  // リモートURL変更時にブランチ一覧をリセット
+  const handleRemoteChange = (e) => {
+    setRemote(e.target.value);
+    setBranches([]);
+    setBranch("");
+  };
+
+  // リモートに接続してブランチ一覧を取得
+  const handleConnect = () => {
+    if (!remote) return;
+
+    const info = {
+      name: gitName,
+      email: gitMail,
+      auth_type: authType,
+      username,
+      password,
+      token,
+      passphrase,
+      filename: '',
+      bytes: Array.from(new TextEncoder().encode(sshKey)),
+    };
+
+    setConnecting(true);
+    ListRemoteBranches(remote, info).then((result) => {
+      setBranches(result || []);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+      setBranches([]);
+    }).finally(() => {
+      setConnecting(false);
+    });
+  };
 
   //保存
   const handleSave = () => {
@@ -105,7 +144,17 @@ function BinderRemote(props) {
 
       <FormControl>
         <FormLabel>Repository(URL)</FormLabel>
-        <TextField value={remote} onChange={(e) => setRemote(e.target.value)}></TextField>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <TextField value={remote} onChange={handleRemoteChange} sx={{ flex: 1 }} />
+          <Button
+            variant="outlined"
+            onClick={handleConnect}
+            disabled={!remote || connecting}
+            sx={{ minWidth: 80 }}
+          >
+            {connecting ? <CircularProgress size={20} /> : t('binderRemote.connect')}
+          </Button>
+        </Box>
       </FormControl>
 
       <FormControl>
@@ -124,7 +173,16 @@ function BinderRemote(props) {
       {/** クローン対象ブランチ */}
       <FormControl>
         <FormLabel>{t("binderRemote.remoteBranch")}</FormLabel>
-        <TextField size="small" value={branch} onChange={(e) => setBranch(e.target.value)} />
+        {branches.length > 0 ? (
+          <Select size="small" value={branch} onChange={(e) => setBranch(e.target.value)}>
+            <MenuItem value="">{t('binderRemote.defaultBranch')}</MenuItem>
+            {branches.map((b) => (
+              <MenuItem key={b} value={b}>{b}</MenuItem>
+            ))}
+          </Select>
+        ) : (
+          <TextField size="small" value={branch} onChange={(e) => setBranch(e.target.value)} />
+        )}
       </FormControl>
 
       {/** 作業ブランチ */}

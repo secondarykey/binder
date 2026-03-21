@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"golang.org/x/xerrors"
 )
 
@@ -71,6 +73,38 @@ type Modified struct {
 	Id     string
 	Typ    string
 	Status *git.FileStatus
+}
+
+// ListRemoteBranches はリモートURLに接続し、ブランチ一覧を返す。
+// Binderが存在しない状態でも使用可能。
+func ListRemoteBranches(url string, info *UserInfo) ([]string, error) {
+	rem := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{url},
+	})
+
+	var auth transport.AuthMethod
+	if info != nil && info.AuthType != AuthNone {
+		var err error
+		auth, err = authMethod(info)
+		if err != nil {
+			return nil, xerrors.Errorf("authMethod() error: %w", err)
+		}
+	}
+
+	refs, err := rem.List(&git.ListOptions{Auth: auth})
+	if err != nil {
+		return nil, xerrors.Errorf("remote.List() error: %w", err)
+	}
+
+	var branches []string
+	for _, ref := range refs {
+		if ref.Name().IsBranch() {
+			branches = append(branches, ref.Name().Short())
+		}
+	}
+	sort.Strings(branches)
+	return branches, nil
 }
 
 func (f *FileSystem) CreateRemote(name, url string) error {

@@ -128,6 +128,31 @@ func (a *App) Push(remoteName string, info *json.UserInfo, save bool) error {
 	return nil
 }
 
+func (a *App) ListRemoteBranches(url string, info *json.UserInfo) ([]string, error) {
+
+	defer log.PrintTrace(log.Func("ListRemoteBranches()"))
+
+	var fsInfo *fs.UserInfo
+	if info != nil {
+		fsInfo = &fs.UserInfo{
+			AuthType:   fs.AuthType(info.AuthType),
+			Username:   info.Username,
+			Password:   info.Password,
+			Token:      info.Token,
+			Passphrase: info.Passphrase,
+			Filename:   info.Filename,
+			Bytes:      info.Bytes,
+		}
+	}
+
+	branches, err := fs.ListRemoteBranches(url, fsInfo)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("ListRemoteBranches() error\n%+v", err)
+	}
+	return branches, nil
+}
+
 func (a *App) GetModifiedIds() ([]string, error) {
 
 	defer log.PrintTrace(log.Func("GetModifiedIds()"))

@@ -166,7 +166,9 @@
         "title" : "Font Setting"
     },
     "binderRemote" : {
-        "remoteBranch" : "Clone Target Branch"
+        "remoteBranch" : "Clone Target Branch",
+        "connect" : "Connect",
+        "defaultBranch" : "(Default Branch)"
     },
     "binderRegister" : {
         "binderDirectory" : "Binder Directory",

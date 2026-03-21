@@ -166,7 +166,9 @@
         "title" : "フォント設定"
     },
     "binderRemote" : {
-        "remoteBranch" : "クローン対象ブランチ"
+        "remoteBranch" : "クローン対象ブランチ",
+        "connect" : "接続",
+        "defaultBranch" : "(デフォルトブランチ)"
     },
     "binderRegister" : {
         "binderDirectory" : "Binderディレクトリ",
