@@ -106,6 +106,7 @@
         "git" : "Git",
         "remoteName" : "Remote Name",
         "branchName" : "Branch Name",
+        "currentBranch" : "Branch",
         "settingRemote" : "Setting Remote",
         "remoteHint" : "You can add, but please use git to edit.",
         "remoteUrl" : "Remote URL",

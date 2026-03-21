@@ -156,6 +156,15 @@ func (f *FileSystem) Push(r, name string) error {
 	return nil
 }
 
+// CurrentBranch は現在のブランチ名を返す。
+func (f *FileSystem) CurrentBranch() (string, error) {
+	head, err := f.repo.Head()
+	if err != nil {
+		return "", xerrors.Errorf("repository Head() error: %w", err)
+	}
+	return head.Name().Short(), nil
+}
+
 func (f *FileSystem) Branch(name string) error {
 
 	head, err := f.repo.Head()

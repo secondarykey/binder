@@ -6,7 +6,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
-import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo } from "../../bindings/binder/api/app";
+import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
 import "../i18n/config";
@@ -33,6 +33,7 @@ function Binder({ isModal, ...props }) {
   const [gitName, setGitName] = useState("");
   const [gitMail, setGitMail] = useState("");
 
+  const [branchName, setBranchName] = useState("");
   const [remoteList, setRemoteList] = useState([]);
 
   // リモートダイアログ（追加・編集兼用）
@@ -64,6 +65,11 @@ function Binder({ isModal, ...props }) {
     GetUserInfo().then((info) => {
       setGitName(info.name || "");
       setGitMail(info.email || "");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+    CurrentBranch().then((name) => {
+      setBranchName(name || "");
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -212,6 +218,12 @@ function Binder({ isModal, ...props }) {
                 <SaveIcon fontSize="large" />
               </IconButton>
             </Box>
+
+            {/** ブランチ */}
+            <FormControl>
+              <FormLabel>{t("binder.currentBranch")}</FormLabel>
+              <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
+            </FormControl>
 
             {/** リモート一覧 */}
             <FormControl>
