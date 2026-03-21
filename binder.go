@@ -171,6 +171,19 @@ func (b *Binder) GetRemotes() ([]string, error) {
 	return names, nil
 }
 
+func (b *Binder) GetCurrentBranch() (string, error) {
+
+	if b == nil {
+		return "", EmptyError
+	}
+
+	name, err := b.fileSystem.CurrentBranch()
+	if err != nil {
+		return "", xerrors.Errorf("fs.CurrentBranch() error: %w", err)
+	}
+	return name, nil
+}
+
 func (b *Binder) GetRemoteList() ([]*json.Remote, error) {
 
 	if b == nil {

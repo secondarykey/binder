@@ -68,6 +68,18 @@ func (a *App) AddRemote(name string, url string) error {
 	return nil
 }
 
+func (a *App) CurrentBranch() (string, error) {
+
+	defer log.PrintTrace(log.Func("CurrentBranch()"))
+
+	name, err := a.current.GetCurrentBranch()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("GetCurrentBranch() error: %+v", err)
+	}
+	return name, nil
+}
+
 func (a *App) RemoteList() ([]*json.Remote, error) {
 
 	defer log.PrintTrace(log.Func("RemoteList()"))

@@ -106,6 +106,7 @@
         "git" : "Git",
         "remoteName" : "リモート名",
         "branchName" : "ブランチ名",
+        "currentBranch" : "ブランチ",
         "settingRemote" : "リモート設定",
         "remoteHint" : "追加は可能ですが、編集にはgitを使用してください。",
         "remoteUrl" : "リモートURL",
