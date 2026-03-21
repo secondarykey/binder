@@ -109,6 +109,8 @@
         "settingRemote" : "リモート設定",
         "remoteHint" : "追加は可能ですが、編集にはgitを使用してください。",
         "remoteUrl" : "リモートURL",
+        "userName" : "名前",
+        "userEmail" : "メールアドレス",
         "updateSuccess" : "Binderを更新しました"
     },
     "commitModal" : {

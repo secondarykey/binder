@@ -109,6 +109,8 @@
         "settingRemote" : "Setting Remote",
         "remoteHint" : "You can add, but please use git to edit.",
         "remoteUrl" : "Remote URL",
+        "userName" : "Name",
+        "userEmail" : "Email",
         "updateSuccess" : "Binder updated."
     },
     "commitModal" : {

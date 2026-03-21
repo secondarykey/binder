@@ -4,7 +4,7 @@ import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormLabel, List, ListItemButton, ListItemText, MenuItem, Select, TextField,
 } from "@mui/material";
-import { GetConfig, EditConfig, Remotes, AddRemote } from "../../bindings/binder/api/app";
+import { GetConfig, EditConfig, Remotes, AddRemote, GetUserInfo, EditUserInfo } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
 import "../i18n/config";
@@ -31,6 +31,9 @@ function Binder({ isModal, ...props }) {
   const [remoteList, setRemoteList] = useState([]);
   const [branch, setBranch] = useState("main");
 
+  const [gitName, setGitName] = useState("");
+  const [gitMail, setGitMail] = useState("");
+
   const [remoteDialog, showRemoteDialog] = useState(false);
   const [remoteName, setRemoteName] = useState("");
   const [remoteURL, setRemoteURL] = useState("");
@@ -53,6 +56,12 @@ function Binder({ isModal, ...props }) {
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
+    GetUserInfo().then((info) => {
+      setGitName(info.name || "");
+      setGitMail(info.email || "");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
     getRemoteList();
   }, []);
 
@@ -65,6 +74,14 @@ function Binder({ isModal, ...props }) {
     };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
+      evt.showSuccessMessage(t("binder.updateSuccess"));
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  const handleSaveUserInfo = () => {
+    EditUserInfo({ name: gitName, email: gitMail }).then(() => {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -165,6 +182,21 @@ function Binder({ isModal, ...props }) {
 
             <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
               <Button variant="contained" onClick={handleSave}>{t("common.save")}</Button>
+            </FormControl>
+
+            {/** ユーザ情報 */}
+            <FormControl>
+              <FormLabel>{t("binder.userName")}</FormLabel>
+              <TextField size="small" value={gitName} onChange={(e) => setGitName(e.target.value)} />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>{t("binder.userEmail")}</FormLabel>
+              <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
+            </FormControl>
+
+            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+              <Button variant="contained" onClick={handleSaveUserInfo}>{t("common.save")}</Button>
             </FormControl>
 
           </div>
