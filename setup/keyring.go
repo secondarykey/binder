@@ -2,8 +2,10 @@ package setup
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/zalando/go-keyring"
 	"golang.org/x/xerrors"
@@ -18,7 +20,10 @@ const (
 func isExistsUserKey() bool {
 	_, err := GetUserKey()
 	if err != nil {
-		return false
+		if errors.Is(keyring.ErrNotFound, err) {
+			return false
+		}
+		slog.Warn("ExistKey", "Error", error)
 	}
 	return true
 }
