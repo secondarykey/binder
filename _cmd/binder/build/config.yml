@@ -7,7 +7,7 @@ info:
   description: "A desktop Markdown editor for technical documents"
   copyright: "(c) 2025, secondarykey"
   comments: "Binder - Markdown Editor"
-  version: "0.8.0"
+  version: "0.8.1"
 
 dev_mode:
   root_path: .
