@@ -8,7 +8,6 @@ require (
 	github.com/go-git/go-git/v5 v5.17.0
 	github.com/google/uuid v1.6.0
 	github.com/mithrandie/csvq-driver v1.7.0
-	github.com/pkg/errors v0.9.1
 	github.com/sergi/go-diff v1.4.0
 	github.com/zalando/go-keyring v0.2.7
 	golang.org/x/image v0.37.0

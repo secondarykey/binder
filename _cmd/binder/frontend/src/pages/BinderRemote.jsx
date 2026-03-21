@@ -8,7 +8,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import Event,{EventContext} from "../Event";
 
 /**
- * Binder新規作成
+ * Binderリモート作成
  * @param {*} props 
  * @returns 
  */
