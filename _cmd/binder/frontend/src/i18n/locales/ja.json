@@ -164,6 +164,9 @@
     "font" : {
         "title" : "フォント設定"
     },
+    "binderRemote" : {
+        "remoteBranch" : "クローン対象ブランチ"
+    },
     "binderRegister" : {
         "binderDirectory" : "Binderディレクトリ",
         "requiredDirectory" : "ディレクトリを選択してください"

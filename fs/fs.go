@@ -72,12 +72,18 @@ func Load(dir string) (*FileSystem, error) {
 	return &b, nil
 }
 
-func Clone(dir string, url string) (*FileSystem, error) {
+func Clone(dir string, url string, branch string) (*FileSystem, error) {
 
-	r, err := git.PlainClone(dir, false, &git.CloneOptions{
+	opts := &git.CloneOptions{
 		URL:      url,
 		Progress: os.Stdout,
-	})
+	}
+	if branch != "" {
+		opts.ReferenceName = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
+		opts.SingleBranch = true
+	}
+
+	r, err := git.PlainClone(dir, false, opts)
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}

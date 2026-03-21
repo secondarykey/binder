@@ -78,11 +78,11 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 	return address, nil
 }
 
-func (a *App) CreateRemoteBinder(url string, dir string) (string, error) {
+func (a *App) CreateRemoteBinder(url, dir, branch, workBranch, gitName, gitMail string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateRemoteBinder()"))
 
-	err := binder.CreateRemote(url, dir, a.version)
+	err := binder.CreateRemote(url, dir, branch, workBranch, gitName, gitMail, a.version)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateRemote() error\n%+v", err)

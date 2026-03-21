@@ -7,7 +7,6 @@ import (
 	"binder/db"
 	"binder/fs"
 	"binder/log"
-	"binder/settings"
 	"binder/setup"
 	"context"
 	"fmt"
@@ -45,9 +44,9 @@ func createUserOp(userId string) db.Op {
 	return op
 }
 
-func CreateRemote(url, dir string, version *Version) error {
+func CreateRemote(url, dir, branch, workBranch, gitName, gitMail string, version *Version) error {
 
-	bfs, err := fs.Clone(dir, url)
+	bfs, err := fs.Clone(dir, url, branch)
 	if err != nil {
 		return xerrors.Errorf("fs.Clone() error: %w", err)
 	}
@@ -58,12 +57,27 @@ func CreateRemote(url, dir string, version *Version) error {
 		return xerrors.Errorf("setup.CheckDirectory() error: %w", err)
 	}
 
-	// 作業ブランチが設定されていれば切り替え
-	s := settings.Get()
-	if s.Git.WorkBranch != "" {
-		err = bfs.Branch(s.Git.WorkBranch)
+	// 作業ブランチが指定されていれば切り替え
+	if workBranch != "" {
+		err = bfs.Branch(workBranch)
 		if err != nil {
 			return xerrors.Errorf("fs.Branch(WorkBranch) error: %w", err)
+		}
+	}
+
+	// ユーザ情報を暗号化して保存
+	if gitName != "" || gitMail != "" {
+		key, err := setup.GetUserKey()
+		if err != nil {
+			slog.Warn("CreateRemote: GetUserKey", "Error", err)
+		} else {
+			info := &fs.UserInfo{
+				Name:  gitName,
+				Email: gitMail,
+			}
+			if err = fs.SaveUserInfo(dir, key, info); err != nil {
+				slog.Warn("CreateRemote: SaveUserInfo", "Error", err)
+			}
 		}
 	}
 

@@ -164,6 +164,9 @@
     "font" : {
         "title" : "Font Setting"
     },
+    "binderRemote" : {
+        "remoteBranch" : "Clone Target Branch"
+    },
     "binderRegister" : {
         "binderDirectory" : "Binder Directory",
         "requiredDirectory" : "Please select a directory."

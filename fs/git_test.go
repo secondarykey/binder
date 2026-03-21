@@ -41,7 +41,7 @@ func TestClone(t *testing.T) {
 	file := "test.txt"
 	url := "https://github.com/secondarykey/secondarykey.github.com"
 
-	n, err := fs.Clone(dir, url)
+	n, err := fs.Clone(dir, url, "")
 	if err != nil {
 		t.Errorf("LoadBinder() error is not nil: %v", err)
 	}
