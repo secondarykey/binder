@@ -171,7 +171,7 @@ function Binder({ isModal, ...props }) {
       <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
 
         {activeSection === "basic" && (
-          <div className="formGrid" style={{ margin: '20px 24px' }}>
+          <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
 
             <FormControl>
               <FormLabel>{t("common.name")}</FormLabel>
@@ -191,7 +191,7 @@ function Binder({ isModal, ...props }) {
         )}
 
         {activeSection === "git" && (
-          <div className="formGrid" style={{ margin: '20px 24px' }}>
+          <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
 
             {/** ユーザ情報 */}
             <FormControl>
