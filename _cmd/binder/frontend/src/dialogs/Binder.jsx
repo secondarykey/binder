@@ -5,6 +5,7 @@ import {
   FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
+import SaveIcon from '@mui/icons-material/Save';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
@@ -183,9 +184,11 @@ function Binder({ isModal, ...props }) {
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
             </FormControl>
 
-            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-              <Button variant="contained" onClick={handleSave}>{t("common.save")}</Button>
-            </FormControl>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <IconButton onClick={handleSave} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+                <SaveIcon fontSize="large" />
+              </IconButton>
+            </Box>
 
           </div>
         )}
@@ -204,9 +207,11 @@ function Binder({ isModal, ...props }) {
               <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
             </FormControl>
 
-            <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-              <Button variant="contained" onClick={handleSaveUserInfo}>{t("common.save")}</Button>
-            </FormControl>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+                <SaveIcon fontSize="large" />
+              </IconButton>
+            </Box>
 
             {/** リモート一覧 */}
             <FormControl>
