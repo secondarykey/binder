@@ -49,6 +49,15 @@ func (w *wrapper) localAddr() string {
 	return fmt.Sprintf("http://%s", w.owner.ServerAddress())
 }
 
+// relativePrefix は公開HTMLでのリソース参照用の相対パスプレフィックスを返す。
+// index.html は docs/ 直下にあるため "./"、サブページは docs/pages/ 配下にあるため "../"。
+func (w *wrapper) relativePrefix() string {
+	if w.note != nil && w.note.Id != "index" {
+		return "../"
+	}
+	return "./"
+}
+
 func (w *wrapper) assets(id string) string {
 	if w.Local {
 		// エディタプレビュー用: HTTPサーバーのプライベートアセットエンドポイントを使用
@@ -148,10 +157,12 @@ func (w *wrapper) getCurrentNote() *tempNote {
 }
 
 // 取得してきたパスからURL変換
+// 公開ディレクトリ(docs/)を除去し、ノートの階層に応じた相対プレフィックスを付与する。
 func (w *wrapper) convertURL(p string) string {
 	np := strings.ReplaceAll(p, "\\", "/")
 	cp := w.owner.fileSystem.GetPublic() + "/"
-	return strings.Replace(np, cp, "", 1)
+	rel := strings.Replace(np, cp, "", 1)
+	return w.relativePrefix() + rel
 }
 
 func (w *wrapper) drawSVG(id string) template.HTML {
@@ -189,8 +200,7 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 	}
 
 	f := fs.SVGFile(d)
-	buf := strings.Replace(f, w.owner.fileSystem.GetPublic(), "", 1)
-	return fs.ConvertHTTPPath(buf), nil
+	return w.convertURL(f), nil
 }
 
 func safeTemplate(src string) string {
@@ -345,7 +355,7 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 		Name   string
 		Detail string
 		Link   string
-	}{config.Name, config.Detail, "./"}
+	}{config.Name, config.Detail, w.relativePrefix()}
 
 	note := w.getCurrentNote()
 

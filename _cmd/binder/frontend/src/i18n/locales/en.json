@@ -100,7 +100,9 @@
         "showPreview" : "Show Preview",
         "fontSetting" : "Font Setting",
         "gitBash" : "Run with Git Bash",
-        "editorProgramError" : "Editor program must contain {file}"
+        "editorProgramError" : "Editor program must contain {file}",
+        "license" : "License",
+        "thirdPartyLicense" : "Third Party Licenses"
     },
     "binder" : {
         "editTitle" : "Edit Binder",

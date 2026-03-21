@@ -100,7 +100,9 @@
         "showPreview" : "プレビューの表示",
         "fontSetting" : "フォント設定",
         "gitBash" : "Git Bashで実行",
-        "editorProgramError" : "エディタプログラムに {file} を含めてください"
+        "editorProgramError" : "エディタプログラムに {file} を含めてください",
+        "license" : "ライセンス",
+        "thirdPartyLicense" : "サードパーティライセンス"
     },
     "binder" : {
         "editTitle" : "Binder編集",
