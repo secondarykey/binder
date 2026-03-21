@@ -236,5 +236,21 @@ func Run(dir string, ver *Version) error {
 		}
 	}
 
+	// 汎用コミット: マイグレーション固有のコミットでカバーされなかった変更をコミットする。
+	// バージョンアップのみ（マイグレーション不要）の場合や、個別コミットを持たない
+	// マイグレーション（0.1.0, 0.2.0 等）でも binder.json と DB ファイルが確実にコミットされる。
+	// 既にコミット済みで変更がない場合は UpdatedFilesError を無視する。
+	if err = bfs.AddDBFiles(); err != nil {
+		return xerrors.Errorf("AddDBFiles() error: %w", err)
+	}
+	if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
+		return xerrors.Errorf("AddFile(binder.json) error: %w", err)
+	}
+	commitMsg := fmt.Sprintf("Update binder version (%s -> %s)", ov.String(), ver.String())
+	commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
+	if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
+		return xerrors.Errorf("AutoCommit(update version) error: %w", commitErr)
+	}
+
 	return nil
 }
