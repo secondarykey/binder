@@ -1,0 +1,98 @@
+{
+  "markdowns": [
+    {
+      "id": "019ccb66-9614-7cc0-85d1-6a40bb9a37e3",
+      "name": "Checkbox",
+      "body": "- [ ] Task1\n- [x] Task2"
+    },
+    {
+      "id": "019ccb66-bfda-7244-a3e8-ab53c7ceee75",
+      "name": "Tables",
+      "body": "| Left align | Right align | Center align |\n|:-----------|------------:|:------------:|\n| This       | This        | This         |"
+    },
+    {
+      "id": "019ccb66-e143-7ab5-8bac-1826588ea873",
+      "name": "Links",
+      "body": "[Text](https://url \"Title\")"
+    },
+    {
+      "id": "019ccb67-2898-7feb-b329-ee422e64f574",
+      "name": "Note",
+      "body": ":::note info\nwarn,aleat(marked is Note suport?)\n:::"
+    },
+    {
+      "id": "019ccb65-1067-7b40-8768-ad2034c9b20a",
+      "name": "Details",
+      "body": "\u003cdetails open\u003e\n\u003csummary\u003eSample\u003c/summary\u003e\nIf you want to close the default, remove \"open\"\n\u003c/details\u003e"
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "019ccb67-522b-7361-9739-726540d5da25",
+      "name": "Sequence",
+      "body": "sequenceDiagram\n    participant API@{ \"type\": \"boundary\", \"alias\": \"Public API\" }\n    participant Auth@{ \"type\": \"control\", \"alias\": \"Auth Service\" }\n    participant DB@{ \"type\": \"database\", \"alias\": \"User Database\" }\n    API-\u003e\u003eAuth: Login request\n    Auth-\u003e\u003eDB: Query user\n    DB--\u003e\u003eAuth: User data\n    Auth--\u003e\u003eAPI: Access token"
+    },
+    {
+      "id": "019ccb67-3c1f-7ed9-bd61-6a157a001de9",
+      "name": "Flowchart",
+      "body": "---\ntitle: Node with text\n---\nflowchart LR\n    id1[This is the text in the box]"
+    },
+    {
+      "id": "019ccb67-6b34-7760-82d4-c4da1cbff60f",
+      "name": "Class",
+      "body": "---\ntitle: Bank example\n---\nclassDiagram\n    class BankAccount\n    BankAccount : +String owner\n    BankAccount : +Bigdecimal balance\n    BankAccount : +deposit(amount)\n    BankAccount : +withdrawal(amount)"
+    },
+    {
+      "id": "019ccb67-7b76-746d-a6df-24e334f6f605",
+      "name": "State",
+      "body": "---\ntitle: Simple sample\n---\nstateDiagram-v2\n    [*] --\u003e Still\n    Still --\u003e [*]\n\n    Still --\u003e Moving\n    Moving --\u003e Still\n    Moving --\u003e Crash\n    Crash --\u003e [*]"
+    },
+    {
+      "id": "019ccb67-8f46-708b-b967-d8181441016d",
+      "name": "ER",
+      "body": "---\ntitle: Order example\n---\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses"
+    },
+    {
+      "id": "019ccb67-a378-79d7-a7f2-8ac34141da71",
+      "name": "Gantt",
+      "body": "gantt\n    title A Gantt Diagram\n    dateFormat YYYY-MM-DD\n    section Section\n        A task          :a1, 2014-01-01, 30d\n        Another task    :after a1, 20d\n    section Another\n        Task in Another :2014-01-12, 12d\n        another task    :24d"
+    },
+    {
+      "id": "019ccb67-b896-7ca0-9757-00a6ac9e2797",
+      "name": "Pie",
+      "body": "pie title Pets adopted by volunteers\n    \"Dogs\" : 386\n    \"Cats\" : 85\n    \"Rats\" : 15"
+    },
+    {
+      "id": "019ccb67-c9ba-7a05-bae1-aa537c0c598c",
+      "name": "Mind Map",
+      "body": "mindmap\n  root((mindmap))\n    Origins\n      Long history\n      ::icon(fa fa-book)\n      Popularisation\n        British popular psychology author Tony Buzan\n    Research\n      On effectiveness\u003cbr/\u003eand features\n      On Automatic creation\n        Uses\n            Creative techniques\n            Strategic planning\n            Argument mapping\n    Tools\n      Pen and paper\n      Mermaid"
+    },
+    {
+      "id": "019ccb67-e7c9-718a-8428-f28d04f98a41",
+      "name": "XY",
+      "body": "xychart\n    title \"Sales Revenue\"\n    x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]\n    y-axis \"Revenue (in $)\" 4000 --\u003e 11000\n    bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]\n    line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]"
+    }
+  ],
+  "templates": [
+    {
+      "id": "019ccb68-bf64-7eab-b0f3-dfbfccca3126",
+      "name": "Draw Diagram",
+      "body": "{{drawDiagram \"\"}}"
+    },
+    {
+      "id": "019ccb68-f701-7899-8714-58106791bc4e",
+      "name": "Assets Image",
+      "body": "{{assetsImage \"\"}}"
+    },
+    {
+      "id": "019ccb69-07eb-77e1-94f5-966972e9f0b9",
+      "name": "Assets URL",
+      "body": "{{assets \"\"}}"
+    },
+    {
+      "id": "019ccb69-1f9e-7df6-bdc7-c509f47be6fd",
+      "name": "Latest Notes",
+      "body": "{{latestNotes \"\" 10}}"
+    }
+  ]
+}
