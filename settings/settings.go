@@ -372,6 +372,24 @@ func load() (*Setting, error) {
 	return &obj, nil
 }
 
+// EnsureDir は ~/.binder ディレクトリと setting.json が存在しない場合に作成する。
+func EnsureDir() error {
+	dir := DirPath()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
+	}
+
+	fn := getFilePath()
+	if _, err := os.Stat(fn); err != nil {
+		// setting.json が存在しない場合、デフォルト設定で作成
+		d := def()
+		if err := d.save(); err != nil {
+			return xerrors.Errorf("save() error: %w", err)
+		}
+	}
+	return nil
+}
+
 func DirPath() string {
 	return filepath.Join(Home(), DirName)
 }

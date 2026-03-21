@@ -7,9 +7,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// InstallSnippets はデフォルトの snippets.json を ~/.binder/snippets.json に配置する。
+// installSnippets はデフォルトの snippets.json を ~/.binder/snippets.json に配置する。
 // ファイルが既に存在する場合はスキップする（ユーザーの編集を上書きしない）。
-func InstallSnippets() error {
+func installSnippets() error {
 
 	//TODO パスを持っていておかしい
 
