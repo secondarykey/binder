@@ -7,6 +7,7 @@ import (
 	"binder/db"
 	"binder/fs"
 	"binder/log"
+	"binder/settings"
 	"binder/setup"
 	"context"
 	"fmt"
@@ -46,17 +47,24 @@ func createUserOp(userId string) db.Op {
 
 func CreateRemote(url, dir string, version *Version) error {
 
-	_, err := fs.Clone(dir, url)
+	bfs, err := fs.Clone(dir, url)
 	if err != nil {
 		return xerrors.Errorf("fs.Clone() error: %w", err)
 	}
-
-	//TODO ブランチがリモートに存在する場合の確認方法
 
 	// リモートから取得した場合、既にBinderのファイルシステムであるはず
 	err = setup.CheckDirectory(dir, false)
 	if err != nil {
 		return xerrors.Errorf("setup.CheckDirectory() error: %w", err)
+	}
+
+	// 作業ブランチが設定されていれば切り替え
+	s := settings.Get()
+	if s.Git.WorkBranch != "" {
+		err = bfs.Branch(s.Git.WorkBranch)
+		if err != nil {
+			return xerrors.Errorf("fs.Branch(WorkBranch) error: %w", err)
+		}
 	}
 
 	return nil
