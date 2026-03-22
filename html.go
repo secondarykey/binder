@@ -247,6 +247,16 @@ func safeTemplate(src string) string {
 	return src
 }
 
+func formatDate(d string, f string) string {
+
+	t, e := time.Parse(time.RFC3339, d)
+	if e != nil {
+		slog.Warn("format error", "err", e.Error(), "value", d)
+		return d
+	}
+	return t.Format(f)
+}
+
 func localeDateScript(src string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 <script>
@@ -265,6 +275,7 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"latestNotes":   w.latestNotes,
 		"safe":          safeTemplate,
 		"localeDate":    localeDateScript,
+		"formatDate":    formatDate,
 		"lf2br":         convertLF2BR,
 		"lf2sp":         convertLF2SP,
 		"lf2comma":      convertLF2Comma,
