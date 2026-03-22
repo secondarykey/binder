@@ -86,6 +86,10 @@ const debouncePromiss = (fn, delay) => {
   }
 }
 
+// テンプレートプレビューで前回選択したノート・テンプレートを記憶する
+let lastPreviewNoteId = "";
+let lastPreviewOtherTemplateId = "";
+
 //テキストの保存処理（デバウンス）
 const writeFn = debouncePromiss((mode, id, txt) => {
   if (mode === Mode.note) {
@@ -236,8 +240,7 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
-      // プレビュー設定をリセット
-      setPreviewOtherTemplateId("");
+      // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
 
       //テンプレートを開く
@@ -267,12 +270,13 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用ノート一覧を取得
+      // プレビュー用ノート一覧を取得（前回選択があれば復元）
       GetBinderTree().then((tree) => {
         const notes = flattenNotes(tree.data ?? []);
         setPreviewNotes(notes);
         if (notes.length > 0) {
-          setPreviewNoteId(notes[0].id);
+          const restored = lastPreviewNoteId && notes.some(n => n.id === lastPreviewNoteId);
+          setPreviewNoteId(restored ? lastPreviewNoteId : notes[0].id);
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -341,12 +345,13 @@ function Editor(props) {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
   }, []);
 
-  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定
+  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定（前回選択があれば復元）
   useEffect(() => {
     if (!templateType) return;
     const others = templateType === "layout" ? previewContents : previewLayouts;
     if (others.length > 0) {
-      setPreviewOtherTemplateId(others[0].id);
+      const restored = lastPreviewOtherTemplateId && others.some(t => t.id === lastPreviewOtherTemplateId);
+      setPreviewOtherTemplateId(restored ? lastPreviewOtherTemplateId : others[0].id);
     }
   }, [templateType, previewLayouts, previewContents]);
 
@@ -1302,7 +1307,7 @@ function Editor(props) {
                     <div className="previewMenuLeft">
                       <Select
                         value={previewOtherTemplateId}
-                        onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                        onChange={(e) => { lastPreviewOtherTemplateId = e.target.value; setPreviewOtherTemplateId(e.target.value); }}
                         size="small"
                         displayEmpty
                         sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
@@ -1313,7 +1318,7 @@ function Editor(props) {
                       </Select>
                       <Select
                         value={previewNoteId}
-                        onChange={(e) => setPreviewNoteId(e.target.value)}
+                        onChange={(e) => { lastPreviewNoteId = e.target.value; setPreviewNoteId(e.target.value); }}
                         size="small"
                         displayEmpty
                         sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
