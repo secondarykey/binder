@@ -23,10 +23,11 @@ const (
 var gCtx context.Context
 var def *slog.Logger
 var logFile *os.File
+var logLevel slog.LevelVar
 
 func init() {
-	//slog.SetLogLoggerLevel(TraceLevel)
 	gCtx = context.Background()
+	logLevel.Set(NoticeLevel)
 	def = slog.Default()
 }
 
@@ -47,7 +48,7 @@ func Init() error {
 
 	w := io.MultiWriter(os.Stdout, logFile)
 	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
-		Level: TraceLevel,
+		Level: &logLevel,
 	})
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
@@ -71,6 +72,16 @@ func Path() string {
 		return ""
 	}
 	return logFile.Name()
+}
+
+// SetLevel はログレベルを動的に変更する。
+func SetLevel(level slog.Level) {
+	logLevel.Set(level)
+}
+
+// GetLevel は現在のログレベルを返す。
+func GetLevel() slog.Level {
+	return logLevel.Level()
 }
 
 func SetContext(ctx context.Context) {
