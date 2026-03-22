@@ -435,7 +435,12 @@ function Editor(props) {
       setCursorLine(cursorLineRef.current);
       viewHTML(text);
     } else if (mode === Mode.template) {
-      //viewHTML(text, noteElm);
+      if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
+      // テンプレートをファイルに即時保存してからプレビューを生成
+      await SaveTemplate(id, text);
+      runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+        .then((result) => setHTML(result))
+        .catch((err) => evt.showErrorMessage(err));
     } else {
       //初回時の実行があるか
     }
