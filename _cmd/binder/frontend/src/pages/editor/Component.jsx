@@ -1085,8 +1085,8 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** マークダウン書式ボタン（テンプレート編集時は非表示） */}
-                  {mode !== Mode.template && <>
+                  {/** マークダウン書式ボタン（ノート編集時のみ表示） */}
+                  {mode === Mode.note && <>
                     {/** 区切り */}
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
