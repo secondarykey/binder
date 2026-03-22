@@ -31,8 +31,7 @@ func init() {
 	def = slog.Default()
 }
 
-// Init はログファイルを temp ディレクトリに作成し、
-// stdout とファイルの両方に出力するよう slog を設定する。
+// Init はログファイルを temp ディレクトリに作成し、slog を設定する。
 func Init() error {
 	dir := filepath.Join(os.TempDir(), "binder")
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -46,8 +45,7 @@ func Init() error {
 	}
 	logFile = f
 
-	w := io.MultiWriter(os.Stdout, logFile)
-	handler := &simpleHandler{w: w, level: &logLevel}
+	handler := &simpleHandler{w: logFile, level: &logLevel}
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 	def = logger
