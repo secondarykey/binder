@@ -2,14 +2,43 @@ package convert083
 
 import (
 	"binder/setup/convert/db/core"
+	"bufio"
 	"encoding/csv"
 	"io"
 	"mime"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/xerrors"
 )
+
+// knownMimeTypes はシステムの MIME データベースに依存しない拡張子→MIMEマッピング。
+// mime.TypeByExtension がシステム依存で空を返す場合のフォールバックとして使用する。
+var knownMimeTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".svg":  "image/svg+xml",
+	".webp": "image/webp",
+	".bmp":  "image/bmp",
+	".ico":  "image/x-icon",
+	".avif": "image/avif",
+	".tiff": "image/tiff",
+	".tif":  "image/tiff",
+	".txt":  "text/plain",
+	".csv":  "text/csv",
+	".html": "text/html",
+	".htm":  "text/html",
+	".css":  "text/css",
+	".js":   "text/javascript",
+	".json": "application/json",
+	".xml":  "text/xml",
+	".pdf":  "application/pdf",
+	".zip":  "application/zip",
+	".md":   "text/markdown",
+}
 
 // Convert083 は0.8.3への移行。
 // assets.csv に mime 列を追加する。
@@ -51,7 +80,6 @@ func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, err
 		}
 	}
 	if structFile == "" {
-		// structures.csv がない場合は空マップ（古いスキーマ）
 		return map[string]string{}, nil
 	}
 
@@ -62,6 +90,8 @@ func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, err
 	defer fp.Close()
 
 	reader := csv.NewReader(fp)
+	reader.FieldsPerRecord = -1 // フィールド数の不一致を許容
+	reader.LazyQuotes = true    // 不正なクォートを許容
 
 	// ヘッダ行を読み取り
 	header, err := reader.Read()
@@ -94,7 +124,8 @@ func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, err
 			break
 		}
 		if err != nil {
-			return nil, xerrors.Errorf("csv.Read() error: %w", err)
+			// パースエラーが発生しても読み込み済みのマッピングを返す
+			break
 		}
 		if len(row) <= typeIdx || len(row) <= nameIdx || len(row) <= idIdx {
 			continue
@@ -108,11 +139,17 @@ func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, err
 }
 
 // detectMimeByName はファイル名の拡張子からMIMEタイプを判定する。
+// mime.TypeByExtension を試行し、結果が得られない場合は knownMimeTypes にフォールバックする。
 func detectMimeByName(name string, binary bool) string {
-	ext := filepath.Ext(name)
+	ext := strings.ToLower(filepath.Ext(name))
 	if ext != "" {
+		// システムの MIME データベースを試行
 		m := mime.TypeByExtension(ext)
 		if m != "" {
+			return m
+		}
+		// フォールバック: 組み込みマッピング
+		if m, ok := knownMimeTypes[ext]; ok {
 			return m
 		}
 	}
@@ -123,6 +160,7 @@ func detectMimeByName(name string, binary bool) string {
 }
 
 // addMimeToAssets は assets.csv に mime 列を追加する。
+// assets.csv の読み書きは他のコンバーターと同じ bufio.Scanner + 生書き込み方式を使用する。
 func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*core.FileSet, error) {
 
 	of := filepath.Join(p, fs.Dst)
@@ -132,13 +170,12 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 	}
 	defer fp.Close()
 
-	reader := csv.NewReader(fp)
-
-	// ヘッダ行を読み取り
-	cols, err := reader.Read()
-	if err != nil {
+	scanner := bufio.NewScanner(fp)
+	if !scanner.Scan() {
 		return fs, nil
 	}
+	headerLine := scanner.Text()
+	cols := strings.Split(headerLine, ",")
 
 	// 既に mime 列が存在する場合はスキップ
 	for _, c := range cols {
@@ -174,21 +211,13 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 	}
 	defer np.Close()
 
-	writer := csv.NewWriter(np)
-	defer writer.Flush()
-
-	if err = writer.Write(newHeader); err != nil {
-		return nil, xerrors.Errorf("csv.Write(header) error: %w", err)
+	_, err = np.Write([]byte(strings.Join(newHeader, ",") + "\n"))
+	if err != nil {
+		return nil, xerrors.Errorf("np.Write(header) error: %w", err)
 	}
 
-	for {
-		row, readErr := reader.Read()
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			return nil, xerrors.Errorf("csv.Read() error: %w", readErr)
-		}
+	for scanner.Scan() {
+		row := strings.Split(scanner.Text(), ",")
 
 		// binary フラグを取得
 		binary := false
@@ -212,9 +241,14 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 		newRow = append(newRow, mimeType)
 		newRow = append(newRow, row[insertIdx:]...)
 
-		if err = writer.Write(newRow); err != nil {
-			return nil, xerrors.Errorf("csv.Write(row) error: %w", err)
+		_, err = np.Write([]byte(strings.Join(newRow, ",") + "\n"))
+		if err != nil {
+			return nil, xerrors.Errorf("np.Write(row) error: %w", err)
 		}
+	}
+
+	if err = scanner.Err(); err != nil {
+		return nil, xerrors.Errorf("scanner error: %w", err)
 	}
 
 	nfs := core.NewFileSet(fs.Org)

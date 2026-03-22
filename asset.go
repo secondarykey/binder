@@ -16,13 +16,43 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// knownMimeTypes はシステムの MIME データベースに依存しない拡張子→MIMEマッピング。
+var knownMimeTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".svg":  "image/svg+xml",
+	".webp": "image/webp",
+	".bmp":  "image/bmp",
+	".ico":  "image/x-icon",
+	".avif": "image/avif",
+	".tiff": "image/tiff",
+	".tif":  "image/tiff",
+	".txt":  "text/plain",
+	".csv":  "text/csv",
+	".html": "text/html",
+	".htm":  "text/html",
+	".css":  "text/css",
+	".js":   "text/javascript",
+	".json": "application/json",
+	".xml":  "text/xml",
+	".pdf":  "application/pdf",
+	".zip":  "application/zip",
+	".md":   "text/markdown",
+}
+
 // detectMime はファイル名の拡張子からMIMEタイプを判定する。
-// 判定できない場合はバイナリなら "application/octet-stream"、テキストなら "text/plain" を返す。
+// mime.TypeByExtension を試行し、結果が得られない場合は knownMimeTypes にフォールバックする。
+// いずれでも判定できない場合はバイナリなら "application/octet-stream"、テキストなら "text/plain" を返す。
 func detectMime(name string, binary bool) string {
-	ext := filepath.Ext(name)
+	ext := strings.ToLower(filepath.Ext(name))
 	if ext != "" {
 		m := mime.TypeByExtension(ext)
 		if m != "" {
+			return m
+		}
+		if m, ok := knownMimeTypes[ext]; ok {
 			return m
 		}
 	}
