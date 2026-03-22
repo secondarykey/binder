@@ -86,6 +86,10 @@ const debouncePromiss = (fn, delay) => {
   }
 }
 
+// テンプレートプレビューで前回選択したノート・テンプレートを記憶する
+let lastPreviewNoteId = "";
+let lastPreviewOtherTemplateId = "";
+
 //テキストの保存処理（デバウンス）
 const writeFn = debouncePromiss((mode, id, txt) => {
   if (mode === Mode.note) {
@@ -236,8 +240,7 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
-      // プレビュー設定をリセット
-      setPreviewOtherTemplateId("");
+      // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
 
       //テンプレートを開く
@@ -267,12 +270,13 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用ノート一覧を取得
+      // プレビュー用ノート一覧を取得（前回選択があれば復元）
       GetBinderTree().then((tree) => {
         const notes = flattenNotes(tree.data ?? []);
         setPreviewNotes(notes);
         if (notes.length > 0) {
-          setPreviewNoteId(notes[0].id);
+          const restored = lastPreviewNoteId && notes.some(n => n.id === lastPreviewNoteId);
+          setPreviewNoteId(restored ? lastPreviewNoteId : notes[0].id);
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -341,12 +345,13 @@ function Editor(props) {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
   }, []);
 
-  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定
+  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定（前回選択があれば復元）
   useEffect(() => {
     if (!templateType) return;
     const others = templateType === "layout" ? previewContents : previewLayouts;
     if (others.length > 0) {
-      setPreviewOtherTemplateId(others[0].id);
+      const restored = lastPreviewOtherTemplateId && others.some(t => t.id === lastPreviewOtherTemplateId);
+      setPreviewOtherTemplateId(restored ? lastPreviewOtherTemplateId : others[0].id);
     }
   }, [templateType, previewLayouts, previewContents]);
 
@@ -1080,46 +1085,49 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                  {/** マークダウン書式ボタン（テンプレート編集時は非表示） */}
+                  {mode !== Mode.template && <>
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
-                  {/** 強調 */}
-                  <Tooltip title={t("editor.bold")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
-                      <FormatBoldIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** 強調 */}
+                    <Tooltip title={t("editor.bold")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                        <FormatBoldIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** イタリック */}
-                  <Tooltip title={t("editor.italic")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
-                      <FormatItalicIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** イタリック */}
+                    <Tooltip title={t("editor.italic")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                        <FormatItalicIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** 打ち消し線 */}
-                  <Tooltip title={t("editor.strikethrough")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
-                      <FormatStrikethroughIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** 打ち消し線 */}
+                    <Tooltip title={t("editor.strikethrough")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                        <FormatStrikethroughIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** コードブロック */}
-                  <Tooltip title={t("editor.codeBlock")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
-                      <CodeIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** コードブロック */}
+                    <Tooltip title={t("editor.codeBlock")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                        <CodeIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** 引用 */}
-                  <Tooltip title={t("editor.quote")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
-                      <FormatQuoteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** 引用 */}
+                    <Tooltip title={t("editor.quote")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                        <FormatQuoteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                  </>}
 
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
@@ -1302,7 +1310,7 @@ function Editor(props) {
                     <div className="previewMenuLeft">
                       <Select
                         value={previewOtherTemplateId}
-                        onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                        onChange={(e) => { lastPreviewOtherTemplateId = e.target.value; setPreviewOtherTemplateId(e.target.value); }}
                         size="small"
                         displayEmpty
                         sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
@@ -1313,7 +1321,7 @@ function Editor(props) {
                       </Select>
                       <Select
                         value={previewNoteId}
-                        onChange={(e) => setPreviewNoteId(e.target.value)}
+                        onChange={(e) => { lastPreviewNoteId = e.target.value; setPreviewNoteId(e.target.value); }}
                         size="small"
                         displayEmpty
                         sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
