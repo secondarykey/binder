@@ -22,6 +22,13 @@ function isImageMime(mime) {
 }
 
 /**
+ * MIMEタイプがテキストかどうかを判定する
+ */
+function isTextMime(mime) {
+  return mime != null && mime.startsWith('text/');
+}
+
+/**
  * 画像ビューア（ドラッグ移動・ホイール拡大縮小）
  * SVGビューア（Editor/Component.jsx viewDiagram）と同じロジックを流用。
  * - 初期表示: コンテナに収まるようにフィットし中央配置
@@ -269,13 +276,13 @@ function AssetViewer() {
   /** ダウンロードボタン押下: アセットファイルをダウンロードする */
   const handleDownload = () => {
     if (!assetContent) return;
-    const { name, binary, mime, content: fileContent } = assetContent;
+    const { name, mime, content: fileContent } = assetContent;
     const byteChars = atob(fileContent);
     const byteArray = new Uint8Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) {
       byteArray[i] = byteChars.charCodeAt(i);
     }
-    const dlMime = mime || (binary ? 'application/octet-stream' : 'text/plain');
+    const dlMime = mime || 'application/octet-stream';
     const blob = new Blob([byteArray], { type: dlMime });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -301,8 +308,9 @@ function AssetViewer() {
       <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Loading...</div>
     );
   } else {
-    const { name, binary, mime, content: fileContent } = assetContent;
-    const isImage = binary && isImageMime(mime);
+    const { name, mime, content: fileContent } = assetContent;
+    const isImage = isImageMime(mime);
+    const isText = isTextMime(mime);
 
     if (isImage) {
       content = (
@@ -311,7 +319,7 @@ function AssetViewer() {
           alt={name}
         />
       );
-    } else if (!binary) {
+    } else if (isText) {
       // テキストファイル: base64 → UTF-8 テキスト
       let text = '';
       try {
@@ -373,7 +381,7 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
-          {assetContent && !assetContent.binary && (
+          {assetContent && isTextMime(assetContent.mime) && (
             <Tooltip title={t("assetViewer.migrate")} placement="bottom">
               <span>
                 <IconButton size="small" aria-label="migrate to note" onClick={handleMigrate} disabled={migrating || !id} className="editorBtn">
