@@ -207,16 +207,20 @@ type op struct {
 	input  string
 	output string
 	v      *ver
+	rgs    []*rgSet
+}
+
+type rgSet struct {
 	xp     string
 	format string
+	rg     *regexp.Regexp
 }
 
 func write(v *ver) error {
 	ops := []*op{
-		&op{configYml, "", v, configRg, configFmt},
-		&op{packJsn, "", v, packRg, packFmt},
-		&op{winInfoJsn, "", v, winInfoRg1, winInfoFmt1},
-		&op{winInfoJsn, "", v, winInfoRg2, winInfoFmt2},
+		&op{configYml, "", v, []*rgSet{&rgSet{configRg, configFmt, nil}}},
+		&op{packJsn, "", v, []*rgSet{&rgSet{packRg, packFmt, nil}}},
+		&op{winInfoJsn, "", v, []*rgSet{&rgSet{winInfoRg1, winInfoFmt1, nil}, &rgSet{winInfoRg2, winInfoFmt2, nil}}},
 	}
 
 	for _, o := range ops {
@@ -227,7 +231,7 @@ func write(v *ver) error {
 	}
 
 	for _, o := range ops {
-		//os.Rename(o.output, o.input)
+		os.Rename(o.output, o.input)
 		fmt.Println("Rename:", o.input)
 	}
 
@@ -236,7 +240,10 @@ func write(v *ver) error {
 
 func writeFile(o *op) error {
 
-	re := regexp.MustCompile(o.xp)
+	for _, set := range o.rgs {
+		rg := regexp.MustCompile(set.xp)
+		set.rg = rg
+	}
 
 	in, err := os.Open(o.input)
 	if err != nil {
@@ -261,10 +268,14 @@ func writeFile(o *op) error {
 
 		line := scanner.Text()
 
-		match := re.FindStringSubmatch(line)
-		if len(match) > 1 {
-			line = fmt.Sprintf(o.format, o.v)
+		for _, set := range o.rgs {
+			match := set.rg.FindStringSubmatch(line)
+			if len(match) > 1 {
+				line = fmt.Sprintf(set.format, o.v)
+				break
+			}
 		}
+
 		fmt.Fprintln(out, line)
 	}
 

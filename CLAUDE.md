@@ -49,9 +49,10 @@ go run ./_cmd/version.go 0.0.0
 ```
 
 - ./_cmd/binder/build/config.yml
+- ./_cmd/binder/build/windows/info.json
 - ./_cmd/binder/frontend/package.json
 
-２つのファイルのバージョンが引数のバージョンに変更されます。
+３つのファイルのバージョンが引数のバージョンに変更されます。
 
 ### テスト
 ```bash
