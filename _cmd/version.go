@@ -11,12 +11,17 @@ import (
 )
 
 const (
-	configYml = "./_cmd/binder/build/config.yml"
-	configRg  = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	configFmt = `  version: "%v"`
-	packJsn   = "./_cmd/binder/frontend/package.json"
-	packRg    = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	packFmt   = `  "version": "%v",`
+	configYml   = "./_cmd/binder/build/config.yml"
+	configRg    = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	configFmt   = `  version: "%v"`
+	packJsn     = "./_cmd/binder/frontend/package.json"
+	packRg      = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	packFmt     = `  "version": "%v",`
+	winInfoJsn  = "./_cmd/binder/build/windows/info.json"
+	winInfoRg1  = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoRg2  = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoFmt1 = `        "file_version": "%v"`
+	winInfoFmt2 = `            "ProductVersion": "%v",`
 )
 
 const inqury = `
@@ -210,6 +215,8 @@ func write(v *ver) error {
 	ops := []*op{
 		&op{configYml, "", v, configRg, configFmt},
 		&op{packJsn, "", v, packRg, packFmt},
+		&op{winInfoJsn, "", v, winInfoRg1, winInfoFmt1},
+		&op{winInfoJsn, "", v, winInfoRg2, winInfoFmt2},
 	}
 
 	for _, o := range ops {
@@ -220,7 +227,7 @@ func write(v *ver) error {
 	}
 
 	for _, o := range ops {
-		os.Rename(o.output, o.input)
+		//os.Rename(o.output, o.input)
 		fmt.Println("Rename:", o.input)
 	}
 
