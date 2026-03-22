@@ -160,6 +160,14 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 
 	} else {
 
+		// MIMEが未指定（ファイル変更なし）の場合は既存値を保持
+		if a.Mime == "" {
+			existing, err := b.db.GetAsset(a.Id)
+			if err == nil && existing != nil {
+				a.Mime = existing.Mime
+			}
+		}
+
 		m := model.ConvertAsset(a)
 
 		err := b.db.UpdateAsset(m, b.op)
