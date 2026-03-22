@@ -96,7 +96,11 @@ function SyslogApp() {
     var url = window.URL.createObjectURL(data);
     var link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'binder-syslog.log');
+    var now = new Date();
+    var date = now.getFullYear().toString()
+      + (now.getMonth() + 1).toString().padStart(2, '0')
+      + now.getDate().toString().padStart(2, '0');
+    link.setAttribute('download', date + '.log');
     link.click();
   };
 
@@ -145,7 +149,7 @@ function SyslogApp() {
         </IconButton>
       </Toolbar>
 
-      <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, paddingBottom: '15px', backgroundColor: '#0d1117' }}>
         <div id="syslogContent" ref={contentRef} onScroll={handleScroll}>
           {lines}
         </div>
