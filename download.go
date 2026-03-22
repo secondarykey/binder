@@ -40,7 +40,8 @@ func (b *Binder) DownloadAll(savePath string) error {
 
 	// 除外ファイル
 	excludes := map[string]bool{
-		fs.UserFileName: true,
+		fs.UserFileName:  true,
+		fs.GitIgnoreFile: true,
 	}
 
 	return createZip(savePath, b.dir, excludes)
