@@ -41,7 +41,9 @@
         "assets" : "アセット",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "clipboardEmpty" : "クリップボード画像のデータが空です",
-        "downloadDocs" : "docsダウンロード"
+        "download" : "ダウンロード",
+        "downloadAll" : "全体",
+        "downloadDocs" : "docs"
     },
     "note" : {
         "editTitle" : "ノート編集",

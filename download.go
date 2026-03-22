@@ -2,6 +2,7 @@ package binder
 
 import (
 	"archive/zip"
+	"binder/fs"
 	"io"
 	"os"
 	"path/filepath"
@@ -26,6 +27,29 @@ func (b *Binder) DownloadDocs(savePath string) error {
 		return xerrors.Errorf("docs directory not found: %s", docsDir)
 	}
 
+	return createZip(savePath, docsDir, nil)
+}
+
+// DownloadAll はバインダー全体の内容をZIPファイルとして保存する。
+// user_data.enc は含めない。
+func (b *Binder) DownloadAll(savePath string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	// 除外ファイル
+	excludes := map[string]bool{
+		fs.UserFileName: true,
+	}
+
+	return createZip(savePath, b.dir, excludes)
+}
+
+// createZip は baseDir 以下のファイルをZIPファイルとして savePath に保存する。
+// excludes に指定されたファイル名（ベース名）は除外する。
+func createZip(savePath, baseDir string, excludes map[string]bool) error {
+
 	outFile, err := os.Create(savePath)
 	if err != nil {
 		return xerrors.Errorf("os.Create() error: %w", err)
@@ -35,16 +59,25 @@ func (b *Binder) DownloadDocs(savePath string) error {
 	w := zip.NewWriter(outFile)
 	defer w.Close()
 
-	err = filepath.Walk(docsDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
+			// .git ディレクトリはスキップ
+			if info.Name() == ".git" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
-		// docsDir からの相対パスをZIP内のパスにする
-		rel, err := filepath.Rel(docsDir, path)
+		// 除外ファイルをスキップ
+		if excludes != nil && excludes[info.Name()] {
+			return nil
+		}
+
+		// baseDir からの相対パスをZIP内のパスにする
+		rel, err := filepath.Rel(baseDir, path)
 		if err != nil {
 			return xerrors.Errorf("filepath.Rel() error: %w", err)
 		}
