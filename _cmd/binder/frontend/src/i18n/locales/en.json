@@ -237,6 +237,7 @@
         "codeBlock" : "Code Block",
         "quote" : "Quote",
         "insertSnippet" : "Insert Snippet",
+        "insertId" : "Insert ID",
         "wordWrapOn" : "Word Wrap: ON",
         "wordWrapOff" : "Word Wrap: OFF",
         "refreshPreview" : "Refresh Preview",

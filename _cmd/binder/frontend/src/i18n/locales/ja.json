@@ -237,6 +237,7 @@
         "codeBlock" : "コードブロック",
         "quote" : "引用",
         "insertSnippet" : "スニペット挿入",
+        "insertId" : "ID挿入",
         "wordWrapOn" : "折り返し: ON",
         "wordWrapOff" : "折り返し: OFF",
         "refreshPreview" : "プレビュー更新",
