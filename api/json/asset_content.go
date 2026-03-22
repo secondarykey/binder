@@ -6,5 +6,6 @@ type AssetContent struct {
 	Id      string `json:"id"`
 	Name    string `json:"name"`
 	Binary  bool   `json:"binary"`
+	Mime    string `json:"mime"`
 	Content string `json:"content"` // base64 encoded
 }

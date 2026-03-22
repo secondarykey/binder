@@ -14,24 +14,11 @@ import { EventContext } from '../Event';
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 
-/** 画像拡張子の判定セット */
-const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico']);
-
 /**
- * ファイル名の拡張子から MIME タイプを返す
+ * MIMEタイプが画像かどうかを判定する
  */
-function getMimeType(name) {
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  switch (ext) {
-    case 'jpg': case 'jpeg': return 'image/jpeg';
-    case 'png':  return 'image/png';
-    case 'gif':  return 'image/gif';
-    case 'svg':  return 'image/svg+xml';
-    case 'webp': return 'image/webp';
-    case 'bmp':  return 'image/bmp';
-    case 'ico':  return 'image/x-icon';
-    default:     return 'application/octet-stream';
-  }
+function isImageMime(mime) {
+  return mime != null && mime.startsWith('image/');
 }
 
 /**
@@ -282,14 +269,14 @@ function AssetViewer() {
   /** ダウンロードボタン押下: アセットファイルをダウンロードする */
   const handleDownload = () => {
     if (!assetContent) return;
-    const { name, binary, content: fileContent } = assetContent;
+    const { name, binary, mime, content: fileContent } = assetContent;
     const byteChars = atob(fileContent);
     const byteArray = new Uint8Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) {
       byteArray[i] = byteChars.charCodeAt(i);
     }
-    const mime = binary ? getMimeType(name) : 'text/plain';
-    const blob = new Blob([byteArray], { type: mime });
+    const dlMime = mime || (binary ? 'application/octet-stream' : 'text/plain');
+    const blob = new Blob([byteArray], { type: dlMime });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -314,12 +301,10 @@ function AssetViewer() {
       <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Loading...</div>
     );
   } else {
-    const { name, binary, content: fileContent } = assetContent;
-    const ext     = name.split('.').pop()?.toLowerCase() ?? '';
-    const isImage = binary && imageExts.has(ext);
+    const { name, binary, mime, content: fileContent } = assetContent;
+    const isImage = binary && isImageMime(mime);
 
     if (isImage) {
-      const mime = getMimeType(name);
       content = (
         <ImageViewer
           src={`data:${mime};base64,${fileContent}`}

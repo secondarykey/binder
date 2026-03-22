@@ -99,6 +99,7 @@ func (a *App) GetAssetContent(id string) (*json.AssetContent, error) {
 		Id:      id,
 		Name:    meta.Name,
 		Binary:  meta.Binary,
+		Mime:    meta.Mime,
 		Content: base64.StdEncoding.EncodeToString(data),
 	}, nil
 }

@@ -9,6 +9,7 @@ import (
 type Asset struct {
 	Id     string `db:"id:key"`
 	Binary bool   `db:"binary"`
+	Mime   string `db:"mime"`
 
 	Created     time.Time `db:"created_date:insert"`
 	CreatedUser string    `db:"created_user:insert"`
@@ -24,6 +25,7 @@ func (a *Asset) To() *json.Asset {
 	var rtn json.Asset
 	rtn.Id = a.Id
 	rtn.Binary = a.Binary
+	rtn.Mime = a.Mime
 	rtn.Created = a.Created
 	rtn.CreatedUser = a.CreatedUser
 	rtn.Updated = a.Updated
@@ -35,6 +37,7 @@ func ConvertAsset(a *json.Asset) *Asset {
 	var rtn Asset
 	rtn.Id = a.Id
 	rtn.Binary = a.Binary
+	rtn.Mime = a.Mime
 	rtn.Created = a.Created
 	rtn.CreatedUser = a.CreatedUser
 	rtn.Updated = a.Updated

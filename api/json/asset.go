@@ -9,7 +9,8 @@ type Asset struct {
 	Name     string `json:"name"`
 	Detail   string `json:"detail"`
 
-	Binary bool `json:"binary"`
+	Binary bool   `json:"binary"`
+	Mime   string `json:"mime"`
 
 	Created     time.Time `json:"created"`
 	CreatedUser string    `json:"createdUser"`
