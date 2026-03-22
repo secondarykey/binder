@@ -1141,12 +1141,13 @@ function Editor(props) {
                     <IconButton size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
+                        const anchor = e.currentTarget;
                         GetBinderTree().then((tree) => {
                           const all = flattenStructures(tree.data || []);
                           const children = all.filter((s) => s.parentId === id);
                           const others = all.filter((s) => s.parentId !== id && s.id !== id);
                           setIdList([...children, ...others]);
-                          setIdListAnchor(e.currentTarget);
+                          setIdListAnchor(anchor);
                         }).catch((err) => evt.showErrorMessage(err));
                       }}
                       className="editorBtn">
