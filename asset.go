@@ -8,12 +8,29 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"golang.org/x/xerrors"
 )
+
+// detectMime はファイル名の拡張子からMIMEタイプを判定する。
+// 判定できない場合はバイナリなら "application/octet-stream"、テキストなら "text/plain" を返す。
+func detectMime(name string, binary bool) string {
+	ext := filepath.Ext(name)
+	if ext != "" {
+		m := mime.TypeByExtension(ext)
+		if m != "" {
+			return m
+		}
+	}
+	if binary {
+		return "application/octet-stream"
+	}
+	return "text/plain"
+}
 
 func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
 
@@ -40,6 +57,7 @@ func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
 			a.Name = fn
 			a.Alias = fn
 		}
+		a.Mime = detectMime(fn, a.Binary)
 	}
 
 	_, err = b.editAsset(a, data)
@@ -74,6 +92,7 @@ func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*
 			a.Name = filename
 			a.Alias = filename
 		}
+		a.Mime = detectMime(filename, a.Binary)
 	}
 
 	_, err := b.editAsset(a, data)
