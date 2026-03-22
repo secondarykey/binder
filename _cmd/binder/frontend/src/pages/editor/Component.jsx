@@ -1180,22 +1180,6 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** テンプレートプレビューリフレッシュ */}
-                  {mode === Mode.template && <>
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                    <Tooltip title={t("editor.refreshPreview")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
-                        onClick={() => {
-                          if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
-                          runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-                            .then((result) => setHTML(result))
-                            .catch((err) => evt.showErrorMessage(err));
-                        }}
-                        className="editorBtn">
-                        <PreviewIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>}
 
                   {/** プレビュー表示トグル */}
                   <Tooltip title={viewer ? t("editor.previewOn") : t("editor.previewOff")} placement="bottom">
