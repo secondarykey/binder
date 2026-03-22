@@ -14,6 +14,7 @@ import (
 type App struct {
 	current *binder.Binder
 	version *Version
+	devMode bool
 }
 
 func New(version string) *App {
@@ -29,11 +30,31 @@ func New(version string) *App {
 	return &app
 }
 
+// SetDevMode は開発モードフラグを設定する
+func (app *App) SetDevMode(dev bool) {
+	app.devMode = dev
+}
+
 func (app *App) SetCurrent(c *binder.Binder) {
 	defer log.PrintTrace(log.Func("SetCurrent()"))
 	app.current = c
 }
 
+
+// VersionInfo はバージョン文字列と開発モードかどうかを返す
+type VersionInfo struct {
+	Version string
+	Dev     bool
+}
+
+// GetVersionInfo はアプリのバージョン情報を返す
+func (a *App) GetVersionInfo() (*VersionInfo, error) {
+	info := &VersionInfo{
+		Version: a.version.String(),
+		Dev:     a.devMode,
+	}
+	return info, nil
+}
 
 func (a *App) Address() (string, error) {
 	defer log.PrintTrace(log.Func("Address()"))

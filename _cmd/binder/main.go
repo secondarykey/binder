@@ -83,6 +83,9 @@ func main() {
 		},
 	})
 
+	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
+	app.SetDevMode(wailsApp.Env.Info().Debug)
+
 	// 2. ウィンドウ作成
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:                  "Binder",
