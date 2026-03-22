@@ -2,11 +2,11 @@ package convert083
 
 import (
 	"binder/setup/convert/db/core"
-	"bufio"
+	"encoding/csv"
+	"io"
 	"mime"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"golang.org/x/xerrors"
 )
@@ -39,6 +39,7 @@ func Convert083(p string, tables []*core.FileSet) ([]*core.FileSet, error) {
 }
 
 // buildAssetNameMap は structures.csv を読み取り、type=asset のエントリの id → name マッピングを返す。
+// encoding/csv を使用してクォートされたフィールド（マルチバイト文字を含む名前等）を正しくパースする。
 func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, error) {
 
 	// structures.csv の FileSet を探す
@@ -60,18 +61,19 @@ func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, err
 	}
 	defer fp.Close()
 
-	scanner := bufio.NewScanner(fp)
-	if !scanner.Scan() {
+	reader := csv.NewReader(fp)
+
+	// ヘッダ行を読み取り
+	header, err := reader.Read()
+	if err != nil {
 		return map[string]string{}, nil
 	}
-	headerLine := scanner.Text()
-	cols := strings.Split(headerLine, ",")
 
 	// 列インデックスを特定
 	idIdx := -1
 	typeIdx := -1
 	nameIdx := -1
-	for i, c := range cols {
+	for i, c := range header {
 		switch c {
 		case "id":
 			idIdx = i
@@ -86,8 +88,14 @@ func buildAssetNameMap(p string, tables []*core.FileSet) (map[string]string, err
 	}
 
 	nameMap := make(map[string]string)
-	for scanner.Scan() {
-		row := strings.Split(scanner.Text(), ",")
+	for {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, xerrors.Errorf("csv.Read() error: %w", err)
+		}
 		if len(row) <= typeIdx || len(row) <= nameIdx || len(row) <= idIdx {
 			continue
 		}
@@ -124,12 +132,13 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 	}
 	defer fp.Close()
 
-	scanner := bufio.NewScanner(fp)
-	if !scanner.Scan() {
+	reader := csv.NewReader(fp)
+
+	// ヘッダ行を読み取り
+	cols, err := reader.Read()
+	if err != nil {
 		return fs, nil
 	}
-	headerLine := scanner.Text()
-	cols := strings.Split(headerLine, ",")
 
 	// 既に mime 列が存在する場合はスキップ
 	for _, c := range cols {
@@ -165,13 +174,21 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 	}
 	defer np.Close()
 
-	_, err = np.Write([]byte(strings.Join(newHeader, ",") + "\n"))
-	if err != nil {
-		return nil, xerrors.Errorf("np.Write(header) error: %w", err)
+	writer := csv.NewWriter(np)
+	defer writer.Flush()
+
+	if err = writer.Write(newHeader); err != nil {
+		return nil, xerrors.Errorf("csv.Write(header) error: %w", err)
 	}
 
-	for scanner.Scan() {
-		row := strings.Split(scanner.Text(), ",")
+	for {
+		row, readErr := reader.Read()
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return nil, xerrors.Errorf("csv.Read() error: %w", readErr)
+		}
 
 		// binary フラグを取得
 		binary := false
@@ -195,14 +212,9 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 		newRow = append(newRow, mimeType)
 		newRow = append(newRow, row[insertIdx:]...)
 
-		_, err = np.Write([]byte(strings.Join(newRow, ",") + "\n"))
-		if err != nil {
-			return nil, xerrors.Errorf("np.Write(row) error: %w", err)
+		if err = writer.Write(newRow); err != nil {
+			return nil, xerrors.Errorf("csv.Write(row) error: %w", err)
 		}
-	}
-
-	if err = scanner.Err(); err != nil {
-		return nil, xerrors.Errorf("scanner error: %w", err)
 	}
 
 	nfs := core.NewFileSet(fs.Org)
