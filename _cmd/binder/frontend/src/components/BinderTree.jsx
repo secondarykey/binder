@@ -8,6 +8,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
@@ -17,7 +18,7 @@ import { Events, Browser } from '@wailsio/runtime';
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
          EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow ,SelectFile } from '../../bindings/main/window';
+import { OpenHistoryWindow, SelectFile, DownloadDocs } from '../../bindings/main/window';
 
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -602,6 +603,10 @@ function BinderTree(props) {
       {/** リモートにPush */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
         <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
+      </MenuItem>
+      {/** docsダウンロード */}
+      <MenuItem onClick={() => { closeMoreMenu(); DownloadDocs(); }}>
+        <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.downloadDocs")}
       </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}

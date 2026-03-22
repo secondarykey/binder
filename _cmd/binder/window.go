@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -315,6 +316,49 @@ func splitDQSpace(v string) []string {
 	}
 
 	return result
+}
+
+// DownloadDocs はdocsディレクトリをZIPファイルとしてダウンロードする。
+// 保存先ダイアログを表示し、選択されたパスにZIPを書き出す。
+func (win *Window) DownloadDocs() error {
+	defer log.PrintTrace(log.Func("DownloadDocs()"))
+
+	// バインダー名を取得してファイル名を生成
+	name, err := win.app.GetBinderName()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("GetBinderName() error\n%+v", err)
+	}
+
+	// yyyyMMddHHmmss_{バインダー名}.zip
+	now := time.Now().Format("20060102150405")
+	defaultName := fmt.Sprintf("%s_%s.zip", now, name)
+
+	// 保存先ダイアログを表示
+	savePath, err := win.runtime.Dialog.SaveFile().
+		SetButtonText("Save").
+		AddFilter("ZIP files", "*.zip").
+		SetFilename(defaultName).
+		PromptForSingleSelection()
+	if err != nil {
+		if savePath == "" {
+			return nil
+		}
+		log.PrintStackTrace(err)
+		return fmt.Errorf("SaveFile dialog error\n%+v", err)
+	}
+
+	if savePath == "" {
+		return nil
+	}
+
+	err = win.app.DownloadDocs(savePath)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DownloadDocs() error\n%+v", err)
+	}
+
+	return nil
 }
 
 func (r *Window) OpenSyslogWindow() error {
