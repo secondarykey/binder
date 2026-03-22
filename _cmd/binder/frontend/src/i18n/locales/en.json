@@ -232,6 +232,7 @@
     "syslog" : {
         "title" : "System Log",
         "clear" : "Clear Display",
+        "save" : "Save Log",
         "scrollToBottom" : "Scroll to Bottom"
     },
     "editor" : {

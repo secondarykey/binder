@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Toolbar, Typography, IconButton, Tooltip, Select, MenuItem } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
+import DownloadIcon from '@mui/icons-material/Download';
 
 import { Window } from '@wailsio/runtime';
 
@@ -90,6 +91,15 @@ function SyslogApp() {
     setLines('');
   };
 
+  const handleDownload = () => {
+    var data = new Blob([lines], { type: 'text/plain' });
+    var url = window.URL.createObjectURL(data);
+    var link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'binder-syslog.log');
+    link.click();
+  };
+
   const handleClose = () => {
     Window.Close();
   };
@@ -120,14 +130,14 @@ function SyslogApp() {
             <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
           ))}
         </Select>
-        <Tooltip title={t('syslog.clear')}>
-          <IconButton size="small" color="inherit" onClick={handleClear} sx={{ mr: 0.5 }}>
-            <DeleteOutlineIcon fontSize="small" />
+        <Tooltip title={t('syslog.save')}>
+          <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ mr: 0.5 }}>
+            <DownloadIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title={t('syslog.scrollToBottom')}>
-          <IconButton size="small" color="inherit" onClick={handleScrollToBottom} sx={{ mr: 0.5 }}>
-            <VerticalAlignBottomIcon fontSize="small" />
+        <Tooltip title={t('syslog.clear')}>
+          <IconButton size="small" color="inherit" onClick={handleClear} sx={{ mr: 0.5 }}>
+            <CancelPresentationIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
@@ -135,8 +145,28 @@ function SyslogApp() {
         </IconButton>
       </Toolbar>
 
-      <div id="syslogContent" ref={contentRef} onScroll={handleScroll}>
-        {lines}
+      <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+        <div id="syslogContent" ref={contentRef} onScroll={handleScroll}>
+          {lines}
+        </div>
+        {!autoScroll && (
+          <Tooltip title={t('syslog.scrollToBottom')}>
+            <IconButton
+              size="small"
+              onClick={handleScrollToBottom}
+              sx={{
+                position: 'absolute',
+                right: 16,
+                bottom: 16,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                color: '#c9d1d9',
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)' },
+              }}
+            >
+              <VerticalAlignBottomIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </div>
     </div>
   );
