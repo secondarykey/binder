@@ -3,9 +3,10 @@ import { useEffect, useState, useContext } from "react";
 import { Box, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
 import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont } from "../../bindings/binder/api/app";
 import { Events } from '@wailsio/runtime';
-import { OpenFileDialog } from "../../bindings/main/window";
+import { OpenFileDialog, OpenSyslogWindow } from "../../bindings/main/window";
 import SaveIcon from '@mui/icons-material/Save';
 import FolderIcon from '@mui/icons-material/Folder';
+import TerminalIcon from '@mui/icons-material/Terminal';
 
 import { EventContext } from "../Event";
 import SnippetSetting from "./SnippetSetting";
@@ -248,6 +249,26 @@ function Setting({ isModal, ...props }) {
                     }}
                   />
                 </Paper>
+                {/** システムログ */}
+                <FormControl>
+                  <FormLabel>{t("setting.systemLog")}</FormLabel>
+                  <IconButton
+                    onClick={() => OpenSyslogWindow().catch((err) => evt.showErrorMessage(err))}
+                    sx={{
+                      width: 'fit-content',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-input)',
+                      borderRadius: '4px',
+                      px: 2,
+                      py: 0.5,
+                      fontSize: '13px',
+                      gap: 1,
+                    }}
+                  >
+                    <TerminalIcon fontSize="small" />
+                    <span style={{ fontSize: '13px' }}>{t("setting.openSystemLog")}</span>
+                  </IconButton>
+                </FormControl>
               </div>
             </div>
 

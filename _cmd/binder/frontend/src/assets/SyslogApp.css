@@ -1,0 +1,41 @@
+#SyslogApp {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#syslogTitle {
+    padding-left: 8px !important;
+    padding-right: 0px;
+    padding-top: 2px !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-titlebar) !important;
+    --wails-draggable: drag;
+    min-height: 40px !important;
+}
+
+#syslogTitle button {
+    --wails-draggable: no-drag;
+}
+
+#syslogTitle button:hover {
+    background-color: var(--bg-elevated);
+}
+
+#syslogContent {
+    height: 100%;
+    overflow-y: auto;
+    background-color: #0d1117;
+    padding: 8px 12px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #c9d1d9;
+    white-space: pre-wrap;
+    word-break: break-all;
+}

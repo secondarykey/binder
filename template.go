@@ -166,13 +166,12 @@ func (b *Binder) SaveTemplate(id string, data []byte) error {
 	}
 
 	j := t.To()
-	fn, err := b.fileSystem.WriteTemplate(j, data)
+	_, err = b.fileSystem.WriteTemplate(j, data)
 	if err != nil {
 		return xerrors.Errorf("fs.WriteTemplate() error: %w", err)
 	}
 
-	//TODO コミット
-	fmt.Println(fn)
+	//fmt.Println(fn)
 
 	return nil
 }

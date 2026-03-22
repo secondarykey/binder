@@ -38,6 +38,7 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import NewLabelIcon from '@mui/icons-material/NewLabel';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
@@ -58,6 +59,20 @@ function flattenNotes(nodes) {
     }
     if (node.children && node.children.length > 0) {
       result.push(...flattenNotes(node.children));
+    }
+  }
+  return result;
+}
+
+/**
+ * ツリーから全Structureをフラットに抽出する
+ */
+function flattenStructures(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId });
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenStructures(node.children));
     }
   }
   return result;
@@ -85,6 +100,10 @@ const debouncePromiss = (fn, delay) => {
     });
   }
 }
+
+// テンプレートプレビューで前回選択したノート・テンプレートを記憶する
+let lastPreviewNoteId = "";
+let lastPreviewOtherTemplateId = "";
 
 //テキストの保存処理（デバウンス）
 const writeFn = debouncePromiss((mode, id, txt) => {
@@ -147,6 +166,10 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
+
+  // ID挿入
+  const [idListAnchor, setIdListAnchor] = useState(null);
+  const [idList, setIdList] = useState([]);
 
   // useEffect([]) 内など古いクロージャから最新の mode/id/name/html を参照するための ref
   const modeRef = useRef(mode);
@@ -236,8 +259,7 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
-      // プレビュー設定をリセット
-      setPreviewOtherTemplateId("");
+      // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
 
       //テンプレートを開く
@@ -267,12 +289,13 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用ノート一覧を取得
+      // プレビュー用ノート一覧を取得（前回選択があれば復元）
       GetBinderTree().then((tree) => {
         const notes = flattenNotes(tree.data ?? []);
         setPreviewNotes(notes);
         if (notes.length > 0) {
-          setPreviewNoteId(notes[0].id);
+          const restored = lastPreviewNoteId && notes.some(n => n.id === lastPreviewNoteId);
+          setPreviewNoteId(restored ? lastPreviewNoteId : notes[0].id);
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -341,12 +364,13 @@ function Editor(props) {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
   }, []);
 
-  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定
+  // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定（前回選択があれば復元）
   useEffect(() => {
     if (!templateType) return;
     const others = templateType === "layout" ? previewContents : previewLayouts;
     if (others.length > 0) {
-      setPreviewOtherTemplateId(others[0].id);
+      const restored = lastPreviewOtherTemplateId && others.some(t => t.id === lastPreviewOtherTemplateId);
+      setPreviewOtherTemplateId(restored ? lastPreviewOtherTemplateId : others[0].id);
     }
   }, [templateType, previewLayouts, previewContents]);
 
@@ -435,7 +459,12 @@ function Editor(props) {
       setCursorLine(cursorLineRef.current);
       viewHTML(text);
     } else if (mode === Mode.template) {
-      //viewHTML(text, noteElm);
+      if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
+      // テンプレートをファイルに即時保存してからプレビューを生成
+      await SaveTemplate(id, text);
+      runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+        .then((result) => setHTML(result))
+        .catch((err) => evt.showErrorMessage(err));
     } else {
       //初回時の実行があるか
     }
@@ -1075,49 +1104,10 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
-                  {/** 強調 */}
-                  <Tooltip title={t("editor.bold")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
-                      <FormatBoldIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
-                  {/** イタリック */}
-                  <Tooltip title={t("editor.italic")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
-                      <FormatItalicIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
-                  {/** 打ち消し線 */}
-                  <Tooltip title={t("editor.strikethrough")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
-                      <FormatStrikethroughIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
-                  {/** コードブロック */}
-                  <Tooltip title={t("editor.codeBlock")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
-                      <CodeIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
-                  {/** 引用 */}
-                  <Tooltip title={t("editor.quote")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
-                      <FormatQuoteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
                     <Tooltip title={t("editor.insertSnippet")} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
                         onMouseDown={(e) => e.preventDefault()}
@@ -1145,6 +1135,84 @@ function Editor(props) {
                       ))}
                     </Menu>
                   </>)}
+
+                  {/** ID挿入 */}
+                  <Tooltip title={t("editor.insertId")} placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        const anchor = e.currentTarget;
+                        GetBinderTree().then((tree) => {
+                          const all = flattenStructures(tree.data || []);
+                          const children = all.filter((s) => s.parentId === id);
+                          const others = all.filter((s) => s.parentId !== id && s.id !== id);
+                          setIdList([...children, ...others]);
+                          setIdListAnchor(anchor);
+                        }).catch((err) => evt.showErrorMessage(err));
+                      }}
+                      className="editorBtn">
+                      <NewLabelIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    anchorEl={idListAnchor}
+                    open={Boolean(idListAnchor)}
+                    onClose={() => setIdListAnchor(null)}
+                    disableAutoFocus
+                    disableEnforceFocus
+                    disableRestoreFocus
+                    PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 300 } }}
+                  >
+                    {idList.map((s) => (
+                      <MenuItem key={s.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); }}
+                        sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
+                        {s.name}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+
+                  {/** マークダウン書式ボタン（ノート編集時のみ表示） */}
+                  {mode === Mode.note && <>
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+
+                    {/** 強調 */}
+                    <Tooltip title={t("editor.bold")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                        <FormatBoldIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/** イタリック */}
+                    <Tooltip title={t("editor.italic")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                        <FormatItalicIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/** 打ち消し線 */}
+                    <Tooltip title={t("editor.strikethrough")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                        <FormatStrikethroughIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/** コードブロック */}
+                    <Tooltip title={t("editor.codeBlock")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                        <CodeIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/** 引用 */}
+                    <Tooltip title={t("editor.quote")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                        <FormatQuoteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </>}
 
                 </Container>
 
@@ -1175,22 +1243,6 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** テンプレートプレビューリフレッシュ */}
-                  {mode === Mode.template && <>
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                    <Tooltip title={t("editor.refreshPreview")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="preview" sx={{ mr: 2 }}
-                        onClick={() => {
-                          if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
-                          runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-                            .then((result) => setHTML(result))
-                            .catch((err) => evt.showErrorMessage(err));
-                        }}
-                        className="editorBtn">
-                        <PreviewIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>}
 
                   {/** プレビュー表示トグル */}
                   <Tooltip title={viewer ? t("editor.previewOn") : t("editor.previewOff")} placement="bottom">
@@ -1313,7 +1365,7 @@ function Editor(props) {
                     <div className="previewMenuLeft">
                       <Select
                         value={previewOtherTemplateId}
-                        onChange={(e) => setPreviewOtherTemplateId(e.target.value)}
+                        onChange={(e) => { lastPreviewOtherTemplateId = e.target.value; setPreviewOtherTemplateId(e.target.value); }}
                         size="small"
                         displayEmpty
                         sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
@@ -1324,7 +1376,7 @@ function Editor(props) {
                       </Select>
                       <Select
                         value={previewNoteId}
-                        onChange={(e) => setPreviewNoteId(e.target.value)}
+                        onChange={(e) => { lastPreviewNoteId = e.target.value; setPreviewNoteId(e.target.value); }}
                         size="small"
                         displayEmpty
                         sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -15,6 +15,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// テンプレートのノートデータ
 type tempNote struct {
 	Id      string
 	Name    string
@@ -84,25 +85,60 @@ func (w *wrapper) assetsImage(id string) template.HTML {
 	return template.HTML(fmt.Sprintf(`<img src="%s">`, src))
 }
 
-func (w *wrapper) latestNotes(n int) []*tempNote {
-	return w.getNotes(n, -1)
+func (w *wrapper) childrenNotes(v ...any) []*tempNote {
+
+	lg := len(v)
+
+	//第一引数は件数
+	n := -1
+	if lg >= 1 {
+		wk, ok := v[0].(int)
+		if ok {
+			n = wk
+		} else {
+			slog.Warn("Tepmpalte children()", "arg1", "validation error: number")
+		}
+	}
+
+	//第二引数はノートId
+	id := w.note.Id
+	if lg >= 2 {
+		wk, ok := v[1].(string)
+		if ok {
+			id = wk
+		} else {
+			slog.Warn("Tepmpalte children()", "arg2", "validation error: note id")
+		}
+	}
+
+	return w.children(id, n, -1)
 }
 
-func (w *wrapper) getNotes(limit int, offset int) []*tempNote {
+func (w *wrapper) children(id string, n int, offset int) []*tempNote {
+	return w.getNotes(id, n, -1)
+}
+
+func (w *wrapper) latestNotes(n int) []*tempNote {
+	return w.getNotes("", n, -1)
+}
+
+func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 
 	var err error
 	var notes []*model.Note
 	if w.Local {
-		notes, err = w.owner.db.FindUpdatedNotes(limit, offset)
+		//TODO いるか？
+		notes, err = w.owner.db.FindUpdatedNotes(id, limit, offset)
 	} else {
-		notes, err = w.owner.db.FindPublishNotes(limit, offset)
+		notes, err = w.owner.db.FindPublishNotes(id, limit, offset)
+	}
+
+	if err != nil {
+		slog.Error("FindNote()", "error", err)
+		return nil
 	}
 
 	rtn := make([]*tempNote, len(notes))
-	if err != nil {
-		log.Println(err)
-		return rtn
-	}
 
 	// Structure情報を取得
 	ids := make([]interface{}, len(notes))
@@ -121,6 +157,7 @@ func (w *wrapper) getNotes(limit int, offset int) []*tempNote {
 	return rtn
 }
 
+// 出力形式に変更
 func (w *wrapper) convertNote(n *json.Note) *tempNote {
 
 	var t tempNote
@@ -134,8 +171,11 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 
 	p := fs.HTMLFile(n)
 	m := fs.PublicMetaFile(n)
+
 	t.Link = w.convertURL(p)
 	t.Image = w.convertURL(m)
+
+	//TODO PREV NEXTは？
 
 	return &t
 }
@@ -207,6 +247,16 @@ func safeTemplate(src string) string {
 	return src
 }
 
+func formatDate(d string, f string) string {
+
+	t, e := time.Parse(time.RFC3339, d)
+	if e != nil {
+		slog.Warn("format error", "err", e.Error(), "value", d)
+		return d
+	}
+	return t.Format(f)
+}
+
 func localeDateScript(src string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 <script>
@@ -217,16 +267,18 @@ document.write(d.toLocaleString());
 
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
-		"drawDiagram": w.drawSVG,
-		"replace":     strings.ReplaceAll,
-		"assets":      w.assets,
-		"assetsImage": w.assetsImage,
-		"latestNotes": w.latestNotes,
-		"safe":        safeTemplate,
-		"localeDate":  localeDateScript,
-		"lf2br":       convertLF2BR,
-		"lf2sp":       convertLF2SP,
-		"lf2comma":    convertLF2Comma,
+		"drawDiagram":   w.drawSVG,
+		"replace":       strings.ReplaceAll,
+		"assets":        w.assets,
+		"assetsImage":   w.assetsImage,
+		"childrenNotes": w.childrenNotes,
+		"latestNotes":   w.latestNotes,
+		"safe":          safeTemplate,
+		"localeDate":    localeDateScript,
+		"formatDate":    formatDate,
+		"lf2br":         convertLF2BR,
+		"lf2sp":         convertLF2SP,
+		"lf2comma":      convertLF2Comma,
 	}
 	return funcMap
 }

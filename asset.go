@@ -8,12 +8,59 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"golang.org/x/xerrors"
 )
+
+// knownMimeTypes はシステムの MIME データベースに依存しない拡張子→MIMEマッピング。
+var knownMimeTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".svg":  "image/svg+xml",
+	".webp": "image/webp",
+	".bmp":  "image/bmp",
+	".ico":  "image/x-icon",
+	".avif": "image/avif",
+	".tiff": "image/tiff",
+	".tif":  "image/tiff",
+	".txt":  "text/plain",
+	".csv":  "text/csv",
+	".html": "text/html",
+	".htm":  "text/html",
+	".css":  "text/css",
+	".js":   "text/javascript",
+	".json": "application/json",
+	".xml":  "text/xml",
+	".pdf":  "application/pdf",
+	".zip":  "application/zip",
+	".md":   "text/markdown",
+}
+
+// detectMime はファイル名の拡張子からMIMEタイプを判定する。
+// mime.TypeByExtension を試行し、結果が得られない場合は knownMimeTypes にフォールバックする。
+// いずれでも判定できない場合はバイナリなら "application/octet-stream"、テキストなら "text/plain" を返す。
+func detectMime(name string, binary bool) string {
+	ext := strings.ToLower(filepath.Ext(name))
+	if ext != "" {
+		m := mime.TypeByExtension(ext)
+		if m != "" {
+			return m
+		}
+		if m, ok := knownMimeTypes[ext]; ok {
+			return m
+		}
+	}
+	if binary {
+		return "application/octet-stream"
+	}
+	return "text/plain"
+}
 
 func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
 
@@ -40,6 +87,7 @@ func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
 			a.Name = fn
 			a.Alias = fn
 		}
+		a.Mime = detectMime(fn, a.Binary)
 	}
 
 	_, err = b.editAsset(a, data)
@@ -74,6 +122,7 @@ func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*
 			a.Name = filename
 			a.Alias = filename
 		}
+		a.Mime = detectMime(filename, a.Binary)
 	}
 
 	_, err := b.editAsset(a, data)
@@ -110,6 +159,14 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 		prefix = "Created Asset"
 
 	} else {
+
+		// MIMEが未指定（ファイル変更なし）の場合は既存値を保持
+		if a.Mime == "" {
+			existing, err := b.db.GetAsset(a.Id)
+			if err == nil && existing != nil {
+				a.Mime = existing.Mime
+			}
+		}
 
 		m := model.ConvertAsset(a)
 

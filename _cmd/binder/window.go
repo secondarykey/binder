@@ -26,6 +26,7 @@ type Window struct {
 	commitWindow   *application.WebviewWindow
 	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
 	previewWindow  *application.WebviewWindow
+	syslogWindow   *application.WebviewWindow
 }
 
 func NewWindow(app *api.App) *Window {
@@ -314,6 +315,103 @@ func splitDQSpace(v string) []string {
 	}
 
 	return result
+}
+
+func (r *Window) OpenSyslogWindow() error {
+	// 既に開いていれば前面に出すだけ
+	if r.syslogWindow != nil {
+		r.syslogWindow.Focus()
+		return nil
+	}
+
+	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - System Log",
+		Width:            900,
+		Height:           500,
+		MinWidth:         600,
+		MinHeight:        300,
+		Frameless:        true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?syslog=1",
+	})
+
+	r.syslogWindow = w
+
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.syslogWindow = nil
+	})
+
+	return nil
+}
+
+// SetLogLevel はログレベルを動的に変更する。
+func (r *Window) SetLogLevel(level int) {
+	log.SetLevel(slog.Level(level))
+}
+
+// GetLogLevel は現在のログレベルを返す。
+func (r *Window) GetLogLevel() int {
+	return int(log.GetLevel())
+}
+
+// ReadLogTail はログファイルの末尾を読み取って返す。
+// offset が指定された場合、そのバイト位置以降の新しい内容のみを返す。
+func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
+	path := log.Path()
+	if path == "" {
+		return map[string]interface{}{
+			"content": "",
+			"offset":  int64(0),
+		}, nil
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("ReadLogTail() open error: %+v", err)
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("ReadLogTail() stat error: %+v", err)
+	}
+
+	size := info.Size()
+
+	// 初回呼び出し（offset=0）: 末尾から最大 64KB を読む
+	if offset <= 0 {
+		readStart := size - 64*1024
+		if readStart < 0 {
+			readStart = 0
+		}
+		buf := make([]byte, size-readStart)
+		_, err = f.ReadAt(buf, readStart)
+		if err != nil {
+			return nil, fmt.Errorf("ReadLogTail() read error: %+v", err)
+		}
+		return map[string]interface{}{
+			"content": string(buf),
+			"offset":  size,
+		}, nil
+	}
+
+	// 差分読み取り
+	if offset >= size {
+		return map[string]interface{}{
+			"content": "",
+			"offset":  size,
+		}, nil
+	}
+
+	buf := make([]byte, size-offset)
+	_, err = f.ReadAt(buf, offset)
+	if err != nil {
+		return nil, fmt.Errorf("ReadLogTail() read error: %+v", err)
+	}
+	return map[string]interface{}{
+		"content": string(buf),
+		"offset":  size,
+	}, nil
 }
 
 func (win *Window) Terminate() bool {

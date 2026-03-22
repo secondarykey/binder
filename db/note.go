@@ -37,15 +37,33 @@ func (inst *Instance) FindNotes() ([]*model.Note, error) {
 	return inst.findNote("", "updated_date desc", -1, -1)
 }
 
-func (inst *Instance) FindUpdatedNotes(limit int, offset int) ([]*model.Note, error) {
-	return inst.findNote("", "updated_date desc", limit, offset)
+func (inst *Instance) FindUpdatedNotes(id string, limit int, offset int) ([]*model.Note, error) {
+
+	//TODO ツリーが更新されてないならダメ
+	where := fmt.Sprintf("type = 'note'")
+	if id != "" {
+		where += fmt.Sprintf("and parent_id = '%s'", id)
+	}
+	order := "updated_date desc"
+	return inst.findStructureNotes(where, order, limit, offset)
+
+	//return inst.findNote("", "updated_date desc", limit, offset)
 }
 
-func (inst *Instance) FindPublishNotes(limit int, offset int) ([]*model.Note, error) {
+func (inst *Instance) FindPublishNotes(id string, limit int, offset int) ([]*model.Note, error) {
+
 	// publish_date は structures テーブルで管理されるため、先に公開済み note の ID を取得する
-	structs, err := inst.findStructure(
-		fmt.Sprintf("type = 'note' and !(publish_date = '%s')", TimeZero),
-		"publish_date desc", limit, 0)
+
+	where := fmt.Sprintf("type = 'note' and !(publish_date = '%s')", TimeZero)
+	if id != "" {
+		where += fmt.Sprintf("and parent_id = '%s'", id)
+	}
+	order := "publish_date desc"
+	return inst.findStructureNotes(where, order, limit, offset)
+}
+
+func (inst *Instance) findStructureNotes(where string, order string, limit int, offset int) ([]*model.Note, error) {
+	structs, err := inst.findStructure(where, order, limit, offset)
 	if err != nil {
 		return nil, xerrors.Errorf("findStructure() error: %w", err)
 	}
