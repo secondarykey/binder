@@ -344,6 +344,16 @@ func (r *Window) OpenSyslogWindow() error {
 	return nil
 }
 
+// SetLogLevel はログレベルを動的に変更する。
+func (r *Window) SetLogLevel(level int) {
+	log.SetLevel(slog.Level(level))
+}
+
+// GetLogLevel は現在のログレベルを返す。
+func (r *Window) GetLogLevel() int {
+	return int(log.GetLevel())
+}
+
 // ReadLogTail はログファイルの末尾を読み取って返す。
 // offset が指定された場合、そのバイト位置以降の新しい内容のみを返す。
 func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
