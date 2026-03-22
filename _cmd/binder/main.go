@@ -57,6 +57,11 @@ func main() {
 
 	flag.Parse()
 
+	if err := log.Init(); err != nil {
+		slog.Warn("ログファイルの初期化に失敗: " + err.Error())
+	}
+	defer log.Close()
+
 	app := api.New(ver)
 	set, err := app.Setup()
 	if err != nil {

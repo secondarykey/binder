@@ -3,9 +3,13 @@ package log
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // debug = -4 ,info = 0 warn = 4,error = 8
@@ -18,11 +22,55 @@ const (
 
 var gCtx context.Context
 var def *slog.Logger
+var logFile *os.File
 
 func init() {
 	//slog.SetLogLoggerLevel(TraceLevel)
 	gCtx = context.Background()
 	def = slog.Default()
+}
+
+// Init はログファイルを temp ディレクトリに作成し、
+// stdout とファイルの両方に出力するよう slog を設定する。
+func Init() error {
+	dir := filepath.Join(os.TempDir(), "binder")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	name := time.Now().Format("20060102") + ".log"
+	f, err := os.OpenFile(filepath.Join(dir, name), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	logFile = f
+
+	w := io.MultiWriter(os.Stdout, logFile)
+	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
+		Level: TraceLevel,
+	})
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+	def = logger
+
+	return nil
+}
+
+// Close はログファイルを閉じる。
+func Close() {
+	if logFile != nil {
+		logFile.Close()
+		logFile = nil
+	}
+}
+
+// Path は現在のログファイルのパスを返す。
+// Init が未呼び出しの場合は空文字を返す。
+func Path() string {
+	if logFile == nil {
+		return ""
+	}
+	return logFile.Name()
 }
 
 func SetContext(ctx context.Context) {

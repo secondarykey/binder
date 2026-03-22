@@ -102,7 +102,9 @@
         "gitBash" : "Run with Git Bash",
         "editorProgramError" : "Editor program must contain {file}",
         "license" : "License",
-        "thirdPartyLicense" : "Third Party Licenses"
+        "thirdPartyLicense" : "Third Party Licenses",
+        "systemLog" : "System Log",
+        "openSystemLog" : "Open System Log"
     },
     "binder" : {
         "editTitle" : "Edit Binder",
@@ -226,6 +228,11 @@
         "needUpdateTitle" : "App Update Required",
         "needUpdateMessage" : "This Binder was created with a newer version. Please update the app to open it.",
         "needUpdateVersionInfo" : "Binder version: {{binderVersion}} / App version: {{appVersion}}"
+    },
+    "syslog" : {
+        "title" : "System Log",
+        "clear" : "Clear Display",
+        "scrollToBottom" : "Scroll to Bottom"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
