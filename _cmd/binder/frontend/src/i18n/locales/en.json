@@ -41,7 +41,9 @@
         "assets" : "Assets",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "clipboardEmpty" : "Clipboard image data is empty.",
-        "downloadDocs" : "Download Docs"
+        "download" : "Download",
+        "downloadAll" : "All",
+        "downloadDocs" : "Docs"
     },
     "note" : {
         "editTitle" : "Edit Note",

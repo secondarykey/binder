@@ -323,31 +323,10 @@ func splitDQSpace(v string) []string {
 func (win *Window) DownloadDocs() error {
 	defer log.PrintTrace(log.Func("DownloadDocs()"))
 
-	// バインダー名を取得してファイル名を生成
-	name, err := win.app.GetBinderName()
+	savePath, err := win.downloadSaveDialog("_docs")
 	if err != nil {
-		log.PrintStackTrace(err)
-		return fmt.Errorf("GetBinderName() error\n%+v", err)
+		return err
 	}
-
-	// yyyyMMddHHmmss_{バインダー名}.zip
-	now := time.Now().Format("20060102150405")
-	defaultName := fmt.Sprintf("%s_%s.zip", now, name)
-
-	// 保存先ダイアログを表示
-	savePath, err := win.runtime.Dialog.SaveFile().
-		SetButtonText("Save").
-		AddFilter("ZIP files", "*.zip").
-		SetFilename(defaultName).
-		PromptForSingleSelection()
-	if err != nil {
-		if savePath == "" {
-			return nil
-		}
-		log.PrintStackTrace(err)
-		return fmt.Errorf("SaveFile dialog error\n%+v", err)
-	}
-
 	if savePath == "" {
 		return nil
 	}
@@ -359,6 +338,60 @@ func (win *Window) DownloadDocs() error {
 	}
 
 	return nil
+}
+
+// DownloadAll はバインダー全体をZIPファイルとしてダウンロードする。
+// 保存先ダイアログを表示し、選択されたパスにZIPを書き出す。
+func (win *Window) DownloadAll() error {
+	defer log.PrintTrace(log.Func("DownloadAll()"))
+
+	savePath, err := win.downloadSaveDialog("")
+	if err != nil {
+		return err
+	}
+	if savePath == "" {
+		return nil
+	}
+
+	err = win.app.DownloadAll(savePath)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DownloadAll() error\n%+v", err)
+	}
+
+	return nil
+}
+
+// downloadSaveDialog はダウンロード用の保存先ダイアログを表示し、保存パスを返す。
+// suffix はファイル名のバインダー名の後に付加する文字列（例: "_docs"）。
+func (win *Window) downloadSaveDialog(suffix string) (string, error) {
+
+	// バインダー名を取得してファイル名を生成
+	name, err := win.app.GetBinderName()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("GetBinderName() error\n%+v", err)
+	}
+
+	// yyyyMMddHHmmss_{バインダー名}{suffix}.zip
+	now := time.Now().Format("20060102150405")
+	defaultName := fmt.Sprintf("%s_%s%s.zip", now, name, suffix)
+
+	// 保存先ダイアログを表示
+	savePath, err := win.runtime.Dialog.SaveFile().
+		SetButtonText("Save").
+		AddFilter("ZIP files", "*.zip").
+		SetFilename(defaultName).
+		PromptForSingleSelection()
+	if err != nil {
+		if savePath == "" {
+			return "", nil
+		}
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("SaveFile dialog error\n%+v", err)
+	}
+
+	return savePath, nil
 }
 
 func (r *Window) OpenSyslogWindow() error {

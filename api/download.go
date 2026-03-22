@@ -18,6 +18,19 @@ func (a *App) DownloadDocs(savePath string) error {
 	return nil
 }
 
+// DownloadAll はバインダー全体をZIPファイルとして指定パスに保存する。
+func (a *App) DownloadAll(savePath string) error {
+
+	defer log.PrintTrace(log.Func("DownloadAll()"))
+
+	err := a.current.DownloadAll(savePath)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DownloadAll() error\n%+v", err)
+	}
+	return nil
+}
+
 // GetBinderName はバインダー名を返す。
 func (a *App) GetBinderName() (string, error) {
 
