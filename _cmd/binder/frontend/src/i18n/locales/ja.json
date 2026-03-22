@@ -102,7 +102,9 @@
         "gitBash" : "Git Bashで実行",
         "editorProgramError" : "エディタプログラムに {file} を含めてください",
         "license" : "ライセンス",
-        "thirdPartyLicense" : "サードパーティライセンス"
+        "thirdPartyLicense" : "サードパーティライセンス",
+        "systemLog" : "システムログ",
+        "openSystemLog" : "システムログを開く"
     },
     "binder" : {
         "editTitle" : "Binder編集",
@@ -226,6 +228,11 @@
         "needUpdateTitle" : "アプリの更新が必要",
         "needUpdateMessage" : "このBinderはアプリより新しいバージョンで作成されています。開くにはアプリを更新してください。",
         "needUpdateVersionInfo" : "Binderバージョン: {{binderVersion}} / アプリバージョン: {{appVersion}}"
+    },
+    "syslog" : {
+        "title" : "システムログ",
+        "clear" : "表示クリア",
+        "scrollToBottom" : "末尾へスクロール"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",

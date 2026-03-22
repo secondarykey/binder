@@ -64,6 +64,15 @@ func Close() {
 	}
 }
 
+// Path は現在のログファイルのパスを返す。
+// Init が未呼び出しの場合は空文字を返す。
+func Path() string {
+	if logFile == nil {
+		return ""
+	}
+	return logFile.Name()
+}
+
 func SetContext(ctx context.Context) {
 	gCtx = ctx
 }
