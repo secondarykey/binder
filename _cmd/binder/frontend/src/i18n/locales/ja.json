@@ -232,6 +232,7 @@
     "syslog" : {
         "title" : "システムログ",
         "clear" : "表示クリア",
+        "save" : "ログを保存",
         "scrollToBottom" : "末尾へスクロール"
     },
     "editor" : {
