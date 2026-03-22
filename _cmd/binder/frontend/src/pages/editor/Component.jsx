@@ -1085,46 +1085,49 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                  {/** マークダウン書式ボタン（テンプレート編集時は非表示） */}
+                  {mode !== Mode.template && <>
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
-                  {/** 強調 */}
-                  <Tooltip title={t("editor.bold")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
-                      <FormatBoldIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** 強調 */}
+                    <Tooltip title={t("editor.bold")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                        <FormatBoldIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** イタリック */}
-                  <Tooltip title={t("editor.italic")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
-                      <FormatItalicIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** イタリック */}
+                    <Tooltip title={t("editor.italic")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                        <FormatItalicIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** 打ち消し線 */}
-                  <Tooltip title={t("editor.strikethrough")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
-                      <FormatStrikethroughIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** 打ち消し線 */}
+                    <Tooltip title={t("editor.strikethrough")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                        <FormatStrikethroughIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** コードブロック */}
-                  <Tooltip title={t("editor.codeBlock")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
-                      <CodeIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** コードブロック */}
+                    <Tooltip title={t("editor.codeBlock")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                        <CodeIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** 引用 */}
-                  <Tooltip title={t("editor.quote")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
-                      <FormatQuoteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    {/** 引用 */}
+                    <Tooltip title={t("editor.quote")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                        <FormatQuoteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                  </>}
 
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
