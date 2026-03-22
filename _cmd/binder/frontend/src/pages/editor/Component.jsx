@@ -38,6 +38,7 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import LinkIcon from '@mui/icons-material/Link';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
@@ -58,6 +59,20 @@ function flattenNotes(nodes) {
     }
     if (node.children && node.children.length > 0) {
       result.push(...flattenNotes(node.children));
+    }
+  }
+  return result;
+}
+
+/**
+ * ツリーから全Structureをフラットに抽出する
+ */
+function flattenStructures(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId });
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenStructures(node.children));
     }
   }
   return result;
@@ -151,6 +166,10 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
+
+  // ID挿入
+  const [idListAnchor, setIdListAnchor] = useState(null);
+  const [idList, setIdList] = useState([]);
 
   // useEffect([]) 内など古いクロージャから最新の mode/id/name/html を参照するための ref
   const modeRef = useRef(mode);
@@ -1085,6 +1104,74 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
+                  {/** スニペット挿入 */}
+                  {snippetList.length > 0 && (<>
+                    {/** 区切り */}
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                    <Tooltip title={t("editor.insertSnippet")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
+                        className="editorBtn">
+                        <PlaylistAddIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={snippetAnchor}
+                      open={Boolean(snippetAnchor)}
+                      onClose={() => setSnippetAnchor(null)}
+                      disableAutoFocus
+                      disableEnforceFocus
+                      disableRestoreFocus
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
+                    >
+                      {snippetList.map((s) => (
+                        <MenuItem key={s.id}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleInsertSnippet(s.body)}
+                          sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
+                          {s.name}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </>)}
+
+                  {/** ID挿入 */}
+                  <Tooltip title={t("editor.insertId")} placement="bottom">
+                    <IconButton size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        GetBinderTree().then((tree) => {
+                          const all = flattenStructures(tree.data || []);
+                          const children = all.filter((s) => s.parentId === id);
+                          const others = all.filter((s) => s.parentId !== id && s.id !== id);
+                          setIdList([...children, ...others]);
+                          setIdListAnchor(e.currentTarget);
+                        }).catch((err) => evt.showErrorMessage(err));
+                      }}
+                      className="editorBtn">
+                      <LinkIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    anchorEl={idListAnchor}
+                    open={Boolean(idListAnchor)}
+                    onClose={() => setIdListAnchor(null)}
+                    disableAutoFocus
+                    disableEnforceFocus
+                    disableRestoreFocus
+                    PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 300 } }}
+                  >
+                    {idList.map((s) => (
+                      <MenuItem key={s.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); }}
+                        sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
+                        {s.name}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+
                   {/** マークダウン書式ボタン（ノート編集時のみ表示） */}
                   {mode === Mode.note && <>
                     {/** 区切り */}
@@ -1124,40 +1211,7 @@ function Editor(props) {
                         <FormatQuoteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-
-                    {/** 区切り */}
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
                   </>}
-
-                  {/** スニペット挿入 */}
-                  {snippetList.length > 0 && (<>
-                    <Tooltip title={t("editor.insertSnippet")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
-                        className="editorBtn">
-                        <PlaylistAddIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Menu
-                      anchorEl={snippetAnchor}
-                      open={Boolean(snippetAnchor)}
-                      onClose={() => setSnippetAnchor(null)}
-                      disableAutoFocus
-                      disableEnforceFocus
-                      disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
-                    >
-                      {snippetList.map((s) => (
-                        <MenuItem key={s.id}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleInsertSnippet(s.body)}
-                          sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
-                          {s.name}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  </>)}
 
                 </Container>
 
