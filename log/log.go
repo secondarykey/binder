@@ -47,14 +47,51 @@ func Init() error {
 	logFile = f
 
 	w := io.MultiWriter(os.Stdout, logFile)
-	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
-		Level: &logLevel,
-	})
+	handler := &simpleHandler{w: w, level: &logLevel}
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 	def = logger
 
 	return nil
+}
+
+// simpleHandler はデフォルトの log パッケージに近いシンプルな出力を行う slog.Handler。
+// 出力形式: 2006/01/02 15:04:05 [LEVEL] message
+type simpleHandler struct {
+	w     io.Writer
+	level *slog.LevelVar
+}
+
+func (h *simpleHandler) Enabled(_ context.Context, l slog.Level) bool {
+	return l >= h.level.Level()
+}
+
+func (h *simpleHandler) Handle(_ context.Context, r slog.Record) error {
+	t := r.Time.Format("2006/01/02 15:04:05")
+	_, err := fmt.Fprintf(h.w, "%s [%s] %s\n", t, levelName(r.Level), r.Message)
+	return err
+}
+
+func (h *simpleHandler) WithAttrs(_ []slog.Attr) slog.Handler { return h }
+func (h *simpleHandler) WithGroup(_ string) slog.Handler      { return h }
+
+func levelName(l slog.Level) string {
+	switch {
+	case l <= TraceLevel:
+		return "TRACE"
+	case l <= slog.LevelDebug:
+		return "DEBUG"
+	case l < NoticeLevel:
+		return "INFO"
+	case l < slog.LevelWarn:
+		return "NOTICE"
+	case l < slog.LevelError:
+		return "WARN"
+	case l < EmergencyLevel:
+		return "ERROR"
+	default:
+		return "EMERGENCY"
+	}
 }
 
 // Close はログファイルを閉じる。
