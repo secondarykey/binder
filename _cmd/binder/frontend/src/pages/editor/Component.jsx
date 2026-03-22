@@ -38,7 +38,7 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
-import LinkIcon from '@mui/icons-material/Link';
+import NewLabelIcon from '@mui/icons-material/NewLabel';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
@@ -1151,7 +1151,7 @@ function Editor(props) {
                         }).catch((err) => evt.showErrorMessage(err));
                       }}
                       className="editorBtn">
-                      <LinkIcon fontSize="small" />
+                      <NewLabelIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Menu
