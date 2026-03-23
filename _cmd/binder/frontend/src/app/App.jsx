@@ -213,8 +213,8 @@ function App() {
 
     //アプリバージョンを取得してタイトル用ラベルを生成
     GetVersionInfo().then((info) => {
-      let label = "Binder " + info.version;
-      if (info.dev) {
+      let label = "Binder " + info.Version;
+      if (info.Dev) {
         label += " DEV";
       }
       setAppVersionLabel(label);
