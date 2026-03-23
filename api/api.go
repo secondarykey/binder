@@ -43,8 +43,8 @@ func (app *App) SetCurrent(c *binder.Binder) {
 
 // VersionInfo はバージョン文字列と開発モードかどうかを返す
 type VersionInfo struct {
-	Version string
-	Dev     bool
+	Version string `json:"version"`
+	Dev     bool   `json:"dev"`
 }
 
 // GetVersionInfo はアプリのバージョン情報を返す

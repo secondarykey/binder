@@ -43,7 +43,7 @@ function LicenseSetting() {
 
         {versionInfo && (
           <Typography variant="subtitle1" sx={{ color: 'var(--text-primary)', mb: 2, fontWeight: 'bold' }}>
-            Binder Version {versionInfo.Version}{versionInfo.Dev ? " (DEV)" : ""}
+            Binder Version {versionInfo.version}{versionInfo.dev ? " (DEV)" : ""}
           </Typography>
         )}
 
