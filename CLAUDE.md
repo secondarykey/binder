@@ -167,30 +167,21 @@ csvq（CSVファイルに対するSQL）を使用。binderリポジトリ内の`
 - `binder.json`（バインダールートに配置）: `{"version": "x.y.z", "name": "...", "detail": "..."}` でアプリバージョン・バインダー情報を管理（0.4.5以降 `config.csv` は廃止）
 - 旧形式（`db/schema.version`）は自動マイグレーション後に削除される
 
-**スキーママイグレーション**:
+**マイグレーション**:
 
-DBマイグレーション (`db/convert/`):
-- `010/converter.go` — 0.1.0への移行（assets に binary カラム追加）
-- `020/converter.go` — 0.2.0への移行（structures テーブル追加、parent_id/name/detail を各エンティティから分離）
-- `021/converter.go` — 0.2.1への移行（alias を各エンティティから structures に移動）
-- `022/converter.go` — 0.2.2への移行（CSVは変更なし、FSマイグレーションのみ）
-- `033/converter.go` — 0.3.3への移行（スニペットタイプ削除、テンプレートタイプ名変更）
-- `034/converter.go` — 0.3.4への移行（templates に seq カラム追加）
-- `045/converter.go` — 0.4.5への移行（config.csv を削除、binder.json へ移行）
-- `047/converter.go` — 0.4.7への移行（publish_date/republish_date を structures に集約、notes/diagrams から削除）
-- `048/converter.go` — 0.4.8への移行（CSVは変更なし、FSマイグレーションのみ）
-- `core/core.go` — コンバーターフレームワーク（`Converter` 型、`FileSet` 追跡）
-- `convert.go` — DBコンバーターのオーケストレーション
+マイグレーションは **アプリレベル** と **バインダーレベル** の2種類がある。
 
-FSマイグレーション (`fs/convert/`):
-- `migrate.go` — マイグレーション振り分け
-- `convert047.go` — `MigrateV047()`: `docs/` ディレクトリを削除
-- `convert048.go` — `MigrateV048()`: `assets/{noteId}-meta` → `assets/meta/{noteId}` にリネーム
+**アプリレベルマイグレーション** (`setup/setup.go` の `migrateApp()`):
+- `~/.binder/` 配下のアプリ全体の設定・リソースを更新する処理
+- `setting.json` の `appVersion` フィールドで前回起動時のバージョンを記録し、バージョン変更を検出する
+- バージョンが変わった場合または開発モードの場合に `UpdateDefaults()` を実行し、`_default/` のテーマ・言語ファイルを最新に上書きする
+- `EnsureExists()` の末尾で呼ばれる。バインダーとは無関係にアプリ起動ごとに実行される
 
-バインダーレベルマイグレーション (`convert/`):
-- `convert.go` — マイグレーション全体を調整（DB + FS を順次実行、binder.json を更新してコミット）
-- `meta.go` — `binder.json` の読み込み（`db/schema.version` へのフォールバック付き）
-- `config.go` — 0.4.5 移行用: `config.csv` 読み込みと CSV エスケープ解除
+**バインダーレベルマイグレーション** (`setup/convert/`):
+- 個々のバインダー（gitリポジトリ）内のDBスキーマ・ファイル構造を更新する処理
+- `binder.json` のバージョンとアプリバージョンを比較し、古い場合に `setup.Convert()` → `convert.Run()` で移行を実行する
+- バインダーを開く時にのみ実行される（`api.App.CheckCompat()` → フロントエンド確認 → `api.App.Convert()`）
+- 各バージョンの移行詳細は `setup/convert/CLAUDE.md` を参照
 
 **DAO コード生成**:
 - `_cmd/gen/main.go` が `db/model/*.go` の構造体タグ（`db:"col_name"`, `db:"id:key"`, `db:"col:insert"`）を読んで `db/*_dao.go` を生成
@@ -200,50 +191,80 @@ FSマイグレーション (`fs/convert/`):
 
 ユーザー設定はホームディレクトリの`binder/setting.json`に保存（ウィンドウ位置、git設定、外観）。`settings/`パッケージで管理。
 
-### テーマ（ダーク/ライトモード）
+### テーマ（外部CSSファイル）
 
-UIの色は `_cmd/binder/frontend/src/assets/theme.css` のCSS custom propertiesで一元管理している。
+テーマは `setup/_assets/themes/` にデフォルトCSSファイルとして管理し、Go embedでバイナリに埋め込む。アプリ起動時に `~/.binder/themes/_default/` へ配置される。ユーザーは `~/.binder/themes/` に独自CSSを追加でき、同名ファイルはユーザー側が優先される。
 
-- **ダーク（デフォルト）**: `:root` に定義された変数値が適用される
-- **ライト**: `<html data-theme="light">` を設定すると `[data-theme="light"]` セレクタの値に切り替わる
-- 色の追加・変更は `theme.css` の変数を編集する。CSSやJSXにハードコードしないこと
+**デフォルトテーマの編集**:
+- `setup/_assets/themes/dark.css` — ダークテーマ
+- `setup/_assets/themes/light.css` — ライトテーマ（darkの全変数を含むこと）
+
+**CSSファイル形式**:
+```css
+/* @theme-name: Dark */
+:root {
+  --bg-app: #050505;
+  --text-primary: #f1f1f1;
+  ...
+}
+```
+- ファイル名（拡張子除く）= テーマID（`setting.json` の `theme` に保存される値）
+- 1行目の `/* @theme-name: ... */` コメントが設定画面での表示名。無ければファイル名を使用
+- CSS変数の追加・変更はこのファイルを編集する。CSSやJSXにハードコードしないこと
+
+**配置の仕組み**:
+- `setup/externals.go` の `installThemes()` が `_assets/themes/` から `~/.binder/themes/_default/` にコピー
+- 初回起動時: ファイルが存在しなければコピー（`force=false`）
+- アプリバージョンアップ時・開発モード時: 常に上書き（`setup.UpdateDefaults()` → `force=true`）
+- バージョン比較は `setting.json` の `appVersion` フィールドで管理（`setup/setup.go` の `migrateApp()`）
+
+**フロントエンドでの利用**:
 - `var(--変数名)` をsx prop / inline style / CSS いずれでも使用可能
+- テーマ切り替えは `applyTheme(themeId)`（`_cmd/binder/frontend/src/theme.js`）でGoからCSS文字列を取得し `<style>` タグに注入
 - **対象外**: エディタtextareaのフォント色・背景色（FontDialog設定で上書き）、プレビューiframe内のHTML、Mermaidテーマ
 
-**テーマ切り替え（JS）**:
+**Go API** (`api/setting.go`):
+- `GetThemeList()` — 利用可能なテーマ一覧
+- `GetThemeCSS(id)` — 指定テーマのCSS文字列を返す
+
+### 言語（外部JSONファイル）
+
+言語ファイルは `setup/_assets/languages/` にデフォルトJSONファイルとして管理し、Go embedでバイナリに埋め込む。テーマと同じ `_default/` ディレクトリ分離パターンで `~/.binder/languages/` に配置される。
+
+**デフォルト言語ファイルの編集**:
+- `setup/_assets/languages/en.json` — 英語
+- `setup/_assets/languages/ja.json` — 日本語
+
+**JSONファイル形式**:
+```json
+{
+  "code": "English",
+  "menu.binder": "Binder",
+  ...
+}
+```
+- ファイル名（拡張子除く）= 言語コード（`setting.json` の `language` に保存される値）
+- `"code"` キーが設定画面での表示名
+- 翻訳キーのIDは表示を行うコンポーネントの名称・区分で発行する
+
+**フロントエンドでの利用**:
+
+コンポーネントでは `useTranslation` フックで翻訳テキストを取得する:
 ```js
-// ライトモードに切り替え
-document.documentElement.dataset.theme = 'light';
-// ダークモードに戻す
-delete document.documentElement.dataset.theme;
-```
-
-## テキストの設定
-
-画面表示を行うテキストは、`_cmd/binder/frontend/src/i18n/locales`の各言語(ja,en)のjsonでIDを追加する。
-
-IDは表示を行うコンポーネントの名称、区分などで発行する
-
-利用するコンポーネントでは
-
-```
 import "../i18n/config";
 import { useTranslation } from 'react-i18next'
-```
 
-で読み込み
-
-```
- const {t} = useTranslation();
-```
-
-を行い
-
-```
+const {t} = useTranslation();
 t("menu.setting")
 ```
 
-のように取得する
+言語の動的読み込みは `loadLanguage(code)`（`_cmd/binder/frontend/src/i18n/config.jsx`）でGoから翻訳JSONを取得し `i18n.addResourceBundle()` で登録する。
+
+**Go API** (`api/setting.go`):
+- `GetLanguageList()` — 利用可能な言語一覧
+- `GetLanguageData(code)` — 指定言語のJSON文字列を返す
+
+**配置の仕組みはテーマと同じ**: `setup/externals.go` の `installLanguages()` が管理。優先順位もテーマと同様（ユーザーディレクトリ > `_default/`）。
 
 
 ## コーディング規約

@@ -67,11 +67,6 @@ func Convert(dir string, ver *Version) error {
 		return xerrors.Errorf("convert.Run() error: %w", err)
 	}
 
-	// マイグレーション時にデフォルトテーマ・言語ファイルを最新に更新
-	if err := UpdateDefaults(); err != nil {
-		slog.Warn("Convert: UpdateDefaults", "Error", err)
-	}
-
 	// 0.7.2 移行時: ユーザデータを初期作成する
 	if result.UserDataRequired {
 		key, err := GetUserKey()

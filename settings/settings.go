@@ -18,11 +18,12 @@ const (
 )
 
 type Setting struct {
-	Position *Position `json:"position"`
-	Path     *Path     `json:"path"`
-	Look     *Look     `json:"lookAndFeel"`
-	Git      *Git      `json:"git"`
-	Language string    `json:"language"`
+	Position   *Position `json:"position"`
+	Path       *Path     `json:"path"`
+	Look       *Look     `json:"lookAndFeel"`
+	Git        *Git      `json:"git"`
+	Language   string    `json:"language"`
+	AppVersion string    `json:"appVersion,omitempty"`
 }
 
 func (s Setting) IsDefault() bool {
@@ -321,6 +322,20 @@ func SaveGit(g *Git) error {
 func SaveTheme(theme string) error {
 	obj := Get()
 	obj.Look.Theme = theme
+	return obj.save()
+}
+
+// GetAppVersion は setting.json に保存された前回起動時のアプリバージョンを返す。
+// 未設定の場合は空文字を返す。
+func GetAppVersion() string {
+	obj := Get()
+	return obj.AppVersion
+}
+
+// SaveAppVersion は現在のアプリバージョンを setting.json に保存する。
+func SaveAppVersion(ver string) error {
+	obj := Get()
+	obj.AppVersion = ver
 	return obj.save()
 }
 

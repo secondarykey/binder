@@ -63,11 +63,6 @@ func main() {
 	defer log.Close()
 
 	app := api.New(ver)
-	set, err := app.Setup()
-	if err != nil {
-		log.PrintStackTrace(err)
-	}
-
 	win := NewWindow(app)
 
 	// 1. アプリケーション作成
@@ -86,7 +81,13 @@ func main() {
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
 	app.SetDevMode(wailsApp.Env.Info().Debug)
 
-	// 2. ウィンドウ作成
+	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
+	set, err := app.Setup()
+	if err != nil {
+		log.PrintStackTrace(err)
+	}
+
+	// 3. ウィンドウ作成
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:                  "Binder",
 		X:                      set.Position.Left,
@@ -106,7 +107,7 @@ func main() {
 		window.Center()
 	}
 
-	// 3. Wails ランタイムを注入して起動処理を実行
+	// 4. Wails ランタイムを注入して起動処理を実行
 	win.runtime = wailsApp
 	win.window = window
 
@@ -143,7 +144,7 @@ func main() {
 		wailsApp.Event.Emit("binder:filedrop:done")
 	})
 
-	// 4. 実行
+	// 5. 実行
 	err = wailsApp.Run()
 	if err != nil {
 		println("Error:", err.Error())
