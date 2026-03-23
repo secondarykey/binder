@@ -59,8 +59,6 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
       })
     });
 
-    evt.changeTitle(t("commitModal.modifiedFiles"));
-
     //更新一覧を取得
     GetModifiedTree().then((tree) => {
 

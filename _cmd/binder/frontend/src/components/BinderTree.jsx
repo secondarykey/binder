@@ -8,6 +8,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
@@ -17,7 +18,7 @@ import { Events, Browser } from '@wailsio/runtime';
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
          EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow ,SelectFile } from '../../bindings/main/window';
+import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -145,6 +146,9 @@ function BinderTree(props) {
 
   // Add サブメニューのアンカー要素
   const [addMenuAnchor, setAddMenuAnchor] = useState(null);
+
+  // ダウンロードサブメニューのアンカー要素
+  const [downloadMenuAnchor, setDownloadMenuAnchor] = useState(null);
 
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
@@ -603,6 +607,10 @@ function BinderTree(props) {
       <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
         <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
       </MenuItem>
+      {/** ダウンロード */}
+      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
+        <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
+      </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}
       <MenuItem onClick={() => { setDisplayMode('none'); closeMoreMenu(); }}>
@@ -624,6 +632,23 @@ function BinderTree(props) {
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
         {t("tree.publish")}
+      </MenuItem>
+    </Menu>
+
+    {/** ダウンロードサブメニュー: 全体 / docs */}
+    <Menu
+      open={Boolean(downloadMenuAnchor)}
+      onClose={() => { setDownloadMenuAnchor(null); closeMoreMenu(); }}
+      anchorEl={downloadMenuAnchor}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      slotProps={{ paper: { sx: { minWidth: 120 } } }}
+    >
+      <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadAll(); }}>
+        {t("tree.downloadAll")}
+      </MenuItem>
+      <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadDocs(); }}>
+        {t("tree.downloadDocs")}
       </MenuItem>
     </Menu>
 

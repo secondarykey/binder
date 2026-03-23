@@ -11,12 +11,17 @@ import (
 )
 
 const (
-	configYml = "./_cmd/binder/build/config.yml"
-	configRg  = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	configFmt = `  version: "%v"`
-	packJsn   = "./_cmd/binder/frontend/package.json"
-	packRg    = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	packFmt   = `  "version": "%v",`
+	configYml   = "./_cmd/binder/build/config.yml"
+	configRg    = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	configFmt   = `  version: "%v"`
+	packJsn     = "./_cmd/binder/frontend/package.json"
+	packRg      = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	packFmt     = `  "version": "%v",`
+	winInfoJsn  = "./_cmd/binder/build/windows/info.json"
+	winInfoRg1  = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoRg2  = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoFmt1 = `        "file_version": "%v"`
+	winInfoFmt2 = `            "ProductVersion": "%v",`
 )
 
 const inqury = `
@@ -202,14 +207,20 @@ type op struct {
 	input  string
 	output string
 	v      *ver
+	rgs    []*rgSet
+}
+
+type rgSet struct {
 	xp     string
 	format string
+	rg     *regexp.Regexp
 }
 
 func write(v *ver) error {
 	ops := []*op{
-		&op{configYml, "", v, configRg, configFmt},
-		&op{packJsn, "", v, packRg, packFmt},
+		&op{configYml, "", v, []*rgSet{&rgSet{configRg, configFmt, nil}}},
+		&op{packJsn, "", v, []*rgSet{&rgSet{packRg, packFmt, nil}}},
+		&op{winInfoJsn, "", v, []*rgSet{&rgSet{winInfoRg1, winInfoFmt1, nil}, &rgSet{winInfoRg2, winInfoFmt2, nil}}},
 	}
 
 	for _, o := range ops {
@@ -229,7 +240,10 @@ func write(v *ver) error {
 
 func writeFile(o *op) error {
 
-	re := regexp.MustCompile(o.xp)
+	for _, set := range o.rgs {
+		rg := regexp.MustCompile(set.xp)
+		set.rg = rg
+	}
 
 	in, err := os.Open(o.input)
 	if err != nil {
@@ -254,10 +268,14 @@ func writeFile(o *op) error {
 
 		line := scanner.Text()
 
-		match := re.FindStringSubmatch(line)
-		if len(match) > 1 {
-			line = fmt.Sprintf(o.format, o.v)
+		for _, set := range o.rgs {
+			match := set.rg.FindStringSubmatch(line)
+			if len(match) > 1 {
+				line = fmt.Sprintf(set.format, o.v)
+				break
+			}
 		}
+
 		fmt.Fprintln(out, line)
 	}
 

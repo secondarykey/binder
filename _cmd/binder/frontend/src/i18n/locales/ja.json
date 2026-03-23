@@ -40,7 +40,10 @@
         "diagram" : "ダイアグラム",
         "assets" : "アセット",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
-        "clipboardEmpty" : "クリップボード画像のデータが空です"
+        "clipboardEmpty" : "クリップボード画像のデータが空です",
+        "download" : "ダウンロード",
+        "downloadAll" : "全体",
+        "downloadDocs" : "docs"
     },
     "note" : {
         "editTitle" : "ノート編集",

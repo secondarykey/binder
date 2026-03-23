@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import { Box, Typography } from "@mui/material";
 
-import { GetLicense, GetThirdPartyLicenses } from "../../bindings/binder/api/app";
+import { GetLicense, GetThirdPartyLicenses, GetVersionInfo } from "../../bindings/binder/api/app";
 import { EventContext } from "../Event";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -17,8 +17,14 @@ function LicenseSetting() {
 
   const [license, setLicense] = useState("");
   const [thirdParty, setThirdParty] = useState("");
+  const [versionInfo, setVersionInfo] = useState(null);
 
   useEffect(() => {
+    GetVersionInfo().then((info) => {
+      setVersionInfo(info);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
     GetLicense().then((text) => {
       setLicense(text);
     }).catch((err) => {
@@ -34,6 +40,12 @@ function LicenseSetting() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ margin: '20px 24px', flex: 1, overflowY: 'auto' }}>
+
+        {versionInfo && (
+          <Typography variant="subtitle1" sx={{ color: 'var(--text-primary)', mb: 2, fontWeight: 'bold' }}>
+            Binder Version {versionInfo.version}{versionInfo.dev ? " (DEV)" : ""}
+          </Typography>
+        )}
 
         <Typography variant="subtitle2" sx={{ color: 'var(--text-primary)', mb: 1 }}>
           {t("setting.license")}
