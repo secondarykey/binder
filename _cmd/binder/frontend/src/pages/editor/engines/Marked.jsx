@@ -17,7 +17,7 @@ class MarkedScript {
           Scripter.get(URL).then( (s) => {
             var objFunc = new Function(s);
             objFunc();
-            MarkedScript.registerAlertExtension();
+            //MarkedScript.registerAlertExtension();
             res();
           }).catch( (err) => {
             rej(err);
