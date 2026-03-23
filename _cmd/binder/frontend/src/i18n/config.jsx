@@ -1,28 +1,13 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
-
-/**
- * 本番環境では、翻訳ファイルはサーバーから取得するようにする。
- * {HOME}/.binder/locales/*.json
- * を元に形成され、*.json内には、code = その言語の名称が保存され、
- * {HTTP}/locales.json  がそのコード一覧を返してくれる。
- * 
- * 開発環境では、ローカルの翻訳ファイルを使用する。
- */
-import localeEn from "./locales/en.json";
-import localeJa from "./locales/ja.json";
+import { GetLanguageData } from '../../bindings/binder/api/app'
 
 i18n
     .use(initReactI18next)
-    .use(LanguageDetector)
     .init({
         fallbackLng: 'en',
         returnEmptyString: false,
-        resources: {
-            ja: { translation: localeJa },
-            en: { translation: localeEn }
-        },
+        resources: {},
         interpolation: {
             escapeValue: false
         },
@@ -30,5 +15,24 @@ i18n
             transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'span']
         }
     })
+
+/**
+ * 指定言語コードの翻訳データを動的に読み込み、i18next に登録する。
+ * ~/.binder/languages/ から Go API 経由で JSON を取得する。
+ */
+export async function loadLanguage(code) {
+    try {
+        const jsonStr = await GetLanguageData(code);
+        const data = JSON.parse(jsonStr);
+        i18n.addResourceBundle(code, 'translation', data, true, true);
+        await i18n.changeLanguage(code);
+    } catch (err) {
+        console.error('Failed to load language:', code, err);
+        // en にフォールバック（ただし無限ループ防止）
+        if (code !== 'en') {
+            await loadLanguage('en');
+        }
+    }
+}
 
 export default i18n;

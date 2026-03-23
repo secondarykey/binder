@@ -24,9 +24,17 @@ func EnsureExists(ver *Version) error {
 		return xerrors.Errorf("installSnippets() error: %w", err)
 	}
 
-	//TODO 将来
-	//locales
-	//theme
+	// ~/.binder/themes/_default/ にデフォルトテーマを配置
+	err = installThemes()
+	if err != nil {
+		return xerrors.Errorf("installThemes() error: %w", err)
+	}
+
+	// ~/.binder/languages/_default/ にデフォルト言語ファイルを配置
+	err = installLanguages()
+	if err != nil {
+		return xerrors.Errorf("installLanguages() error: %w", err)
+	}
 
 	//暗号化キーが存在しない場合
 	if !isExistsUserKey() {
