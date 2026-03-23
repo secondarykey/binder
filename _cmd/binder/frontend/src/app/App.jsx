@@ -270,6 +270,8 @@ function App() {
    */
   const handleClickHome = () => {
     CloseBinder().then(() => {
+      setPageTitle("");
+      setBinderName("");
       nav("/");
     }).catch((err) => {
       evt.showErrorMessage(err);
