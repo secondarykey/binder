@@ -17,7 +17,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
 import { SavePosition,Terminate } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -65,10 +65,15 @@ function App() {
   // 非テンプレートエディタルートでのみサイドバートグルを表示する
   const isNonTemplateEditor = /^\/editor\/(?!template)/.test(location.pathname);
 
+  // バインダー未選択画面（履歴、新規作成、リモート）かどうか
+  const isBinderOpenScreen = ['/', '/file/new', '/file/remote'].includes(location.pathname);
+
   //文書名（ページタイトル: ノート名・画面名など）
   const [pageTitle, setPageTitle] = useState("");
   //開いているBinder名
   const [binderName, setBinderName] = useState("");
+  //アプリバージョンラベル（バインダー未選択画面で表示）
+  const [appVersionLabel, setAppVersionLabel] = useState("Binder");
   const [pin, setPin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
@@ -206,6 +211,15 @@ function App() {
       loadBinderName();
     });
 
+    //アプリバージョンを取得してタイトル用ラベルを生成
+    GetVersionInfo().then((info) => {
+      let label = "Binder " + info.version;
+      if (info.dev) {
+        label += " DEV";
+      }
+      setAppVersionLabel(label);
+    }).catch(() => {});
+
     //パス設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
     GetPath().then((path) => {
       if (path?.runWithOpen) {
@@ -306,7 +320,7 @@ function App() {
           </Tooltip>
 
           <Typography variant="body1" component="div" noWrap>
-            {binderName}
+            {isBinderOpenScreen ? appVersionLabel : binderName}
           </Typography>
           {/** サイドバー開閉: ツリー画面（非テンプレートエディタ）のみ表示 */}
           {isNonTemplateEditor && (
