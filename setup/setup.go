@@ -24,14 +24,14 @@ func EnsureExists(ver *Version) error {
 		return xerrors.Errorf("installSnippets() error: %w", err)
 	}
 
-	// ~/.binder/themes/_default/ にデフォルトテーマを配置
-	err = installThemes()
+	// ~/.binder/themes/_default/ にデフォルトテーマを配置（存在しなければ）
+	err = installThemes(false)
 	if err != nil {
 		return xerrors.Errorf("installThemes() error: %w", err)
 	}
 
-	// ~/.binder/languages/_default/ にデフォルト言語ファイルを配置
-	err = installLanguages()
+	// ~/.binder/languages/_default/ にデフォルト言語ファイルを配置（存在しなければ）
+	err = installLanguages(false)
 	if err != nil {
 		return xerrors.Errorf("installLanguages() error: %w", err)
 	}

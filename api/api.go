@@ -6,6 +6,7 @@ import (
 
 	"binder"
 	"binder/log"
+	"binder/setup"
 
 	"fmt"
 )
@@ -30,9 +31,15 @@ func New(version string) *App {
 	return &app
 }
 
-// SetDevMode は開発モードフラグを設定する
+// SetDevMode は開発モードフラグを設定する。
+// 開発モードの場合、デフォルトテーマ・言語ファイルを最新に上書きする。
 func (app *App) SetDevMode(dev bool) {
 	app.devMode = dev
+	if dev {
+		if err := setup.UpdateDefaults(); err != nil {
+			slog.Warn("SetDevMode: UpdateDefaults", "Error", err)
+		}
+	}
 }
 
 func (app *App) SetCurrent(c *binder.Binder) {
