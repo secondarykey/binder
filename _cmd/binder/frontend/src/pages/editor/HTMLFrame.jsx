@@ -60,7 +60,16 @@ class HTMLFrame extends React.Component {
 
     // <head> 内を同期（<style>, <meta>, <link>, <title>, <script> 等すべて）
     // innerHTML で一括置換し、スタイルが途切れる瞬間を作らない
+    // ただし <script> は innerHTML では実行されないため createElement で再作成する
     iDoc.head.innerHTML = newDoc.head.innerHTML;
+    for (const old of Array.from(iDoc.head.querySelectorAll('script'))) {
+      const script = iDoc.createElement('script');
+      for (const attr of old.attributes) {
+        script.setAttribute(attr.name, attr.value);
+      }
+      script.textContent = old.textContent;
+      old.parentNode.replaceChild(script, old);
+    }
 
     this.postProcess(iDoc);
   }
