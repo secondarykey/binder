@@ -55,23 +55,31 @@ class HTMLFrame extends React.Component {
     const parser = new DOMParser();
     const newDoc = parser.parseFromString(html, 'text/html');
 
+    // <head> 内を同期（<style>, <meta>, <link>, <title>, <script> 等すべて）
+    // innerHTML で一括置換し、スタイルが途切れる瞬間を作らない
+    iDoc.head.innerHTML = newDoc.head.innerHTML;
+
     // body を差し替え
     iDoc.body.innerHTML = newDoc.body.innerHTML;
 
-    // <head> 内を同期（<style>, <meta>, <link>, <title>, <script> 等すべて）
-    // innerHTML で一括置換し、スタイルが途切れる瞬間を作らない
-    // ただし <script> は innerHTML では実行されないため createElement で再作成する
-    iDoc.head.innerHTML = newDoc.head.innerHTML;
-    for (const old of Array.from(iDoc.head.querySelectorAll('script'))) {
-      const script = iDoc.createElement('script');
+    // innerHTML で挿入された <script> は実行されないため createElement で再作成する
+    this.activateScripts(iDoc);
+
+    this.postProcess(iDoc);
+  }
+
+  /**
+   * innerHTML で挿入された <script> を createElement で再作成し実行させる
+   */
+  activateScripts(doc) {
+    for (const old of Array.from(doc.querySelectorAll('script'))) {
+      const script = doc.createElement('script');
       for (const attr of old.attributes) {
         script.setAttribute(attr.name, attr.value);
       }
       script.textContent = old.textContent;
       old.parentNode.replaceChild(script, old);
     }
-
-    this.postProcess(iDoc);
   }
 
   /**
