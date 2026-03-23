@@ -59,13 +59,8 @@ class HTMLFrame extends React.Component {
     iDoc.body.innerHTML = newDoc.body.innerHTML;
 
     // <head> 内を同期（<style>, <meta>, <link>, <title>, <script> 等すべて）
-    // 既存の head 子要素をクリアして新しい HTML の head 内容を移植
-    while (iDoc.head.firstChild) {
-      iDoc.head.removeChild(iDoc.head.firstChild);
-    }
-    for (const node of Array.from(newDoc.head.childNodes)) {
-      iDoc.head.appendChild(iDoc.adoptNode(node));
-    }
+    // innerHTML で一括置換し、スタイルが途切れる瞬間を作らない
+    iDoc.head.innerHTML = newDoc.head.innerHTML;
 
     this.postProcess(iDoc);
   }
