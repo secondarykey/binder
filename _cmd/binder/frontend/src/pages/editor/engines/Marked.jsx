@@ -17,12 +17,52 @@ class MarkedScript {
           Scripter.get(URL).then( (s) => {
             var objFunc = new Function(s);
             objFunc();
+            MarkedScript.registerAlertExtension();
             res();
           }).catch( (err) => {
             rej(err);
           });
         })
         return rtn;
+    }
+
+    /**
+     * GitHub スタイルのアラート拡張を登録する
+     *
+     * blockquote 内の最初の行が [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]
+     * のいずれかである場合、対応するスタイル付きアラートブロックに変換する。
+     */
+    static registerAlertExtension() {
+        const alertTypes = {
+            NOTE:      { label: 'Note',      color: '#1f6feb', icon: 'ℹ' },
+            TIP:       { label: 'Tip',       color: '#238636', icon: '💡' },
+            IMPORTANT: { label: 'Important', color: '#8957e5', icon: '📣' },
+            WARNING:   { label: 'Warning',   color: '#d29922', icon: '⚠' },
+            CAUTION:   { label: 'Caution',   color: '#da3633', icon: '🔴' },
+        };
+
+        marked.marked.use({
+            renderer: {
+                blockquote(token) {
+                    const html = this.parser.parse(token.tokens);
+                    // <p> の先頭にアラートマーカーがあるか確認
+                    const match = html.match(/^<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n?/);
+                    if (!match) {
+                        return `<blockquote>\n${html}</blockquote>\n`;
+                    }
+
+                    const type = match[1];
+                    const cfg = alertTypes[type];
+                    // マーカー行を除去した本文
+                    const body = html.replace(/^<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n?/, '<p>');
+
+                    return `<div class="markdown-alert markdown-alert-${type.toLowerCase()}" style="border-left: 4px solid ${cfg.color}; padding: 8px 16px; margin: 16px 0; border-radius: 4px;">
+  <p class="markdown-alert-title" style="font-weight: 600; color: ${cfg.color}; margin: 0 0 4px 0;">${cfg.icon} ${cfg.label}</p>
+  ${body}
+</div>\n`;
+                }
+            }
+        });
     }
 
     static async parse(txt) {
