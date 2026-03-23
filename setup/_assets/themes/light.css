@@ -1,0 +1,75 @@
+/* @theme-name: Light */
+:root {
+  /* --- 背景 --- */
+  --bg-app:           #f5f5f5;
+  --bg-titlebar:      #e8e8e8;
+  --bg-sidebar:       #e0e0e0;
+  --bg-panel:         #f0f0f0;
+  --bg-surface:       #ffffff;
+  --bg-elevated:      #eaeaea;
+  --bg-overlay:       #e0e0e0;
+  --bg-dialog:        #ffffff;
+  --bg-dropdown:      #ffffff;
+  --bg-button:        #d8d8d8;
+
+  /* --- テキスト --- */
+  --text-primary:     #1a1a1a;
+  --text-secondary:   #333333;
+  --text-tertiary:    #666666;
+  --text-muted:       #888888;
+  --text-disabled:    #aaaaaa;
+  --text-faint:       #bbbbbb;
+
+  /* --- ボーダー --- */
+  --border-primary:   #d0d0d0;
+  --border-subtle:    #e0e0e0;
+  --border-input:     #cccccc;
+  --border-strong:    #bbbbbb;
+
+  /* --- アクセント（共通） --- */
+  --accent-blue:      #3333ff;
+  --accent-drag:      #1a73e8;
+  --accent-orange:    #cc5511;
+  --accent-green:     #2e7d32;
+  --accent-red:       #f44336;
+  --accent-error:     #ff8888;
+  --accent-active:    #00ff00;
+
+  /* --- 選択/ハイライト --- */
+  --selected-bg:      #d0e0ff;
+  --selected-hover:   #b0c8f0;
+  --selected-text:    #1565c0;
+  --selected-menu:    #e0e8f0;
+
+  /* --- hover --- */
+  --hover-overlay:    rgba(0, 0, 0, 0.04);
+  --hover-menuitem:   #eeeeee;
+  --hover-tree:       rgba(0, 0, 255, 0.08);
+  --hover-tree-sel:   rgba(0, 0, 255, 0.15);
+
+  /* --- フローティングボタン --- */
+  --float-bg:         rgba(255, 255, 255, 0.9);
+  --float-bg-hover:   rgba(230, 230, 230, 0.95);
+  --float-danger:     rgba(255, 200, 200, 0.95);
+
+  /* --- スクロールバー --- */
+  --scrollbar-track:  #e0e0e0;
+  --scrollbar-thumb:  #bbbbbb;
+  --scrollbar-hover:  #999999;
+
+  /* --- アイコン --- */
+  --icon-color:       #333333;
+
+  /* --- スプリッター --- */
+  --splitter-dot:       #bbbbbb;
+  --splitter-dot-hover: #6666ff;
+  --splitter-hover-bg:  #6666ff;
+
+  /* --- Tree DnD --- */
+  --tree-inside-bg:   rgb(220, 225, 230);
+
+  /* --- input-box --- */
+  --input-bg:         rgba(240, 240, 240, 1);
+  --input-bg-focus:   rgba(255, 255, 255, 1);
+  --input-btn-hover-text: #333333;
+}

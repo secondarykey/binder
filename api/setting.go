@@ -93,3 +93,27 @@ func (a *App) GetFontNames() ([]string, error) {
 	names := binder.FontNames()
 	return names, nil
 }
+
+// GetThemeList は利用可能なテーマ一覧を返す。
+func (a *App) GetThemeList() ([]settings.ThemeInfo, error) {
+	defer log.PrintTrace(log.Func("GetThemeList()"))
+	return settings.ListThemes()
+}
+
+// GetThemeCSS は指定IDのテーマCSSを返す。
+func (a *App) GetThemeCSS(id string) (string, error) {
+	defer log.PrintTrace(log.Func("GetThemeCSS()"))
+	return settings.ReadThemeCSS(id)
+}
+
+// GetLanguageList は利用可能な言語一覧を返す。
+func (a *App) GetLanguageList() ([]settings.LanguageInfo, error) {
+	defer log.PrintTrace(log.Func("GetLanguageList()"))
+	return settings.ListLanguages()
+}
+
+// GetLanguageData は指定コードの言語JSONを返す。
+func (a *App) GetLanguageData(code string) (string, error) {
+	defer log.PrintTrace(log.Func("GetLanguageData()"))
+	return settings.ReadLanguageJSON(code)
+}
