@@ -58,16 +58,14 @@ class HTMLFrame extends React.Component {
     // body を差し替え
     iDoc.body.innerHTML = newDoc.body.innerHTML;
 
-    // <style> タグを同期（外観が変わった場合に対応）
-    const newStyles = Array.from(newDoc.head.querySelectorAll('style'))
-      .map(s => s.textContent).join('\n');
-    let styleEl = iDoc.head.querySelector('#_binder_preview_styles');
-    if (!styleEl) {
-      styleEl = iDoc.createElement('style');
-      styleEl.id = '_binder_preview_styles';
-      iDoc.head.appendChild(styleEl);
+    // <head> 内を同期（<style>, <meta>, <link>, <title>, <script> 等すべて）
+    // 既存の head 子要素をクリアして新しい HTML の head 内容を移植
+    while (iDoc.head.firstChild) {
+      iDoc.head.removeChild(iDoc.head.firstChild);
     }
-    styleEl.textContent = newStyles;
+    for (const node of Array.from(newDoc.head.childNodes)) {
+      iDoc.head.appendChild(iDoc.adoptNode(node));
+    }
 
     this.postProcess(iDoc);
   }
