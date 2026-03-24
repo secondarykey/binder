@@ -39,14 +39,18 @@ function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
     setContextMenu({ open: true, x: e.clientX, y: e.clientY, leaf });
   };
 
-  const handleOpenItem = () => {
-    const leaf = contextMenu.leaf;
-    setContextMenu({ open: false, x: 0, y: 0, leaf: null });
+  const openItem = (leaf) => {
     if (!leaf) return;
     const path = leaf.type === 'asset' ? `/editor/assets/${leaf.id}` : `/editor/${leaf.type}/${leaf.id}`;
     if (onClose) onClose();
     nav(path);
     evt.selectTreeNode(leaf.id);
+  };
+
+  const handleOpenItem = () => {
+    const leaf = contextMenu.leaf;
+    setContextMenu({ open: false, x: 0, y: 0, leaf: null });
+    openItem(leaf);
   };
 
   const [notes, setNotes] = useState([]);
@@ -146,9 +150,9 @@ function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
   return (<>
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <UnpublishedList name="Note"    data={notes}    onContextMenu={handleContextMenu} ref={noteRef} />
-      <UnpublishedList name="Diagram" data={diagrams} onContextMenu={handleContextMenu} ref={diagramRef} />
-      <UnpublishedList name="Asset"   data={assets}   onContextMenu={handleContextMenu} ref={assetRef} />
+      <UnpublishedList name="Note"    data={notes}    onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={noteRef} />
+      <UnpublishedList name="Diagram" data={diagrams} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={diagramRef} />
+      <UnpublishedList name="Asset"   data={assets}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={assetRef} />
     </List>
 
     <Menu open={contextMenu.open}
@@ -231,6 +235,7 @@ const UnpublishedList = forwardRef((props, ref) => {
           pl: 2, py: 0.25, borderRadius: '2px',
           '&:hover': { backgroundColor: 'var(--selected-bg)' },
         }}
+        onDoubleClick={(e) => props.onDoubleClick?.(e, leaf)}
         onContextMenu={(e) => props.onContextMenu?.(e, leaf)}>
         <ListItemIcon sx={{ minWidth: 32 }}>
           <Checkbox

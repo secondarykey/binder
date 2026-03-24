@@ -36,14 +36,18 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
     setContextMenu({ open: true, x: e.clientX, y: e.clientY, leaf });
   };
 
-  const handleOpenItem = () => {
-    const leaf = contextMenu.leaf;
-    setContextMenu({ open: false, x: 0, y: 0, leaf: null });
+  const openItem = (leaf) => {
     if (!leaf) return;
     const path = leaf.type === 'asset' ? `/editor/assets/${leaf.id}` : `/editor/${leaf.type}/${leaf.id}`;
     if (onClose) onClose();
     routerNav(path);
     evt.selectTreeNode(leaf.id);
+  };
+
+  const handleOpenItem = () => {
+    const leaf = contextMenu.leaf;
+    setContextMenu({ open: false, x: 0, y: 0, leaf: null });
+    openItem(leaf);
   };
 
   const [notes, setNotes] = useState([]);
@@ -138,10 +142,10 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
   return (<>
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} onContextMenu={handleContextMenu} selectedId={currentId} ref={noteRef} />
-      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} onContextMenu={handleContextMenu} selectedId={currentId} ref={diagramRef} />
-      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
-      <ModifiedList name="Template" data={templates} onClick={handleOpen} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
+      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={noteRef} />
+      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={diagramRef} />
+      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
+      <ModifiedList name="Template" data={templates} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
     </List>
 
     <Menu open={contextMenu.open}
@@ -217,6 +221,7 @@ const ModifiedList = forwardRef((props, ref) => {
           '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
         }}
         onClick={(e) => props.onClick(e, leaf)}
+        onDoubleClick={(e) => props.onDoubleClick?.(e, leaf)}
         onContextMenu={(e) => props.onContextMenu?.(e, leaf)}>
         <ListItemIcon sx={{ minWidth: 32 }}>
           <Checkbox
