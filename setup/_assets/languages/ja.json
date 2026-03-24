@@ -27,7 +27,8 @@
         "set" : "設定",
         "create" : "作成",
         "updated" : "更新しました",
-        "deleted" : "削除しました"
+        "deleted" : "削除しました",
+        "open" : "開く"
     },
     "tree" : {
         "menu" : "メニュー",

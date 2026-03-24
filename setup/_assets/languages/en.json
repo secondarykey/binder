@@ -27,7 +27,8 @@
         "set" : "Set",
         "create" : "Create",
         "updated" : "Updated.",
-        "deleted" : "Deleted."
+        "deleted" : "Deleted.",
+        "open" : "Open"
     },
     "tree" : {
         "menu" : "Menu",

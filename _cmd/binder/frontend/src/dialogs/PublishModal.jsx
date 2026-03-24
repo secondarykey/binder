@@ -32,7 +32,7 @@ function PublishModal({ open, onClose }) {
     >
       <div id="commitArea">
         <div id="commitLeft">
-          <UnpublishedMenu date={date} />
+          <UnpublishedMenu date={date} onClose={onClose} />
         </div>
         <div id="commitRight">
           <div id="commitForm">
