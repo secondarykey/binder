@@ -156,6 +156,7 @@
         "generateComment" : "Generate Comment",
         "generate" : "Generate",
         "generateSuccess" : "Generated.",
+        "generateError" : "Errors occurred in the following files:",
         "noFilesSelected" : "No files selected."
     },
     "snippetSetting" : {

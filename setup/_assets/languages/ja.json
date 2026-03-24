@@ -156,6 +156,7 @@
         "generateComment" : "Generateコメント",
         "generate" : "Generate",
         "generateSuccess" : "Generate完了",
+        "generateError" : "以下のファイルでエラーが発生しました:",
         "noFilesSelected" : "ファイルが選択されていません。"
     },
     "snippetSetting" : {
