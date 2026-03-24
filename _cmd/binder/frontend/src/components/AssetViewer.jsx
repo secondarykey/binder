@@ -149,6 +149,7 @@ function AssetViewer() {
   const [migrating, setMigrating] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [migrateDeleteAsset, setMigrateDeleteAsset] = useState(true);
   // MoreVert メニュー
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
   const openMoreMenu = (el) => setMoreMenu({ open: true, el });
@@ -234,7 +235,7 @@ function AssetViewer() {
     setConfirmOpen(false);
     setMigrating(true);
     try {
-      const note = await MigrateAssetToNote(id);
+      const note = await MigrateAssetToNote(id, migrateDeleteAsset);
       evt.refreshTree();
       evt.showSuccessMessage(t("assetViewer.migrateSuccess"));
       nav(`/editor/note/${note.id}`);
@@ -476,10 +477,20 @@ function AssetViewer() {
           <DialogContentText style={{ color: "var(--text-secondary)" }}>
             {t("assetViewer.migrateConfirm", { name: assetName })}
           </DialogContentText>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={migrateDeleteAsset}
+                onChange={(e) => setMigrateDeleteAsset(e.target.checked)}
+              />
+            }
+            label={t("assetViewer.migrateDeleteAsset")}
+            sx={{ mt: 1 }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={handleMigrateConfirm} color="primary">{t("assetViewer.migrate")}</Button>
+          <Button onClick={handleMigrateConfirm} color="primary">{t("common.ok")}</Button>
         </DialogActions>
       </Dialog>
 

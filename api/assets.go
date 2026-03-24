@@ -127,9 +127,9 @@ func (a *App) SetAssetAsMetaImage(assetId string, deleteAsset bool) error {
 
 // MigrateAssetToNote はテキストアセットをノートに移行する。
 // 移行先のノート情報を返す。
-func (a *App) MigrateAssetToNote(id string) (*json.Note, error) {
-	defer log.PrintTrace(log.Func("MigrateAssetToNote()", id))
-	n, err := a.current.MigrateAssetToNote(id)
+func (a *App) MigrateAssetToNote(id string, deleteAsset bool) (*json.Note, error) {
+	defer log.PrintTrace(log.Func("MigrateAssetToNote()", id, deleteAsset))
+	n, err := a.current.MigrateAssetToNote(id, deleteAsset)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("MigrateAssetToNote() error\n%+v", err)
