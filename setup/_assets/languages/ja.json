@@ -44,7 +44,9 @@
         "clipboardEmpty" : "クリップボード画像のデータが空です",
         "download" : "ダウンロード",
         "downloadAll" : "全体",
-        "downloadDocs" : "docs"
+        "downloadDocs" : "docs",
+        "expandAll" : "すべて展開",
+        "collapseAll" : "すべて閉じる"
     },
     "note" : {
         "editTitle" : "ノート編集",

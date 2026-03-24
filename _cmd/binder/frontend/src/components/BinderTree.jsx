@@ -12,6 +12,8 @@ import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -86,6 +88,20 @@ const findAncestorIds = (nodes, targetId, path = []) => {
     if (result) return result;
   }
   return null;
+};
+
+/**
+ * ツリー（生データ）から子を持つ全ノードのIDを収集する（展開可能なノード）
+ */
+const collectExpandableIds = (nodes, ids = []) => {
+  if (!nodes) return ids;
+  for (const node of nodes) {
+    if (node.children && node.children.length > 0) {
+      ids.push(node.id);
+      collectExpandableIds(node.children, ids);
+    }
+  }
+  return ids;
 };
 
 /**
@@ -632,6 +648,15 @@ function BinderTree(props) {
       {/** ダウンロード */}
       <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
         <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
+      </MenuItem>
+      <Divider />
+      {/** すべて展開 */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
+        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
+      </MenuItem>
+      {/** すべて閉じる */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>
+        <UnfoldLessIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
       </MenuItem>
       <Divider />
       {/** None: ステータス非表示 */}

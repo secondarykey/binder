@@ -44,7 +44,9 @@
         "clipboardEmpty" : "Clipboard image data is empty.",
         "download" : "Download",
         "downloadAll" : "All",
-        "downloadDocs" : "Docs"
+        "downloadDocs" : "Docs",
+        "expandAll" : "Expand All",
+        "collapseAll" : "Collapse All"
     },
     "note" : {
         "editTitle" : "Edit Note",
