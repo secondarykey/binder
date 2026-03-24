@@ -62,9 +62,12 @@ func migrateApp(ver *Version, devMode bool) error {
 	if prev == "" {
 		prev = "0.8.5"
 	}
-	current := ver.String()
+	prevVer, err := NewVersion(prev)
+	if err != nil {
+		return xerrors.Errorf("NewVersion(%s) error: %w", prev, err)
+	}
 
-	needUpdate := devMode || prev != current
+	needUpdate := devMode || !prevVer.Eq(ver)
 
 	if needUpdate {
 		if err := UpdateDefaults(); err != nil {
@@ -73,8 +76,8 @@ func migrateApp(ver *Version, devMode bool) error {
 	}
 
 	// EnsureExists 終了時点で常に現在のバージョンを記録する
-	if prev != current {
-		if err := settings.SaveAppVersion(current); err != nil {
+	if !prevVer.Eq(ver) {
+		if err := settings.SaveAppVersion(ver.String()); err != nil {
 			return xerrors.Errorf("settings.SaveAppVersion() error: %w", err)
 		}
 	}
