@@ -6,6 +6,7 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, GetFont } from '../../bindings/binder/api/app';
 import { Events } from '@wailsio/runtime';
@@ -397,7 +398,21 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip title={t("preview.publish")} placement="bottom">
+        </div>
+      </div>
+      {/* コンテンツ */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+        {content}
+      </div>
+
+      {/* ステータスバー */}
+      <div id="parseStatusBar">
+        <div className="parseStatusLeft">
+          <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} />
+          <span className="parseStatusText">Success</span>
+        </div>
+        <div className="parseStatusRight">
+          <Tooltip title={t("preview.publish")} placement="top">
             <span>
               <IconButton size="small" aria-label="publish" onClick={handleGenerate} disabled={generating || !id} className="editorBtn">
                 <PublishIcon sx={{ fontSize: '16px' }} />
@@ -405,10 +420,6 @@ function AssetViewer() {
             </span>
           </Tooltip>
         </div>
-      </div>
-      {/* コンテンツ */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
-        {content}
       </div>
 
       {/* ノート移行確認ダイアログ */}
