@@ -222,7 +222,13 @@
         "migrateTitle" : "Migrate to Note",
         "migrateConfirm" : "Migrate \"{{name}}\" to a note. The original asset will be deleted. Continue?",
         "migrate" : "Migrate",
-        "updateFile" : "Update File"
+        "updateFile" : "Update File",
+        "setMetaImage" : "Set as Meta Image",
+        "setMetaImageTitle" : "Set as Meta Image",
+        "setMetaImageConfirm" : "Set \"{{name}}\" as the meta image for the parent note. Continue?",
+        "setMetaImageDeleteAsset" : "Delete asset",
+        "setMetaImageSuccess" : "Set as meta image.",
+        "setMetaImageError" : "Failed to set meta image: {{error}}"
     },
     "preview" : {
         "publish" : "Publish",

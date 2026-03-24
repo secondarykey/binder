@@ -222,7 +222,13 @@
         "migrateTitle" : "ノートに移行",
         "migrateConfirm" : "「{{name}}」をノートに移行します。元のアセットは削除されます。よろしいですか？",
         "migrate" : "移行",
-        "updateFile" : "ファイル更新"
+        "updateFile" : "ファイル更新",
+        "setMetaImage" : "メタ画像に設定",
+        "setMetaImageTitle" : "メタ画像に設定",
+        "setMetaImageConfirm" : "「{{name}}」を親ノートのメタ画像に設定します。よろしいですか？",
+        "setMetaImageDeleteAsset" : "アセットを削除する",
+        "setMetaImageSuccess" : "メタ画像に設定しました。",
+        "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}"
     },
     "preview" : {
         "publish" : "公開",

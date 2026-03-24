@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import ImageIcon from '@mui/icons-material/Image';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, GetFont } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, SetAssetAsMetaImage, GetFont } from '../../bindings/binder/api/app';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
@@ -152,6 +153,9 @@ function AssetViewer() {
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
   const openMoreMenu = (el) => setMoreMenu({ open: true, el });
   const closeMoreMenu = () => setMoreMenu({ open: false, el: null });
+  // メタ画像設定ダイアログ
+  const [metaImageDlg, setMetaImageDlg] = useState(false);
+  const [metaImageDeleteAsset, setMetaImageDeleteAsset] = useState(true);
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
 
@@ -277,6 +281,28 @@ function AssetViewer() {
     }).catch((e) => {
       evt.showErrorMessage(t("assetViewer.unpublishError", { error: e }));
     });
+  };
+
+  /** メタ画像設定ダイアログを開く */
+  const handleSetMetaImage = () => {
+    setMetaImageDeleteAsset(true);
+    setMetaImageDlg(true);
+  };
+
+  /** メタ画像設定確定 */
+  const handleSetMetaImageConfirm = async () => {
+    setMetaImageDlg(false);
+    try {
+      await SetAssetAsMetaImage(id, metaImageDeleteAsset);
+      evt.refreshTree();
+      evt.showSuccessMessage(t("assetViewer.setMetaImageSuccess"));
+      if (metaImageDeleteAsset && assetMeta?.parentId) {
+        nav(`/editor/note/${assetMeta.parentId}`);
+        evt.selectTreeNode(assetMeta.parentId);
+      }
+    } catch (e) {
+      evt.showErrorMessage(t("assetViewer.setMetaImageError", { error: e }));
+    }
   };
 
   /** ダウンロードボタン押下: アセットファイルをダウンロードする */
@@ -410,6 +436,11 @@ function AssetViewer() {
         <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
           <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
         </MenuItem>
+        {assetContent && isImageMime(assetContent.mime) && (
+          <MenuItem onClick={() => { closeMoreMenu(); handleSetMetaImage(); }} disabled={!id}>
+            <ImageIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.setMetaImage")}
+          </MenuItem>
+        )}
         {assetContent && isTextMime(assetContent.mime) && (
           <MenuItem onClick={() => { closeMoreMenu(); handleMigrate(); }} disabled={migrating || !id}>
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
@@ -449,6 +480,30 @@ function AssetViewer() {
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
           <Button onClick={handleMigrateConfirm} color="primary">{t("assetViewer.migrate")}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* メタ画像設定確認ダイアログ */}
+      <Dialog open={metaImageDlg} onClose={() => setMetaImageDlg(false)}>
+        <DialogTitle>{t("assetViewer.setMetaImageTitle")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText style={{ color: "var(--text-secondary)" }}>
+            {t("assetViewer.setMetaImageConfirm", { name: assetName })}
+          </DialogContentText>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={metaImageDeleteAsset}
+                onChange={(e) => setMetaImageDeleteAsset(e.target.checked)}
+              />
+            }
+            label={t("assetViewer.setMetaImageDeleteAsset")}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMetaImageDlg(false)}>{t("common.cancel")}</Button>
+          <Button onClick={handleSetMetaImageConfirm} color="primary">{t("common.ok")}</Button>
         </DialogActions>
       </Dialog>
     </div>
