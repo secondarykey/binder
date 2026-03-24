@@ -76,6 +76,19 @@ const findNodeInTree = (nodes, id) => {
 };
 
 /**
+ * ツリー（生データ）を再帰検索し、対象ノードまでの祖先IDの配列を返す
+ */
+const findAncestorIds = (nodes, targetId, path = []) => {
+  if (!nodes) return null;
+  for (const node of nodes) {
+    if (node.id === targetId) return path;
+    const result = findAncestorIds(node.children, targetId, [...path, node.id]);
+    if (result) return result;
+  }
+  return null;
+};
+
+/**
  * GetBinderTree() の戻り値をカスタムTreeコンポーネント用に変換する
  * - 子を持つ note → displayType を "folder" に変換
  * - nodeType に元の type を保持（コンテキストメニュー判定用）
@@ -230,6 +243,15 @@ function BinderTree(props) {
     // 履歴復元などでツリーのノード選択を外部から更新する
     evt.register("BinderTree", Event.SelectTree, (id) => {
       setSelectedId(id);
+      // 対象ノードまでの祖先を展開する
+      const ancestors = findAncestorIds(treeRef.current, id);
+      if (ancestors && ancestors.length > 0) {
+        setExpand(prev => {
+          const set = new Set(prev);
+          ancestors.forEach(a => set.add(a));
+          return [...set];
+        });
+      }
     });
     // 初回表示時もトップ階層を展開
     viewTree(true);
