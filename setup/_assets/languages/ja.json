@@ -170,7 +170,12 @@
         "newSnippet" : "NewSnippet"
     },
     "font" : {
-        "title" : "フォント設定"
+        "title" : "フォント設定",
+        "name" : "フォント名",
+        "size" : "サイズ",
+        "color" : "文字色",
+        "backgroundColor" : "背景色",
+        "sample" : "サンプル"
     },
     "binderRemote" : {
         "remoteBranch" : "クローン対象ブランチ",

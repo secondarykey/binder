@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef, useContext, Fragment, isValidElement } from "react";
+import { useEffect, useState, useContext } from "react";
 
 import { GetFontNames } from "../../bindings/binder/api/app";
 
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Button, DialogContent, FormControl, InputLabel, TextField } from "@mui/material";
+import { Box, Button, DialogContent, FormControl, FormLabel, TextField } from "@mui/material";
 import { EventContext } from "../Event";
 import { MenuItem, Select } from "@mui/material";
 
@@ -86,7 +86,7 @@ func main() {
   const handleChangeName = (e) => {
     var val = e.target.value;
     setName(val);
-    changeStyle(name,size,color,bgcolor);
+    changeStyle(val,size,color,bgcolor);
   };
 
   const handleChangeSize = (e) => {
@@ -112,30 +112,44 @@ func main() {
   return (
 
     <Dialog open={show} onClose={handleClose}
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "500px" } }}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "600px" } }}
     >
       <DialogTitle>{t("font.title")}</DialogTitle>
       <DialogContent>
 
-        {/** フォント一覧 */}
-        <FormControl style={{"width":"100%"}}>
-          <Select value={name} onChange={handleChangeName} style={{ "minWidth": "100%" }}>
+        {/** フォント名 */}
+        <FormControl sx={{ width: "100%", mb: 2, mt: 1 }}>
+          <FormLabel>{t("font.name")}</FormLabel>
+          <Select value={name} onChange={handleChangeName} size="small" style={{ minWidth: "100%" }}>
             {fonts.map((v) => {
               return <MenuItem key={v} value={v}>{v}</MenuItem>;
             })}
           </Select>
         </FormControl>
 
-        {/** サイズ、色、背景色の指定 */}
-        <FormControl style={{"display":"flex","flexDirection":"row"}}>
-          <TextField value={size} onChange={handleChangeSize} type="number" />
-          <MuiColorInput format="hex" value={color} onChange={handleChangeColor} />
-          <MuiColorInput format="hex" value={bgcolor} onChange={handleChangeBGColor} />
+        {/** サイズ */}
+        <FormControl sx={{ mb: 2 }}>
+          <FormLabel>{t("font.size")}</FormLabel>
+          <TextField value={size} onChange={handleChangeSize} type="number" size="small" sx={{ width: "120px" }} />
         </FormControl>
 
-        {/** サンプルコード */}
-        <FormControl style={{"width":"100%","height":"100px"}}>
-          <TextField className="codeSample" multiline fullWidth 
+        {/** 文字色・背景色 */}
+        <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+          <FormControl sx={{ flex: 1 }}>
+            <FormLabel>{t("font.color")}</FormLabel>
+            <MuiColorInput format="hex" value={color} onChange={handleChangeColor} size="small" />
+          </FormControl>
+          <FormControl sx={{ flex: 1 }}>
+            <FormLabel>{t("font.backgroundColor")}</FormLabel>
+            <MuiColorInput format="hex" value={bgcolor} onChange={handleChangeBGColor} size="small" />
+          </FormControl>
+        </Box>
+
+        {/** サンプル */}
+        <FormControl sx={{ width: "100%" }}>
+          <FormLabel>{t("font.sample")}</FormLabel>
+          <TextField className="codeSample" multiline fullWidth
+                     minRows={8}
                      value={text} onChange={handleChangeText}
                      slotProps={{
                         input: {

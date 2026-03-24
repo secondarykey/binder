@@ -170,7 +170,12 @@
         "newSnippet" : "NewSnippet"
     },
     "font" : {
-        "title" : "Font Setting"
+        "title" : "Font Setting",
+        "name" : "Font Name",
+        "size" : "Size",
+        "color" : "Text Color",
+        "backgroundColor" : "Background Color",
+        "sample" : "Sample"
     },
     "binderRemote" : {
         "remoteBranch" : "Clone Target Branch",
