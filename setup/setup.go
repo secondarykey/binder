@@ -13,6 +13,11 @@ import (
 // 必要かの有無を判定ものです。
 func EnsureExists(ver *Version, devMode bool) error {
 
+	//開発バージョンの時にパッチを上げる
+	if devMode {
+		ver.AddPatch()
+	}
+
 	// ~/.binder ディレクトリと setting.json の確認・作成
 	err := settings.EnsureDir()
 	if err != nil {

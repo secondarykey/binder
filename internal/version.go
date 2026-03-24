@@ -26,6 +26,10 @@ func NewVersion(buf string) (*Version, error) {
 	return &v, nil
 }
 
+func (v *Version) AddPatch() {
+	v.patch += 1
+}
+
 func (v *Version) CompareCore(ver *Version) int {
 
 	if v.major < ver.major {
