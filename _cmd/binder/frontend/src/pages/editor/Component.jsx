@@ -496,18 +496,17 @@ function Editor(props) {
   // lineNumbers=true のとき parseWithSourceLines を使い data-src-line 属性を付与する（プレビュー用）
   const createMarked = async (id, txt, local, lineNumbers = false) => {
     var p = ""
+    var parseError = false;
     await ParseNote(id, local, txt).then((resp) => {
       p = resp;
     }).catch((err) => {
       setParseStatus({ status: "error", err });
+      parseError = true;
       p = txt;
     });
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
-    if (val) {
-      return val;
-    }
-    return "";
+    return { html: val || "", parseError };
   }
 
   /**
@@ -517,10 +516,10 @@ function Editor(props) {
 
     if (mode === "note") {
 
-      var embed = await createMarked(id, txt, true, true);
-      CreateNoteHTML(id, embed).then((resp) => {
+      var result = await createMarked(id, txt, true, true);
+      CreateNoteHTML(id, result.html).then((resp) => {
         setHTML(resp);
-        setParseStatus({ status: "success", err: null });
+        if (!result.parseError) setParseStatus({ status: "success", err: null });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
       }).catch((err) => {
         setParseStatus({ status: "error", err });
@@ -663,7 +662,7 @@ function Editor(props) {
   const handlePublish = async () => {
     var elm = "";
     if (mode === Mode.note) {
-      elm = await createMarked(id, text, false);
+      elm = (await createMarked(id, text, false)).html;
     } else if (mode === Mode.diagram) {
       var obj = await Mermaid.parse(text);
       elm = obj.svg
