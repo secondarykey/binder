@@ -151,6 +151,11 @@ func main() {
           <TextField className="codeSample" multiline fullWidth
                      minRows={8}
                      value={text} onChange={handleChangeText}
+                     sx={{
+                       '& .MuiOutlinedInput-root': {
+                         backgroundColor: bgcolor + ' !important',
+                       }
+                     }}
                      slotProps={{
                         input: {
                           style: style
