@@ -117,21 +117,23 @@ func main() {
       <DialogTitle>{t("font.title")}</DialogTitle>
       <DialogContent>
 
-        {/** フォント名 */}
-        <FormControl sx={{ width: "100%", mb: 2, mt: 1 }}>
-          <FormLabel>{t("font.name")}</FormLabel>
-          <Select value={name} onChange={handleChangeName} size="small" style={{ minWidth: "100%" }}>
-            {fonts.map((v) => {
-              return <MenuItem key={v} value={v}>{v}</MenuItem>;
-            })}
-          </Select>
-        </FormControl>
-
-        {/** サイズ */}
-        <FormControl sx={{ mb: 2 }}>
-          <FormLabel>{t("font.size")}</FormLabel>
-          <TextField value={size} onChange={handleChangeSize} type="number" size="small" sx={{ width: "120px" }} />
-        </FormControl>
+        {/** フォント名・サイズ */}
+        <Box sx={{ display: "flex", gap: 2, mb: 2, mt: 1 }}>
+          <FormControl sx={{ flex: 1 }}>
+            <FormLabel>{t("font.name")}</FormLabel>
+            <Select value={name} onChange={handleChangeName} size="small"
+                    MenuProps={{ PaperProps: { style: { maxHeight: 15 * 36 } } }}>
+              {fonts.map((v) => {
+                return <MenuItem key={v} value={v}>{v}</MenuItem>;
+              })}
+            </Select>
+          </FormControl>
+          <FormControl sx={{ width: "80px" }}>
+            <FormLabel>{t("font.size")}</FormLabel>
+            <TextField value={size} onChange={handleChangeSize} type="number" size="small"
+                       slotProps={{ input: { style: { textAlign: "right" } } }} />
+          </FormControl>
+        </Box>
 
         {/** 文字色・背景色 */}
         <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -149,11 +151,13 @@ func main() {
         <FormControl sx={{ width: "100%" }}>
           <FormLabel>{t("font.sample")}</FormLabel>
           <TextField className="codeSample" multiline fullWidth
-                     minRows={8}
                      value={text} onChange={handleChangeText}
                      sx={{
                        '& .MuiOutlinedInput-root': {
                          backgroundColor: bgcolor + ' !important',
+                         height: '200px',
+                         alignItems: 'flex-start',
+                         overflow: 'auto',
                        }
                      }}
                      slotProps={{
