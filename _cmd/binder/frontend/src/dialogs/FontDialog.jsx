@@ -5,9 +5,10 @@ import { GetFontNames } from "../../bindings/binder/api/app";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Box, Button, DialogContent, FormControl, FormLabel, TextField } from "@mui/material";
+import { Box, Button, DialogContent, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
 import { EventContext } from "../Event";
 import { MenuItem, Select } from "@mui/material";
+import { Close } from "@mui/icons-material";
 
 import { MuiColorInput } from 'mui-color-input'
 import "../i18n/config";
@@ -114,7 +115,12 @@ func main() {
     <Dialog open={show} onClose={handleClose}
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "600px" } }}
     >
-      <DialogTitle>{t("font.title")}</DialogTitle>
+      <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
+        <span style={{ flex: 1 }}>{t("font.title")}</span>
+        <IconButton size="small" onClick={handleClose} aria-label="close">
+          <Close fontSize="small" />
+        </IconButton>
+      </DialogTitle>
       <DialogContent>
 
         {/** フォント名・サイズ */}
@@ -171,7 +177,6 @@ func main() {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>{t("common.cancel")}</Button>
         <Button onClick={handleSubmit}>{t("common.ok")}</Button>
       </DialogActions>
     </Dialog>
