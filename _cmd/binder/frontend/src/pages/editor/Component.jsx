@@ -1402,11 +1402,6 @@ function Editor(props) {
                         <DownloadIcon sx={{ fontSize: '16px' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={t("preview.publish")} placement="bottom">
-                      <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
-                        <PublishIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
                   </div>
                 }
               </div>
@@ -1425,10 +1420,23 @@ function Editor(props) {
               </div>
 
               {/** パースステータスバー */}
-              <div id="parseStatusBar" onDoubleClick={() => { if (parseStatus.err) setParseErrorDlg(true); }}>
-                {parseStatus.status === "error"
-                  ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
-                  : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
+              <div id="parseStatusBar">
+                <div className="parseStatusLeft" onDoubleClick={() => { if (parseStatus.err) setParseErrorDlg(true); }}>
+                  {parseStatus.status === "error"
+                    ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
+                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
+                  }
+                </div>
+                {mode !== Mode.template &&
+                  <div className="parseStatusRight">
+                    <Tooltip title={t("preview.publish")} placement="top">
+                      <span>
+                        <IconButton size="small" aria-label="publish" onClick={handlePublish} disabled={parseStatus.status === "error"} className="editorBtn">
+                          <PublishIcon sx={{ fontSize: '16px' }} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </div>
                 }
               </div>
 

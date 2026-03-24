@@ -192,8 +192,19 @@
   height: 40px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 12px;
   background-color: var(--bg-overlay);
+}
+
+.parseStatusLeft {
+  display: flex;
+  align-items: center;
+}
+
+.parseStatusRight {
+  display: flex;
+  align-items: center;
 }
 
 .parseStatusText {
