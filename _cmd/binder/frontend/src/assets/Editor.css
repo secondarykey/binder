@@ -192,22 +192,8 @@
   height: 40px;
   display: flex;
   align-items: center;
-  padding: 0 12px;
-}
-
-#parseStatusBar.parseError {
-  background-color: var(--accent-red);
-}
-
-#parseStatusBar.parseSuccess {
-  background-color: var(--accent-green);
-}
-
-.parseStatusText {
-  font-size: 0.8rem;
-  color: #fff;
-  font-weight: 500;
-  user-select: none;
+  justify-content: center;
+  background-color: var(--bg-overlay);
 }
 
 iframe.htmlViewer {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Backdrop, Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -43,6 +43,8 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 
 import BinderTree from "../../components/BinderTree.jsx";
@@ -194,7 +196,8 @@ function Editor(props) {
   const editorSettingRef = useRef(null);
 
   // パースステータス（プレビュー下部のステータスバー用）
-  const [parseStatus, setParseStatus] = useState({ status: "success", message: "" });
+  const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
+  const [parseErrorDlg, setParseErrorDlg] = useState(false);
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -496,7 +499,7 @@ function Editor(props) {
     await ParseNote(id, local, txt).then((resp) => {
       p = resp;
     }).catch((err) => {
-      setParseStatus({ status: "error", message: String(err) });
+      setParseStatus({ status: "error", err });
       p = txt;
     });
 
@@ -517,10 +520,10 @@ function Editor(props) {
       var embed = await createMarked(id, txt, true, true);
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
-        setParseStatus({ status: "success", message: "" });
+        setParseStatus({ status: "success", err: null });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
       }).catch((err) => {
-        setParseStatus({ status: "error", message: String(err) });
+        setParseStatus({ status: "error", err });
       })
 
     } else if (mode === "template") {
@@ -541,7 +544,7 @@ function Editor(props) {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
-      setParseStatus({ status: "success", message: "" });
+      setParseStatus({ status: "success", err: null });
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt });
 
       var svg = document.querySelector('#mermaidViewer svg');
@@ -579,7 +582,7 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
-      setParseStatus({ status: "error", message: "Diagram parse error:" + err });
+      setParseStatus({ status: "error", err });
     });
   }
 
@@ -1423,10 +1426,11 @@ function Editor(props) {
               </div>
 
               {/** パースステータスバー */}
-              <div id="parseStatusBar" className={parseStatus.status === "error" ? "parseError" : "parseSuccess"}>
-                <span className="parseStatusText">
-                  {parseStatus.status === "error" ? "Error" : "Success"}
-                </span>
+              <div id="parseStatusBar" onDoubleClick={() => { if (parseStatus.err) setParseErrorDlg(true); }}>
+                {parseStatus.status === "error"
+                  ? <ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)' }} />
+                  : <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)' }} />
+                }
               </div>
 
             </div>
@@ -1438,6 +1442,19 @@ function Editor(props) {
 
       {/** フォント設定 */}
       <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose} />
+
+      {/** パースエラー詳細ダイアログ */}
+      <Dialog open={parseErrorDlg} onClose={() => setParseErrorDlg(false)}>
+        <DialogTitle>Parse Error</DialogTitle>
+        <DialogContent>
+          <DialogContentText className="messageTxt">
+            {parseStatus.err ? String(parseStatus.err) : ""}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setParseErrorDlg(false)}>{t("common.close")}</Button>
+        </DialogActions>
+      </Dialog>
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
