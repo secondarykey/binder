@@ -128,7 +128,7 @@ func main() {
           <FormControl sx={{ flex: 1 }}>
             <FormLabel>{t("font.name")}</FormLabel>
             <Select value={name} onChange={handleChangeName} size="small"
-                    MenuProps={{ PaperProps: { style: { maxHeight: 15 * 36 } } }}>
+                    MenuProps={{ PaperProps: { style: { maxHeight: 10 * 36 } } }}>
               {fonts.map((v) => {
                 return <MenuItem key={v} value={v}>{v}</MenuItem>;
               })}
