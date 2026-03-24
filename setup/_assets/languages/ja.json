@@ -224,7 +224,8 @@
         "publish" : "公開",
         "unpublish" : "非公開",
         "download" : "ダウンロード",
-        "windowTitle" : "プレビュー"
+        "windowTitle" : "プレビュー",
+        "parseError" : "解析エラー"
     },
     "convert" : {
         "title" : "データ移行",

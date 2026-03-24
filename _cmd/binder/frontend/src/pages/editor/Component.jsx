@@ -469,8 +469,8 @@ function Editor(props) {
       // テンプレートをファイルに即時保存してからプレビューを生成
       await SaveTemplate(id, text);
       runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-        .then((result) => setHTML(result))
-        .catch((err) => evt.showErrorMessage(err));
+        .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
+        .catch((err) => setParseStatus({ status: "error", err }));
     } else {
       //初回時の実行があるか
     }
@@ -1428,8 +1428,8 @@ function Editor(props) {
               {/** パースステータスバー */}
               <div id="parseStatusBar" onDoubleClick={() => { if (parseStatus.err) setParseErrorDlg(true); }}>
                 {parseStatus.status === "error"
-                  ? <ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)' }} />
-                  : <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)' }} />
+                  ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
+                  : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
                 }
               </div>
 
