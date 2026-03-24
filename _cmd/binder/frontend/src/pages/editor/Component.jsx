@@ -193,6 +193,9 @@ function Editor(props) {
   const [editorStyle, setEditorStyle] = useState({});
   const editorSettingRef = useRef(null);
 
+  // パースステータス（プレビュー下部のステータスバー用）
+  const [parseStatus, setParseStatus] = useState({ status: "success", message: "" });
+
   //viewHTMLのprop
   const [html, setHTML] = useState("");
   useEffect(() => { htmlRef.current = html; }, [html]);
@@ -493,7 +496,7 @@ function Editor(props) {
     await ParseNote(id, local, txt).then((resp) => {
       p = resp;
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      setParseStatus({ status: "error", message: String(err) });
       p = txt;
     });
 
@@ -514,9 +517,10 @@ function Editor(props) {
       var embed = await createMarked(id, txt, true, true);
       CreateNoteHTML(id, embed).then((resp) => {
         setHTML(resp);
+        setParseStatus({ status: "success", message: "" });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
       }).catch((err) => {
-        evt.showErrorMessage(err);
+        setParseStatus({ status: "error", message: String(err) });
       })
 
     } else if (mode === "template") {
@@ -537,6 +541,7 @@ function Editor(props) {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
+      setParseStatus({ status: "success", message: "" });
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt });
 
       var svg = document.querySelector('#mermaidViewer svg');
@@ -574,7 +579,7 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
-      evt.showWarningMessage("Diagram parse error:" + err);
+      setParseStatus({ status: "error", message: "Diagram parse error:" + err });
     });
   }
 
@@ -1415,6 +1420,13 @@ function Editor(props) {
                 {mode === Mode.template &&
                   <HTMLFrame html={html} cursorLine={cursorLine} />
                 }
+              </div>
+
+              {/** パースステータスバー */}
+              <div id="parseStatusBar" className={parseStatus.status === "error" ? "parseError" : "parseSuccess"}>
+                <span className="parseStatusText">
+                  {parseStatus.status === "error" ? "Error" : "Success"}
+                </span>
               </div>
 
             </div>
