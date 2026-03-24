@@ -165,6 +165,11 @@ function Editor(props) {
   const openEditorMoreMenu = (el) => setEditorMoreMenu({ open: true, el });
   const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, el: null });
 
+  // プレビューメニュー MoreVert
+  const [previewMoreMenu, setPreviewMoreMenu] = useState({ open: false, el: null });
+  const openPreviewMoreMenu = (el) => setPreviewMoreMenu({ open: true, el });
+  const closePreviewMoreMenu = () => setPreviewMoreMenu({ open: false, el: null });
+
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
@@ -1357,15 +1362,6 @@ function Editor(props) {
 
               {/** プレビューメニュー */}
               <div id="previewMenu">
-                {mode !== Mode.template &&
-                  <div className="previewMenuLeft">
-                    <Tooltip title={t("preview.unpublish")} placement="bottom">
-                      <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="editorBtn">
-                        <UnpublishedIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                }
                 {mode === Mode.template && (() => {
                   const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                   return (
@@ -1395,16 +1391,39 @@ function Editor(props) {
                     </div>
                   );
                 })()}
-                {mode !== Mode.template &&
-                  <div className="previewMenuRight">
+                {mode !== Mode.template && <div className="previewMenuLeft" />}
+                <div className="previewMenuRight">
+                  {mode !== Mode.template &&
                     <Tooltip title={t("preview.download")} placement="bottom">
                       <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
                         <DownloadIcon sx={{ fontSize: '16px' }} />
                       </IconButton>
                     </Tooltip>
-                  </div>
-                }
+                  }
+                  <IconButton
+                    size="small"
+                    onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
+                    sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+                    className="editorBtn"
+                  >
+                    <MoreVertIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                </div>
               </div>
+
+              {/** プレビュー MoreVert ドロップダウンメニュー */}
+              <Menu
+                open={previewMoreMenu.open}
+                anchorEl={previewMoreMenu.el ?? undefined}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                onClose={closePreviewMoreMenu}
+                slotProps={{ paper: { sx: { minWidth: 160 } } }}
+              >
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
+                  <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+                </MenuItem>
+              </Menu>
 
               {/** プレビューコンテンツ */}
               <div id="previewContent">
