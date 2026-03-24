@@ -91,7 +91,8 @@ div.leftButton.active {
 }
 
 .codeSample > div > textarea {
-  color :inherit !important
+  color :inherit !important;
+  background-color: inherit !important;
 }
 
 #expandButton {

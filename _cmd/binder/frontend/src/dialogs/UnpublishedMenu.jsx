@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, forwardRef, useContext, useImperativeHandle } from 'react';
 
 import {
+  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
   Checkbox,
 } from '@mui/material';
@@ -31,6 +32,7 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
   const [assets, setAssets] = useState([]);
+  const [errorDlg, setErrorDlg] = useState({ open: false, names: [] });
 
   const noteRef = useRef(null);
   const diagramRef = useRef(null);
@@ -85,6 +87,7 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
         return;
       }
 
+      const errors = [];
       for (const leaf of selected) {
         try {
           if (leaf.type === "note") {
@@ -101,12 +104,15 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
             await Generate("assets", leaf.id, "");
           }
         } catch (err) {
-          evt.showErrorMessage(`${leaf.name}: ${err}`);
-          return;
+          errors.push(leaf.name);
         }
       }
 
-      evt.showSuccessMessage(t("publishModal.generateSuccess"));
+      if (errors.length > 0) {
+        setErrorDlg({ open: true, names: errors });
+      } else {
+        evt.showSuccessMessage(t("publishModal.generateSuccess"));
+      }
       // 一覧を再取得
       setTimeout(() => {
         loadTree();
@@ -117,14 +123,26 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
 
   }, [dateProp]);
 
-  return (
+  return (<>
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
       <UnpublishedList name="Note"    data={notes}    ref={noteRef} />
       <UnpublishedList name="Diagram" data={diagrams} ref={diagramRef} />
       <UnpublishedList name="Asset"   data={assets}   ref={assetRef} />
     </List>
-  );
+
+    <Dialog open={errorDlg.open} onClose={() => setErrorDlg({ open: false, names: [] })}>
+      <DialogTitle>{t("publishModal.generateError")}</DialogTitle>
+      <DialogContent>
+        <DialogContentText className="messageTxt" sx={{ whiteSpace: 'pre-line' }}>
+          {errorDlg.names.join("\n")}
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setErrorDlg({ open: false, names: [] })}>{t("common.close")}</Button>
+      </DialogActions>
+    </Dialog>
+  </>);
 }
 
 /**

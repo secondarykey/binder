@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
 import { Box, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont } from "../../bindings/binder/api/app";
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetThemeList, GetLanguageList } from "../../bindings/binder/api/app";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog, OpenSyslogWindow } from "../../bindings/main/window";
 import SaveIcon from '@mui/icons-material/Save';
@@ -15,7 +15,8 @@ import GitSetting from "./GitSetting";
 import LicenseSetting from "./LicenseSetting";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
-import locals from "../i18n/locals.json";
+import { applyTheme } from '../theme';
+import { loadLanguage } from '../i18n/config';
 
 /**
  * アプリ設定
@@ -33,8 +34,10 @@ function Setting({ isModal, ...props }) {
   const [pathRunWith, setPathRunWith] = useState(true);
   const [pathOpenWith, setPathOpenWith] = useState(false);
   const [theme, setThemeState] = useState(
-    document.documentElement.getAttribute('data-theme') || 'dark'
+    document.documentElement.dataset.theme || 'dark'
   );
+  const [themeList, setThemeList] = useState([]);
+  const [langList, setLangList] = useState([]);
 
   useEffect(() => {
 
@@ -54,12 +57,20 @@ function Setting({ isModal, ...props }) {
     GetLanguage().then((lang) => {
       if (lang) i18n.changeLanguage(lang);
     }).catch(() => {});
+
+    // テーマ・言語の一覧を動的に取得
+    GetThemeList().then((list) => {
+      setThemeList(list || []);
+    }).catch(() => {});
+    GetLanguageList().then((list) => {
+      setLangList(list || []);
+    }).catch(() => {});
   }, []);
 
   const handleThemeChange = (e) => {
     const next = e.target.value;
     setThemeState(next);
-    document.documentElement.setAttribute('data-theme', next);
+    applyTheme(next);
     SetTheme(next).then(() => {
       // テーマ変更後にそのテーマのフォント設定を取得して全画面に通知
       GetFont().then((f) => {
@@ -72,7 +83,7 @@ function Setting({ isModal, ...props }) {
 
   const handleLanguageChange = (e) => {
     const lang = e.target.value;
-    i18n.changeLanguage(lang);
+    loadLanguage(lang);
     SetLanguage(lang).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -176,7 +187,7 @@ function Setting({ isModal, ...props }) {
                     }}
                     MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
                   >
-                    {locals.languages.map((lang) => (
+                    {langList.map((lang) => (
                       <MenuItem key={lang.code} value={lang.code} sx={{ fontSize: '13px' }}>{lang.name}</MenuItem>
                     ))}
                   </Select>
@@ -198,8 +209,9 @@ function Setting({ isModal, ...props }) {
                     }}
                     MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
                   >
-                    <MenuItem value="dark" sx={{ fontSize: '13px' }}>{t("setting.themeDark")}</MenuItem>
-                    <MenuItem value="light" sx={{ fontSize: '13px' }}>{t("setting.themeLight")}</MenuItem>
+                    {themeList.map((t) => (
+                      <MenuItem key={t.id} value={t.id} sx={{ fontSize: '13px' }}>{t.name}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
                 {/** デフォルトパス保存先 */}

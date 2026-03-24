@@ -30,7 +30,7 @@ func New(version string) *App {
 	return &app
 }
 
-// SetDevMode は開発モードフラグを設定する
+// SetDevMode は開発モードフラグを設定する。
 func (app *App) SetDevMode(dev bool) {
 	app.devMode = dev
 }

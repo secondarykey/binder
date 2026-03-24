@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tooltip } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, GetFont } from '../../bindings/binder/api/app';
 import { Events } from '@wailsio/runtime';
@@ -146,6 +148,10 @@ function AssetViewer() {
   const [migrating, setMigrating] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // MoreVert メニュー
+  const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
+  const openMoreMenu = (el) => setMoreMenu({ open: true, el });
+  const closeMoreMenu = () => setMoreMenu({ open: false, el: null });
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
 
@@ -365,15 +371,6 @@ function AssetViewer() {
       {/* メニューバー */}
       <div id="previewMenu">
         <div className="previewMenuLeft">
-          <Tooltip title={t("preview.unpublish")} placement="bottom">
-            <span>
-              <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} disabled={!id} className="editorBtn">
-                <UnpublishedIcon sx={{ fontSize: '16px' }} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </div>
-        <div className="previewMenuRight">
           <Tooltip title={t("assetViewer.updateFile")} placement="bottom">
             <span>
               <IconButton size="small" aria-label="update file" onClick={handleUpdateFile} disabled={updating || !id} className="editorBtn">
@@ -381,15 +378,8 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
-          {assetContent && isTextMime(assetContent.mime) && (
-            <Tooltip title={t("assetViewer.migrate")} placement="bottom">
-              <span>
-                <IconButton size="small" aria-label="migrate to note" onClick={handleMigrate} disabled={migrating || !id} className="editorBtn">
-                  <NoteAddIcon sx={{ fontSize: '16px' }} />
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
+        </div>
+        <div className="previewMenuRight">
           <Tooltip title={t("preview.download")} placement="bottom">
             <span>
               <IconButton size="small" aria-label="download" onClick={handleDownload} disabled={!assetContent || !id} className="editorBtn">
@@ -397,7 +387,48 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip title={t("preview.publish")} placement="bottom">
+          <IconButton
+            size="small"
+            onClick={(e) => openMoreMenu(e.currentTarget)}
+            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+            className="editorBtn"
+          >
+            <MoreVertIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+        </div>
+      </div>
+
+      {/* MoreVert ドロップダウンメニュー */}
+      <Menu
+        open={moreMenu.open}
+        anchorEl={moreMenu.el ?? undefined}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        onClose={closeMoreMenu}
+        slotProps={{ paper: { sx: { minWidth: 160 } } }}
+      >
+        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+        </MenuItem>
+        {assetContent && isTextMime(assetContent.mime) && (
+          <MenuItem onClick={() => { closeMoreMenu(); handleMigrate(); }} disabled={migrating || !id}>
+            <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
+          </MenuItem>
+        )}
+      </Menu>
+      {/* コンテンツ */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+        {content}
+      </div>
+
+      {/* ステータスバー */}
+      <div id="parseStatusBar">
+        <div className="parseStatusLeft">
+          <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} />
+          <span className="parseStatusText">Success</span>
+        </div>
+        <div className="parseStatusRight">
+          <Tooltip title={t("preview.publish")} placement="top">
             <span>
               <IconButton size="small" aria-label="publish" onClick={handleGenerate} disabled={generating || !id} className="editorBtn">
                 <PublishIcon sx={{ fontSize: '16px' }} />
@@ -405,10 +436,6 @@ function AssetViewer() {
             </span>
           </Tooltip>
         </div>
-      </div>
-      {/* コンテンツ */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
-        {content}
       </div>
 
       {/* ノート移行確認ダイアログ */}

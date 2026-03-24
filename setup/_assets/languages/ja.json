@@ -156,6 +156,7 @@
         "generateComment" : "Generateコメント",
         "generate" : "Generate",
         "generateSuccess" : "Generate完了",
+        "generateError" : "以下のファイルでエラーが発生しました:",
         "noFilesSelected" : "ファイルが選択されていません。"
     },
     "snippetSetting" : {
@@ -170,7 +171,12 @@
         "newSnippet" : "NewSnippet"
     },
     "font" : {
-        "title" : "フォント設定"
+        "title" : "フォント設定",
+        "name" : "フォント名",
+        "size" : "サイズ",
+        "color" : "文字色",
+        "backgroundColor" : "背景色",
+        "sample" : "サンプル"
     },
     "binderRemote" : {
         "remoteBranch" : "クローン対象ブランチ",
@@ -219,7 +225,8 @@
         "publish" : "公開",
         "unpublish" : "非公開",
         "download" : "ダウンロード",
-        "windowTitle" : "プレビュー"
+        "windowTitle" : "プレビュー",
+        "parseError" : "解析エラー"
     },
     "convert" : {
         "title" : "データ移行",

@@ -12,7 +12,6 @@ tasks:
     dir: frontend
     sources:
       - package.json
-      - package-lock.json
     generates:
       - node_modules
     preconditions:
@@ -110,8 +109,6 @@ tasks:
   dev:frontend:
     summary: Runs the frontend in development mode
     dir: frontend
-    deps:
-      - task: install:frontend:deps
     cmds:
       - npm run dev -- --port {{.VITE_PORT}} --strictPort
 

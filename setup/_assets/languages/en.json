@@ -156,6 +156,7 @@
         "generateComment" : "Generate Comment",
         "generate" : "Generate",
         "generateSuccess" : "Generated.",
+        "generateError" : "Errors occurred in the following files:",
         "noFilesSelected" : "No files selected."
     },
     "snippetSetting" : {
@@ -170,7 +171,12 @@
         "newSnippet" : "NewSnippet"
     },
     "font" : {
-        "title" : "Font Setting"
+        "title" : "Font Setting",
+        "name" : "Font Name",
+        "size" : "Size",
+        "color" : "Text Color",
+        "backgroundColor" : "Background Color",
+        "sample" : "Sample"
     },
     "binderRemote" : {
         "remoteBranch" : "Clone Target Branch",
@@ -219,7 +225,8 @@
         "publish" : "Publish",
         "unpublish" : "Unpublish",
         "download" : "Download",
-        "windowTitle" : "Preview"
+        "windowTitle" : "Preview",
+        "parseError" : "Parse Error"
     },
     "convert" : {
         "title" : "Data Migration",

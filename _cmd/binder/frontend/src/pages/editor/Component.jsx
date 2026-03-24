@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Backdrop, Container, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
@@ -43,6 +43,8 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 
 import BinderTree from "../../components/BinderTree.jsx";
@@ -163,6 +165,11 @@ function Editor(props) {
   const openEditorMoreMenu = (el) => setEditorMoreMenu({ open: true, el });
   const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, el: null });
 
+  // プレビューメニュー MoreVert
+  const [previewMoreMenu, setPreviewMoreMenu] = useState({ open: false, el: null });
+  const openPreviewMoreMenu = (el) => setPreviewMoreMenu({ open: true, el });
+  const closePreviewMoreMenu = () => setPreviewMoreMenu({ open: false, el: null });
+
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
@@ -192,6 +199,10 @@ function Editor(props) {
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
   const editorSettingRef = useRef(null);
+
+  // パースステータス（プレビュー下部のステータスバー用）
+  const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
+  const [parseErrorDlg, setParseErrorDlg] = useState(false);
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -463,8 +474,8 @@ function Editor(props) {
       // テンプレートをファイルに即時保存してからプレビューを生成
       await SaveTemplate(id, text);
       runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-        .then((result) => setHTML(result))
-        .catch((err) => evt.showErrorMessage(err));
+        .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
+        .catch((err) => setParseStatus({ status: "error", err }));
     } else {
       //初回時の実行があるか
     }
@@ -490,18 +501,17 @@ function Editor(props) {
   // lineNumbers=true のとき parseWithSourceLines を使い data-src-line 属性を付与する（プレビュー用）
   const createMarked = async (id, txt, local, lineNumbers = false) => {
     var p = ""
+    var parseError = false;
     await ParseNote(id, local, txt).then((resp) => {
       p = resp;
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      setParseStatus({ status: "error", err });
+      parseError = true;
       p = txt;
     });
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
-    if (val) {
-      return val;
-    }
-    return "";
+    return { html: val || "", parseError };
   }
 
   /**
@@ -511,12 +521,13 @@ function Editor(props) {
 
     if (mode === "note") {
 
-      var embed = await createMarked(id, txt, true, true);
-      CreateNoteHTML(id, embed).then((resp) => {
+      var result = await createMarked(id, txt, true, true);
+      CreateNoteHTML(id, result.html).then((resp) => {
         setHTML(resp);
+        if (!result.parseError) setParseStatus({ status: "success", err: null });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
       }).catch((err) => {
-        evt.showErrorMessage(err);
+        setParseStatus({ status: "error", err });
       })
 
     } else if (mode === "template") {
@@ -537,6 +548,7 @@ function Editor(props) {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
+      setParseStatus({ status: "success", err: null });
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt });
 
       var svg = document.querySelector('#mermaidViewer svg');
@@ -574,7 +586,7 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
-      evt.showWarningMessage("Diagram parse error:" + err);
+      setParseStatus({ status: "error", err });
     });
   }
 
@@ -655,7 +667,7 @@ function Editor(props) {
   const handlePublish = async () => {
     var elm = "";
     if (mode === Mode.note) {
-      elm = await createMarked(id, text, false);
+      elm = (await createMarked(id, text, false)).html;
     } else if (mode === Mode.diagram) {
       var obj = await Mermaid.parse(text);
       elm = obj.svg
@@ -1350,15 +1362,6 @@ function Editor(props) {
 
               {/** プレビューメニュー */}
               <div id="previewMenu">
-                {mode !== Mode.template &&
-                  <div className="previewMenuLeft">
-                    <Tooltip title={t("preview.unpublish")} placement="bottom">
-                      <IconButton size="small" aria-label="unpublish" onClick={handleUnpublish} className="editorBtn">
-                        <UnpublishedIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                }
                 {mode === Mode.template && (() => {
                   const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                   return (
@@ -1388,21 +1391,39 @@ function Editor(props) {
                     </div>
                   );
                 })()}
-                {mode !== Mode.template &&
-                  <div className="previewMenuRight">
+                {mode !== Mode.template && <div className="previewMenuLeft" />}
+                <div className="previewMenuRight">
+                  {mode !== Mode.template &&
                     <Tooltip title={t("preview.download")} placement="bottom">
                       <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
                         <DownloadIcon sx={{ fontSize: '16px' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={t("preview.publish")} placement="bottom">
-                      <IconButton size="small" aria-label="publish" onClick={handlePublish} className="editorBtn">
-                        <PublishIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                }
+                  }
+                  <IconButton
+                    size="small"
+                    onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
+                    sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+                    className="editorBtn"
+                  >
+                    <MoreVertIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                </div>
               </div>
+
+              {/** プレビュー MoreVert ドロップダウンメニュー */}
+              <Menu
+                open={previewMoreMenu.open}
+                anchorEl={previewMoreMenu.el ?? undefined}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                onClose={closePreviewMoreMenu}
+                slotProps={{ paper: { sx: { minWidth: 160 } } }}
+              >
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
+                  <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+                </MenuItem>
+              </Menu>
 
               {/** プレビューコンテンツ */}
               <div id="previewContent">
@@ -1417,6 +1438,27 @@ function Editor(props) {
                 }
               </div>
 
+              {/** パースステータスバー */}
+              <div id="parseStatusBar">
+                <div className="parseStatusLeft" onDoubleClick={() => { if (parseStatus.err) setParseErrorDlg(true); }}>
+                  {parseStatus.status === "error"
+                    ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
+                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
+                  }
+                </div>
+                {mode !== Mode.template &&
+                  <div className="parseStatusRight">
+                    <Tooltip title={t("preview.publish")} placement="top">
+                      <span>
+                        <IconButton size="small" aria-label="publish" onClick={handlePublish} disabled={parseStatus.status === "error"} className="editorBtn">
+                          <PublishIcon sx={{ fontSize: '16px' }} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </div>
+                }
+              </div>
+
             </div>
           }
 
@@ -1426,6 +1468,19 @@ function Editor(props) {
 
       {/** フォント設定 */}
       <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose} />
+
+      {/** パースエラー詳細ダイアログ */}
+      <Dialog open={parseErrorDlg} onClose={() => setParseErrorDlg(false)}>
+        <DialogTitle>Parse Error</DialogTitle>
+        <DialogContent>
+          <DialogContentText className="messageTxt">
+            {parseStatus.err ? String(parseStatus.err) : ""}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setParseErrorDlg(false)}>{t("common.close")}</Button>
+        </DialogActions>
+      </Dialog>
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
