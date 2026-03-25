@@ -26,7 +26,7 @@ tasks:
     dir: frontend
     sources:
       - "**/*"
-      - "!**/node_modules/**"
+      - ecclude: node_modules/**/*
     generates:
       - dist/**/*
     deps:
@@ -94,17 +94,19 @@ tasks:
     generates:
       - frontend/bindings/**/*
     cmds:
-      - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts
+      - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true
 
   generate:icons:
     summary: Generates Windows `.ico` and Mac `.icns` files from an image
     dir: build
     sources:
       - "appicon.png"
+      - "appicon.icon"
     generates:
+      - "darwin/icons.icns"
       - "windows/icon.ico"
     cmds:
-      - wails3 generate icons -input appicon.png -windowsfilename windows/icon.ico
+      - wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename windows/icon.ico -iconcomposerinput appicon.icon -macassetdir darwin
 
   dev:frontend:
     summary: Runs the frontend in development mode
