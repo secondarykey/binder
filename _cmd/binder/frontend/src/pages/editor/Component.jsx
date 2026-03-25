@@ -194,6 +194,7 @@ function Editor(props) {
 
   // カーソル行（1始まり）- handleChangeText で更新し parseText で HTMLFrame に渡す
   const cursorLineRef = useRef(1);
+  const composingRef = useRef(false);
   const [cursorLine, setCursorLine] = useState(1);
 
   const [editorFont, setEditorFont] = useState(undefined);
@@ -841,8 +842,21 @@ function Editor(props) {
   /**
    * Enter時にインデントを挿入
    */
+  const handleCompositionStart = () => {
+    composingRef.current = true;
+  };
+
+  const handleCompositionEnd = () => {
+    composingRef.current = true;
+    // compositionend 直後の keydown（確定Enter）を無視するため、
+    // 次のイベントループでフラグを落とす
+    requestAnimationFrame(() => {
+      composingRef.current = false;
+    });
+  };
+
   const handleKeyDown = (e) => {
-    if (e.nativeEvent.isComposing) {
+    if (composingRef.current) {
       return;
     }
 
@@ -1332,6 +1346,8 @@ function Editor(props) {
                 wordWrap={wordWrap}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
+                onCompositionStart={handleCompositionStart}
+                onCompositionEnd={handleCompositionEnd}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               />
