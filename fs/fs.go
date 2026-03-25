@@ -136,7 +136,7 @@ func (f *FileSystem) Close() error {
 
 // ディレクトリを親ごと作成
 func (f *FileSystem) mkdir(n string) error {
-	err := f.fs.MkdirAll(n, 0666)
+	err := f.fs.MkdirAll(n, 0755)
 	if err != nil {
 		return xerrors.Errorf("MkdirAll() error: %w", err)
 	}
