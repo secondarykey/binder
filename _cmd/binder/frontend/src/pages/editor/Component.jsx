@@ -856,7 +856,7 @@ function Editor(props) {
   };
 
   const handleKeyDown = (e) => {
-    if (composingRef.current) {
+    if (composingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) {
       return;
     }
 
