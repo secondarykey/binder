@@ -222,6 +222,8 @@ function Editor(props) {
   useEffect(() => {
 
     evt.clearMessage();
+    // ツリー選択を同期（画像貼り付け・ツリー展開に必要）
+    evt.selectTreeNode(id);
 
     if (mode === Mode.diagram) {
 

@@ -278,6 +278,63 @@ func (b *Binder) RemoveAsset(id string) (*json.Asset, error) {
 	return a, nil
 }
 
+// SetAssetAsMetaImage はアセット画像を親ノートのメタ画像として設定する。
+// deleteAsset が true の場合、アセットをDBおよびファイルシステムから削除する。
+func (b *Binder) SetAssetAsMetaImage(assetId string, deleteAsset bool) error {
+	if b == nil {
+		return EmptyError
+	}
+
+	// アセット情報を取得（parentId = ノートID）
+	a, err := b.db.GetAssetWithParent(assetId)
+	if err != nil {
+		return xerrors.Errorf("db.GetAssetWithParent() error: %w", err)
+	}
+
+	// アセットのバイナリを読み込む
+	data, _, err := b.ReadAssetBytes(assetId)
+	if err != nil {
+		return xerrors.Errorf("ReadAssetBytes() error: %w", err)
+	}
+
+	// 親ノートのメタ画像として書き込む
+	n := &json.Note{Id: a.ParentId}
+	mf, err := b.fileSystem.WriteMetaData(n, data)
+	if err != nil {
+		return xerrors.Errorf("fs.WriteMetaData() error: %w", err)
+	}
+
+	var commitFiles []string
+	commitFiles = append(commitFiles, mf)
+	commitMsg := "Set Asset as Meta Image, " + a.Name
+
+	// アセット削除
+	if deleteAsset {
+		err = b.db.DeleteAsset(assetId)
+		if err != nil {
+			return xerrors.Errorf("db.DeleteAsset() error: %w", err)
+		}
+		err = b.db.DeleteStructure(assetId)
+		if err != nil {
+			return xerrors.Errorf("db.DeleteStructure() error: %w", err)
+		}
+		files, err := b.fileSystem.DeleteAsset(a)
+		if err != nil {
+			return xerrors.Errorf("fs.DeleteAsset() error: %w", err)
+		}
+		commitFiles = append(commitFiles, files...)
+		commitFiles = append(commitFiles, fs.AssetTableFile(), fs.StructureTableFile())
+		commitMsg += " (asset deleted)"
+	}
+
+	err = b.fileSystem.Commit(fs.M(commitMsg, a.ParentId), commitFiles...)
+	if err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	return nil
+}
+
 func (b *Binder) PublishAsset(id string) (*json.Asset, error) {
 
 	a, err := b.db.GetAssetWithParent(id)
@@ -341,8 +398,8 @@ func (b *Binder) GetUnpublishedAssets() ([]*json.Asset, error) {
 }
 
 // MigrateAssetToNote はテキストアセットをノートに移行する。
-// アセットの内容をノートのMarkdownとして登録し、元のアセットを削除する。
-func (b *Binder) MigrateAssetToNote(assetId string) (*json.Note, error) {
+// アセットの内容をノートのMarkdownとして登録し、deleteAsset が true の場合は元のアセットを削除する。
+func (b *Binder) MigrateAssetToNote(assetId string, deleteAsset bool) (*json.Note, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -411,26 +468,30 @@ func (b *Binder) MigrateAssetToNote(assetId string) (*json.Note, error) {
 		return nil, xerrors.Errorf("createStructure() error: %w", err)
 	}
 
-	// アセットをDBから削除
-	err = b.db.DeleteAsset(assetId)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
-	}
-	err = b.db.DeleteStructure(assetId)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
-	}
-
-	// アセットファイルを削除
-	assetFiles, err := b.fileSystem.DeleteAsset(a)
-	if err != nil {
-		return nil, xerrors.Errorf("fs.DeleteAsset() error: %w", err)
-	}
-
 	// 全変更をコミット
 	files := []string{fn}
-	files = append(files, assetFiles...)
-	files = append(files, fs.NoteTableFile(), fs.AssetTableFile(), fs.StructureTableFile())
+	files = append(files, fs.NoteTableFile(), fs.StructureTableFile())
+
+	if deleteAsset {
+		// アセットをDBから削除
+		err = b.db.DeleteAsset(assetId)
+		if err != nil {
+			return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
+		}
+		err = b.db.DeleteStructure(assetId)
+		if err != nil {
+			return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+		}
+
+		// アセットファイルを削除
+		assetFiles, err := b.fileSystem.DeleteAsset(a)
+		if err != nil {
+			return nil, xerrors.Errorf("fs.DeleteAsset() error: %w", err)
+		}
+		files = append(files, assetFiles...)
+		files = append(files, fs.AssetTableFile())
+	}
+
 	err = b.fileSystem.Commit(fs.M("Migrate Asset to Note", n.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)

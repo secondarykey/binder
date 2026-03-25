@@ -166,6 +166,24 @@ func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
 	return pub, nil
 }
 
+// WriteMetaData はバイト列をメタ画像ファイル（assets/meta/{noteId}）に書き込む。
+func (f *FileSystem) WriteMetaData(n *json.Note, data []byte) (string, error) {
+
+	mf := MetaFile(n)
+	fp, err := f.Create(mf)
+	if err != nil {
+		return "", xerrors.Errorf("binder Create() error: %w", err)
+	}
+	defer fp.Close()
+
+	_, err = fp.Write(data)
+	if err != nil {
+		return "", xerrors.Errorf("writer Write() error: %w", err)
+	}
+
+	return mf, nil
+}
+
 // DeleteMetaFile は assets/meta/{noteId} を削除する。
 // ファイルが存在しない場合は何もしない。
 func (f *FileSystem) DeleteMetaFile(n *json.Note) (string, bool) {
