@@ -842,6 +842,9 @@ function Editor(props) {
    * Enter時にインデントを挿入
    */
   const handleKeyDown = (e) => {
+    if (e.nativeEvent.isComposing) {
+      return;
+    }
 
     const textarea = e.target;
     const val = textarea.value;
