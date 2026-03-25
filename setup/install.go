@@ -96,38 +96,38 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 
 	// 空でもディレクトリは作っておく
 	docsdir := filepath.Join(dir, f.GetPublic())
-	err := os.MkdirAll(docsdir, 0666)
+	err := os.MkdirAll(docsdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
 	}
 
 	datadir := filepath.Join(dir, fs.DiagramDir)
-	err = os.MkdirAll(datadir, 0666)
+	err = os.MkdirAll(datadir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(diagrams) error: %w", err)
 	}
 
 	notesdir := filepath.Join(dir, fs.NoteDir)
-	err = os.MkdirAll(notesdir, 0666)
+	err = os.MkdirAll(notesdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(notes) error: %w", err)
 	}
 
 	tempDir := filepath.Join(dir, fs.TemplateDir)
-	err = os.MkdirAll(tempDir, 0666)
+	err = os.MkdirAll(tempDir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(templates) error: %w", err)
 	}
 
 	assetdir := filepath.Join(dir, fs.AssetDir)
-	err = os.MkdirAll(assetdir, 0666)
+	err = os.MkdirAll(assetdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(assets) error: %w", err)
 	}
 
 	// データベースを作成
 	dbdir := filepath.Join(dir, fs.DBDir)
-	err = os.MkdirAll(dbdir, 0666)
+	err = os.MkdirAll(dbdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(db) error: %w", err)
 	}
