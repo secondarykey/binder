@@ -3,8 +3,8 @@ package binder
 import (
 	"binder/api/json"
 	"binder/db/model"
-
-	"log/slog"
+	"binder/log"
+	"fmt"
 
 	"golang.org/x/xerrors"
 )
@@ -21,11 +21,11 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("db.FindStructures() error: %w", err)
 	}
 
-	slog.Info("Tree Length", "Structures", len(structures))
+	log.Info(fmt.Sprintf("Tree Length: %d", len(structures)))
 
 	treeMap := make(map[string][]*json.Leaf)
 	for _, s := range structures {
-		slog.Debug("GetTree()", "Structure", s)
+		log.Debug(fmt.Sprintf("GetTree() : %v", s.Id))
 		list := treeMap[s.ParentId]
 		treeMap[s.ParentId] = append(list, convertStructure2Leaf(s))
 	}
@@ -45,10 +45,10 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 	}
 	buildTree(root)
 
-	slog.Debug("Tree", "RootLength", len(root))
+	log.Debug(fmt.Sprintf("Tree:%d", len(root)))
 	if root != nil {
-		slog.Debug("Tree", "RootId", root[0].Id)
-		slog.Debug("Tree", "Root Children", len(root[0].Children))
+		log.Debug(fmt.Sprintf("Tree RootId: %s", root[0].Id))
+		log.Debug(fmt.Sprintf("Tree Root Children: %d", len(root[0].Children)))
 	}
 
 	var tree json.Tree

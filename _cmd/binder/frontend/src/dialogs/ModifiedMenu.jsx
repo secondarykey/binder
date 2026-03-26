@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
-  Checkbox,
+  Checkbox, Menu, MenuItem,
 } from '@mui/material';
 
 import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
  * @param {*} props
  * @returns
  */
-function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ...props }) {
+function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext)
   const {t} = useTranslation();
@@ -27,6 +27,28 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
   const date = dateProp ?? params.date;
   const currentId = currentIdProp ?? params.currentId;
   const nav = onNavigate ?? routerNav;
+
+  // コンテキストメニュー
+  const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0, leaf: null });
+
+  const handleContextMenu = (e, leaf) => {
+    e.preventDefault();
+    setContextMenu({ open: true, x: e.clientX, y: e.clientY, leaf });
+  };
+
+  const openItem = (leaf) => {
+    if (!leaf) return;
+    const path = leaf.type === 'asset' ? `/editor/assets/${leaf.id}` : `/editor/${leaf.type}/${leaf.id}`;
+    if (onClose) onClose();
+    routerNav(path);
+    evt.selectTreeNode(leaf.id);
+  };
+
+  const handleOpenItem = () => {
+    const leaf = contextMenu.leaf;
+    setContextMenu({ open: false, x: 0, y: 0, leaf: null });
+    openItem(leaf);
+  };
 
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
@@ -49,6 +71,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
       files.push(...assetRef.current.checked());
       files.push(...templateRef.current.checked());
 
+      evt.raise(Event.ModifiedProgress, { running: true });
       CommitFiles(files, comment).then(() => {
         evt.showSuccessMessage(t("commitModal.commitSuccess"));
         setTimeout(function () {
@@ -56,6 +79,8 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
         }, 1000);
       }).catch((err) => {
         evt.showErrorMessage(err);
+      }).finally(() => {
+        evt.raise(Event.ModifiedProgress, { running: false });
       })
     });
 
@@ -117,15 +142,22 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, ..
     nav("/status/modified/" + leaf.type + "/" + leaf.id);
   }
 
-  return (
+  return (<>
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} selectedId={currentId} ref={noteRef} />
-      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} selectedId={currentId} ref={diagramRef} />
-      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} selectedId={currentId} ref={assetRef} />
-      <ModifiedList name="Template" data={templates} onClick={handleOpen} selectedId={currentId} ref={templateRef} />
+      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={noteRef} />
+      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={diagramRef} />
+      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
+      <ModifiedList name="Template" data={templates} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
     </List>
-  );
+
+    <Menu open={contextMenu.open}
+      onClose={() => setContextMenu({ open: false, x: 0, y: 0, leaf: null })}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}>
+      <MenuItem onClick={handleOpenItem}>{t("common.open")}</MenuItem>
+    </Menu>
+  </>);
 }
 
 /**
@@ -191,7 +223,9 @@ const ModifiedList = forwardRef((props, ref) => {
           '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
           '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
         }}
-        onClick={(e) => props.onClick(e, leaf)}>
+        onClick={(e) => props.onClick(e, leaf)}
+        onDoubleClick={(e) => props.onDoubleClick?.(e, leaf)}
+        onContextMenu={(e) => props.onContextMenu?.(e, leaf)}>
         <ListItemIcon sx={{ minWidth: 32 }}>
           <Checkbox
             size="small"

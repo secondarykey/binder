@@ -98,6 +98,16 @@ class Event {
     static PublishGenerate = "publish.generate"
 
     /**
+     * コミット進捗（ModifiedMenuからCommit側に伝達）
+     */
+    static ModifiedProgress = "git.modified.progress"
+
+    /**
+     * Generate進捗（UnpublishedMenuからGenerateForm側に伝達）
+     */
+    static PublishProgress = "publish.progress"
+
+    /**
      * 管理イベント
      */
     eventMap = new Map();

@@ -27,7 +27,8 @@
         "set" : "設定",
         "create" : "作成",
         "updated" : "更新しました",
-        "deleted" : "削除しました"
+        "deleted" : "削除しました",
+        "open" : "開く"
     },
     "tree" : {
         "menu" : "メニュー",
@@ -43,7 +44,9 @@
         "clipboardEmpty" : "クリップボード画像のデータが空です",
         "download" : "ダウンロード",
         "downloadAll" : "全体",
-        "downloadDocs" : "docs"
+        "downloadDocs" : "docs",
+        "expandAll" : "すべて展開",
+        "collapseAll" : "すべて閉じる"
     },
     "note" : {
         "editTitle" : "ノート編集",
@@ -217,9 +220,16 @@
         "unpublishError" : "Unpublishに失敗しました: {{error}}",
         "binaryNotSupported" : "バイナリファイルのため表示できません: {{name}}",
         "migrateTitle" : "ノートに移行",
-        "migrateConfirm" : "「{{name}}」をノートに移行します。元のアセットは削除されます。よろしいですか？",
+        "migrateConfirm" : "「{{name}}」をノートに移行します。",
         "migrate" : "移行",
-        "updateFile" : "ファイル更新"
+        "migrateDeleteAsset" : "アセットを削除する",
+        "updateFile" : "ファイル更新",
+        "setMetaImage" : "メタ画像に設定",
+        "setMetaImageTitle" : "メタ画像に設定",
+        "setMetaImageConfirm" : "「{{name}}」を親ノートのメタ画像に設定します。よろしいですか？",
+        "setMetaImageDeleteAsset" : "アセットを削除する",
+        "setMetaImageSuccess" : "メタ画像に設定しました。",
+        "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}"
     },
     "preview" : {
         "publish" : "公開",

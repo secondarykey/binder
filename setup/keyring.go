@@ -1,11 +1,12 @@
 package setup
 
 import (
+	"binder/log"
+
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 
 	"github.com/zalando/go-keyring"
 	"golang.org/x/xerrors"
@@ -23,7 +24,8 @@ func isExistsUserKey() bool {
 		if errors.Is(keyring.ErrNotFound, err) {
 			return false
 		}
-		slog.Warn("ExistKey", "Error", err.Error())
+		log.PrintStackTrace(err)
+		return true
 	}
 	return true
 }

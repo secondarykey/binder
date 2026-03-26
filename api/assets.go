@@ -114,11 +114,22 @@ func (a *App) RemoveAsset(id string) error {
 	return nil
 }
 
+// SetAssetAsMetaImage はアセット画像を親ノートのメタ画像に設定する。
+func (a *App) SetAssetAsMetaImage(assetId string, deleteAsset bool) error {
+	defer log.PrintTrace(log.Func("SetAssetAsMetaImage()", assetId))
+	err := a.current.SetAssetAsMetaImage(assetId, deleteAsset)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("SetAssetAsMetaImage() error\n%+v", err)
+	}
+	return nil
+}
+
 // MigrateAssetToNote はテキストアセットをノートに移行する。
 // 移行先のノート情報を返す。
-func (a *App) MigrateAssetToNote(id string) (*json.Note, error) {
-	defer log.PrintTrace(log.Func("MigrateAssetToNote()", id))
-	n, err := a.current.MigrateAssetToNote(id)
+func (a *App) MigrateAssetToNote(id string, deleteAsset bool) (*json.Note, error) {
+	defer log.PrintTrace(log.Func("MigrateAssetToNote()", id, deleteAsset))
+	n, err := a.current.MigrateAssetToNote(id, deleteAsset)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("MigrateAssetToNote() error\n%+v", err)

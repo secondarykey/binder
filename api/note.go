@@ -3,7 +3,6 @@ package api
 import (
 	"binder/api/json"
 	"binder/log"
-	"log/slog"
 	"strings"
 
 	"fmt"
@@ -13,7 +12,6 @@ func (a *App) EditNote(n *json.Note, imageName string) (*json.Note, error) {
 
 	defer log.PrintTrace(log.Func("EditNote()"))
 
-	slog.Info("EditNote()", slog.Any("Note", n), "image", imageName)
 	//ノートを追加
 	n, err := a.current.EditNote(n, imageName)
 	if err != nil {

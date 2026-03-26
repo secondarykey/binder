@@ -5,8 +5,8 @@ import (
 	"binder/api/json"
 	"binder/fs"
 	"binder/setup"
+	"binder/log"
 	"binder/test"
-	"log/slog"
 	"path/filepath"
 	"testing"
 )
@@ -114,7 +114,7 @@ func TestInitialize(t *testing.T) {
 	ja.ApplyStructure(assetStruct.To())
 	fn = fs.AssetFile(ja)
 
-	slog.Error(fn)
+	log.Error(fn)
 	_, err = f.Stat(fn)
 	if err != nil {
 		t.Errorf("asset [%s] file not found error: %v", asset.Id, err)

@@ -2,8 +2,8 @@ package setup
 
 import (
 	. "binder/internal"
+	"binder/log"
 	"binder/settings"
-	"log/slog"
 
 	"golang.org/x/xerrors"
 )
@@ -76,7 +76,7 @@ func migrateApp(ver *Version, devMode bool) error {
 
 	if needUpdate {
 		if err := UpdateDefaults(); err != nil {
-			slog.Warn("migrateApp: UpdateDefaults", "Error", err)
+			log.WarnE("migrateApp: UpdateDefaults", err)
 		}
 	}
 

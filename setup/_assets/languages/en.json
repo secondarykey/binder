@@ -27,7 +27,8 @@
         "set" : "Set",
         "create" : "Create",
         "updated" : "Updated.",
-        "deleted" : "Deleted."
+        "deleted" : "Deleted.",
+        "open" : "Open"
     },
     "tree" : {
         "menu" : "Menu",
@@ -43,7 +44,9 @@
         "clipboardEmpty" : "Clipboard image data is empty.",
         "download" : "Download",
         "downloadAll" : "All",
-        "downloadDocs" : "Docs"
+        "downloadDocs" : "Docs",
+        "expandAll" : "Expand All",
+        "collapseAll" : "Collapse All"
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -217,9 +220,16 @@
         "unpublishError" : "Unpublish failed: {{error}}",
         "binaryNotSupported" : "Cannot display binary file: {{name}}",
         "migrateTitle" : "Migrate to Note",
-        "migrateConfirm" : "Migrate \"{{name}}\" to a note. The original asset will be deleted. Continue?",
+        "migrateConfirm" : "Migrate \"{{name}}\" to a note.",
         "migrate" : "Migrate",
-        "updateFile" : "Update File"
+        "migrateDeleteAsset" : "Delete asset",
+        "updateFile" : "Update File",
+        "setMetaImage" : "Set as Meta Image",
+        "setMetaImageTitle" : "Set as Meta Image",
+        "setMetaImageConfirm" : "Set \"{{name}}\" as the meta image for the parent note. Continue?",
+        "setMetaImageDeleteAsset" : "Delete asset",
+        "setMetaImageSuccess" : "Set as meta image.",
+        "setMetaImageError" : "Failed to set meta image: {{error}}"
     },
     "preview" : {
         "publish" : "Publish",

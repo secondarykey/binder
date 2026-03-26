@@ -2,9 +2,9 @@ package fs
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -136,7 +136,7 @@ func (f *FileSystem) Close() error {
 
 // ディレクトリを親ごと作成
 func (f *FileSystem) mkdir(n string) error {
-	err := f.fs.MkdirAll(n, 0666)
+	err := f.fs.MkdirAll(n, 0755)
 	if err != nil {
 		return xerrors.Errorf("MkdirAll() error: %w", err)
 	}
@@ -282,7 +282,7 @@ func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, er
 			us = json.NothingStatus
 		}
 	} else {
-		slog.Warn("modified error " + sfn + ":" + err.Error())
+		log.WarnE("modified error "+sfn, err)
 	}
 
 	//公開側に指定がない場合、エラー

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, forwardRef, useContext, useImperativeHandle } from 'react';
+import { useNavigate } from 'react-router';
 
 import {
   Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
-  Checkbox,
+  Checkbox, Menu, MenuItem,
 } from '@mui/material';
 
 import {
@@ -12,8 +13,8 @@ import {
   ParseNote, Generate,
 } from '../../bindings/binder/api/app';
 
-import Marked from '../pages/editor/engines/Marked';
-import Mermaid from '../pages/editor/engines/Mermaid';
+import Marked from '../components/editor/engines/Marked';
+import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
 import "../i18n/config";
@@ -24,10 +25,33 @@ import { useTranslation } from 'react-i18next';
  * ModifiedMenu と同じ構造で Note/Diagram/Asset を表示し、
  * PublishGenerate イベントを受け取ったら選択済みファイルを順次 Generate する。
  */
-function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
+function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext);
   const {t} = useTranslation();
+  const nav = useNavigate();
+
+  // コンテキストメニュー
+  const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0, leaf: null });
+
+  const handleContextMenu = (e, leaf) => {
+    e.preventDefault();
+    setContextMenu({ open: true, x: e.clientX, y: e.clientY, leaf });
+  };
+
+  const openItem = (leaf) => {
+    if (!leaf) return;
+    const path = leaf.type === 'asset' ? `/editor/assets/${leaf.id}` : `/editor/${leaf.type}/${leaf.id}`;
+    if (onClose) onClose();
+    nav(path);
+    evt.selectTreeNode(leaf.id);
+  };
+
+  const handleOpenItem = () => {
+    const leaf = contextMenu.leaf;
+    setContextMenu({ open: false, x: 0, y: 0, leaf: null });
+    openItem(leaf);
+  };
 
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
@@ -87,8 +111,13 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
         return;
       }
 
+      const total = selected.length;
+      evt.raise(Event.PublishProgress, { running: true, current: 0, total });
+
       const errors = [];
-      for (const leaf of selected) {
+      for (let i = 0; i < selected.length; i++) {
+        const leaf = selected[i];
+        evt.raise(Event.PublishProgress, { running: true, current: i, total });
         try {
           if (leaf.type === "note") {
             const text = await OpenNote(leaf.id);
@@ -108,6 +137,8 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
         }
       }
 
+      evt.raise(Event.PublishProgress, { running: false, current: total, total });
+
       if (errors.length > 0) {
         setErrorDlg({ open: true, names: errors });
       } else {
@@ -126,10 +157,17 @@ function UnpublishedMenu({ date: dateProp, onNavigate, ...props }) {
   return (<>
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <UnpublishedList name="Note"    data={notes}    ref={noteRef} />
-      <UnpublishedList name="Diagram" data={diagrams} ref={diagramRef} />
-      <UnpublishedList name="Asset"   data={assets}   ref={assetRef} />
+      <UnpublishedList name="Note"    data={notes}    onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={noteRef} />
+      <UnpublishedList name="Diagram" data={diagrams} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={diagramRef} />
+      <UnpublishedList name="Asset"   data={assets}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={assetRef} />
     </List>
+
+    <Menu open={contextMenu.open}
+      onClose={() => setContextMenu({ open: false, x: 0, y: 0, leaf: null })}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}>
+      <MenuItem onClick={handleOpenItem}>{t("common.open")}</MenuItem>
+    </Menu>
 
     <Dialog open={errorDlg.open} onClose={() => setErrorDlg({ open: false, names: [] })}>
       <DialogTitle>{t("publishModal.generateError")}</DialogTitle>
@@ -203,7 +241,9 @@ const UnpublishedList = forwardRef((props, ref) => {
         sx={{
           pl: 2, py: 0.25, borderRadius: '2px',
           '&:hover': { backgroundColor: 'var(--selected-bg)' },
-        }}>
+        }}
+        onDoubleClick={(e) => props.onDoubleClick?.(e, leaf)}
+        onContextMenu={(e) => props.onContextMenu?.(e, leaf)}>
         <ListItemIcon sx={{ minWidth: 32 }}>
           <Checkbox
             size="small"

@@ -4,9 +4,9 @@ import (
 	"binder/db"
 	"binder/fs"
 	. "binder/internal"
+	"binder/log"
 	"binder/settings"
 	"embed"
-	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -70,14 +70,14 @@ func Install(dir string, ver *Version, name string) error {
 	// ユーザデータを暗号化して保存（Git設定のユーザ名・メールアドレスを初期値とする）
 	key, err := GetUserKey()
 	if err != nil {
-		slog.Warn("Install: GetUserKey", "Error", err)
+		log.WarnE("Install: GetUserKey()", err)
 	} else {
 		info := &fs.UserInfo{
 			Name:  s.Git.Name,
 			Email: s.Git.Mail,
 		}
 		if err = fs.SaveUserInfo(dir, key, info); err != nil {
-			slog.Warn("Install: SaveUserInfo", "Error", err)
+			log.WarnE("Install: SaveUserInfo()", err)
 		}
 	}
 
@@ -96,38 +96,38 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 
 	// 空でもディレクトリは作っておく
 	docsdir := filepath.Join(dir, f.GetPublic())
-	err := os.MkdirAll(docsdir, 0666)
+	err := os.MkdirAll(docsdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(docs) error: %w", err)
 	}
 
 	datadir := filepath.Join(dir, fs.DiagramDir)
-	err = os.MkdirAll(datadir, 0666)
+	err = os.MkdirAll(datadir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(diagrams) error: %w", err)
 	}
 
 	notesdir := filepath.Join(dir, fs.NoteDir)
-	err = os.MkdirAll(notesdir, 0666)
+	err = os.MkdirAll(notesdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(notes) error: %w", err)
 	}
 
 	tempDir := filepath.Join(dir, fs.TemplateDir)
-	err = os.MkdirAll(tempDir, 0666)
+	err = os.MkdirAll(tempDir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(templates) error: %w", err)
 	}
 
 	assetdir := filepath.Join(dir, fs.AssetDir)
-	err = os.MkdirAll(assetdir, 0666)
+	err = os.MkdirAll(assetdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(assets) error: %w", err)
 	}
 
 	// データベースを作成
 	dbdir := filepath.Join(dir, fs.DBDir)
-	err = os.MkdirAll(dbdir, 0666)
+	err = os.MkdirAll(dbdir, 0755)
 	if err != nil {
 		return xerrors.Errorf("os.Mkdir(db) error: %w", err)
 	}

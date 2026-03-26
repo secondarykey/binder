@@ -1,7 +1,7 @@
 package fsconvert
 
 import (
-	"log/slog"
+	"binder/log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,7 +44,7 @@ func MigrateV048(dir string) error {
 		src := filepath.Join(assetsDir, name)
 		dst := filepath.Join(metaDir, noteId)
 
-		slog.Info("migrate meta file", "src", src, "dst", dst)
+		log.Info("migrate meta file src=" + src + " dst=" + dst)
 		if err := os.Rename(src, dst); err != nil {
 			return xerrors.Errorf("os.Rename(%s→%s) error: %w", src, dst, err)
 		}

@@ -14,7 +14,7 @@ import PropTypes from "prop-types";
  *   onDragOver      - ドラッグオーバーハンドラ
  *   onDrop          - ドロップハンドラ
  */
-function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, onKeyDown, onChange, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, onKeyDown, onChange, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   const canvasRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
@@ -99,6 +99,8 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, onKe
         value={text}
         onKeyDown={onKeyDown}
         onChange={onChange}
+        onCompositionStart={onCompositionStart}
+        onCompositionEnd={onCompositionEnd}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onScroll={handleEditorScroll}
@@ -114,6 +116,8 @@ EditorArea.propTypes = {
   wordWrap: PropTypes.bool,
   onKeyDown: PropTypes.func,
   onChange: PropTypes.func,
+  onCompositionStart: PropTypes.func,
+  onCompositionEnd: PropTypes.func,
   onDragOver: PropTypes.func,
   onDrop: PropTypes.func,
 };

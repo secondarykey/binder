@@ -1,10 +1,10 @@
 package fs
 
 import (
+	"binder/log"
 	"binder/settings"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"sort"
 	"strings"
@@ -337,7 +337,7 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 
 	if len(names) == 0 {
 		//更新がない場合
-		//slog.Info("names is zero")
+		//log.Info("names is zero")
 	}
 	return names, nil
 }
@@ -357,12 +357,15 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 	var rtn []*Modified
 	//notes,diagrams,templates 以外ないはず
 	for f, s := range status {
-		slog.Debug("Status", "File", f, "Staging", s.Staging, "Worktree", s.Worktree, "Extra", s.Extra)
+
+		//TODO なんかログを考える
+		//log.Debug("Status", "File", f, "Staging", s.Staging, "Worktree", s.Worktree, "Extra", s.Extra)
+
 		//fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
 		mod, err := getModelType(f)
 		if err != nil {
 			// db/・binder.json など管理外のファイルは無視（Debugレベル）
-			slog.Debug(err.Error())
+			log.DebugE("getModelType() error", err)
 		} else {
 			mod.Status = s
 			rtn = append(rtn, mod)
@@ -447,7 +450,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 				//w.Clean(&git.CleanOptions{})
 				commitOk = true
 			} else if s.Staging == git.Added {
-				slog.Warn("s.Staging is added")
+				log.Warn("s.Staging is added")
 				commitOk = true
 			} else if s.Staging == git.Modified {
 				// 事前に w.Add() でステージング済みのファイル
@@ -456,7 +459,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 				// 事前に w.Remove() でステージング済みの削除
 				commitOk = true
 			} else if s.Staging == git.Untracked {
-				slog.Warn("s.Staging is untracked?")
+				log.Warn("s.Staging is untracked?")
 				//commitOk = true
 			}
 		}
@@ -464,7 +467,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 
 	if !commitOk {
 		// update file nothing
-		slog.Warn("update file nothing")
+		log.Warn("update file nothing")
 		return UpdatedFilesError
 	}
 

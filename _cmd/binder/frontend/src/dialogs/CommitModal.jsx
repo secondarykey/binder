@@ -64,6 +64,7 @@ function CommitModal({ open, onClose }) {
             date={modalState.date}
             currentId={modalState.currentId}
             onNavigate={handleNavigate}
+            onClose={onClose}
           />
         </div>
         <div id="commitRight">

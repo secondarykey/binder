@@ -2,8 +2,9 @@ package fs
 
 import (
 	"binder/api/json"
+	"binder/log"
+
 	"fmt"
-	"log/slog"
 	"path/filepath"
 	"strings"
 )
@@ -16,9 +17,9 @@ func (sys *FileSystem) ToFullPath(mode, id string) string {
 	case "diagram":
 		fn = diagramFile(id)
 	case "template":
-		slog.Warn("Not Implemented")
+		log.Warn("Not Implemented")
 	case "assets":
-		slog.Warn("Not Implemented")
+		log.Warn("Not Implemented")
 	default:
 	}
 

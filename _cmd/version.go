@@ -11,17 +11,21 @@ import (
 )
 
 const (
-	configYml   = "./_cmd/binder/build/config.yml"
-	configRg    = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	configFmt   = `  version: "%v"`
-	packJsn     = "./_cmd/binder/frontend/package.json"
-	packRg      = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	packFmt     = `  "version": "%v",`
-	winInfoJsn  = "./_cmd/binder/build/windows/info.json"
-	winInfoRg1  = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	winInfoRg2  = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	winInfoFmt1 = `        "file_version": "%v"`
-	winInfoFmt2 = `            "ProductVersion": "%v",`
+	versionFile  = "./_cmd/binder/version"
+	configYml    = "./_cmd/binder/build/config.yml"
+	configRg     = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	configFmt    = `  version: "%v"`
+	packJsn      = "./_cmd/binder/frontend/package.json"
+	packRg       = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	packFmt      = `  "version": "%v",`
+	winInfoJsn   = "./_cmd/binder/build/windows/info.json"
+	winInfoRg1   = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoRg2   = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoFmt1  = `        "file_version": "%v"`
+	winInfoFmt2  = `            "ProductVersion": "%v",`
+	darwinPlist  = "./_cmd/binder/build/darwin/Info.plist"
+	plistRg      = `<string>([0-9]+\.[0-9]+\.[0-9]+)</string>`
+	plistFmt     = `            <string>%v</string>`
 )
 
 const inqury = `
@@ -104,16 +108,16 @@ func (v *ver) isError() bool {
 	return false
 }
 
+var bump bool
+
 func main() {
 
+	flag.BoolVar(&bump, "bump", false, "対話的にバージョンを選択して更新")
 	flag.Parse()
-	name := ""
-	args := flag.Args()
-	if len(args) > 0 {
-		name = args[0]
-	}
 
-	err := run(name)
+	args := flag.Args()
+
+	err := run(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "run() error: %+v", err)
 		os.Exit(1)
@@ -122,23 +126,27 @@ func main() {
 	fmt.Println("Success")
 }
 
-func run(v string) error {
+func run(args []string) error {
+
+	now, err := parseVersion()
+	if err != nil {
+		return err
+	}
+
+	// 引数なし・フラグなし: version ファイルのバージョンで他ファイルを同期
+	if len(args) == 0 && !bump {
+		fmt.Println("Version:", now)
+		return write(now)
+	}
 
 	var rtn *ver
-	if v == "" || v == "print" {
-		now, err := parseVersion()
-		if err != nil {
-			return err
-		}
 
-		if v == "print" {
-			fmt.Printf("Now Version: %v\n", now)
-			return nil
-		}
+	if bump {
+		// -bump: 対話的にバージョンを選択
 		rtn = inquryVersion(now)
-
 	} else {
-		rtn = parseVer(v)
+		// 引数指定: 指定バージョンを設定
+		rtn = parseVer(args[0])
 	}
 
 	if rtn.isError() {
@@ -147,12 +155,13 @@ func run(v string) error {
 
 	fmt.Println("Version:", rtn)
 
-	err := write(rtn)
-	if err != nil {
+	// version ファイルに書き込み
+	if err := os.WriteFile(versionFile, []byte(rtn.String()), 0644); err != nil {
 		return err
 	}
+	fmt.Println("Write:", versionFile)
 
-	return nil
+	return write(rtn)
 }
 
 func inquryVersion(now *ver) *ver {
@@ -182,25 +191,13 @@ func inquryVersion(now *ver) *ver {
 
 func parseVersion() (*ver, error) {
 
-	re := regexp.MustCompile(configRg)
-
-	fp, err := os.Open(configYml)
+	data, err := os.ReadFile(versionFile)
 	if err != nil {
 		return nil, err
 	}
-	defer fp.Close()
 
-	scanner := bufio.NewScanner(fp)
-	for scanner.Scan() {
-		line := scanner.Text()
-		match := re.FindStringSubmatch(line)
-		if len(match) > 1 {
-			v := parseVer(match[1])
-			return v, nil
-		}
-	}
-
-	return nil, nil
+	v := parseVer(strings.TrimSpace(string(data)))
+	return v, nil
 }
 
 type op struct {
@@ -217,10 +214,13 @@ type rgSet struct {
 }
 
 func write(v *ver) error {
+
+	// 各ファイルを更新
 	ops := []*op{
-		&op{configYml, "", v, []*rgSet{&rgSet{configRg, configFmt, nil}}},
-		&op{packJsn, "", v, []*rgSet{&rgSet{packRg, packFmt, nil}}},
-		&op{winInfoJsn, "", v, []*rgSet{&rgSet{winInfoRg1, winInfoFmt1, nil}, &rgSet{winInfoRg2, winInfoFmt2, nil}}},
+		{configYml, "", v, []*rgSet{{configRg, configFmt, nil}}},
+		{packJsn, "", v, []*rgSet{{packRg, packFmt, nil}}},
+		{winInfoJsn, "", v, []*rgSet{{winInfoRg1, winInfoFmt1, nil}, {winInfoRg2, winInfoFmt2, nil}}},
+		{darwinPlist, "", v, []*rgSet{{plistRg, plistFmt, nil}}},
 	}
 
 	for _, o := range ops {
