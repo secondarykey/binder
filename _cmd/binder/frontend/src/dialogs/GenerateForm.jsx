@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { Grid, TextField, FormControl, FormLabel, Button } from "@mui/material";
+import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress } from "@mui/material";
 
 import Event, { EventContext } from '../Event';
 import "../i18n/config";
@@ -16,10 +16,14 @@ function GenerateForm({ date }) {
   const evt = useContext(EventContext);
   const {t} = useTranslation();
   const [comment, setComment] = useState("Generate:");
+  const [progress, setProgress] = useState({ running: false, current: 0, total: 0 });
 
   useEffect(() => {
     evt.register("GenerateForm", Event.PublishComment, function (c) {
       setComment(c);
+    });
+    evt.register("GenerateForm", Event.PublishProgress, function (p) {
+      setProgress(p);
     });
   }, [date]);
 
@@ -43,8 +47,16 @@ function GenerateForm({ date }) {
         />
       </FormControl>
 
+      {progress.running && (
+        <LinearProgress
+          variant="determinate"
+          value={progress.total > 0 ? (progress.current / progress.total) * 100 : 0}
+          sx={{ mx: 1 }}
+        />
+      )}
+
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleGenerate}>{t("publishModal.generate")}</Button>
+        <Button variant="contained" onClick={handleGenerate} disabled={progress.running}>{t("publishModal.generate")}</Button>
       </FormControl>
 
     </Grid>
