@@ -108,16 +108,16 @@ func (v *ver) isError() bool {
 	return false
 }
 
+var bump bool
+
 func main() {
 
+	flag.BoolVar(&bump, "bump", false, "対話的にバージョンを選択して更新")
 	flag.Parse()
-	name := ""
-	args := flag.Args()
-	if len(args) > 0 {
-		name = args[0]
-	}
 
-	err := run(name)
+	args := flag.Args()
+
+	err := run(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "run() error: %+v", err)
 		os.Exit(1)
@@ -126,23 +126,27 @@ func main() {
 	fmt.Println("Success")
 }
 
-func run(v string) error {
+func run(args []string) error {
+
+	now, err := parseVersion()
+	if err != nil {
+		return err
+	}
+
+	// 引数なし・フラグなし: version ファイルのバージョンで他ファイルを同期
+	if len(args) == 0 && !bump {
+		fmt.Println("Version:", now)
+		return write(now)
+	}
 
 	var rtn *ver
-	if v == "" || v == "print" {
-		now, err := parseVersion()
-		if err != nil {
-			return err
-		}
 
-		if v == "print" {
-			fmt.Printf("Now Version: %v\n", now)
-			return nil
-		}
+	if bump {
+		// -bump: 対話的にバージョンを選択
 		rtn = inquryVersion(now)
-
 	} else {
-		rtn = parseVer(v)
+		// 引数指定: 指定バージョンを設定
+		rtn = parseVer(args[0])
 	}
 
 	if rtn.isError() {
@@ -151,12 +155,13 @@ func run(v string) error {
 
 	fmt.Println("Version:", rtn)
 
-	err := write(rtn)
-	if err != nil {
+	// version ファイルに書き込み
+	if err := os.WriteFile(versionFile, []byte(rtn.String()), 0644); err != nil {
 		return err
 	}
+	fmt.Println("Write:", versionFile)
 
-	return nil
+	return write(rtn)
 }
 
 func inquryVersion(now *ver) *ver {
