@@ -11,17 +11,21 @@ import (
 )
 
 const (
-	configYml   = "./_cmd/binder/build/config.yml"
-	configRg    = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	configFmt   = `  version: "%v"`
-	packJsn     = "./_cmd/binder/frontend/package.json"
-	packRg      = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	packFmt     = `  "version": "%v",`
-	winInfoJsn  = "./_cmd/binder/build/windows/info.json"
-	winInfoRg1  = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	winInfoRg2  = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	winInfoFmt1 = `        "file_version": "%v"`
-	winInfoFmt2 = `            "ProductVersion": "%v",`
+	versionFile  = "./_cmd/binder/version"
+	configYml    = "./_cmd/binder/build/config.yml"
+	configRg     = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	configFmt    = `  version: "%v"`
+	packJsn      = "./_cmd/binder/frontend/package.json"
+	packRg       = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	packFmt      = `  "version": "%v",`
+	winInfoJsn   = "./_cmd/binder/build/windows/info.json"
+	winInfoRg1   = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoRg2   = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	winInfoFmt1  = `        "file_version": "%v"`
+	winInfoFmt2  = `            "ProductVersion": "%v",`
+	darwinPlist  = "./_cmd/binder/build/darwin/Info.plist"
+	plistRg      = `<string>([0-9]+\.[0-9]+\.[0-9]+)</string>`
+	plistFmt     = `            <string>%v</string>`
 )
 
 const inqury = `
@@ -182,25 +186,13 @@ func inquryVersion(now *ver) *ver {
 
 func parseVersion() (*ver, error) {
 
-	re := regexp.MustCompile(configRg)
-
-	fp, err := os.Open(configYml)
+	data, err := os.ReadFile(versionFile)
 	if err != nil {
 		return nil, err
 	}
-	defer fp.Close()
 
-	scanner := bufio.NewScanner(fp)
-	for scanner.Scan() {
-		line := scanner.Text()
-		match := re.FindStringSubmatch(line)
-		if len(match) > 1 {
-			v := parseVer(match[1])
-			return v, nil
-		}
-	}
-
-	return nil, nil
+	v := parseVer(strings.TrimSpace(string(data)))
+	return v, nil
 }
 
 type op struct {
@@ -217,10 +209,13 @@ type rgSet struct {
 }
 
 func write(v *ver) error {
+
+	// 各ファイルを更新
 	ops := []*op{
-		&op{configYml, "", v, []*rgSet{&rgSet{configRg, configFmt, nil}}},
-		&op{packJsn, "", v, []*rgSet{&rgSet{packRg, packFmt, nil}}},
-		&op{winInfoJsn, "", v, []*rgSet{&rgSet{winInfoRg1, winInfoFmt1, nil}, &rgSet{winInfoRg2, winInfoFmt2, nil}}},
+		{configYml, "", v, []*rgSet{{configRg, configFmt, nil}}},
+		{packJsn, "", v, []*rgSet{{packRg, packFmt, nil}}},
+		{winInfoJsn, "", v, []*rgSet{{winInfoRg1, winInfoFmt1, nil}, {winInfoRg2, winInfoFmt2, nil}}},
+		{darwinPlist, "", v, []*rgSet{{plistRg, plistFmt, nil}}},
 	}
 
 	for _, o := range ops {
