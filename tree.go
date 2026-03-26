@@ -25,7 +25,7 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 
 	treeMap := make(map[string][]*json.Leaf)
 	for _, s := range structures {
-		log.Debug(fmt.Sprintf("GetTree() : %v"))
+		log.Debug(fmt.Sprintf("GetTree() : %v", s.Id))
 		list := treeMap[s.ParentId]
 		treeMap[s.ParentId] = append(list, convertStructure2Leaf(s))
 	}
