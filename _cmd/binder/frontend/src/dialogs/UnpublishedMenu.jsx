@@ -13,8 +13,8 @@ import {
   ParseNote, Generate,
 } from '../../bindings/binder/api/app';
 
-import Marked from '../pages/editor/engines/Marked';
-import Mermaid from '../pages/editor/engines/Mermaid';
+import Marked from '../components/editor/engines/Marked';
+import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
 import "../i18n/config";

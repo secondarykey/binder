@@ -6,8 +6,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Events, Window } from '@wailsio/runtime';
 
 import { SystemMessage } from '../Message';
-import HTMLFrame from '../pages/editor/HTMLFrame';
-import Mermaid from '../pages/editor/engines/Mermaid';
+import HTMLFrame from '../components/editor/HTMLFrame';
+import Mermaid from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
 import '../assets/PreviewApp.css';
