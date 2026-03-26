@@ -1,8 +1,8 @@
 package binder
 
 import (
+	"binder/log"
 	"errors"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -37,7 +37,7 @@ func FontNames() []string {
 		if err != nil {
 			//エラーが存在したので一応表示
 			b := filepath.Base(p)
-			slog.Warn("Font Name error:" + err.Error() + ":" + b)
+			log.WarnE("Font Name error:"+b, err)
 		}
 	}
 

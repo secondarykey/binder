@@ -2,8 +2,9 @@ package binder
 
 import (
 	"binder/fs"
+	"binder/log"
+
 	"fmt"
-	"log/slog"
 
 	"golang.org/x/xerrors"
 )
@@ -20,7 +21,7 @@ func (b *Binder) ToFile(mode string, id string) string {
 	case "template":
 		f = fs.TemplateFile(id)
 	default:
-		slog.Warn("leaf is template type? " + mode)
+		log.Warn("leaf is template type? " + mode)
 	}
 	return f
 }

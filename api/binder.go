@@ -7,7 +7,6 @@ import (
 	"binder/settings"
 	"binder/setup"
 	"fmt"
-	"log/slog"
 
 	"golang.org/x/xerrors"
 )
@@ -38,7 +37,7 @@ func (a *App) LoadBinder(dir string) (string, error) {
 
 	// 履歴を保存（最近開いたバインダーを先頭にする）
 	if err := settings.SaveHistory(dir); err != nil {
-		slog.Warn("SaveHistory error", "err", err)
+		log.WarnE("SaveHistory error", err)
 	}
 
 	return address, nil
@@ -118,7 +117,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 
 	default:
 		//templateはないはず
-		slog.Warn("Unknown Mode:" + mode)
+		log.Warn("Unknown Mode:" + mode)
 	}
 
 	if err != nil {
@@ -140,7 +139,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	case "assets":
 		err = a.current.UnpublishAsset(id)
 	default:
-		slog.Warn("Unknown Mode:" + mode)
+		log.Warn("Unknown Mode:" + mode)
 	}
 
 	if err != nil {

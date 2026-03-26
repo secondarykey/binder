@@ -15,9 +15,9 @@ import (
 // debug = -4 ,info = 0 warn = 4,error = 8
 
 const (
-	TraceLevel     slog.Level = -8
-	NoticeLevel    slog.Level = 2
-	EmergencyLevel slog.Level = 32
+	LevelTrace     slog.Level = -8
+	LevelNotice    slog.Level = 2
+	LevelEmergency slog.Level = 32
 )
 
 var gCtx context.Context
@@ -27,7 +27,7 @@ var logLevel slog.LevelVar
 
 func init() {
 	gCtx = context.Background()
-	logLevel.Set(NoticeLevel)
+	logLevel.Set(LevelNotice)
 	def = slog.Default()
 }
 
@@ -75,17 +75,17 @@ func (h *simpleHandler) WithGroup(_ string) slog.Handler      { return h }
 
 func levelName(l slog.Level) string {
 	switch {
-	case l <= TraceLevel:
+	case l <= LevelTrace:
 		return "TRACE"
 	case l <= slog.LevelDebug:
 		return "DEBUG"
-	case l < NoticeLevel:
+	case l < LevelNotice:
 		return "INFO"
 	case l < slog.LevelWarn:
 		return "NOTICE"
 	case l < slog.LevelError:
 		return "WARN"
-	case l < EmergencyLevel:
+	case l < LevelEmergency:
 		return "ERROR"
 	default:
 		return "EMERGENCY"
@@ -124,23 +124,68 @@ func SetContext(ctx context.Context) {
 }
 
 func Trace(msg string) {
-	//Handler.Enabled(ctx,Level)
-	//defer binder.Trace(binder.Start("Trace"))
-	slog.Log(gCtx, TraceLevel, msg)
+	log(LevelTrace, msg, nil)
+}
+
+func TraceE(msg string, err error) {
+	log(LevelTrace, msg, err)
+}
+
+func Debug(msg string) {
+	log(slog.LevelDebug, msg, nil)
+}
+
+func DebugE(msg string, err error) {
+	log(slog.LevelDebug, msg, err)
+}
+
+func Info(msg string) {
+	log(slog.LevelInfo, msg, nil)
+}
+
+func InfoE(msg string, err error) {
+	log(slog.LevelInfo, msg, err)
 }
 
 func Notice(msg string) {
-	slog.Log(gCtx, NoticeLevel, msg)
+	log(LevelNotice, msg, nil)
+}
+
+func NoticeE(msg string, err error) {
+	log(LevelNotice, msg, err)
+}
+
+func Warn(msg string) {
+	log(slog.LevelWarn, msg, nil)
+}
+
+func WarnE(msg string, err error) {
+	log(slog.LevelWarn, msg, err)
+}
+
+func Error(msg string) {
+	log(slog.LevelError, msg, nil)
+}
+
+func ErrorE(msg string, err error) {
+	log(slog.LevelError, msg, err)
+}
+
+func log(lv slog.Level, msg string, err error) {
+	slog.Log(gCtx, lv, msg)
+	if err != nil && def.Enabled(gCtx, slog.LevelInfo) {
+		stacktrace(err)
+	}
 }
 
 func PrintTrace(caller string) {
-	if def.Enabled(gCtx, TraceLevel) {
+	if def.Enabled(gCtx, LevelTrace) {
 		Trace(caller + " End")
 	}
 }
 
 func Func(caller string, args ...interface{}) string {
-	if def.Enabled(gCtx, TraceLevel) {
+	if def.Enabled(gCtx, LevelTrace) {
 		//pc,file,line,ok  := runtime.Caller(1)
 		Trace(caller + " Start")
 		if len(args) > 0 {
@@ -162,7 +207,7 @@ func arguments(args ...interface{}) string {
 }
 
 func PrintStackTrace(err error) {
-	slog.Error("Exception:\n" + stacktrace(err))
+	slog.Error("Error:\n" + stacktrace(err))
 	return
 }
 
@@ -182,9 +227,9 @@ func emergency(err interface{}) {
 	//2.defer
 	//3. panic!
 	_, file, line, ok := runtime.Caller(3)
-	slog.Log(gCtx, EmergencyLevel, "Emergency!!\n"+stacktrace(err))
+	slog.Log(gCtx, LevelEmergency, "Emergency!!\n"+stacktrace(err))
 	if ok {
-		slog.Log(gCtx, EmergencyLevel, "File:"+file)
-		slog.Log(gCtx, EmergencyLevel, fmt.Sprintf("Line:%d", line))
+		slog.Log(gCtx, LevelEmergency, "File:"+file)
+		slog.Log(gCtx, LevelEmergency, fmt.Sprintf("Line:%d", line))
 	}
 }

@@ -2,12 +2,12 @@ package db
 
 import (
 	. "binder/internal"
+	"binder/log"
 	"bufio"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -198,7 +198,7 @@ func loadOldSchemaFile(dir string) string {
 	//存在する場合
 	if len(files) >= 1 {
 		if len(files) > 1 {
-			slog.Warn("schema file duplicate:" + dir)
+			log.Warn("schema file duplicate:" + dir)
 		}
 
 		f := files[0]

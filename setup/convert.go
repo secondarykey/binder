@@ -3,9 +3,9 @@ package setup
 import (
 	"binder/fs"
 	. "binder/internal"
+	"binder/log"
 	"binder/settings"
 	"binder/setup/convert"
-	"log/slog"
 
 	"golang.org/x/xerrors"
 )
@@ -71,7 +71,7 @@ func Convert(dir string, ver *Version) error {
 	if result.UserDataRequired {
 		key, err := GetUserKey()
 		if err != nil {
-			slog.Warn("Convert: GetUserKey", "Error", err)
+			log.WarnE("Convert: GetUserKey", err)
 		} else {
 			s := settings.Get()
 			info := &fs.UserInfo{
@@ -79,7 +79,7 @@ func Convert(dir string, ver *Version) error {
 				Email: s.Git.Mail,
 			}
 			if err = fs.SaveUserInfo(dir, key, info); err != nil {
-				slog.Warn("Convert: SaveUserInfo", "Error", err)
+				log.WarnE("Convert: SaveUserInfo", err)
 			}
 		}
 	}

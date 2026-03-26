@@ -10,7 +10,6 @@ import (
 	"binder/setup"
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -85,10 +84,10 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	if save && fsInfo != nil {
 		key, err := setup.GetUserKey()
 		if err != nil {
-			slog.Warn("CreateRemote: GetUserKey", "Error", err)
+			log.WarnE("CreateRemote: GetUserKey", err)
 		} else {
 			if err = fs.SaveUserInfo(dir, key, fsInfo); err != nil {
-				slog.Warn("CreateRemote: SaveUserInfo", "Error", err)
+				log.WarnE("CreateRemote: SaveUserInfo", err)
 			}
 		}
 	}
@@ -134,11 +133,11 @@ func Load(dir string) (*Binder, error) {
 	// バインダーのユーザ情報をコミット署名に設定
 	key, err := setup.GetUserKey()
 	if err != nil {
-		slog.Warn("Load: GetUserKey", "Error", err)
+		log.WarnE("Load: GetUserKey()", err)
 	} else {
 		info, err := fs.LoadUserInfo(dir, key)
 		if err != nil {
-			slog.Warn("Load: LoadUserInfo", "Error", err)
+			log.WarnE("Load: LoadUserInfo()", err)
 		} else if info != nil {
 			bfs.SetUserSig(info)
 		}
@@ -339,7 +338,7 @@ func (b *Binder) generateId() string {
 
 	id, err := uuid.NewV7()
 	if err != nil {
-		slog.Error("UUID v7 generate error: " + err.Error())
+		log.ErrorE("UUID v7 generate error", err)
 		return ""
 	}
 	return id.String()

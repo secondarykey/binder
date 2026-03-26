@@ -2,7 +2,6 @@ package api
 
 import (
 	. "binder/internal"
-	"log/slog"
 
 	"binder"
 	"binder/log"
@@ -23,7 +22,7 @@ func New(version string) *App {
 	var err error
 	app.version, err = NewVersion(version)
 	if err != nil {
-		slog.Warn(fmt.Sprintf("Version parse error: %+v", err))
+		log.WarnE("Version parse error", err)
 	}
 	log.Notice(fmt.Sprintf("Binder Version: %s", app.version))
 
@@ -39,7 +38,6 @@ func (app *App) SetCurrent(c *binder.Binder) {
 	defer log.PrintTrace(log.Func("SetCurrent()"))
 	app.current = c
 }
-
 
 // VersionInfo はバージョン文字列と開発モードかどうかを返す
 type VersionInfo struct {

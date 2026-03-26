@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log/slog"
 	"strings"
 	"time"
 
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"binder/log"
 
 	"golang.org/x/xerrors"
 )
@@ -96,7 +96,7 @@ func (w *wrapper) childrenNotes(v ...any) []*tempNote {
 		if ok {
 			n = wk
 		} else {
-			slog.Warn("Tepmpalte children()", "arg1", "validation error: number")
+			log.Warn("Tepmpalte children() validation error: number")
 		}
 	}
 
@@ -107,7 +107,7 @@ func (w *wrapper) childrenNotes(v ...any) []*tempNote {
 		if ok {
 			id = wk
 		} else {
-			slog.Warn("Tepmpalte children()", "arg2", "validation error: note id")
+			log.Warn("Tepmpalte children() validation error: note id")
 		}
 	}
 
@@ -134,7 +134,7 @@ func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 	}
 
 	if err != nil {
-		slog.Error("FindNote()", "error", err)
+		log.ErrorE("FindNote()", err)
 		return nil
 	}
 
@@ -251,7 +251,7 @@ func formatDate(d string, f string) string {
 
 	t, e := time.Parse(time.RFC3339, d)
 	if e != nil {
-		slog.Warn("format error", "err", e.Error(), "value", d)
+		log.WarnE("format error:"+d, e)
 		return d
 	}
 	return t.Format(f)

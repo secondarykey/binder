@@ -4,9 +4,9 @@ import (
 	"binder/db"
 	"binder/fs"
 	. "binder/internal"
+	"binder/log"
 	"binder/settings"
 	"embed"
-	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -70,14 +70,14 @@ func Install(dir string, ver *Version, name string) error {
 	// ユーザデータを暗号化して保存（Git設定のユーザ名・メールアドレスを初期値とする）
 	key, err := GetUserKey()
 	if err != nil {
-		slog.Warn("Install: GetUserKey", "Error", err)
+		log.WarnE("Install: GetUserKey()", err)
 	} else {
 		info := &fs.UserInfo{
 			Name:  s.Git.Name,
 			Email: s.Git.Mail,
 		}
 		if err = fs.SaveUserInfo(dir, key, info); err != nil {
-			slog.Warn("Install: SaveUserInfo", "Error", err)
+			log.WarnE("Install: SaveUserInfo()", err)
 		}
 	}
 

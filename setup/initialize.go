@@ -5,7 +5,7 @@ import (
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
-	"log/slog"
+	"binder/log"
 
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -69,7 +69,7 @@ func newOp(userId string) db.Op {
 func generateId() string {
 	id, err := uuid.NewV7()
 	if err != nil {
-		slog.Error("UUID v7 generate error: " + err.Error())
+		log.ErrorE("UUID v7 generate error ", err)
 		return ""
 	}
 	return id.String()

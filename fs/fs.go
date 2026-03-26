@@ -2,9 +2,9 @@ package fs
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -282,7 +282,7 @@ func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, er
 			us = json.NothingStatus
 		}
 	} else {
-		slog.Warn("modified error " + sfn + ":" + err.Error())
+		log.WarnE("modified error "+sfn, err)
 	}
 
 	//公開側に指定がない場合、エラー
