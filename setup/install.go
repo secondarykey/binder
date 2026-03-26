@@ -76,8 +76,8 @@ func Install(dir string, ver *Version, name string) error {
 			Name:  s.Git.Name,
 			Email: s.Git.Mail,
 		}
-		if err = fs.SaveUserInfo(dir, key, info); err != nil {
-			log.WarnE("Install: SaveUserInfo()", err)
+		if err = f.SaveUserData(key, info); err != nil {
+			log.WarnE("Install: SaveUserData()", err)
 		}
 	}
 

@@ -40,6 +40,7 @@ type UserInfo struct {
 }
 
 // SaveUserInfo はUserInfoを暗号化してバインダー直下に保存する。
+// FileSystem インスタンスがない場合（マイグレーション等）に使用する。
 func SaveUserInfo(dir string, key []byte, info *UserInfo) error {
 	data, err := encrypt(key, info)
 	if err != nil {
@@ -55,6 +56,7 @@ func SaveUserInfo(dir string, key []byte, info *UserInfo) error {
 
 // LoadUserInfo はバインダー直下の暗号化ファイルを読み込みUserInfoに復号する。
 // ファイルが存在しない場合は nil, nil を返す。
+// FileSystem インスタンスがない場合（マイグレーション等）に使用する。
 func LoadUserInfo(dir string, key []byte) (*UserInfo, error) {
 	p := filepath.Join(dir, UserFileName)
 	data, err := os.ReadFile(p)
@@ -70,4 +72,15 @@ func LoadUserInfo(dir string, key []byte) (*UserInfo, error) {
 		return nil, xerrors.Errorf("decrypt() error: %w", err)
 	}
 	return &info, nil
+}
+
+// SaveUserData はUserInfoを暗号化してバインダー直下に保存する。
+func (f *FileSystem) SaveUserData(key []byte, info *UserInfo) error {
+	return SaveUserInfo(f.base, key, info)
+}
+
+// LoadUserData はバインダー直下の暗号化ファイルを読み込みUserInfoに復号する。
+// ファイルが存在しない場合は nil, nil を返す。
+func (f *FileSystem) LoadUserData(key []byte) (*UserInfo, error) {
+	return LoadUserInfo(f.base, key)
 }

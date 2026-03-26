@@ -66,9 +66,9 @@ func (b *Binder) GetUserInfo() (*json.UserInfo, error) {
 		return nil, xerrors.Errorf("setup.GetUserKey() error: %w", err)
 	}
 
-	info, err := fs.LoadUserInfo(b.dir, key)
+	info, err := b.fileSystem.LoadUserData(key)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.LoadUserInfo() error: %w", err)
+		return nil, xerrors.Errorf("LoadUserData() error: %w", err)
 	}
 	if info == nil {
 		return &json.UserInfo{}, nil
@@ -108,8 +108,8 @@ func (b *Binder) EditUserInfo(u *json.UserInfo) error {
 		Filename:   u.Filename,
 		Bytes:      u.Bytes,
 	}
-	if err = fs.SaveUserInfo(b.dir, key, info); err != nil {
-		return xerrors.Errorf("fs.SaveUserInfo() error: %w", err)
+	if err = b.fileSystem.SaveUserData(key, info); err != nil {
+		return xerrors.Errorf("SaveUserData() error: %w", err)
 	}
 
 	// コミット署名を即時反映
