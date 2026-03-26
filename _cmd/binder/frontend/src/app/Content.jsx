@@ -1,11 +1,11 @@
 import { Paper } from "@mui/material";
 
-import BinderRegister from "../pages/BinderRegister";
+import BinderRegister from "../components/BinderRegister";
 
-import Editor from "../pages/editor/Component";
+import Editor from "../components/editor/Component";
 import AssetViewer from "../components/AssetViewer";
-import BinderHistory from "../pages/BinderHistory";
-import BinderRemote from "../pages/BinderRemote";
+import BinderHistory from "../components/BinderHistory";
+import BinderRemote from "../components/BinderRemote";
 
 import { Routes, Route } from "react-router";
 

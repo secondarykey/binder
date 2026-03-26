@@ -13,8 +13,8 @@ import {
   ParseNote, Generate,
 } from '../../bindings/binder/api/app';
 
-import Marked from '../pages/editor/engines/Marked';
-import Mermaid from '../pages/editor/engines/Mermaid';
+import Marked from '../components/editor/engines/Marked';
+import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
 import "../i18n/config";
@@ -111,8 +111,13 @@ function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
         return;
       }
 
+      const total = selected.length;
+      evt.raise(Event.PublishProgress, { running: true, current: 0, total });
+
       const errors = [];
-      for (const leaf of selected) {
+      for (let i = 0; i < selected.length; i++) {
+        const leaf = selected[i];
+        evt.raise(Event.PublishProgress, { running: true, current: i, total });
         try {
           if (leaf.type === "note") {
             const text = await OpenNote(leaf.id);
@@ -131,6 +136,8 @@ function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
           errors.push(leaf.name);
         }
       }
+
+      evt.raise(Event.PublishProgress, { running: false, current: total, total });
 
       if (errors.length > 0) {
         setErrorDlg({ open: true, names: errors });

@@ -71,6 +71,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       files.push(...assetRef.current.checked());
       files.push(...templateRef.current.checked());
 
+      evt.raise(Event.ModifiedProgress, { running: true });
       CommitFiles(files, comment).then(() => {
         evt.showSuccessMessage(t("commitModal.commitSuccess"));
         setTimeout(function () {
@@ -78,6 +79,8 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
         }, 1000);
       }).catch((err) => {
         evt.showErrorMessage(err);
+      }).finally(() => {
+        evt.raise(Event.ModifiedProgress, { running: false });
       })
     });
 

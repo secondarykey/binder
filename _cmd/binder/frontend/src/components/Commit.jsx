@@ -1,6 +1,6 @@
 import { useEffect, useState,useContext } from "react";
 import { useParams } from "react-router";
-import { Grid, TextField, FormControl,FormLabel,Button} from "@mui/material";
+import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress } from "@mui/material";
 
 import Event,{EventContext} from '../Event';
 import "../i18n/config";
@@ -16,12 +16,16 @@ function Commit({ date: dateProp, ...props }) {
   const evt = useContext(EventContext)
   const {t} = useTranslation();
   const [comment, setComment] = useState("Updated:");
+  const [running, setRunning] = useState(false);
   const { date: paramDate } = useParams();
   const date = dateProp ?? paramDate;
 
   useEffect(() => {
     evt.register("Commit",Event.ModifiedComment,function(comment) {
       setComment(comment);
+    })
+    evt.register("Commit", Event.ModifiedProgress, function(progress) {
+      setRunning(progress.running);
     })
   }, [date])
 
@@ -47,8 +51,10 @@ function Commit({ date: dateProp, ...props }) {
       ></TextField>
        </FormControl>
 
+      {running && <LinearProgress sx={{ mx: 1 }} />}
+
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleCommit}>{t("commitModal.commit")}</Button>
+        <Button variant="contained" onClick={handleCommit} disabled={running}>{t("commitModal.commit")}</Button>
        </FormControl>
     </Grid>
   </>);
