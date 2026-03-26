@@ -7,6 +7,7 @@ import (
 	"binder/db"
 	"binder/fs"
 	"binder/log"
+	"binder/settings"
 	"binder/setup"
 	"context"
 	"fmt"
@@ -81,12 +82,23 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	}
 
 	// ユーザ情報を暗号化して保存（認証情報の保存 or ユーザ名/メールの保存）
-	if save && fsInfo != nil {
-		key, err := setup.GetUserKey()
-		if err != nil {
-			log.WarnE("CreateRemote: GetUserKey", err)
-		} else {
+	key, err := setup.GetUserKey()
+	if err != nil {
+		log.WarnE("CreateRemote: GetUserKey", err)
+	} else {
+		if save && fsInfo != nil {
+			// 認証情報ごと保存
 			if err = fs.SaveUserInfo(dir, key, fsInfo); err != nil {
+				log.WarnE("CreateRemote: SaveUserInfo", err)
+			}
+		} else {
+			// save=false またはfsInfo==nil でもデフォルトのName/Emailで作成
+			s := settings.Get()
+			info := &fs.UserInfo{
+				Name:  s.Git.Name,
+				Email: s.Git.Mail,
+			}
+			if err = fs.SaveUserInfo(dir, key, info); err != nil {
 				log.WarnE("CreateRemote: SaveUserInfo", err)
 			}
 		}
@@ -139,6 +151,17 @@ func Load(dir string) (*Binder, error) {
 		if err != nil {
 			log.WarnE("Load: LoadUserInfo()", err)
 		} else if info != nil {
+			bfs.SetUserSig(info)
+		} else {
+			// user-data.enc が存在しない場合はデフォルト設定で作成
+			s := settings.Get()
+			info = &fs.UserInfo{
+				Name:  s.Git.Name,
+				Email: s.Git.Mail,
+			}
+			if err = fs.SaveUserInfo(dir, key, info); err != nil {
+				log.WarnE("Load: SaveUserInfo()", err)
+			}
 			bfs.SetUserSig(info)
 		}
 	}
