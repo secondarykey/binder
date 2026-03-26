@@ -233,7 +233,7 @@ func (win *Window) RunEditor(mode, id string) error {
 	bash := editor.GitBash && runtime.GOOS == "windows"
 
 	fn := win.app.GetFullPath(mode, id)
-	slog.Info(fn)
+	log.Info(fn)
 
 	ch, err := runEditor(entry, fn, bash)
 	if err != nil {

@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"flag"
-	"log/slog"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -20,15 +19,6 @@ var assets embed.FS
 var configYml []byte
 var ver string
 
-func attrFunc(groups []string, a slog.Attr) slog.Attr {
-	if a.Key == slog.TimeKey {
-		return slog.Any("", a.Value)
-	} else if a.Key == "msg" {
-		return slog.Any("message", a.Value)
-	}
-	return a
-}
-
 var resetPosition bool
 
 func init() {
@@ -42,7 +32,7 @@ func parseVersion(data []byte) string {
 	s := string(data)
 	idx := strings.Index(s, key)
 	if idx < 0 {
-		slog.Warn("version not found in config.yml")
+		log.Warn("version not found in config.yml")
 		return "0.0.0"
 	}
 	s = s[idx+len(key):]
@@ -58,7 +48,7 @@ func main() {
 	flag.Parse()
 
 	if err := log.Init(); err != nil {
-		slog.Warn("ログファイルの初期化に失敗: " + err.Error())
+		log.WarnE("ログファイルの初期化に失敗", err)
 	}
 	defer log.Close()
 

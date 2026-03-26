@@ -1,8 +1,8 @@
 package dbconvert
 
 import (
+	"binder/log"
 	"binder/setup/convert/db/core"
-	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -91,14 +91,14 @@ func execFileSet(p string, fset []*core.FileSet) error {
 			_, err2 := os.Stat(df)
 			if err2 == nil {
 				// 宛先が既に存在 → 前回の実行でリネーム済み、スキップ
-				slog.Warn("Already renamed: " + df)
+				log.Warn("Already renamed: " + df)
 				continue
 			}
-			slog.Warn("Not Found:" + err.Error())
+			log.WarnE("Not Found", err)
 		}
 		_, err = os.Stat(df)
 		if err == nil {
-			slog.Warn("Found:" + df)
+			log.Warn("Found:" + df)
 		}
 
 		err = os.Rename(nf, df)
