@@ -190,14 +190,9 @@ func (f *FileSystem) DeprecatedRemove(n string) error {
 		return fmt.Errorf("%s not exist", n)
 	}
 
-	if f.base == "" {
-		return fmt.Errorf("do not delete filesystem(base is empty):[%s]", n)
-	}
-
-	fn := filepath.Join(f.base, n)
-	err := os.Remove(fn)
+	err := f.fs.Remove(n)
 	if err != nil {
-		return xerrors.Errorf("os.Remove() error: %w", err)
+		return xerrors.Errorf("Remove() error: %w", err)
 	}
 
 	//TODO インデックスを削除

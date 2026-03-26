@@ -14,9 +14,9 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 		return EmptyError
 	}
 
-	meta, err := fs.LoadMeta(b.dir)
+	meta, err := b.fileSystem.LoadMetaData()
 	if err != nil {
-		return xerrors.Errorf("fs.LoadMeta() error: %w", err)
+		return xerrors.Errorf("LoadMetaData() error: %w", err)
 	}
 	if meta == nil {
 		meta = &fs.BinderMeta{}
@@ -25,8 +25,8 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 	meta.Name = conf.Name
 	meta.Detail = conf.Detail
 
-	if err = fs.SaveMeta(b.dir, meta); err != nil {
-		return xerrors.Errorf("fs.SaveMeta() error: %w", err)
+	if err = b.fileSystem.SaveMetaData(meta); err != nil {
+		return xerrors.Errorf("SaveMetaData() error: %w", err)
 	}
 
 	err = b.fileSystem.Commit(fs.M("Update Config", "Main"), fs.BinderMetaFile)
@@ -42,9 +42,9 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 		return nil, EmptyError
 	}
 
-	meta, err := fs.LoadMeta(b.dir)
+	meta, err := b.fileSystem.LoadMetaData()
 	if err != nil {
-		return nil, xerrors.Errorf("fs.LoadMeta() error: %w", err)
+		return nil, xerrors.Errorf("LoadMetaData() error: %w", err)
 	}
 	if meta == nil {
 		meta = &fs.BinderMeta{}
