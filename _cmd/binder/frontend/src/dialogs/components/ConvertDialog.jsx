@@ -2,6 +2,7 @@ import {
   Button, Dialog, DialogActions, DialogContentText, DialogTitle,
   Typography,
 } from "@mui/material";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 import "../../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -47,7 +48,10 @@ export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose }) {
       onClose={onClose}
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
     >
-      <DialogTitle>{t("convert.needUpdateTitle")}</DialogTitle>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <ErrorOutlineIcon color="error" />
+        {t("convert.needUpdateTitle")}
+      </DialogTitle>
       <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
         {t("convert.needUpdateMessage")}
       </DialogContentText>
