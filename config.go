@@ -14,9 +14,9 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 		return EmptyError
 	}
 
-	meta, err := fs.LoadMeta(b.dir)
+	meta, err := b.fileSystem.LoadMetaData()
 	if err != nil {
-		return xerrors.Errorf("fs.LoadMeta() error: %w", err)
+		return xerrors.Errorf("LoadMetaData() error: %w", err)
 	}
 	if meta == nil {
 		meta = &fs.BinderMeta{}
@@ -25,8 +25,8 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 	meta.Name = conf.Name
 	meta.Detail = conf.Detail
 
-	if err = fs.SaveMeta(b.dir, meta); err != nil {
-		return xerrors.Errorf("fs.SaveMeta() error: %w", err)
+	if err = b.fileSystem.SaveMetaData(meta); err != nil {
+		return xerrors.Errorf("SaveMetaData() error: %w", err)
 	}
 
 	err = b.fileSystem.Commit(fs.M("Update Config", "Main"), fs.BinderMetaFile)
@@ -42,9 +42,9 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 		return nil, EmptyError
 	}
 
-	meta, err := fs.LoadMeta(b.dir)
+	meta, err := b.fileSystem.LoadMetaData()
 	if err != nil {
-		return nil, xerrors.Errorf("fs.LoadMeta() error: %w", err)
+		return nil, xerrors.Errorf("LoadMetaData() error: %w", err)
 	}
 	if meta == nil {
 		meta = &fs.BinderMeta{}
@@ -66,9 +66,9 @@ func (b *Binder) GetUserInfo() (*json.UserInfo, error) {
 		return nil, xerrors.Errorf("setup.GetUserKey() error: %w", err)
 	}
 
-	info, err := fs.LoadUserInfo(b.dir, key)
+	info, err := b.fileSystem.LoadUserData(key)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.LoadUserInfo() error: %w", err)
+		return nil, xerrors.Errorf("LoadUserData() error: %w", err)
 	}
 	if info == nil {
 		return &json.UserInfo{}, nil
@@ -108,8 +108,8 @@ func (b *Binder) EditUserInfo(u *json.UserInfo) error {
 		Filename:   u.Filename,
 		Bytes:      u.Bytes,
 	}
-	if err = fs.SaveUserInfo(b.dir, key, info); err != nil {
-		return xerrors.Errorf("fs.SaveUserInfo() error: %w", err)
+	if err = b.fileSystem.SaveUserData(key, info); err != nil {
+		return xerrors.Errorf("SaveUserData() error: %w", err)
 	}
 
 	// コミット署名を即時反映

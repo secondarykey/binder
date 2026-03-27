@@ -76,8 +76,8 @@ func Install(dir string, ver *Version, name string) error {
 			Name:  s.Git.Name,
 			Email: s.Git.Mail,
 		}
-		if err = fs.SaveUserInfo(dir, key, info); err != nil {
-			log.WarnE("Install: SaveUserInfo()", err)
+		if err = f.SaveUserData(key, info); err != nil {
+			log.WarnE("Install: SaveUserData()", err)
 		}
 	}
 
@@ -143,18 +143,22 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 			Version: ver.String(),
 			Name:    "Binder",
 		}
-		err = fs.SaveMeta(dir, meta)
+		err = f.SaveMetaData(meta)
 		if err != nil {
-			return xerrors.Errorf("fs.SaveMeta() error: %w", err)
+			return xerrors.Errorf("SaveMetaData() error: %w", err)
 		}
 	}
 
 	// .gitignore を作成（ユーザデータファイルを除外）
-	ignorePath := filepath.Join(dir, fs.GitIgnoreFile)
-	err = os.WriteFile(ignorePath, []byte(fs.UserFileName+"\n"), 0644)
+	gitignore, err := f.Create(fs.GitIgnoreFile)
 	if err != nil {
-		return xerrors.Errorf("os.WriteFile(.gitignore) error: %w", err)
+		return xerrors.Errorf("Create(.gitignore) error: %w", err)
 	}
+	if _, err = gitignore.Write([]byte(fs.UserFileName + "\n")); err != nil {
+		gitignore.Close()
+		return xerrors.Errorf("Write(.gitignore) error: %w", err)
+	}
+	gitignore.Close()
 
 	// Gitへの追加を行う
 	err = f.AddDBFiles()

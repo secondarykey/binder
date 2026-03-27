@@ -7,6 +7,7 @@ import (
 	"binder/db"
 	"binder/fs"
 	"binder/log"
+	"binder/settings"
 	"binder/setup"
 	"context"
 	"fmt"
@@ -81,13 +82,24 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	}
 
 	// ユーザ情報を暗号化して保存（認証情報の保存 or ユーザ名/メールの保存）
-	if save && fsInfo != nil {
-		key, err := setup.GetUserKey()
-		if err != nil {
-			log.WarnE("CreateRemote: GetUserKey", err)
+	key, err := setup.GetUserKey()
+	if err != nil {
+		log.WarnE("CreateRemote: GetUserKey", err)
+	} else {
+		if save && fsInfo != nil {
+			// 認証情報ごと保存
+			if err = bfs.SaveUserData(key, fsInfo); err != nil {
+				log.WarnE("CreateRemote: SaveUserData", err)
+			}
 		} else {
-			if err = fs.SaveUserInfo(dir, key, fsInfo); err != nil {
-				log.WarnE("CreateRemote: SaveUserInfo", err)
+			// save=false またはfsInfo==nil でもデフォルトのName/Emailで作成
+			s := settings.Get()
+			info := &fs.UserInfo{
+				Name:  s.Git.Name,
+				Email: s.Git.Mail,
+			}
+			if err = bfs.SaveUserData(key, info); err != nil {
+				log.WarnE("CreateRemote: SaveUserData", err)
 			}
 		}
 	}
@@ -135,10 +147,21 @@ func Load(dir string) (*Binder, error) {
 	if err != nil {
 		log.WarnE("Load: GetUserKey()", err)
 	} else {
-		info, err := fs.LoadUserInfo(dir, key)
+		info, err := bfs.LoadUserData(key)
 		if err != nil {
-			log.WarnE("Load: LoadUserInfo()", err)
+			log.WarnE("Load: LoadUserData()", err)
 		} else if info != nil {
+			bfs.SetUserSig(info)
+		} else {
+			// user-data.enc が存在しない場合はデフォルト設定で作成
+			s := settings.Get()
+			info = &fs.UserInfo{
+				Name:  s.Git.Name,
+				Email: s.Git.Mail,
+			}
+			if err = bfs.SaveUserData(key, info); err != nil {
+				log.WarnE("Load: SaveUserData()", err)
+			}
 			bfs.SetUserSig(info)
 		}
 	}
@@ -316,8 +339,8 @@ func (b *Binder) Push(remoteName string, info *json.UserInfo, save bool) error {
 		if err != nil {
 			return xerrors.Errorf("setup.GetUserKey() error: %w", err)
 		}
-		if err = fs.SaveUserInfo(b.dir, key, fsInfo); err != nil {
-			return xerrors.Errorf("fs.SaveUserInfo() error: %w", err)
+		if err = b.fileSystem.SaveUserData(key, fsInfo); err != nil {
+			return xerrors.Errorf("SaveUserData() error: %w", err)
 		}
 		b.fileSystem.SetUserSig(fsInfo)
 	}

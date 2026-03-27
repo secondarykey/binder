@@ -170,10 +170,18 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 	t.Updated = formatTime(w.getUpdatedNoteFile(n))
 
 	p := fs.HTMLFile(n)
-	m := fs.PublicMetaFile(n)
-
 	t.Link = w.convertURL(p)
-	t.Image = w.convertURL(m)
+
+	// メタ画像URL: ローカルプレビュー時は絶対URLでファイルサーバー経由でアクセス
+	m := fs.PublicMetaFile(n)
+	if w.Local {
+		addr := w.owner.ServerAddress()
+		if addr != "" {
+			t.Image = fmt.Sprintf("http://%s/%s", addr, w.publishRelPath(m))
+		}
+	} else {
+		t.Image = w.convertURL(m)
+	}
 
 	//TODO PREV NEXTは？
 
@@ -196,13 +204,17 @@ func (w *wrapper) getCurrentNote() *tempNote {
 	return w.convertNote(w.note)
 }
 
+// publishRelPath は公開ディレクトリ(docs/)を除去した相対パスを返す。
+func (w *wrapper) publishRelPath(p string) string {
+	np := strings.ReplaceAll(p, "\\", "/")
+	cp := w.owner.fileSystem.GetPublic() + "/"
+	return strings.Replace(np, cp, "", 1)
+}
+
 // 取得してきたパスからURL変換
 // 公開ディレクトリ(docs/)を除去し、ノートの階層に応じた相対プレフィックスを付与する。
 func (w *wrapper) convertURL(p string) string {
-	np := strings.ReplaceAll(p, "\\", "/")
-	cp := w.owner.fileSystem.GetPublic() + "/"
-	rel := strings.Replace(np, cp, "", 1)
-	return w.relativePrefix() + rel
+	return w.relativePrefix() + w.publishRelPath(p)
 }
 
 func (w *wrapper) drawSVG(id string) template.HTML {
