@@ -7,8 +7,9 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import "../../i18n/config";
 import { useTranslation } from 'react-i18next';
 
-// 閉じても位置を保持するためコンポーネント外で管理
+// 閉じても状態を保持するためコンポーネント外で管理
 let savedPosition = { x: 60, y: 44 };
+let savedQuery = "";
 
 /**
  * エディタ内テキスト検索フローティングパネル
@@ -20,7 +21,7 @@ let savedPosition = { x: 60, y: 44 };
  */
 function SearchBar({ text, onClose, onNavigate }) {
   const { t } = useTranslation();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => savedQuery);
   const [matches, setMatches] = useState([]);
   const [searched, setSearched] = useState(false);
   const inputRef = useRef(null);
@@ -32,9 +33,12 @@ function SearchBar({ text, onClose, onNavigate }) {
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
-  // マウント時に入力欄にフォーカス
+  // マウント時に入力欄にフォーカスし、前回のクエリがあれば再検索
   useEffect(() => {
     inputRef.current?.focus();
+    if (savedQuery) {
+      doSearchWith(savedQuery);
+    }
   }, []);
 
   // ドラッグ処理
@@ -78,15 +82,15 @@ function SearchBar({ text, onClose, onNavigate }) {
     };
   }, [handleDragMove, handleDragEnd]);
 
-  // 検索実行
-  const doSearch = () => {
-    if (!query) {
+  // 検索実行（引数指定で任意のクエリで検索可能）
+  const doSearchWith = (searchText) => {
+    if (!searchText) {
       setMatches([]);
       setSearched(false);
       return;
     }
     setSearched(true);
-    const q = query.toLowerCase();
+    const q = searchText.toLowerCase();
     const lines = text.split('\n');
     const results = [];
     let offset = 0;
@@ -102,9 +106,9 @@ function SearchBar({ text, onClose, onNavigate }) {
           line: i + 1,
           lineText: line,
           matchStart: idx,
-          matchEnd: idx + query.length,
+          matchEnd: idx + searchText.length,
           absoluteStart: offset + idx,
-          absoluteEnd: offset + idx + query.length,
+          absoluteEnd: offset + idx + searchText.length,
         });
         pos = idx + 1;
       }
@@ -116,7 +120,7 @@ function SearchBar({ text, onClose, onNavigate }) {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      doSearch();
+      doSearchWith(query);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
@@ -163,7 +167,7 @@ function SearchBar({ text, onClose, onNavigate }) {
           variant="outlined"
           placeholder={t("editor.searchPlaceholder")}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; }}
           onKeyDown={handleKeyDown}
           slotProps={{
             input: {
