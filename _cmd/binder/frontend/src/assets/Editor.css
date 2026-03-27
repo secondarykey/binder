@@ -362,25 +362,39 @@ iframe.htmlViewer {
 }
 
 /* =====================================================================
- * テキスト検索バー（Ctrl+F）
+ * テキスト検索フローティングパネル（Ctrl+F）
  * ===================================================================== */
-.editorSearchBar {
+.editorSearchFloat {
   position: absolute;
-  top: 38px;
-  left: 0;
-  right: 0;
-  z-index: 20;
+  z-index: 30;
+  min-width: 320px;
+  max-width: 500px;
   background-color: var(--bg-elevated);
-  border-bottom: 1px solid var(--border-input);
+  border: 1px solid var(--border-input);
+  border-radius: 6px;
   padding: 6px 8px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
 }
 
 .editorSearchRow {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.editorSearchDragHandle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.editorSearchDragHandle:active {
+  cursor: grabbing;
 }
 
 .editorSearchResults {

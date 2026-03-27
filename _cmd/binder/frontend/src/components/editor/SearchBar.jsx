@@ -1,20 +1,21 @@
-import { useState, useRef, useEffect, forwardRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import { IconButton, TextField, InputAdornment } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import "../../i18n/config";
 import { useTranslation } from 'react-i18next';
 
 /**
- * エディタ内テキスト検索バー
+ * エディタ内テキスト検索フローティングパネル
  *
  * Props:
  *   text       - 検索対象のテキスト全体
  *   onClose    - 検索バーを閉じるコールバック
  *   onNavigate - (absoluteStart, absoluteEnd) => void  一致箇所へ移動
  */
-const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, ref) {
+function SearchBar({ text, onClose, onNavigate }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState([]);
@@ -22,10 +23,55 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
   const inputRef = useRef(null);
   const resultsRef = useRef(null);
 
+  // ドラッグ状態
+  const [position, setPosition] = useState({ x: 60, y: 44 });
+  const dragRef = useRef(null);
+  const draggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+
   // マウント時に入力欄にフォーカス
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // ドラッグ処理
+  const handleDragStart = useCallback((e) => {
+    // テキスト選択を防止
+    e.preventDefault();
+    draggingRef.current = true;
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      posX: position.x,
+      posY: position.y,
+    };
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+  }, [position]);
+
+  const handleDragMove = useCallback((e) => {
+    if (!draggingRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPosition({
+      x: dragStartRef.current.posX + dx,
+      y: dragStartRef.current.posY + dy,
+    });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    draggingRef.current = false;
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+  }, [handleDragMove]);
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [handleDragMove, handleDragEnd]);
 
   // 検索実行
   const doSearch = () => {
@@ -38,7 +84,7 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
     const q = query.toLowerCase();
     const lines = text.split('\n');
     const results = [];
-    let offset = 0; // 各行の開始位置（テキスト全体での絶対位置）
+    let offset = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -57,7 +103,7 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
         });
         pos = idx + 1;
       }
-      offset += line.length + 1; // +1 for '\n'
+      offset += line.length + 1;
     }
     setMatches(results);
   };
@@ -79,7 +125,6 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
   // 行テキストを表示（一致部分をハイライト）
   const renderLineText = (match) => {
     const { lineText, matchStart, matchEnd } = match;
-    // 長い行は一致箇所周辺だけ表示
     const contextChars = 40;
     const start = Math.max(0, matchStart - contextChars);
     const end = Math.min(lineText.length, matchEnd + contextChars);
@@ -94,8 +139,19 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
   };
 
   return (
-    <div className="editorSearchBar" ref={ref}>
+    <div
+      className="editorSearchFloat"
+      ref={dragRef}
+      style={{ left: position.x + 'px', top: position.y + 'px' }}
+    >
+      {/** ドラッグハンドル + 検索入力行 */}
       <div className="editorSearchRow">
+        <span
+          className="editorSearchDragHandle"
+          onMouseDown={handleDragStart}
+        >
+          <DragIndicatorIcon sx={{ fontSize: '16px' }} />
+        </span>
         <TextField
           inputRef={inputRef}
           size="small"
@@ -119,7 +175,7 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
               }
             }
           }}
-          sx={{ flex: 1, maxWidth: 300 }}
+          sx={{ flex: 1, minWidth: 160 }}
         />
         <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
           {searched
@@ -128,7 +184,7 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
               : t("editor.searchNoMatches"))
             : ""}
         </span>
-        <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)', ml: 'auto' }}>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)' }}>
           <CloseIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </div>
@@ -149,7 +205,7 @@ const SearchBar = forwardRef(function SearchBar({ text, onClose, onNavigate }, r
       )}
     </div>
   );
-});
+}
 
 SearchBar.propTypes = {
   text: PropTypes.string.isRequired,

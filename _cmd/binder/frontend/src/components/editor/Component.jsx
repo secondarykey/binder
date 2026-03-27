@@ -245,24 +245,6 @@ function Editor(props) {
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
   }, [text]);
 
-  // 検索バーの高さを計測してエディタエリアをずらす
-  const searchBarRef = useRef(null);
-  const [searchBarHeight, setSearchBarHeight] = useState(0);
-  useEffect(() => {
-    if (!searchOpen || !searchBarRef.current) {
-      setSearchBarHeight(0);
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setSearchBarHeight(entry.contentRect.height + 12); // padding分を加算
-      }
-    });
-    observer.observe(searchBarRef.current);
-    return () => observer.disconnect();
-  }, [searchOpen]);
-  const editorTopOffset = searchOpen ? 38 + searchBarHeight : undefined;
-
   //開いた時の初期処理
   useEffect(() => {
 
@@ -1382,10 +1364,9 @@ function Editor(props) {
                 </MenuItem>
               </Menu>
 
-              {/** テキスト検索バー（Ctrl+F） */}
+              {/** テキスト検索フローティングパネル（Ctrl+F） */}
               {searchOpen && (
                 <SearchBar
-                  ref={searchBarRef}
                   text={text}
                   onClose={() => setSearchOpen(false)}
                   onNavigate={handleSearchNavigate}
@@ -1398,7 +1379,6 @@ function Editor(props) {
                 style={editorStyle}
                 showLineNumbers={showLineNumbers}
                 wordWrap={wordWrap}
-                topOffset={editorTopOffset}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onCompositionStart={handleCompositionStart}
