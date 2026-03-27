@@ -27,11 +27,11 @@ type wailsSearchEmitter struct {
 }
 
 func (e *wailsSearchEmitter) EmitResult(result binder.SearchResult) {
-	e.app.EmitEvent("binder:search:result", result)
+	e.app.Event.Emit("binder:search:result", result)
 }
 
 func (e *wailsSearchEmitter) EmitDone() {
-	e.app.EmitEvent("binder:search:done")
+	e.app.Event.Emit("binder:search:done")
 }
 
 func init() {
