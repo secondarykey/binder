@@ -209,9 +209,9 @@ function App() {
 
     // 検索ウィンドウからのナビゲーション通知
     const cleanupSearch = Events.On("binder:search:navigate", (event) => {
-      const { typ, id } = event.data?.[0] ?? event.data ?? {};
+      const { typ, id, query } = event.data?.[0] ?? event.data ?? {};
       if (typ && id) {
-        nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now() } });
+        nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now(), searchQuery: query || "" } });
         evt.selectTreeNode(id);
       }
     });

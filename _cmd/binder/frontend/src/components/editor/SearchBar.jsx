@@ -19,9 +19,9 @@ let savedQuery = "";
  *   onClose    - 検索バーを閉じるコールバック
  *   onNavigate - (absoluteStart, absoluteEnd) => void  一致箇所へ移動
  */
-function SearchBar({ text, onClose, onNavigate }) {
+function SearchBar({ text, onClose, onNavigate, initialQuery }) {
   const { t } = useTranslation();
-  const [query, setQuery] = useState(() => savedQuery);
+  const [query, setQuery] = useState(() => initialQuery || savedQuery);
   const [matches, setMatches] = useState([]);
   const [searched, setSearched] = useState(false);
   const inputRef = useRef(null);
@@ -37,8 +37,10 @@ function SearchBar({ text, onClose, onNavigate }) {
   // マウント時に入力欄にフォーカスし、初期位置を算出
   useEffect(() => {
     inputRef.current?.focus();
-    if (savedQuery) {
-      doSearchWith(savedQuery);
+    const q = initialQuery || savedQuery;
+    if (q) {
+      savedQuery = q;
+      doSearchWith(q);
     }
     // 初回のみ #editorContent の中央に配置
     if (!savedPosition && panelRef.current) {
@@ -235,6 +237,7 @@ SearchBar.propTypes = {
   text: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   onNavigate: PropTypes.func.isRequired,
+  initialQuery: PropTypes.string,
 };
 
 export default SearchBar;

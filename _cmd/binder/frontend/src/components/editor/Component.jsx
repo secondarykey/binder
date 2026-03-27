@@ -137,6 +137,7 @@ function Editor(props) {
   var { mode, id } = useParams();
   const location = useLocation();
   const restoredAt = location.state?.restoredAt;
+  const searchQuery = location.state?.searchQuery;
   const evt = useContext(EventContext)
   const {t} = useTranslation();
 
@@ -364,6 +365,13 @@ function Editor(props) {
     }
 
   }, [id, restoredAt]);
+
+  // 検索ウィンドウからのナビゲーション: searchQuery があればエディタ内検索を自動で開く
+  useEffect(() => {
+    if (searchQuery) {
+      setSearchOpen(true);
+    }
+  }, [searchQuery, restoredAt]);
 
   // プレビューウィンドウからの準備完了通知を受けて現在のHTMLを送信
   useEffect(() => {
@@ -1370,6 +1378,7 @@ function Editor(props) {
                   text={text}
                   onClose={() => setSearchOpen(false)}
                   onNavigate={handleSearchNavigate}
+                  initialQuery={searchQuery}
                 />
               )}
 

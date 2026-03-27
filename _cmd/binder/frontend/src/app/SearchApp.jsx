@@ -66,9 +66,9 @@ function SearchApp() {
     }
   };
 
-  // ダブルクリックでメインウィンドウのツリーにナビゲート
+  // ダブルクリックでメインウィンドウのツリーにナビゲート（検索クエリも渡す）
   const handleNavigate = (result) => {
-    Events.Emit('binder:search:navigate', { typ: result.type, id: result.id });
+    Events.Emit('binder:search:navigate', { typ: result.type, id: result.id, query: query.trim() });
   };
 
   const handleClose = () => {
