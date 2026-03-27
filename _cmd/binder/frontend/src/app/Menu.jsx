@@ -165,6 +165,23 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
+        {/** Search  */}
+        <Tooltip title={t("menu.search")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}>
+            <SearchIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
+
+        {/** Template */}
+        <Tooltip title={t("menu.template")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+            <ContentPasteIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
+
+        {/** Divider */}
+        <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
+
         {/** Modified  */}
         <Tooltip title={t("menu.commit")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
@@ -179,22 +196,8 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
-        {/** Search  */}
-        <Tooltip title={t("menu.search")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}>
-            <SearchIcon fill="white" className="leftIcon" />
-          </IconButton>
-        </Tooltip>
-
-        {/** Divider: ナビ系と設定系を分離 */}
+        {/** Divider */}
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
-
-        {/** Template */}
-        <Tooltip title={t("menu.template")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
-            <ContentPasteIcon fill="white" className="leftIcon" />
-          </IconButton>
-        </Tooltip>
 
         {/** Binder Setting */}
         <Tooltip title={t("menu.config")} placement="right">
