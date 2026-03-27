@@ -276,6 +276,9 @@
         "fontSetting" : "Font Setting",
         "openExternalEditor" : "Open in External Editor",
         "openPreviewWindow" : "Open in Preview Window",
-        "externalEditorLocked" : "Opened in external editor."
+        "externalEditorLocked" : "Opened in external editor.",
+        "searchPlaceholder" : "Search text...",
+        "searchMatches" : "{{count}} matches",
+        "searchNoMatches" : "No matches"
     }
 }

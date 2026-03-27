@@ -276,6 +276,9 @@
         "fontSetting" : "フォント設定",
         "openExternalEditor" : "外部エディタで開く",
         "openPreviewWindow" : "プレビューウィンドウで開く",
-        "externalEditorLocked" : "外部エディタで開いています。"
+        "externalEditorLocked" : "外部エディタで開いています。",
+        "searchPlaceholder" : "テキストを検索...",
+        "searchMatches" : "{{count}}件",
+        "searchNoMatches" : "一致なし"
     }
 }

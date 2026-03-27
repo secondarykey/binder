@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react"
+import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { useParams, useLocation } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
@@ -15,6 +15,7 @@ import { Events } from '@wailsio/runtime';
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
+import SearchBar from "./SearchBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
 import "../../i18n/config";
@@ -151,6 +152,8 @@ function Editor(props) {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   // テキスト折り返しトグル
   const [wordWrap, setWordWrap] = useState(true);
+  // テキスト検索バーの表示状態
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
@@ -218,6 +221,47 @@ function Editor(props) {
   const [previewNotes, setPreviewNotes] = useState([]);
   const [previewNoteId, setPreviewNoteId] = useState("");
   const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
+
+  // Ctrl+F で検索バーを開く
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
+  const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(absoluteStart, absoluteEnd);
+    const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
+    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
+    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
+  }, [text]);
+
+  // 検索バーの高さを計測してエディタエリアをずらす
+  const searchBarRef = useRef(null);
+  const [searchBarHeight, setSearchBarHeight] = useState(0);
+  useEffect(() => {
+    if (!searchOpen || !searchBarRef.current) {
+      setSearchBarHeight(0);
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setSearchBarHeight(entry.contentRect.height + 12); // padding分を加算
+      }
+    });
+    observer.observe(searchBarRef.current);
+    return () => observer.disconnect();
+  }, [searchOpen]);
+  const editorTopOffset = searchOpen ? 38 + searchBarHeight : undefined;
 
   //開いた時の初期処理
   useEffect(() => {
@@ -1338,12 +1382,23 @@ function Editor(props) {
                 </MenuItem>
               </Menu>
 
+              {/** テキスト検索バー（Ctrl+F） */}
+              {searchOpen && (
+                <SearchBar
+                  ref={searchBarRef}
+                  text={text}
+                  onClose={() => setSearchOpen(false)}
+                  onNavigate={handleSearchNavigate}
+                />
+              )}
+
               {/** テキスト編集（行番号ガター + textarea） */}
               <EditorArea
                 text={text}
                 style={editorStyle}
                 showLineNumbers={showLineNumbers}
                 wordWrap={wordWrap}
+                topOffset={editorTopOffset}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onCompositionStart={handleCompositionStart}

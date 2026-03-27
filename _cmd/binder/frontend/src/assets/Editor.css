@@ -362,6 +362,70 @@ iframe.htmlViewer {
 }
 
 /* =====================================================================
+ * テキスト検索バー（Ctrl+F）
+ * ===================================================================== */
+.editorSearchBar {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-input);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorSearchResults {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.editorSearchResultItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  border-radius: 3px;
+}
+
+.editorSearchResultItem:hover {
+  background-color: var(--hover-overlay);
+}
+
+.editorSearchLineNum {
+  flex-shrink: 0;
+  min-width: 3em;
+  text-align: right;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.editorSearchLineText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorSearchResultItem mark {
+  background-color: rgba(255, 213, 79, 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* =====================================================================
  * ボタンバー（エディタ左側の下部）
  * ===================================================================== */
 .buttonBar {

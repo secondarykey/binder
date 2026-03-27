@@ -14,7 +14,7 @@ import PropTypes from "prop-types";
  *   onDragOver      - ドラッグオーバーハンドラ
  *   onDrop          - ドロップハンドラ
  */
-function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, onKeyDown, onChange, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, topOffset, onKeyDown, onChange, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   const canvasRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
@@ -79,7 +79,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, onKe
     : { ...style, overflowX: 'auto' };
 
   return (
-    <div className="editorArea">
+    <div className="editorArea" style={topOffset != null ? { top: topOffset + 'px' } : undefined}>
       {showLineNumbers && (
         <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
           {text.split('\n').map((_, i) => {
@@ -114,6 +114,7 @@ EditorArea.propTypes = {
   style: PropTypes.object,
   showLineNumbers: PropTypes.bool,
   wordWrap: PropTypes.bool,
+  topOffset: PropTypes.number,
   onKeyDown: PropTypes.func,
   onChange: PropTypes.func,
   onCompositionStart: PropTypes.func,
