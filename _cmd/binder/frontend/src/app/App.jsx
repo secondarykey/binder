@@ -101,6 +101,7 @@ function App() {
           setConvertOpen(true);
           break;
         case CompatNeedUpdate:
+          setPendingDir(dir);
           setNeedUpdateOpen(true);
           break;
         default:
@@ -396,7 +397,13 @@ function App() {
         open={needUpdateOpen}
         appVersion={compatVersions.appVersion}
         binderVersion={compatVersions.binderVersion}
-        onClose={() => setNeedUpdateOpen(false)}
+        onClose={() => { setNeedUpdateOpen(false); setPendingDir(""); }}
+        onForceOpen={() => {
+          setNeedUpdateOpen(false);
+          const dir = pendingDir;
+          setPendingDir("");
+          loadBinder(dir);
+        }}
       />
 
       {/** 別コンポーネントメッセージ */}

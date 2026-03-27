@@ -1,6 +1,7 @@
+import { useState } from "react";
 import {
-  Button, Dialog, DialogActions, DialogContentText, DialogTitle,
-  Typography,
+  Button, Checkbox, Dialog, DialogActions, DialogContentText, DialogTitle,
+  FormControlLabel, Typography,
 } from "@mui/material";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
@@ -38,14 +39,26 @@ function ConvertDialog({ open, appVersion, binderVersion, onCancel, onConfirm })
 
 /**
  * アプリ更新が必要な場合のダイアログ
- * @param {{ open: boolean, appVersion: string, binderVersion: string, onClose: () => void }} props
+ * @param {{ open: boolean, appVersion: string, binderVersion: string, onClose: () => void, onForceOpen: () => void }} props
  */
-export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose }) {
+export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose, onForceOpen }) {
   const {t} = useTranslation();
+  const [forceOpen, setForceOpen] = useState(false);
+
+  const handleClose = () => {
+    setForceOpen(false);
+    onClose();
+  };
+
+  const handleForceOpen = () => {
+    setForceOpen(false);
+    onForceOpen();
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
     >
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -58,8 +71,16 @@ export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose }) {
       <Typography variant="body2" style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
         {t("convert.needUpdateVersionInfo", { appVersion, binderVersion })}
       </Typography>
+      <FormControlLabel
+        control={<Checkbox checked={forceOpen} onChange={(e) => setForceOpen(e.target.checked)} />}
+        label={t("convert.forceOpen")}
+        style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}
+      />
       <DialogActions>
-        <Button onClick={onClose}>{t("common.ok")}</Button>
+        {forceOpen
+          ? <Button color="warning" variant="contained" onClick={handleForceOpen}>{t("common.open")}</Button>
+          : <Button onClick={handleClose}>{t("common.ok")}</Button>
+        }
       </DialogActions>
     </Dialog>
   );

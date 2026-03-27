@@ -247,7 +247,8 @@
         "error" : "Migration failed: {{error}}",
         "needUpdateTitle" : "App Update Required",
         "needUpdateMessage" : "This Binder was created with a newer version. Please update the app to open it.",
-        "needUpdateVersionInfo" : "Binder version: {{binderVersion}} / App version: {{appVersion}}"
+        "needUpdateVersionInfo" : "Binder version: {{binderVersion}} / App version: {{appVersion}}",
+        "forceOpen" : "Force open (data may not display correctly)"
     },
     "syslog" : {
         "title" : "System Log",
