@@ -170,10 +170,18 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 	t.Updated = formatTime(w.getUpdatedNoteFile(n))
 
 	p := fs.HTMLFile(n)
-	m := fs.PublicMetaFile(n)
-
 	t.Link = w.convertURL(p)
-	t.Image = w.convertURL(m)
+
+	// メタ画像URL: ローカルプレビュー時はHTTPサーバーのプライベートエンドポイントを使用
+	if w.Local {
+		addr := w.owner.ServerAddress()
+		if addr != "" {
+			t.Image = fmt.Sprintf("http://%s/binder-meta/%s", addr, n.Id)
+		}
+	} else {
+		m := fs.PublicMetaFile(n)
+		t.Image = w.convertURL(m)
+	}
 
 	//TODO PREV NEXTは？
 
