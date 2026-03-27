@@ -8,7 +8,7 @@ import "../../i18n/config";
 import { useTranslation } from 'react-i18next';
 
 // 閉じても状態を保持するためコンポーネント外で管理
-let savedPosition = { x: 60, y: 44 };
+let savedPosition = null; // null = 未初期化（初回は中央に配置）
 let savedQuery = "";
 
 /**
@@ -28,16 +28,31 @@ function SearchBar({ text, onClose, onNavigate }) {
   const resultsRef = useRef(null);
 
   // ドラッグ状態
-  const [position, setPosition] = useState(() => ({ ...savedPosition }));
-  const dragRef = useRef(null);
+  const panelRef = useRef(null);
+  const [position, setPosition] = useState(() => savedPosition ? { ...savedPosition } : { x: 0, y: 0 });
+  const [visible, setVisible] = useState(!!savedPosition);
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
-  // マウント時に入力欄にフォーカスし、前回のクエリがあれば再検索
+  // マウント時に入力欄にフォーカスし、初期位置を算出
   useEffect(() => {
     inputRef.current?.focus();
     if (savedQuery) {
       doSearchWith(savedQuery);
+    }
+    // 初回のみ #editorContent の中央に配置
+    if (!savedPosition && panelRef.current) {
+      const content = document.querySelector('#editorContent');
+      if (content) {
+        const contentRect = content.getBoundingClientRect();
+        const panelRect = panelRef.current.getBoundingClientRect();
+        const wrapperRect = panelRef.current.offsetParent?.getBoundingClientRect() || contentRect;
+        const centerX = (contentRect.left + contentRect.width / 2) - wrapperRect.left - panelRect.width / 2;
+        const pos = { x: Math.max(0, centerX), y: 44 };
+        setPosition(pos);
+        savedPosition = pos;
+      }
+      setVisible(true);
     }
   }, []);
 
@@ -150,8 +165,8 @@ function SearchBar({ text, onClose, onNavigate }) {
   return (
     <div
       className="editorSearchFloat"
-      ref={dragRef}
-      style={{ left: position.x + 'px', top: position.y + 'px' }}
+      ref={panelRef}
+      style={{ left: position.x + 'px', top: position.y + 'px', visibility: visible ? 'visible' : 'hidden' }}
     >
       {/** ドラッグハンドル + 検索入力行 */}
       <div className="editorSearchRow">
