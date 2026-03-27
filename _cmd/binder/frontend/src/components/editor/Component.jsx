@@ -227,7 +227,7 @@ function Editor(props) {
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        setSearchOpen(true);
+        setSearchOpen(prev => !prev);
       }
     };
     document.addEventListener('keydown', handler);

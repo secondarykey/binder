@@ -7,6 +7,9 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import "../../i18n/config";
 import { useTranslation } from 'react-i18next';
 
+// 閉じても位置を保持するためコンポーネント外で管理
+let savedPosition = { x: 60, y: 44 };
+
 /**
  * エディタ内テキスト検索フローティングパネル
  *
@@ -24,7 +27,7 @@ function SearchBar({ text, onClose, onNavigate }) {
   const resultsRef = useRef(null);
 
   // ドラッグ状態
-  const [position, setPosition] = useState({ x: 60, y: 44 });
+  const [position, setPosition] = useState(() => ({ ...savedPosition }));
   const dragRef = useRef(null);
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
@@ -53,10 +56,12 @@ function SearchBar({ text, onClose, onNavigate }) {
     if (!draggingRef.current) return;
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
-    setPosition({
+    const newPos = {
       x: dragStartRef.current.posX + dx,
       y: dragStartRef.current.posY + dy,
-    });
+    };
+    setPosition(newPos);
+    savedPosition = newPos;
   }, []);
 
   const handleDragEnd = useCallback(() => {
