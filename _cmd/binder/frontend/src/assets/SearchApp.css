@@ -1,0 +1,116 @@
+#SearchApp {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#searchTitle {
+    padding-left: 8px !important;
+    padding-right: 0px;
+    padding-top: 2px !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-titlebar) !important;
+    --wails-draggable: drag;
+    min-height: 40px !important;
+}
+
+#searchTitle button,
+#searchTitle input,
+#searchTitle .MuiInputBase-root {
+    --wails-draggable: no-drag;
+}
+
+#searchTitle button:hover {
+    background-color: var(--bg-elevated);
+}
+
+#searchContent {
+    flex: 1;
+    overflow-y: auto;
+    background-color: var(--bg-app);
+    padding: 0;
+}
+
+.searchResultFile {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.searchResultFileHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    background-color: var(--bg-panel);
+}
+
+.searchResultFileHeader:hover {
+    background-color: var(--hover-overlay);
+}
+
+.searchResultType {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border-subtle);
+}
+
+.searchResultLines {
+    padding: 0;
+}
+
+.searchResultLine {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 2px 12px 2px 32px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.searchResultLine:hover {
+    background-color: var(--hover-overlay);
+}
+
+.searchResultLineNum {
+    flex-shrink: 0;
+    min-width: 3em;
+    text-align: right;
+    color: var(--text-faint);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.searchResultLineText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.searchResultLineText mark {
+    background-color: rgba(255, 213, 79, 0.4);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+#searchEmpty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}

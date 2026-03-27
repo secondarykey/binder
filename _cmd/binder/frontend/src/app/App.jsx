@@ -207,6 +207,15 @@ function App() {
       }
     });
 
+    // 検索ウィンドウからのナビゲーション通知
+    const cleanupSearch = Events.On("binder:search:navigate", (event) => {
+      const { typ, id } = event.data?.[0] ?? event.data ?? {};
+      if (typ && id) {
+        nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now() } });
+        evt.selectTreeNode(id);
+      }
+    });
+
     //バインダーを開いたとき（アドレス変更時）にBinder名を再取得
     evt.register("App", Event.ChangeAddress, function () {
       loadBinderName();
@@ -245,6 +254,7 @@ function App() {
 
     return () => {
       cleanupRestored();
+      cleanupSearch();
     };
 
     /**

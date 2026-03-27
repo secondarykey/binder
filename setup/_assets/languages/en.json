@@ -9,7 +9,15 @@
         "publish" : "Unpublished Notes",
         "template" : "Template Settings",
         "config" : "Binder Settings",
-        "setting" : "App Settings"
+        "setting" : "App Settings",
+        "search" : "Search"
+    },
+    "search" : {
+        "title" : "Search",
+        "placeholder" : "Search notes and diagrams...",
+        "noResults" : "No results found.",
+        "searching" : "Searching...",
+        "matches" : "{{count}} matches in {{files}} files"
     },
     "common" : {
         "name" : "Name",

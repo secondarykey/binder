@@ -7,6 +7,7 @@ import App from './app/App'
 import HistoryApp from './app/HistoryApp'
 import PreviewApp from './app/PreviewApp'
 import SyslogApp from './app/SyslogApp'
+import SearchApp from './app/SearchApp'
 
 import { GetTheme, GetLanguage } from '../bindings/binder/api/app'
 import { applyTheme } from './theme'
@@ -20,6 +21,7 @@ const isCommitWindow  = params.get('commit')  === '1';
 const isHistoryWindow = params.get('history') === '1';
 const isPreviewWindow = params.get('preview') === '1';
 const isSyslogWindow  = params.get('syslog')  === '1';
+const isSearchWindow  = params.get('search')  === '1';
 
 // テーマと言語を動的に読み込んでからレンダリング
 Promise.all([
@@ -29,7 +31,7 @@ Promise.all([
   root.render(
       <React.StrictMode>
         <HashRouter>
-          {isSyslogWindow ? <SyslogApp /> : isPreviewWindow ? <PreviewApp /> : isHistoryWindow ? <HistoryApp /> : <App />}
+          {isSearchWindow ? <SearchApp /> : isSyslogWindow ? <SyslogApp /> : isPreviewWindow ? <PreviewApp /> : isHistoryWindow ? <HistoryApp /> : <App />}
         </HashRouter>
       </React.StrictMode>
   )

@@ -9,7 +9,8 @@ import PublishIcon from '@mui/icons-material/Publish';
 import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
-import { SettingsApplications, LibraryBooks as LibraryBooksIcon } from '@mui/icons-material';
+import { SettingsApplications, LibraryBooks as LibraryBooksIcon, Search as SearchIcon } from '@mui/icons-material';
+import { OpenSearchWindow } from '../../bindings/main/window';
 import TemplateTree from './TemplateTree';
 
 import Event, { EventContext } from '../Event';
@@ -175,6 +176,13 @@ function Menu(props) {
         <Tooltip title={t("menu.publish")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
             <PublishIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
+
+        {/** Search  */}
+        <Tooltip title={t("menu.search")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}>
+            <SearchIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 

@@ -9,7 +9,15 @@
         "publish" : "未公開一覧",
         "template" : "テンプレート設定",
         "config" : "バインダー設定",
-        "setting" : "アプリ設定"
+        "setting" : "アプリ設定",
+        "search" : "検索"
+    },
+    "search" : {
+        "title" : "検索",
+        "placeholder" : "ノートとダイアグラムを検索...",
+        "noResults" : "結果が見つかりませんでした。",
+        "searching" : "検索中...",
+        "matches" : "{{files}}件のファイルで{{count}}件一致"
     },
     "common" : {
         "name" : "名前",

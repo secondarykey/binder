@@ -28,6 +28,7 @@ type Window struct {
 	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
 	previewWindow  *application.WebviewWindow
 	syslogWindow   *application.WebviewWindow
+	searchWindow   *application.WebviewWindow
 }
 
 func NewWindow(app *api.App) *Window {
@@ -416,6 +417,34 @@ func (r *Window) OpenSyslogWindow() error {
 
 	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		r.syslogWindow = nil
+	})
+
+	return nil
+}
+
+// OpenSearchWindow はバインダー全体検索ウィンドウを開く。
+// 既に開いていれば前面に出す。
+func (r *Window) OpenSearchWindow() error {
+	if r.searchWindow != nil {
+		r.searchWindow.Focus()
+		return nil
+	}
+
+	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - Search",
+		Width:            700,
+		Height:           500,
+		MinWidth:         500,
+		MinHeight:        300,
+		Frameless:        true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?search=1",
+	})
+
+	r.searchWindow = w
+
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.searchWindow = nil
 	})
 
 	return nil
