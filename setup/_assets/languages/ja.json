@@ -247,7 +247,8 @@
         "error" : "移行に失敗しました: {{error}}",
         "needUpdateTitle" : "アプリの更新が必要",
         "needUpdateMessage" : "このBinderはアプリより新しいバージョンで作成されています。開くにはアプリを更新してください。",
-        "needUpdateVersionInfo" : "Binderバージョン: {{binderVersion}} / アプリバージョン: {{appVersion}}"
+        "needUpdateVersionInfo" : "Binderバージョン: {{binderVersion}} / アプリバージョン: {{appVersion}}",
+        "forceOpen" : "強制的に開く（データが正しく表示されない可能性があります）"
     },
     "syslog" : {
         "title" : "システムログ",
