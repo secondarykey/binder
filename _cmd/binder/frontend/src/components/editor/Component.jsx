@@ -1375,6 +1375,7 @@ function Editor(props) {
               {/** テキスト検索フローティングパネル（Ctrl+F） */}
               {searchOpen && (
                 <SearchBar
+                  key={restoredAt}
                   text={text}
                   onClose={() => setSearchOpen(false)}
                   onNavigate={handleSearchNavigate}

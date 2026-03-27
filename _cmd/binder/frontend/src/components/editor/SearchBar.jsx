@@ -99,6 +99,13 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
     };
   }, [handleDragMove, handleDragEnd]);
 
+  // テキスト（ファイル内容）が更新されたら現在のクエリで再検索
+  useEffect(() => {
+    if (query && searched) {
+      doSearchWith(query);
+    }
+  }, [text]);
+
   // 検索実行（引数指定で任意のクエリで検索可能）
   const doSearchWith = (searchText) => {
     if (!searchText) {
