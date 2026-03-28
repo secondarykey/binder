@@ -44,6 +44,7 @@
         "menu" : "メニュー",
         "openBrowser" : "ブラウザで開く",
         "pushRemote" : "リモートにPush",
+        "mergeRemote" : "リモートからマージ",
         "none" : "なし",
         "commit" : "コミット",
         "publish" : "公開",
@@ -156,6 +157,21 @@
         "saveCredentials" : "認証情報を保存する",
         "pushSuccess" : "Pushしました",
         "pushButton" : "Push"
+    },
+    "merge" : {
+        "title" : "リモートからマージ",
+        "remote" : "リモート",
+        "localBranch" : "ローカルブランチ",
+        "remoteBranch" : "リモートブランチ",
+        "loadBranches" : "ブランチ一覧を取得",
+        "mergeButton" : "マージ実行",
+        "authType" : "認証方式",
+        "saveCredentials" : "認証情報を保存する",
+        "uncommittedWarning" : "未コミットの変更があります。全体のコミットを行ってから実行してください。",
+        "mergeSuccess" : "マージしました",
+        "upToDate" : "既に最新です",
+        "diverged" : "ブランチが分岐しています。外部のGitクライアントを使用して手動でマージを行ってください。",
+        "reloadError" : "マージ後のBinder再読み込みに失敗しました。Binderを開き直してください。"
     },
     "commitModal" : {
         "title" : "コミット",

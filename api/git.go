@@ -153,6 +153,83 @@ func (a *App) ListRemoteBranches(url string, info *json.UserInfo) ([]string, err
 	return branches, nil
 }
 
+func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserInfo, save bool) (*json.MergeResult, error) {
+
+	defer log.PrintTrace(log.Func("MergeFromRemote()", remoteName, remoteBranch))
+
+	// 1. 未コミット変更のチェック
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	if len(ids) > 0 {
+		return nil, fmt.Errorf("uncommitted changes exist")
+	}
+
+	// 2. 認証情報を変換
+	fsInfo := &fs.UserInfo{
+		Name:       info.Name,
+		Email:      info.Email,
+		AuthType:   fs.AuthType(info.AuthType),
+		Username:   info.Username,
+		Password:   info.Password,
+		Token:      info.Token,
+		Passphrase: info.Passphrase,
+		Filename:   info.Filename,
+		Bytes:      info.Bytes,
+	}
+
+	// 3. 認証情報の保存（オプション）
+	if save {
+		a.current.SaveUserInfo(fsInfo)
+	}
+
+	// 4. Fetch（Binder を閉じる前に実行 — Fetch はDB操作を伴わない）
+	err = a.current.Fetch(remoteName, remoteBranch, fsInfo)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("Fetch() error: %+v", err)
+	}
+
+	// 5. ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err = a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// 6. リポジトリを直接開いて fast-forward マージ
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		// マージできなくても Binder を再オープン
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	status, err := tmpFs.MergeFFOnly(remoteName, remoteBranch)
+	if err != nil {
+		// エラー時も Binder を再オープン
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// 7. Binder を再オープン
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.MergeResult{Status: status, Address: address}, nil
+}
+
 func (a *App) GetModifiedIds() ([]string, error) {
 
 	defer log.PrintTrace(log.Func("GetModifiedIds()"))

@@ -44,6 +44,7 @@
         "menu" : "Menu",
         "openBrowser" : "Open Browser",
         "pushRemote" : "Push to Remote",
+        "mergeRemote" : "Merge from Remote",
         "none" : "None",
         "commit" : "Commit",
         "publish" : "Publish",
@@ -156,6 +157,21 @@
         "saveCredentials" : "Save credentials",
         "pushSuccess" : "Pushed successfully.",
         "pushButton" : "Push"
+    },
+    "merge" : {
+        "title" : "Merge from Remote",
+        "remote" : "Remote",
+        "localBranch" : "Local Branch",
+        "remoteBranch" : "Remote Branch",
+        "loadBranches" : "Load Branches",
+        "mergeButton" : "Merge",
+        "authType" : "Authentication",
+        "saveCredentials" : "Save credentials",
+        "uncommittedWarning" : "There are uncommitted changes. Please commit all changes before merging.",
+        "mergeSuccess" : "Merged successfully.",
+        "upToDate" : "Already up to date.",
+        "diverged" : "Branches have diverged. Please use an external Git client to merge manually.",
+        "reloadError" : "Failed to reload Binder after merge. Please reopen the Binder."
     },
     "commitModal" : {
         "title" : "Commit",

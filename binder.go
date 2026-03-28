@@ -357,6 +357,33 @@ func (b *Binder) Push(remoteName string, info *json.UserInfo, save bool) error {
 	return nil
 }
 
+// Dir はバインダーのディレクトリパスを返す。
+func (b *Binder) Dir() string {
+	return b.dir
+}
+
+// Fetch はリモートブランチをフェッチする。
+func (b *Binder) Fetch(remoteName, branchName string, info *fs.UserInfo) error {
+	if b == nil {
+		return EmptyError
+	}
+	return b.fileSystem.Fetch(remoteName, branchName, info)
+}
+
+// SaveUserInfo は認証情報を保存する。
+func (b *Binder) SaveUserInfo(info *fs.UserInfo) {
+	key, err := setup.GetUserKey()
+	if err != nil {
+		log.WarnE("setup.GetUserKey() error", err)
+		return
+	}
+	if err = b.fileSystem.SaveUserData(key, info); err != nil {
+		log.WarnE("SaveUserData() error", err)
+		return
+	}
+	b.fileSystem.SetUserSig(info)
+}
+
 func (b *Binder) generateId() string {
 
 	id, err := uuid.NewV7()

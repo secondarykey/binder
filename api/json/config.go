@@ -21,3 +21,9 @@ type Remote struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
+
+type MergeResult struct {
+	Status  string `json:"status"`  // success, uptodate, diverged, reload_error
+	Message string `json:"message"`
+	Address string `json:"address"` // 再読み込み後のHTTPアドレス
+}

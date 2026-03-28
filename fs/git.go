@@ -157,6 +157,104 @@ func (f *FileSystem) GetRemotes() ([]*config.RemoteConfig, error) {
 	return rtn, nil
 }
 
+// Fetch はリモートブランチをフェッチする。
+func (f *FileSystem) Fetch(remoteName, branchName string, info *UserInfo) error {
+
+	auth, err := authMethod(info)
+	if err != nil {
+		return xerrors.Errorf("authMethod() error: %w", err)
+	}
+
+	remote, err := f.repo.Remote(remoteName)
+	if err != nil {
+		return xerrors.Errorf("Remote() error: %w", err)
+	}
+
+	refSpec := config.RefSpec(
+		fmt.Sprintf("+refs/heads/%s:refs/remotes/%s/%s", branchName, remoteName, branchName))
+	err = remote.Fetch(&git.FetchOptions{
+		Progress: os.Stdout,
+		RefSpecs: []config.RefSpec{refSpec},
+		Auth:     auth,
+	})
+
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return xerrors.Errorf("remote Fetch() error: %w", err)
+	}
+
+	return nil
+}
+
+// MergeFFOnly はフェッチ済みリモートブランチに対してfast-forwardマージを試みる。
+// 戻り値: status = "success", "uptodate", "diverged"
+func (f *FileSystem) MergeFFOnly(remoteName, branchName string) (string, error) {
+
+	// HEAD のコミットハッシュを取得
+	head, err := f.repo.Head()
+	if err != nil {
+		return "", xerrors.Errorf("repository Head() error: %w", err)
+	}
+	headHash := head.Hash()
+
+	// リモートブランチの ref を取得
+	remoteRef, err := f.repo.Reference(
+		plumbing.ReferenceName(fmt.Sprintf("refs/remotes/%s/%s", remoteName, branchName)), true)
+	if err != nil {
+		return "", xerrors.Errorf("Reference() error: %w", err)
+	}
+	remoteHash := remoteRef.Hash()
+
+	// 同一ハッシュなら更新不要
+	if headHash == remoteHash {
+		return "uptodate", nil
+	}
+
+	// HEAD がリモートの祖先かチェック（fast-forward 可能か）
+	headCommit, err := f.repo.CommitObject(headHash)
+	if err != nil {
+		return "", xerrors.Errorf("CommitObject(HEAD) error: %w", err)
+	}
+	remoteCommit, err := f.repo.CommitObject(remoteHash)
+	if err != nil {
+		return "", xerrors.Errorf("CommitObject(remote) error: %w", err)
+	}
+
+	isAncestor, err := headCommit.IsAncestor(remoteCommit)
+	if err != nil {
+		return "", xerrors.Errorf("IsAncestor() error: %w", err)
+	}
+	if !isAncestor {
+		return "diverged", nil
+	}
+
+	// fast-forward: HEAD をリモートのコミットに進める
+	wt, err := f.repo.Worktree()
+	if err != nil {
+		return "", xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	err = wt.Checkout(&git.CheckoutOptions{
+		Hash: remoteHash,
+	})
+	if err != nil {
+		return "", xerrors.Errorf("Checkout() error: %w", err)
+	}
+
+	// ブランチ参照を更新
+	branchRef := plumbing.NewHashReference(head.Name(), remoteHash)
+	err = f.repo.Storer.SetReference(branchRef)
+	if err != nil {
+		return "", xerrors.Errorf("SetReference() error: %w", err)
+	}
+
+	return "success", nil
+}
+
+// Repo はリポジトリを返す（低レベル操作用）。
+func (f *FileSystem) Repo() *git.Repository {
+	return f.repo
+}
+
 func (f *FileSystem) Push(r, name string, info *UserInfo) error {
 
 	auth, err := authMethod(info)
