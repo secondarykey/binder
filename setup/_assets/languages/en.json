@@ -208,7 +208,13 @@
         "removeSuccess" : "Template removed.",
         "deleteTitle" : "Delete Template",
         "deleteConfirm" : "Delete \"{{name}}\"?",
-        "type" : "Type"
+        "type" : "Type",
+        "batchPublish" : "Batch Publish",
+        "batchPublishTitle" : "Batch Publish",
+        "batchPublishConfirm" : "Republish all notes related to this template.\n*Notes that have never been published will be skipped.",
+        "batchPublishSuccess" : "{{count}} notes published.",
+        "batchPublishError" : "Errors occurred in the following notes: {{names}}",
+        "batchPublishNoNotes" : "No notes to publish."
     },
     "history" : {
         "title" : "History",

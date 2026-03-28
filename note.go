@@ -384,6 +384,42 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 	return rtn, nil
 }
 
+// GetPublishedNotesByTemplate はテンプレートを使用している公開済みノートの一覧を返す。
+// 一度も公開されていないノートは含まれない。
+func (b *Binder) GetPublishedNotesByTemplate(templateId string) ([]*json.Leaf, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	notes, err := b.db.FindNotesByTemplate(templateId)
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindNotesByTemplate() error: %w", err)
+	}
+	if len(notes) == 0 {
+		return nil, nil
+	}
+
+	ids := make([]interface{}, len(notes))
+	for i, n := range notes {
+		ids[i] = n.Id
+	}
+	structMap, err := b.getStructureMap(ids...)
+	if err != nil {
+		return nil, xerrors.Errorf("getStructureMap() error: %w", err)
+	}
+
+	var leaves []*json.Leaf
+	for _, n := range notes {
+		s, ok := structMap[n.Id]
+		if !ok || s.Publish.IsZero() {
+			continue
+		}
+		leaves = append(leaves, &json.Leaf{Id: n.Id, Name: s.Name, Type: "note"})
+	}
+	return leaves, nil
+}
+
 func (b *Binder) UnpublishNote(id string) error {
 
 	n, err := b.db.GetNote(id)

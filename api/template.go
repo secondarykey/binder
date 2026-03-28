@@ -81,6 +81,18 @@ func (a *App) UpdateTemplateSeqs(ids []string) error {
 	return nil
 }
 
+func (a *App) GetPublishedNotesByTemplate(templateId string) ([]*json.Leaf, error) {
+
+	defer log.PrintTrace(log.Func("GetPublishedNotesByTemplate()"))
+
+	leaves, err := a.current.GetPublishedNotesByTemplate(templateId)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetPublishedNotesByTemplate() error\n%+v", err)
+	}
+	return leaves, nil
+}
+
 func (a *App) GetHTMLTemplates() (*json.Templates, error) {
 
 	defer log.PrintTrace(log.Func("GetHTMLTemplates()"))

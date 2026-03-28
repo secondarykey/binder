@@ -208,7 +208,13 @@
         "removeSuccess" : "テンプレートを削除しました",
         "deleteTitle" : "テンプレートの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
-        "type" : "タイプ"
+        "type" : "タイプ",
+        "batchPublish" : "一括公開",
+        "batchPublishTitle" : "一括公開",
+        "batchPublishConfirm" : "関連するノートを一括で公開します。\n※一度も公開してないものは処理されません",
+        "batchPublishSuccess" : "{{count}}件のノートを公開しました",
+        "batchPublishError" : "以下のノートでエラーが発生しました: {{names}}",
+        "batchPublishNoNotes" : "公開対象のノートがありません"
     },
     "history" : {
         "title" : "更新履歴",
