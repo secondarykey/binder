@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
@@ -46,4 +46,11 @@ jobs:
           go env GOOS GOARCH
           node -v
           npm -v
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Wails doctor
+        run: |
+          wails3 doctor
 
