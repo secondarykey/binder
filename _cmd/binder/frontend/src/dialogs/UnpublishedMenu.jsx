@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 
 import {
-  GetUnpublishedTree,
+  GetUnpublishedTree, GetPublishedNotesByTemplate,
   OpenNote, OpenDiagram,
   ParseNote, Generate,
 } from '../../bindings/binder/api/app';
@@ -25,7 +25,7 @@ import { useTranslation } from 'react-i18next';
  * ModifiedMenu と同じ構造で Note/Diagram/Asset を表示し、
  * PublishGenerate イベントを受け取ったら選択済みファイルを順次 Generate する。
  */
-function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
+function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext);
   const {t} = useTranslation();
@@ -63,6 +63,21 @@ function UnpublishedMenu({ date: dateProp, onNavigate, onClose, ...props }) {
   const assetRef = useRef(null);
 
   const loadTree = () => {
+    if (template) {
+      // テンプレート一括公開モード: 公開済みノートのみ取得
+      GetPublishedNotesByTemplate(template.id).then((leaves) => {
+        const noteLeaves = (leaves ?? []).map(l => ({ ...l, type: "note" }));
+        setNotes(noteLeaves);
+        setDiagrams([]);
+        setAssets([]);
+        const comment = t("template.batchPublishComment", { name: template.name });
+        evt.raise(Event.PublishComment, comment);
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      });
+      return;
+    }
+
     GetUnpublishedTree().then((tree) => {
 
       const data = tree.data ?? [];

@@ -10,9 +10,8 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate, GetPublishedNotesByTemplate, OpenNote, ParseNote, Generate } from '../../bindings/binder/api/app';
+import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../bindings/binder/api/app';
 import { OpenHistoryWindow } from '../../bindings/main/window';
-import Marked from '../components/editor/engines/Marked';
 
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -183,38 +182,11 @@ function TemplateTree(props) {
     setBatchPublish({ open: true, id: targetId, name: targetName });
   };
 
-  // 一括公開: 実行
-  const handleBatchPublishConfirm = async () => {
-    const targetId = batchPublish.id;
+  // 一括公開: 確認後に PublishModal を開く
+  const handleBatchPublishConfirm = () => {
+    const templateData = { id: batchPublish.id, name: batchPublish.name };
     setBatchPublish({ open: false, id: null, name: '' });
-
-    try {
-      const leaves = await GetPublishedNotesByTemplate(targetId);
-      if (!leaves || leaves.length === 0) {
-        evt.showWarningMessage(t("template.batchPublishNoNotes"));
-        return;
-      }
-
-      const errors = [];
-      for (const leaf of leaves) {
-        try {
-          const text = await OpenNote(leaf.id);
-          const parsed = await ParseNote(leaf.id, false, text);
-          const html = await Marked.parse(parsed);
-          await Generate("note", leaf.id, html);
-        } catch (err) {
-          errors.push(leaf.name);
-        }
-      }
-
-      if (errors.length > 0) {
-        evt.showErrorMessage(t("template.batchPublishError", { names: errors.join(", ") }));
-      } else {
-        evt.showSuccessMessage(t("template.batchPublishSuccess", { count: leaves.length }));
-      }
-    } catch (err) {
-      evt.showErrorMessage(err);
-    }
+    evt.openPublishModal(templateData);
   };
 
   // DnD終了: 並び替えてバックエンドに seq を保存

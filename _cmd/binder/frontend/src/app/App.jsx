@@ -78,6 +78,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [publishModalTemplate, setPublishModalTemplate] = useState(null);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
@@ -183,7 +184,8 @@ function App() {
     });
 
     //公開一覧モーダルを開く
-    evt.register("App", Event.OpenPublishModal, function () {
+    evt.register("App", Event.OpenPublishModal, function (data) {
+      setPublishModalTemplate(data ?? null);
       setPublishModalOpen(true);
     });
 
@@ -382,7 +384,7 @@ function App() {
       <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
 
       {/** 公開一覧モーダル */}
-      <PublishModal open={publishModalOpen} onClose={() => setPublishModalOpen(false)} />
+      <PublishModal open={publishModalOpen} template={publishModalTemplate} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); }} />
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />

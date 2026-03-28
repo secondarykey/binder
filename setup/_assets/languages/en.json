@@ -214,7 +214,8 @@
         "batchPublishConfirm" : "Republish all notes related to this template.\n*Notes that have never been published will be skipped.",
         "batchPublishSuccess" : "{{count}} notes published.",
         "batchPublishError" : "Errors occurred in the following notes: {{names}}",
-        "batchPublishNoNotes" : "No notes to publish."
+        "batchPublishNoNotes" : "No notes to publish.",
+        "batchPublishComment" : "Design change due to template \"{{name}}\" update"
     },
     "history" : {
         "title" : "History",
