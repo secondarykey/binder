@@ -660,6 +660,7 @@ function Editor(props) {
   const treeSplitStartRef = useRef(null);
 
   const handleTreeSplitterPointerDown = (e) => {
+    if (!treeVisible) return;
     e.preventDefault();
     treeSplitStartRef.current = { startX: e.clientX, startWidth: treeWidth };
     treeSplitterRef.current.setPointerCapture(e.pointerId);
@@ -1110,17 +1111,18 @@ function Editor(props) {
       <Paper id="splitScreen">
 
         {/** ツリーパネル（template モード以外） */}
-        {showTree && treeVisible && (
-          <div id="editorTreePanel" style={{ width: treeWidth + 'px' }}>
+        {showTree && (
+          <div id="editorTreePanel" className={!treeVisible ? 'hidden' : ''} style={{ width: treeWidth + 'px' }}>
             <BinderTree />
           </div>
         )}
 
         {/** ツリー/エディタ間スプリッター */}
-        {showTree && treeVisible && (
+        {showTree && (
           <div
             ref={treeSplitterRef}
             id="treeSplitter"
+            className={!treeVisible ? 'hidden' : ''}
             onPointerDown={handleTreeSplitterPointerDown}
             onPointerMove={handleTreeSplitterPointerMove}
             onPointerUp={handleTreeSplitterPointerUp}

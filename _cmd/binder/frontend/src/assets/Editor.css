@@ -28,6 +28,14 @@
   color: var(--text-primary);
   border-right: 1px solid var(--border-primary);
   --wails-draggable: no-drag;
+  transition: width 0.3s ease-out, opacity 0.2s ease-out;
+}
+
+#editorTreePanel.hidden {
+  width: 0 !important;
+  opacity: 0;
+  overflow: hidden;
+  border-right: none;
 }
 
 /* ツリースクロールエリア */
@@ -47,7 +55,14 @@
 
   border: 0;
   background-color: var(--bg-overlay);
-  transition: background-color 0.4s;
+  transition: background-color 0.4s, opacity 0.3s ease-out, width 0.3s ease-out;
+}
+
+#treeSplitter.hidden {
+  width: 0 !important;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 #treeSplitter:hover {
