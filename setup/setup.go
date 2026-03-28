@@ -80,6 +80,23 @@ func migrateApp(ver *Version, devMode bool) error {
 		}
 	}
 
+	// 0.9.2: Editor.Program をクリアし、Editor.Args を設定
+	// GitBash が有効だった場合は {bfile} をデフォルトにする
+	v092, _ := NewVersion("0.9.2")
+	if prevVer.Lt(v092) {
+		editor := settings.GetEditor()
+		editor.Program = ""
+		if editor.GitBash {
+			editor.Args = "{bfile}"
+		} else {
+			editor.Args = "{file}"
+		}
+		editor.GitBash = false
+		if err := settings.SaveEditor(editor); err != nil {
+			log.WarnE("migrateApp: SaveEditor", err)
+		}
+	}
+
 	// EnsureExists 終了時点で常に現在のバージョンを記録する
 	if !prevVer.Eq(ver) {
 		if err := settings.SaveAppVersion(ver.String()); err != nil {

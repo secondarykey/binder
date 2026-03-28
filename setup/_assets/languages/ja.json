@@ -37,7 +37,8 @@
         "updated" : "更新しました",
         "deleted" : "削除しました",
         "open" : "開く",
-        "mime" : "MIMEタイプ"
+        "mime" : "MIMEタイプ",
+        "select" : "選択"
     },
     "tree" : {
         "menu" : "メニュー",
@@ -114,8 +115,9 @@
         "wordWrap" : "テキストの折り返し",
         "showPreview" : "プレビューの表示",
         "fontSetting" : "フォント設定",
-        "gitBash" : "Git Bashで実行",
-        "editorProgramError" : "エディタプログラムに {file} を含めてください",
+        "editorArgs" : "エディタ引数",
+        "editorArgsError" : "エディタ引数に {file} または {bfile} を含めてください",
+        "editorArgsHint" : "WindowsでGit Bashを利用する場合は、ファイル名の指定を {bfile} にしてください",
         "license" : "ライセンス",
         "thirdPartyLicense" : "サードパーティライセンス",
         "systemLog" : "システムログ",

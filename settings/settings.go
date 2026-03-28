@@ -85,6 +85,7 @@ type Look struct {
 
 type Editor struct {
 	Program         string       `json:"program"`
+	Args            string       `json:"args"`
 	GitBash         bool         `json:"gitbash"`
 	ShowLineNumbers bool         `json:"showLineNumbers"`
 	WordWrap        bool         `json:"wordWrap"`
@@ -297,6 +298,7 @@ func GetEditor() *Editor {
 func SaveEditor(e *Editor) error {
 	obj := Get()
 	obj.Look.Editor.Program = e.Program
+	obj.Look.Editor.Args = e.Args
 	obj.Look.Editor.GitBash = e.GitBash
 	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
 	obj.Look.Editor.WordWrap = e.WordWrap

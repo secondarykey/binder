@@ -37,7 +37,8 @@
         "updated" : "Updated.",
         "deleted" : "Deleted.",
         "open" : "Open",
-        "mime" : "MIME Type"
+        "mime" : "MIME Type",
+        "select" : "Select"
     },
     "tree" : {
         "menu" : "Menu",
@@ -114,8 +115,9 @@
         "wordWrap" : "Word Wrap",
         "showPreview" : "Show Preview",
         "fontSetting" : "Font Setting",
-        "gitBash" : "Run with Git Bash",
-        "editorProgramError" : "Editor program must contain {file}",
+        "editorArgs" : "Editor Arguments",
+        "editorArgsError" : "Editor arguments must contain {file} or {bfile}",
+        "editorArgsHint" : "To use Git Bash on Windows, use {bfile} instead of {file}",
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",
