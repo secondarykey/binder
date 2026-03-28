@@ -32,54 +32,66 @@
 #searchContent {
     flex: 1;
     overflow-y: auto;
-    background-color: var(--bg-app);
+    background-color: var(--bg-panel);
     padding: 0;
+    margin-bottom: 2px;
+    margin-right: 2px;
 }
 
 .searchResultFile {
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.searchResultFileHeader {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-primary);
     cursor: pointer;
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    font-weight: 500;
-    background-color: var(--bg-panel);
 }
 
-.searchResultFileHeader:hover {
+.searchResultFile:hover {
     background-color: var(--hover-overlay);
 }
 
+.searchResultFileHeader {
+    flex-shrink: 0;
+    display: flex;
+    align-items: start;
+    gap: 4px;
+    width: 180px;
+    min-width: 120px;
+    padding: 5px 8px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    overflow: hidden;
+    border-right: 1px solid var(--border-primary);
+}
+
+.searchResultFileHeader span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .searchResultType {
-    font-size: 0.7rem;
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 0.65rem;
     color: var(--text-muted);
-    padding: 1px 6px;
+    padding: 0px 4px;
     border-radius: 3px;
     border: 1px solid var(--border-subtle);
 }
 
 .searchResultLines {
-    padding: 0;
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
 }
 
 .searchResultLine {
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    padding: 2px 12px 2px 32px;
+    gap: 6px;
+    padding: 1px 8px;
     font-size: 0.8rem;
     color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.searchResultLine:hover {
-    background-color: var(--hover-overlay);
 }
 
 .searchResultLineNum {
@@ -93,10 +105,12 @@
 }
 
 .searchResultLineText {
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.8rem;
 }
 
 .searchResultLineText mark {

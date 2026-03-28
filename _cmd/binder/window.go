@@ -433,15 +433,17 @@ func (r *Window) OpenSearchWindow() error {
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            "Binder - Search",
 		Width:            700,
-		Height:           500,
+		Height:           46,
 		MinWidth:         500,
-		MinHeight:        300,
+		MinHeight:        46,
 		Frameless:        true,
+		AlwaysOnTop:      true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              "/?search=1",
 	})
 
 	r.searchWindow = w
+	w.SetAlwaysOnTop(true)
 
 	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		r.searchWindow = nil
