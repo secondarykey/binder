@@ -77,6 +77,12 @@
   position: relative;   /* 内部の absolute 要素の基準 */
   flex-shrink: 0;
   height: 100%;
+  transition: flex 0.3s ease-out;
+}
+
+#editorWrapper.viewer-hidden {
+  flex: 1 0 auto;
+  min-width: 0;
 }
 
 #editorMenu {
@@ -120,7 +126,14 @@
 
   border: 0;
   background-color: var(--bg-overlay);
-  transition: background-color 0.4s;
+  transition: background-color 0.4s, opacity 0.3s ease-out, width 0.3s ease-out;
+}
+
+#splitter.hidden {
+  width: 0 !important;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 #splitter::before {
@@ -162,6 +175,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: flex 0.3s ease-out, min-width 0.3s ease-out, opacity 0.2s ease-out;
+}
+
+#dataViewer.hidden {
+  flex: 0;
+  min-width: 0;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 
 #previewMenu {

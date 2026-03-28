@@ -633,6 +633,7 @@ function Editor(props) {
   const splitStartRef = useRef(null);
 
   const handleSplitterPointerDown = (e) => {
+    if (!viewer) return;
     e.preventDefault();
     splitStartRef.current = { startX: e.clientX, startWidth: width };
     splitterRef.current.setPointerCapture(e.pointerId);
@@ -1138,7 +1139,7 @@ function Editor(props) {
 
           {/** エディタ */}
           {editor &&
-            <div id="editorWrapper" style={viewer ? { width: (width - 4) + 'px' } : { flex: 1, minWidth: 0 }}>
+            <div id="editorWrapper" className={!viewer ? 'viewer-hidden' : ''} style={{ width: (width - 4) + 'px' }}>
 
               {/** テキスト用のメニュー */}
               <Container id="editorMenu">
@@ -1414,8 +1415,9 @@ function Editor(props) {
           }
 
           {/** セパレータ（エディタ/ビューア間） */}
-          {editor && viewer &&
+          {editor &&
             <div ref={splitterRef} id="splitter"
+              className={!viewer ? 'hidden' : ''}
               onPointerDown={handleSplitterPointerDown}
               onPointerMove={handleSplitterPointerMove}
               onPointerUp={handleSplitterPointerUp}
@@ -1423,8 +1425,7 @@ function Editor(props) {
           }
 
           {/** 表示側 */}
-          {viewer &&
-            <div id="dataViewer">
+            <div id="dataViewer" className={!viewer ? 'hidden' : ''}>
 
               {/** プレビューメニュー */}
               <div id="previewMenu">
@@ -1526,7 +1527,6 @@ function Editor(props) {
               </div>
 
             </div>
-          }
 
         </div>
 
