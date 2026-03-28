@@ -263,8 +263,8 @@ func runEditor(program, argsStr, fn string) (chan error, error) {
 	// {bfile} がある場合は GitBash 形式のパスに変換して置換
 	bashFn := fs.ToGitBash(fn)
 
-	// 引数をスペースで分割し、{file}/{bfile} を実パスに置換
-	tokens := strings.Fields(argsStr)
+	// 引数をダブルクォート考慮で分割し、{file}/{bfile} を実パスに置換
+	tokens := splitDQSpace(argsStr)
 	fm := false
 	var args []string
 	for _, token := range tokens {
@@ -296,6 +296,27 @@ func runEditor(program, argsStr, fn string) (chan error, error) {
 	}(ch)
 
 	return ch, nil
+}
+
+// splitDQSpace はダブルコーテーション込のスペース区切りを行う
+func splitDQSpace(v string) []string {
+
+	// ダブルコーテーションで分割
+	parts := strings.Split(v, "\"")
+	var result []string
+
+	for i, part := range parts {
+		if i%2 == 0 {
+			// ダブルコーテーション外の部分をスペースで分割
+			words := strings.Fields(part)
+			result = append(result, words...)
+		} else {
+			// ダブルコーテーション内の部分をそのまま追加
+			result = append(result, part)
+		}
+	}
+
+	return result
 }
 
 // DownloadDocs はdocsディレクトリをZIPファイルとしてダウンロードする。
