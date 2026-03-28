@@ -1,0 +1,36 @@
+name: Multi-OS Echo Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [ closed ]
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  echo-test:
+    if: github.event.pull_request.merged == true
+    # ここから下がジョブの設定（stepsと同階層）
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    # 実行するOSの指定（matrixを参照）
+    runs-on: ${{ matrix.os }}
+
+    # 実際の実行手順
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Display Go version
+        run: |
+          go version
+          go env GOOS GOARCH
+
