@@ -36,7 +36,8 @@
         "create" : "作成",
         "updated" : "更新しました",
         "deleted" : "削除しました",
-        "open" : "開く"
+        "open" : "開く",
+        "mime" : "MIMEタイプ"
     },
     "tree" : {
         "menu" : "メニュー",
