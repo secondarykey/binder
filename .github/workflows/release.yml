@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     types: [ closed ]
 env:
+
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
@@ -29,8 +30,20 @@ jobs:
         with:
           go-version: '1.25'
 
-      - name: Display Go version
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0-dev libayatana-appindicator3-dev
+      - name: Display version
         run: |
           go version
           go env GOOS GOARCH
+          node -v
+          npm -v
 
