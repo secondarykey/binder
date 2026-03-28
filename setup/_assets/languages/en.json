@@ -36,7 +36,8 @@
         "create" : "Create",
         "updated" : "Updated.",
         "deleted" : "Deleted.",
-        "open" : "Open"
+        "open" : "Open",
+        "mime" : "MIME Type"
     },
     "tree" : {
         "menu" : "Menu",
