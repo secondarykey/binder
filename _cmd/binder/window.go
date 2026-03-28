@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
@@ -28,6 +27,7 @@ type Window struct {
 	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
 	previewWindow  *application.WebviewWindow
 	syslogWindow   *application.WebviewWindow
+	searchWindow   *application.WebviewWindow
 }
 
 func NewWindow(app *api.App) *Window {
@@ -223,19 +223,22 @@ func (win *Window) OpenBinderSite() error {
 	return nil
 }
 
-const editorFileMark = "{file}"
+const (
+	editorFileMark     = "{file}"
+	editorBashFileMark = "{bfile}"
+)
 
 func (win *Window) RunEditor(mode, id string) error {
 	defer log.PrintTrace(log.Func("RunEditor()", mode, id))
 
 	editor := settings.GetEditor()
-	entry := editor.Program
-	bash := editor.GitBash && runtime.GOOS == "windows"
+	program := editor.Program
+	argsStr := editor.Args
 
 	fn := win.app.GetFullPath(mode, id)
 	log.Info(fn)
 
-	ch, err := runEditor(entry, fn, bash)
+	ch, err := runEditor(program, argsStr, fn)
 	if err != nil {
 		return xerrors.Errorf("runEditor() error: %w", err)
 	}
@@ -247,42 +250,40 @@ func (win *Window) RunEditor(mode, id string) error {
 	return nil
 }
 
-func runEditor(entry, fn string, winBash bool) (chan error, error) {
+func runEditor(program, argsStr, fn string) (chan error, error) {
 
-	if winBash {
-		fn = fs.ToGitBash(fn)
+	if program == "" {
+		return nil, xerrors.Errorf("editor program is not set")
 	}
 
-	//区切り文字のスライスを作成
-	lines := splitDQSpace(entry)
+	if argsStr == "" {
+		argsStr = editorFileMark
+	}
 
-	cmd := ""
+	// {bfile} がある場合は GitBash 形式のパスに変換して置換
+	bashFn := fs.ToGitBash(fn)
+
+	// 引数をダブルクォート考慮で分割し、{file}/{bfile} を実パスに置換
+	tokens := splitDQSpace(argsStr)
 	fm := false
-
 	var args []string
-	for idx, bk := range lines {
-		if idx == 0 {
-			cmd = bk
-		} else {
-			word := bk
-			idx := strings.Index(word, editorFileMark)
-			if idx != -1 {
-				word = strings.ReplaceAll(word, editorFileMark, fn)
-				fm = true
-			}
-			args = append(args, word)
+	for _, token := range tokens {
+		if strings.Contains(token, editorBashFileMark) {
+			token = strings.ReplaceAll(token, editorBashFileMark, bashFn)
+			fm = true
 		}
+		if strings.Contains(token, editorFileMark) {
+			token = strings.ReplaceAll(token, editorFileMark, fn)
+			fm = true
+		}
+		args = append(args, token)
 	}
 
 	if !fm {
 		return nil, xerrors.Errorf("file mark[%s] error", editorFileMark)
 	}
 
-	if len(args) <= 0 {
-		return nil, xerrors.Errorf("command arguments error")
-	}
-
-	exe := exec.Command(cmd, args...)
+	exe := exec.Command(program, args...)
 	err := exe.Start()
 	if err != nil {
 		return nil, xerrors.Errorf("command start error: %w", err)
@@ -416,6 +417,36 @@ func (r *Window) OpenSyslogWindow() error {
 
 	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		r.syslogWindow = nil
+	})
+
+	return nil
+}
+
+// OpenSearchWindow はバインダー全体検索ウィンドウを開く。
+// 既に開いていれば前面に出す。
+func (r *Window) OpenSearchWindow() error {
+	if r.searchWindow != nil {
+		r.searchWindow.Focus()
+		return nil
+	}
+
+	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - Search",
+		Width:            700,
+		Height:           46,
+		MinWidth:         500,
+		MinHeight:        46,
+		Frameless:        true,
+		AlwaysOnTop:      true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?search=1",
+	})
+
+	r.searchWindow = w
+	w.SetAlwaysOnTop(true)
+
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.searchWindow = nil
 	})
 
 	return nil

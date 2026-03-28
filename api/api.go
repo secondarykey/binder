@@ -5,15 +5,23 @@ import (
 
 	"binder"
 	"binder/log"
-
+	"context"
 	"fmt"
 )
 
+// SearchEmitter は検索イベントの発火を外部に委譲するインターフェース
+type SearchEmitter interface {
+	EmitResult(result binder.SearchResult)
+	EmitDone()
+}
+
 // App struct
 type App struct {
-	current *binder.Binder
-	version *Version
-	devMode bool
+	current        *binder.Binder
+	version        *Version
+	devMode        bool
+	searchCancel   context.CancelFunc
+	SearchEmitter  SearchEmitter
 }
 
 func New(version string) *App {
@@ -52,6 +60,31 @@ func (a *App) GetVersionInfo() (*VersionInfo, error) {
 		Dev:     a.devMode,
 	}
 	return info, nil
+}
+
+// SearchBinder はバインダー内の全ノート・ダイアグラムを非同期で検索する。
+// 結果は SearchEmitter 経由でイベントとして返される。
+func (a *App) SearchBinder(query string) error {
+	if a.current == nil {
+		return fmt.Errorf("binder is not opened")
+	}
+	if a.SearchEmitter == nil {
+		return fmt.Errorf("search emitter is not set")
+	}
+	// 前回の検索をキャンセル
+	if a.searchCancel != nil {
+		a.searchCancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	a.searchCancel = cancel
+	emitter := a.SearchEmitter
+	go func() {
+		a.current.Search(ctx, query, func(result binder.SearchResult) {
+			emitter.EmitResult(result)
+		})
+		emitter.EmitDone()
+	}()
+	return nil
 }
 
 func (a *App) Address() (string, error) {

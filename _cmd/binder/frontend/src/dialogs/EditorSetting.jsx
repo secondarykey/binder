@@ -6,6 +6,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 
 import { GetEditor, SaveEditor, GetFont, SaveFont } from "../../bindings/binder/api/app";
+import { SelectFile } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -20,11 +21,11 @@ function EditorSetting() {
   const {t} = useTranslation();
 
   const [editorProgram, setEditorProgram] = useState("");
-  const [gitBash, setGitBash] = useState(false);
+  const [editorArgs, setEditorArgs] = useState("{file}");
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [wordWrap, setWordWrap] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
-  const [programError, setProgramError] = useState(false);
+  const [argsError, setArgsError] = useState(false);
   const editorBaseRef = useRef(null);
 
   const [fontDialogOpen, setFontDialogOpen] = useState(false);
@@ -35,7 +36,7 @@ function EditorSetting() {
       if (e) {
         editorBaseRef.current = e;
         setEditorProgram(e.program || "");
-        setGitBash(e.gitbash || false);
+        setEditorArgs(e.args || "{file}");
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setShowPreview(e.showPreview);
@@ -69,25 +70,31 @@ function EditorSetting() {
     return () => { cleanupSetting(); cleanupFont(); };
   }, []);
 
-  const handleProgramChange = (e) => {
+  const handleSelectProgram = () => {
+    SelectFile("Executable Files", "*.exe;*").then((path) => {
+      if (path) setEditorProgram(path);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  const hasFileMark = (val) => val.includes("{file}") || val.includes("{bfile}");
+
+  const handleArgsChange = (e) => {
     const val = e.target.value;
-    setEditorProgram(val);
-    if (val && !val.includes("{file}")) {
-      setProgramError(true);
-    } else {
-      setProgramError(false);
-    }
+    setEditorArgs(val);
+    setArgsError(val && !hasFileMark(val));
   };
 
   const handleSave = () => {
-    if (editorProgram && !editorProgram.includes("{file}")) {
-      setProgramError(true);
+    if (editorArgs && !hasFileMark(editorArgs)) {
+      setArgsError(true);
       return;
     }
     const editor = {
       ...editorBaseRef.current,
       program: editorProgram,
-      gitbash: gitBash,
+      args: editorArgs,
       showLineNumbers: showLineNumbers,
       wordWrap: wordWrap,
       showPreview: showPreview,
@@ -172,25 +179,32 @@ function EditorSetting() {
           {/** エディタプログラム */}
           <FormControl>
             <FormLabel>{t("setting.editorProgram")}</FormLabel>
-            <TextField
-              size="small"
-              value={editorProgram}
-              onChange={handleProgramChange}
-              error={programError}
-              helperText={programError ? t("setting.editorProgramError") : ""}
-            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                value={editorProgram}
+                InputProps={{ readOnly: true }}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                variant="outlined"
+                onClick={handleSelectProgram}
+                sx={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)', whiteSpace: 'nowrap' }}
+              >
+                {t("common.select")}
+              </Button>
+            </Box>
           </FormControl>
 
-          {/** Git Bash */}
+          {/** エディタ引数 */}
           <FormControl>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={gitBash}
-                  onChange={(e) => setGitBash(e.target.checked)}
-                />
-              }
-              label={t("setting.gitBash")}
+            <FormLabel>{t("setting.editorArgs")}</FormLabel>
+            <TextField
+              size="small"
+              value={editorArgs}
+              onChange={handleArgsChange}
+              error={argsError}
+              helperText={argsError ? t("setting.editorArgsError") : t("setting.editorArgsHint")}
             />
           </FormControl>
 
@@ -199,7 +213,7 @@ function EditorSetting() {
 
       {/** 保存 */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-        <IconButton onClick={handleSave} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+        <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
           <SaveIcon fontSize="large" />
         </IconButton>
       </Box>

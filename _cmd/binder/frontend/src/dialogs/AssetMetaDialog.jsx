@@ -23,17 +23,19 @@ function AssetMetaDialog({ open, id, onClose }) {
   const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
   const [binary, setBinary] = useState(false);
+  const [mime, setMime] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!open || !id) return;
-    setName(""); setAlias(""); setDetail(""); setBinary(false);
+    setName(""); setAlias(""); setDetail(""); setBinary(false); setMime("");
 
     GetAsset(id).then((data) => {
       setName(data.name);
       setAlias(data.alias);
       setDetail(data.detail);
       setBinary(data.binary);
+      setMime(data.mime || "");
       setParentId(data.parentId);
     }).catch((err) => evt.showErrorMessage(err));
   }, [open, id]);
@@ -69,6 +71,11 @@ function AssetMetaDialog({ open, id, onClose }) {
       <FormControl>
         <FormLabel>{t("common.detail")}</FormLabel>
         <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline maxRows={4} />
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>{t("common.mime")}</FormLabel>
+        <TextField size="small" value={mime} InputProps={{ readOnly: true }} />
       </FormControl>
 
       <FormControl>

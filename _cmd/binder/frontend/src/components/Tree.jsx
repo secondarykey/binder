@@ -72,6 +72,16 @@ const IconWrapper = styled.span`
   }}
 `;
 
+const ChildrenContainer = styled.div`
+  display: grid;
+  grid-template-rows: ${props => props.$expanded ? '1fr' : '0fr'};
+  transition: grid-template-rows 0.2s ease-out;
+`;
+
+const ChildrenInner = styled.div`
+  overflow: hidden;
+`;
+
 // Helper functions to manipulate the tree data structure
 const removeNode = (nodes, id) => {
   const nodeIndex = nodes.findIndex(n => n.id === id);
@@ -354,6 +364,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     onFocus={(e) => e.target.select()}
                     onBlur={() => onRenameCommit && onRenameCommit()}
                     onKeyDown={(e) => {
+                      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                       if (e.key === 'Enter') { e.preventDefault(); onRenameCommit && onRenameCommit(); }
                       if (e.key === 'Escape') { e.preventDefault(); onRenameCancel && onRenameCancel(); }
                     }}
@@ -379,8 +390,12 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
               </NodeContent>
             </Row>
         </NodeContentContainer>
-        {hasChildren && isExpanded && (
-          <div>{node.children.map(child => renderNode(child, false))}</div>
+        {hasChildren && (
+          <ChildrenContainer $expanded={isExpanded}>
+            <ChildrenInner>
+              {node.children.map(child => renderNode(child, false))}
+            </ChildrenInner>
+          </ChildrenContainer>
         )}
       </NodeWrapper>
     );

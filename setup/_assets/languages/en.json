@@ -9,7 +9,15 @@
         "publish" : "Unpublished Notes",
         "template" : "Template Settings",
         "config" : "Binder Settings",
-        "setting" : "App Settings"
+        "setting" : "App Settings",
+        "search" : "Search"
+    },
+    "search" : {
+        "title" : "Search",
+        "placeholder" : "Search notes and diagrams...",
+        "noResults" : "No results found.",
+        "searching" : "Searching...",
+        "matches" : "{{count}} matches in {{files}} files"
     },
     "common" : {
         "name" : "Name",
@@ -28,7 +36,9 @@
         "create" : "Create",
         "updated" : "Updated.",
         "deleted" : "Deleted.",
-        "open" : "Open"
+        "open" : "Open",
+        "mime" : "MIME Type",
+        "select" : "Select"
     },
     "tree" : {
         "menu" : "Menu",
@@ -105,8 +115,9 @@
         "wordWrap" : "Word Wrap",
         "showPreview" : "Show Preview",
         "fontSetting" : "Font Setting",
-        "gitBash" : "Run with Git Bash",
-        "editorProgramError" : "Editor program must contain {file}",
+        "editorArgs" : "Editor Arguments",
+        "editorArgsError" : "Editor arguments must contain {file} or {bfile}",
+        "editorArgsHint" : "To use Git Bash on Windows, use {bfile} instead of {file}",
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",
@@ -199,7 +210,15 @@
         "removeSuccess" : "Template removed.",
         "deleteTitle" : "Delete Template",
         "deleteConfirm" : "Delete \"{{name}}\"?",
-        "type" : "Type"
+        "type" : "Type",
+        "batchPublish" : "Batch Publish",
+        "batchPublishTitle" : "Batch Publish",
+        "batchPublishConfirm" : "Republish all notes related to this template.\n*Notes that have never been published will be skipped.",
+        "batchPublishSuccess" : "{{count}} notes published.",
+        "batchPublishError" : "Errors occurred in the following notes: {{names}}",
+        "batchPublishNoNotes" : "No notes to publish.",
+        "batchPublishComment" : "Design change due to template \"{{name}}\" update",
+        "batchPublishNotice" : "*Notes that have never been published are not included."
     },
     "history" : {
         "title" : "History",
@@ -276,6 +295,9 @@
         "fontSetting" : "Font Setting",
         "openExternalEditor" : "Open in External Editor",
         "openPreviewWindow" : "Open in Preview Window",
-        "externalEditorLocked" : "Opened in external editor."
+        "externalEditorLocked" : "Opened in external editor.",
+        "searchPlaceholder" : "Search text...",
+        "searchMatches" : "{{count}} matches",
+        "searchNoMatches" : "No matches"
     }
 }

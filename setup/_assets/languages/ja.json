@@ -9,7 +9,15 @@
         "publish" : "未公開一覧",
         "template" : "テンプレート設定",
         "config" : "バインダー設定",
-        "setting" : "アプリ設定"
+        "setting" : "アプリ設定",
+        "search" : "検索"
+    },
+    "search" : {
+        "title" : "検索",
+        "placeholder" : "ノートとダイアグラムを検索...",
+        "noResults" : "結果が見つかりませんでした。",
+        "searching" : "検索中...",
+        "matches" : "{{files}}件のファイルで{{count}}件一致"
     },
     "common" : {
         "name" : "名前",
@@ -28,7 +36,9 @@
         "create" : "作成",
         "updated" : "更新しました",
         "deleted" : "削除しました",
-        "open" : "開く"
+        "open" : "開く",
+        "mime" : "MIMEタイプ",
+        "select" : "選択"
     },
     "tree" : {
         "menu" : "メニュー",
@@ -105,8 +115,9 @@
         "wordWrap" : "テキストの折り返し",
         "showPreview" : "プレビューの表示",
         "fontSetting" : "フォント設定",
-        "gitBash" : "Git Bashで実行",
-        "editorProgramError" : "エディタプログラムに {file} を含めてください",
+        "editorArgs" : "エディタ引数",
+        "editorArgsError" : "エディタ引数に {file} または {bfile} を含めてください",
+        "editorArgsHint" : "WindowsでGit Bashを利用する場合は、ファイル名の指定を {bfile} にしてください",
         "license" : "ライセンス",
         "thirdPartyLicense" : "サードパーティライセンス",
         "systemLog" : "システムログ",
@@ -199,7 +210,15 @@
         "removeSuccess" : "テンプレートを削除しました",
         "deleteTitle" : "テンプレートの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
-        "type" : "タイプ"
+        "type" : "タイプ",
+        "batchPublish" : "一括公開",
+        "batchPublishTitle" : "一括公開",
+        "batchPublishConfirm" : "関連するノートを一括で公開します。\n※一度も公開してないものは処理されません",
+        "batchPublishSuccess" : "{{count}}件のノートを公開しました",
+        "batchPublishError" : "以下のノートでエラーが発生しました: {{names}}",
+        "batchPublishNoNotes" : "公開対象のノートがありません",
+        "batchPublishComment" : "テンプレート\"{{name}}\"の更新によるデザイン変更",
+        "batchPublishNotice" : "※現在未公開のものは含まれておりません"
     },
     "history" : {
         "title" : "更新履歴",
@@ -276,6 +295,9 @@
         "fontSetting" : "フォント設定",
         "openExternalEditor" : "外部エディタで開く",
         "openPreviewWindow" : "プレビューウィンドウで開く",
-        "externalEditorLocked" : "外部エディタで開いています。"
+        "externalEditorLocked" : "外部エディタで開いています。",
+        "searchPlaceholder" : "テキストを検索...",
+        "searchMatches" : "{{count}}件",
+        "searchNoMatches" : "一致なし"
     }
 }

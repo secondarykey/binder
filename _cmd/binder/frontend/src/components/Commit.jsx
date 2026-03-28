@@ -53,7 +53,7 @@ function Commit({ date: dateProp, ...props }) {
 
       {running && <LinearProgress sx={{ mx: 1 }} />}
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px", justifyContent: "flex-end" }}>
         <Button variant="contained" onClick={handleCommit} disabled={running}>{t("commitModal.commit")}</Button>
        </FormControl>
     </Grid>

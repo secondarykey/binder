@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react"
+import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { useParams, useLocation } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
@@ -15,6 +15,7 @@ import { Events } from '@wailsio/runtime';
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
+import SearchBar from "./SearchBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
 import "../../i18n/config";
@@ -48,6 +49,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 
 import BinderTree from "../../components/BinderTree.jsx";
+import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 
 /**
@@ -136,6 +138,7 @@ function Editor(props) {
   var { mode, id } = useParams();
   const location = useLocation();
   const restoredAt = location.state?.restoredAt;
+  const searchQuery = location.state?.searchQuery;
   const evt = useContext(EventContext)
   const {t} = useTranslation();
 
@@ -151,6 +154,8 @@ function Editor(props) {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   // テキスト折り返しトグル
   const [wordWrap, setWordWrap] = useState(true);
+  // テキスト検索バーの表示状態
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
@@ -218,6 +223,29 @@ function Editor(props) {
   const [previewNotes, setPreviewNotes] = useState([]);
   const [previewNoteId, setPreviewNoteId] = useState("");
   const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
+
+  // Ctrl+F で検索バーを開く
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
+  const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(absoluteStart, absoluteEnd);
+    const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
+    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
+    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
+  }, [text]);
 
   //開いた時の初期処理
   useEffect(() => {
@@ -338,6 +366,13 @@ function Editor(props) {
     }
 
   }, [id, restoredAt]);
+
+  // 検索ウィンドウからのナビゲーション: searchQuery があればエディタ内検索を自動で開く
+  useEffect(() => {
+    if (searchQuery) {
+      setSearchOpen(true);
+    }
+  }, [searchQuery, restoredAt]);
 
   // プレビューウィンドウからの準備完了通知を受けて現在のHTMLを送信
   useEffect(() => {
@@ -599,9 +634,11 @@ function Editor(props) {
   const splitStartRef = useRef(null);
 
   const handleSplitterPointerDown = (e) => {
+    if (!viewer) return;
     e.preventDefault();
     splitStartRef.current = { startX: e.clientX, startWidth: width };
     splitterRef.current.setPointerCapture(e.pointerId);
+    document.getElementById('editorContent')?.classList.add('no-transition');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   };
@@ -616,6 +653,7 @@ function Editor(props) {
   const handleSplitterPointerUp = () => {
     if (!splitStartRef.current) return;
     splitStartRef.current = null;
+    document.getElementById('editorContent')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
@@ -625,9 +663,11 @@ function Editor(props) {
   const treeSplitStartRef = useRef(null);
 
   const handleTreeSplitterPointerDown = (e) => {
+    if (!treeVisible) return;
     e.preventDefault();
     treeSplitStartRef.current = { startX: e.clientX, startWidth: treeWidth };
     treeSplitterRef.current.setPointerCapture(e.pointerId);
+    document.getElementById('splitScreen')?.classList.add('no-transition');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   };
@@ -642,6 +682,7 @@ function Editor(props) {
   const handleTreeSplitterPointerUp = () => {
     if (!treeSplitStartRef.current) return;
     treeSplitStartRef.current = null;
+    document.getElementById('splitScreen')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
@@ -1067,25 +1108,26 @@ function Editor(props) {
     </InputAdornment>
   )
 
-  // template 以外のエディタルートではツリーパネルを表示する
-  const showTree = mode !== Mode.template;
+  // エディタルートではツリーパネルを常に表示する
+  const showTree = true;
 
   return (
     <>
       <Paper id="splitScreen">
 
-        {/** ツリーパネル（template モード以外） */}
-        {showTree && treeVisible && (
-          <div id="editorTreePanel" style={{ width: treeWidth + 'px' }}>
-            <BinderTree />
+        {/** ツリーパネル */}
+        {showTree && (
+          <div id="editorTreePanel" className={!treeVisible ? 'hidden' : ''} style={{ width: treeWidth + 'px' }}>
+            {mode === Mode.template ? <TemplateTree /> : <BinderTree />}
           </div>
         )}
 
         {/** ツリー/エディタ間スプリッター */}
-        {showTree && treeVisible && (
+        {showTree && (
           <div
             ref={treeSplitterRef}
             id="treeSplitter"
+            className={!treeVisible ? 'hidden' : ''}
             onPointerDown={handleTreeSplitterPointerDown}
             onPointerMove={handleTreeSplitterPointerMove}
             onPointerUp={handleTreeSplitterPointerUp}
@@ -1104,7 +1146,7 @@ function Editor(props) {
 
           {/** エディタ */}
           {editor &&
-            <div id="editorWrapper" style={viewer ? { width: (width - 4) + 'px' } : { flex: 1, minWidth: 0 }}>
+            <div id="editorWrapper" className={!viewer ? 'viewer-hidden' : ''} style={{ width: (width - 4) + 'px' }}>
 
               {/** テキスト用のメニュー */}
               <Container id="editorMenu">
@@ -1338,6 +1380,17 @@ function Editor(props) {
                 </MenuItem>
               </Menu>
 
+              {/** テキスト検索フローティングパネル（Ctrl+F） */}
+              {searchOpen && (
+                <SearchBar
+                  key={restoredAt}
+                  text={text}
+                  onClose={() => setSearchOpen(false)}
+                  onNavigate={handleSearchNavigate}
+                  initialQuery={searchQuery}
+                />
+              )}
+
               {/** テキスト編集（行番号ガター + textarea） */}
               <EditorArea
                 text={text}
@@ -1369,8 +1422,9 @@ function Editor(props) {
           }
 
           {/** セパレータ（エディタ/ビューア間） */}
-          {editor && viewer &&
+          {editor &&
             <div ref={splitterRef} id="splitter"
+              className={!viewer ? 'hidden' : ''}
               onPointerDown={handleSplitterPointerDown}
               onPointerMove={handleSplitterPointerMove}
               onPointerUp={handleSplitterPointerUp}
@@ -1378,8 +1432,7 @@ function Editor(props) {
           }
 
           {/** 表示側 */}
-          {viewer &&
-            <div id="dataViewer">
+            <div id="dataViewer" className={!viewer ? 'hidden' : ''}>
 
               {/** プレビューメニュー */}
               <div id="previewMenu">
@@ -1481,7 +1534,6 @@ function Editor(props) {
               </div>
 
             </div>
-          }
 
         </div>
 

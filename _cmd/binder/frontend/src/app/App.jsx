@@ -78,6 +78,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [publishModalTemplate, setPublishModalTemplate] = useState(null);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
@@ -183,7 +184,8 @@ function App() {
     });
 
     //公開一覧モーダルを開く
-    evt.register("App", Event.OpenPublishModal, function () {
+    evt.register("App", Event.OpenPublishModal, function (data) {
+      setPublishModalTemplate(data ?? null);
       setPublishModalOpen(true);
     });
 
@@ -203,6 +205,15 @@ function App() {
       const { typ, id } = event.data ?? {};
       if (typ && id) {
         nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now() } });
+        evt.selectTreeNode(id);
+      }
+    });
+
+    // 検索ウィンドウからのナビゲーション通知
+    const cleanupSearch = Events.On("binder:search:navigate", (event) => {
+      const { typ, id, query } = event.data?.[0] ?? event.data ?? {};
+      if (typ && id) {
+        nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now(), searchQuery: query || "" } });
         evt.selectTreeNode(id);
       }
     });
@@ -245,6 +256,7 @@ function App() {
 
     return () => {
       cleanupRestored();
+      cleanupSearch();
     };
 
     /**
@@ -372,7 +384,7 @@ function App() {
       <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
 
       {/** 公開一覧モーダル */}
-      <PublishModal open={publishModalOpen} onClose={() => setPublishModalOpen(false)} />
+      <PublishModal open={publishModalOpen} template={publishModalTemplate} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); }} />
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />

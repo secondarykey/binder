@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
  * CommitModal と同じ構成で、Generate を行っていないファイルの一覧を表示し、
  * 選択したファイルをまとめて Generate できる。
  */
-function PublishModal({ open, onClose }) {
+function PublishModal({ open, template, onClose }) {
   const {t} = useTranslation();
 
   const [date, setDate] = useState(new Date().toISOString());
@@ -25,18 +25,20 @@ function PublishModal({ open, onClose }) {
     }
   }, [open]);
 
+  const title = template ? t("template.batchPublishTitle") : t("publishModal.title");
+
   return (
     <ModalWrapper
-      open={open} onClose={onClose} title={t("publishModal.title")}
+      open={open} onClose={onClose} title={title}
       width="900px" height="600px" maxWidth="90vw" maxHeight="85vh"
     >
       <div id="commitArea">
         <div id="commitLeft">
-          <UnpublishedMenu date={date} onClose={onClose} />
+          <UnpublishedMenu date={date} template={template} onClose={onClose} />
         </div>
         <div id="commitRight">
           <div id="commitForm">
-            <GenerateForm date={date} />
+            <GenerateForm date={date} template={template} />
           </div>
         </div>
       </div>

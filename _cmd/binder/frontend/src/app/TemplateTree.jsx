@@ -60,7 +60,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
       <IconButton
         size="small"
         onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.name); }}
-        sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' } }}
+        sx={{ '& svg': { fill: 'var(--accent-red)' } }}
       >
         <DeleteIcon sx={{ fontSize: '15px' }} />
       </IconButton>
@@ -173,6 +173,14 @@ function TemplateTree(props) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
+  // 一括公開: PublishModal をテンプレートモードで開く
+  const handleBatchPublish = () => {
+    const targetId = id;
+    const targetName = name;
+    closeMenu();
+    evt.openPublishModal({ id: targetId, name: targetName });
+  };
+
   // DnD終了: 並び替えてバックエンドに seq を保存
   const handleDragEnd = (event, setItems) => {
     const { active, over } = event;
@@ -259,6 +267,7 @@ function TemplateTree(props) {
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
       <MenuItem onClick={handleEditTemplate} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleBatchPublish} divider>{t("template.batchPublish")}</MenuItem>
       <MenuItem onClick={handleHistoryTemplate}>{t("common.history")}</MenuItem>
     </Menu>
 

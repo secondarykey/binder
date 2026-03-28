@@ -10,6 +10,15 @@
   flex-direction: row;
 }
 
+/* スプリッタードラッグ中はtransitionを無効化 */
+#splitScreen.no-transition #editorTreePanel,
+#splitScreen.no-transition #treeSplitter,
+#editorContent.no-transition #editorWrapper,
+#editorContent.no-transition #splitter,
+#editorContent.no-transition #dataViewer {
+  transition: none !important;
+}
+
 /* =====================================================================
  * ツリーパネル（BinderTree を内包）
  * ===================================================================== */
@@ -28,6 +37,12 @@
   color: var(--text-primary);
   border-right: 1px solid var(--border-primary);
   --wails-draggable: no-drag;
+  transition: width 0.3s ease-out, border-right-width 0.3s ease-out;
+}
+
+#editorTreePanel.hidden {
+  width: 0 !important;
+  border-right-width: 0;
 }
 
 /* ツリースクロールエリア */
@@ -47,7 +62,12 @@
 
   border: 0;
   background-color: var(--bg-overlay);
-  transition: background-color 0.4s;
+  transition: background-color 0.4s, width 0.3s ease-out;
+}
+
+#treeSplitter.hidden {
+  width: 0 !important;
+  pointer-events: none;
 }
 
 #treeSplitter:hover {
@@ -77,6 +97,12 @@
   position: relative;   /* 内部の absolute 要素の基準 */
   flex-shrink: 0;
   height: 100%;
+  transition: flex 0.3s ease-out;
+}
+
+#editorWrapper.viewer-hidden {
+  flex: 1 0 auto;
+  min-width: 0;
 }
 
 #editorMenu {
@@ -120,7 +146,12 @@
 
   border: 0;
   background-color: var(--bg-overlay);
-  transition: background-color 0.4s;
+  transition: background-color 0.4s, width 0.3s ease-out;
+}
+
+#splitter.hidden {
+  width: 0 !important;
+  pointer-events: none;
 }
 
 #splitter::before {
@@ -158,10 +189,18 @@
 
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: flex 0.3s ease-out, max-width 0.3s ease-out;
+}
+
+#dataViewer.hidden {
+  flex: 0;
+  min-width: 0;
+  max-width: 0;
 }
 
 #previewMenu {
@@ -359,6 +398,84 @@ iframe.htmlViewer {
 
 .floatTopRightBtn2:hover {
   background-color: var(--float-bg-hover) !important;
+}
+
+/* =====================================================================
+ * テキスト検索フローティングパネル（Ctrl+F）
+ * ===================================================================== */
+.editorSearchFloat {
+  position: absolute;
+  z-index: 30;
+  min-width: 320px;
+  max-width: 500px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-input);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.editorSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorSearchDragHandle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.editorSearchDragHandle:active {
+  cursor: grabbing;
+}
+
+.editorSearchResults {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.editorSearchResultItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  border-radius: 3px;
+}
+
+.editorSearchResultItem:hover {
+  background-color: var(--hover-overlay);
+}
+
+.editorSearchLineNum {
+  flex-shrink: 0;
+  min-width: 3em;
+  text-align: right;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.editorSearchLineText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorSearchResultItem mark {
+  background-color: rgba(255, 213, 79, 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 /* =====================================================================

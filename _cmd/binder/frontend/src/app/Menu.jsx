@@ -9,7 +9,8 @@ import PublishIcon from '@mui/icons-material/Publish';
 import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
-import { SettingsApplications, LibraryBooks as LibraryBooksIcon } from '@mui/icons-material';
+import { SettingsApplications, LibraryBooks as LibraryBooksIcon, Search as SearchIcon } from '@mui/icons-material';
+import { OpenSearchWindow } from '../../bindings/main/window';
 import TemplateTree from './TemplateTree';
 
 import Event, { EventContext } from '../Event';
@@ -59,24 +60,23 @@ function Menu(props) {
   const nav = useNavigate();
   const location = useLocation();
 
-  // /editor/note/:id, /editor/diagram/:id, /editor/assets/:id など
-  // template 以外のエディタルートは Editor 内部でツリーを管理するため #menu を非表示にする
-  const isNonTemplateEditor = /^\/editor\/(?!template)/.test(location.pathname);
+  // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
+  const isEditorRoute = /^\/editor\//.test(location.pathname);
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
   // イベントハンドラ内で最新の開閉状態を参照するための ref
   const menuOpenRef = useRef(true);
 
-  // 非テンプレートエディタルートから離脱した際に #menu を開いた状態へリセットする。
-  // エディタルートでは #menu が DOM から除外されるため、menuClasses が "hideMenu" のまま
-  // 残ると他の画面（テンプレート等）で #menu が非表示になってしまうのを防ぐ。
+  // エディタルートから離脱した際に #menu を開いた状態へリセットする。
+  // エディタルートでは #menu が非表示のため、menuClasses が "hideMenu" のまま
+  // 残ると他の画面で #menu が非表示になってしまうのを防ぐ。
   useEffect(() => {
-    if (!isNonTemplateEditor) {
+    if (!isEditorRoute) {
       setMenuClasses("");
       menuOpenRef.current = true;
     }
-  }, [isNonTemplateEditor]);
+  }, [isEditorRoute]);
 
   /**
    * メニューを開く
@@ -164,6 +164,23 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
+        {/** Search  */}
+        <Tooltip title={t("menu.search")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}>
+            <SearchIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
+
+        {/** Template */}
+        <Tooltip title={t("menu.template")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+            <ContentPasteIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
+
+        {/** Divider */}
+        <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
+
         {/** Modified  */}
         <Tooltip title={t("menu.commit")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickModified}>
@@ -178,15 +195,8 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
-        {/** Divider: ナビ系と設定系を分離 */}
+        {/** Divider */}
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
-
-        {/** Template */}
-        <Tooltip title={t("menu.template")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
-            <ContentPasteIcon fill="white" className="leftIcon" />
-          </IconButton>
-        </Tooltip>
 
         {/** Binder Setting */}
         <Tooltip title={t("menu.config")} placement="right">
@@ -219,9 +229,9 @@ function Menu(props) {
 
       </Paper>
 
-      {/** 非テンプレートエディタルートでは Editor 内部でツリーを管理するため非表示。
+      {/** エディタルートでは Editor 内部でツリーを管理するため非表示。
            アンマウントせず display:none で隠すことで BinderTree のステートを保持する */}
-        <Paper id="menu" className={menuClasses} style={{ display: isNonTemplateEditor ? 'none' : undefined }}>
+        <Paper id="menu" className={menuClasses} style={{ display: isEditorRoute ? 'none' : undefined }}>
 
           {/** メニューの中身 */}
           <Paper id="leftContent">

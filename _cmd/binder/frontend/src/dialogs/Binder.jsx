@@ -4,6 +4,7 @@ import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
 } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import AuthFields from "../components/AuthFields";
@@ -122,7 +123,7 @@ function Binder({ isModal, ...props }) {
   // リモート追加ダイアログを開く
   const openAddRemoteDialog = () => {
     setRemoteDialogMode("add");
-    setRemoteName("");
+    setRemoteName("origin");
     setRemoteURL("");
     showRemoteDialog(true);
   };
@@ -216,7 +217,7 @@ function Binder({ isModal, ...props }) {
             </FormControl>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSave} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+              <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
                 <SaveIcon fontSize="large" />
               </IconButton>
             </Box>
@@ -255,7 +256,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
                 <SaveIcon fontSize="large" />
               </IconButton>
             </Box>
@@ -264,7 +265,7 @@ function Binder({ isModal, ...props }) {
             <FormControl>
               <FormLabel>
                 {t("binder.settingRemote")}
-                <Button onClick={openAddRemoteDialog}>{t("common.add")}</Button>
+                <IconButton size="small" onClick={openAddRemoteDialog}><AddIcon fontSize="small" /></IconButton>
               </FormLabel>
               <List dense disablePadding>
                 {remoteList.map((r) => (
@@ -286,7 +287,7 @@ function Binder({ isModal, ...props }) {
                       <IconButton
                         size="small"
                         onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
-                        sx={{ color: 'var(--text-secondary)' }}
+                        sx={{ '& svg': { fill: 'var(--accent-red)' } }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>

@@ -8,6 +8,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"binder"
 	"binder/api"
 	"binder/log"
 )
@@ -19,6 +20,19 @@ var assets embed.FS
 var ver string
 
 var resetPosition bool
+
+// wailsSearchEmitter は api.SearchEmitter を Wails イベントで実装する
+type wailsSearchEmitter struct {
+	app *application.App
+}
+
+func (e *wailsSearchEmitter) EmitResult(result binder.SearchResult) {
+	e.app.Event.Emit("binder:search:result", result)
+}
+
+func (e *wailsSearchEmitter) EmitDone() {
+	e.app.Event.Emit("binder:search:done")
+}
 
 func init() {
 	flag.BoolVar(&resetPosition, "reset-position", false, "Windows Position reset")
@@ -81,6 +95,9 @@ func main() {
 	// 4. Wails ランタイムを注入して起動処理を実行
 	win.runtime = wailsApp
 	win.window = window
+
+	// 検索イベントエミッターを設定
+	app.SearchEmitter = &wailsSearchEmitter{app: wailsApp}
 
 	// 外部ファイルドロップ: OS からのファイルドロップを Wails ネイティブイベントで処理する。
 	// EnableFileDrop: true が前提。Wails runtime (window.ts) が drop を補足し、

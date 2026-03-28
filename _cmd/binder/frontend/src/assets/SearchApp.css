@@ -1,0 +1,130 @@
+#SearchApp {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#searchTitle {
+    padding-left: 8px !important;
+    padding-right: 0px;
+    padding-top: 2px !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-titlebar) !important;
+    --wails-draggable: drag;
+    min-height: 40px !important;
+}
+
+#searchTitle button,
+#searchTitle input,
+#searchTitle .MuiInputBase-root {
+    --wails-draggable: no-drag;
+}
+
+#searchTitle button:hover {
+    background-color: var(--bg-elevated);
+}
+
+#searchContent {
+    flex: 1;
+    overflow-y: auto;
+    background-color: var(--bg-panel);
+    padding: 0;
+    margin-bottom: 2px;
+    margin-right: 2px;
+}
+
+.searchResultFile {
+    display: flex;
+    border-bottom: 1px solid var(--border-primary);
+    cursor: pointer;
+}
+
+.searchResultFile:hover {
+    background-color: var(--hover-overlay);
+}
+
+.searchResultFileHeader {
+    flex-shrink: 0;
+    display: flex;
+    align-items: start;
+    gap: 4px;
+    width: 180px;
+    min-width: 120px;
+    padding: 5px 8px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    overflow: hidden;
+    border-right: 1px solid var(--border-primary);
+}
+
+.searchResultFileHeader span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.searchResultType {
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    padding: 0px 4px;
+    border-radius: 3px;
+    border: 1px solid var(--border-subtle);
+}
+
+.searchResultLines {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
+}
+
+.searchResultLine {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 1px 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.searchResultLineNum {
+    flex-shrink: 0;
+    min-width: 3em;
+    text-align: right;
+    color: var(--text-faint);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.searchResultLineText {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.8rem;
+}
+
+.searchResultLineText mark {
+    background-color: rgba(255, 213, 79, 0.4);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+#searchEmpty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}

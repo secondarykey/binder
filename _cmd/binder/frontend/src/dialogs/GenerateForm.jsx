@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress } from "@mui/material";
+import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress, Typography } from "@mui/material";
 
 import Event, { EventContext } from '../Event';
 import "../i18n/config";
@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
  * PublishComment イベントでコメントを受け取り、
  * Generate ボタン押下で PublishGenerate イベントを発火する。
  */
-function GenerateForm({ date }) {
+function GenerateForm({ date, template }) {
 
   const evt = useContext(EventContext);
   const {t} = useTranslation();
@@ -36,6 +36,12 @@ function GenerateForm({ date }) {
   return (
     <Grid className="formGrid">
 
+      {template && (
+        <Typography variant="body2" sx={{ mx: 1, mb: 1, color: 'var(--text-secondary)' }}>
+          {t("template.batchPublishNotice")}
+        </Typography>
+      )}
+
       <FormControl>
         <FormLabel>{t("publishModal.generateComment")}</FormLabel>
         <TextField
@@ -55,7 +61,7 @@ function GenerateForm({ date }) {
         />
       )}
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px", justifyContent: "flex-end" }}>
         <Button variant="contained" onClick={handleGenerate} disabled={progress.running}>{t("publishModal.generate")}</Button>
       </FormControl>
 

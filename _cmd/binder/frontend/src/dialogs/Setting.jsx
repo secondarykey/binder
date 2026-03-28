@@ -286,7 +286,7 @@ function Setting({ isModal, ...props }) {
 
             {/** 保存 */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSave} aria-label="save" sx={{ color: 'var(--accent-blue)' }}>
+              <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
                 <SaveIcon fontSize="large" />
               </IconButton>
             </Box>
