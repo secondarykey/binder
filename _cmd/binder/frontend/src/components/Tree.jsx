@@ -354,6 +354,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     onFocus={(e) => e.target.select()}
                     onBlur={() => onRenameCommit && onRenameCommit()}
                     onKeyDown={(e) => {
+                      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                       if (e.key === 'Enter') { e.preventDefault(); onRenameCommit && onRenameCommit(); }
                       if (e.key === 'Escape') { e.preventDefault(); onRenameCancel && onRenameCancel(); }
                     }}
