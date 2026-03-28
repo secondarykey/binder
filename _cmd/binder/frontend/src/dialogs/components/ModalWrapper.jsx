@@ -10,7 +10,10 @@ function ModalWrapper({ open, onClose, title, width = "1000px", height = "75vh",
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={(_, reason) => {
+        if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+        onClose();
+      }}
       maxWidth={false}
       PaperProps={{
         sx: {
