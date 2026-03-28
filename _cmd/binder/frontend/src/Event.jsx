@@ -183,8 +183,8 @@ class Event {
         this.raise(Event.OpenBinderModal);
     }
 
-    openPublishModal() {
-        this.raise(Event.OpenPublishModal);
+    openPublishModal(data) {
+        this.raise(Event.OpenPublishModal, data);
     }
 
     openPushModal() {
