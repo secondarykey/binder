@@ -23,7 +23,33 @@ type Remote struct {
 }
 
 type MergeResult struct {
-	Status  string `json:"status"`  // success, uptodate, diverged, reload_error
-	Message string `json:"message"`
-	Address string `json:"address"` // 再読み込み後のHTTPアドレス
+	Status       string          `json:"status"`        // success, uptodate, conflicts, error, reload_error
+	Message      string          `json:"message"`
+	Address      string          `json:"address"`
+	Conflicts    []*ConflictFile `json:"conflicts"`     // status=="conflicts" 時のみ
+	BaseHash     string          `json:"base_hash"`
+	OursHash     string          `json:"ours_hash"`
+	TheirsHash   string          `json:"theirs_hash"`
+	AutoResolved int             `json:"auto_resolved"` // 自動解決されたファイル数
+}
+
+type ConflictFile struct {
+	Path        string `json:"path"`
+	Type        string `json:"type"`
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	OursAction  string `json:"ours_action"`
+	TheirAction string `json:"their_action"`
+}
+
+type MergeResolution struct {
+	BaseHash    string            `json:"base_hash"`
+	OursHash    string            `json:"ours_hash"`
+	TheirsHash  string            `json:"theirs_hash"`
+	Resolutions []*FileResolution `json:"resolutions"`
+}
+
+type FileResolution struct {
+	Path       string `json:"path"`
+	Resolution string `json:"resolution"` // "ours" or "theirs"
 }

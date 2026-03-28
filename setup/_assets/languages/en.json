@@ -170,8 +170,19 @@
         "uncommittedWarning" : "There are uncommitted changes. Please commit all changes before merging.",
         "mergeSuccess" : "Merged successfully.",
         "upToDate" : "Already up to date.",
-        "diverged" : "Branches have diverged. Please use an external Git client to merge manually.",
-        "reloadError" : "Failed to reload Binder after merge. Please reopen the Binder."
+        "reloadError" : "Failed to reload Binder after merge. Please reopen the Binder.",
+        "conflictsTitle" : "Resolve Conflicts",
+        "autoResolved" : "files auto-resolved",
+        "selectResolution" : "Files requiring resolution",
+        "keepOurs" : "Keep Local",
+        "keepTheirs" : "Keep Remote",
+        "applyResolution" : "Apply Merge",
+        "modified" : "Modified",
+        "deleted" : "Deleted",
+        "added" : "Added",
+        "localLabel" : "Local",
+        "remoteLabel" : "Remote",
+        "selectFile" : "Select a file from the list."
     },
     "commitModal" : {
         "title" : "Commit",

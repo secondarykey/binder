@@ -170,8 +170,19 @@
         "uncommittedWarning" : "未コミットの変更があります。全体のコミットを行ってから実行してください。",
         "mergeSuccess" : "マージしました",
         "upToDate" : "既に最新です",
-        "diverged" : "ブランチが分岐しています。外部のGitクライアントを使用して手動でマージを行ってください。",
-        "reloadError" : "マージ後のBinder再読み込みに失敗しました。Binderを開き直してください。"
+        "reloadError" : "マージ後のBinder再読み込みに失敗しました。Binderを開き直してください。",
+        "conflictsTitle" : "コンフリクトの解決",
+        "autoResolved" : "件を自動解決済み",
+        "selectResolution" : "解決が必要なファイル",
+        "keepOurs" : "ローカルを採用",
+        "keepTheirs" : "リモートを採用",
+        "applyResolution" : "マージを適用",
+        "modified" : "変更あり",
+        "deleted" : "削除",
+        "added" : "追加",
+        "localLabel" : "ローカル",
+        "remoteLabel" : "リモート",
+        "selectFile" : "左のファイルを選択してください"
     },
     "commitModal" : {
         "title" : "コミット",
