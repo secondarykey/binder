@@ -176,12 +176,12 @@ function MergeModal({ open, onClose }) {
         {/* リモート選択 + 接続ボタン */}
         <FormControl size="small">
           <FormLabel>{t('merge.remote')}</FormLabel>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
             <Select
               value={remoteName}
               onChange={(e) => setRemoteName(e.target.value)}
               size="small"
-              sx={{ flex: 1 }}
+              sx={{ flex: 1, minWidth: 0 }}
             >
               {remotes.map((r) => (
                 <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
