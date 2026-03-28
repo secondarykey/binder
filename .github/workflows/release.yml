@@ -13,8 +13,8 @@ jobs:
     if: github.event.pull_request.merged == true
     # ここから下がジョブの設定（stepsと同階層）
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
         os: [ubuntu-latest, windows-latest, macos-latest]
     
     # 実行するOSの指定（matrixを参照）
