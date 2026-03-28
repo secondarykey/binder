@@ -10,6 +10,15 @@
   flex-direction: row;
 }
 
+/* スプリッタードラッグ中はtransitionを無効化 */
+#splitScreen.no-transition #editorTreePanel,
+#splitScreen.no-transition #treeSplitter,
+#editorContent.no-transition #editorWrapper,
+#editorContent.no-transition #splitter,
+#editorContent.no-transition #dataViewer {
+  transition: none !important;
+}
+
 /* =====================================================================
  * ツリーパネル（BinderTree を内包）
  * ===================================================================== */
@@ -28,14 +37,12 @@
   color: var(--text-primary);
   border-right: 1px solid var(--border-primary);
   --wails-draggable: no-drag;
-  transition: width 0.3s ease-out, opacity 0.2s ease-out;
+  transition: width 0.3s ease-out, border-right-width 0.3s ease-out;
 }
 
 #editorTreePanel.hidden {
   width: 0 !important;
-  opacity: 0;
-  overflow: hidden;
-  border-right: none;
+  border-right-width: 0;
 }
 
 /* ツリースクロールエリア */
@@ -55,13 +62,11 @@
 
   border: 0;
   background-color: var(--bg-overlay);
-  transition: background-color 0.4s, opacity 0.3s ease-out, width 0.3s ease-out;
+  transition: background-color 0.4s, width 0.3s ease-out;
 }
 
 #treeSplitter.hidden {
   width: 0 !important;
-  opacity: 0;
-  overflow: hidden;
   pointer-events: none;
 }
 
@@ -141,13 +146,11 @@
 
   border: 0;
   background-color: var(--bg-overlay);
-  transition: background-color 0.4s, opacity 0.3s ease-out, width 0.3s ease-out;
+  transition: background-color 0.4s, width 0.3s ease-out;
 }
 
 #splitter.hidden {
   width: 0 !important;
-  opacity: 0;
-  overflow: hidden;
   pointer-events: none;
 }
 
@@ -186,20 +189,18 @@
 
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: flex 0.3s ease-out, min-width 0.3s ease-out, opacity 0.2s ease-out;
+  transition: flex 0.3s ease-out, max-width 0.3s ease-out;
 }
 
 #dataViewer.hidden {
   flex: 0;
   min-width: 0;
   max-width: 0;
-  opacity: 0;
-  overflow: hidden;
-  visibility: hidden;
 }
 
 #previewMenu {

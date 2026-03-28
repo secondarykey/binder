@@ -637,6 +637,7 @@ function Editor(props) {
     e.preventDefault();
     splitStartRef.current = { startX: e.clientX, startWidth: width };
     splitterRef.current.setPointerCapture(e.pointerId);
+    document.getElementById('editorContent')?.classList.add('no-transition');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   };
@@ -651,6 +652,7 @@ function Editor(props) {
   const handleSplitterPointerUp = () => {
     if (!splitStartRef.current) return;
     splitStartRef.current = null;
+    document.getElementById('editorContent')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
@@ -664,6 +666,7 @@ function Editor(props) {
     e.preventDefault();
     treeSplitStartRef.current = { startX: e.clientX, startWidth: treeWidth };
     treeSplitterRef.current.setPointerCapture(e.pointerId);
+    document.getElementById('splitScreen')?.classList.add('no-transition');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   };
@@ -678,6 +681,7 @@ function Editor(props) {
   const handleTreeSplitterPointerUp = () => {
     if (!treeSplitStartRef.current) return;
     treeSplitStartRef.current = null;
+    document.getElementById('splitScreen')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
