@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -12,13 +13,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const structureRootId = "index"
+
 // MergeAnalysis は3-way比較の結果を保持する。
 type MergeAnalysis struct {
 	BaseHash   plumbing.Hash
 	OursHash   plumbing.Hash
 	TheirsHash plumbing.Hash
-	AutoFiles  []ResolvedFile // 自動解決済み
-	Conflicts  []ConflictFile // ユーザー選択が必要
+	AutoFiles  []ResolvedFile        // 自動解決済み
+	Conflicts  []ConflictFile        // ユーザー選択が必要
+	MergedCSVs map[string]string     // CSVマージ結果（path→content）
 }
 
 // ResolvedFile は自動解決されたファイル。
@@ -137,9 +141,33 @@ func (f *FileSystem) DetectConflictsByHash(oursHashStr, theirsHashStr string) (*
 	return f.analyzeChanges(baseCommit.Hash, oursHash, theirsHash, baseTree, oursTree, theirsTree)
 }
 
+// isDBCSV は DB ディレクトリ内のCSVファイルかを判定する。
+func isDBCSV(path string) bool {
+	return strings.HasPrefix(path, DBDir+"/") && strings.HasSuffix(path, ".csv")
+}
+
+// isStructureCSV は structures.csv かを判定する。
+func isStructureCSV(path string) bool {
+	return path == DBDir+"/structures.csv"
+}
+
 // analyzeChanges は3つのツリーを比較してコンフリクトを分類する。
+// DB CSVファイルは行単位の3-wayマージで自動解決する。
 func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash,
 	baseTree, oursTree, theirsTree *object.Tree) (*MergeAnalysis, error) {
+
+	baseCommit, err := f.repo.CommitObject(baseHash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject(base) error: %w", err)
+	}
+	oursCommit, err := f.repo.CommitObject(oursHash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject(ours) error: %w", err)
+	}
+	theirsCommit, err := f.repo.CommitObject(theirsHash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject(theirs) error: %w", err)
+	}
 
 	oursChanges, err := baseTree.Diff(oursTree)
 	if err != nil {
@@ -187,6 +215,7 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 		BaseHash:   baseHash,
 		OursHash:   oursHash,
 		TheirsHash: theirsHash,
+		MergedCSVs: make(map[string]string),
 	}
 
 	// ours のみの変更 → auto: ours
@@ -207,7 +236,7 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 		}
 	}
 
-	// 両方変更 → 同じハッシュなら auto、違えば conflict
+	// 両方変更 → 同じハッシュなら auto、違えば conflict or CSV merge
 	for path, ours := range oursMap {
 		theirs, both := theirsMap[path]
 		if !both {
@@ -220,6 +249,23 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 				Path: path, Resolution: "ours",
 			})
 			continue
+		}
+
+		// DB CSV は行単位マージで自動解決を試みる
+		if isDBCSV(path) && ours.action != merkletrie.Delete && theirs.action != merkletrie.Delete {
+			merged, err := mergeCSVFiles(
+				baseCommit, oursCommit, theirsCommit,
+				path, isStructureCSV(path), structureRootId,
+			)
+			if err == nil {
+				content := renderCSV(merged.Header, merged.Rows)
+				analysis.MergedCSVs[path] = content
+				analysis.AutoFiles = append(analysis.AutoFiles, ResolvedFile{
+					Path: path, Resolution: "merged",
+				})
+				continue
+			}
+			// CSV マージ失敗時はコンフリクトとして扱う
 		}
 
 		cf := ConflictFile{
@@ -272,14 +318,33 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 
 	// 各ファイルに解決を適用
 	for path, resolution := range allResolutions {
+		fullPath := filepath.Join(f.base, filepath.FromSlash(path))
+
+		// CSVマージ結果がある場合はそれを使用
+		if resolution == "merged" {
+			if content, ok := analysis.MergedCSVs[path]; ok {
+				dir := filepath.Dir(fullPath)
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return xerrors.Errorf("MkdirAll(%s) error: %w", dir, err)
+				}
+				if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+					return xerrors.Errorf("WriteFile(%s) error: %w", path, err)
+				}
+				if _, err := wt.Add(path); err != nil {
+					return xerrors.Errorf("Add(%s) error: %w", path, err)
+				}
+				continue
+			}
+			// MergedCSVs に無い場合は ours にフォールバック
+			resolution = "ours"
+		}
+
 		var sourceCommit *object.Commit
 		if resolution == "theirs" {
 			sourceCommit = theirsCommit
 		} else {
 			sourceCommit = oursCommit
 		}
-
-		fullPath := filepath.Join(f.base, filepath.FromSlash(path))
 
 		file, err := sourceCommit.File(path)
 		if err != nil {
