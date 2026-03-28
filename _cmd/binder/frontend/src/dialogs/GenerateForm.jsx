@@ -55,7 +55,7 @@ function GenerateForm({ date }) {
         />
       )}
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px", justifyContent: "flex-end" }}>
         <Button variant="contained" onClick={handleGenerate} disabled={progress.running}>{t("publishModal.generate")}</Button>
       </FormControl>
 

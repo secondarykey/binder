@@ -42,7 +42,7 @@ function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
         <IconButton
           size="small"
           onClick={(e) => { e.stopPropagation(); onDelete(snippet.id); }}
-          sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' }, mr: -1 }}
+          sx={{ '& svg': { fill: 'var(--accent-red)' }, mr: -1 }}
         >
           <DeleteIcon sx={{ fontSize: '15px' }} />
         </IconButton>

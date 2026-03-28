@@ -61,7 +61,7 @@ function SortableTemplateItem({ item, selectedId, onOpen, onContextMenu, onDelet
       <IconButton
         size="small"
         onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.name); }}
-        sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--accent-red)' } }}
+        sx={{ '& svg': { fill: 'var(--accent-red)' } }}
       >
         <DeleteIcon sx={{ fontSize: '15px' }} />
       </IconButton>
