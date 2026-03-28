@@ -1,0 +1,30 @@
+name: Multi-OS Echo Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [ closed ]
+
+jobs:
+  echo-test:
+    # PRがマージされた時だけ実行する条件（単に閉じられただけなら動かさない）
+    if: github.event.pull_request.merged == true
+
+  strategy:
+    matrix:
+      # ここで3つのOSを定義します
+      os: [ubuntu-latest, windows-latest, macos-latest]
+    
+  # matrixで定義したOSを順番に、あるいは並列で呼び出します
+  runs-on: ${{ matrix.os }}
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run echo command
+      # OSによってシェルが異なるため、共通のコマンドを試します
+      run: |
+        echo "Hello World! I am running on ${{ matrix.os }}"
+        echo "Current runner OS is: ${{ runner.os }}"
+
