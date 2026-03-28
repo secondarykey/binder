@@ -286,7 +286,7 @@ function Binder({ isModal, ...props }) {
                       <IconButton
                         size="small"
                         onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
-                        sx={{ color: 'var(--text-secondary)' }}
+                        sx={{ '& svg': { fill: 'var(--accent-red)' } }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
