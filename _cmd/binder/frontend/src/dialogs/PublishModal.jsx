@@ -38,7 +38,7 @@ function PublishModal({ open, template, onClose }) {
         </div>
         <div id="commitRight">
           <div id="commitForm">
-            <GenerateForm date={date} />
+            <GenerateForm date={date} template={template} />
           </div>
         </div>
       </div>

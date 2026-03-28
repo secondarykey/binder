@@ -215,7 +215,8 @@
         "batchPublishSuccess" : "{{count}}件のノートを公開しました",
         "batchPublishError" : "以下のノートでエラーが発生しました: {{names}}",
         "batchPublishNoNotes" : "公開対象のノートがありません",
-        "batchPublishComment" : "テンプレート\"{{name}}\"の更新によるデザイン変更"
+        "batchPublishComment" : "テンプレート\"{{name}}\"の更新によるデザイン変更",
+        "batchPublishNotice" : "※現在未公開のものは含まれておりません"
     },
     "history" : {
         "title" : "更新履歴",
