@@ -163,7 +163,7 @@
         "remote" : "リモート",
         "localBranch" : "ローカルブランチ",
         "remoteBranch" : "リモートブランチ",
-        "loadBranches" : "ブランチ一覧を取得",
+        "connect" : "接続",
         "mergeButton" : "マージ実行",
         "authType" : "認証方式",
         "saveCredentials" : "認証情報を保存する",

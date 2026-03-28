@@ -173,49 +173,20 @@ function MergeModal({ open, onClose }) {
           </Alert>
         )}
 
-        {/* リモート選択 */}
+        {/* リモート選択 + 接続ボタン */}
         <FormControl size="small">
           <FormLabel>{t('merge.remote')}</FormLabel>
-          <Select
-            value={remoteName}
-            onChange={(e) => setRemoteName(e.target.value)}
-            size="small"
-          >
-            {remotes.map((r) => (
-              <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {/* ローカルブランチ（読み取り専用） */}
-        <FormControl size="small">
-          <FormLabel>{t('merge.localBranch')}</FormLabel>
-          <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
-        </FormControl>
-
-        {/* リモートブランチ */}
-        <FormControl size="small">
-          <FormLabel>{t('merge.remoteBranch')}</FormLabel>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            {remoteBranches.length > 0 ? (
-              <Select
-                value={remoteBranch}
-                onChange={(e) => setRemoteBranch(e.target.value)}
-                size="small"
-                sx={{ flex: 1 }}
-              >
-                {remoteBranches.map((b) => (
-                  <MenuItem key={b} value={b}>{b}</MenuItem>
-                ))}
-              </Select>
-            ) : (
-              <TextField
-                size="small"
-                value={remoteBranch}
-                onChange={(e) => setRemoteBranch(e.target.value)}
-                sx={{ flex: 1 }}
-              />
-            )}
+            <Select
+              value={remoteName}
+              onChange={(e) => setRemoteName(e.target.value)}
+              size="small"
+              sx={{ flex: 1 }}
+            >
+              {remotes.map((r) => (
+                <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
+              ))}
+            </Select>
             <Button
               variant="text"
               size="small"
@@ -223,9 +194,37 @@ function MergeModal({ open, onClose }) {
               disabled={loadingBranches || !remoteName || !authType}
               sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
             >
-              {loadingBranches ? <CircularProgress size={16} /> : t('merge.loadBranches')}
+              {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
             </Button>
           </Box>
+        </FormControl>
+
+        {/* リモートブランチ */}
+        <FormControl size="small">
+          <FormLabel>{t('merge.remoteBranch')}</FormLabel>
+          {remoteBranches.length > 0 ? (
+            <Select
+              value={remoteBranch}
+              onChange={(e) => setRemoteBranch(e.target.value)}
+              size="small"
+            >
+              {remoteBranches.map((b) => (
+                <MenuItem key={b} value={b}>{b}</MenuItem>
+              ))}
+            </Select>
+          ) : (
+            <TextField
+              size="small"
+              value={remoteBranch}
+              onChange={(e) => setRemoteBranch(e.target.value)}
+            />
+          )}
+        </FormControl>
+
+        {/* ローカルブランチ（読み取り専用） */}
+        <FormControl size="small">
+          <FormLabel>{t('merge.localBranch')}</FormLabel>
+          <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
         </FormControl>
 
         {/* マージボタン */}

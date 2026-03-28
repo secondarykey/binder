@@ -163,7 +163,7 @@
         "remote" : "Remote",
         "localBranch" : "Local Branch",
         "remoteBranch" : "Remote Branch",
-        "loadBranches" : "Load Branches",
+        "connect" : "Connect",
         "mergeButton" : "Merge",
         "authType" : "Authentication",
         "saveCredentials" : "Save credentials",
