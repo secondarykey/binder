@@ -215,7 +215,8 @@
         "batchPublishSuccess" : "{{count}} notes published.",
         "batchPublishError" : "Errors occurred in the following notes: {{names}}",
         "batchPublishNoNotes" : "No notes to publish.",
-        "batchPublishComment" : "Design change due to template \"{{name}}\" update"
+        "batchPublishComment" : "Design change due to template \"{{name}}\" update",
+        "batchPublishNotice" : "*Notes that have never been published are not included."
     },
     "history" : {
         "title" : "History",

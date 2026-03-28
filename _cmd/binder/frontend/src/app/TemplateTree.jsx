@@ -84,7 +84,6 @@ function TemplateTree(props) {
   const [contextMenu, setContextMenu] = useState({ open: false, x: 0, y: 0 });
   const [metaDialog, setMetaDialog] = useState({ open: false, id: null, type: null });
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, name: '' });
-  const [batchPublish, setBatchPublish] = useState({ open: false, id: null, name: '' });
 
   // ドラッグ開始までの距離（px）: クリックとドラッグを区別する
   const sensors = useSensors(
@@ -174,19 +173,12 @@ function TemplateTree(props) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  // 一括公開: 確認ダイアログを表示
+  // 一括公開: PublishModal をテンプレートモードで開く
   const handleBatchPublish = () => {
     const targetId = id;
     const targetName = name;
     closeMenu();
-    setBatchPublish({ open: true, id: targetId, name: targetName });
-  };
-
-  // 一括公開: 確認後に PublishModal を開く
-  const handleBatchPublishConfirm = () => {
-    const templateData = { id: batchPublish.id, name: batchPublish.name };
-    setBatchPublish({ open: false, id: null, name: '' });
-    evt.openPublishModal(templateData);
+    evt.openPublishModal({ id: targetId, name: targetName });
   };
 
   // DnD終了: 並び替えてバックエンドに seq を保存
@@ -286,22 +278,6 @@ function TemplateTree(props) {
       type={metaDialog.type}
       onClose={() => setMetaDialog({ open: false, id: null, type: null })}
     />
-
-    {/** 一括公開確認ダイアログ */}
-    <Dialog
-      open={batchPublish.open}
-      onClose={() => setBatchPublish({ open: false, id: null, name: '' })}
-      PaperProps={{ style: { backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' } }}
-    >
-      <DialogTitle>{t("template.batchPublishTitle")}</DialogTitle>
-      <DialogContentText style={{ padding: '0 24px 8px', color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
-        {t("template.batchPublishConfirm")}
-      </DialogContentText>
-      <DialogActions>
-        <Button onClick={() => setBatchPublish({ open: false, id: null, name: '' })}>{t("common.cancel")}</Button>
-        <Button color="primary" onClick={handleBatchPublishConfirm}>{t("common.ok")}</Button>
-      </DialogActions>
-    </Dialog>
 
     {/** 削除確認ダイアログ */}
     <Dialog
