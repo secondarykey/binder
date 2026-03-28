@@ -49,6 +49,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 
 import BinderTree from "../../components/BinderTree.jsx";
+import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 
 /**
@@ -1107,17 +1108,17 @@ function Editor(props) {
     </InputAdornment>
   )
 
-  // template 以外のエディタルートではツリーパネルを表示する
-  const showTree = mode !== Mode.template;
+  // エディタルートではツリーパネルを常に表示する
+  const showTree = true;
 
   return (
     <>
       <Paper id="splitScreen">
 
-        {/** ツリーパネル（template モード以外） */}
+        {/** ツリーパネル */}
         {showTree && (
           <div id="editorTreePanel" className={!treeVisible ? 'hidden' : ''} style={{ width: treeWidth + 'px' }}>
-            <BinderTree />
+            {mode === Mode.template ? <TemplateTree /> : <BinderTree />}
           </div>
         )}
 

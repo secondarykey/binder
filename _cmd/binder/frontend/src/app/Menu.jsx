@@ -60,24 +60,23 @@ function Menu(props) {
   const nav = useNavigate();
   const location = useLocation();
 
-  // /editor/note/:id, /editor/diagram/:id, /editor/assets/:id など
-  // template 以外のエディタルートは Editor 内部でツリーを管理するため #menu を非表示にする
-  const isNonTemplateEditor = /^\/editor\/(?!template)/.test(location.pathname);
+  // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
+  const isEditorRoute = /^\/editor\//.test(location.pathname);
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
   // イベントハンドラ内で最新の開閉状態を参照するための ref
   const menuOpenRef = useRef(true);
 
-  // 非テンプレートエディタルートから離脱した際に #menu を開いた状態へリセットする。
-  // エディタルートでは #menu が DOM から除外されるため、menuClasses が "hideMenu" のまま
-  // 残ると他の画面（テンプレート等）で #menu が非表示になってしまうのを防ぐ。
+  // エディタルートから離脱した際に #menu を開いた状態へリセットする。
+  // エディタルートでは #menu が非表示のため、menuClasses が "hideMenu" のまま
+  // 残ると他の画面で #menu が非表示になってしまうのを防ぐ。
   useEffect(() => {
-    if (!isNonTemplateEditor) {
+    if (!isEditorRoute) {
       setMenuClasses("");
       menuOpenRef.current = true;
     }
-  }, [isNonTemplateEditor]);
+  }, [isEditorRoute]);
 
   /**
    * メニューを開く
@@ -230,9 +229,9 @@ function Menu(props) {
 
       </Paper>
 
-      {/** 非テンプレートエディタルートでは Editor 内部でツリーを管理するため非表示。
+      {/** エディタルートでは Editor 内部でツリーを管理するため非表示。
            アンマウントせず display:none で隠すことで BinderTree のステートを保持する */}
-        <Paper id="menu" className={menuClasses} style={{ display: isNonTemplateEditor ? 'none' : undefined }}>
+        <Paper id="menu" className={menuClasses} style={{ display: isEditorRoute ? 'none' : undefined }}>
 
           {/** メニューの中身 */}
           <Paper id="leftContent">
