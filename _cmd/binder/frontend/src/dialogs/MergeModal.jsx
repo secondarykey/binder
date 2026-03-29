@@ -431,11 +431,16 @@ function MergeModal({ open, onClose }) {
                   <ToggleButton value="theirs" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
                     {t('merge.keepTheirs')}
                   </ToggleButton>
+                  {['note', 'diagram', 'template'].includes(selectedConflict.type) && (
+                    <ToggleButton value="both" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
+                      {t('merge.keepBoth')}
+                    </ToggleButton>
+                  )}
                 </ToggleButtonGroup>
 
                 {resolutions[selectedConflict.path] && (
                   <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 1 }}>
-                    → {resolutions[selectedConflict.path] === 'ours' ? t('merge.keepOurs') : t('merge.keepTheirs')}
+                    → {resolutions[selectedConflict.path] === 'ours' ? t('merge.keepOurs') : resolutions[selectedConflict.path] === 'theirs' ? t('merge.keepTheirs') : t('merge.keepBoth')}
                   </Typography>
                 )}
               </>

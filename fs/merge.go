@@ -353,6 +353,39 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 			resolution = "ours"
 		}
 
+		// 両方残す: ours と theirs をセパレータ付きで結合
+		if resolution == "both" {
+			oursContent := ""
+			if f, err := oursCommit.File(path); err == nil {
+				oursContent, _ = f.Contents()
+			}
+			theirsContent := ""
+			if f, err := theirsCommit.File(path); err == nil {
+				theirsContent, _ = f.Contents()
+			}
+
+			var combined string
+			if oursContent == "" {
+				combined = theirsContent
+			} else if theirsContent == "" {
+				combined = oursContent
+			} else {
+				combined = "<<<< LOCAL >>>>\n" + oursContent + "\n<<<< REMOTE >>>>\n" + theirsContent
+			}
+
+			dir := filepath.Dir(fullPath)
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return nil, xerrors.Errorf("MkdirAll(%s) error: %w", dir, err)
+			}
+			if err := os.WriteFile(fullPath, []byte(combined), 0644); err != nil {
+				return nil, xerrors.Errorf("WriteFile(%s) error: %w", path, err)
+			}
+			if _, err := wt.Add(path); err != nil {
+				return nil, xerrors.Errorf("Add(%s) error: %w", path, err)
+			}
+			continue
+		}
+
 		var sourceCommit *object.Commit
 		if resolution == "theirs" {
 			sourceCommit = theirsCommit

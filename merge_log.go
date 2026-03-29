@@ -196,6 +196,8 @@ func resolutionLabel(resolution string) string {
 		return "ローカル採用"
 	case "theirs":
 		return "リモート採用"
+	case "both":
+		return "両方結合"
 	case "merged":
 		return "行単位マージ"
 	default:

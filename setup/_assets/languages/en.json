@@ -176,6 +176,7 @@
         "selectResolution" : "Files requiring resolution",
         "keepOurs" : "Keep Local",
         "keepTheirs" : "Keep Remote",
+        "keepBoth" : "Keep Both",
         "applyResolution" : "Apply Merge",
         "modified" : "Modified",
         "deleted" : "Deleted",

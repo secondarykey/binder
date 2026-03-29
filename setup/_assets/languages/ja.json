@@ -176,6 +176,7 @@
         "selectResolution" : "解決が必要なファイル",
         "keepOurs" : "ローカルを採用",
         "keepTheirs" : "リモートを採用",
+        "keepBoth" : "両方残す",
         "applyResolution" : "マージを適用",
         "modified" : "変更あり",
         "deleted" : "削除",

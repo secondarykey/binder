@@ -53,5 +53,5 @@ type MergeResolution struct {
 
 type FileResolution struct {
 	Path       string `json:"path"`
-	Resolution string `json:"resolution"` // "ours" or "theirs"
+	Resolution string `json:"resolution"` // "ours", "theirs", or "both"
 }
