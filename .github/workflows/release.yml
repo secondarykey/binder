@@ -1,17 +1,17 @@
-name: Multi-OS Echo Test
+name: Multi-OS Build
 
 on:
-  pull_request:
-    branches: [ "main" ]
-    types: [ closed ]
+  push:
+    tags:
+      - 'v*-off'
 env:
 
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
-  echo-test:
-    if: github.event.pull_request.merged == true
-    # ここから下がジョブの設定（stepsと同階層）
+
+  release:
+
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +46,8 @@ jobs:
           echo "GOOS=$(go env GOOS)" >> $GITHUB_ENV
           echo "GOARCH=$(go env GOARCH)" >> $GITHUB_ENV
           echo "APP_NAME=binder" >> $GITHUB_ENV
-          echo "VERSION=0.9.2" >> $GITHUB_ENV
+          echo "VERSION=$(cat _cmd/binder/version | xargs)" >> $GITHUB_ENV
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
