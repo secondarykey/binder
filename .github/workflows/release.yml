@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-      - '!v*[-+]*'
 env:
 
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -18,7 +17,10 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         #os: [ubuntu-latest, windows-latest, macos-latest]
-    
+    if: |
+      contains(github.ref, 'refs/tags/v') && 
+      !contains(github.ref, '-') && 
+      !contains(github.ref, '+') 
     # 実行するOSの指定（matrixを参照）
     runs-on: ${{ matrix.os }}
 
