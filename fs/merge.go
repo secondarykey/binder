@@ -17,12 +17,23 @@ const structureRootId = "index"
 
 // MergeAnalysis は3-way比較の結果を保持する。
 type MergeAnalysis struct {
-	BaseHash   plumbing.Hash
-	OursHash   plumbing.Hash
-	TheirsHash plumbing.Hash
-	AutoFiles  []ResolvedFile        // 自動解決済み
-	Conflicts  []ConflictFile        // ユーザー選択が必要
-	MergedCSVs map[string]string     // CSVマージ結果（path→content）
+	BaseHash       plumbing.Hash
+	OursHash       plumbing.Hash
+	TheirsHash     plumbing.Hash
+	AutoFiles      []ResolvedFile        // 自動解決済み
+	Conflicts      []ConflictFile        // ユーザー選択が必要
+	MergedCSVs     map[string]string     // CSVマージ結果（path→content）
+	MergedCSVInfos map[string]*MergedCSV // CSVマージ詳細（ログ用）
+}
+
+// MergeLog はマージ操作の詳細ログ。ノートとして記録するために使用。
+type MergeLog struct {
+	RemoteName   string
+	RemoteBranch string
+	LocalBranch  string
+	AutoFiles    []ResolvedFile
+	MergedCSVs   map[string]*MergedCSV
+	UserFiles    []FileResolution
 }
 
 // ResolvedFile は自動解決されたファイル。
@@ -212,10 +223,11 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 	}
 
 	analysis := &MergeAnalysis{
-		BaseHash:   baseHash,
-		OursHash:   oursHash,
-		TheirsHash: theirsHash,
-		MergedCSVs: make(map[string]string),
+		BaseHash:       baseHash,
+		OursHash:       oursHash,
+		TheirsHash:     theirsHash,
+		MergedCSVs:     make(map[string]string),
+		MergedCSVInfos: make(map[string]*MergedCSV),
 	}
 
 	// ours のみの変更 → auto: ours
@@ -260,6 +272,7 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 			if err == nil {
 				content := renderCSV(merged.Header, merged.Rows)
 				analysis.MergedCSVs[path] = content
+				analysis.MergedCSVInfos[path] = merged
 				analysis.AutoFiles = append(analysis.AutoFiles, ResolvedFile{
 					Path: path, Resolution: "merged",
 				})
@@ -291,20 +304,21 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 }
 
 // ApplyResolutions はファイル解決を適用してマージコミットを作成する。
-func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions []FileResolution) error {
+// 戻り値の MergeLog にはマージの詳細情報が含まれる。
+func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions []FileResolution) (*MergeLog, error) {
 
 	oursCommit, err := f.repo.CommitObject(analysis.OursHash)
 	if err != nil {
-		return xerrors.Errorf("CommitObject(ours) error: %w", err)
+		return nil, xerrors.Errorf("CommitObject(ours) error: %w", err)
 	}
 	theirsCommit, err := f.repo.CommitObject(analysis.TheirsHash)
 	if err != nil {
-		return xerrors.Errorf("CommitObject(theirs) error: %w", err)
+		return nil, xerrors.Errorf("CommitObject(theirs) error: %w", err)
 	}
 
 	wt, err := f.repo.Worktree()
 	if err != nil {
-		return xerrors.Errorf("Worktree() error: %w", err)
+		return nil, xerrors.Errorf("Worktree() error: %w", err)
 	}
 
 	// 全ての解決（自動 + ユーザー選択）を統合
@@ -325,13 +339,13 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 			if content, ok := analysis.MergedCSVs[path]; ok {
 				dir := filepath.Dir(fullPath)
 				if err := os.MkdirAll(dir, 0755); err != nil {
-					return xerrors.Errorf("MkdirAll(%s) error: %w", dir, err)
+					return nil, xerrors.Errorf("MkdirAll(%s) error: %w", dir, err)
 				}
 				if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
-					return xerrors.Errorf("WriteFile(%s) error: %w", path, err)
+					return nil, xerrors.Errorf("WriteFile(%s) error: %w", path, err)
 				}
 				if _, err := wt.Add(path); err != nil {
-					return xerrors.Errorf("Add(%s) error: %w", path, err)
+					return nil, xerrors.Errorf("Add(%s) error: %w", path, err)
 				}
 				continue
 			}
@@ -357,20 +371,20 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 		// ファイル内容を書き込み
 		content, err := file.Contents()
 		if err != nil {
-			return xerrors.Errorf("File.Contents(%s) error: %w", path, err)
+			return nil, xerrors.Errorf("File.Contents(%s) error: %w", path, err)
 		}
 
 		dir := filepath.Dir(fullPath)
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return xerrors.Errorf("MkdirAll(%s) error: %w", dir, err)
+			return nil, xerrors.Errorf("MkdirAll(%s) error: %w", dir, err)
 		}
 
 		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
-			return xerrors.Errorf("WriteFile(%s) error: %w", path, err)
+			return nil, xerrors.Errorf("WriteFile(%s) error: %w", path, err)
 		}
 
 		if _, err := wt.Add(path); err != nil {
-			return xerrors.Errorf("Add(%s) error: %w", path, err)
+			return nil, xerrors.Errorf("Add(%s) error: %w", path, err)
 		}
 	}
 
@@ -384,10 +398,16 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 		},
 	})
 	if err != nil {
-		return xerrors.Errorf("merge Commit() error: %w", err)
+		return nil, xerrors.Errorf("merge Commit() error: %w", err)
 	}
 
-	return nil
+	mergeLog := &MergeLog{
+		AutoFiles:  analysis.AutoFiles,
+		MergedCSVs: analysis.MergedCSVInfos,
+		UserFiles:  userResolutions,
+	}
+
+	return mergeLog, nil
 }
 
 // changePath は Change からファイルパスを取得する。

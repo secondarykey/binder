@@ -197,6 +197,8 @@ function MergeModal({ open, onClose }) {
       base_hash: mergeHashes.base,
       ours_hash: mergeHashes.ours,
       theirs_hash: mergeHashes.theirs,
+      remote_name: remoteName,
+      remote_branch: remoteBranch,
       resolutions: resolutionList,
     }).then((result) => {
       if (result.address) evt.changeAddress(result.address);

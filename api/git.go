@@ -234,7 +234,7 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 
 		if len(analysis.Conflicts) == 0 {
 			// 全て自動解決可能 → 即マージ
-			err = tmpFs.ApplyResolutions(analysis, nil)
+			mergeLog, err := tmpFs.ApplyResolutions(analysis, nil)
 			if err != nil {
 				address, reloadErr := a.LoadBinder(dir)
 				if reloadErr != nil {
@@ -246,6 +246,19 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 			if err != nil {
 				return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
 			}
+
+			// マージログノートを作成（失敗してもマージ自体は成功とする）
+			if mergeLog != nil {
+				mergeLog.RemoteName = remoteName
+				mergeLog.RemoteBranch = remoteBranch
+				if branch, err := a.current.GetCurrentBranch(); err == nil {
+					mergeLog.LocalBranch = branch
+				}
+				if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
+					log.WarnE("CreateMergeLogNote() error", err)
+				}
+			}
+
 			return &json.MergeResult{
 				Status:       "success",
 				Address:      address,
@@ -344,7 +357,7 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 		}
 	}
 
-	err = tmpFs.ApplyResolutions(analysis, fsResolutions)
+	mergeLog, err := tmpFs.ApplyResolutions(analysis, fsResolutions)
 	if err != nil {
 		address, reloadErr := a.LoadBinder(dir)
 		if reloadErr != nil {
@@ -357,6 +370,18 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 	address, err := a.LoadBinder(dir)
 	if err != nil {
 		return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	// 7. マージログノートを作成（失敗してもマージ自体は成功とする）
+	if mergeLog != nil {
+		mergeLog.RemoteName = resolution.RemoteName
+		mergeLog.RemoteBranch = resolution.RemoteBranch
+		if branch, err := a.current.GetCurrentBranch(); err == nil {
+			mergeLog.LocalBranch = branch
+		}
+		if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
+			log.WarnE("CreateMergeLogNote() error", err)
+		}
 	}
 
 	return &json.MergeResult{Status: "success", Address: address}, nil

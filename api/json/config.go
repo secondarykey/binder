@@ -43,10 +43,12 @@ type ConflictFile struct {
 }
 
 type MergeResolution struct {
-	BaseHash    string            `json:"base_hash"`
-	OursHash    string            `json:"ours_hash"`
-	TheirsHash  string            `json:"theirs_hash"`
-	Resolutions []*FileResolution `json:"resolutions"`
+	BaseHash     string            `json:"base_hash"`
+	OursHash     string            `json:"ours_hash"`
+	TheirsHash   string            `json:"theirs_hash"`
+	RemoteName   string            `json:"remote_name"`
+	RemoteBranch string            `json:"remote_branch"`
+	Resolutions  []*FileResolution `json:"resolutions"`
 }
 
 type FileResolution struct {
