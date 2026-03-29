@@ -88,6 +88,7 @@ function App() {
   const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
   const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "" });
+  const [devMode, setDevMode] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
   const CompatOK = 0;
@@ -237,6 +238,7 @@ function App() {
         label += " DEV";
       }
       setAppVersionLabel(label);
+      setDevMode(info.dev);
     }).catch(() => {});
 
     //パス設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
@@ -345,7 +347,7 @@ function App() {
 
           {/** ストレージボタン: バインダーを閉じてトップへ戻る */}
           <Tooltip title={t("app.home")} placement="right">
-          <IconButton size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
+          <IconButton id="storageBtn" className={devMode ? "dev" : ""} size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
             <StorageIcon fontSize="small" />
           </IconButton>
           </Tooltip>

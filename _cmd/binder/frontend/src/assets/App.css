@@ -53,6 +53,10 @@ body {
     color: #aaaacc;
 }
 
+#storageBtn.dev > svg {
+    color: var(--accent-orange);
+}
+
 
 .binderTitle {
     min-height: 40px !important;
