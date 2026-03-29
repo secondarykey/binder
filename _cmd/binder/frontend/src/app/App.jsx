@@ -19,7 +19,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
 import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
-import { SavePosition,Terminate } from '../../bindings/main/window';
+import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
@@ -261,7 +261,16 @@ function App() {
       SavePosition();
     }, 60 * 1000);
 
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        OpenSyslogWindow().catch(() => {});
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
+      document.removeEventListener('keydown', handleKeyDown);
       cleanupRestored();
       cleanupSearch();
     };
