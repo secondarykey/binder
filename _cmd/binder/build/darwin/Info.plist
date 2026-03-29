@@ -10,11 +10,11 @@
         <key>CFBundleIdentifier</key>
             <string>com.github.secondarykey.binder</string>
         <key>CFBundleVersion</key>
-            <string>0.9.5</string>
+            <string>0.9.2</string>
         <key>CFBundleGetInfoString</key>
             <string></string>
         <key>CFBundleShortVersionString</key>
-            <string>0.9.5</string>
+            <string>0.9.2</string>
         <key>CFBundleIconFile</key>
             <string>icons</string>
         <key>CFBundleIconName</key>
