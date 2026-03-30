@@ -81,6 +81,22 @@ func (f *FileSystem) PublishAsset(a *json.Asset) (string, error) {
 	return pub, nil
 }
 
+func (f *FileSystem) WriteAssetText(id string, data []byte) error {
+
+	n := assetFile(id)
+	fp, err := f.Create(n)
+	if err != nil {
+		return fmt.Errorf("Open() error\n%+v", err)
+	}
+	defer fp.Close()
+
+	_, err = fp.Write(data)
+	if err != nil {
+		return fmt.Errorf("Write() error\n%+v", err)
+	}
+	return nil
+}
+
 func (f *FileSystem) SetAssetStatus(a *json.Asset) error {
 
 	//元ファイルを作成
