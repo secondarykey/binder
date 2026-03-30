@@ -87,6 +87,8 @@
 .MuiMenuItem-root {
   color: var(--text-primary) !important;
   font-size: 14px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
 .MuiMenuItem-root:hover {
