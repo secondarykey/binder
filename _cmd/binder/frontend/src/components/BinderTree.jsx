@@ -8,6 +8,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -640,11 +641,6 @@ function BinderTree(props) {
       <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
         <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
       </MenuItem>
-      <Divider />
-      {/** リモートにPush */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
-        <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
-      </MenuItem>
       {/** ダウンロード */}
       <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
         <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
@@ -679,6 +675,15 @@ function BinderTree(props) {
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
         {t("tree.publish")}
+      </MenuItem>
+      <Divider />
+      {/** リモートにPush */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
+        <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
+      </MenuItem>
+      {/** リモートからマージ */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openMergeModal(); }}>
+        <CloudDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.mergeRemote")}
       </MenuItem>
     </Menu>
 

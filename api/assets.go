@@ -104,6 +104,20 @@ func (a *App) GetAssetContent(id string) (*json.AssetContent, error) {
 	}, nil
 }
 
+// SaveAssetContent はテキストアセットの内容を保存する。
+func (a *App) SaveAssetContent(assetId string, data string) error {
+
+	defer log.PrintTrace(log.Func("SaveAssetContent()"))
+
+	err := a.current.SaveAssetContent(assetId, []byte(data))
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("SaveAssetContent() error\n%+v", err)
+	}
+
+	return nil
+}
+
 func (a *App) RemoveAsset(id string) error {
 	defer log.PrintTrace(log.Func("RemoveAsset()"))
 	_, err := a.current.RemoveAsset(id)

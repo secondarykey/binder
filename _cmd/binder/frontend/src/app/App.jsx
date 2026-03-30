@@ -7,6 +7,7 @@ import PublishModal from '../dialogs/PublishModal.jsx';
 import SettingModal from '../dialogs/SettingModal.jsx';
 import BinderModal from '../dialogs/BinderModal.jsx';
 import PushModal from '../dialogs/PushModal.jsx';
+import MergeModal from '../dialogs/MergeModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -18,7 +19,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
 import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
-import { SavePosition,Terminate } from '../../bindings/main/window';
+import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
@@ -82,10 +83,12 @@ function App() {
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
   const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "" });
+  const [devMode, setDevMode] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
   const CompatOK = 0;
@@ -194,6 +197,11 @@ function App() {
       setPushModalOpen(true);
     });
 
+    //Mergeモーダルを開く
+    evt.register("App", Event.OpenMergeModal, function () {
+      setMergeModalOpen(true);
+    });
+
     //バインダーを開く（CheckCompat付き）
     evt.register("App", Event.OpenBinder, function (dir) {
       openBinder(dir);
@@ -230,6 +238,7 @@ function App() {
         label += " DEV";
       }
       setAppVersionLabel(label);
+      setDevMode(info.dev);
     }).catch(() => {});
 
     //パス設定を取得し、「起動時にバインダーを開く」が有効かつ履歴があれば自動的に開く
@@ -254,7 +263,16 @@ function App() {
       SavePosition();
     }, 60 * 1000);
 
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        OpenSyslogWindow().catch(() => {});
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
+      document.removeEventListener('keydown', handleKeyDown);
       cleanupRestored();
       cleanupSearch();
     };
@@ -329,7 +347,7 @@ function App() {
 
           {/** ストレージボタン: バインダーを閉じてトップへ戻る */}
           <Tooltip title={t("app.home")} placement="right">
-          <IconButton size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
+          <IconButton id="storageBtn" className={devMode ? "dev" : ""} size="small" color="inherit" aria-label="home" sx={{ mr: 1, ml: '-2px' }} onClick={handleClickHome}>
             <StorageIcon fontSize="small" />
           </IconButton>
           </Tooltip>
@@ -394,6 +412,9 @@ function App() {
 
       {/** Pushモーダル */}
       <PushModal open={pushModalOpen} onClose={() => setPushModalOpen(false)} />
+
+      {/** Mergeモーダル */}
+      <MergeModal open={mergeModalOpen} onClose={() => setMergeModalOpen(false)} />
 
       {/** データ移行確認ダイアログ */}
       <ConvertDialog

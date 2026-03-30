@@ -83,6 +83,11 @@ class Event {
     static OpenPushModal = "push.modal.open"
 
     /**
+     * Mergeモーダルを開く
+     */
+    static OpenMergeModal = "merge.modal.open"
+
+    /**
      * バインダーを開く（CheckCompat付き）
      */
     static OpenBinder = "binder.open"
@@ -189,6 +194,10 @@ class Event {
 
     openPushModal() {
         this.raise(Event.OpenPushModal);
+    }
+
+    openMergeModal() {
+        this.raise(Event.OpenMergeModal);
     }
 
     openBinder(dir) {

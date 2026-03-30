@@ -508,6 +508,18 @@ func (b *Binder) AssetFile(id string) string {
 	return fs.AssetFile(a)
 }
 
+// SaveAssetContent はテキストアセットの内容を保存する。
+func (b *Binder) SaveAssetContent(assetId string, data []byte) error {
+	if b == nil {
+		return EmptyError
+	}
+	err := b.fileSystem.WriteAssetText(assetId, data)
+	if err != nil {
+		return xerrors.Errorf("fs.WriteAssetText() error: %w", err)
+	}
+	return nil
+}
+
 // ReadAssetBytes はアセットファイルの内容をバイト列で返す。
 // メタデータ（名前・バイナリフラグ）も合わせて返す。
 func (b *Binder) ReadAssetBytes(id string) ([]byte, *json.Asset, error) {

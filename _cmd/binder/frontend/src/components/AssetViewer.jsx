@@ -10,7 +10,8 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, SetAssetAsMetaImage, GetFont } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent } from '../../bindings/binder/api/app';
+import EditorArea from './editor/EditorArea';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
@@ -30,6 +31,24 @@ function isImageMime(mime) {
 function isTextMime(mime) {
   return mime != null && mime.startsWith('text/');
 }
+
+//指定秒数での実行処理
+const debouncePromiss = (fn, delay) => {
+  var timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    return new Promise((resolve) => {
+      timer = setTimeout(() => {
+        resolve(fn.apply(this, args));
+      }, delay);
+    });
+  }
+}
+
+//テキストアセットの保存処理（デバウンス）
+const saveAssetText = debouncePromiss((id, text) => {
+  return SaveAssetContent(id, text);
+}, 1000);
 
 /**
  * 画像ビューア（ドラッグ移動・ホイール拡大縮小）
@@ -157,6 +176,8 @@ function AssetViewer() {
   // メタ画像設定ダイアログ
   const [metaImageDlg, setMetaImageDlg] = useState(false);
   const [metaImageDeleteAsset, setMetaImageDeleteAsset] = useState(true);
+  // テキストアセット編集用
+  const [editText, setEditText] = useState('');
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
 
@@ -207,6 +228,14 @@ function AssetViewer() {
       if (resp?.name) {
         setAssetName(resp.name);
         evt.changeTitle(resp.name);
+      }
+      // テキストアセットの場合、base64デコードして編集用stateに設定
+      if (resp && isTextMime(resp.mime)) {
+        try {
+          setEditText(decodeURIComponent(escape(atob(resp.content))));
+        } catch {
+          setEditText(atob(resp.content));
+        }
       }
     }).catch(() => {
       // エラーポップアップではなくビューア内にメッセージを表示
@@ -353,33 +382,14 @@ function AssetViewer() {
         />
       );
     } else if (isText) {
-      // テキストファイル: base64 → UTF-8 テキスト
-      let text = '';
-      try {
-        text = decodeURIComponent(escape(atob(fileContent)));
-      } catch {
-        text = atob(fileContent);
-      }
-      // ソースエディタ（textarea#editor）と同じスタイルで読み取り専用表示
+      // テキストファイル: EditorArea（行番号付き、デバウンス自動保存）
       content = (
-        <textarea
-          readOnly
-          value={text}
-          style={{
-            ...editorStyle,
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '100%',
-            boxSizing: 'border-box',
-            padding: '5px',
-            margin: 0,
-            border: 0,
-            resize: 'none',
-            outline: 'none',
+        <EditorArea
+          text={editText}
+          style={editorStyle}
+          onChange={(e) => {
+            setEditText(e.target.value);
+            saveAssetText(id, e.target.value);
           }}
         />
       );
@@ -449,7 +459,7 @@ function AssetViewer() {
         )}
       </Menu>
       {/* コンテンツ */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+      <div className="assetTextEditor" style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
         {content}
       </div>
 
