@@ -1,7 +1,8 @@
 import Scripter from "./Scripter";
 
 const Name = "mermaid";
-const URL    = "https://cdn.jsdelivr.net/npm/mermaid@11/+esm";
+const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+//const URL    = "https://cdn.jsdelivr.net/npm/mermaid@11/+esm";
 //const ZenURL = "https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml/+esm";
 //const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
 //const URL = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
@@ -26,6 +27,7 @@ class MermaidScript {
     }
     var mermaid = await this.load(url);
 
+    console.log(opts);
     mermaid.initialize(opts);
     globalThis.mermaid = mermaid;
 
@@ -64,7 +66,7 @@ class MermaidScript {
         return;
       }
 
-      this.init(URL,{ startOnLoad: false,theme:"dark",handDrawn:true }).then(() => {
+      this.init(URL,{ startOnLoad: false,theme:"dark",look: 'handDrawn',handDrawn:true }).then(() => {
         func();
       }).catch((err) => {
         console.error(err)
