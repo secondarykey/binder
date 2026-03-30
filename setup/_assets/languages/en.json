@@ -44,6 +44,7 @@
         "menu" : "Menu",
         "openBrowser" : "Open Browser",
         "pushRemote" : "Push to Remote",
+        "mergeRemote" : "Merge from Remote",
         "none" : "None",
         "commit" : "Commit",
         "publish" : "Publish",
