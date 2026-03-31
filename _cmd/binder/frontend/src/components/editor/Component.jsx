@@ -369,9 +369,11 @@ function Editor(props) {
       }, 200);
     }
 
-    // レイアウト反映後にtransitionを再有効化
+    // レイアウト反映後にtransitionを再有効化（二重rAFでReact再描画完了を待つ）
     requestAnimationFrame(() => {
-      editorContentEl?.classList.remove('no-transition');
+      requestAnimationFrame(() => {
+        editorContentEl?.classList.remove('no-transition');
+      });
     });
 
   }, [id, restoredAt]);
