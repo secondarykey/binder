@@ -9,6 +9,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -677,6 +678,10 @@ function BinderTree(props) {
         {t("tree.publish")}
       </MenuItem>
       <Divider />
+      {/** ブランチ変更 */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
+        <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
+      </MenuItem>
       {/** リモートにPush */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
         <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}

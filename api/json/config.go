@@ -22,6 +22,12 @@ type Remote struct {
 	URL  string `json:"url"`
 }
 
+type BranchResult struct {
+	Status  string `json:"status"`  // success, error, reload_error
+	Message string `json:"message"`
+	Address string `json:"address"`
+}
+
 type MergeResult struct {
 	Status       string          `json:"status"`        // success, uptodate, conflicts, error, reload_error
 	Message      string          `json:"message"`

@@ -43,6 +43,7 @@
     "tree" : {
         "menu" : "メニュー",
         "openBrowser" : "ブラウザで開く",
+        "changeBranch" : "ブランチ変更",
         "pushRemote" : "リモートにPush",
         "mergeRemote" : "リモートからマージ",
         "none" : "なし",
@@ -184,6 +185,22 @@
         "localLabel" : "ローカル",
         "remoteLabel" : "リモート",
         "selectFile" : "左のファイルを選択してください"
+    },
+    "branch" : {
+        "title" : "ブランチ管理",
+        "current" : "現在のブランチ",
+        "list" : "ブランチ一覧",
+        "switch" : "切替",
+        "create" : "ブランチ作成",
+        "rename" : "リネーム",
+        "newName" : "新しいブランチ名",
+        "branchName" : "ブランチ名",
+        "switchSuccess" : "ブランチを切り替えました: {{name}}",
+        "createSuccess" : "ブランチを作成しました: {{name}}",
+        "renameSuccess" : "ブランチ名を変更しました: {{old}} → {{new}}",
+        "reloadError" : "ブランチ切替後の再読み込みに失敗しました。Binderを開き直してください。",
+        "uncommittedError" : "ブランチを切り替える前に変更をコミットしてください。",
+        "confirmSwitch" : "このブランチに切り替えますか？バインダーが再読み込みされます。"
     },
     "commitModal" : {
         "title" : "コミット",

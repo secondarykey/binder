@@ -353,6 +353,80 @@ func (f *FileSystem) Branch(name string) error {
 	return nil
 }
 
+// ListBranches はローカルブランチ一覧をソート済みで返す。
+func (f *FileSystem) ListBranches() ([]string, error) {
+	iter, err := f.repo.Branches()
+	if err != nil {
+		return nil, xerrors.Errorf("Branches() error: %w", err)
+	}
+	var branches []string
+	err = iter.ForEach(func(ref *plumbing.Reference) error {
+		branches = append(branches, ref.Name().Short())
+		return nil
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("Branches iteration error: %w", err)
+	}
+	sort.Strings(branches)
+	return branches, nil
+}
+
+// CheckoutBranch は既存ブランチにチェックアウトする。
+func (f *FileSystem) CheckoutBranch(name string) error {
+	branch := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", name))
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	err = w.Checkout(&git.CheckoutOptions{Branch: branch})
+	if err != nil {
+		return xerrors.Errorf("Checkout() error: %w", err)
+	}
+	return nil
+}
+
+// RenameBranch はブランチ名を変更する。
+func (f *FileSystem) RenameBranch(oldName, newName string) error {
+	oldRef := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", oldName))
+	newRef := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", newName))
+
+	// 旧ブランチの参照を取得
+	ref, err := f.repo.Reference(oldRef, true)
+	if err != nil {
+		return xerrors.Errorf("Reference(%s) error: %w", oldName, err)
+	}
+
+	// 新しい参照を作成
+	newReference := plumbing.NewHashReference(newRef, ref.Hash())
+	err = f.repo.Storer.SetReference(newReference)
+	if err != nil {
+		return xerrors.Errorf("SetReference(%s) error: %w", newName, err)
+	}
+
+	// 現在のブランチがリネーム対象の場合、新ブランチにチェックアウト
+	head, err := f.repo.Head()
+	if err == nil && head.Name() == oldRef {
+		w, err := f.repo.Worktree()
+		if err != nil {
+			return xerrors.Errorf("Worktree() error: %w", err)
+		}
+		err = w.Checkout(&git.CheckoutOptions{Branch: newRef})
+		if err != nil {
+			return xerrors.Errorf("Checkout(%s) error: %w", newName, err)
+		}
+	}
+
+	// 旧参照を削除
+	err = f.repo.Storer.RemoveReference(oldRef)
+	if err != nil {
+		return xerrors.Errorf("RemoveReference(%s) error: %w", oldName, err)
+	}
+
+	return nil
+}
+
 // SetUserSig はバインダーごとのユーザ署名を設定する。
 func (f *FileSystem) SetUserSig(info *UserInfo) {
 	f.userSig = info

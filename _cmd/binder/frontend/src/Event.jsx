@@ -88,6 +88,11 @@ class Event {
     static OpenMergeModal = "merge.modal.open"
 
     /**
+     * ブランチ変更モーダルを開く
+     */
+    static OpenBranchModal = "branch.modal.open"
+
+    /**
      * バインダーを開く（CheckCompat付き）
      */
     static OpenBinder = "binder.open"
@@ -198,6 +203,10 @@ class Event {
 
     openMergeModal() {
         this.raise(Event.OpenMergeModal);
+    }
+
+    openBranchModal() {
+        this.raise(Event.OpenBranchModal);
     }
 
     openBinder(dir) {

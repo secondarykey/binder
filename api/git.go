@@ -455,3 +455,126 @@ func (a *App) GetHistoryPatch(typ string, id string, hash string) (*binder.Patch
 	}
 	return p, nil
 }
+
+func (a *App) ListBranches() ([]string, error) {
+
+	defer log.PrintTrace(log.Func("ListBranches()"))
+
+	branches, err := a.current.ListBranches()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("ListBranches() error: %+v", err)
+	}
+	return branches, nil
+}
+
+func (a *App) SwitchBranch(name string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("SwitchBranch()", name))
+
+	// 未コミット変更のチェック
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	if len(ids) > 0 {
+		return nil, fmt.Errorf("uncommitted changes exist")
+	}
+
+	// ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err = a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// リポジトリを直接開いてチェックアウト
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		// Binder を復旧
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	err = tmpFs.CheckoutBranch(name)
+	if err != nil {
+		log.PrintStackTrace(err)
+		// Binder を復旧
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// Binder を再読み込み
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
+func (a *App) CreateBranch(name string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("CreateBranch()", name))
+
+	// ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err := a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// リポジトリを直接開いてブランチ作成+チェックアウト
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	err = tmpFs.Branch(name)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// Binder を再読み込み
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
+func (a *App) RenameBranch(oldName, newName string) error {
+
+	defer log.PrintTrace(log.Func("RenameBranch()", oldName, newName))
+
+	err := a.current.RenameBranch(oldName, newName)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("RenameBranch() error: %+v", err)
+	}
+	return nil
+}
