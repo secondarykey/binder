@@ -250,6 +250,10 @@ function Editor(props) {
   //開いた時の初期処理
   useEffect(() => {
 
+    // モード切替時のエディタ/ビューア開閉でアニメーションさせない
+    const editorContentEl = document.getElementById('editorContent');
+    editorContentEl?.classList.add('no-transition');
+
     evt.clearMessage();
     // ツリー選択を同期（画像貼り付け・ツリー展開に必要）
     evt.selectTreeNode(id);
@@ -364,6 +368,11 @@ function Editor(props) {
         document.querySelector('#editor')?.focus();
       }, 200);
     }
+
+    // レイアウト反映後にtransitionを再有効化
+    requestAnimationFrame(() => {
+      editorContentEl?.classList.remove('no-transition');
+    });
 
   }, [id, restoredAt]);
 
