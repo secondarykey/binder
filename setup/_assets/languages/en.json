@@ -286,7 +286,10 @@
         "templates" : "Templates",
         "added" : "Added",
         "modified" : "Modified",
-        "deleted" : "Deleted"
+        "deleted" : "Deleted",
+        "database" : "Database",
+        "publish" : "Publish",
+        "other" : "Other"
     },
     "assetViewer" : {
         "loadError" : "Could not load file content. The file may not exist on disk.",

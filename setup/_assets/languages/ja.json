@@ -286,7 +286,10 @@
         "templates" : "テンプレート",
         "added" : "追加",
         "modified" : "変更",
-        "deleted" : "削除"
+        "deleted" : "削除",
+        "database" : "データベース",
+        "publish" : "公開",
+        "other" : "その他"
     },
     "assetViewer" : {
         "loadError" : "ファイルの内容を読み込めませんでした。ファイルがディスク上に存在しない可能性があります。",

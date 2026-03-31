@@ -194,8 +194,8 @@ func (f *FileSystem) getOverallHistory(limit, offset int) ([]*CommitInfo, bool, 
 	return result, hasMore, nil
 }
 
-// getCommitFiles は指定コミットで変更されたファイル一覧を返す。
-// DB CSV 等の管理ファイルは除外し、note/diagram/asset/template のみ返す。
+// getCommitFiles は指定コミットで変更された全ファイル一覧を返す。
+// note/diagram/asset/template に加え、database/publish/other カテゴリも含む。
 func (f *FileSystem) getCommitFiles(hash string) ([]*CommitFile, error) {
 
 	c, err := f.repo.CommitObject(plumbing.NewHash(hash))
@@ -234,10 +234,21 @@ func (f *FileSystem) getCommitFiles(hash string) ([]*CommitFile, error) {
 		}
 
 		path := changePath(change)
+
+		// ファイルカテゴリの分類
+		var typ, id string
 		mod, err := getModelType(path)
 		if err != nil {
-			// DB CSV 等の管理ファイルはスキップ
-			continue
+			// getModelType で分類できないファイルを追加カテゴリで分類
+			if strings.HasPrefix(path, DBDir+"/") {
+				typ, id = "database", path
+			} else if strings.HasPrefix(path, publishDir+"/") {
+				typ, id = "publish", path
+			} else {
+				typ, id = "other", path
+			}
+		} else {
+			typ, id = mod.Typ, mod.Id
 		}
 
 		var actionStr string
@@ -254,8 +265,8 @@ func (f *FileSystem) getCommitFiles(hash string) ([]*CommitFile, error) {
 
 		result = append(result, &CommitFile{
 			Path:   path,
-			Typ:    mod.Typ,
-			Id:     mod.Id,
+			Typ:    typ,
+			Id:     id,
 			Action: actionStr,
 		})
 	}

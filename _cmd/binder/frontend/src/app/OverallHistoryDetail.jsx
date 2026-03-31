@@ -9,6 +9,9 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CodeIcon from '@mui/icons-material/Code';
 import FolderIcon from '@mui/icons-material/Folder';
+import StorageIcon from '@mui/icons-material/Storage';
+import PublicIcon from '@mui/icons-material/Public';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
 import { GetCommitFiles } from '../../bindings/binder/api/app';
 import { OpenHistoryWindow } from '../../bindings/main/window';
@@ -17,13 +20,19 @@ import { EventContext } from '../Event';
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 
-const typeOrder = ['note', 'diagram', 'asset', 'template'];
+const typeOrder = ['note', 'diagram', 'asset', 'template', 'database', 'publish', 'other'];
+
+// ファイル履歴ウィンドウを呼び出せるカテゴリ
+const clickableTypes = new Set(['note', 'diagram', 'asset', 'template']);
 
 const typeIcons = {
   note:     <TextSnippetIcon fontSize="small" />,
   diagram:  <CodeIcon fontSize="small" />,
   asset:    <AttachFileIcon fontSize="small" />,
   template: <FolderIcon fontSize="small" />,
+  database: <StorageIcon fontSize="small" />,
+  publish:  <PublicIcon fontSize="small" />,
+  other:    <InsertDriveFileIcon fontSize="small" />,
 };
 
 const actionColors = {
@@ -56,8 +65,10 @@ function OverallHistoryDetail() {
     });
   }, [hash]);
 
+  const isClickable = (file) => clickableTypes.has(file.typ) && file.action !== 'deleted';
+
   const handleFileClick = (file) => {
-    if (file.action === 'deleted') return;
+    if (!isClickable(file)) return;
     OpenHistoryWindow(file.typ, file.id, file.name);
   };
 
@@ -73,6 +84,9 @@ function OverallHistoryDetail() {
     diagram:  t('overallHistory.diagrams'),
     asset:    t('overallHistory.assets'),
     template: t('overallHistory.templates'),
+    database: t('overallHistory.database'),
+    publish:  t('overallHistory.publish'),
+    other:    t('overallHistory.other'),
   };
 
   return (
@@ -108,11 +122,11 @@ function OverallHistoryDetail() {
               key={file.id}
               sx={{
                 pl: 2, py: 0.3, borderRadius: '2px',
-                cursor: file.action === 'deleted' ? 'default' : 'pointer',
+                cursor: isClickable(file) ? 'pointer' : 'default',
                 opacity: file.action === 'deleted' ? 0.6 : 1,
               }}
               onClick={() => handleFileClick(file)}
-              disabled={file.action === 'deleted'}
+              disabled={!isClickable(file)}
             >
               <ListItemIcon sx={{ minWidth: 28, color: 'var(--text-muted)' }}>
                 {typeIcons[file.typ]}

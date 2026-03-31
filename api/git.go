@@ -457,8 +457,16 @@ func (a *App) GetCommitFiles(hash string) ([]*json.CommitFileEntry, error) {
 	entries := make([]*json.CommitFileEntry, len(files))
 	for i, f := range files {
 		name := f.Id
-		// Structure から表示名を解決
-		if f.Typ != "asset" {
+		// カテゴリに応じて表示名を解決
+		switch f.Typ {
+		case "database", "publish", "other":
+			// パスをそのまま表示
+			name = f.Id
+		case "asset":
+			// アセットは ID をそのまま使用
+			name = f.Id
+		default:
+			// note/diagram/template は Structure から表示名を解決
 			if s, err := a.current.GetStructure(f.Id); err == nil && s.Name != "" {
 				name = s.Name
 			}
