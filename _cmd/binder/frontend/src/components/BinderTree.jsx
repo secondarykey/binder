@@ -684,7 +684,7 @@ function BinderTree(props) {
         <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
       </MenuItem>
       {/** 全体の履歴 */}
-      <MenuItem onClick={() => { closeMoreMenu(); OpenOverallHistoryWindow(); }}>
+      <MenuItem onClick={() => { closeMoreMenu(); OpenOverallHistoryWindow(""); }}>
         <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.overallHistory")}
       </MenuItem>
       <Divider />

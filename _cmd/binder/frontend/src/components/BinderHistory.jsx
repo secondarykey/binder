@@ -1,9 +1,13 @@
 import { useEffect, useState, useContext } from "react";
 
 import { GetHistories } from "../../bindings/binder/api/app";
-import { List, ListItemButton, ListItemText } from "@mui/material";
+import { OpenOverallHistoryWindow } from "../../bindings/main/window";
+import { List, ListItemButton, ListItemText, IconButton, Tooltip } from "@mui/material";
+import HistoryIcon from '@mui/icons-material/History';
 
 import {EventContext} from '../Event';
+import "../i18n/config";
+import { useTranslation } from 'react-i18next';
 
 /**
  * 履歴からバインダーの選択を行う
@@ -13,6 +17,7 @@ import {EventContext} from '../Event';
 function BinderHistory(props) {
 
   const evt = useContext(EventContext)
+  const { t } = useTranslation();
   const [histories, setHistories] = useState([]);
 
   useEffect(() => {
@@ -33,6 +38,15 @@ function BinderHistory(props) {
         return (
           <ListItemButton key={p} onClick={() => handleSelect(p)} >
             <ListItemText style={{ color: "var(--text-primary)" }} primary={p} />
+            <Tooltip title={t('binderHistory.history')} placement="left">
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); OpenOverallHistoryWindow(p); }}
+                sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+              >
+                <HistoryIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </ListItemButton>
         )
       })}

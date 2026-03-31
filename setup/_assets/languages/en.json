@@ -142,6 +142,9 @@
         "deleteRemoteConfirm" : "Delete \"{{name}}\"?",
         "updateSuccess" : "Binder updated."
     },
+    "binderHistory" : {
+        "history" : "History"
+    },
     "push" : {
         "title" : "Push",
         "remote" : "Remote",

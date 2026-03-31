@@ -122,11 +122,16 @@ func (r *Window) OpenHistoryWindow(typ, id, name string) error {
 	return nil
 }
 
-func (r *Window) OpenOverallHistoryWindow() error {
+func (r *Window) OpenOverallHistoryWindow(binderPath string) error {
 	// 既に開いていれば前面に出すだけ
 	if r.overallHistoryWindow != nil {
 		r.overallHistoryWindow.Focus()
 		return nil
+	}
+
+	windowURL := "/?overallHistory=1"
+	if binderPath != "" {
+		windowURL += "&binderPath=" + url.QueryEscape(binderPath)
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
@@ -137,7 +142,7 @@ func (r *Window) OpenOverallHistoryWindow() error {
 		MinHeight:        400,
 		Frameless:        true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
-		URL:              "/?overallHistory=1",
+		URL:              windowURL,
 	})
 
 	r.overallHistoryWindow = w

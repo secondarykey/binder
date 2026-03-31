@@ -13,7 +13,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import PublicIcon from '@mui/icons-material/Public';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
-import { GetCommitFiles } from '../../bindings/binder/api/app';
+import { GetCommitFiles, GetCommitFilesByPath } from '../../bindings/binder/api/app';
 import { OpenHistoryWindow } from '../../bindings/main/window';
 
 import { EventContext } from '../Event';
@@ -43,8 +43,9 @@ const actionColors = {
 
 /**
  * 全体履歴 コミット詳細（変更ファイル一覧）
+ * @param {{ binderPath?: string }} props binderPath が指定されていれば ByPath API を使用
  */
-function OverallHistoryDetail() {
+function OverallHistoryDetail({ binderPath }) {
 
   const { hash } = useParams();
   const evt = useContext(EventContext);
@@ -56,7 +57,10 @@ function OverallHistoryDetail() {
   useEffect(() => {
     if (!hash) return;
     setLoading(true);
-    GetCommitFiles(hash).then((result) => {
+    const fetchFiles = binderPath
+      ? GetCommitFilesByPath(binderPath, hash)
+      : GetCommitFiles(hash);
+    fetchFiles.then((result) => {
       setFiles(result ?? []);
     }).catch((err) => {
       evt.showErrorMessage(err);

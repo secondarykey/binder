@@ -26,6 +26,10 @@ function OverallHistoryApp() {
   const nav = useNavigate();
   const { t } = useTranslation();
 
+  // URL search params から binderPath を取得（未オープン状態での起動用）
+  const params = new URLSearchParams(window.location.search);
+  const binderPath = params.get('binderPath') ?? '';
+
   useEffect(() => {
     nav('/overall/list');
   }, []);
@@ -40,7 +44,7 @@ function OverallHistoryApp() {
       {/** タイトルバー（ドラッグ可能・フレームレス対応） */}
       <Toolbar id="overallHistoryTitle" className="binderTitle" onDoubleClick={() => Window.ToggleMaximise()}>
         <Typography variant="body1" sx={{ flex: 1 }} noWrap>
-          {t('overallHistory.title')}
+          {t('overallHistory.title')}{binderPath ? ` — ${binderPath}` : ''}
         </Typography>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
@@ -52,16 +56,16 @@ function OverallHistoryApp() {
 
         <div id="overallHistoryLeft">
           <Routes>
-            <Route path="/overall/list"          element={<OverallHistoryMenu />} />
-            <Route path="/overall/detail/:hash"  element={<OverallHistoryMenu />} />
-            <Route path="*"                      element={<OverallHistoryMenu />} />
+            <Route path="/overall/list"          element={<OverallHistoryMenu binderPath={binderPath} />} />
+            <Route path="/overall/detail/:hash"  element={<OverallHistoryMenu binderPath={binderPath} />} />
+            <Route path="*"                      element={<OverallHistoryMenu binderPath={binderPath} />} />
           </Routes>
         </div>
 
         <div id="overallHistoryRight">
           <Routes>
             <Route path="/overall/list"          element={<div id="overallHistoryEmpty" />} />
-            <Route path="/overall/detail/:hash"  element={<OverallHistoryDetail />} />
+            <Route path="/overall/detail/:hash"  element={<OverallHistoryDetail binderPath={binderPath} />} />
             <Route path="*"                      element={<div id="overallHistoryEmpty" />} />
           </Routes>
         </div>

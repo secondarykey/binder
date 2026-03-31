@@ -142,6 +142,9 @@
         "deleteRemoteConfirm" : "「{{name}}」を削除しますか？",
         "updateSuccess" : "Binderを更新しました"
     },
+    "binderHistory" : {
+        "history" : "履歴"
+    },
     "push" : {
         "title" : "Push",
         "remote" : "リモート",

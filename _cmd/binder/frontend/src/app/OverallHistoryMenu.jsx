@@ -13,7 +13,7 @@ import RestoreIcon from '@mui/icons-material/Restore';
 
 import { Events, Window } from '@wailsio/runtime';
 
-import { GetOverallHistory, GetModifiedIds, RestoreToCommit } from '../../bindings/binder/api/app';
+import { GetOverallHistory, GetOverallHistoryByPath, GetModifiedIds, RestoreToCommit, RestoreToCommitByPath } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import "../i18n/config";
@@ -23,8 +23,9 @@ const PAGE_SIZE = 10;
 
 /**
  * 全体履歴 コミット一覧
+ * @param {{ binderPath?: string }} props binderPath が指定されていれば ByPath API を使用
  */
-function OverallHistoryMenu() {
+function OverallHistoryMenu({ binderPath }) {
 
   const evt = useContext(EventContext);
   const { hash } = useParams();
@@ -47,7 +48,10 @@ function OverallHistoryMenu() {
     setOffset(0);
     setHasMore(false);
     setLoading(true);
-    GetOverallHistory(PAGE_SIZE, 0).then((page) => {
+    const fetchHistory = binderPath
+      ? GetOverallHistoryByPath(binderPath, PAGE_SIZE, 0)
+      : GetOverallHistory(PAGE_SIZE, 0);
+    fetchHistory.then((page) => {
       setEntries(page?.entries ?? []);
       setHasMore(page?.hasMore ?? false);
     }).catch((err) => {
@@ -61,7 +65,10 @@ function OverallHistoryMenu() {
   useEffect(() => {
     if (offset === 0) return;
     setLoading(true);
-    GetOverallHistory(PAGE_SIZE, offset).then((page) => {
+    const fetchMore = binderPath
+      ? GetOverallHistoryByPath(binderPath, PAGE_SIZE, offset)
+      : GetOverallHistory(PAGE_SIZE, offset);
+    fetchMore.then((page) => {
       setEntries(prev => [...prev, ...(page?.entries ?? [])]);
       setHasMore(page?.hasMore ?? false);
     }).catch((err) => {
@@ -89,19 +96,27 @@ function OverallHistoryMenu() {
     if (!entry) return;
     setRestoreHash(entry.hash);
 
-    GetModifiedIds().then((ids) => {
-      if ((ids ?? []).length > 0) {
-        setConfirmOpen(true);
-      } else {
+    if (binderPath) {
+      // ByPath モード: 未コミットチェック不要（バインダー未オープン）
+      setConfirmOpen(true);
+    } else {
+      GetModifiedIds().then((ids) => {
+        if ((ids ?? []).length > 0) {
+          setConfirmOpen(true);
+        } else {
+          doRestore(entry.hash);
+        }
+      }).catch(() => {
         doRestore(entry.hash);
-      }
-    }).catch(() => {
-      doRestore(entry.hash);
-    });
+      });
+    }
   };
 
   const doRestore = (targetHash) => {
-    RestoreToCommit(targetHash).then((result) => {
+    const restoreCall = binderPath
+      ? RestoreToCommitByPath(binderPath, targetHash)
+      : RestoreToCommit(targetHash);
+    restoreCall.then((result) => {
       if (result?.status === 'success') {
         Events.Emit("binder:restored", { address: result.address });
         Window.Close();
