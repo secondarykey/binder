@@ -16,13 +16,14 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import HistoryIcon from '@mui/icons-material/History';
 
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
          EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
+import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -682,6 +683,11 @@ function BinderTree(props) {
       <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
         <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
       </MenuItem>
+      {/** 全体の履歴 */}
+      <MenuItem onClick={() => { closeMoreMenu(); OpenOverallHistoryWindow(); }}>
+        <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.overallHistory")}
+      </MenuItem>
+      <Divider />
       {/** リモートにPush */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
         <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}

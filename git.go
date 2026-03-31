@@ -112,6 +112,24 @@ func (b *Binder) RestoreHistory(typ, id, hash string) error {
 	return nil
 }
 
+func (b *Binder) GetOverallHistory(limit, offset int) ([]*fs.CommitInfo, bool, error) {
+
+	result, hasMore, err := b.fileSystem.GetOverallHistory(limit, offset)
+	if err != nil {
+		return nil, false, xerrors.Errorf("GetOverallHistory() error: %w", err)
+	}
+	return result, hasMore, nil
+}
+
+func (b *Binder) GetCommitFiles(hash string) ([]*fs.CommitFile, error) {
+
+	files, err := b.fileSystem.GetCommitFiles(hash)
+	if err != nil {
+		return nil, xerrors.Errorf("GetCommitFiles() error: %w", err)
+	}
+	return files, nil
+}
+
 func (b *Binder) GetHistory(typ, id string, limit, offset int) ([]*fs.CommitInfo, bool, error) {
 
 	fn, err := b.getFilename(typ, id)

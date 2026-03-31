@@ -58,7 +58,8 @@
         "downloadAll" : "全体",
         "downloadDocs" : "docs",
         "expandAll" : "すべて展開",
-        "collapseAll" : "すべて閉じる"
+        "collapseAll" : "すべて閉じる",
+        "overallHistory" : "全体の履歴"
     },
     "note" : {
         "editTitle" : "ノート編集",
@@ -271,6 +272,21 @@
         "restoreWarning" : "現在のファイルにコミットされていない変更があります。復元すると、その変更は失われます。",
         "restore" : "復元する",
         "loadMore" : "さらに読み込む"
+    },
+    "overallHistory" : {
+        "title" : "全体履歴",
+        "files" : "変更ファイル",
+        "restoreTitle" : "この時点に復元しますか？",
+        "restoreWarning" : "全ファイルが選択したコミットの状態に復元されます。新しいコミットが作成されます。",
+        "restore" : "復元する",
+        "noFiles" : "変更ファイルなし",
+        "notes" : "ノート",
+        "diagrams" : "ダイアグラム",
+        "assets" : "アセット",
+        "templates" : "テンプレート",
+        "added" : "追加",
+        "modified" : "変更",
+        "deleted" : "削除"
     },
     "assetViewer" : {
         "loadError" : "ファイルの内容を読み込めませんでした。ファイルがディスク上に存在しない可能性があります。",

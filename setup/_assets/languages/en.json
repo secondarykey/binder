@@ -58,7 +58,8 @@
         "downloadAll" : "All",
         "downloadDocs" : "Docs",
         "expandAll" : "Expand All",
-        "collapseAll" : "Collapse All"
+        "collapseAll" : "Collapse All",
+        "overallHistory" : "Overall History"
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -271,6 +272,21 @@
         "restoreWarning" : "The current file has uncommitted changes. Restoring will discard those changes.",
         "restore" : "Restore",
         "loadMore" : "Load more"
+    },
+    "overallHistory" : {
+        "title" : "Overall History",
+        "files" : "Changed Files",
+        "restoreTitle" : "Restore to this commit?",
+        "restoreWarning" : "All files will be restored to the selected commit state. A new commit will be created.",
+        "restore" : "Restore",
+        "noFiles" : "No changed files",
+        "notes" : "Notes",
+        "diagrams" : "Diagrams",
+        "assets" : "Assets",
+        "templates" : "Templates",
+        "added" : "Added",
+        "modified" : "Modified",
+        "deleted" : "Deleted"
     },
     "assetViewer" : {
         "loadError" : "Could not load file content. The file may not exist on disk.",

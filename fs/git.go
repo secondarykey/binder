@@ -715,6 +715,36 @@ func (f *FileSystem) GetNowPatch(file string) (string, string, error) {
 	return source, w.String(), nil
 }
 
+// GetOverallHistory はリポジトリ全体のコミット履歴を limit 件取得する。
+func (f *FileSystem) GetOverallHistory(limit, offset int) ([]*CommitInfo, bool, error) {
+
+	result, hasMore, err := f.getOverallHistory(limit, offset)
+	if err != nil {
+		return nil, false, xerrors.Errorf("getOverallHistory() error: %w", err)
+	}
+	return result, hasMore, nil
+}
+
+// GetCommitFiles は指定コミットで変更されたファイル一覧を返す。
+func (f *FileSystem) GetCommitFiles(hash string) ([]*CommitFile, error) {
+
+	result, err := f.getCommitFiles(hash)
+	if err != nil {
+		return nil, xerrors.Errorf("getCommitFiles() error: %w", err)
+	}
+	return result, nil
+}
+
+// RestoreToCommit は指定コミットの状態にワーキングツリーを復元し、auto-commit する。
+func (f *FileSystem) RestoreToCommit(hash string) error {
+
+	err := f.restoreToCommit(hash)
+	if err != nil {
+		return xerrors.Errorf("restoreToCommit() error: %w", err)
+	}
+	return nil
+}
+
 // GetFileHistory は指定ファイルのgit履歴を limit 件取得する。
 // offset でスキップ件数を指定する。hasMore は次のページが存在するかを示す。
 func (f *FileSystem) GetFileHistory(file string, limit, offset int) ([]*CommitInfo, bool, error) {

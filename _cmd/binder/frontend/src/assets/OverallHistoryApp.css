@@ -1,0 +1,54 @@
+#OverallHistoryApp {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#overallHistoryTitle {
+    padding-left: 8px !important;
+    padding-right: 0px;
+    padding-top: 2px !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-titlebar) !important;
+    --wails-draggable: drag;
+}
+
+#overallHistoryTitle button {
+    --wails-draggable: no-drag;
+}
+
+#overallHistoryTitle button:hover {
+    background-color: var(--bg-elevated);
+}
+
+#overallHistoryArea {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#overallHistoryLeft {
+    width: 280px;
+    min-width: 280px;
+    background-color: var(--bg-panel);
+    overflow-y: auto;
+    border-right: 1px solid var(--border-primary);
+}
+
+#overallHistoryRight {
+    flex: 1;
+    position: relative;
+    overflow-y: auto;
+    background-color: var(--bg-surface);
+}
+
+#overallHistoryEmpty {
+    width: 100%;
+    height: 100%;
+}

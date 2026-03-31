@@ -24,8 +24,9 @@ type Window struct {
 	runtime        *application.App
 	window         *application.WebviewWindow
 	commitWindow   *application.WebviewWindow
-	historyWindows map[string]*application.WebviewWindow // key: typ+":"+id
-	previewWindow  *application.WebviewWindow
+	historyWindows       map[string]*application.WebviewWindow // key: typ+":"+id
+	overallHistoryWindow *application.WebviewWindow
+	previewWindow        *application.WebviewWindow
 	syslogWindow   *application.WebviewWindow
 	searchWindow   *application.WebviewWindow
 }
@@ -116,6 +117,34 @@ func (r *Window) OpenHistoryWindow(typ, id, name string) error {
 	// ウィンドウが閉じられたらリセット
 	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		delete(r.historyWindows, key)
+	})
+
+	return nil
+}
+
+func (r *Window) OpenOverallHistoryWindow() error {
+	// 既に開いていれば前面に出すだけ
+	if r.overallHistoryWindow != nil {
+		r.overallHistoryWindow.Focus()
+		return nil
+	}
+
+	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - Overall History",
+		Width:            1000,
+		Height:           600,
+		MinWidth:         700,
+		MinHeight:        400,
+		Frameless:        true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?overallHistory=1",
+	})
+
+	r.overallHistoryWindow = w
+
+	// ウィンドウが閉じられたらリセット
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.overallHistoryWindow = nil
 	})
 
 	return nil

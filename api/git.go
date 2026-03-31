@@ -423,6 +423,109 @@ func (a *App) RestoreHistory(typ string, id string, hash string) error {
 	return nil
 }
 
+func (a *App) GetOverallHistory(limit int, offset int) (*json.HistoryPage, error) {
+
+	defer log.PrintTrace(log.Func("GetOverallHistory()"))
+
+	commits, hasMore, err := a.current.GetOverallHistory(limit, offset)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+	}
+
+	entries := make([]*json.HistoryEntry, len(commits))
+	for i, c := range commits {
+		entries[i] = &json.HistoryEntry{
+			Hash:    c.Hash,
+			Message: c.Message,
+			When:    c.When.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+	return &json.HistoryPage{Entries: entries, HasMore: hasMore}, nil
+}
+
+func (a *App) GetCommitFiles(hash string) ([]*json.CommitFileEntry, error) {
+
+	defer log.PrintTrace(log.Func("GetCommitFiles()", hash))
+
+	files, err := a.current.GetCommitFiles(hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+	}
+
+	entries := make([]*json.CommitFileEntry, len(files))
+	for i, f := range files {
+		name := f.Id
+		// Structure から表示名を解決
+		if f.Typ != "asset" {
+			if s, err := a.current.GetStructure(f.Id); err == nil && s.Name != "" {
+				name = s.Name
+			}
+		}
+		entries[i] = &json.CommitFileEntry{
+			Typ:    f.Typ,
+			Id:     f.Id,
+			Action: f.Action,
+			Name:   name,
+		}
+	}
+	return entries, nil
+}
+
+func (a *App) RestoreToCommit(hash string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("RestoreToCommit()", hash))
+
+	// 未コミット変更のチェック
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	if len(ids) > 0 {
+		return nil, fmt.Errorf("uncommitted changes exist")
+	}
+
+	// ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err = a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// リポジトリを直接開いて復元
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	err = tmpFs.RestoreToCommit(hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// Binder を再読み込み
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
 func (a *App) GetHistory(typ string, id string, limit int, offset int) (*json.HistoryPage, error) {
 
 	defer log.PrintTrace(log.Func("GetHistory()", typ, id))
