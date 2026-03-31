@@ -333,6 +333,12 @@ func (f *FileSystem) Branch(name string) error {
 		return nil
 	}
 
+	// 同名ブランチが既に存在する場合はエラー
+	_, err = f.repo.Reference(branch, true)
+	if err == nil {
+		return fmt.Errorf("branch '%s' already exists", name)
+	}
+
 	ref := plumbing.NewHashReference(branch, head.Hash())
 	err = f.repo.Storer.SetReference(ref)
 	if err != nil {
@@ -343,8 +349,6 @@ func (f *FileSystem) Branch(name string) error {
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
 	}
-
-	//TODO すでに存在して処理する場合
 
 	err = w.Checkout(&git.CheckoutOptions{Branch: branch})
 	if err != nil {
