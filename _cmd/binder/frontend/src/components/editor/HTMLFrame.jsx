@@ -124,6 +124,14 @@ class HTMLFrame extends React.Component {
     // クリックを禁止
     doc.addEventListener('click', (e) => e.preventDefault());
 
+    // iframe 内のキーボードイベントを親ウィンドウに転送（F12 など）
+    doc.addEventListener('keydown', (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        window.document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F12' }));
+      }
+    });
+
     // ソース行コメントを data-src-line 属性に変換
     this.attachSourceLines(doc);
 

@@ -444,7 +444,7 @@ function Editor(props) {
 
   // モードに対応するスニペット一覧
   const snippetList = (() => {
-    if (mode === Mode.note) return snippets.markdowns ?? [];
+    if (mode === Mode.note) return [...(snippets.markdowns ?? []), ...(snippets.templates ?? [])];
     if (mode === Mode.diagram) return snippets.diagrams ?? [];
     if (mode === Mode.template) return snippets.templates ?? [];
     return [];
