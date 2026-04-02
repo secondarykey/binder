@@ -1,13 +1,11 @@
 import React from "react";
-import morphdom from "morphdom";
 import Mermaid from "./engines/Mermaid";
 
 /**
- * HTMLプレビュー用 iframe コンポーネント
+ * HTMLプレビュー用ダブルバッファ iframe コンポーネント
  *
- * 初回のみ srcdoc でドキュメントをロードし、以降の更新は
- * contentDocument.body.innerHTML を直接差し替えることでドキュメントリロードを
- * 回避する。リロードがないため白フラッシュが発生しない。
+ * 2つの iframe を交互に使い、裏側で描画が完了してから表示を切り替えることで
+ * ちらつきを防止する。
  *
  * Props:
  *   html       - 表示する HTML 文字列
@@ -17,8 +15,10 @@ class HTMLFrame extends React.Component {
 
   constructor(props) {
     super(props);
-    this.iframeRef = React.createRef();
-    this.initialized = false;
+    this.refs0 = React.createRef();
+    this.refs1 = React.createRef();
+    // 現在表示中の iframe インデックス (0 or 1)
+    this.active = -1;
     this.view = this.view.bind(this);
   }
 
@@ -34,58 +34,41 @@ class HTMLFrame extends React.Component {
     this.view();
   }
 
+  getIframe(index) {
+    return index === 0 ? this.refs0.current : this.refs1.current;
+  }
+
   view() {
     const html = this.props.html;
-    const iframe = this.iframeRef.current;
-    if (!iframe) return;
+    if (!html) return;
 
-    const iDoc = iframe.contentDocument;
+    // 裏側の iframe を決定
+    const backIndex = this.active <= 0 ? 1 : 0;
+    const backIframe = this.getIframe(backIndex);
+    if (!backIframe) return;
 
-    // 初回またはドキュメントが未初期化の場合は srcdoc でロード
-    if (!this.initialized || !iDoc || !iDoc.body) {
-      this.initialized = false;
-      iframe.onload = () => {
-        this.initialized = true;
-        this.postProcess(iframe.contentDocument);
-      };
-      iframe.srcdoc = html;
-      return;
-    }
-
-    // 2回目以降: DOM差分パッチで更新（未変更ノードを保持しちらつきを防ぐ）
-    const parser = new DOMParser();
-    const newDoc = parser.parseFromString(html, 'text/html');
-
-    // <head> は innerHTML で置換（画像なし、ちらつき影響なし）
-    iDoc.head.innerHTML = newDoc.head.innerHTML;
-
-    // <body> は morphdom で差分パッチ（画像等の未変更要素を保持）
-    morphdom(iDoc.body, newDoc.body, {
-      childrenOnly: false,
-      onBeforeElUpdated(fromEl, toEl) {
-        if (fromEl.isEqualNode(toEl)) return false;
-        return true;
-      },
-    });
-
-    // morphdom で挿入された <script> は実行されないため createElement で再作成する
-    this.activateScripts(iDoc);
-
-    this.postProcess(iDoc);
+    // 裏 iframe に描画開始
+    backIframe.onload = () => {
+      const doc = backIframe.contentDocument;
+      this.postProcess(doc, () => {
+        // 描画完了後に表裏を切り替え
+        this.swap(backIndex);
+      });
+    };
+    backIframe.srcdoc = html;
   }
 
   /**
-   * innerHTML で挿入された <script> を createElement で再作成し実行させる
+   * 表裏を切り替える
    */
-  activateScripts(doc) {
-    for (const old of Array.from(doc.querySelectorAll('script'))) {
-      const script = doc.createElement('script');
-      for (const attr of old.attributes) {
-        script.setAttribute(attr.name, attr.value);
-      }
-      script.textContent = old.textContent;
-      old.parentNode.replaceChild(script, old);
-    }
+  swap(newActiveIndex) {
+    const showIframe = this.getIframe(newActiveIndex);
+    const hideIframe = this.getIframe(newActiveIndex === 0 ? 1 : 0);
+
+    if (showIframe) showIframe.style.visibility = 'visible';
+    if (hideIframe) hideIframe.style.visibility = 'hidden';
+
+    this.active = newActiveIndex;
   }
 
   /**
@@ -135,35 +118,46 @@ class HTMLFrame extends React.Component {
     target.scrollIntoView({ behavior: 'instant', block: 'center' });
   }
 
-  postProcess(doc) {
-    if (!doc) return;
+  postProcess(doc, onComplete) {
+    if (!doc) { onComplete?.(); return; }
 
-    // クリックを禁止（重複登録しない）
-    if (!doc._binderClickBlocked) {
-      doc._binderClickBlocked = true;
-      doc.addEventListener('click', (e) => e.preventDefault());
-    }
+    // クリックを禁止
+    doc.addEventListener('click', (e) => e.preventDefault());
+
+    // ソース行コメントを data-src-line 属性に変換
+    this.attachSourceLines(doc);
 
     // ノート内の Mermaid ダイアグラムを描画
-    doc.querySelectorAll('div.binderSVG').forEach((elm) => {
+    const mermaidElements = Array.from(doc.querySelectorAll('div.binderSVG'));
+    if (mermaidElements.length === 0) {
+      // Mermaid なし → 即完了
+      this.scrollToSourceLine(doc, this.props.cursorLine);
+      onComplete?.();
+      return;
+    }
+
+    // 全 Mermaid の描画完了を待ってから切り替え
+    const promises = mermaidElements.map((elm) => {
       const txt = elm.textContent;
-      Mermaid.parse(txt).then((data) => {
+      return Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
         console.error(err);
       });
     });
 
-    // ソース行コメントを data-src-line 属性に変換
-    this.attachSourceLines(doc);
-
-    // カーソル行の近傍要素へスクロール
-    this.scrollToSourceLine(doc, this.props.cursorLine);
+    Promise.all(promises).then(() => {
+      this.scrollToSourceLine(doc, this.props.cursorLine);
+      onComplete?.();
+    });
   }
 
   render() {
     return (
-      <iframe className="htmlViewer" ref={this.iframeRef} />
+      <>
+        <iframe className="htmlViewer" ref={this.refs0} style={{ visibility: 'hidden' }} />
+        <iframe className="htmlViewer" ref={this.refs1} style={{ visibility: 'hidden' }} />
+      </>
     );
   }
 }
