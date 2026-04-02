@@ -115,5 +115,8 @@ func (b *Binder) EditUserInfo(u *json.UserInfo) error {
 	// コミット署名を即時反映
 	b.fileSystem.SetUserSig(info)
 
+	// DB操作のユーザ名を即時反映
+	b.op = createUserOp(b.fileSystem.UserName())
+
 	return nil
 }

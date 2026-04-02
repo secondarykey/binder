@@ -436,6 +436,14 @@ func (f *FileSystem) SetUserSig(info *UserInfo) {
 	f.userSig = info
 }
 
+// UserName はバインダーのユーザ名を返す。バインダー固有の設定があればそれを、なければアプリ設定を使用する。
+func (f *FileSystem) UserName() string {
+	if f.userSig != nil && f.userSig.Name != "" {
+		return f.userSig.Name
+	}
+	return settings.Get().Git.Name
+}
+
 // userSigOrDefault はバインダーのユーザ署名があればそれを、なければアプリ設定を使用する。
 func (f *FileSystem) userSigOrDefault() *object.Signature {
 	if f.userSig != nil && f.userSig.Name != "" {

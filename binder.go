@@ -166,8 +166,7 @@ func Load(dir string) (*Binder, error) {
 		}
 	}
 
-	//TODO ユーザ情報から取得
-	b.op = createUserOp("user")
+	b.op = createUserOp(bfs.UserName())
 
 	return &b, nil
 }
