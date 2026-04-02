@@ -1,4 +1,4 @@
-package convert083
+package convert092
 
 import (
 	"binder/setup/convert/db/core"
@@ -40,10 +40,10 @@ var knownMimeTypes = map[string]string{
 	".md":   "text/markdown",
 }
 
-// Convert083 は0.8.3への移行。
+// Convert092 は0.9.2への移行。
 // assets.csv に mime 列を追加する。
 // structures.csv の name（ファイル名）から拡張子を取得し、MIMEタイプを判定して設定する。
-func Convert083(p string, tables []*core.FileSet) ([]*core.FileSet, error) {
+func Convert092(p string, tables []*core.FileSet) ([]*core.FileSet, error) {
 
 	// structures.csv から asset の id → name マッピングを構築
 	nameMap, err := buildAssetNameMap(p, tables)
@@ -203,7 +203,7 @@ func addMimeToAssets(p string, fs *core.FileSet, nameMap map[string]string) (*co
 	newHeader = append(newHeader, "mime")
 	newHeader = append(newHeader, cols[insertIdx:]...)
 
-	nn := "assets083.csv"
+	nn := "assets092.csv"
 	nf := filepath.Join(p, nn)
 	np, err := os.Create(nf)
 	if err != nil {

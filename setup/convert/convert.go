@@ -20,13 +20,13 @@ import (
 	convert045 "binder/setup/convert/db/045"
 	convert047 "binder/setup/convert/db/047"
 	convert048 "binder/setup/convert/db/048"
-	convert083 "binder/setup/convert/db/083"
+	convert092 "binder/setup/convert/db/092"
 	fsconvert "binder/setup/convert/fs"
 
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v083 *Version
+var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092 *Version
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
@@ -91,9 +91,9 @@ func init() {
 	if err != nil {
 		panic("v072 version parse error: " + err.Error())
 	}
-	v083, err = NewVersion("0.8.3")
+	v092, err = NewVersion("0.9.2")
 	if err != nil {
-		panic("v083 version parse error: " + err.Error())
+		panic("v092 version parse error: " + err.Error())
 	}
 
 	migrations = []migration{
@@ -158,9 +158,9 @@ func init() {
 			state.gitignorCreated = true
 			return nil
 		}},
-		// 0.8.3: assets.csv に mime 列を追加（ファイル名の拡張子からMIMEタイプを判定）
-		{v083, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert083.Convert083)
+		// 0.9.2: assets.csv に mime 列を追加（ファイル名の拡張子からMIMEタイプを判定）
+		{v092, func(_, dbDir string, _ *migrateState) error {
+			return applyDB(dbDir, convert092.Convert092)
 		}},
 	}
 }
