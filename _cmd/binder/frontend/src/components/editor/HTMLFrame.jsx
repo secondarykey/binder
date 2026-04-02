@@ -1,4 +1,5 @@
 import React from "react";
+import morphdom from "morphdom";
 import Mermaid from "./engines/Mermaid";
 
 /**
@@ -51,18 +52,23 @@ class HTMLFrame extends React.Component {
       return;
     }
 
-    // 2回目以降: ドキュメントリロードなしで DOM を差し替え
+    // 2回目以降: DOM差分パッチで更新（未変更ノードを保持しちらつきを防ぐ）
     const parser = new DOMParser();
     const newDoc = parser.parseFromString(html, 'text/html');
 
-    // <head> 内を同期（<style>, <meta>, <link>, <title>, <script> 等すべて）
-    // innerHTML で一括置換し、スタイルが途切れる瞬間を作らない
+    // <head> は innerHTML で置換（画像なし、ちらつき影響なし）
     iDoc.head.innerHTML = newDoc.head.innerHTML;
 
-    // body を差し替え
-    iDoc.body.innerHTML = newDoc.body.innerHTML;
+    // <body> は morphdom で差分パッチ（画像等の未変更要素を保持）
+    morphdom(iDoc.body, newDoc.body, {
+      childrenOnly: false,
+      onBeforeElUpdated(fromEl, toEl) {
+        if (fromEl.isEqualNode(toEl)) return false;
+        return true;
+      },
+    });
 
-    // innerHTML で挿入された <script> は実行されないため createElement で再作成する
+    // morphdom で挿入された <script> は実行されないため createElement で再作成する
     this.activateScripts(iDoc);
 
     this.postProcess(iDoc);
