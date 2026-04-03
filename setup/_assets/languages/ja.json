@@ -144,7 +144,9 @@
         "script" : "スクリプト",
         "markedUrl" : "Marked.js CDN URL",
         "mermaidUrl" : "Mermaid.js CDN URL",
-        "cdnHint" : "空欄の場合は内蔵バージョンを使用します。"
+        "cdnHint" : "空欄の場合は内蔵バージョンを使用します。",
+        "cdnOk" : "指定URLから正常に読み込みました。",
+        "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。"
     },
     "binderHistory" : {
         "history" : "履歴"

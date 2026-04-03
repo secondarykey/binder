@@ -144,7 +144,9 @@
         "script" : "Script",
         "markedUrl" : "Marked.js CDN URL",
         "mermaidUrl" : "Mermaid.js CDN URL",
-        "cdnHint" : "Leave empty to use the bundled version."
+        "cdnHint" : "Leave empty to use the bundled version.",
+        "cdnOk" : "Loaded successfully from specified URL.",
+        "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used."
     },
     "binderHistory" : {
         "history" : "History"
