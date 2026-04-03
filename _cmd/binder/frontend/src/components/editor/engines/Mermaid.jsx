@@ -28,19 +28,21 @@ class MermaidScript {
   }
 
   /**
-   * CDN URLが指定されている場合はESM importを試み、失敗時はUMDベンダーにフォールバック。
-   * 未指定の場合はベンダーUMDを直接読み込む。
-   * @param {string|null} url CDN URL（nullの場合はベンダーを使用）
+   * CDN URLが指定されている場合はESM importを試行。
+   * 未指定またはESM import失敗時はベンダーUMDを<script>タグで読み込む。
+   * @param {string|null} url CDN ESM URL（nullの場合はベンダーを使用）
    */
   static async load(url) {
     if (url) {
-      var m = await Scripter.importWithFallback(url, mermaidVendorUrl, "mermaid");
-      return m.default;
+      try {
+        var m = await Scripter.import(url);
+        return m.default;
+      } catch (err) {
+        console.warn("CDN import failed, falling back to vendor:", err);
+      }
     }
-    // デフォルト: ベンダーUMD
-    var script = await Scripter.get(mermaidVendorUrl);
-    new Function(script)();
-    return globalThis.mermaid;
+    // ベンダーUMDを<script>タグで読み込む
+    return await Scripter.loadScript(mermaidVendorUrl, "mermaid");
   }
 
   static async parse(txt) {
