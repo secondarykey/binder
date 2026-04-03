@@ -3,9 +3,10 @@ import { GetConfig } from "../../../../bindings/binder/api/app";
 import mermaidVendorUrl from '../../../assets/vendor/mermaid.min.js?url';
 
 const Name = "mermaid";
+const DefaultOpts = { startOnLoad: false, theme: "dark", look: 'handDrawn', handDrawn: true };
 
 /**
- * mermaid を利用してパースするクラス
+ * mermaid を利用してパースするクラス（ESM / UMD 両対応）
  */
 class MermaidScript {
 
@@ -21,35 +22,72 @@ class MermaidScript {
   }
 
   /**
+   * URLからmermaidを読み込む（ESM → UMD の順に試行）
+   * @param {string} url 読み込み先URL
+   * @returns {object|null} mermaidインスタンス。失敗時null
+   */
+  static async tryLoadUrl(url) {
+    // ESM import を試行
+    try {
+      var m = await Scripter.import(url);
+      return m.default;
+    } catch (esmErr) {
+      // UMD <script>タグを試行
+      try {
+        return await Scripter.loadScript(url, Name);
+      } catch (umdErr) {
+        return null;
+      }
+    }
+  }
+
+  /**
    * 初期化処理
+   * CDN URL指定時: ESM → UMD → ベンダーの順にフォールバック
+   * CDN URL未指定: ベンダーUMDを使用
    */
   static async init(url, opts) {
 
     if ( globalThis.mermaid !== undefined ) {
       return;
     }
-    var mermaid = await this.load(url);
+
+    var mermaid = null;
+    if (url) {
+      mermaid = await MermaidScript.tryLoadUrl(url);
+      if (!mermaid) {
+        console.warn("CDN URL failed, falling back to vendor");
+      }
+    }
+    if (!mermaid) {
+      // ベンダーUMDを<script>タグで読み込む
+      mermaid = await Scripter.loadScript(mermaidVendorUrl, Name);
+    }
 
     mermaid.initialize(opts);
     globalThis.mermaid = mermaid;
   }
 
   /**
-   * CDN URLが指定されている場合はESM importを試行。
-   * 未指定またはESM import失敗時はベンダーUMDを<script>タグで読み込む。
-   * @param {string|null} url CDN ESM URL（nullの場合はベンダーを使用）
+   * 指定URLでmermaidを読み込み、成功時はそのまま使用する。
+   * 失敗時はベンダー版にフォールバックして初期化する。
+   * @param {string} url 検証するURL
+   * @returns {{ success: boolean }} 指定URLでの読み込み結果
    */
-  static async load(url) {
+  static async loadAndValidate(url) {
+    delete globalThis.mermaid;
+
+    var mermaid = null;
     if (url) {
-      try {
-        var m = await Scripter.import(url);
-        return m.default;
-      } catch (err) {
-        console.warn("CDN import failed, falling back to vendor:", err);
-      }
+      mermaid = await MermaidScript.tryLoadUrl(url);
     }
-    // ベンダーUMDを<script>タグで読み込む
-    return await Scripter.loadScript(mermaidVendorUrl, "mermaid");
+    var success = (mermaid !== null);
+    if (!mermaid) {
+      mermaid = await Scripter.loadScript(mermaidVendorUrl, Name);
+    }
+    mermaid.initialize(DefaultOpts);
+    globalThis.mermaid = mermaid;
+    return { success };
   }
 
   static async parse(txt) {
@@ -78,7 +116,7 @@ class MermaidScript {
       GetConfig().then((conf) => {
         if (conf && conf.mermaidUrl) cdnUrl = conf.mermaidUrl;
       }).catch(() => {}).finally(() => {
-        this.init(cdnUrl, { startOnLoad: false, theme: "dark", look: 'handDrawn', handDrawn: true }).then(() => {
+        this.init(cdnUrl, DefaultOpts).then(() => {
           func();
         }).catch((err) => {
           console.error(err)

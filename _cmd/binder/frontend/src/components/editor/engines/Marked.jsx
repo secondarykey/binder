@@ -5,7 +5,7 @@ import markedVendorUrl from '../../../assets/vendor/marked.min.js?url';
 const Name = "marked"
 
 /**
- * marked.js を利用するクラス（ESM import）
+ * marked.js を利用するクラス（ESM / UMD 両対応）
  */
 class MarkedScript {
 
@@ -20,6 +20,35 @@ class MarkedScript {
         delete globalThis.marked;
     }
 
+    /**
+     * URLからmarkedを読み込む（ESM → UMD の順に試行）
+     * @param {string} url 読み込み先URL
+     * @returns {boolean} 成功時true
+     */
+    static async tryLoadUrl(url) {
+        delete globalThis.marked;
+        // ESM import を試行
+        try {
+            var m = await Scripter.import(url);
+            globalThis.marked = m;
+            return true;
+        } catch (esmErr) {
+            // UMD <script>タグを試行
+            try {
+                await Scripter.loadScript(url, Name);
+                // UMDはglobalThis.markedを直接設定する
+                return true;
+            } catch (umdErr) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * バインダー設定に基づいて初期化する。
+     * CDN URL指定時: ESM → UMD → ベンダーの順にフォールバック
+     * CDN URL未指定: ベンダーESMを使用
+     */
     static async init() {
         let cdnUrl = null;
         try {
@@ -27,17 +56,33 @@ class MarkedScript {
             if (conf && conf.markedUrl) cdnUrl = conf.markedUrl;
         } catch (e) {}
 
-        let m;
         if (cdnUrl) {
-            // バインダー設定URL優先、失敗時にベンダーへフォールバック
-            m = await Scripter.importWithFallback(cdnUrl, markedVendorUrl);
-        } else {
-            // デフォルト: 埋め込みベンダー
-            m = await Scripter.import(markedVendorUrl);
+            if (await MarkedScript.tryLoadUrl(cdnUrl)) return;
+            console.warn("CDN URL failed, falling back to vendor");
         }
-        // ESM named exports をグローバルに設定（marked.marked(), marked.Lexer 等で参照される）
+        // デフォルト: 埋め込みベンダーESM
+        var m = await Scripter.import(markedVendorUrl);
         globalThis.marked = m;
         //MarkedScript.registerAlertExtension();
+    }
+
+    /**
+     * 指定URLでmarkedを読み込み、成功時はそのまま使用する。
+     * 失敗時はベンダー版にフォールバックして初期化する。
+     * @param {string} url 検証するURL
+     * @returns {{ success: boolean }} 指定URLでの読み込み結果
+     */
+    static async loadAndValidate(url) {
+        delete globalThis.marked;
+        if (url) {
+            if (await MarkedScript.tryLoadUrl(url)) {
+                return { success: true };
+            }
+        }
+        // ベンダーにフォールバック
+        var m = await Scripter.import(markedVendorUrl);
+        globalThis.marked = m;
+        return { success: false };
     }
 
     /**
