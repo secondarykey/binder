@@ -141,6 +141,7 @@
         "deleteRemoteTitle" : "Delete Remote",
         "deleteRemoteConfirm" : "Delete \"{{name}}\"?",
         "updateSuccess" : "Binder updated.",
+        "script" : "Script",
         "markedUrl" : "Marked.js CDN URL",
         "mermaidUrl" : "Mermaid.js CDN URL",
         "cdnHint" : "Leave empty to use the bundled version."
