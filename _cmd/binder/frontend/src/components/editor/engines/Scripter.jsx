@@ -56,6 +56,21 @@ class Scripter {
             document.head.appendChild(script);
         });
     }
+    /**
+     * URLのホスト名がホワイトリストに含まれているか検証する
+     * @param {string} url 検証するURL
+     * @param {string[]} allowedDomains 許可ドメインリスト
+     * @returns {boolean} 許可されている場合true
+     */
+    static isAllowedUrl(url, allowedDomains) {
+        if (!url || !allowedDomains || allowedDomains.length === 0) return false;
+        try {
+            const hostname = new URL(url).hostname;
+            return allowedDomains.some(d => hostname === d || hostname.endsWith('.' + d));
+        } catch {
+            return false;
+        }
+    }
 }
 
 export default Scripter;

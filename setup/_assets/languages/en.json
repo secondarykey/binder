@@ -124,7 +124,12 @@
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",
-        "openSystemLog" : "Open System Log"
+        "openSystemLog" : "Open System Log",
+        "allowedCDNs" : "Allowed CDN Domains",
+        "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
+        "addDomain" : "Add Domain",
+        "domainPlaceholder" : "e.g. cdn.jsdelivr.net",
+        "security" : "Security"
     },
     "binder" : {
         "editTitle" : "Edit Binder",

@@ -1,5 +1,5 @@
 import Scripter from "./Scripter";
-import { GetConfig } from "../../../../bindings/binder/api/app";
+import { GetConfig, GetAllowedCDNs } from "../../../../bindings/binder/api/app";
 import markedVendorUrl from '../../../assets/vendor/marked.min.js?url';
 
 const Name = "marked"
@@ -55,6 +55,17 @@ class MarkedScript {
             const conf = await GetConfig();
             if (conf && conf.markedUrl) cdnUrl = conf.markedUrl;
         } catch (e) {}
+
+        // ホワイトリスト検証
+        if (cdnUrl) {
+            try {
+                const allowedDomains = await GetAllowedCDNs() || [];
+                if (!Scripter.isAllowedUrl(cdnUrl, allowedDomains)) {
+                    console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl);
+                    cdnUrl = null;
+                }
+            } catch (e) {}
+        }
 
         if (cdnUrl) {
             if (await MarkedScript.tryLoadUrl(cdnUrl)) return;
