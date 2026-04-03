@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
+  { key: "script", labelKey: "binder.script" },
   { key: "git", labelKey: "binder.git" },
 ];
 
@@ -220,13 +221,25 @@ function Binder({ isModal, ...props }) {
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
             </FormControl>
 
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
+                <SaveIcon fontSize="large" />
+              </IconButton>
+            </Box>
+
+          </div>
+        )}
+
+        {activeSection === "script" && (
+          <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
+
             <FormControl>
               <FormLabel>{t("binder.markedUrl")}</FormLabel>
               <TextField
                 size="small"
                 value={markedUrl}
                 onChange={(e) => setMarkedUrl(e.target.value)}
-                placeholder="https://cdn.jsdelivr.net/npm/marked@14/lib/marked.umd.min.js"
+                placeholder="https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.umd.min.js"
                 helperText={t("binder.cdnHint")}
               />
             </FormControl>
@@ -237,7 +250,7 @@ function Binder({ isModal, ...props }) {
                 size="small"
                 value={mermaidUrl}
                 onChange={(e) => setMermaidUrl(e.target.value)}
-                placeholder="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+                placeholder="https://cdn.jsdelivr.net/npm/mermaid@11.14.0/dist/mermaid.esm.min.mjs"
                 helperText={t("binder.cdnHint")}
               />
             </FormControl>
