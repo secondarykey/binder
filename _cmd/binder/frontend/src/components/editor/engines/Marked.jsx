@@ -13,6 +13,13 @@ class MarkedScript {
         return Scripter.isExists(Name)
     }
 
+    /**
+     * バインダー切り替え時にグローバル状態をリセットし、次回parseで再初期化させる
+     */
+    static reset() {
+        delete globalThis.marked;
+    }
+
     static async init() {
         let cdnUrl = null;
         try {

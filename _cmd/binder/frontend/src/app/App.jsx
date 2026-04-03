@@ -25,6 +25,8 @@ import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/w
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
 import ConvertDialog, { NeedUpdateDialog } from '../dialogs/components/ConvertDialog';
+import MarkedScript from '../components/editor/engines/Marked';
+import MermaidScript from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
 import "../i18n/config";
@@ -121,6 +123,9 @@ function App() {
 
   // LoadBinder を呼んでエディタに遷移する
   const loadBinder = (dir) => {
+    // バインダー切り替え時にスクリプトエンジンをリセット（次回parseで新バインダーの設定で再初期化）
+    MarkedScript.reset();
+    MermaidScript.reset();
     LoadBinder(dir).then((href) => {
       evt.changeAddress(href);
       nav("/editor/note/index");

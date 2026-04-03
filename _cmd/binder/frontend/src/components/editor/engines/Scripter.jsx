@@ -36,8 +36,13 @@ class Scripter {
      */
     static async loadScript(url, globalName) {
         return new Promise((resolve, reject) => {
+            // 既存の同名スクリプトタグを除去（バインダー切り替え時の再読み込み対応）
+            const existing = document.querySelector(`script[data-scripter="${globalName}"]`);
+            if (existing) existing.remove();
+
             const script = document.createElement('script');
             script.src = url;
+            script.dataset.scripter = globalName;
             script.onload = () => {
                 if (globalThis[globalName]) {
                     resolve(globalThis[globalName]);

@@ -14,6 +14,13 @@ class MermaidScript {
   }
 
   /**
+   * バインダー切り替え時にグローバル状態をリセットし、次回parseで再初期化させる
+   */
+  static reset() {
+    delete globalThis.mermaid;
+  }
+
+  /**
    * 初期化処理
    */
   static async init(url, opts) {
