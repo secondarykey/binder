@@ -239,7 +239,7 @@ function Binder({ isModal, ...props }) {
                 size="small"
                 value={markedUrl}
                 onChange={(e) => setMarkedUrl(e.target.value)}
-                placeholder="https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.umd.min.js"
+                placeholder="https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.esm.js"
                 helperText={t("binder.cdnHint")}
               />
             </FormControl>

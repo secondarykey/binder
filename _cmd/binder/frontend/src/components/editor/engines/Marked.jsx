@@ -5,7 +5,7 @@ import markedVendorUrl from '../../../assets/vendor/marked.min.js?url';
 const Name = "marked"
 
 /**
- * marked.js を利用するクラス
+ * marked.js を利用するクラス（ESM import）
  */
 class MarkedScript {
 
@@ -20,16 +20,16 @@ class MarkedScript {
             if (conf && conf.markedUrl) cdnUrl = conf.markedUrl;
         } catch (e) {}
 
-        let script;
+        let m;
         if (cdnUrl) {
             // バインダー設定URL優先、失敗時にベンダーへフォールバック
-            script = await Scripter.getWithFallback(cdnUrl, markedVendorUrl);
+            m = await Scripter.importWithFallback(cdnUrl, markedVendorUrl);
         } else {
             // デフォルト: 埋め込みベンダー
-            script = await Scripter.get(markedVendorUrl);
+            m = await Scripter.import(markedVendorUrl);
         }
-        var objFunc = new Function(script);
-        objFunc();
+        // ESM named exports をグローバルに設定（marked.marked(), marked.Lexer 等で参照される）
+        globalThis.marked = m;
         //MarkedScript.registerAlertExtension();
     }
 

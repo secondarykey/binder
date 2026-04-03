@@ -7,60 +7,49 @@ class Scripter {
     }
 
     /**
-     * 指定したURLのファイルをスクリプトとして実行
-     * @param url
+     * ESM dynamic import
+     * @param {string} url ESM URL
      */
-    static async get(url) {
-        var rtn = new Promise((resolve, reject) => {
-            fetch(url).then(resp => resp.text()).then(script => {
-                //オブジェクトとして扱いたい場合はreturnで取得できる
-                resolve(script);
-            }).catch((err) => {
-                console.log(err)
-                reject(err);
-            });
-        });
-        return rtn;
-    }
-
     static async import(url) {
-        var rtn = new Promise( (res,rej) => {
-            import(/* @vite-ignore */ url).then( (m) => {
-                res(m);
-            })
-        })
-        return rtn;
+        return await import(/* @vite-ignore */ url);
     }
 
     /**
-     * CDN URLからスクリプトを取得し、失敗時にフォールバックURLから取得する
-     * @param {string} primaryUrl CDN URL
-     * @param {string} fallbackUrl ローカルベンダーURL
-     */
-    static async getWithFallback(primaryUrl, fallbackUrl) {
-        try {
-            return await Scripter.get(primaryUrl);
-        } catch (err) {
-            console.warn("CDN load failed, falling back to vendor:", err);
-            return await Scripter.get(fallbackUrl);
-        }
-    }
-
-    /**
-     * CDN ESM importを試み、失敗時にUMDベンダーファイルをフォールバックとして読み込む
+     * ESM dynamic import を試み、失敗時にフォールバックURLで再試行する
      * @param {string} primaryUrl CDN ESM URL
-     * @param {string} fallbackUrl ローカルベンダーUMD URL
-     * @param {string} globalName UMDがエクスポートするグローバル変数名
+     * @param {string} fallbackUrl ローカルベンダー ESM URL
      */
-    static async importWithFallback(primaryUrl, fallbackUrl, globalName) {
+    static async importWithFallback(primaryUrl, fallbackUrl) {
         try {
             return await Scripter.import(primaryUrl);
         } catch (err) {
-            console.warn("CDN ESM import failed, falling back to vendor UMD:", err);
-            var script = await Scripter.get(fallbackUrl);
-            new Function(script)();
-            return { default: globalThis[globalName] };
+            console.warn("CDN import failed, falling back to vendor:", err);
+            return await Scripter.import(fallbackUrl);
         }
+    }
+
+    /**
+     * UMDスクリプトを<script>タグで読み込む
+     * fetch + new Function では動作しない大規模UMDライブラリ向け。
+     * @param {string} url スクリプトURL
+     * @param {string} globalName グローバル変数名
+     */
+    static async loadScript(url, globalName) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = () => {
+                if (globalThis[globalName]) {
+                    resolve(globalThis[globalName]);
+                } else {
+                    reject(new Error(`${globalName} not found after loading ${url}`));
+                }
+            };
+            script.onerror = (err) => {
+                reject(new Error(`Failed to load script: ${url}`));
+            };
+            document.head.appendChild(script);
+        });
     }
 }
 
