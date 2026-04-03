@@ -1,7 +1,4 @@
 
-const markedName = "marked";
-const mermaidName = "marked";
-
 class Scripter {
 
     static isExists(name) {
@@ -11,7 +8,7 @@ class Scripter {
 
     /**
      * 指定したURLのファイルをスクリプトとして実行
-     * @param url 
+     * @param url
      */
     static async get(url) {
         var rtn = new Promise((resolve, reject) => {
@@ -33,6 +30,37 @@ class Scripter {
             })
         })
         return rtn;
+    }
+
+    /**
+     * CDN URLからスクリプトを取得し、失敗時にフォールバックURLから取得する
+     * @param {string} primaryUrl CDN URL
+     * @param {string} fallbackUrl ローカルベンダーURL
+     */
+    static async getWithFallback(primaryUrl, fallbackUrl) {
+        try {
+            return await Scripter.get(primaryUrl);
+        } catch (err) {
+            console.warn("CDN load failed, falling back to vendor:", err);
+            return await Scripter.get(fallbackUrl);
+        }
+    }
+
+    /**
+     * CDN ESM importを試み、失敗時にUMDベンダーファイルをフォールバックとして読み込む
+     * @param {string} primaryUrl CDN ESM URL
+     * @param {string} fallbackUrl ローカルベンダーUMD URL
+     * @param {string} globalName UMDがエクスポートするグローバル変数名
+     */
+    static async importWithFallback(primaryUrl, fallbackUrl, globalName) {
+        try {
+            return await Scripter.import(primaryUrl);
+        } catch (err) {
+            console.warn("CDN ESM import failed, falling back to vendor UMD:", err);
+            var script = await Scripter.get(fallbackUrl);
+            new Function(script)();
+            return { default: globalThis[globalName] };
+        }
     }
 }
 

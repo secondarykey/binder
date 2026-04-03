@@ -140,7 +140,10 @@
         "editRemote" : "リモート編集",
         "deleteRemoteTitle" : "リモートの削除",
         "deleteRemoteConfirm" : "「{{name}}」を削除しますか？",
-        "updateSuccess" : "Binderを更新しました"
+        "updateSuccess" : "Binderを更新しました",
+        "markedUrl" : "Marked.js CDN URL",
+        "mermaidUrl" : "Mermaid.js CDN URL",
+        "cdnHint" : "空欄の場合は内蔵バージョンを使用します。"
     },
     "binderHistory" : {
         "history" : "履歴"

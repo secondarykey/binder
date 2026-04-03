@@ -16,10 +16,12 @@ const BinderMetaFile = "binder.json"
 // 0.3.2以降はappバージョンのみで管理し、schemaフィールドは廃止。
 // 0.4.5以降はconfig.csvを廃止し、name/detailをbinder.jsonで管理する。
 type BinderMeta struct {
-	Version string `json:"version"`
-	Name    string `json:"name,omitempty"`
-	Detail  string `json:"detail,omitempty"`
-	Schema  string `json:"schema,omitempty"` // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
+	Version    string `json:"version"`
+	Name       string `json:"name,omitempty"`
+	Detail     string `json:"detail,omitempty"`
+	MarkedURL  string `json:"markedUrl,omitempty"`
+	MermaidURL string `json:"mermaidUrl,omitempty"`
+	Schema     string `json:"schema,omitempty"` // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
 }
 
 // LoadMeta はbinder.jsonを読み込む。

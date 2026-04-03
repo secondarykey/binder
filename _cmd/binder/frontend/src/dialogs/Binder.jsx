@@ -31,6 +31,8 @@ function Binder({ isModal, ...props }) {
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
+  const [markedUrl, setMarkedUrl] = useState("");
+  const [mermaidUrl, setMermaidUrl] = useState("");
 
   const [gitName, setGitName] = useState("");
   const [gitMail, setGitMail] = useState("");
@@ -69,6 +71,8 @@ function Binder({ isModal, ...props }) {
     GetConfig().then((conf) => {
       setName(conf.name);
       setDetail(conf.detail);
+      setMarkedUrl(conf.markedUrl || "");
+      setMermaidUrl(conf.mermaidUrl || "");
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -98,7 +102,7 @@ function Binder({ isModal, ...props }) {
   }, []);
 
   const handleSave = () => {
-    const config = { name, detail };
+    const config = { name, detail, markedUrl, mermaidUrl };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
@@ -214,6 +218,28 @@ function Binder({ isModal, ...props }) {
             <FormControl>
               <FormLabel>{t("common.detail")}</FormLabel>
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>{t("binder.markedUrl")}</FormLabel>
+              <TextField
+                size="small"
+                value={markedUrl}
+                onChange={(e) => setMarkedUrl(e.target.value)}
+                placeholder="https://cdn.jsdelivr.net/npm/marked@14/lib/marked.umd.min.js"
+                helperText={t("binder.cdnHint")}
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>{t("binder.mermaidUrl")}</FormLabel>
+              <TextField
+                size="small"
+                value={mermaidUrl}
+                onChange={(e) => setMermaidUrl(e.target.value)}
+                placeholder="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+                helperText={t("binder.cdnHint")}
+              />
             </FormControl>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
