@@ -1,8 +1,10 @@
 package json
 
 type Config struct {
-	Name   string `json:"name"`
-	Detail string `json:"detail"`
+	Name       string `json:"name"`
+	Detail     string `json:"detail"`
+	MarkedURL  string `json:"markedUrl"`
+	MermaidURL string `json:"mermaidUrl"`
 }
 
 type UserInfo struct {

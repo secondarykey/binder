@@ -1,12 +1,8 @@
 import Scripter from "./Scripter";
+import { GetConfig } from "../../../../bindings/binder/api/app";
+import mermaidVendorUrl from '../../../assets/vendor/mermaid.min.js?url';
 
 const Name = "mermaid";
-const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-//const URL    = "https://cdn.jsdelivr.net/npm/mermaid@11/+esm";
-//const ZenURL = "https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml/+esm";
-//const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
-//const URL = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
-//const URL = "https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.2.0/dist/mermaid-zenuml.min.js"
 
 /**
  * mermaid を利用してパースするクラス
@@ -20,29 +16,31 @@ class MermaidScript {
   /**
    * 初期化処理
    */
-  static async init(url,opts) {
+  static async init(url, opts) {
 
     if ( globalThis.mermaid !== undefined ) {
       return;
     }
     var mermaid = await this.load(url);
 
-    console.log(opts);
     mermaid.initialize(opts);
     globalThis.mermaid = mermaid;
-
-    //var z = await import(ZenURL);
-    //mermaid.registerExternalDiagrams([z.default]);
   }
 
   /**
-   * 
-   * @param {*} url 
+   * CDN URLが指定されている場合はESM importを試み、失敗時はUMDベンダーにフォールバック。
+   * 未指定の場合はベンダーUMDを直接読み込む。
+   * @param {string|null} url CDN URL（nullの場合はベンダーを使用）
    */
   static async load(url) {
-    var m = await import(/* @vite-ignore */url);
-    var mermaid = m.default;
-    return mermaid;
+    if (url) {
+      var m = await Scripter.importWithFallback(url, mermaidVendorUrl, "mermaid");
+      return m.default;
+    }
+    // デフォルト: ベンダーUMD
+    var script = await Scripter.get(mermaidVendorUrl);
+    new Function(script)();
+    return globalThis.mermaid;
   }
 
   static async parse(txt) {
@@ -66,12 +64,18 @@ class MermaidScript {
         return;
       }
 
-      this.init(URL,{ startOnLoad: false,theme:"dark",look: 'handDrawn',handDrawn:true }).then(() => {
-        func();
-      }).catch((err) => {
-        console.error(err)
-        rej(err);
-      })
+      // バインダー設定からCDN URLを取得
+      var cdnUrl = null;
+      GetConfig().then((conf) => {
+        if (conf && conf.mermaidUrl) cdnUrl = conf.mermaidUrl;
+      }).catch(() => {}).finally(() => {
+        this.init(cdnUrl, { startOnLoad: false, theme: "dark", look: 'handDrawn', handDrawn: true }).then(() => {
+          func();
+        }).catch((err) => {
+          console.error(err)
+          rej(err);
+        })
+      });
     })
 
     return rtn;

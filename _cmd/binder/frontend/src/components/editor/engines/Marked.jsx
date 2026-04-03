@@ -1,7 +1,8 @@
 import Scripter from "./Scripter";
+import { GetConfig } from "../../../../bindings/binder/api/app";
+import markedVendorUrl from '../../../assets/vendor/marked.min.js?url';
 
 const Name = "marked"
-const URL = "https://cdn.jsdelivr.net/npm/marked@14/lib/marked.umd.min.js";
 
 /**
  * marked.js を利用するクラス
@@ -13,17 +14,23 @@ class MarkedScript {
     }
 
     static async init() {
-        var rtn = new Promise( (res,rej) => {
-          Scripter.get(URL).then( (s) => {
-            var objFunc = new Function(s);
-            objFunc();
-            //MarkedScript.registerAlertExtension();
-            res();
-          }).catch( (err) => {
-            rej(err);
-          });
-        })
-        return rtn;
+        let cdnUrl = null;
+        try {
+            const conf = await GetConfig();
+            if (conf && conf.markedUrl) cdnUrl = conf.markedUrl;
+        } catch (e) {}
+
+        let script;
+        if (cdnUrl) {
+            // バインダー設定URL優先、失敗時にベンダーへフォールバック
+            script = await Scripter.getWithFallback(cdnUrl, markedVendorUrl);
+        } else {
+            // デフォルト: 埋め込みベンダー
+            script = await Scripter.get(markedVendorUrl);
+        }
+        var objFunc = new Function(script);
+        objFunc();
+        //MarkedScript.registerAlertExtension();
     }
 
     /**
