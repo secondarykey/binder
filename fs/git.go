@@ -26,7 +26,7 @@ var NoUpdated = fmt.Errorf("updates to the file")
 var UpdatedFilesError = fmt.Errorf("No updated files")
 
 func M(header string, name string) string {
-	return fmt.Sprintf("%s : %s", header, name)
+	return fmt.Sprintf("DB %s : %s", header, name)
 }
 
 type ModifiedFiles []*Modified
