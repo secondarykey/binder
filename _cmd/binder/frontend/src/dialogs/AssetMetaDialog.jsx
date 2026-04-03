@@ -41,7 +41,7 @@ function AssetMetaDialog({ open, id, onClose }) {
   }, [open, id]);
 
   const handleSave = () => {
-    EditAsset({ id, parentId, name, alias, detail, binary }, "").then(() => {
+    EditAsset({ id, parentId, name, alias, detail, binary, mime }, "").then(() => {
       evt.refreshTree();
       evt.showSuccessMessage(t("asset.updateSuccess"));
       onClose();
@@ -75,7 +75,7 @@ function AssetMetaDialog({ open, id, onClose }) {
 
       <FormControl>
         <FormLabel>{t("common.mime")}</FormLabel>
-        <TextField size="small" value={mime} InputProps={{ readOnly: true }} />
+        <TextField size="small" value={mime} onChange={(e) => setMime(e.target.value)} />
       </FormControl>
 
       <FormControl>

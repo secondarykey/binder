@@ -113,6 +113,17 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 		n.Id = b.generateId()
 		n.Alias = n.Id
 
+		// LayoutTemplateが未指定の場合、seqが最小のlayoutテンプレートをデフォルトとして設定する
+		if n.LayoutTemplate == "" {
+			lt, err := b.db.FindDefaultLayoutTemplate()
+			if err != nil {
+				return nil, xerrors.Errorf("db.FindDefaultLayoutTemplate() error: %w", err)
+			}
+			if lt != nil {
+				n.LayoutTemplate = lt.Id
+			}
+		}
+
 		// ContentTemplateが未指定の場合、seqが最小のcontentテンプレートをデフォルトとして設定する
 		if n.ContentTemplate == "" {
 			dt, err := b.db.FindDefaultContentTemplate()

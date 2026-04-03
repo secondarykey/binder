@@ -166,8 +166,7 @@ func Load(dir string) (*Binder, error) {
 		}
 	}
 
-	//TODO ユーザ情報から取得
-	b.op = createUserOp("user")
+	b.op = createUserOp(bfs.UserName())
 
 	return &b, nil
 }
@@ -248,6 +247,32 @@ func (b *Binder) GetCurrentBranch() (string, error) {
 		return "", xerrors.Errorf("fs.CurrentBranch() error: %w", err)
 	}
 	return name, nil
+}
+
+func (b *Binder) ListBranches() ([]string, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	branches, err := b.fileSystem.ListBranches()
+	if err != nil {
+		return nil, xerrors.Errorf("fs.ListBranches() error: %w", err)
+	}
+	return branches, nil
+}
+
+func (b *Binder) RenameBranch(oldName, newName string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	err := b.fileSystem.RenameBranch(oldName, newName)
+	if err != nil {
+		return xerrors.Errorf("fs.RenameBranch() error: %w", err)
+	}
+	return nil
 }
 
 func (b *Binder) GetRemoteList() ([]*json.Remote, error) {

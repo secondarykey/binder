@@ -423,6 +423,228 @@ func (a *App) RestoreHistory(typ string, id string, hash string) error {
 	return nil
 }
 
+func (a *App) GetOverallHistory(limit int, offset int) (*json.HistoryPage, error) {
+
+	defer log.PrintTrace(log.Func("GetOverallHistory()"))
+
+	commits, hasMore, err := a.current.GetOverallHistory(limit, offset)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+	}
+	return toHistoryPage(commits, hasMore), nil
+}
+
+func (a *App) GetCommitFiles(hash string) ([]*json.CommitFileEntry, error) {
+
+	defer log.PrintTrace(log.Func("GetCommitFiles()", hash))
+
+	files, err := a.current.GetCommitFiles(hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+	}
+	return toCommitFileEntries(files, a.current), nil
+}
+
+func (a *App) RestoreToCommit(hash string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("RestoreToCommit()", hash))
+
+	// 未コミット変更のチェック
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	if len(ids) > 0 {
+		return nil, fmt.Errorf("uncommitted changes exist")
+	}
+
+	// ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err = a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// リポジトリを直接開いて復元
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	err = tmpFs.RestoreToCommit(hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// Binder を再読み込み
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
+// --- ByPath 系: バインダー未オープン状態でディレクトリパスから直接操作する ---
+
+// GetOverallHistoryByPath はバインダーを開かずにディレクトリパスから全体履歴を取得する。
+// binder.Load() を試み、失敗したら fs.Load() にフォールバックする。
+func (a *App) GetOverallHistoryByPath(dir string, limit int, offset int) (*json.HistoryPage, error) {
+
+	defer log.PrintTrace(log.Func("GetOverallHistoryByPath()", dir))
+
+	// まず binder.Load() を試みる
+	b, err := binder.Load(dir)
+	if err == nil {
+		defer b.Close()
+		commits, hasMore, err := b.GetOverallHistory(limit, offset)
+		if err != nil {
+			log.PrintStackTrace(err)
+			return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+		}
+		return toHistoryPage(commits, hasMore), nil
+	}
+
+	// binder.Load() 失敗 → fs.Load() にフォールバック
+	log.WarnE("binder.Load() failed, falling back to fs.Load()", err)
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+	commits, hasMore, err := tmpFs.GetOverallHistory(limit, offset)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+	}
+	return toHistoryPage(commits, hasMore), nil
+}
+
+// GetCommitFilesByPath はバインダーを開かずにディレクトリパスからコミットのファイル一覧を取得する。
+func (a *App) GetCommitFilesByPath(dir string, hash string) ([]*json.CommitFileEntry, error) {
+
+	defer log.PrintTrace(log.Func("GetCommitFilesByPath()", dir, hash))
+
+	// まず binder.Load() を試みる（名前解決のため）
+	b, err := binder.Load(dir)
+	if err == nil {
+		defer b.Close()
+		files, err := b.GetCommitFiles(hash)
+		if err != nil {
+			log.PrintStackTrace(err)
+			return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+		}
+		return toCommitFileEntries(files, b), nil
+	}
+
+	// binder.Load() 失敗 → fs.Load() にフォールバック（名前解決なし）
+	log.WarnE("binder.Load() failed, falling back to fs.Load()", err)
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+	files, err := tmpFs.GetCommitFiles(hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+	}
+	// 名前解決なし: パスをそのまま名前にする
+	entries := make([]*json.CommitFileEntry, len(files))
+	for i, f := range files {
+		entries[i] = &json.CommitFileEntry{
+			Typ:    f.Typ,
+			Id:     f.Id,
+			Action: f.Action,
+			Name:   f.Id,
+		}
+	}
+	return entries, nil
+}
+
+// RestoreToCommitByPath はバインダーを開かずにディレクトリパスから指定コミットに復元する。
+// もし a.current が同じディレクトリを開いていたら Close→Restore→Reload する。
+func (a *App) RestoreToCommitByPath(dir string, hash string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("RestoreToCommitByPath()", dir, hash))
+
+	// a.current が同じディレクトリを開いていたら既存の RestoreToCommit と同じフローにする
+	if a.current != nil && a.current.Dir() == dir {
+		return a.RestoreToCommit(hash)
+	}
+
+	// バインダー未オープン: fs.Load で直接復元
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	err = tmpFs.RestoreToCommit(hash)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success"}, nil
+}
+
+// toHistoryPage は CommitInfo スライスを HistoryPage JSON に変換する。
+func toHistoryPage(commits []*fs.CommitInfo, hasMore bool) *json.HistoryPage {
+	entries := make([]*json.HistoryEntry, len(commits))
+	for i, c := range commits {
+		entries[i] = &json.HistoryEntry{
+			Hash:    c.Hash,
+			Message: c.Message,
+			When:    c.When.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+	return &json.HistoryPage{Entries: entries, HasMore: hasMore}
+}
+
+// toCommitFileEntries は CommitFile スライスを CommitFileEntry JSON に変換する。
+// Binder が利用可能なら Structure から名前解決する。
+func toCommitFileEntries(files []*fs.CommitFile, b *binder.Binder) []*json.CommitFileEntry {
+	entries := make([]*json.CommitFileEntry, len(files))
+	for i, f := range files {
+		name := f.Id
+		if b != nil {
+			switch f.Typ {
+			case "database", "publish", "other":
+				name = f.Id
+			case "asset":
+				name = f.Id
+			default:
+				if s, err := b.GetStructure(f.Id); err == nil && s.Name != "" {
+					name = s.Name
+				}
+			}
+		}
+		entries[i] = &json.CommitFileEntry{
+			Typ:    f.Typ,
+			Id:     f.Id,
+			Action: f.Action,
+			Name:   name,
+		}
+	}
+	return entries
+}
+
 func (a *App) GetHistory(typ string, id string, limit int, offset int) (*json.HistoryPage, error) {
 
 	defer log.PrintTrace(log.Func("GetHistory()", typ, id))
@@ -454,4 +676,127 @@ func (a *App) GetHistoryPatch(typ string, id string, hash string) (*binder.Patch
 		return nil, fmt.Errorf("GetHistoryPatch() error: %+v", err)
 	}
 	return p, nil
+}
+
+func (a *App) ListBranches() ([]string, error) {
+
+	defer log.PrintTrace(log.Func("ListBranches()"))
+
+	branches, err := a.current.ListBranches()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("ListBranches() error: %+v", err)
+	}
+	return branches, nil
+}
+
+func (a *App) SwitchBranch(name string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("SwitchBranch()", name))
+
+	// 未コミット変更のチェック
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	if len(ids) > 0 {
+		return nil, fmt.Errorf("uncommitted changes exist")
+	}
+
+	// ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err = a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// リポジトリを直接開いてチェックアウト
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		// Binder を復旧
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	err = tmpFs.CheckoutBranch(name)
+	if err != nil {
+		log.PrintStackTrace(err)
+		// Binder を復旧
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// Binder を再読み込み
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
+func (a *App) CreateBranch(name string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("CreateBranch()", name))
+
+	// ディレクトリを保存してから Binder を閉じる
+	dir := a.current.Dir()
+
+	err := a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	// リポジトリを直接開いてブランチ作成+チェックアウト
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	err = tmpFs.Branch(name)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	// Binder を再読み込み
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
+func (a *App) RenameBranch(oldName, newName string) error {
+
+	defer log.PrintTrace(log.Func("RenameBranch()", oldName, newName))
+
+	err := a.current.RenameBranch(oldName, newName)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("RenameBranch() error: %+v", err)
+	}
+	return nil
 }

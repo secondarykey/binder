@@ -8,6 +8,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// GetStructure は指定IDのStructureを返す
+func (b *Binder) GetStructure(id string) (*model.Structure, error) {
+	return b.db.GetStructure(id)
+}
+
 // createStructure は新しいエンティティのStructure行を作成する
 func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) error {
 

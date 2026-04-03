@@ -250,6 +250,10 @@ function Editor(props) {
   //開いた時の初期処理
   useEffect(() => {
 
+    // モード切替時のエディタ/ビューア開閉でアニメーションさせない
+    const editorContentEl = document.getElementById('editorContent');
+    editorContentEl?.classList.add('no-transition');
+
     evt.clearMessage();
     // ツリー選択を同期（画像貼り付け・ツリー展開に必要）
     evt.selectTreeNode(id);
@@ -365,6 +369,13 @@ function Editor(props) {
       }, 200);
     }
 
+    // レイアウト反映後にtransitionを再有効化（二重rAFでReact再描画完了を待つ）
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        editorContentEl?.classList.remove('no-transition');
+      });
+    });
+
   }, [id, restoredAt]);
 
   // 検索ウィンドウからのナビゲーション: searchQuery があればエディタ内検索を自動で開く
@@ -433,7 +444,7 @@ function Editor(props) {
 
   // モードに対応するスニペット一覧
   const snippetList = (() => {
-    if (mode === Mode.note) return snippets.markdowns ?? [];
+    if (mode === Mode.note) return [...(snippets.markdowns ?? []), ...(snippets.templates ?? [])];
     if (mode === Mode.diagram) return snippets.diagrams ?? [];
     if (mode === Mode.template) return snippets.templates ?? [];
     return [];

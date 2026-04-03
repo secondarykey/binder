@@ -9,19 +9,21 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import HistoryIcon from '@mui/icons-material/History';
 
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
          EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
+import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
@@ -675,6 +677,15 @@ function BinderTree(props) {
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
         {t("tree.publish")}
+      </MenuItem>
+      <Divider />
+      {/** ブランチ変更 */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
+        <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
+      </MenuItem>
+      {/** 全体の履歴 */}
+      <MenuItem onClick={() => { closeMoreMenu(); OpenOverallHistoryWindow(""); }}>
+        <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.overallHistory")}
       </MenuItem>
       <Divider />
       {/** リモートにPush */}
