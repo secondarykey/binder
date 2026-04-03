@@ -9,9 +9,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
-import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch } from "../../bindings/binder/api/app";
+import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs } from "../../bindings/binder/api/app";
 import MarkedScript from "../components/editor/engines/Marked";
 import MermaidScript from "../components/editor/engines/Mermaid";
+import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
 import "../i18n/config";
@@ -123,13 +124,23 @@ function Binder({ isModal, ...props }) {
     setMarkedStatus("");
     setMermaidStatus("");
     try {
+      // ホワイトリストを取得
+      let allowedDomains = [];
+      try {
+        allowedDomains = await GetAllowedCDNs() || [];
+      } catch (e) {}
+
       const config = { name, detail, markedUrl, mermaidUrl };
       await EditConfig(config);
 
       // marked の検証と差し替え
       if (markedUrl) {
-        const result = await MarkedScript.loadAndValidate(markedUrl);
-        setMarkedStatus(result.success ? "ok" : "error");
+        if (!Scripter.isAllowedUrl(markedUrl, allowedDomains)) {
+          setMarkedStatus("error");
+        } else {
+          const result = await MarkedScript.loadAndValidate(markedUrl);
+          setMarkedStatus(result.success ? "ok" : "error");
+        }
       } else {
         MarkedScript.reset();
         setMarkedStatus("");
@@ -137,8 +148,12 @@ function Binder({ isModal, ...props }) {
 
       // mermaid の検証と差し替え
       if (mermaidUrl) {
-        const result = await MermaidScript.loadAndValidate(mermaidUrl);
-        setMermaidStatus(result.success ? "ok" : "error");
+        if (!Scripter.isAllowedUrl(mermaidUrl, allowedDomains)) {
+          setMermaidStatus("error");
+        } else {
+          const result = await MermaidScript.loadAndValidate(mermaidUrl);
+          setMermaidStatus(result.success ? "ok" : "error");
+        }
       } else {
         MermaidScript.reset();
         setMermaidStatus("");

@@ -18,12 +18,13 @@ const (
 )
 
 type Setting struct {
-	Position   *Position `json:"position"`
-	Path       *Path     `json:"path"`
-	Look       *Look     `json:"lookAndFeel"`
-	Git        *Git      `json:"git"`
-	Language   string    `json:"language"`
-	AppVersion string    `json:"appVersion,omitempty"`
+	Position    *Position `json:"position"`
+	Path        *Path     `json:"path"`
+	Look        *Look     `json:"lookAndFeel"`
+	Git         *Git      `json:"git"`
+	Language    string    `json:"language"`
+	AppVersion  string    `json:"appVersion,omitempty"`
+	AllowedCDNs []string  `json:"allowedCdns"`
 }
 
 func (s Setting) IsDefault() bool {
@@ -129,6 +130,9 @@ func Get() *Setting {
 		ds := def()
 		pSet.Look.Editor = ds.Look.Editor
 	}
+	if pSet.AllowedCDNs == nil {
+		pSet.AllowedCDNs = defaultAllowedCDNs()
+	}
 	return pSet
 }
 
@@ -226,7 +230,18 @@ func def() *Setting {
 	auth.File = ""
 	set.Git = &auth
 
+	// CDNホワイトリストのデフォルト
+	set.AllowedCDNs = defaultAllowedCDNs()
+
 	return &set
+}
+
+func defaultAllowedCDNs() []string {
+	return []string{
+		"cdn.jsdelivr.net",
+		"cdnjs.cloudflare.com",
+		"unpkg.com",
+	}
 }
 
 func GetFont() *Font {
@@ -324,6 +339,19 @@ func SaveGit(g *Git) error {
 func SaveTheme(theme string) error {
 	obj := Get()
 	obj.Look.Theme = theme
+	return obj.save()
+}
+
+// GetAllowedCDNs はスクリプト読み込みを許可するCDNドメインの一覧を返す。
+func GetAllowedCDNs() []string {
+	obj := Get()
+	return obj.AllowedCDNs
+}
+
+// SaveAllowedCDNs はスクリプト読み込みを許可するCDNドメインの一覧を保存する。
+func SaveAllowedCDNs(cdns []string) error {
+	obj := Get()
+	obj.AllowedCDNs = cdns
 	return obj.save()
 }
 

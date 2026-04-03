@@ -117,3 +117,15 @@ func (a *App) GetLanguageData(code string) (string, error) {
 	defer log.PrintTrace(log.Func("GetLanguageData()"))
 	return settings.ReadLanguageJSON(code)
 }
+
+// GetAllowedCDNs はスクリプト読み込みを許可するCDNドメイン一覧を返す。
+func (a *App) GetAllowedCDNs() []string {
+	defer log.PrintTrace(log.Func("GetAllowedCDNs()"))
+	return settings.GetAllowedCDNs()
+}
+
+// SaveAllowedCDNs はスクリプト読み込みを許可するCDNドメイン一覧を保存する。
+func (a *App) SaveAllowedCDNs(cdns []string) error {
+	defer log.PrintTrace(log.Func("SaveAllowedCDNs()"))
+	return settings.SaveAllowedCDNs(cdns)
+}

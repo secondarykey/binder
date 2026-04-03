@@ -124,7 +124,12 @@
         "license" : "ライセンス",
         "thirdPartyLicense" : "サードパーティライセンス",
         "systemLog" : "システムログ",
-        "openSystemLog" : "システムログを開く"
+        "openSystemLog" : "システムログを開く",
+        "allowedCDNs" : "許可するCDNドメイン",
+        "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
+        "addDomain" : "ドメインを追加",
+        "domainPlaceholder" : "例: cdn.jsdelivr.net",
+        "security" : "セキュリティ"
     },
     "binder" : {
         "editTitle" : "Binder編集",

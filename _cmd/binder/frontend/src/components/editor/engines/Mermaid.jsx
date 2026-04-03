@@ -1,5 +1,5 @@
 import Scripter from "./Scripter";
-import { GetConfig } from "../../../../bindings/binder/api/app";
+import { GetConfig, GetAllowedCDNs } from "../../../../bindings/binder/api/app";
 import mermaidVendorUrl from '../../../assets/vendor/mermaid.min.js?url';
 
 const Name = "mermaid";
@@ -111,11 +111,19 @@ class MermaidScript {
         return;
       }
 
-      // バインダー設定からCDN URLを取得
+      // バインダー設定からCDN URLを取得し、ホワイトリスト検証
       var cdnUrl = null;
       GetConfig().then((conf) => {
         if (conf && conf.mermaidUrl) cdnUrl = conf.mermaidUrl;
-      }).catch(() => {}).finally(() => {
+      }).catch(() => {}).then(() => {
+        if (!cdnUrl) return;
+        return GetAllowedCDNs().then((domains) => {
+          if (!Scripter.isAllowedUrl(cdnUrl, domains || [])) {
+            console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl);
+            cdnUrl = null;
+          }
+        }).catch(() => {});
+      }).then(() => {
         this.init(cdnUrl, DefaultOpts).then(() => {
           func();
         }).catch((err) => {
