@@ -307,6 +307,8 @@ function Editor(props) {
       setViewer(true);
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
+      setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
+      setPreviewOtherTemplateId(""); // 同上
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
