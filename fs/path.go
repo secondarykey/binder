@@ -115,11 +115,15 @@ func resourceFile(s string, ext string) string {
 const publicAssetsDir = "assets"
 const publicMetaSubDir = "meta"
 
+func publicMetaFilePath(alias string) string {
+	return filepath.Join(publishDir, resourceDir, publicMetaSubDir, alias)
+}
+
 func PublicMetaFile(n *json.Note) string {
 	if n == nil {
 		return "error"
 	}
-	return filepath.Join(publishDir, resourceDir, publicMetaSubDir, n.Alias)
+	return publicMetaFilePath(n.Alias)
 }
 
 func PublicAssetFile(a *json.Asset) string {
