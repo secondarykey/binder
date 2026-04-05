@@ -713,6 +713,7 @@ function Editor(props) {
     cursorLineRef.current = txt.substring(0, e.target.selectionStart).split('\n').length;
     setText(txt);
 
+    setUpdated(true);
     writeFn(mode, id, txt).then(() => {
       console.debug("Write!");
       evt.markModified(id);
@@ -756,6 +757,7 @@ function Editor(props) {
   const handleCommit = () => {
     Commit(mode, id, comment).then(() => {
       setUpdated(false);
+      evt.commitDone();
       evt.showSuccessMessage("Commit.")
     }).catch((err) => {
       evt.showErrorMessage(err);
