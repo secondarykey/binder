@@ -716,8 +716,8 @@ function BinderTree(props) {
         <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
       </MenuItem>
       {/** ダウンロード */}
-      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
-        <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
+      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
       </MenuItem>
       <Divider />
       {/** ブランチ変更 */}
