@@ -1,7 +1,4 @@
 
-const markedName = "marked";
-const mermaidName = "marked";
-
 class Scripter {
 
     static isExists(name) {
@@ -10,29 +7,69 @@ class Scripter {
     }
 
     /**
-     * 指定したURLのファイルをスクリプトとして実行
-     * @param url 
+     * ESM dynamic import
+     * @param {string} url ESM URL
      */
-    static async get(url) {
-        var rtn = new Promise((resolve, reject) => {
-            fetch(url).then(resp => resp.text()).then(script => {
-                //オブジェクトとして扱いたい場合はreturnで取得できる
-                resolve(script);
-            }).catch((err) => {
-                console.log(err)
-                reject(err);
-            });
-        });
-        return rtn;
+    static async import(url) {
+        return await import(/* @vite-ignore */ url);
     }
 
-    static async import(url) {
-        var rtn = new Promise( (res,rej) => {
-            import(/* @vite-ignore */ url).then( (m) => {
-                res(m);
-            })
-        })
-        return rtn;
+    /**
+     * ESM dynamic import を試み、失敗時にフォールバックURLで再試行する
+     * @param {string} primaryUrl CDN ESM URL
+     * @param {string} fallbackUrl ローカルベンダー ESM URL
+     */
+    static async importWithFallback(primaryUrl, fallbackUrl) {
+        try {
+            return await Scripter.import(primaryUrl);
+        } catch (err) {
+            console.warn("CDN import failed, falling back to vendor:", err);
+            return await Scripter.import(fallbackUrl);
+        }
+    }
+
+    /**
+     * UMDスクリプトを<script>タグで読み込む
+     * fetch + new Function では動作しない大規模UMDライブラリ向け。
+     * @param {string} url スクリプトURL
+     * @param {string} globalName グローバル変数名
+     */
+    static async loadScript(url, globalName) {
+        return new Promise((resolve, reject) => {
+            // 既存の同名スクリプトタグを除去（バインダー切り替え時の再読み込み対応）
+            const existing = document.querySelector(`script[data-scripter="${globalName}"]`);
+            if (existing) existing.remove();
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.dataset.scripter = globalName;
+            script.onload = () => {
+                if (globalThis[globalName]) {
+                    resolve(globalThis[globalName]);
+                } else {
+                    reject(new Error(`${globalName} not found after loading ${url}`));
+                }
+            };
+            script.onerror = (err) => {
+                reject(new Error(`Failed to load script: ${url}`));
+            };
+            document.head.appendChild(script);
+        });
+    }
+    /**
+     * URLのホスト名がホワイトリストに含まれているか検証する
+     * @param {string} url 検証するURL
+     * @param {string[]} allowedDomains 許可ドメインリスト
+     * @returns {boolean} 許可されている場合true
+     */
+    static isAllowedUrl(url, allowedDomains) {
+        if (!url || !allowedDomains || allowedDomains.length === 0) return false;
+        try {
+            const hostname = new URL(url).hostname;
+            return allowedDomains.some(d => hostname === d || hostname.endsWith('.' + d));
+        } catch {
+            return false;
+        }
     }
 }
 

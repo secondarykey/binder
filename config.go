@@ -24,6 +24,8 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 
 	meta.Name = conf.Name
 	meta.Detail = conf.Detail
+	meta.MarkedURL = conf.MarkedURL
+	meta.MermaidURL = conf.MermaidURL
 
 	if err = b.fileSystem.SaveMetaData(meta); err != nil {
 		return xerrors.Errorf("SaveMetaData() error: %w", err)
@@ -53,6 +55,8 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 	var conf json.Config
 	conf.Name = meta.Name
 	conf.Detail = meta.Detail
+	conf.MarkedURL = meta.MarkedURL
+	conf.MermaidURL = meta.MermaidURL
 	return &conf, nil
 }
 

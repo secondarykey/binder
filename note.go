@@ -158,6 +158,19 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 			return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 		}
 
+		// alias変更時に公開済みファイルをリネーム
+		oldS, err := b.db.GetStructure(n.Id)
+		if err != nil {
+			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+		}
+		if oldS.Alias != n.Alias {
+			renamedFiles, err := b.fileSystem.RenamePublishedNote(oldS.Alias, n.Alias)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.RenamePublishedNote() error: %w", err)
+			}
+			files = append(files, renamedFiles...)
+		}
+
 		m := model.ConvertNote(n)
 		err = b.db.UpdateNote(m, b.op)
 		if err != nil {

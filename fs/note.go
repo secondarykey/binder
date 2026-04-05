@@ -206,3 +206,38 @@ func (f *FileSystem) UnpublishNoteMeta(n *json.Note) (string, bool) {
 	f.remove(pub) //nolint: errcheck
 	return pub, true
 }
+
+// RenamePublishedNote は公開済みのノートファイルを旧aliasから新aliasへ移動する。
+// 対象: docs/pages/{alias}.html および docs/images/meta/{alias}
+// ファイルが存在しない場合はスキップする。変更されたファイルパスのスライスを返す。
+func (f *FileSystem) RenamePublishedNote(oldAlias, newAlias string) ([]string, error) {
+	var files []string
+
+	// HTML ファイル
+	oldHTML := htmlFile(oldAlias)
+	newHTML := htmlFile(newAlias)
+	if f.isExist(oldHTML) {
+		if err := f.copyFile(newHTML, oldHTML); err != nil {
+			return nil, xerrors.Errorf("copyFile(%s) error: %w", oldHTML, err)
+		}
+		if err := f.remove(oldHTML); err != nil {
+			return nil, xerrors.Errorf("remove(%s) error: %w", oldHTML, err)
+		}
+		files = append(files, oldHTML, newHTML)
+	}
+
+	// メタ画像
+	oldMeta := publicMetaFilePath(oldAlias)
+	newMeta := publicMetaFilePath(newAlias)
+	if f.isExist(oldMeta) {
+		if err := f.copyFile(newMeta, oldMeta); err != nil {
+			return nil, xerrors.Errorf("copyFile(%s) error: %w", oldMeta, err)
+		}
+		if err := f.remove(oldMeta); err != nil {
+			return nil, xerrors.Errorf("remove(%s) error: %w", oldMeta, err)
+		}
+		files = append(files, oldMeta, newMeta)
+	}
+
+	return files, nil
+}

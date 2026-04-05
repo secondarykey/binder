@@ -7,8 +7,12 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
+import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
-import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch } from "../../bindings/binder/api/app";
+import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs } from "../../bindings/binder/api/app";
+import MarkedScript from "../components/editor/engines/Marked";
+import MermaidScript from "../components/editor/engines/Mermaid";
+import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
 import "../i18n/config";
@@ -16,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 
 const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
+  { key: "script", labelKey: "binder.script" },
   { key: "git", labelKey: "binder.git" },
 ];
 
@@ -31,6 +36,11 @@ function Binder({ isModal, ...props }) {
 
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
+  const [markedUrl, setMarkedUrl] = useState("");
+  const [mermaidUrl, setMermaidUrl] = useState("");
+  const [scriptSaving, setScriptSaving] = useState(false);
+  const [markedStatus, setMarkedStatus] = useState("");  // "", "ok", "error"
+  const [mermaidStatus, setMermaidStatus] = useState(""); // "", "ok", "error"
 
   const [gitName, setGitName] = useState("");
   const [gitMail, setGitMail] = useState("");
@@ -69,6 +79,8 @@ function Binder({ isModal, ...props }) {
     GetConfig().then((conf) => {
       setName(conf.name);
       setDetail(conf.detail);
+      setMarkedUrl(conf.markedUrl || "");
+      setMermaidUrl(conf.mermaidUrl || "");
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -98,13 +110,61 @@ function Binder({ isModal, ...props }) {
   }, []);
 
   const handleSave = () => {
-    const config = { name, detail };
+    const config = { name, detail, markedUrl, mermaidUrl };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
+  };
+
+  const handleSaveScript = async () => {
+    setScriptSaving(true);
+    setMarkedStatus("");
+    setMermaidStatus("");
+    try {
+      // ホワイトリストを取得
+      let allowedDomains = [];
+      try {
+        allowedDomains = await GetAllowedCDNs() || [];
+      } catch (e) {}
+
+      const config = { name, detail, markedUrl, mermaidUrl };
+      await EditConfig(config);
+
+      // marked の検証と差し替え
+      if (markedUrl) {
+        if (!Scripter.isAllowedUrl(markedUrl, allowedDomains)) {
+          setMarkedStatus("error");
+        } else {
+          const result = await MarkedScript.loadAndValidate(markedUrl);
+          setMarkedStatus(result.success ? "ok" : "error");
+        }
+      } else {
+        MarkedScript.reset();
+        setMarkedStatus("");
+      }
+
+      // mermaid の検証と差し替え
+      if (mermaidUrl) {
+        if (!Scripter.isAllowedUrl(mermaidUrl, allowedDomains)) {
+          setMermaidStatus("error");
+        } else {
+          const result = await MermaidScript.loadAndValidate(mermaidUrl);
+          setMermaidStatus(result.success ? "ok" : "error");
+        }
+      } else {
+        MermaidScript.reset();
+        setMermaidStatus("");
+      }
+
+      evt.showSuccessMessage(t("binder.updateSuccess"));
+    } catch (err) {
+      evt.showErrorMessage(err);
+    } finally {
+      setScriptSaving(false);
+    }
   };
 
   const handleSaveUserInfo = () => {
@@ -218,6 +278,55 @@ function Binder({ isModal, ...props }) {
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
               <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
+                <SaveIcon fontSize="large" />
+              </IconButton>
+            </Box>
+
+          </div>
+        )}
+
+        {activeSection === "script" && (
+          <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
+
+            <FormControl>
+              <FormLabel>{t("binder.markedUrl")}</FormLabel>
+              <TextField
+                size="small"
+                value={markedUrl}
+                onChange={(e) => { setMarkedUrl(e.target.value); setMarkedStatus(""); }}
+                placeholder="https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.esm.js"
+                helperText={
+                  markedStatus === "ok" ? t("binder.cdnOk") :
+                  markedStatus === "error" ? t("binder.cdnLoadError") :
+                  t("binder.cdnHint")
+                }
+                error={markedStatus === "error"}
+                color={markedStatus === "ok" ? "success" : undefined}
+                focused={markedStatus === "ok"}
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>{t("binder.mermaidUrl")}</FormLabel>
+              <TextField
+                size="small"
+                value={mermaidUrl}
+                onChange={(e) => { setMermaidUrl(e.target.value); setMermaidStatus(""); }}
+                placeholder="https://cdn.jsdelivr.net/npm/mermaid@11.14.0/dist/mermaid.esm.min.mjs"
+                helperText={
+                  mermaidStatus === "ok" ? t("binder.cdnOk") :
+                  mermaidStatus === "error" ? t("binder.cdnLoadError") :
+                  t("binder.cdnHint")
+                }
+                error={mermaidStatus === "error"}
+                color={mermaidStatus === "ok" ? "success" : undefined}
+                focused={mermaidStatus === "ok"}
+              />
+            </FormControl>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
+              {scriptSaving && <CircularProgress size={24} />}
+              <IconButton onClick={handleSaveScript} disabled={scriptSaving} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
                 <SaveIcon fontSize="large" />
               </IconButton>
             </Box>

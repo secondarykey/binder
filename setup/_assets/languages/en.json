@@ -124,7 +124,12 @@
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",
-        "openSystemLog" : "Open System Log"
+        "openSystemLog" : "Open System Log",
+        "allowedCDNs" : "Allowed CDN Domains",
+        "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
+        "addDomain" : "Add Domain",
+        "domainPlaceholder" : "e.g. cdn.jsdelivr.net",
+        "security" : "Security"
     },
     "binder" : {
         "editTitle" : "Edit Binder",
@@ -140,7 +145,13 @@
         "editRemote" : "Edit Remote",
         "deleteRemoteTitle" : "Delete Remote",
         "deleteRemoteConfirm" : "Delete \"{{name}}\"?",
-        "updateSuccess" : "Binder updated."
+        "updateSuccess" : "Binder updated.",
+        "script" : "Script",
+        "markedUrl" : "Marked.js CDN URL",
+        "mermaidUrl" : "Mermaid.js CDN URL",
+        "cdnHint" : "Leave empty to use the bundled version.",
+        "cdnOk" : "Loaded successfully from specified URL.",
+        "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used."
     },
     "binderHistory" : {
         "history" : "History"
@@ -204,7 +215,8 @@
         "renameSuccess" : "Renamed branch: {{old}} → {{new}}",
         "reloadError" : "Failed to reload after branch switch. Please reopen the Binder.",
         "uncommittedError" : "Please commit changes before switching branches.",
-        "confirmSwitch" : "Switch to this branch? The binder will be reloaded."
+        "confirmSwitch" : "Switch to this branch? The binder will be reloaded.",
+        "confirmCreate" : "Create a new branch '{{name}}' from current branch '{{from}}'?"
     },
     "commitModal" : {
         "title" : "Commit",

@@ -1,7 +1,9 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetThemeList, GetLanguageList } from "../../bindings/binder/api/app";
+import { Box, Button, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetThemeList, GetLanguageList, GetAllowedCDNs, SaveAllowedCDNs } from "../../bindings/binder/api/app";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog, OpenSyslogWindow } from "../../bindings/main/window";
 import SaveIcon from '@mui/icons-material/Save';
@@ -38,6 +40,8 @@ function Setting({ isModal, ...props }) {
   );
   const [themeList, setThemeList] = useState([]);
   const [langList, setLangList] = useState([]);
+  const [allowedCDNs, setAllowedCDNs] = useState([]);
+  const [newDomain, setNewDomain] = useState("");
 
   useEffect(() => {
 
@@ -64,6 +68,9 @@ function Setting({ isModal, ...props }) {
     }).catch(() => {});
     GetLanguageList().then((list) => {
       setLangList(list || []);
+    }).catch(() => {});
+    GetAllowedCDNs().then((cdns) => {
+      setAllowedCDNs(cdns || []);
     }).catch(() => {});
   }, []);
 
@@ -111,6 +118,25 @@ function Setting({ isModal, ...props }) {
     });
   };
 
+  const handleAddDomain = () => {
+    const domain = newDomain.trim().toLowerCase();
+    if (!domain || allowedCDNs.includes(domain)) return;
+    const updated = [...allowedCDNs, domain];
+    setAllowedCDNs(updated);
+    setNewDomain("");
+    SaveAllowedCDNs(updated).then(() => {
+      evt.showSuccessMessage(t("common.updated"));
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
+  const handleRemoveDomain = (domain) => {
+    const updated = allowedCDNs.filter((d) => d !== domain);
+    setAllowedCDNs(updated);
+    SaveAllowedCDNs(updated).then(() => {
+      evt.showSuccessMessage(t("common.updated"));
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   const handleSwitch = (e, caller) => {
     caller(e.target.checked);
   }
@@ -120,6 +146,7 @@ function Setting({ isModal, ...props }) {
     { key: "editor", label: t("setting.editor") },
     { key: "snippet", label: t("setting.snippet") },
     { key: "git", label: t("setting.git") },
+    { key: "security", label: t("setting.security") },
     { key: "license", label: t("setting.license") },
   ];
 
@@ -303,6 +330,62 @@ function Setting({ isModal, ...props }) {
 
         {activeSection === "snippet" && (
           <SnippetSetting />
+        )}
+
+        {activeSection === "security" && (
+          <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
+            <FormControl>
+              <FormLabel>{t("setting.allowedCDNs")}</FormLabel>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' }}>
+                {t("setting.allowedCDNsHint")}
+              </p>
+              <List dense disablePadding>
+                {allowedCDNs.map((domain) => (
+                  <ListItemButton
+                    key={domain}
+                    disableRipple
+                    sx={{
+                      py: 0.5,
+                      cursor: 'default',
+                      '&:hover': { backgroundColor: 'var(--bg-elevated)' },
+                    }}
+                  >
+                    <ListItemText
+                      primary={domain}
+                      primaryTypographyProps={{ fontSize: '13px' }}
+                    />
+                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveDomain(domain)}
+                        sx={{ '& svg': { fill: 'var(--accent-red)' } }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </ListItemIcon>
+                  </ListItemButton>
+                ))}
+              </List>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1, alignItems: 'center' }}>
+                <TextField
+                  size="small"
+                  value={newDomain}
+                  onChange={(e) => setNewDomain(e.target.value)}
+                  placeholder={t("setting.domainPlaceholder")}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddDomain(); } }}
+                  sx={{ flex: 1 }}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleAddDomain}
+                  disabled={!newDomain.trim()}
+                  sx={{ '& svg': { fill: 'var(--accent-blue)' } }}
+                >
+                  <AddIcon />
+                </IconButton>
+              </Box>
+            </FormControl>
+          </div>
         )}
 
         {activeSection === "license" && (

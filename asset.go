@@ -168,9 +168,22 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 			}
 		}
 
+		// alias変更時に公開済みファイルをリネーム
+		oldS, err := b.db.GetStructure(a.Id)
+		if err != nil {
+			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+		}
+		if oldS.Alias != a.Alias {
+			renamedFiles, err := b.fileSystem.RenamePublishedAsset(oldS.Alias, a.Alias)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.RenamePublishedAsset() error: %w", err)
+			}
+			files = append(files, renamedFiles...)
+		}
+
 		m := model.ConvertAsset(a)
 
-		err := b.db.UpdateAsset(m, b.op)
+		err = b.db.UpdateAsset(m, b.op)
 		if err != nil {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}

@@ -1,15 +1,12 @@
 import Scripter from "./Scripter";
+import { GetConfig, GetAllowedCDNs } from "../../../../bindings/binder/api/app";
+import mermaidVendorUrl from '../../../assets/vendor/mermaid.min.js?url';
 
 const Name = "mermaid";
-const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-//const URL    = "https://cdn.jsdelivr.net/npm/mermaid@11/+esm";
-//const ZenURL = "https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml/+esm";
-//const URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
-//const URL = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
-//const URL = "https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.2.0/dist/mermaid-zenuml.min.js"
+const DefaultOpts = { startOnLoad: false, theme: "dark", look: 'handDrawn', handDrawn: true };
 
 /**
- * mermaid を利用してパースするクラス
+ * mermaid を利用してパースするクラス（ESM / UMD 両対応）
  */
 class MermaidScript {
 
@@ -18,31 +15,79 @@ class MermaidScript {
   }
 
   /**
-   * 初期化処理
+   * バインダー切り替え時にグローバル状態をリセットし、次回parseで再初期化させる
    */
-  static async init(url,opts) {
+  static reset() {
+    delete globalThis.mermaid;
+  }
+
+  /**
+   * URLからmermaidを読み込む（ESM → UMD の順に試行）
+   * @param {string} url 読み込み先URL
+   * @returns {object|null} mermaidインスタンス。失敗時null
+   */
+  static async tryLoadUrl(url) {
+    // ESM import を試行
+    try {
+      var m = await Scripter.import(url);
+      return m.default;
+    } catch (esmErr) {
+      // UMD <script>タグを試行
+      try {
+        return await Scripter.loadScript(url, Name);
+      } catch (umdErr) {
+        return null;
+      }
+    }
+  }
+
+  /**
+   * 初期化処理
+   * CDN URL指定時: ESM → UMD → ベンダーの順にフォールバック
+   * CDN URL未指定: ベンダーUMDを使用
+   */
+  static async init(url, opts) {
 
     if ( globalThis.mermaid !== undefined ) {
       return;
     }
-    var mermaid = await this.load(url);
 
-    console.log(opts);
+    var mermaid = null;
+    if (url) {
+      mermaid = await MermaidScript.tryLoadUrl(url);
+      if (!mermaid) {
+        console.warn("CDN URL failed, falling back to vendor");
+      }
+    }
+    if (!mermaid) {
+      // ベンダーUMDを<script>タグで読み込む
+      mermaid = await Scripter.loadScript(mermaidVendorUrl, Name);
+    }
+
     mermaid.initialize(opts);
     globalThis.mermaid = mermaid;
-
-    //var z = await import(ZenURL);
-    //mermaid.registerExternalDiagrams([z.default]);
   }
 
   /**
-   * 
-   * @param {*} url 
+   * 指定URLでmermaidを読み込み、成功時はそのまま使用する。
+   * 失敗時はベンダー版にフォールバックして初期化する。
+   * @param {string} url 検証するURL
+   * @returns {{ success: boolean }} 指定URLでの読み込み結果
    */
-  static async load(url) {
-    var m = await import(/* @vite-ignore */url);
-    var mermaid = m.default;
-    return mermaid;
+  static async loadAndValidate(url) {
+    delete globalThis.mermaid;
+
+    var mermaid = null;
+    if (url) {
+      mermaid = await MermaidScript.tryLoadUrl(url);
+    }
+    var success = (mermaid !== null);
+    if (!mermaid) {
+      mermaid = await Scripter.loadScript(mermaidVendorUrl, Name);
+    }
+    mermaid.initialize(DefaultOpts);
+    globalThis.mermaid = mermaid;
+    return { success };
   }
 
   static async parse(txt) {
@@ -66,12 +111,26 @@ class MermaidScript {
         return;
       }
 
-      this.init(URL,{ startOnLoad: false,theme:"dark",look: 'handDrawn',handDrawn:true }).then(() => {
-        func();
-      }).catch((err) => {
-        console.error(err)
-        rej(err);
-      })
+      // バインダー設定からCDN URLを取得し、ホワイトリスト検証
+      var cdnUrl = null;
+      GetConfig().then((conf) => {
+        if (conf && conf.mermaidUrl) cdnUrl = conf.mermaidUrl;
+      }).catch(() => {}).then(() => {
+        if (!cdnUrl) return;
+        return GetAllowedCDNs().then((domains) => {
+          if (!Scripter.isAllowedUrl(cdnUrl, domains || [])) {
+            console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl);
+            cdnUrl = null;
+          }
+        }).catch(() => {});
+      }).then(() => {
+        this.init(cdnUrl, DefaultOpts).then(() => {
+          func();
+        }).catch((err) => {
+          console.error(err)
+          rej(err);
+        })
+      });
     })
 
     return rtn;

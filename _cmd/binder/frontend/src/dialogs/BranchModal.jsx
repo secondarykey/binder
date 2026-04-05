@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
-  Box, Button, IconButton, List, ListItem, ListItemText, TextField, Typography, Chip, Divider,
+  Alert, Box, Button, Dialog, DialogActions, DialogContentText, DialogTitle,
+  IconButton, List, ListItem, ListItemText, TextField, Typography, Chip, Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,7 +9,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
 import ModalWrapper from './components/ModalWrapper';
-import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch } from '../../bindings/binder/api/app';
+import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import '../i18n/config';
@@ -24,12 +25,18 @@ function BranchModal({ open, onClose }) {
   const [renamingBranch, setRenamingBranch] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasUncommitted, setHasUncommitted] = useState(false);
+  const [confirmSwitchName, setConfirmSwitchName] = useState(null);
+  const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     reload();
     setNewBranchName('');
     setRenamingBranch(null);
+    GetModifiedIds().then((ids) => {
+      setHasUncommitted(ids && ids.length > 0);
+    }).catch((err) => evt.showErrorMessage(err));
   }, [open]);
 
   const reload = () => {
@@ -37,7 +44,8 @@ function BranchModal({ open, onClose }) {
     CurrentBranch().then(setCurrentBranch).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleSwitch = (name) => {
+  const doSwitch = (name) => {
+    setConfirmSwitchName(null);
     setLoading(true);
     SwitchBranch(name).then((result) => {
       if (result.address) evt.changeAddress(result.address);
@@ -59,7 +67,8 @@ function BranchModal({ open, onClose }) {
     });
   };
 
-  const handleCreate = () => {
+  const doCreate = () => {
+    setConfirmCreateOpen(false);
     if (!newBranchName.trim()) return;
     setLoading(true);
     CreateBranch(newBranchName.trim()).then((result) => {
@@ -115,6 +124,12 @@ function BranchModal({ open, onClose }) {
     >
       <Box sx={{ p: 2, overflowY: 'auto' }}>
 
+        {hasUncommitted && (
+          <Alert severity="warning" sx={{ mb: 2, fontSize: '13px' }}>
+            {t('branch.uncommittedError')}
+          </Alert>
+        )}
+
         {/** ブランチ一覧 */}
         <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
           {t("branch.list")}
@@ -141,13 +156,15 @@ function BranchModal({ open, onClose }) {
                   </Box>
                 ) : (
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton size="small" onClick={() => startRename(name)} disabled={loading}
-                      title={t("branch.rename")}>
-                      <EditIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
+                    {name === currentBranch && (
+                      <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
+                        title={t("branch.rename")}>
+                        <EditIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    )}
                     {name !== currentBranch && (
-                      <Button size="small" variant="outlined" onClick={() => handleSwitch(name)}
-                        disabled={loading} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
+                      <Button size="small" variant="outlined" onClick={() => setConfirmSwitchName(name)}
+                        disabled={loading || hasUncommitted} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
                         {t("branch.switch")}
                       </Button>
                     )}
@@ -193,7 +210,7 @@ function BranchModal({ open, onClose }) {
             placeholder={t("branch.branchName")}
             value={newBranchName}
             onChange={(e) => setNewBranchName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') setConfirmCreateOpen(true); }}
             disabled={loading}
             sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
           />
@@ -201,8 +218,8 @@ function BranchModal({ open, onClose }) {
             size="small"
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={handleCreate}
-            disabled={loading || !newBranchName.trim()}
+            onClick={() => setConfirmCreateOpen(true)}
+            disabled={loading || hasUncommitted || !newBranchName.trim()}
             sx={{ whiteSpace: 'nowrap' }}
           >
             {t("branch.create")}
@@ -210,6 +227,39 @@ function BranchModal({ open, onClose }) {
         </Box>
 
       </Box>
+
+      {/** ブランチ切替確認ダイアログ */}
+      <Dialog
+        open={!!confirmSwitchName}
+        onClose={() => setConfirmSwitchName(null)}
+        PaperProps={{ style: { backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' } }}
+      >
+        <DialogTitle>{t("branch.switch")}</DialogTitle>
+        <DialogContentText style={{ padding: '0 24px 8px', color: 'var(--text-secondary)' }}>
+          {t('branch.confirmSwitch')}
+        </DialogContentText>
+        <DialogActions>
+          <Button onClick={() => setConfirmSwitchName(null)}>{t('common.cancel')}</Button>
+          <Button variant="contained" onClick={() => doSwitch(confirmSwitchName)}>{t('branch.switch')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/** ブランチ作成確認ダイアログ */}
+      <Dialog
+        open={confirmCreateOpen}
+        onClose={() => setConfirmCreateOpen(false)}
+        PaperProps={{ style: { backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' } }}
+      >
+        <DialogTitle>{t("branch.create")}</DialogTitle>
+        <DialogContentText style={{ padding: '0 24px 8px', color: 'var(--text-secondary)' }}>
+          {t('branch.confirmCreate', { name: newBranchName.trim(), from: currentBranch })}
+        </DialogContentText>
+        <DialogActions>
+          <Button onClick={() => setConfirmCreateOpen(false)}>{t('common.cancel')}</Button>
+          <Button variant="contained" onClick={doCreate}>{t('branch.create')}</Button>
+        </DialogActions>
+      </Dialog>
+
     </ModalWrapper>
   );
 }

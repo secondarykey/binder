@@ -124,7 +124,12 @@
         "license" : "ライセンス",
         "thirdPartyLicense" : "サードパーティライセンス",
         "systemLog" : "システムログ",
-        "openSystemLog" : "システムログを開く"
+        "openSystemLog" : "システムログを開く",
+        "allowedCDNs" : "許可するCDNドメイン",
+        "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
+        "addDomain" : "ドメインを追加",
+        "domainPlaceholder" : "例: cdn.jsdelivr.net",
+        "security" : "セキュリティ"
     },
     "binder" : {
         "editTitle" : "Binder編集",
@@ -140,7 +145,13 @@
         "editRemote" : "リモート編集",
         "deleteRemoteTitle" : "リモートの削除",
         "deleteRemoteConfirm" : "「{{name}}」を削除しますか？",
-        "updateSuccess" : "Binderを更新しました"
+        "updateSuccess" : "Binderを更新しました",
+        "script" : "スクリプト",
+        "markedUrl" : "Marked.js CDN URL",
+        "mermaidUrl" : "Mermaid.js CDN URL",
+        "cdnHint" : "空欄の場合は内蔵バージョンを使用します。",
+        "cdnOk" : "指定URLから正常に読み込みました。",
+        "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。"
     },
     "binderHistory" : {
         "history" : "履歴"
@@ -204,7 +215,8 @@
         "renameSuccess" : "ブランチ名を変更しました: {{old}} → {{new}}",
         "reloadError" : "ブランチ切替後の再読み込みに失敗しました。Binderを開き直してください。",
         "uncommittedError" : "ブランチを切り替える前に変更をコミットしてください。",
-        "confirmSwitch" : "このブランチに切り替えますか？バインダーが再読み込みされます。"
+        "confirmSwitch" : "このブランチに切り替えますか？バインダーが再読み込みされます。",
+        "confirmCreate" : "現在のブランチ '{{from}}' から新規ブランチ '{{name}}' を作成しますか？"
     },
     "commitModal" : {
         "title" : "コミット",

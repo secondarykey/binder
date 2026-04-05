@@ -66,6 +66,26 @@ func (f *FileSystem) UnpublishAsset(a *json.Asset) (string, error) {
 	return pub, nil
 }
 
+// RenamePublishedAsset は公開済みのアセットファイルを旧aliasから新aliasへ移動する。
+// 対象: docs/assets/{alias}
+// ファイルが存在しない場合はスキップする。変更されたファイルパスのスライスを返す。
+func (f *FileSystem) RenamePublishedAsset(oldAlias, newAlias string) ([]string, error) {
+	oldPub := publicAssetFile(oldAlias)
+	newPub := publicAssetFile(newAlias)
+	if !f.isExist(oldPub) {
+		return nil, nil
+	}
+
+	if err := f.copyFile(newPub, oldPub); err != nil {
+		return nil, xerrors.Errorf("copyFile(%s) error: %w", oldPub, err)
+	}
+	if err := f.remove(oldPub); err != nil {
+		return nil, xerrors.Errorf("remove(%s) error: %w", oldPub, err)
+	}
+
+	return []string{oldPub, newPub}, nil
+}
+
 func (f *FileSystem) PublishAsset(a *json.Asset) (string, error) {
 
 	//元ファイルを作成

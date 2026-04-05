@@ -117,3 +117,23 @@ func (f *FileSystem) UnpublishDiagram(d *json.Diagram) (string, error) {
 
 	return pub, nil
 }
+
+// RenamePublishedDiagram は公開済みのダイアグラムファイルを旧aliasから新aliasへ移動する。
+// 対象: docs/images/{alias}.svg
+// ファイルが存在しない場合はスキップする。変更されたファイルパスのスライスを返す。
+func (f *FileSystem) RenamePublishedDiagram(oldAlias, newAlias string) ([]string, error) {
+	oldSVG := svgFile(oldAlias)
+	newSVG := svgFile(newAlias)
+	if !f.isExist(oldSVG) {
+		return nil, nil
+	}
+
+	if err := f.copyFile(newSVG, oldSVG); err != nil {
+		return nil, xerrors.Errorf("copyFile(%s) error: %w", oldSVG, err)
+	}
+	if err := f.remove(oldSVG); err != nil {
+		return nil, xerrors.Errorf("remove(%s) error: %w", oldSVG, err)
+	}
+
+	return []string{oldSVG, newSVG}, nil
+}

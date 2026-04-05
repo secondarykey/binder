@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router';
 
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
 
-import { SelectDirectory } from '../../bindings/main/window';
+import { SelectDirectory, OpenOverallHistoryWindow } from '../../bindings/main/window';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import DownloadIcon from '@mui/icons-material/Download';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import BuildIcon from '@mui/icons-material/Build';
 
 import Event,{EventContext} from '../Event';
 
@@ -42,6 +43,22 @@ function FileMenu(props) {
 
   }
 
+  const handleRepair = () => {
+
+    SelectDirectory(false).then( (p) => {
+
+      if ( p == "" ) return;
+
+      OpenOverallHistoryWindow(p).catch( (err) => {
+        evt.showErrorMessage(err);
+      });
+
+    }).catch( (err)=> {
+      evt.showErrorMessage(err);
+    })
+
+  }
+
   return (<>
 
     <MenuList id="fileMenu">
@@ -64,6 +81,12 @@ function FileMenu(props) {
           <DownloadIcon />
         </ListItemIcon>
         <ListItemText>Remote Import</ListItemText>
+      </MenuItem>
+      <MenuItem onClick={handleRepair}>
+        <ListItemIcon>
+          <BuildIcon />
+        </ListItemIcon>
+        <ListItemText>Repair</ListItemText>
       </MenuItem>
 
     </MenuList>

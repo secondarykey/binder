@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-Binderは技術文書作成向けの実験的なデスクトップMarkdownエディタ。**Wails v3**（Go + React）でフレームレスのデスクトップアプリケーションを構築している。コンテンツはローカルgitリポジトリにファイルとして保存され、メタデータはCSVベースのSQLテーブル（csvq）で管理される。
+Binderは技術文書作成向けの実験的なデスクトップMarkdownエディタ。**Wails v3**（Go + React）でデスクトップアプリケーションを構築している。コンテンツはローカルgitリポジトリにファイルとして保存され、メタデータはCSVベースのSQLテーブル（csvq）で管理される。
 
 ## ビルド・開発コマンド
 
@@ -268,7 +268,6 @@ t("menu.setting")
 - `GetLanguageData(code)` — 指定言語のJSON文字列を返す
 
 **配置の仕組みはテーマと同じ**: `setup/externals.go` の `installLanguages()` が管理。優先順位もテーマと同様（ユーザーディレクトリ > `_default/`）。
-
 
 ## コーディング規約
 

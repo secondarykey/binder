@@ -53,8 +53,18 @@ func (b *Binder) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 			return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 		}
 
-		// TODO Alias変更の処理を行う (old alias取得はStructureから)
-		// 現在公開中のものを新規の場所にコピー
+		// alias変更時に公開済みファイルをリネーム
+		oldS, err := b.db.GetStructure(d.Id)
+		if err != nil {
+			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+		}
+		if oldS.Alias != d.Alias {
+			renamedFiles, err := b.fileSystem.RenamePublishedDiagram(oldS.Alias, d.Alias)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.RenamePublishedDiagram() error: %w", err)
+			}
+			files = append(files, renamedFiles...)
+		}
 
 		m := model.ConvertDiagram(d)
 		err = b.db.UpdateDiagram(m, b.op)

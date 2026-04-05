@@ -1,10 +1,11 @@
 import Scripter from "./Scripter";
+import { GetConfig, GetAllowedCDNs } from "../../../../bindings/binder/api/app";
+import markedVendorUrl from '../../../assets/vendor/marked.min.js?url';
 
 const Name = "marked"
-const URL = "https://cdn.jsdelivr.net/npm/marked@14/lib/marked.umd.min.js";
 
 /**
- * marked.js を利用するクラス
+ * marked.js を利用するクラス（ESM / UMD 両対応）
  */
 class MarkedScript {
 
@@ -12,18 +13,87 @@ class MarkedScript {
         return Scripter.isExists(Name)
     }
 
+    /**
+     * バインダー切り替え時にグローバル状態をリセットし、次回parseで再初期化させる
+     */
+    static reset() {
+        delete globalThis.marked;
+    }
+
+    /**
+     * URLからmarkedを読み込む（ESM → UMD の順に試行）
+     * @param {string} url 読み込み先URL
+     * @returns {boolean} 成功時true
+     */
+    static async tryLoadUrl(url) {
+        delete globalThis.marked;
+        // ESM import を試行
+        try {
+            var m = await Scripter.import(url);
+            globalThis.marked = m;
+            return true;
+        } catch (esmErr) {
+            // UMD <script>タグを試行
+            try {
+                await Scripter.loadScript(url, Name);
+                // UMDはglobalThis.markedを直接設定する
+                return true;
+            } catch (umdErr) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * バインダー設定に基づいて初期化する。
+     * CDN URL指定時: ESM → UMD → ベンダーの順にフォールバック
+     * CDN URL未指定: ベンダーESMを使用
+     */
     static async init() {
-        var rtn = new Promise( (res,rej) => {
-          Scripter.get(URL).then( (s) => {
-            var objFunc = new Function(s);
-            objFunc();
-            //MarkedScript.registerAlertExtension();
-            res();
-          }).catch( (err) => {
-            rej(err);
-          });
-        })
-        return rtn;
+        let cdnUrl = null;
+        try {
+            const conf = await GetConfig();
+            if (conf && conf.markedUrl) cdnUrl = conf.markedUrl;
+        } catch (e) {}
+
+        // ホワイトリスト検証
+        if (cdnUrl) {
+            try {
+                const allowedDomains = await GetAllowedCDNs() || [];
+                if (!Scripter.isAllowedUrl(cdnUrl, allowedDomains)) {
+                    console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl);
+                    cdnUrl = null;
+                }
+            } catch (e) {}
+        }
+
+        if (cdnUrl) {
+            if (await MarkedScript.tryLoadUrl(cdnUrl)) return;
+            console.warn("CDN URL failed, falling back to vendor");
+        }
+        // デフォルト: 埋め込みベンダーESM
+        var m = await Scripter.import(markedVendorUrl);
+        globalThis.marked = m;
+        //MarkedScript.registerAlertExtension();
+    }
+
+    /**
+     * 指定URLでmarkedを読み込み、成功時はそのまま使用する。
+     * 失敗時はベンダー版にフォールバックして初期化する。
+     * @param {string} url 検証するURL
+     * @returns {{ success: boolean }} 指定URLでの読み込み結果
+     */
+    static async loadAndValidate(url) {
+        delete globalThis.marked;
+        if (url) {
+            if (await MarkedScript.tryLoadUrl(url)) {
+                return { success: true };
+            }
+        }
+        // ベンダーにフォールバック
+        var m = await Scripter.import(markedVendorUrl);
+        globalThis.marked = m;
+        return { success: false };
     }
 
     /**
