@@ -28,6 +28,8 @@ import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, 
 import "../i18n/config";
 import { useTranslation } from 'react-i18next';
 
+import { copyClipboard } from '../app/App';
+
 import Event, { EventContext } from '../Event';
 import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
@@ -89,6 +91,20 @@ const findAncestorIds = (nodes, targetId, path = []) => {
     if (node.id === targetId) return path;
     const result = findAncestorIds(node.children, targetId, [...path, node.id]);
     if (result) return result;
+  }
+  return null;
+};
+
+/**
+ * ツリーを再帰検索し、ルートから対象ノードまでの名前を
+ * スラッシュ区切りで返す（例: "ParentNote/ChildNote"）
+ */
+const buildNodePath = (nodes, targetId, pathNames = []) => {
+  if (!nodes) return null;
+  for (const node of nodes) {
+    if (node.id === targetId) return [...pathNames, node.name].join('/');
+    const result = buildNodePath(node.children, targetId, [...pathNames, node.name]);
+    if (result !== null) return result;
   }
   return null;
 };
@@ -181,6 +197,9 @@ function BinderTree(props) {
 
   // ダウンロードサブメニューのアンカー要素
   const [downloadMenuAnchor, setDownloadMenuAnchor] = useState(null);
+
+  // Copy サブメニューのアンカー要素
+  const [copyMenuAnchor, setCopyMenuAnchor] = useState(null);
 
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
@@ -397,12 +416,33 @@ function BinderTree(props) {
   /** コンテキストメニューとAddサブメニューをまとめて閉じる */
   const closeAllMenus = () => {
     setAddMenuAnchor(null);
+    setCopyMenuAnchor(null);
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
   /** Addサブメニューを開く */
   const handleAddMenuOpen = (e) => {
     setAddMenuAnchor(e.currentTarget);
+  };
+
+  /** Copy サブメニューを開く */
+  const handleCopyMenuOpen = (e) => {
+    setCopyMenuAnchor(e.currentTarget);
+  };
+
+  /** Copy > ID */
+  const handleCopyId = () => {
+    const id = contextMenu.node.id;
+    closeAllMenus();
+    copyClipboard(id);
+  };
+
+  /** Copy > パス */
+  const handleCopyPath = () => {
+    const id = contextMenu.node.id;
+    closeAllMenus();
+    const path = buildNodePath(treeRef.current, id);
+    if (path !== null) copyClipboard(path);
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
@@ -729,6 +769,9 @@ function BinderTree(props) {
         <span>{t("common.add")}</span><span>▶</span>
       </MenuItem>
       <MenuItem onClick={handleHistoryNote} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
@@ -746,6 +789,19 @@ function BinderTree(props) {
       <MenuItem onClick={handleRegisterAssets}>{t("tree.assets")}</MenuItem>
     </Menu>
 
+    {/** Copy サブメニュー: ID / パス */}
+    <Menu
+      open={Boolean(copyMenuAnchor)}
+      onClose={closeAllMenus}
+      anchorEl={copyMenuAnchor}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      slotProps={{ paper: { sx: { minWidth: 120 } } }}
+    >
+      <MenuItem onClick={handleCopyId}>{t("tree.copy.id")}</MenuItem>
+      <MenuItem onClick={handleCopyPath}>{t("tree.copy.path")}</MenuItem>
+    </Menu>
+
     {/** ダイアグラムメニュー: Edit / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
@@ -757,6 +813,9 @@ function BinderTree(props) {
       <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleEditDiagram} divider>{t("common.edit")}</MenuItem>
       <MenuItem onClick={handleHistoryDiagram} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
@@ -770,6 +829,9 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleEditAsset} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 

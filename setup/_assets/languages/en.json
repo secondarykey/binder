@@ -59,7 +59,10 @@
         "downloadDocs" : "Docs",
         "expandAll" : "Expand All",
         "collapseAll" : "Collapse All",
-        "overallHistory" : "Overall History"
+        "overallHistory" : "Overall History",
+        "copy"      : "Copy",
+        "copy.id"   : "ID",
+        "copy.path" : "Path"
     },
     "note" : {
         "editTitle" : "Edit Note",

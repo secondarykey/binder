@@ -59,7 +59,10 @@
         "downloadDocs" : "docs",
         "expandAll" : "すべて展開",
         "collapseAll" : "すべて閉じる",
-        "overallHistory" : "全体の履歴"
+        "overallHistory" : "全体の履歴",
+        "copy"      : "コピー",
+        "copy.id"   : "ID",
+        "copy.path" : "パス"
     },
     "note" : {
         "editTitle" : "ノート編集",
