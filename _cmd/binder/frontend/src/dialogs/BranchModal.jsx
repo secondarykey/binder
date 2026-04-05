@@ -157,7 +157,7 @@ function BranchModal({ open, onClose }) {
                 ) : (
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     {name === currentBranch && (
-                      <IconButton size="small" onClick={() => startRename(name)} disabled={loading}
+                      <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
                         title={t("branch.rename")}>
                         <EditIcon sx={{ fontSize: '16px' }} />
                       </IconButton>
