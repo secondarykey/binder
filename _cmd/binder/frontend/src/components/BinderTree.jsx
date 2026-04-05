@@ -21,7 +21,8 @@ import HistoryIcon from '@mui/icons-material/History';
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath } from '../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
+         IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
@@ -186,6 +187,9 @@ function BinderTree(props) {
 
   // Copy サブメニューのアンカー要素
   const [copyMenuAnchor, setCopyMenuAnchor] = useState(null);
+
+  // エディタ引数に {bfile} が含まれる場合に true（右クリック都度判定）
+  const [showGitBashPath, setShowGitBashPath] = useState(false);
 
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
@@ -392,6 +396,7 @@ function BinderTree(props) {
     e.preventDefault();
     e.stopPropagation(); // エリア右クリックへのバブリングを防ぐ
     setContextMenu({ open: true, x: e.clientX, y: e.clientY, node });
+    IsGitBashPath().then(setShowGitBashPath).catch(() => setShowGitBashPath(false));
   };
 
   /** コンテキストメニューを閉じる */
@@ -428,6 +433,15 @@ function BinderTree(props) {
     const { id, nodeType } = contextMenu.node;
     closeAllMenus();
     GetFullPath(nodeType, id).then((path) => {
+      if (path) copyClipboard(path);
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
+  /** Copy > GitBash パス */
+  const handleCopyGitBashPath = () => {
+    const { id, nodeType } = contextMenu.node;
+    closeAllMenus();
+    GetGitBashFullPath(nodeType, id).then((path) => {
       if (path) copyClipboard(path);
     }).catch((err) => evt.showErrorMessage(err));
   };
@@ -787,6 +801,9 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleCopyId}>{t("tree.copy.id")}</MenuItem>
       <MenuItem onClick={handleCopyPath}>{t("tree.copy.path")}</MenuItem>
+      {showGitBashPath && (
+        <MenuItem onClick={handleCopyGitBashPath}>{t("tree.copy.gitbashPath")}</MenuItem>
+      )}
     </Menu>
 
     {/** ダイアグラムメニュー: Edit / History / Delete */}

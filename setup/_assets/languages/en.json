@@ -60,9 +60,10 @@
         "expandAll" : "Expand All",
         "collapseAll" : "Collapse All",
         "overallHistory" : "Overall History",
-        "copy"      : "Copy",
-        "copy.id"   : "ID",
-        "copy.path" : "Path"
+        "copy"           : "Copy",
+        "copy.id"        : "ID",
+        "copy.path"      : "Path",
+        "copy.gitbashPath" : "GitBash Path"
     },
     "note" : {
         "editTitle" : "Edit Note",

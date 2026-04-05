@@ -60,9 +60,10 @@
         "expandAll" : "すべて展開",
         "collapseAll" : "すべて閉じる",
         "overallHistory" : "全体の履歴",
-        "copy"      : "コピー",
-        "copy.id"   : "ID",
-        "copy.path" : "パス"
+        "copy"           : "コピー",
+        "copy.id"        : "ID",
+        "copy.path"      : "パス",
+        "copy.gitbashPath" : "GitBashパス"
     },
     "note" : {
         "editTitle" : "ノート編集",
