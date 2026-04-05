@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import {
-  Box, Button, IconButton, List, ListItem, ListItemText, TextField, Typography, Chip, Divider,
+  Alert, Box, Button, IconButton, List, ListItem, ListItemText, TextField, Typography, Chip, Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
 import ModalWrapper from './components/ModalWrapper';
-import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch } from '../../bindings/binder/api/app';
+import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import '../i18n/config';
@@ -24,12 +24,16 @@ function BranchModal({ open, onClose }) {
   const [renamingBranch, setRenamingBranch] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasUncommitted, setHasUncommitted] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     reload();
     setNewBranchName('');
     setRenamingBranch(null);
+    GetModifiedIds().then((ids) => {
+      setHasUncommitted(ids && ids.length > 0);
+    }).catch((err) => evt.showErrorMessage(err));
   }, [open]);
 
   const reload = () => {
@@ -115,6 +119,12 @@ function BranchModal({ open, onClose }) {
     >
       <Box sx={{ p: 2, overflowY: 'auto' }}>
 
+        {hasUncommitted && (
+          <Alert severity="warning" sx={{ mb: 2, fontSize: '13px' }}>
+            {t('branch.uncommittedError')}
+          </Alert>
+        )}
+
         {/** ブランチ一覧 */}
         <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
           {t("branch.list")}
@@ -147,7 +157,7 @@ function BranchModal({ open, onClose }) {
                     </IconButton>
                     {name !== currentBranch && (
                       <Button size="small" variant="outlined" onClick={() => handleSwitch(name)}
-                        disabled={loading} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
+                        disabled={loading || hasUncommitted} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
                         {t("branch.switch")}
                       </Button>
                     )}
@@ -202,7 +212,7 @@ function BranchModal({ open, onClose }) {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreate}
-            disabled={loading || !newBranchName.trim()}
+            disabled={loading || hasUncommitted || !newBranchName.trim()}
             sx={{ whiteSpace: 'nowrap' }}
           >
             {t("branch.create")}
