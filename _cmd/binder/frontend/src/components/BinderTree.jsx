@@ -619,6 +619,23 @@ function BinderTree(props) {
     });
   };
 
+  /** 対象を展開: 現在の表示モードに応じた対象ノードの祖先をすべて展開する */
+  const handleExpandTargets = () => {
+    closeMoreMenu();
+    let targetIds = [];
+    if (displayMode === 'commit' && modifiedIds) {
+      targetIds = [...modifiedIds];
+    } else if (displayMode === 'publish' && unpublishedMap) {
+      targetIds = [...unpublishedMap.keys()].filter(id => (unpublishedMap.get(id) ?? 0) > 0);
+    }
+    const ancestorIds = new Set();
+    for (const id of targetIds) {
+      const ancestors = findAncestorIds(treeRef.current, id);
+      if (ancestors) ancestors.forEach(aid => ancestorIds.add(aid));
+    }
+    setExpand([...ancestorIds]);
+  };
+
   /** 削除をキャンセル */
   const handleDeleteCancel = () => {
     setDeleteConfirm({ open: false, node: null });
@@ -705,6 +722,10 @@ function BinderTree(props) {
       {/** すべて展開 */}
       <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
         <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
+      </MenuItem>
+      {/** 対象を展開 */}
+      <MenuItem onClick={handleExpandTargets} disabled={displayMode === 'none'}>
+        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandTargets")}
       </MenuItem>
       {/** すべて閉じる */}
       <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>

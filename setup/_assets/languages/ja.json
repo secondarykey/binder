@@ -58,6 +58,7 @@
         "downloadAll" : "全体",
         "downloadDocs" : "docs",
         "expandAll" : "すべて展開",
+        "expandTargets" : "対象を展開",
         "collapseAll" : "すべて閉じる",
         "overallHistory" : "全体の履歴",
         "copy"           : "コピー",

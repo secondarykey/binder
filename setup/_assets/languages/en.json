@@ -58,6 +58,7 @@
         "downloadAll" : "All",
         "downloadDocs" : "Docs",
         "expandAll" : "Expand All",
+        "expandTargets" : "Expand Targets",
         "collapseAll" : "Collapse All",
         "overallHistory" : "Overall History",
         "copy"           : "Copy",
