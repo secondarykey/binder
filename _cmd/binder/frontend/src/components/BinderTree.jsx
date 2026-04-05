@@ -680,24 +680,6 @@ function BinderTree(props) {
       onClose={closeMoreMenu}
       slotProps={{ paper: { sx: { minWidth: 160 } } }}
     >
-      {/** ブラウザで開く */}
-      <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
-        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
-      </MenuItem>
-      {/** ダウンロード */}
-      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
-        <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
-      </MenuItem>
-      <Divider />
-      {/** すべて展開 */}
-      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
-        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
-      </MenuItem>
-      {/** すべて閉じる */}
-      <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>
-        <UnfoldLessIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
-      </MenuItem>
-      <Divider />
       {/** None: ステータス非表示 */}
       <MenuItem onClick={() => { setDisplayMode('none'); closeMoreMenu(); }}>
         {displayMode === 'none'
@@ -718,6 +700,24 @@ function BinderTree(props) {
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
         {t("tree.publish")}
+      </MenuItem>
+      <Divider />
+      {/** すべて展開 */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
+        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
+      </MenuItem>
+      {/** すべて閉じる */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>
+        <UnfoldLessIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
+      </MenuItem>
+      <Divider />
+      {/** ブラウザで開く */}
+      <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
+        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+      </MenuItem>
+      {/** ダウンロード */}
+      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
+        <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
       </MenuItem>
       <Divider />
       {/** ブランチ変更 */}
