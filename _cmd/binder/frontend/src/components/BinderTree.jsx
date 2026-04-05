@@ -21,7 +21,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
@@ -91,20 +91,6 @@ const findAncestorIds = (nodes, targetId, path = []) => {
     if (node.id === targetId) return path;
     const result = findAncestorIds(node.children, targetId, [...path, node.id]);
     if (result) return result;
-  }
-  return null;
-};
-
-/**
- * ツリーを再帰検索し、ルートから対象ノードまでの名前を
- * スラッシュ区切りで返す（例: "ParentNote/ChildNote"）
- */
-const buildNodePath = (nodes, targetId, pathNames = []) => {
-  if (!nodes) return null;
-  for (const node of nodes) {
-    if (node.id === targetId) return [...pathNames, node.name].join('/');
-    const result = buildNodePath(node.children, targetId, [...pathNames, node.name]);
-    if (result !== null) return result;
   }
   return null;
 };
@@ -439,10 +425,11 @@ function BinderTree(props) {
 
   /** Copy > パス */
   const handleCopyPath = () => {
-    const id = contextMenu.node.id;
+    const { id, nodeType } = contextMenu.node;
     closeAllMenus();
-    const path = buildNodePath(treeRef.current, id);
-    if (path !== null) copyClipboard(path);
+    GetFullPath(nodeType, id).then((path) => {
+      if (path) copyClipboard(path);
+    }).catch((err) => evt.showErrorMessage(err));
   };
 
   /** D&D: parentId と childIds を使って Seq を更新する */
