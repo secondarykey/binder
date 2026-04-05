@@ -283,6 +283,15 @@ function BinderTree(props) {
     evt.register("BinderTree", Event.MarkModified, (id) => {
       if (id) setLocalDirtyIds(prev => new Set([...prev, id]));
     });
+    // コミット完了 — localDirtyIds をクリアして git 状態を再取得
+    evt.register("BinderTree", Event.CommitDone, () => {
+      setLocalDirtyIds(new Set());
+      GetModifiedIds().then((ids) => {
+        setModifiedIds(new Set(ids ?? []));
+      }).catch((err) => {
+        console.warn("GetModifiedIds failed:", err);
+      });
+    });
     // 初期URLを取得
     Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
     // 履歴復元などでツリーのノード選択を外部から更新する

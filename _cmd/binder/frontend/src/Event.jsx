@@ -118,6 +118,11 @@ class Event {
     static PublishGenerate = "publish.generate"
 
     /**
+     * コミット完了（CommitFiles成功後に発火 — localDirtyIds クリア用）
+     */
+    static CommitDone = "commit.done"
+
+    /**
      * コミット進捗（ModifiedMenuからCommit側に伝達）
      */
     static ModifiedProgress = "git.modified.progress"
@@ -173,6 +178,10 @@ class Event {
 
     reloadModified() {
         this.raise(Event.ReloadModified);
+    }
+
+    commitDone() {
+        this.raise(Event.CommitDone);
     }
 
     markModified(id) {

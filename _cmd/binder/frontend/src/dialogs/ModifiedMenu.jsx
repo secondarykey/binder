@@ -74,6 +74,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       evt.raise(Event.ModifiedProgress, { running: true });
       CommitFiles(files, comment).then(() => {
         evt.showSuccessMessage(t("commitModal.commitSuccess"));
+        evt.commitDone();
         setTimeout(function () {
           nav("/status/modified/" + (new Date()).toISOString());
         }, 1000);
