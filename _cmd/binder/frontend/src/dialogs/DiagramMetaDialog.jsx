@@ -41,6 +41,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
     if (!alias) { evt.showWarningMessage(t("diagram.aliasRequired")); return; }
 
     EditDiagram({ id, parentId, name, detail, alias }).then(() => {
+      evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("diagram.updateSuccess"));
       onClose();

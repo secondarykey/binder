@@ -76,6 +76,7 @@ function NoteMetaDialog({ open, id, onClose }) {
 
     const note = { id, parentId, name, alias, detail, layoutTemplate: layout, contentTemplate: content };
     EditNote(note, "").then(() => {
+      evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("note.updateSuccess"));
       onClose();

@@ -42,6 +42,7 @@ function AssetMetaDialog({ open, id, onClose }) {
 
   const handleSave = () => {
     EditAsset({ id, parentId, name, alias, detail, binary, mime }, "").then(() => {
+      evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("asset.updateSuccess"));
       onClose();

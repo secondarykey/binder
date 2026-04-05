@@ -27,6 +27,16 @@ class Event {
      * ツリーの再描画
      */
     static ReloadTree = "tree.reload"
+
+    /**
+     * 未コミットIDのみ再取得（ツリー全体の再描画は行わない）
+     */
+    static ReloadModified = "modified.reload"
+
+    /**
+     * 指定IDをローカルダーティとしてマーク（自動コミット操作後のUI用）
+     */
+    static MarkModified = "item.mark.modified"
     /**
      * ツリーの再描画
      */
@@ -159,6 +169,14 @@ class Event {
 
     refreshTree() {
         this.raise(Event.ReloadTree);
+    }
+
+    reloadModified() {
+        this.raise(Event.ReloadModified);
+    }
+
+    markModified(id) {
+        this.raise(Event.MarkModified, id);
     }
 
     changeTitle(title) {

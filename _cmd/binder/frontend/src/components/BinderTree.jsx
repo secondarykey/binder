@@ -191,6 +191,10 @@ function BinderTree(props) {
   // エディタ引数に {bfile} が含まれる場合に true（右クリック都度判定）
   const [showGitBashPath, setShowGitBashPath] = useState(false);
 
+  // 自動コミット操作（名前変更・メタ更新・移動など）後にフロントエンド側で保持するダーティID
+  // ChangeAddress 時にクリア
+  const [localDirtyIds, setLocalDirtyIds] = useState(new Set());
+
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
 
@@ -264,7 +268,20 @@ function BinderTree(props) {
       setSiteUrl(addr);
       const isNewBinder = addr !== currentAddressRef.current;
       currentAddressRef.current = addr;
+      setLocalDirtyIds(new Set()); // バインダー切替時にローカルダーティをクリア
       viewTree(isNewBinder);
+    });
+    // 未コミットIDのみ再取得（ツリー全体は再描画しない）
+    evt.register("BinderTree", Event.ReloadModified, () => {
+      GetModifiedIds().then((ids) => {
+        setModifiedIds(new Set(ids ?? []));
+      }).catch((err) => {
+        console.error('[BinderTree] GetModifiedIds error:', err);
+      });
+    });
+    // 自動コミット操作後のローカルダーティマーク
+    evt.register("BinderTree", Event.MarkModified, (id) => {
+      if (id) setLocalDirtyIds(prev => new Set([...prev, id]));
     });
     // 初期URLを取得
     Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
@@ -366,9 +383,17 @@ function BinderTree(props) {
   }, [showPublishStatus]);
 
   // Treeコンポーネント用データ（メモ化）
+  // git 検出済み + ローカルダーティをマージした修正IDセット
+  const effectiveModifiedIds = useMemo(() => {
+    if (!localDirtyIds.size) return modifiedIds;
+    const merged = new Set(modifiedIds);
+    localDirtyIds.forEach(id => merged.add(id));
+    return merged;
+  }, [modifiedIds, localDirtyIds]);
+
   const treeData = useMemo(
-    () => processTreeData(tree, modifiedIds, showModified, unpublishedMap, showPublishStatus),
-    [tree, modifiedIds, showModified, unpublishedMap, showPublishStatus]
+    () => processTreeData(tree, effectiveModifiedIds, showModified, unpublishedMap, showPublishStatus),
+    [tree, effectiveModifiedIds, showModified, unpublishedMap, showPublishStatus]
   );
 
   // ---- ハンドラ ----
@@ -450,6 +475,8 @@ function BinderTree(props) {
   const handleChange = (changeInfo) => {
     const parentId = changeInfo.parentId ?? "";
     MoveNode(parentId, changeInfo.childIds).then(() => {
+      // 移動した全子ノードをローカルダーティとしてマーク
+      changeInfo.childIds.forEach(id => evt.markModified(id));
       viewTree();
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -508,6 +535,7 @@ function BinderTree(props) {
         if (!current) { doNav(); return; }
         await EditAsset({ ...current, name: newName }, '');
       }
+      evt.markModified(id);
       evt.refreshTree();
       doNav();
     } catch (err) {
