@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 
 	"binder/api/json"
 
@@ -137,7 +138,7 @@ func (f *FileSystem) SetTemplateStatus(t *json.Template) error {
 	//元ファイルを作成
 	base := TemplateFile(t.Id)
 
-	us, _, err := f.getStatus(base, "")
+	us, _, err := f.getStatus(base, time.Time{}, time.Time{})
 	if err != nil {
 		return xerrors.Errorf("getPublishStatus() error: %w", err)
 	}

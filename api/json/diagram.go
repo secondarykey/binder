@@ -9,12 +9,13 @@ type Diagram struct {
 	Name     string `json:"name"`
 	Detail   string `json:"detail"`
 
-	Publish     time.Time `json:"publish"`
-	Republish   time.Time `json:"republish"`
-	Created     time.Time `json:"created"`
-	CreatedUser string    `json:"createdUser"`
-	Updated     time.Time `json:"updated"`
-	UpdatedUser string    `json:"updatedUser"`
+	Publish          time.Time `json:"publish"`
+	Republish        time.Time `json:"republish"`
+	StructureUpdated time.Time `json:"structureUpdated"`
+	Created          time.Time `json:"created"`
+	CreatedUser      string    `json:"createdUser"`
+	Updated          time.Time `json:"updated"`
+	UpdatedUser      string    `json:"updatedUser"`
 
 	// not schema
 	Parent        *Note  `json:"-"`
@@ -34,4 +35,5 @@ func (d *Diagram) ApplyStructure(s *Structure) {
 	d.Alias = s.Alias
 	d.Publish = s.Publish
 	d.Republish = s.Republish
+	d.StructureUpdated = s.Updated
 }

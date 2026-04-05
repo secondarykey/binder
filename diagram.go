@@ -6,7 +6,6 @@ import (
 	"binder/fs"
 	"errors"
 	"io"
-	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -235,26 +234,12 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 	}
 
-	s, err := b.db.GetStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
-	}
-
 	m := d.To()
 
-	// publish/republish タイムスタンプを設定
-	if s.Publish.IsZero() {
-		// 初回公開: publish/republish 両方に現在時刻を設定
-		now := time.Now()
-		s.Publish = now
-		s.Republish = now
-	} else {
-		// 再公開: republish のみ更新
-		s.Republish = time.Now()
-	}
-	err = b.db.UpdateStructure(s, b.op)
+	// publish/republish タイムスタンプを設定（updated_date と republish_date を同一時刻にするため PublishStructure を使用）
+	s, err := b.db.PublishStructure(id, b.op)
 	if err != nil {
-		return nil, xerrors.Errorf("db.UpdateStructure() error: %w", err)
+		return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
 	}
 	m.ApplyStructure(s.To())
 
@@ -290,12 +275,18 @@ func (b *Binder) UnpublishDiagram(id string) error {
 	m := d.To()
 	m.ApplyStructure(s.To())
 
+	// republish_date をリセットして非公開扱いにする
+	err = b.db.UnpublishStructure(id, b.op)
+	if err != nil {
+		return xerrors.Errorf("db.UnpublishStructure() error: %w", err)
+	}
+
 	fn, err := b.fileSystem.UnpublishDiagram(m)
 	if err != nil {
 		return xerrors.Errorf("fs.UnpublishDiagram() error: %w", err)
 	}
 
-	err = b.fileSystem.Commit(fs.M("Unpublish Diagram", m.Name), fn)
+	err = b.fileSystem.Commit(fs.M("Unpublish Diagram", m.Name), fn, fs.StructureTableFile())
 	if err != nil && !errors.Is(err, fs.UpdatedFilesError) {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}

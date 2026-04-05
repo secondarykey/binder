@@ -259,17 +259,15 @@ func (f *FileSystem) copyReader(out string, r io.Reader) error {
 	return nil
 }
 
-func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, error) {
+func (f *FileSystem) getStatus(source string, republish, structureUpdated time.Time) (json.Status, json.Status, error) {
 
 	us := json.ErrorStatus
 	ps := json.ErrorStatus
 
-	p := ConvertPaths(source, pub)
-
+	p := ConvertPaths(source)
 	sfn := p[0]
 
 	m, err := f.modified(sfn)
-
 	if err == nil {
 		if len(m) > 0 {
 			us = json.UpdatedStatus
@@ -280,31 +278,22 @@ func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, er
 		log.WarnE("modified error "+sfn, err)
 	}
 
-	//公開側に指定がない場合、エラー
-	if pub == "" {
+	// DB の republish_date でまず非公開判定
+	if republish.IsZero() {
+		ps = json.PrivateStatus
 		return us, ps, nil
 	}
 
+	// ソースファイルの ModTime と republish_date を比較
 	bi, err := f.Stat(sfn)
-	bt := time.Now()
-	if err == nil {
-		bt = bi.ModTime()
-	} else {
-		//存在しないはエラー
+	if err != nil {
 		return us, ps, fmt.Errorf("source file Nothing[%s]", sfn)
 	}
 
-	pi, err := f.Stat(p[1])
-	pt := time.Time{}
-	if err == nil {
-		pt = pi.ModTime()
-		if bt.After(pt) {
-			ps = json.UpdatedStatus
-		} else {
-			ps = json.LatestStatus
-		}
+	if bi.ModTime().After(republish) || structureUpdated.After(republish) {
+		ps = json.UpdatedStatus
 	} else {
-		ps = json.PrivateStatus
+		ps = json.LatestStatus
 	}
 
 	return us, ps, nil

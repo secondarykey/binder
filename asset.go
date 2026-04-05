@@ -355,12 +355,19 @@ func (b *Binder) PublishAsset(id string) (*json.Asset, error) {
 		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
+	// publish/republish タイムスタンプを更新（updated_date と republish_date を同一時刻にするため PublishStructure を使用）
+	s, err := b.db.PublishStructure(id, b.op)
+	if err != nil {
+		return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
+	}
+	a.ApplyStructure(s.To())
+
 	fn, err := b.fileSystem.PublishAsset(a)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.PublishAsset() error: %w", err)
 	}
 
-	err = b.fileSystem.Commit(fs.M("Publish Asset", a.Name), fn)
+	err = b.fileSystem.Commit(fs.M("Publish Asset", a.Name), fn, fs.StructureTableFile())
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
@@ -375,12 +382,18 @@ func (b *Binder) UnpublishAsset(id string) error {
 		return xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
+	// republish_date をリセットして非公開扱いにする
+	err = b.db.UnpublishStructure(id, b.op)
+	if err != nil {
+		return xerrors.Errorf("db.UnpublishStructure() error: %w", err)
+	}
+
 	fn, err := b.fileSystem.UnpublishAsset(a)
 	if err != nil {
 		return xerrors.Errorf("fs.UnpublishAsset() error: %w", err)
 	}
 
-	err = b.fileSystem.Commit(fs.M("Unpublish Asset", a.Name), fn)
+	err = b.fileSystem.Commit(fs.M("Unpublish Asset", a.Name), fn, fs.StructureTableFile())
 	if err != nil && !errors.Is(err, fs.UpdatedFilesError) {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}

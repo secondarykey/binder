@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"time"
 
 	"binder/db/model"
 
@@ -18,20 +17,6 @@ func (inst *Instance) ExistNote(id string) bool {
 	return false
 }
 
-func (inst *Instance) PublishNote(id string, op Op) error {
-	now := time.Now()
-	num, err := inst.updateStructure(
-		"publish_date = ?,updated_date = ?,updated_user = ?",
-		"id = ?",
-		now, now, op.GetOperationId(), id)
-	if err != nil {
-		return xerrors.Errorf("updateStructure() error: %w", err)
-	}
-	if num != 1 {
-		return fmt.Errorf("updateStructure() non single error: %v == %d", id, num)
-	}
-	return nil
-}
 
 func (inst *Instance) FindNotes() ([]*model.Note, error) {
 	return inst.findNote("", "updated_date desc", -1, -1)

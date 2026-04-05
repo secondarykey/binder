@@ -119,17 +119,10 @@ func (f *FileSystem) WriteAssetText(id string, data []byte) error {
 
 func (f *FileSystem) SetAssetStatus(a *json.Asset) error {
 
-	//元ファイルを作成
 	base := AssetFile(a)
-	//公開ファイルを取得
-	pub := PublicAssetFile(a)
-	if pub == "" {
-		return fmt.Errorf("public asset file error:[%s]", a.Id)
-	}
 
-	us, ps, err := f.getStatus(base, pub)
+	us, ps, err := f.getStatus(base, a.Republish, a.StructureUpdated)
 	if err != nil {
-		//存在しないはエラー
 		return xerrors.Errorf("getPublishStats() error: %w", err)
 	}
 	a.UpdatedStatus = us

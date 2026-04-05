@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"time"
 
 	"binder/api/json"
 	"binder/db/model"
@@ -107,20 +106,6 @@ func (inst *Instance) FindAssetWithParent() ([]*json.Asset, error) {
 	return rtn, nil
 }
 
-func (inst *Instance) PublishAsset(id string, op Op) error {
-	now := time.Now()
-	num, err := inst.updateStructure(
-		"publish_date = ?,updated_date = ?,updated_user = ?",
-		"id = ?",
-		now, now, op.GetOperationId(), id)
-	if err != nil {
-		return xerrors.Errorf("updateStructure() error: %w", err)
-	}
-	if num != 1 {
-		return fmt.Errorf("updateStructure() non single error: %v == %d", id, num)
-	}
-	return nil
-}
 
 func (inst *Instance) GetAssetWithParent(id string) (*json.Asset, error) {
 
