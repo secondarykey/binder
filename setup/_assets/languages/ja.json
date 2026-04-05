@@ -215,7 +215,8 @@
         "renameSuccess" : "ブランチ名を変更しました: {{old}} → {{new}}",
         "reloadError" : "ブランチ切替後の再読み込みに失敗しました。Binderを開き直してください。",
         "uncommittedError" : "ブランチを切り替える前に変更をコミットしてください。",
-        "confirmSwitch" : "このブランチに切り替えますか？バインダーが再読み込みされます。"
+        "confirmSwitch" : "このブランチに切り替えますか？バインダーが再読み込みされます。",
+        "confirmCreate" : "現在のブランチ '{{from}}' から新規ブランチ '{{name}}' を作成しますか？"
     },
     "commitModal" : {
         "title" : "コミット",
