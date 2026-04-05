@@ -715,6 +715,7 @@ function Editor(props) {
 
     writeFn(mode, id, txt).then(() => {
       console.debug("Write!");
+      evt.reloadModified();
     }).catch((err) => {;
       evt.showErrorMessage(err);
     });
