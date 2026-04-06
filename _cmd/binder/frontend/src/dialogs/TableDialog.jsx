@@ -4,7 +4,7 @@ import {
   TextField, ToggleButton, ToggleButtonGroup, Tooltip,
 } from "@mui/material";
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
 import {
   SortableContext, useSortable, arrayMove,
@@ -130,15 +130,21 @@ function SortableColHandle({ id, colWidth }) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// サブコンポーネント: 行の表示内容（ドラッグオーバーレイでも再利用）
+// サブコンポーネント: データ行（行ドラッグ対応）
 // ────────────────────────────────────────────────────────────────
 
-function RowContent({ row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth, dragHandleProps }) {
+function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth }) {
   const { t } = useTranslation();
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging,
+  } = useSortable({ id });
+
   return (
     <Box sx={{ display: "flex", alignItems: "stretch", mb: "2px" }}>
-      {/* 行ドラッグハンドル */}
+      {/* 行ドラッグハンドル: transform はここだけに適用（列ハンドルと同じ方式） */}
       <Box
+        ref={setNodeRef}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
         sx={{
           width: "32px",
           flexShrink: 0,
@@ -146,10 +152,11 @@ function RowContent({ row, r, aligns, selectedCell, onCellClick, onDeleteRow, co
           alignItems: "center",
           justifyContent: "center",
           cursor: "grab",
-          color: "var(--text-faint)",
+          color: isDragging ? "var(--text-primary)" : "var(--text-faint)",
           "&:active": { cursor: "grabbing" },
         }}
-        {...dragHandleProps}
+        {...attributes}
+        {...listeners}
       >
         <DragIndicatorIcon sx={{ fontSize: "14px" }} />
       </Box>
@@ -216,27 +223,6 @@ function RowContent({ row, r, aligns, selectedCell, onCellClick, onDeleteRow, co
 }
 
 // ────────────────────────────────────────────────────────────────
-// サブコンポーネント: データ行（行ドラッグ対応）
-// ────────────────────────────────────────────────────────────────
-
-function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id });
-
-  return (
-    <Box ref={setNodeRef} sx={{ opacity: isDragging ? 0 : 1 }}>
-      <RowContent
-        row={row} r={r} aligns={aligns}
-        selectedCell={selectedCell}
-        onCellClick={onCellClick}
-        onDeleteRow={onDeleteRow}
-        colWidth={colWidth}
-        dragHandleProps={{ ...attributes, ...listeners }}
-      />
-    </Box>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────
 // メインコンポーネント
 // ────────────────────────────────────────────────────────────────
 
@@ -251,7 +237,6 @@ function TableDialog({ open, tableLines, onClose }) {
   const [aligns, setAligns] = useState([]);
   const [selectedCell, setSelectedCell] = useState({ r: -1, c: -1 });
   const [cellText, setCellText] = useState("");
-  const [activeId, setActiveId] = useState(null);
 
   // tableLines が変わったらパース
   useEffect(() => {
@@ -332,10 +317,7 @@ function TableDialog({ open, tableLines, onClose }) {
   // ドラッグ
   // ────────────────────────
 
-  const handleDragStart = ({ active }) => setActiveId(String(active.id));
-
   const handleDragEnd = ({ active, over }) => {
-    setActiveId(null);
     if (!over || active.id === over.id) return;
 
     const activeStr = String(active.id);
@@ -403,7 +385,6 @@ function TableDialog({ open, tableLines, onClose }) {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <Box sx={{ overflowX: "auto", pb: 1 }}>
@@ -558,26 +539,6 @@ function TableDialog({ open, tableLines, onClose }) {
               </Box>
             </Box>
 
-            <DragOverlay>
-              {activeId && activeId.startsWith("row-") && (() => {
-                const idx = parseInt(activeId.slice(4));
-                if (!rows[idx]) return null;
-                return (
-                  <Box sx={{ opacity: 0.9, boxShadow: 4, borderRadius: "2px", backgroundColor: "var(--bg-elevated)" }}>
-                    <RowContent
-                      row={rows[idx]}
-                      r={idx}
-                      aligns={aligns}
-                      selectedCell={{ r: -1, c: -1 }}
-                      onCellClick={() => {}}
-                      onDeleteRow={() => {}}
-                      colWidth={colWidth}
-                      dragHandleProps={{}}
-                    />
-                  </Box>
-                );
-              })()}
-            </DragOverlay>
           </DndContext>
         )}
 
