@@ -382,6 +382,20 @@
         "externalEditorLocked" : "外部エディタで開いています。",
         "searchPlaceholder" : "テキストを検索...",
         "searchMatches" : "{{count}}件",
-        "searchNoMatches" : "一致なし"
+        "searchNoMatches" : "一致なし",
+        "tableEdit" : "テーブル編集",
+        "notInTable" : "カーソルがテーブル内にありません"
+    },
+    "tableDialog" : {
+        "title" : "テーブル編集",
+        "addRow" : "行追加",
+        "deleteRow" : "行削除",
+        "addColumn" : "列追加",
+        "deleteColumn" : "列削除",
+        "alignLeft" : "左寄せ",
+        "alignCenter" : "中央寄せ",
+        "alignRight" : "右寄せ",
+        "cellText" : "セルテキスト",
+        "updateCell" : "更新"
     }
 }

@@ -382,6 +382,20 @@
         "externalEditorLocked" : "Opened in external editor.",
         "searchPlaceholder" : "Search text...",
         "searchMatches" : "{{count}} matches",
-        "searchNoMatches" : "No matches"
+        "searchNoMatches" : "No matches",
+        "tableEdit" : "Edit Table",
+        "notInTable" : "Cursor is not inside a table"
+    },
+    "tableDialog" : {
+        "title" : "Edit Table",
+        "addRow" : "Add Row",
+        "deleteRow" : "Delete Row",
+        "addColumn" : "Add Column",
+        "deleteColumn" : "Delete Column",
+        "alignLeft" : "Align Left",
+        "alignCenter" : "Align Center",
+        "alignRight" : "Align Right",
+        "cellText" : "Cell Text",
+        "updateCell" : "Update"
     }
 }

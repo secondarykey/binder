@@ -44,9 +44,11 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import FontDialog from "../../dialogs/FontDialog.jsx";
+import TableDialog from "../../dialogs/TableDialog.jsx";
 
 import BinderTree from "../../components/BinderTree.jsx";
 import TemplateTree from "../../app/TemplateTree.jsx";
@@ -80,6 +82,50 @@ function flattenStructures(nodes) {
     }
   }
   return result;
+}
+
+/**
+ * カーソル位置からマークダウンテーブルの範囲を検出する
+ * @param {string} fullText
+ * @param {number} cursorPos
+ * @returns {{ startOffset: number, endOffset: number, lines: string[] } | null}
+ */
+function detectTableAt(fullText, cursorPos) {
+  const allLines = fullText.split("\n");
+  let offset = 0;
+  let cursorLineIdx = -1;
+
+  for (let i = 0; i < allLines.length; i++) {
+    const lineEnd = offset + allLines[i].length;
+    if (cursorPos <= lineEnd) {
+      cursorLineIdx = i;
+      break;
+    }
+    offset = lineEnd + 1;
+  }
+
+  if (cursorLineIdx < 0) return null;
+  if (!allLines[cursorLineIdx].trimStart().startsWith("|")) return null;
+
+  let startLine = cursorLineIdx;
+  while (startLine > 0 && allLines[startLine - 1].trimStart().startsWith("|")) {
+    startLine--;
+  }
+
+  let endLine = cursorLineIdx;
+  while (endLine < allLines.length - 1 && allLines[endLine + 1].trimStart().startsWith("|")) {
+    endLine++;
+  }
+
+  const tableLines = allLines.slice(startLine, endLine + 1);
+  if (tableLines.length < 2) return null;
+  if (!/^\|[-:| ]+\|$/.test(tableLines[1].trim())) return null;
+
+  const startOffset =
+    allLines.slice(0, startLine).join("\n").length + (startLine > 0 ? 1 : 0);
+  const endOffset = startOffset + tableLines.join("\n").length;
+
+  return { startOffset, endOffset, lines: tableLines };
 }
 
 /**
@@ -164,6 +210,11 @@ function Editor(props) {
   const [treeWidth, setTreeWidth] = useState(250);
 
   const [fontDialog, setShowFontDialog] = useState(false);
+
+  // テーブル編集ダイアログ
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
+  const [tableDialogLines, setTableDialogLines] = useState([]);
+  const [tableRange, setTableRange] = useState({ start: 0, end: 0 });
 
   // エディタメニュー MoreVert
   const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, el: null });
@@ -1039,6 +1090,38 @@ function Editor(props) {
   }
 
   /**
+   * テーブル編集ダイアログを起動
+   */
+  const handleTableEdit = () => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const result = detectTableAt(textarea.value, textarea.selectionStart);
+    if (!result) {
+      evt.showWarningMessage(t("editor.notInTable"));
+      return;
+    }
+    setTableDialogLines(result.lines);
+    setTableRange({ start: result.startOffset, end: result.endOffset });
+    setTableDialogOpen(true);
+  };
+
+  /**
+   * テーブル編集ダイアログを終了
+   */
+  const handleTableClose = (newMarkdown) => {
+    setTableDialogOpen(false);
+    if (newMarkdown === null) return;
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const newText =
+      textarea.value.substring(0, tableRange.start) +
+      newMarkdown +
+      textarea.value.substring(tableRange.end);
+    textarea.value = newText;
+    setTimeout(() => setText(newText), 500);
+  };
+
+  /**
    * フォントの設定
    */
   const settingFont = (set, save) => {
@@ -1304,6 +1387,15 @@ function Editor(props) {
                         <FormatQuoteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
+                    {/** テーブル編集 */}
+                    <Tooltip title={t("editor.tableEdit")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="table-edit" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleTableEdit} className="editorBtn">
+                        <TableChartIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </>}
 
                 </Container>
@@ -1560,6 +1652,13 @@ function Editor(props) {
 
       {/** フォント設定 */}
       <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose} />
+
+      {/** テーブル編集ダイアログ */}
+      <TableDialog
+        open={tableDialogOpen}
+        tableLines={tableDialogLines}
+        onClose={handleTableClose}
+      />
 
       {/** パースエラー詳細ダイアログ */}
       <Dialog open={parseErrorDlg} onClose={() => setParseErrorDlg(false)}>
