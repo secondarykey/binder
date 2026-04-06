@@ -29,7 +29,7 @@ import MarkedScript from '../components/editor/engines/Marked';
 import MermaidScript from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next'
 
 /**

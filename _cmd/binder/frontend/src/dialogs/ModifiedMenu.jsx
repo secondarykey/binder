@@ -9,7 +9,7 @@ import {
 import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

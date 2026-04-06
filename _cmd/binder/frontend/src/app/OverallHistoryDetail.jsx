@@ -17,7 +17,7 @@ import { GetCommitFiles, GetCommitFilesByPath } from '../../bindings/binder/api/
 import { OpenHistoryWindow } from '../../bindings/main/window';
 
 import { EventContext } from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 const typeOrder = ['note', 'diagram', 'asset', 'template', 'database', 'publish', 'other'];

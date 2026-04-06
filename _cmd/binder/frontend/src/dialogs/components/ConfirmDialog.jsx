@@ -2,7 +2,7 @@ import {
   Button, Dialog, DialogActions, DialogContentText, DialogTitle,
 } from "@mui/material";
 
-import "../../i18n/config";
+import "../../language";
 import { useTranslation } from 'react-i18next';
 
 /**

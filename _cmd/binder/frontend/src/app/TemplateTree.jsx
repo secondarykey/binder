@@ -13,7 +13,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../bindings/binder/api/app';
 import { OpenHistoryWindow } from '../../bindings/main/window';
 
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 import Event, { EventContext } from '../Event';

@@ -18,7 +18,7 @@ import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
-import "../../i18n/config";
+import "../../language";
 import { useTranslation } from 'react-i18next';
 
 import HTMLFrame from "./HTMLFrame.jsx";

@@ -15,7 +15,7 @@ import noImage from '../assets/images/noimage.png';
 import { EventContext } from "../Event";
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

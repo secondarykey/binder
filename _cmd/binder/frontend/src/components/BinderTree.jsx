@@ -26,7 +26,7 @@ import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset,
 
 import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 import { copyClipboard } from '../app/App';

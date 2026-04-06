@@ -19,7 +19,7 @@ import FormatAlignCenterIcon from "@mui/icons-material/FormatAlignCenter";
 import FormatAlignRightIcon from "@mui/icons-material/FormatAlignRight";
 import ModalWrapper from "./components/ModalWrapper.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from "react-i18next";
 
 // ────────────────────────────────────────────────────────────────

@@ -15,7 +15,7 @@ import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 const MENU_ITEMS_KEYS = [

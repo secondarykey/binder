@@ -12,7 +12,7 @@ import AuthFields from '../components/AuthFields';
 import { GetUserInfo, RemoteList, Push, CurrentBranch } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
-import '../i18n/config';
+import '../language';
 import { useTranslation } from 'react-i18next';
 
 /**

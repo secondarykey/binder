@@ -17,7 +17,7 @@ import Marked from '../components/editor/engines/Marked';
 import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

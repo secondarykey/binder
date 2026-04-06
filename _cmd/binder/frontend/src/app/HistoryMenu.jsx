@@ -16,7 +16,7 @@ import { Events, Window } from '@wailsio/runtime';
 import { GetHistory, GetModifiedIds, RestoreHistory } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;

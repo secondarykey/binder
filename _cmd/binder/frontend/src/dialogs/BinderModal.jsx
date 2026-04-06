@@ -1,6 +1,6 @@
 import Binder from './Binder';
 import ModalWrapper from './components/ModalWrapper';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

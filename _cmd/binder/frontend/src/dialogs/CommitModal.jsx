@@ -8,7 +8,7 @@ import Patch from '../components/Patch';
 import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

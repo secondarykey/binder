@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress } from "@mui/material";
 
 import Event,{EventContext} from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

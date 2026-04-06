@@ -12,7 +12,7 @@ import SearchApp from './app/SearchApp'
 
 import { GetTheme, GetLanguage } from '../bindings/binder/api/app'
 import { applyTheme } from './theme'
-import { loadLanguage } from './i18n/config'
+import { loadLanguage } from './language'
 
 const container = document.getElementById('root')
 const root = createRoot(container)

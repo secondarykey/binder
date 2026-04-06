@@ -11,7 +11,7 @@ import { MenuItem, Select } from "@mui/material";
 import { Close } from "@mui/icons-material";
 
 import { MuiColorInput } from 'mui-color-input'
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

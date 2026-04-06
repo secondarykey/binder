@@ -5,7 +5,7 @@ import GenerateForm from './GenerateForm';
 import ModalWrapper from './components/ModalWrapper';
 
 import '../assets/CommitApp.css';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

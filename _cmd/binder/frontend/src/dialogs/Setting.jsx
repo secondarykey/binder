@@ -15,10 +15,10 @@ import SnippetSetting from "./SnippetSetting";
 import EditorSetting from "./EditorSetting";
 import GitSetting from "./GitSetting";
 import LicenseSetting from "./LicenseSetting";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 import { applyTheme } from '../theme';
-import { loadLanguage } from '../i18n/config';
+import { loadLanguage } from '../language';
 
 /**
  * アプリ設定

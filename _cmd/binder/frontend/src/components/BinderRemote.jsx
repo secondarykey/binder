@@ -14,7 +14,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import AuthFields from "../components/AuthFields";
 import Event, { EventContext } from "../Event";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

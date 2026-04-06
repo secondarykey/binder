@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { FormControl, FormLabel, TextField } from "@mui/material";
 
 import { EditTemplate, GetTemplate, RemoveTemplate } from "../../bindings/binder/api/app";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 import { EventContext } from "../Event";

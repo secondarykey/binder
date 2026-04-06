@@ -3,7 +3,7 @@ import { useEffect, useState,useContext } from "react";
 import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
 
 import Event,{EventContext} from "./Event";
-import "./i18n/config";
+import "./language";
 import { useTranslation } from 'react-i18next';
 
 class Message {
