@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
-  Box, Button, DialogActions, DialogContent, IconButton, MenuItem,
-  Select, TextField, Tooltip, Typography,
+  Box, Button, DialogActions, DialogContent, IconButton,
+  TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
 } from "@mui/material";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
@@ -194,8 +194,9 @@ function SortableRow({
                 : aligns[c] === "right"
                 ? "right"
                 : "left",
-            whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
             minHeight: "28px",
             mr: "2px",
             userSelect: "none",
@@ -265,8 +266,8 @@ function TableDialog({ open, tableLines, onClose }) {
   }, [open, tableLines]);
 
   const colCount = aligns.length;
-  // 列幅: 最低80px
-  const colWidth = Math.max(80, Math.floor((900 - 32 - 32 - colCount * 2) / colCount));
+  // 列幅: 固定
+  const colWidth = 120;
 
   const rowIds = rows.map((_, i) => `row-${i}`);
   const colIds = aligns.map((_, i) => `col-${i}`);
@@ -446,38 +447,43 @@ function TableDialog({ open, tableLines, onClose }) {
 
                 {aligns.map((align, c) => (
                   <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px" }}>
-                    <Select
-                      size="small"
+                    <ToggleButtonGroup
                       value={align}
-                      onChange={(e) => handleAlignChange(c, e.target.value)}
+                      exclusive
+                      size="small"
+                      onChange={(_, v) => { if (v) handleAlignChange(c, v); }}
                       sx={{
                         width: "100%",
-                        fontSize: "12px",
                         height: "28px",
-                        backgroundColor: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                        "& .MuiOutlinedInput-notchedOutline": {
+                        "& .MuiToggleButton-root": {
+                          flex: 1,
+                          padding: "2px",
+                          color: "var(--text-faint)",
                           borderColor: "var(--border-input)",
+                          "&.Mui-selected": {
+                            color: "var(--text-primary)",
+                            backgroundColor: "rgba(255,255,255,0.10)",
+                          },
+                          "&:hover": { backgroundColor: "rgba(255,255,255,0.06)" },
                         },
-                        "& .MuiSvgIcon-root": { color: "var(--text-primary)" },
                       }}
                     >
-                      <MenuItem value="left">
-                        <Tooltip title={t("tableDialog.alignLeft")} placement="right">
-                          <FormatAlignLeftIcon sx={{ fontSize: "16px" }} />
+                      <ToggleButton value="left">
+                        <Tooltip title={t("tableDialog.alignLeft")} placement="top">
+                          <FormatAlignLeftIcon sx={{ fontSize: "14px" }} />
                         </Tooltip>
-                      </MenuItem>
-                      <MenuItem value="center">
-                        <Tooltip title={t("tableDialog.alignCenter")} placement="right">
-                          <FormatAlignCenterIcon sx={{ fontSize: "16px" }} />
+                      </ToggleButton>
+                      <ToggleButton value="center">
+                        <Tooltip title={t("tableDialog.alignCenter")} placement="top">
+                          <FormatAlignCenterIcon sx={{ fontSize: "14px" }} />
                         </Tooltip>
-                      </MenuItem>
-                      <MenuItem value="right">
-                        <Tooltip title={t("tableDialog.alignRight")} placement="right">
-                          <FormatAlignRightIcon sx={{ fontSize: "16px" }} />
+                      </ToggleButton>
+                      <ToggleButton value="right">
+                        <Tooltip title={t("tableDialog.alignRight")} placement="top">
+                          <FormatAlignRightIcon sx={{ fontSize: "14px" }} />
                         </Tooltip>
-                      </MenuItem>
-                    </Select>
+                      </ToggleButton>
+                    </ToggleButtonGroup>
                   </Box>
                 ))}
 
