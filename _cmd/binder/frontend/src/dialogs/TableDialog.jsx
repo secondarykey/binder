@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Box, Button, DialogActions, DialogContent, IconButton,
-  TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
+  TextField, ToggleButton, ToggleButtonGroup, Tooltip,
 } from "@mui/material";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
@@ -130,28 +130,13 @@ function SortableColHandle({ id, colWidth }) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// サブコンポーネント: データ行（行ドラッグ対応）
+// サブコンポーネント: 行の表示内容（ドラッグオーバーレイでも再利用）
 // ────────────────────────────────────────────────────────────────
 
-function SortableRow({
-  id, row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth,
-}) {
+function RowContent({ row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth, dragHandleProps }) {
   const { t } = useTranslation();
-  const {
-    attributes, listeners, setNodeRef, transform, transition, isDragging,
-  } = useSortable({ id });
-
   return (
-    <Box
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      sx={{
-        display: "flex",
-        alignItems: "stretch",
-        opacity: isDragging ? 0.4 : 1,
-        mb: "2px",
-      }}
-    >
+    <Box sx={{ display: "flex", alignItems: "stretch", mb: "2px" }}>
       {/* 行ドラッグハンドル */}
       <Box
         sx={{
@@ -164,8 +149,7 @@ function SortableRow({
           color: "var(--text-faint)",
           "&:active": { cursor: "grabbing" },
         }}
-        {...attributes}
-        {...listeners}
+        {...dragHandleProps}
       >
         <DragIndicatorIcon sx={{ fontSize: "14px" }} />
       </Box>
@@ -205,13 +189,7 @@ function SortableRow({
           }}
         >
           {cell || (
-            <span
-              style={{
-                color: "var(--text-faint)",
-                fontStyle: "italic",
-                pointerEvents: "none",
-              }}
-            >
+            <span style={{ color: "var(--text-faint)", fontStyle: "italic", pointerEvents: "none" }}>
               &nbsp;
             </span>
           )}
@@ -226,16 +204,34 @@ function SortableRow({
               size="small"
               onClick={() => onDeleteRow(r)}
               disabled={r === 0}
-              sx={{
-                color: r === 0 ? "transparent" : "var(--accent-red, #e57373)",
-                padding: "2px",
-              }}
+              sx={{ color: r === 0 ? "transparent" : "var(--accent-red, #e57373)", padding: "2px" }}
             >
               <DeleteIcon sx={{ fontSize: "14px" }} />
             </IconButton>
           </span>
         </Tooltip>
       </Box>
+    </Box>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+// サブコンポーネント: データ行（行ドラッグ対応）
+// ────────────────────────────────────────────────────────────────
+
+function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id });
+
+  return (
+    <Box ref={setNodeRef} sx={{ opacity: isDragging ? 0 : 1 }}>
+      <RowContent
+        row={row} r={r} aligns={aligns}
+        selectedCell={selectedCell}
+        onCellClick={onCellClick}
+        onDeleteRow={onDeleteRow}
+        colWidth={colWidth}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </Box>
   );
 }
@@ -565,20 +561,19 @@ function TableDialog({ open, tableLines, onClose }) {
             <DragOverlay>
               {activeId && activeId.startsWith("row-") && (() => {
                 const idx = parseInt(activeId.slice(4));
+                if (!rows[idx]) return null;
                 return (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      backgroundColor: "var(--bg-elevated)",
-                      opacity: 0.85,
-                      border: "1px solid var(--border-subtle)",
-                      borderRadius: "2px",
-                      p: "2px 4px",
-                    }}
-                  >
-                    <Typography sx={{ fontSize: "13px", color: "var(--text-primary)" }}>
-                      {rows[idx]?.join(" | ")}
-                    </Typography>
+                  <Box sx={{ opacity: 0.9, boxShadow: 4, borderRadius: "2px", backgroundColor: "var(--bg-elevated)" }}>
+                    <RowContent
+                      row={rows[idx]}
+                      r={idx}
+                      aligns={aligns}
+                      selectedCell={{ r: -1, c: -1 }}
+                      onCellClick={() => {}}
+                      onDeleteRow={() => {}}
+                      colWidth={colWidth}
+                      dragHandleProps={{}}
+                    />
                   </Box>
                 );
               })()}
