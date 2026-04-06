@@ -18,6 +18,7 @@ import FormatAlignLeftIcon from "@mui/icons-material/FormatAlignLeft";
 import FormatAlignCenterIcon from "@mui/icons-material/FormatAlignCenter";
 import FormatAlignRightIcon from "@mui/icons-material/FormatAlignRight";
 import ModalWrapper from "./components/ModalWrapper.jsx";
+import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import "../i18n/config";
 import { useTranslation } from "react-i18next";
 
@@ -212,7 +213,7 @@ function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRo
               size="small"
               onClick={() => onDeleteRow(r)}
               disabled={r === 0}
-              sx={{ color: r === 0 ? "transparent" : "var(--accent-red, #e57373)", padding: "2px" }}
+              sx={{ color: r === 0 ? "transparent" : "#e57373", padding: "2px" }}
             >
               <DeleteIcon sx={{ fontSize: "14px" }} />
             </IconButton>
@@ -238,6 +239,7 @@ function TableDialog({ open, tableLines, onClose }) {
   const [aligns, setAligns] = useState([]);
   const [selectedCell, setSelectedCell] = useState({ r: -1, c: -1 });
   const [cellText, setCellText] = useState("");
+  const [confirmState, setConfirmState] = useState({ open: false, type: null, index: -1 });
 
   // tableLines が変わったらパース
   useEffect(() => {
@@ -290,11 +292,7 @@ function TableDialog({ open, tableLines, onClose }) {
 
   const handleDeleteColumn = (c) => {
     if (aligns.length <= 1) return;
-    setAligns((a) => a.filter((_, i) => i !== c));
-    setRows((prev) => prev.map((row) => row.filter((_, i) => i !== c)));
-    if (selectedCell.c === c) setSelectedCell({ r: -1, c: -1 });
-    else if (selectedCell.c > c)
-      setSelectedCell((sel) => ({ ...sel, c: sel.c - 1 }));
+    setConfirmState({ open: true, type: "col", index: c });
   };
 
   const handleAddRow = () => {
@@ -304,10 +302,28 @@ function TableDialog({ open, tableLines, onClose }) {
   const handleDeleteRow = (r) => {
     if (r === 0) return;
     if (rows.length <= 2) return; // ヘッダ + 最低1データ行
-    setRows((prev) => prev.filter((_, i) => i !== r));
-    if (selectedCell.r === r) setSelectedCell({ r: -1, c: -1 });
-    else if (selectedCell.r > r)
-      setSelectedCell((sel) => ({ ...sel, r: sel.r - 1 }));
+    setConfirmState({ open: true, type: "row", index: r });
+  };
+
+  const handleConfirmDelete = () => {
+    const { type, index } = confirmState;
+    setConfirmState({ open: false, type: null, index: -1 });
+    if (type === "row") {
+      setRows((prev) => prev.filter((_, i) => i !== index));
+      if (selectedCell.r === index) setSelectedCell({ r: -1, c: -1 });
+      else if (selectedCell.r > index)
+        setSelectedCell((sel) => ({ ...sel, r: sel.r - 1 }));
+    } else if (type === "col") {
+      setAligns((a) => a.filter((_, i) => i !== index));
+      setRows((prev) => prev.map((row) => row.filter((_, i) => i !== index)));
+      if (selectedCell.c === index) setSelectedCell({ r: -1, c: -1 });
+      else if (selectedCell.c > index)
+        setSelectedCell((sel) => ({ ...sel, c: sel.c - 1 }));
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmState({ open: false, type: null, index: -1 });
   };
 
   const handleAlignChange = (c, value) => {
@@ -499,7 +515,7 @@ function TableDialog({ open, tableLines, onClose }) {
                         size="small"
                         onClick={() => handleDeleteColumn(c)}
                         disabled={aligns.length <= 1}
-                        sx={{ color: aligns.length <= 1 ? "transparent" : "var(--accent-red, #e57373)", padding: "2px" }}
+                        sx={{ color: aligns.length <= 1 ? "transparent" : "#e57373", padding: "2px" }}
                       >
                         <DeleteIcon sx={{ fontSize: "14px" }} />
                       </IconButton>
@@ -568,6 +584,14 @@ function TableDialog({ open, tableLines, onClose }) {
           {t("tableDialog.updateCell")}
         </Button>
       </DialogActions>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.type === "row" ? t("tableDialog.deleteRowTitle") : t("tableDialog.deleteColumnTitle")}
+        message={confirmState.type === "row" ? t("tableDialog.deleteRowConfirm") : t("tableDialog.deleteColumnConfirm")}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </ModalWrapper>
   );
 }

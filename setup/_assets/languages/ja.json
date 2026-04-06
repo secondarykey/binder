@@ -396,6 +396,10 @@
         "alignCenter" : "中央寄せ",
         "alignRight" : "右寄せ",
         "cellText" : "セルテキスト",
-        "updateCell" : "更新"
+        "updateCell" : "更新",
+        "deleteRowTitle" : "行削除",
+        "deleteRowConfirm" : "この行を削除しますか？",
+        "deleteColumnTitle" : "列削除",
+        "deleteColumnConfirm" : "この列を削除しますか？"
     }
 }

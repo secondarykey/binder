@@ -396,6 +396,10 @@
         "alignCenter" : "Align Center",
         "alignRight" : "Align Right",
         "cellText" : "Cell Text",
-        "updateCell" : "Update"
+        "updateCell" : "Update",
+        "deleteRowTitle" : "Delete Row",
+        "deleteRowConfirm" : "Delete this row?",
+        "deleteColumnTitle" : "Delete Column",
+        "deleteColumnConfirm" : "Delete this column?"
     }
 }
