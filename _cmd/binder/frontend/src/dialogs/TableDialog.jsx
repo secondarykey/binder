@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box, Button, DialogActions, DialogContent, IconButton,
   TextField, ToggleButton, ToggleButtonGroup, Tooltip,
@@ -240,6 +240,7 @@ function TableDialog({ open, tableLines, onClose }) {
   const [selectedCell, setSelectedCell] = useState({ r: -1, c: -1 });
   const [cellText, setCellText] = useState("");
   const [confirmState, setConfirmState] = useState({ open: false, type: null, index: -1 });
+  const cellInputRef = useRef(null);
 
   // tableLines が変わったらパース
   useEffect(() => {
@@ -276,6 +277,7 @@ function TableDialog({ open, tableLines, onClose }) {
   const handleCellClick = (r, c) => {
     setSelectedCell({ r, c });
     setCellText(rows[r][c]);
+    setTimeout(() => cellInputRef.current?.focus(), 0);
   };
 
   const handleCellTextChange = (value) => {
@@ -551,6 +553,7 @@ function TableDialog({ open, tableLines, onClose }) {
           }}
         >
           <TextField
+            inputRef={cellInputRef}
             multiline
             rows={3}
             fullWidth
