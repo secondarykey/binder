@@ -141,7 +141,7 @@ function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRo
 
   return (
     <Box sx={{ display: "flex", alignItems: "stretch", mb: "2px" }}>
-      {/* 行ドラッグハンドル: transform はここだけに適用（列ハンドルと同じ方式） */}
+      {/* 行ドラッグハンドル */}
       <Box
         ref={setNodeRef}
         style={{ transform: CSS.Transform.toString(transform), transition }}
@@ -182,11 +182,9 @@ function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRo
             backgroundColor:
               r === 0 ? "var(--bg-elevated)" : "var(--bg-surface)",
             textAlign:
-              aligns[c] === "center"
-                ? "center"
-                : aligns[c] === "right"
-                ? "right"
-                : "left",
+              aligns[c] === "center" ? "center"
+              : aligns[c] === "right" ? "right"
+              : "left",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -203,7 +201,10 @@ function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRo
         </Box>
       ))}
 
-      {/* 行削除ボタン */}
+      {/* +列の空欄 */}
+      <Box sx={{ width: "32px", flexShrink: 0 }} />
+
+      {/* ×列: 行削除ボタン */}
       <Box sx={{ width: "32px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Tooltip title={t("tableDialog.deleteRow")} placement="right">
           <span>
@@ -390,9 +391,7 @@ function TableDialog({ open, tableLines, onClose }) {
             <Box sx={{ overflowX: "auto", pb: 1 }}>
               {/* ─── 列ドラッグハンドル行 ─── */}
               <Box sx={{ display: "flex", alignItems: "center", mb: "2px" }}>
-                {/* 行ドラッグハンドル列の空欄 */}
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
-
                 <SortableContext items={colIds} strategy={horizontalListSortingStrategy}>
                   {colIds.map((cid) => (
                     <Box key={cid} sx={{ mr: "2px" }}>
@@ -400,27 +399,20 @@ function TableDialog({ open, tableLines, onClose }) {
                     </Box>
                   ))}
                 </SortableContext>
-
-                {/* 列追加ボタン */}
+                {/* +列: 列追加ボタン */}
                 <Tooltip title={t("tableDialog.addColumn")} placement="top">
-                  <IconButton
-                    size="small"
-                    onClick={handleAddColumn}
-                    sx={{
-                      width: "32px",
-                      flexShrink: 0,
-                      color: "var(--text-secondary, var(--text-primary))",
-                    }}
-                  >
+                  <IconButton size="small" onClick={handleAddColumn}
+                    sx={{ width: "32px", flexShrink: 0, color: "var(--text-secondary, var(--text-primary))" }}>
                     <AddIcon sx={{ fontSize: "14px" }} />
                   </IconButton>
                 </Tooltip>
+                {/* ×列: ヘッダ行は空欄 */}
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
 
               {/* ─── Align 設定行 ─── */}
               <Box sx={{ display: "flex", alignItems: "center", mb: "4px" }}>
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
-
                 {aligns.map((align, c) => (
                   <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px", boxSizing: "border-box", border: "1px solid transparent" }}>
                     <ToggleButtonGroup
@@ -462,8 +454,8 @@ function TableDialog({ open, tableLines, onClose }) {
                     </ToggleButtonGroup>
                   </Box>
                 ))}
-
-                {/* 削除ボタン列の空欄 */}
+                {/* +列・×列: align行は空欄 */}
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
 
@@ -484,57 +476,38 @@ function TableDialog({ open, tableLines, onClose }) {
                 ))}
               </SortableContext>
 
-              {/* ─── フッタ行（行追加 + 列削除） ─── */}
+              {/* ─── +行: 行追加 ─── */}
               <Box sx={{ display: "flex", alignItems: "center", mt: "4px" }}>
-                {/* 行追加ボタン */}
                 <Tooltip title={t("tableDialog.addRow")} placement="bottom">
-                  <IconButton
-                    size="small"
-                    onClick={handleAddRow}
-                    sx={{
-                      width: "32px",
-                      flexShrink: 0,
-                      color: "var(--text-secondary, var(--text-primary))",
-                    }}
-                  >
+                  <IconButton size="small" onClick={handleAddRow}
+                    sx={{ width: "32px", flexShrink: 0, color: "var(--text-secondary, var(--text-primary))" }}>
                     <AddIcon sx={{ fontSize: "14px" }} />
                   </IconButton>
                 </Tooltip>
+                {aligns.map((_, c) => <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />)}
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
+              </Box>
 
-                {/* 列削除ボタン群 */}
+              {/* ─── ×行: 列削除 ─── */}
+              <Box sx={{ display: "flex", alignItems: "center", mt: "2px" }}>
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
                 {aligns.map((_, c) => (
-                  <Box
-                    key={c}
-                    sx={{
-                      width: colWidth,
-                      flexShrink: 0,
-                      mr: "2px",
-                      boxSizing: "border-box",
-                      border: "1px solid transparent",
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px", boxSizing: "border-box", border: "1px solid transparent", display: "flex", justifyContent: "center" }}>
                     <Tooltip title={t("tableDialog.deleteColumn")} placement="bottom">
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteColumn(c)}
                         disabled={aligns.length <= 1}
-                        sx={{
-                          color:
-                            aligns.length <= 1
-                              ? "transparent"
-                              : "var(--accent-red, #e57373)",
-                          padding: "2px",
-                        }}
+                        sx={{ color: aligns.length <= 1 ? "transparent" : "var(--accent-red, #e57373)", padding: "2px" }}
                       >
                         <DeleteIcon sx={{ fontSize: "14px" }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
                 ))}
-
-                {/* 削除ボタン列の空欄 */}
+                {/* +列・×列: ×行は空欄 */}
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
             </Box>
