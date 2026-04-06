@@ -134,8 +134,7 @@ function SortableColHandle({ id, colWidth }) {
 // サブコンポーネント: データ行（行ドラッグ対応）
 // ────────────────────────────────────────────────────────────────
 
-function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRow, colWidth }) {
-  const { t } = useTranslation();
+function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, colWidth }) {
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
   } = useSortable({ id });
@@ -201,25 +200,6 @@ function SortableRow({ id, row, r, aligns, selectedCell, onCellClick, onDeleteRo
           )}
         </Box>
       ))}
-
-      {/* +列の空欄 */}
-      <Box sx={{ width: "32px", flexShrink: 0 }} />
-
-      {/* ×列: 行削除ボタン */}
-      <Box sx={{ width: "32px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Tooltip title={t("tableDialog.deleteRow")} placement="right">
-          <span>
-            <IconButton
-              size="small"
-              onClick={() => onDeleteRow(r)}
-              disabled={r === 0}
-              sx={{ color: r === 0 ? "transparent" : "#e57373", padding: "2px" }}
-            >
-              <DeleteIcon sx={{ fontSize: "14px" }} />
-            </IconButton>
-          </span>
-        </Tooltip>
-      </Box>
     </Box>
   );
 }
@@ -426,31 +406,8 @@ function TableDialog({ open, tableLines, onClose }) {
                     </Box>
                   ))}
                 </SortableContext>
-                {/* +列: 列追加ボタン（colWidth幅に広げる） */}
-                <Tooltip title={t("tableDialog.addColumn")} placement="top">
-                  <Box
-                    onClick={handleAddColumn}
-                    sx={{
-                      width: colWidth,
-                      flexShrink: 0,
-                      height: "28px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      border: "1px dashed var(--border-subtle)",
-                      borderRadius: "2px",
-                      color: "var(--text-faint)",
-                      mr: "2px",
-                      "&:hover": {
-                        borderColor: "var(--text-secondary, var(--text-primary))",
-                        color: "var(--text-secondary, var(--text-primary))",
-                      },
-                    }}
-                  >
-                    <AddIcon sx={{ fontSize: "14px" }} />
-                  </Box>
-                </Tooltip>
+                {/* +列: データ行に縦長ボタンがあるため空欄 */}
+                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
                 {/* ×列: ヘッダ行は空欄 */}
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
@@ -500,25 +457,77 @@ function TableDialog({ open, tableLines, onClose }) {
                   </Box>
                 ))}
                 {/* +列・×列: align行は空欄 */}
-                <Box sx={{ width: "32px", flexShrink: 0 }} />
+                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
 
-              {/* ─── データ行 ─── */}
+              {/* ─── データ行 + +列（縦長）+ ×列（行削除）─── */}
               <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
-                {rows.map((row, r) => (
-                  <SortableRow
-                    key={rowIds[r]}
-                    id={rowIds[r]}
-                    row={row}
-                    r={r}
-                    aligns={aligns}
-                    selectedCell={selectedCell}
-                    onCellClick={handleCellClick}
-                    onDeleteRow={handleDeleteRow}
-                    colWidth={colWidth}
-                  />
-                ))}
+                <Box sx={{ display: "flex", alignItems: "stretch" }}>
+                  {/* 行（ハンドル＋セル） */}
+                  <Box sx={{ display: "flex", flexDirection: "column" }}>
+                    {rows.map((row, r) => (
+                      <SortableRow
+                        key={rowIds[r]}
+                        id={rowIds[r]}
+                        row={row}
+                        r={r}
+                        aligns={aligns}
+                        selectedCell={selectedCell}
+                        onCellClick={handleCellClick}
+                        colWidth={colWidth}
+                      />
+                    ))}
+                  </Box>
+
+                  {/* +列: 全行にわたる縦長追加ボタン */}
+                  <Tooltip title={t("tableDialog.addColumn")} placement="right">
+                    <Box
+                      onClick={handleAddColumn}
+                      sx={{
+                        width: colWidth,
+                        flexShrink: 0,
+                        mr: "2px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        border: "1px dashed var(--border-subtle)",
+                        borderRadius: "2px",
+                        color: "var(--text-faint)",
+                        "&:hover": {
+                          borderColor: "var(--text-secondary, var(--text-primary))",
+                          color: "var(--text-secondary, var(--text-primary))",
+                        },
+                      }}
+                    >
+                      <AddIcon sx={{ fontSize: "14px" }} />
+                    </Box>
+                  </Tooltip>
+
+                  {/* ×列: 行削除ボタン（各行に1つ） */}
+                  <Box sx={{ width: "32px", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+                    {rows.map((_, r) => (
+                      <Box
+                        key={r}
+                        sx={{ height: "30px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <Tooltip title={t("tableDialog.deleteRow")} placement="right">
+                          <span>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteRow(r)}
+                              disabled={r === 0}
+                              sx={{ color: r === 0 ? "transparent" : "#e57373", padding: "2px" }}
+                            >
+                              <DeleteIcon sx={{ fontSize: "14px" }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
               </SortableContext>
 
               {/* ─── +行: 行追加 ─── */}
@@ -549,7 +558,7 @@ function TableDialog({ open, tableLines, onClose }) {
                     <AddIcon sx={{ fontSize: "14px" }} />
                   </Box>
                 </Tooltip>
-                <Box sx={{ width: "32px", flexShrink: 0 }} />
+                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
 
@@ -571,7 +580,7 @@ function TableDialog({ open, tableLines, onClose }) {
                   </Box>
                 ))}
                 {/* +列・×列: ×行は空欄 */}
-                <Box sx={{ width: "32px", flexShrink: 0 }} />
+                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
             </Box>
