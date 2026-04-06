@@ -255,6 +255,13 @@ function TableDialog({ open, tableLines, onClose }) {
   // 列幅: 固定
   const colWidth = 84;
 
+  // ダイアログサイズを列数・行数に合わせて動的計算
+  // 横: 行ハンドル(32) + 列×(colWidth+2) + +列(32) + ×列(32) + 内側padding(24) + バッファ(16)
+  const dialogWidth = Math.max(300, 136 + colCount * (colWidth + 2));
+  // 縦: ツールバー(40) + コンテンツpadding(24) + 列ドラッグ行(30) + align行(26)
+  //      + データ行×n(30each) + +行(36) + ×行(34) + セル編集エリア(100) + アクション(48)
+  const dialogHeight = Math.max(400, 338 + rows.length * 30);
+
   const rowIds = rows.map((_, i) => `row-${i}`);
   const colIds = aligns.map((_, i) => `col-${i}`);
 
@@ -385,8 +392,10 @@ function TableDialog({ open, tableLines, onClose }) {
       open={open}
       onClose={handleClose}
       title={t("tableDialog.title")}
-      width="1000px"
-      height="80vh"
+      width={`${dialogWidth}px`}
+      height={`${dialogHeight}px`}
+      maxWidth="95vw"
+      maxHeight="90vh"
     >
       <DialogContent
         sx={{
