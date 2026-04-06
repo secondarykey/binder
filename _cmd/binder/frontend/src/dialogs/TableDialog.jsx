@@ -105,10 +105,11 @@ function SortableColHandle({ id, colWidth }) {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.4 : 1,
-        width: colWidth,
-        flexShrink: 0,
       }}
       sx={{
+        width: colWidth,
+        flexShrink: 0,
+        boxSizing: "border-box",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -177,6 +178,7 @@ function SortableRow({
           sx={{
             width: colWidth,
             flexShrink: 0,
+            boxSizing: "border-box",
             border:
               selectedCell.r === r && selectedCell.c === c
                 ? "1px solid var(--accent-blue)"
@@ -443,7 +445,7 @@ function TableDialog({ open, tableLines, onClose }) {
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
 
                 {aligns.map((align, c) => (
-                  <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px", boxSizing: "border-box" }}>
+                  <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px", boxSizing: "border-box", border: "1px solid transparent" }}>
                     <ToggleButtonGroup
                       value={align}
                       exclusive
@@ -530,6 +532,8 @@ function TableDialog({ open, tableLines, onClose }) {
                       width: colWidth,
                       flexShrink: 0,
                       mr: "2px",
+                      boxSizing: "border-box",
+                      border: "1px solid transparent",
                       display: "flex",
                       justifyContent: "center",
                     }}
