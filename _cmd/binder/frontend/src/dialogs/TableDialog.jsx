@@ -285,12 +285,13 @@ function TableDialog({ open, tableLines, onClose }) {
     setCellText(rows[r][c]);
   };
 
-  const handleUpdateCell = () => {
+  const handleCellTextChange = (value) => {
+    setCellText(value);
     if (selectedCell.r < 0) return;
     const { r, c } = selectedCell;
     setRows((prev) =>
       prev.map((row, ri) =>
-        ri === r ? row.map((cell, ci) => (ci === c ? cellText : cell)) : row
+        ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row
       )
     );
   };
@@ -378,18 +379,14 @@ function TableDialog({ open, tableLines, onClose }) {
   // OK / キャンセル
   // ────────────────────────
 
-  const handleOk = () => {
+  const handleClose = () => {
     onClose(generateMarkdownTable(rows, aligns));
-  };
-
-  const handleCancel = () => {
-    onClose(null);
   };
 
   return (
     <ModalWrapper
       open={open}
-      onClose={handleCancel}
+      onClose={handleClose}
       title={t("tableDialog.title")}
       width="1000px"
       height="80vh"
@@ -446,18 +443,18 @@ function TableDialog({ open, tableLines, onClose }) {
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
 
                 {aligns.map((align, c) => (
-                  <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px" }}>
+                  <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px", boxSizing: "border-box" }}>
                     <ToggleButtonGroup
                       value={align}
                       exclusive
-                      size="small"
                       onChange={(_, v) => { if (v) handleAlignChange(c, v); }}
                       sx={{
                         width: "100%",
-                        height: "28px",
+                        height: "22px",
                         "& .MuiToggleButton-root": {
                           flex: 1,
-                          padding: "2px",
+                          padding: "0px",
+                          minWidth: 0,
                           color: "var(--text-faint)",
                           borderColor: "var(--border-input)",
                           "&.Mui-selected": {
@@ -470,17 +467,17 @@ function TableDialog({ open, tableLines, onClose }) {
                     >
                       <ToggleButton value="left">
                         <Tooltip title={t("tableDialog.alignLeft")} placement="top">
-                          <FormatAlignLeftIcon sx={{ fontSize: "14px" }} />
+                          <FormatAlignLeftIcon sx={{ fontSize: "12px" }} />
                         </Tooltip>
                       </ToggleButton>
                       <ToggleButton value="center">
                         <Tooltip title={t("tableDialog.alignCenter")} placement="top">
-                          <FormatAlignCenterIcon sx={{ fontSize: "14px" }} />
+                          <FormatAlignCenterIcon sx={{ fontSize: "12px" }} />
                         </Tooltip>
                       </ToggleButton>
                       <ToggleButton value="right">
                         <Tooltip title={t("tableDialog.alignRight")} placement="top">
-                          <FormatAlignRightIcon sx={{ fontSize: "14px" }} />
+                          <FormatAlignRightIcon sx={{ fontSize: "12px" }} />
                         </Tooltip>
                       </ToggleButton>
                     </ToggleButtonGroup>
@@ -605,7 +602,7 @@ function TableDialog({ open, tableLines, onClose }) {
                 : t("tableDialog.cellText")
             }
             value={cellText}
-            onChange={(e) => setCellText(e.target.value)}
+            onChange={(e) => handleCellTextChange(e.target.value)}
             disabled={selectedCell.r < 0}
             size="small"
             sx={{
@@ -623,15 +620,6 @@ function TableDialog({ open, tableLines, onClose }) {
               },
             }}
           />
-          <Button
-            variant="contained"
-            size="small"
-            disabled={selectedCell.r < 0}
-            onClick={handleUpdateCell}
-            sx={{ flexShrink: 0, mt: "4px" }}
-          >
-            {t("tableDialog.updateCell")}
-          </Button>
         </Box>
       </DialogContent>
 
@@ -643,11 +631,8 @@ function TableDialog({ open, tableLines, onClose }) {
           backgroundColor: "var(--bg-surface)",
         }}
       >
-        <Button onClick={handleCancel} sx={{ color: "var(--text-primary)" }}>
-          {t("common.cancel")}
-        </Button>
-        <Button variant="contained" onClick={handleOk}>
-          {t("common.ok")}
+        <Button variant="contained" onClick={handleClose}>
+          {t("common.close")}
         </Button>
       </DialogActions>
     </ModalWrapper>
