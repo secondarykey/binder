@@ -195,6 +195,10 @@ function BinderTree(props) {
   // ChangeAddress 時にクリア
   const [localDirtyIds, setLocalDirtyIds] = useState(new Set());
 
+  // テキスト編集後にフロントエンド側で保持する「未公開ダーティ」ID
+  // ReloadUnpublished（Generate/Unpublish 完了）または ChangeAddress 時にクリア
+  const [localPublishDirtyIds, setLocalPublishDirtyIds] = useState(new Set());
+
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
 
@@ -268,7 +272,8 @@ function BinderTree(props) {
       setSiteUrl(addr);
       const isNewBinder = addr !== currentAddressRef.current;
       currentAddressRef.current = addr;
-      setLocalDirtyIds(new Set()); // バインダー切替時にローカルダーティをクリア
+      setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
+      setLocalPublishDirtyIds(new Set()); // バインダー切替時にローカル未公開ダーティをクリア
       viewTree(isNewBinder);
     });
     // 未コミットIDのみ再取得（ツリー全体は再描画しない）
@@ -291,6 +296,15 @@ function BinderTree(props) {
       }).catch((err) => {
         console.warn("GetModifiedIds failed:", err);
       });
+    });
+    // 公開/非公開完了 — localPublishDirtyIds をクリアして未公開マップを再取得
+    evt.register("BinderTree", Event.ReloadUnpublished, () => {
+      setLocalPublishDirtyIds(new Set());
+      loadUnpublished();
+    });
+    // テキスト編集後のローカル未公開ダーティマーク
+    evt.register("BinderTree", Event.MarkPublishDirty, (id) => {
+      if (id) setLocalPublishDirtyIds(prev => new Set([...prev, id]));
     });
     // 初期URLを取得
     Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
@@ -400,9 +414,22 @@ function BinderTree(props) {
     return merged;
   }, [modifiedIds, localDirtyIds]);
 
+  // DB取得済みの未公開マップ + ローカル編集済みID（status 0 → 2 に昇格）をマージ
+  const effectiveUnpublishedMap = useMemo(() => {
+    if (!localPublishDirtyIds.size) return unpublishedMap;
+    if (!unpublishedMap) return unpublishedMap;
+    const merged = new Map(unpublishedMap);
+    localPublishDirtyIds.forEach(id => {
+      // status 0（最新公開済み）→ 2（公開後に更新あり）に昇格
+      // status 1（未公開新規）または 2 は変更なし
+      if ((merged.get(id) ?? 0) === 0) merged.set(id, 2);
+    });
+    return merged;
+  }, [unpublishedMap, localPublishDirtyIds]);
+
   const treeData = useMemo(
-    () => processTreeData(tree, effectiveModifiedIds, showModified, unpublishedMap, showPublishStatus),
-    [tree, effectiveModifiedIds, showModified, unpublishedMap, showPublishStatus]
+    () => processTreeData(tree, effectiveModifiedIds, showModified, effectiveUnpublishedMap, showPublishStatus),
+    [tree, effectiveModifiedIds, showModified, effectiveUnpublishedMap, showPublishStatus]
   );
 
   // ---- ハンドラ ----
@@ -662,8 +689,8 @@ function BinderTree(props) {
     let targetIds = [];
     if (displayMode === 'commit' && modifiedIds) {
       targetIds = [...modifiedIds];
-    } else if (displayMode === 'publish' && unpublishedMap) {
-      targetIds = [...unpublishedMap.keys()].filter(id => (unpublishedMap.get(id) ?? 0) > 0);
+    } else if (displayMode === 'publish' && effectiveUnpublishedMap) {
+      targetIds = [...effectiveUnpublishedMap.keys()].filter(id => (effectiveUnpublishedMap.get(id) ?? 0) > 0);
     }
     const ancestorIds = new Set();
     for (const id of targetIds) {

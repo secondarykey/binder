@@ -123,6 +123,16 @@ class Event {
     static CommitDone = "commit.done"
 
     /**
+     * 公開完了 / 非公開化完了（Generate/Unpublish成功後に発火 — unpublishedMap 再取得用）
+     */
+    static ReloadUnpublished = "unpublished.reload"
+
+    /**
+     * 指定IDをローカル未公開ダーティとしてマーク（テキスト編集後のUI用）
+     */
+    static MarkPublishDirty = "item.mark.publish.dirty"
+
+    /**
      * コミット進捗（ModifiedMenuからCommit側に伝達）
      */
     static ModifiedProgress = "git.modified.progress"
@@ -182,6 +192,14 @@ class Event {
 
     commitDone() {
         this.raise(Event.CommitDone);
+    }
+
+    reloadUnpublished() {
+        this.raise(Event.ReloadUnpublished);
+    }
+
+    markPublishDirty(id) {
+        this.raise(Event.MarkPublishDirty, id);
     }
 
     markModified(id) {

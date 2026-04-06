@@ -717,6 +717,7 @@ function Editor(props) {
     writeFn(mode, id, txt).then(() => {
       console.debug("Write!");
       evt.markModified(id);
+      evt.markPublishDirty(id);
     }).catch((err) => {;
       evt.showErrorMessage(err);
     });
@@ -738,6 +739,7 @@ function Editor(props) {
 
     //出力処理を行う
     Generate(mode, id, elm).then(() => {
+      evt.reloadUnpublished();
       evt.showSuccessMessage("Generate.")
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -747,6 +749,7 @@ function Editor(props) {
   //非公開処理
   const handleUnpublish = () => {
     Unpublish(mode, id).then(() => {
+      evt.reloadUnpublished();
       evt.showSuccessMessage("Unpublish.")
     }).catch((err) => {
       evt.showErrorMessage(err);
