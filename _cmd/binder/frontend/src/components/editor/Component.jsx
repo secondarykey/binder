@@ -1388,6 +1388,8 @@ function Editor(props) {
                       </IconButton>
                     </Tooltip>
 
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+
                     {/** テーブル編集 */}
                     <Tooltip title={t("editor.tableEdit")} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="table-edit" sx={{ mr: 2 }}
