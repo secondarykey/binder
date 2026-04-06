@@ -15,7 +15,7 @@ import EditorArea from './editor/EditorArea';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

@@ -1,7 +1,7 @@
 import { Box, Button, FormControl, FormLabel, MenuItem, Select, TextField } from "@mui/material";
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { SelectFileContent } from "../../bindings/main/window";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 const AUTH_TYPES = [

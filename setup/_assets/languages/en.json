@@ -46,9 +46,9 @@
         "changeBranch" : "Change Branch",
         "pushRemote" : "Push to Remote",
         "mergeRemote" : "Merge from Remote",
-        "none" : "None",
-        "commit" : "Commit",
-        "publish" : "Publish",
+        "none" : "No Display",
+        "commit" : "Uncommitted",
+        "publish" : "Unpublished",
         "note" : "Note",
         "diagram" : "Diagram",
         "assets" : "Assets",
@@ -58,8 +58,13 @@
         "downloadAll" : "All",
         "downloadDocs" : "Docs",
         "expandAll" : "Expand All",
+        "expandTargets" : "Expand Targets",
         "collapseAll" : "Collapse All",
-        "overallHistory" : "Overall History"
+        "overallHistory" : "Overall History",
+        "copy"           : "Copy",
+        "copy.id"        : "ID",
+        "copy.path"      : "Path",
+        "copy.gitbashPath" : "GitBash Path"
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -377,6 +382,24 @@
         "externalEditorLocked" : "Opened in external editor.",
         "searchPlaceholder" : "Search text...",
         "searchMatches" : "{{count}} matches",
-        "searchNoMatches" : "No matches"
+        "searchNoMatches" : "No matches",
+        "tableEdit" : "Edit Table",
+        "notInTable" : "Cursor is not inside a table"
+    },
+    "tableDialog" : {
+        "title" : "Edit Table",
+        "addRow" : "Add Row",
+        "deleteRow" : "Delete Row",
+        "addColumn" : "Add Column",
+        "deleteColumn" : "Delete Column",
+        "alignLeft" : "Align Left",
+        "alignCenter" : "Align Center",
+        "alignRight" : "Align Right",
+        "cellText" : "Cell Text",
+        "updateCell" : "Update",
+        "deleteRowTitle" : "Delete Row",
+        "deleteRowConfirm" : "Delete this row?",
+        "deleteColumnTitle" : "Delete Column",
+        "deleteColumnConfirm" : "Delete this column?"
     }
 }

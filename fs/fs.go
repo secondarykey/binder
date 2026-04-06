@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/storage/filesystem"
@@ -93,6 +94,22 @@ func Clone(dir string, url string, branch string, info *UserInfo) (*FileSystem, 
 	r, err := git.PlainClone(dir, false, opts)
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
+	}
+
+	// SingleBranch=true でクローンすると fetch refspec が単一ブランチ固定になるため、
+	// ワイルドカードに更新する
+	cfg, err := r.Config()
+	if err != nil {
+		return nil, xerrors.Errorf("Config() error: %w", err)
+	}
+	const remoteName = "origin"
+	if rc, ok := cfg.Remotes[remoteName]; ok {
+		rc.Fetch = []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("+refs/heads/*:refs/remotes/%s/*", remoteName)),
+		}
+		if err := r.SetConfig(cfg); err != nil {
+			return nil, xerrors.Errorf("SetConfig() error: %w", err)
+		}
 	}
 
 	var b FileSystem
@@ -259,17 +276,15 @@ func (f *FileSystem) copyReader(out string, r io.Reader) error {
 	return nil
 }
 
-func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, error) {
+func (f *FileSystem) getStatus(source string, republish, structureUpdated time.Time) (json.Status, json.Status, error) {
 
 	us := json.ErrorStatus
 	ps := json.ErrorStatus
 
-	p := ConvertPaths(source, pub)
-
+	p := ConvertPaths(source)
 	sfn := p[0]
 
 	m, err := f.modified(sfn)
-
 	if err == nil {
 		if len(m) > 0 {
 			us = json.UpdatedStatus
@@ -280,31 +295,22 @@ func (f *FileSystem) getStatus(source, pub string) (json.Status, json.Status, er
 		log.WarnE("modified error "+sfn, err)
 	}
 
-	//公開側に指定がない場合、エラー
-	if pub == "" {
+	// DB の republish_date でまず非公開判定
+	if republish.IsZero() {
+		ps = json.PrivateStatus
 		return us, ps, nil
 	}
 
+	// ソースファイルの ModTime と republish_date を比較
 	bi, err := f.Stat(sfn)
-	bt := time.Now()
-	if err == nil {
-		bt = bi.ModTime()
-	} else {
-		//存在しないはエラー
+	if err != nil {
 		return us, ps, fmt.Errorf("source file Nothing[%s]", sfn)
 	}
 
-	pi, err := f.Stat(p[1])
-	pt := time.Time{}
-	if err == nil {
-		pt = pi.ModTime()
-		if bt.After(pt) {
-			ps = json.UpdatedStatus
-		} else {
-			ps = json.LatestStatus
-		}
+	if bi.ModTime().After(republish) || structureUpdated.After(republish) {
+		ps = json.UpdatedStatus
 	} else {
-		ps = json.PrivateStatus
+		ps = json.LatestStatus
 	}
 
 	return us, ps, nil

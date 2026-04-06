@@ -16,9 +16,9 @@ func (sys *FileSystem) ToFullPath(mode, id string) string {
 		fn = noteFile(id)
 	case "diagram":
 		fn = diagramFile(id)
+	case "asset", "assets":
+		fn = assetFile(id)
 	case "template":
-		log.Warn("Not Implemented")
-	case "assets":
 		log.Warn("Not Implemented")
 	default:
 	}

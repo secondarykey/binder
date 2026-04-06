@@ -2,9 +2,11 @@ package api
 
 import (
 	"binder"
+	"binder/fs"
 	"binder/log"
 	"binder/settings"
 	"fmt"
+	"strings"
 )
 
 func (a *App) SavePosition(pos *settings.Position) error {
@@ -116,6 +118,20 @@ func (a *App) GetLanguageList() ([]settings.LanguageInfo, error) {
 func (a *App) GetLanguageData(code string) (string, error) {
 	defer log.PrintTrace(log.Func("GetLanguageData()"))
 	return settings.ReadLanguageJSON(code)
+}
+
+// IsGitBashPath はエディタ引数に {bfile} が含まれる場合に true を返す。
+// コピーメニューで GitBash 形式パスを表示するかどうかの判定に使用する。
+func (a *App) IsGitBashPath() bool {
+	return strings.Contains(settings.GetEditor().Args, "{bfile}")
+}
+
+// GetGitBashFullPath は物理ファイルパスを GitBash 形式に変換して返す。
+// fs.ToGitBash と同等の変換（例: "C:\path\to\file" → "/C/path/to/file"）。
+func (a *App) GetGitBashFullPath(mode, id string) string {
+	defer log.PrintTrace(log.Func("GetGitBashFullPath()", mode, id))
+	fullPath := a.current.GetFullPath(mode, id)
+	return fs.ToGitBash(fullPath)
 }
 
 // GetAllowedCDNs はスクリプト読み込みを許可するCDNドメイン一覧を返す。

@@ -11,12 +11,13 @@ type Note struct {
 	LayoutTemplate  string `json:"layoutTemplate"`
 	ContentTemplate string `json:"contentTemplate"`
 
-	Publish     time.Time `json:"publish"`
-	Republish   time.Time `json:"republish"`
-	Created     time.Time `json:"created"`
-	CreatedUser string    `json:"createdUser"`
-	Updated     time.Time `json:"updated"`
-	UpdatedUser string    `json:"updatedUser"`
+	Publish          time.Time `json:"publish"`
+	Republish        time.Time `json:"republish"`
+	StructureUpdated time.Time `json:"structureUpdated"`
+	Created          time.Time `json:"created"`
+	CreatedUser      string    `json:"createdUser"`
+	Updated          time.Time `json:"updated"`
+	UpdatedUser      string    `json:"updatedUser"`
 
 	Parent   *Note      `json:"-"`
 	Children []*Note    `json:"-"`
@@ -57,4 +58,5 @@ func (n *Note) ApplyStructure(s *Structure) {
 	n.Alias = s.Alias
 	n.Publish = s.Publish
 	n.Republish = s.Republish
+	n.StructureUpdated = s.Updated
 }

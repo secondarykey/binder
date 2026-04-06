@@ -10,7 +10,7 @@ import { Events, Window } from "@wailsio/runtime";
 import { GetFont,GetHistoryPatch, GetModifiedIds, RestoreHistory } from "../../bindings/binder/api/app";
 
 import { EventContext } from "../Event";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**

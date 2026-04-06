@@ -113,12 +113,9 @@ func (f *FileSystem) WriteNoteText(id string, data []byte) error {
 
 func (f *FileSystem) SetNoteStatus(n *json.Note) error {
 
-	//元ファイルを作成
 	base := NoteFile(n.Id)
-	//公開ファイルを取得
-	pub := HTMLFile(n)
 
-	us, ps, err := f.getStatus(base, pub)
+	us, ps, err := f.getStatus(base, n.Republish, n.StructureUpdated)
 	if err != nil {
 		return xerrors.Errorf("getPublishStatus() error: %w", err)
 	}

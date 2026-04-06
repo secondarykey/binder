@@ -9,7 +9,7 @@ import {
 import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../Event';
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -74,6 +74,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       evt.raise(Event.ModifiedProgress, { running: true });
       CommitFiles(files, comment).then(() => {
         evt.showSuccessMessage(t("commitModal.commitSuccess"));
+        evt.commitDone();
         setTimeout(function () {
           nav("/status/modified/" + (new Date()).toISOString());
         }, 1000);

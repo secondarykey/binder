@@ -12,10 +12,13 @@ type Asset struct {
 	Binary bool   `json:"binary"`
 	Mime   string `json:"mime"`
 
-	Created     time.Time `json:"created"`
-	CreatedUser string    `json:"createdUser"`
-	Updated     time.Time `json:"updated"`
-	UpdatedUser string    `json:"updatedUser"`
+	Publish          time.Time `json:"publish"`
+	Republish        time.Time `json:"republish"`
+	StructureUpdated time.Time `json:"structureUpdated"`
+	Created          time.Time `json:"created"`
+	CreatedUser      string    `json:"createdUser"`
+	Updated          time.Time `json:"updated"`
+	UpdatedUser      string    `json:"updatedUser"`
 
 	Parent        *Note  `json:"-"`
 	PublishStatus Status `json:"publishStatus"`
@@ -34,4 +37,7 @@ func (a *Asset) ApplyStructure(s *Structure) {
 	a.Name = s.Name
 	a.Detail = s.Detail
 	a.Alias = s.Alias
+	a.Publish = s.Publish
+	a.Republish = s.Republish
+	a.StructureUpdated = s.Updated
 }

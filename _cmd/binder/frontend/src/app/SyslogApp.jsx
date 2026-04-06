@@ -12,7 +12,7 @@ import { ReadLogTail, GetLogLevel, SetLogLevel } from '../../bindings/main/windo
 
 import '../assets/App.css';
 import '../assets/SyslogApp.css';
-import '../i18n/config';
+import '../language';
 import { useTranslation } from 'react-i18next';
 
 /**

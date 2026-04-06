@@ -12,7 +12,7 @@ import ModalWrapper from './components/ModalWrapper';
 import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
-import '../i18n/config';
+import '../language';
 import { useTranslation } from 'react-i18next';
 
 function BranchModal({ open, onClose }) {

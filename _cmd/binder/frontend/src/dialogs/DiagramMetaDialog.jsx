@@ -6,7 +6,7 @@ import { EditDiagram, GetDiagram, RemoveDiagram } from "../../bindings/binder/ap
 import { EventContext } from "../Event";
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -41,6 +41,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
     if (!alias) { evt.showWarningMessage(t("diagram.aliasRequired")); return; }
 
     EditDiagram({ id, parentId, name, detail, alias }).then(() => {
+      evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("diagram.updateSuccess"));
       onClose();

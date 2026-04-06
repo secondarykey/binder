@@ -4,7 +4,7 @@ import { IconButton, TextField, InputAdornment } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import "../../i18n/config";
+import "../../language";
 import { useTranslation } from 'react-i18next';
 
 // 閉じても状態を保持するためコンポーネント外で管理

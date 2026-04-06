@@ -21,12 +21,15 @@ import HistoryIcon from '@mui/icons-material/History';
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address } from '../../bindings/binder/api/app';
+         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
+         IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
+
+import { copyClipboard } from '../app/App';
 
 import Event, { EventContext } from '../Event';
 import Tree from './Tree';
@@ -182,6 +185,20 @@ function BinderTree(props) {
   // ダウンロードサブメニューのアンカー要素
   const [downloadMenuAnchor, setDownloadMenuAnchor] = useState(null);
 
+  // Copy サブメニューのアンカー要素
+  const [copyMenuAnchor, setCopyMenuAnchor] = useState(null);
+
+  // エディタ引数に {bfile} が含まれる場合に true（右クリック都度判定）
+  const [showGitBashPath, setShowGitBashPath] = useState(false);
+
+  // 自動コミット操作（名前変更・メタ更新・移動など）後にフロントエンド側で保持するダーティID
+  // ChangeAddress 時にクリア
+  const [localDirtyIds, setLocalDirtyIds] = useState(new Set());
+
+  // テキスト編集後にフロントエンド側で保持する「未公開ダーティ」ID
+  // ReloadUnpublished（Generate/Unpublish 完了）または ChangeAddress 時にクリア
+  const [localPublishDirtyIds, setLocalPublishDirtyIds] = useState(new Set());
+
   // 削除確認ダイアログの状態
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
 
@@ -255,7 +272,39 @@ function BinderTree(props) {
       setSiteUrl(addr);
       const isNewBinder = addr !== currentAddressRef.current;
       currentAddressRef.current = addr;
+      setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
+      setLocalPublishDirtyIds(new Set()); // バインダー切替時にローカル未公開ダーティをクリア
       viewTree(isNewBinder);
+    });
+    // 未コミットIDのみ再取得（ツリー全体は再描画しない）
+    evt.register("BinderTree", Event.ReloadModified, () => {
+      GetModifiedIds().then((ids) => {
+        setModifiedIds(new Set(ids ?? []));
+      }).catch((err) => {
+        console.error('[BinderTree] GetModifiedIds error:', err);
+      });
+    });
+    // 自動コミット操作後のローカルダーティマーク
+    evt.register("BinderTree", Event.MarkModified, (id) => {
+      if (id) setLocalDirtyIds(prev => new Set([...prev, id]));
+    });
+    // コミット完了 — localDirtyIds をクリアして git 状態を再取得
+    evt.register("BinderTree", Event.CommitDone, () => {
+      setLocalDirtyIds(new Set());
+      GetModifiedIds().then((ids) => {
+        setModifiedIds(new Set(ids ?? []));
+      }).catch((err) => {
+        console.warn("GetModifiedIds failed:", err);
+      });
+    });
+    // 公開/非公開完了 — localPublishDirtyIds をクリアして未公開マップを再取得
+    evt.register("BinderTree", Event.ReloadUnpublished, () => {
+      setLocalPublishDirtyIds(new Set());
+      loadUnpublished();
+    });
+    // テキスト編集後のローカル未公開ダーティマーク
+    evt.register("BinderTree", Event.MarkPublishDirty, (id) => {
+      if (id) setLocalPublishDirtyIds(prev => new Set([...prev, id]));
     });
     // 初期URLを取得
     Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
@@ -357,9 +406,30 @@ function BinderTree(props) {
   }, [showPublishStatus]);
 
   // Treeコンポーネント用データ（メモ化）
+  // git 検出済み + ローカルダーティをマージした修正IDセット
+  const effectiveModifiedIds = useMemo(() => {
+    if (!localDirtyIds.size) return modifiedIds;
+    const merged = new Set(modifiedIds);
+    localDirtyIds.forEach(id => merged.add(id));
+    return merged;
+  }, [modifiedIds, localDirtyIds]);
+
+  // DB取得済みの未公開マップ + ローカル編集済みID（status 0 → 2 に昇格）をマージ
+  const effectiveUnpublishedMap = useMemo(() => {
+    if (!localPublishDirtyIds.size) return unpublishedMap;
+    if (!unpublishedMap) return unpublishedMap;
+    const merged = new Map(unpublishedMap);
+    localPublishDirtyIds.forEach(id => {
+      // status 0（最新公開済み）→ 2（公開後に更新あり）に昇格
+      // status 1（未公開新規）または 2 は変更なし
+      if ((merged.get(id) ?? 0) === 0) merged.set(id, 2);
+    });
+    return merged;
+  }, [unpublishedMap, localPublishDirtyIds]);
+
   const treeData = useMemo(
-    () => processTreeData(tree, modifiedIds, showModified, unpublishedMap, showPublishStatus),
-    [tree, modifiedIds, showModified, unpublishedMap, showPublishStatus]
+    () => processTreeData(tree, effectiveModifiedIds, showModified, effectiveUnpublishedMap, showPublishStatus),
+    [tree, effectiveModifiedIds, showModified, effectiveUnpublishedMap, showPublishStatus]
   );
 
   // ---- ハンドラ ----
@@ -387,6 +457,7 @@ function BinderTree(props) {
     e.preventDefault();
     e.stopPropagation(); // エリア右クリックへのバブリングを防ぐ
     setContextMenu({ open: true, x: e.clientX, y: e.clientY, node });
+    IsGitBashPath().then(setShowGitBashPath).catch(() => setShowGitBashPath(false));
   };
 
   /** コンテキストメニューを閉じる */
@@ -397,6 +468,7 @@ function BinderTree(props) {
   /** コンテキストメニューとAddサブメニューをまとめて閉じる */
   const closeAllMenus = () => {
     setAddMenuAnchor(null);
+    setCopyMenuAnchor(null);
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
@@ -405,10 +477,42 @@ function BinderTree(props) {
     setAddMenuAnchor(e.currentTarget);
   };
 
+  /** Copy サブメニューを開く */
+  const handleCopyMenuOpen = (e) => {
+    setCopyMenuAnchor(e.currentTarget);
+  };
+
+  /** Copy > ID */
+  const handleCopyId = () => {
+    const id = contextMenu.node.id;
+    closeAllMenus();
+    copyClipboard(id);
+  };
+
+  /** Copy > パス */
+  const handleCopyPath = () => {
+    const { id, nodeType } = contextMenu.node;
+    closeAllMenus();
+    GetFullPath(nodeType, id).then((path) => {
+      if (path) copyClipboard(path);
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
+  /** Copy > GitBash パス */
+  const handleCopyGitBashPath = () => {
+    const { id, nodeType } = contextMenu.node;
+    closeAllMenus();
+    GetGitBashFullPath(nodeType, id).then((path) => {
+      if (path) copyClipboard(path);
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   /** D&D: parentId と childIds を使って Seq を更新する */
   const handleChange = (changeInfo) => {
     const parentId = changeInfo.parentId ?? "";
     MoveNode(parentId, changeInfo.childIds).then(() => {
+      // 移動した全子ノードをローカルダーティとしてマーク
+      changeInfo.childIds.forEach(id => evt.markModified(id));
       viewTree();
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -467,6 +571,7 @@ function BinderTree(props) {
         if (!current) { doNav(); return; }
         await EditAsset({ ...current, name: newName }, '');
       }
+      evt.markModified(id);
       evt.refreshTree();
       doNav();
     } catch (err) {
@@ -578,6 +683,23 @@ function BinderTree(props) {
     });
   };
 
+  /** 対象を展開: 現在の表示モードに応じた対象ノードの祖先をすべて展開する */
+  const handleExpandTargets = () => {
+    closeMoreMenu();
+    let targetIds = [];
+    if (displayMode === 'commit' && modifiedIds) {
+      targetIds = [...modifiedIds];
+    } else if (displayMode === 'publish' && effectiveUnpublishedMap) {
+      targetIds = [...effectiveUnpublishedMap.keys()].filter(id => (effectiveUnpublishedMap.get(id) ?? 0) > 0);
+    }
+    const ancestorIds = new Set();
+    for (const id of targetIds) {
+      const ancestors = findAncestorIds(treeRef.current, id);
+      if (ancestors) ancestors.forEach(aid => ancestorIds.add(aid));
+    }
+    setExpand([...ancestorIds]);
+  };
+
   /** 削除をキャンセル */
   const handleDeleteCancel = () => {
     setDeleteConfirm({ open: false, node: null });
@@ -639,24 +761,6 @@ function BinderTree(props) {
       onClose={closeMoreMenu}
       slotProps={{ paper: { sx: { minWidth: 160 } } }}
     >
-      {/** ブラウザで開く */}
-      <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
-        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
-      </MenuItem>
-      {/** ダウンロード */}
-      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }}>
-        <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}
-      </MenuItem>
-      <Divider />
-      {/** すべて展開 */}
-      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
-        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
-      </MenuItem>
-      {/** すべて閉じる */}
-      <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>
-        <UnfoldLessIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
-      </MenuItem>
-      <Divider />
       {/** None: ステータス非表示 */}
       <MenuItem onClick={() => { setDisplayMode('none'); closeMoreMenu(); }}>
         {displayMode === 'none'
@@ -677,6 +781,28 @@ function BinderTree(props) {
           ? <RadioButtonCheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />
           : <RadioButtonUncheckedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />}
         {t("tree.publish")}
+      </MenuItem>
+      <Divider />
+      {/** すべて展開 */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
+        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
+      </MenuItem>
+      {/** 対象を展開 */}
+      <MenuItem onClick={handleExpandTargets} disabled={displayMode === 'none'}>
+        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandTargets")}
+      </MenuItem>
+      {/** すべて閉じる */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>
+        <UnfoldLessIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
+      </MenuItem>
+      <Divider />
+      {/** ブラウザで開く */}
+      <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
+        <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+      </MenuItem>
+      {/** ダウンロード */}
+      <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
       </MenuItem>
       <Divider />
       {/** ブランチ変更 */}
@@ -729,6 +855,9 @@ function BinderTree(props) {
         <span>{t("common.add")}</span><span>▶</span>
       </MenuItem>
       <MenuItem onClick={handleHistoryNote} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
@@ -746,6 +875,22 @@ function BinderTree(props) {
       <MenuItem onClick={handleRegisterAssets}>{t("tree.assets")}</MenuItem>
     </Menu>
 
+    {/** Copy サブメニュー: ID / パス */}
+    <Menu
+      open={Boolean(copyMenuAnchor)}
+      onClose={closeAllMenus}
+      anchorEl={copyMenuAnchor}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      slotProps={{ paper: { sx: { minWidth: 120 } } }}
+    >
+      <MenuItem onClick={handleCopyId}>{t("tree.copy.id")}</MenuItem>
+      <MenuItem onClick={handleCopyPath}>{t("tree.copy.path")}</MenuItem>
+      {showGitBashPath && (
+        <MenuItem onClick={handleCopyGitBashPath}>{t("tree.copy.gitbashPath")}</MenuItem>
+      )}
+    </Menu>
+
     {/** ダイアグラムメニュー: Edit / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
@@ -757,6 +902,9 @@ function BinderTree(props) {
       <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleEditDiagram} divider>{t("common.edit")}</MenuItem>
       <MenuItem onClick={handleHistoryDiagram} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
@@ -770,6 +918,9 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleEditAsset} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 

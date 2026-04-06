@@ -6,7 +6,6 @@ import (
 	"binder/fs"
 	"errors"
 	"io"
-	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -355,26 +354,12 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 	}
 
-	s, err := b.db.GetStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
-	}
-
 	rtn := n.To()
 
-	// publish/republish タイムスタンプを設定
-	if s.Publish.IsZero() {
-		// 初回公開: publish/republish 両方に現在時刻を設定
-		now := time.Now()
-		s.Publish = now
-		s.Republish = now
-	} else {
-		// 再公開: republish のみ更新
-		s.Republish = time.Now()
-	}
-	err = b.db.UpdateStructure(s, b.op)
+	// publish/republish タイムスタンプを設定（updated_date と republish_date を同一時刻にするため PublishStructure を使用）
+	s, err := b.db.PublishStructure(id, b.op)
 	if err != nil {
-		return nil, xerrors.Errorf("db.UpdateStructure() error: %w", err)
+		return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
 	}
 	rtn.ApplyStructure(s.To())
 
@@ -459,13 +444,19 @@ func (b *Binder) UnpublishNote(id string) error {
 	rtn := n.To()
 	rtn.ApplyStructure(s.To())
 
+	// republish_date をリセットして非公開扱いにする
+	err = b.db.UnpublishStructure(id, b.op)
+	if err != nil {
+		return xerrors.Errorf("db.UnpublishStructure() error: %w", err)
+	}
+
 	var files []string
 
 	fn, err := b.fileSystem.UnpublishNote(rtn)
 	if err != nil {
 		return xerrors.Errorf("fs.UnpublishNote() error: %w", err)
 	}
-	files = append(files, fn)
+	files = append(files, fn, fs.StructureTableFile())
 
 	// メタ画像が存在する場合も docs/images/meta/{alias} を削除
 	if mf, ok := b.fileSystem.UnpublishNoteMeta(rtn); ok {

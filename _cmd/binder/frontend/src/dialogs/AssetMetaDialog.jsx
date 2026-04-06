@@ -6,7 +6,7 @@ import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app"
 import { EventContext } from "../Event";
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -42,6 +42,7 @@ function AssetMetaDialog({ open, id, onClose }) {
 
   const handleSave = () => {
     EditAsset({ id, parentId, name, alias, detail, binary, mime }, "").then(() => {
+      evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("asset.updateSuccess"));
       onClose();

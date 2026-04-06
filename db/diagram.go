@@ -1,13 +1,9 @@
 package db
 
 import (
-	"fmt"
-	"time"
-
 	"binder/db/model"
 
 	_ "github.com/mithrandie/csvq-driver"
-	"golang.org/x/xerrors"
 )
 
 func (inst *Instance) ExistDiagram(id string) bool {
@@ -24,19 +20,4 @@ func (inst *Instance) FindDiagrams() ([]*model.Diagram, error) {
 
 func (inst *Instance) FindInDiagramId(ids ...interface{}) ([]*model.Diagram, error) {
 	return inst.findDiagram("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
-}
-
-func (inst *Instance) PublishDiagram(id string, op Op) error {
-	now := time.Now()
-	num, err := inst.updateStructure(
-		"publish_date = ?,updated_date = ?,updated_user = ?",
-		"id = ?",
-		now, now, op.GetOperationId(), id)
-	if err != nil {
-		return xerrors.Errorf("updateStructure() error: %w", err)
-	}
-	if num != 1 {
-		return fmt.Errorf("updateStructure() non single error: %v == %d", id, num)
-	}
-	return nil
 }

@@ -12,7 +12,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { EventContext } from "../Event";
-import "../i18n/config";
+import "../language";
 import { useTranslation } from 'react-i18next';
 
 const CATEGORIES = [

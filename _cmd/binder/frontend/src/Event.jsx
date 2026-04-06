@@ -27,6 +27,16 @@ class Event {
      * ツリーの再描画
      */
     static ReloadTree = "tree.reload"
+
+    /**
+     * 未コミットIDのみ再取得（ツリー全体の再描画は行わない）
+     */
+    static ReloadModified = "modified.reload"
+
+    /**
+     * 指定IDをローカルダーティとしてマーク（自動コミット操作後のUI用）
+     */
+    static MarkModified = "item.mark.modified"
     /**
      * ツリーの再描画
      */
@@ -108,6 +118,21 @@ class Event {
     static PublishGenerate = "publish.generate"
 
     /**
+     * コミット完了（CommitFiles成功後に発火 — localDirtyIds クリア用）
+     */
+    static CommitDone = "commit.done"
+
+    /**
+     * 公開完了 / 非公開化完了（Generate/Unpublish成功後に発火 — unpublishedMap 再取得用）
+     */
+    static ReloadUnpublished = "unpublished.reload"
+
+    /**
+     * 指定IDをローカル未公開ダーティとしてマーク（テキスト編集後のUI用）
+     */
+    static MarkPublishDirty = "item.mark.publish.dirty"
+
+    /**
      * コミット進捗（ModifiedMenuからCommit側に伝達）
      */
     static ModifiedProgress = "git.modified.progress"
@@ -159,6 +184,26 @@ class Event {
 
     refreshTree() {
         this.raise(Event.ReloadTree);
+    }
+
+    reloadModified() {
+        this.raise(Event.ReloadModified);
+    }
+
+    commitDone() {
+        this.raise(Event.CommitDone);
+    }
+
+    reloadUnpublished() {
+        this.raise(Event.ReloadUnpublished);
+    }
+
+    markPublishDirty(id) {
+        this.raise(Event.MarkPublishDirty, id);
+    }
+
+    markModified(id) {
+        this.raise(Event.MarkModified, id);
     }
 
     changeTitle(title) {

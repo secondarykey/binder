@@ -46,9 +46,9 @@
         "changeBranch" : "ブランチ変更",
         "pushRemote" : "リモートにPush",
         "mergeRemote" : "リモートからマージ",
-        "none" : "なし",
-        "commit" : "コミット",
-        "publish" : "公開",
+        "none" : "表示なし",
+        "commit" : "未コミット",
+        "publish" : "未公開",
         "note" : "ノート",
         "diagram" : "ダイアグラム",
         "assets" : "アセット",
@@ -58,8 +58,13 @@
         "downloadAll" : "全体",
         "downloadDocs" : "docs",
         "expandAll" : "すべて展開",
+        "expandTargets" : "対象を展開",
         "collapseAll" : "すべて閉じる",
-        "overallHistory" : "全体の履歴"
+        "overallHistory" : "全体の履歴",
+        "copy"           : "コピー",
+        "copy.id"        : "ID",
+        "copy.path"      : "パス",
+        "copy.gitbashPath" : "GitBashパス"
     },
     "note" : {
         "editTitle" : "ノート編集",
@@ -377,6 +382,24 @@
         "externalEditorLocked" : "外部エディタで開いています。",
         "searchPlaceholder" : "テキストを検索...",
         "searchMatches" : "{{count}}件",
-        "searchNoMatches" : "一致なし"
+        "searchNoMatches" : "一致なし",
+        "tableEdit" : "テーブル編集",
+        "notInTable" : "カーソルがテーブル内にありません"
+    },
+    "tableDialog" : {
+        "title" : "テーブル編集",
+        "addRow" : "行追加",
+        "deleteRow" : "行削除",
+        "addColumn" : "列追加",
+        "deleteColumn" : "列削除",
+        "alignLeft" : "左寄せ",
+        "alignCenter" : "中央寄せ",
+        "alignRight" : "右寄せ",
+        "cellText" : "セルテキスト",
+        "updateCell" : "更新",
+        "deleteRowTitle" : "行削除",
+        "deleteRowConfirm" : "この行を削除しますか？",
+        "deleteColumnTitle" : "列削除",
+        "deleteColumnConfirm" : "この列を削除しますか？"
     }
 }
