@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/storage/filesystem"
@@ -93,6 +94,22 @@ func Clone(dir string, url string, branch string, info *UserInfo) (*FileSystem, 
 	r, err := git.PlainClone(dir, false, opts)
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
+	}
+
+	// SingleBranch=true でクローンすると fetch refspec が単一ブランチ固定になるため、
+	// ワイルドカードに更新する
+	cfg, err := r.Config()
+	if err != nil {
+		return nil, xerrors.Errorf("Config() error: %w", err)
+	}
+	const remoteName = "origin"
+	if rc, ok := cfg.Remotes[remoteName]; ok {
+		rc.Fetch = []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("+refs/heads/*:refs/remotes/%s/*", remoteName)),
+		}
+		if err := r.SetConfig(cfg); err != nil {
+			return nil, xerrors.Errorf("SetConfig() error: %w", err)
+		}
 	}
 
 	var b FileSystem
