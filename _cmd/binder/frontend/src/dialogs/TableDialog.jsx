@@ -257,8 +257,8 @@ function TableDialog({ open, tableLines, onClose }) {
   const colWidth = 84;
 
   // ダイアログサイズを列数・行数に合わせて動的計算
-  // 横: 行ハンドル(32) + 列×(colWidth+2) + +列(32) + ×列(32) + 内側padding(24) + バッファ(16)
-  const dialogWidth = Math.max(300, 136 + colCount * (colWidth + 2));
+  // 横: 行ハンドル(32) + 列×(colWidth+2) + +列(colWidth+2) + ×列(32) + 内側padding(24) + バッファ(16)
+  const dialogWidth = Math.max(300, 104 + (colCount + 1) * (colWidth + 2) + 32);
   // 縦: ツールバー(40) + コンテンツpadding(24) + 列ドラッグ行(30) + align行(26)
   //      + データ行×n(30each) + +行(36) + ×行(34) + セル編集エリア(100) + アクション(48)
   const dialogHeight = Math.max(400, 338 + rows.length * 30);
@@ -426,12 +426,30 @@ function TableDialog({ open, tableLines, onClose }) {
                     </Box>
                   ))}
                 </SortableContext>
-                {/* +列: 列追加ボタン */}
+                {/* +列: 列追加ボタン（colWidth幅に広げる） */}
                 <Tooltip title={t("tableDialog.addColumn")} placement="top">
-                  <IconButton size="small" onClick={handleAddColumn}
-                    sx={{ width: "32px", flexShrink: 0, color: "var(--text-secondary, var(--text-primary))" }}>
+                  <Box
+                    onClick={handleAddColumn}
+                    sx={{
+                      width: colWidth,
+                      flexShrink: 0,
+                      height: "28px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      border: "1px dashed var(--border-subtle)",
+                      borderRadius: "2px",
+                      color: "var(--text-faint)",
+                      mr: "2px",
+                      "&:hover": {
+                        borderColor: "var(--text-secondary, var(--text-primary))",
+                        color: "var(--text-secondary, var(--text-primary))",
+                      },
+                    }}
+                  >
                     <AddIcon sx={{ fontSize: "14px" }} />
-                  </IconButton>
+                  </Box>
                 </Tooltip>
                 {/* ×列: ヘッダ行は空欄 */}
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
@@ -505,13 +523,32 @@ function TableDialog({ open, tableLines, onClose }) {
 
               {/* ─── +行: 行追加 ─── */}
               <Box sx={{ display: "flex", alignItems: "center", mt: "4px" }}>
+                {/* 行ハンドル列: 空 */}
+                <Box sx={{ width: "32px", flexShrink: 0 }} />
+                {/* セル列全体に広がる追加ボタン */}
                 <Tooltip title={t("tableDialog.addRow")} placement="bottom">
-                  <IconButton size="small" onClick={handleAddRow}
-                    sx={{ width: "32px", flexShrink: 0, color: "var(--text-secondary, var(--text-primary))" }}>
+                  <Box
+                    onClick={handleAddRow}
+                    sx={{
+                      width: colCount * (colWidth + 2) - 2,
+                      flexShrink: 0,
+                      height: "28px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      border: "1px dashed var(--border-subtle)",
+                      borderRadius: "2px",
+                      color: "var(--text-faint)",
+                      "&:hover": {
+                        borderColor: "var(--text-secondary, var(--text-primary))",
+                        color: "var(--text-secondary, var(--text-primary))",
+                      },
+                    }}
+                  >
                     <AddIcon sx={{ fontSize: "14px" }} />
-                  </IconButton>
+                  </Box>
                 </Tooltip>
-                {aligns.map((_, c) => <Box key={c} sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />)}
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
