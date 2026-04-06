@@ -12,6 +12,7 @@ type Structure struct {
 	Alias       string    `json:"alias"`
 	Publish     time.Time `json:"publish"`
 	Republish   time.Time `json:"republish"`
+	Private     bool      `json:"private"`
 	Created     time.Time `json:"created"`
 	CreatedUser string    `json:"createdUser"`
 	Updated     time.Time `json:"updated"`
