@@ -236,9 +236,12 @@ function TableDialog({ open, tableLines, onClose }) {
   // 列幅: 固定
   const colWidth = 84;
 
+  // +列ボタンの幅
+  const addColWidth = 30;
+
   // ダイアログサイズを列数・行数に合わせて動的計算
-  // 横: 行ハンドル(32) + 列×(colWidth+2) + +列(colWidth+2) + ×列(32) + 内側padding(24) + バッファ(16)
-  const dialogWidth = Math.max(300, 104 + (colCount + 1) * (colWidth + 2) + 32);
+  // 横: 行ハンドル(32) + 列×(colWidth+2) + +列(addColWidth+2) + ×列(32) + 内側padding(24) + バッファ(16)
+  const dialogWidth = Math.max(300, 32 + colCount * (colWidth + 2) + (addColWidth + 2) + 32 + 40);
   // 縦: ツールバー(40) + コンテンツpadding(24) + 列ドラッグ行(30) + align行(26)
   //      + データ行×n(30each) + +行(36) + ×行(34) + セル編集エリア(100) + アクション(48)
   const dialogHeight = Math.max(400, 338 + rows.length * 30);
@@ -407,7 +410,7 @@ function TableDialog({ open, tableLines, onClose }) {
                   ))}
                 </SortableContext>
                 {/* +列: データ行に縦長ボタンがあるため空欄 */}
-                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
+                <Box sx={{ width: addColWidth, flexShrink: 0, mr: "2px" }} />
                 {/* ×列: ヘッダ行は空欄 */}
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
@@ -457,7 +460,7 @@ function TableDialog({ open, tableLines, onClose }) {
                   </Box>
                 ))}
                 {/* +列・×列: align行は空欄 */}
-                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
+                <Box sx={{ width: addColWidth, flexShrink: 0, mr: "2px" }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
 
@@ -485,7 +488,7 @@ function TableDialog({ open, tableLines, onClose }) {
                     <Box
                       onClick={handleAddColumn}
                       sx={{
-                        width: colWidth,
+                        width: addColWidth,
                         flexShrink: 0,
                         mr: "2px",
                         display: "flex",
@@ -518,9 +521,9 @@ function TableDialog({ open, tableLines, onClose }) {
                               size="small"
                               onClick={() => handleDeleteRow(r)}
                               disabled={r === 0}
-                              sx={{ color: r === 0 ? "transparent" : "#e57373", padding: "2px" }}
+                              sx={{ padding: "2px", opacity: r === 0 ? 0 : 1 }}
                             >
-                              <DeleteIcon sx={{ fontSize: "14px" }} />
+                              <DeleteIcon sx={{ fontSize: "14px", color: "#e57373" }} />
                             </IconButton>
                           </span>
                         </Tooltip>
@@ -558,7 +561,7 @@ function TableDialog({ open, tableLines, onClose }) {
                     <AddIcon sx={{ fontSize: "14px" }} />
                   </Box>
                 </Tooltip>
-                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
+                <Box sx={{ width: addColWidth, flexShrink: 0, mr: "2px" }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
 
@@ -572,15 +575,15 @@ function TableDialog({ open, tableLines, onClose }) {
                         size="small"
                         onClick={() => handleDeleteColumn(c)}
                         disabled={aligns.length <= 1}
-                        sx={{ color: aligns.length <= 1 ? "transparent" : "#e57373", padding: "2px" }}
+                        sx={{ padding: "2px", opacity: aligns.length <= 1 ? 0 : 1 }}
                       >
-                        <DeleteIcon sx={{ fontSize: "14px" }} />
+                        <DeleteIcon sx={{ fontSize: "14px", color: "#e57373" }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
                 ))}
                 {/* +列・×列: ×行は空欄 */}
-                <Box sx={{ width: colWidth, flexShrink: 0, mr: "2px" }} />
+                <Box sx={{ width: addColWidth, flexShrink: 0, mr: "2px" }} />
                 <Box sx={{ width: "32px", flexShrink: 0 }} />
               </Box>
             </Box>
