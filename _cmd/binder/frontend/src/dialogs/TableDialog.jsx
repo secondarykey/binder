@@ -266,8 +266,8 @@ function TableDialog({ open, tableLines, onClose }) {
   }, [open, tableLines]);
 
   const colCount = aligns.length;
-  // 列幅: 固定（alignボタン28px×3と合わせる）
-  const colWidth = 84;
+  // 列幅: 固定
+  const colWidth = 70;
 
   const rowIds = rows.map((_, i) => `row-${i}`);
   const colIds = aligns.map((_, i) => `col-${i}`);
