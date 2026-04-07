@@ -77,7 +77,7 @@ func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 	htmlLeaf := json.NewLeaf("DIR_HTML", "HTML")
 	layoutLeaf := json.NewLeaf("DIR_HTML_Layout", "Layout")
 	contentLeaf := json.NewLeaf("DIR_HTML_Content", "Content")
-	diagramLeaf := json.NewLeaf("DIR_HTML_Diagram", "Diagram")
+	diagramLeaf := json.NewLeaf("DIR_Diagram_Style", "Diagram")
 
 	htmlLeaf.AddChild(layoutLeaf)
 	htmlLeaf.AddChild(contentLeaf)
