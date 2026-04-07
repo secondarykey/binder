@@ -336,13 +336,10 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
-      OpenDiagram(id).then((resp) => {
-        setText(resp);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
 
-      GetDiagram(id).then((resp) => {
+      // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
+      // setText が先に走ると styleTemplateId が空のまま初回描画されるため
+      const metaReady = GetDiagram(id).then(async (resp) => {
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
@@ -350,13 +347,17 @@ function Editor(props) {
         }
         setIsPrivate(!!resp.private);
         setName(resp.name);
-        // スタイルテンプレートをキャッシュ
         setStyleTemplateId(resp.styleTemplate || "");
         if (resp.styleTemplate) {
-          OpenTemplate(resp.styleTemplate).then((content) => {
-            Mermaid.setStyleTemplate(resp.styleTemplate, content);
-          }).catch(() => {});
+          const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
+          Mermaid.setStyleTemplate(resp.styleTemplate, content);
         }
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      });
+
+      Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        setText(diagramText);
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
