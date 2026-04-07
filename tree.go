@@ -64,6 +64,7 @@ func convertStructure2Leaf(s *model.Structure) *json.Leaf {
 	l.Seq = s.Seq
 	l.Name = s.Name
 	l.Type = s.Typ
+	l.Private = s.Private
 	return &l
 }
 
