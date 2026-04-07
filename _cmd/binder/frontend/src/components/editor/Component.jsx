@@ -1641,7 +1641,7 @@ function Editor(props) {
                     <Tooltip title={t("preview.publish")} placement="top">
                       <span>
                         <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { pointerEvents: 'none' } : {}}>
-                          <PublishIcon sx={{ fontSize: '16px', color: isPrivate ? '#9e9e9e' : 'inherit' }} />
+                          <PublishIcon sx={{ fontSize: '16px', ...(isPrivate && { color: '#9e9e9e' }) }} />
                         </IconButton>
                       </span>
                     </Tooltip>
