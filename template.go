@@ -198,15 +198,15 @@ func (b *Binder) UpdateTemplateSeqs(ids []string) error {
 	return nil
 }
 
-func (b *Binder) GetHTMLTemplates() ([]*json.Template, []*json.Template, error) {
+func (b *Binder) GetHTMLTemplates() ([]*json.Template, []*json.Template, []*json.Template, error) {
 
 	if b == nil {
-		return nil, nil, EmptyError
+		return nil, nil, nil, EmptyError
 	}
 
 	tmps, err := b.db.FindLayoutTemplates()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("FindLayoutTemplates() error: %w", err)
+		return nil, nil, nil, xerrors.Errorf("FindLayoutTemplates() error: %w", err)
 	}
 	layouts := make([]*json.Template, len(tmps))
 	for idx, t := range tmps {
@@ -215,12 +215,21 @@ func (b *Binder) GetHTMLTemplates() ([]*json.Template, []*json.Template, error) 
 
 	tmps, err = b.db.FindContentTemplates()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("FindContentTemplates() error: %w", err)
+		return nil, nil, nil, xerrors.Errorf("FindContentTemplates() error: %w", err)
 	}
 	contents := make([]*json.Template, len(tmps))
 	for idx, t := range tmps {
 		contents[idx] = t.To()
 	}
 
-	return layouts, contents, nil
+	tmps, err = b.db.FindDiagramTemplates()
+	if err != nil {
+		return nil, nil, nil, xerrors.Errorf("FindDiagramTemplates() error: %w", err)
+	}
+	diagrams := make([]*json.Template, len(tmps))
+	for idx, t := range tmps {
+		diagrams[idx] = t.To()
+	}
+
+	return layouts, contents, diagrams, nil
 }

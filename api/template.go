@@ -97,7 +97,7 @@ func (a *App) GetHTMLTemplates() (*json.Templates, error) {
 
 	defer log.PrintTrace(log.Func("GetHTMLTemplates()"))
 
-	l, c, err := a.current.GetHTMLTemplates()
+	l, c, d, err := a.current.GetHTMLTemplates()
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
@@ -106,6 +106,7 @@ func (a *App) GetHTMLTemplates() (*json.Templates, error) {
 	var tmpls json.Templates
 	tmpls.Layouts = l
 	tmpls.Contents = c
+	tmpls.Diagrams = d
 
 	return &tmpls, nil
 }

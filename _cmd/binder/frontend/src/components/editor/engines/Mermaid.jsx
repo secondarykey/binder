@@ -5,6 +5,9 @@ import mermaidVendorUrl from '../../../assets/vendor/mermaid.min.js?url';
 const Name = "mermaid";
 const DefaultOpts = { startOnLoad: false, theme: "dark", look: 'handDrawn', handDrawn: true };
 
+// ダイアグラムスタイルテンプレートのキャッシュ（テンプレートID → 内容文字列）
+const _styleCache = {};
+
 /**
  * mermaid を利用してパースするクラス（ESM / UMD 両対応）
  */
@@ -90,13 +93,30 @@ class MermaidScript {
     return { success };
   }
 
-  static async parse(txt) {
+  /**
+   * スタイルテンプレートをキャッシュに設定する
+   */
+  static setStyleTemplate(id, content) {
+    if (id) _styleCache[id] = content;
+  }
+
+  /**
+   * キャッシュからスタイルテンプレート内容を取得し、%%{init:...}%% でラップして返す
+   */
+  static getStylePrefix(id) {
+    if (!id || !_styleCache[id]) return '';
+    return `%%{init:${_styleCache[id]}}%%\n`;
+  }
+
+  static async parse(txt, styleTemplateId) {
+    const prefix = this.getStylePrefix(styleTemplateId);
+    const fullTxt = prefix ? prefix + txt : txt;
 
     var rtn = new Promise((res, rej) => {
 
       var func = function () {
-        mermaid.parse(txt).then(() => {
-          mermaid.render('svg', txt).then((data) => {
+        mermaid.parse(fullTxt).then(() => {
+          mermaid.render('svg', fullTxt).then((data) => {
             res(data);
           }).catch((err) => {
             rej(err);

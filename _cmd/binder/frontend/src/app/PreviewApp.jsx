@@ -41,8 +41,8 @@ function PreviewApp() {
           // ダイアグラムは mermaidViewer に直接レンダリング
           const el = document.querySelector('#previewMermaidViewer');
           if (el && data.html) {
-            Mermaid.render(data.html).then((svg) => {
-              el.innerHTML = svg;
+            Mermaid.parse(data.html, data.styleTemplateId).then((result) => {
+              el.innerHTML = result.svg;
             }).catch(() => {
               el.innerHTML = data.html;
             });
