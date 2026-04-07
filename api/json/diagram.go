@@ -9,7 +9,8 @@ type Diagram struct {
 	Name     string `json:"name"`
 	Detail   string `json:"detail"`
 
-	Private bool `json:"private"`
+	Private       bool   `json:"private"`
+	StyleTemplate string `json:"styleTemplate"`
 
 	Publish          time.Time `json:"publish"`
 	Republish        time.Time `json:"republish"`

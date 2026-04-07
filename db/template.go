@@ -15,6 +15,10 @@ func (inst *Instance) FindContentTemplates() ([]*model.Template, error) {
 	return inst.findTypeTemplates(json.ContentTemplateType)
 }
 
+func (inst *Instance) FindDiagramTemplates() ([]*model.Template, error) {
+	return inst.findTypeTemplates(json.DiagramTemplateType)
+}
+
 func (inst *Instance) findTypeTemplates(t json.TemplateType) ([]*model.Template, error) {
 	return inst.findTemplate("type = ?", "seq asc, updated_date desc", -1, -1, string(t))
 }

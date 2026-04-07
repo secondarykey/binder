@@ -100,7 +100,6 @@ func init() {
 	if err != nil {
 		panic("v097 version parse error: " + err.Error())
 	}
-
 	migrations = []migration{
 		// 0.1.0: assets.csv に binary 列を追加
 		{v010, func(_, dbDir string, _ *migrateState) error {
@@ -168,6 +167,7 @@ func init() {
 			return applyDB(dbDir, convert092.Convert092)
 		}},
 		// 0.9.7: structures.csv に private 列を追加（デフォルト値: false）
+		// diagrams.csv に style_template 列を追加（デフォルト値: 空文字列）
 		{v097, func(_, dbDir string, _ *migrateState) error {
 			return applyDB(dbDir, convert097.Convert097)
 		}},

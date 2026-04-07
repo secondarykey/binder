@@ -40,7 +40,8 @@
         "mime" : "MIME Type",
         "select" : "Select",
         "private" : "Private",
-        "aliasDuplicate" : "This alias is already in use"
+        "aliasDuplicate" : "This alias is already in use",
+        "none" : "None"
     },
     "tree" : {
         "menu" : "Menu",
@@ -93,7 +94,8 @@
         "updateSuccess" : "Diagram updated.",
         "removeSuccess" : "Diagram removed.",
         "deleteTitle" : "Delete Diagram",
-        "deleteConfirm" : "Delete \"{{name}}\"?"
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "styleTemplate" : "Style Template"
     },
     "asset" : {
         "editTitle" : "Edit Assets",

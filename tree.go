@@ -77,11 +77,13 @@ func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 	htmlLeaf := json.NewLeaf("DIR_HTML", "HTML")
 	layoutLeaf := json.NewLeaf("DIR_HTML_Layout", "Layout")
 	contentLeaf := json.NewLeaf("DIR_HTML_Content", "Content")
+	diagramLeaf := json.NewLeaf("DIR_Diagram_Style", "Diagram")
 
 	htmlLeaf.AddChild(layoutLeaf)
 	htmlLeaf.AddChild(contentLeaf)
+	htmlLeaf.AddChild(diagramLeaf)
 
-	//大枠のツリーを作成（HTMLテンプレートのみ）
+	//大枠のツリーを作成
 	root := []*json.Leaf{htmlLeaf}
 
 	templates, err := b.db.FindTemplates()
@@ -95,6 +97,8 @@ func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 			layoutLeaf.AddChild(convertTemplateLeaf(temp))
 		case json.ContentTemplateType:
 			contentLeaf.AddChild(convertTemplateLeaf(temp))
+		case json.DiagramTemplateType:
+			diagramLeaf.AddChild(convertTemplateLeaf(temp))
 		}
 	}
 

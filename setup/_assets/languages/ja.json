@@ -40,7 +40,8 @@
         "mime" : "MIMEタイプ",
         "select" : "選択",
         "private" : "非公開",
-        "aliasDuplicate" : "このエイリアスは既に使用されています"
+        "aliasDuplicate" : "このエイリアスは既に使用されています",
+        "none" : "なし"
     },
     "tree" : {
         "menu" : "メニュー",
@@ -93,7 +94,8 @@
         "updateSuccess" : "ダイアグラムを更新しました",
         "removeSuccess" : "ダイアグラムを削除しました",
         "deleteTitle" : "ダイアグラムの削除",
-        "deleteConfirm" : "「{{name}}」を削除しますか？"
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "styleTemplate" : "スタイルテンプレート"
     },
     "asset" : {
         "editTitle" : "アセット編集",

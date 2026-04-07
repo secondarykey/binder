@@ -261,6 +261,8 @@ function Editor(props) {
   const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  // ダイアグラムスタイルテンプレートID
+  const [styleTemplateId, setStyleTemplateId] = useState("");
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -328,6 +330,13 @@ function Editor(props) {
         }
         setIsPrivate(!!resp.private);
         setName(resp.name);
+        // スタイルテンプレートをキャッシュ
+        setStyleTemplateId(resp.styleTemplate || "");
+        if (resp.styleTemplate) {
+          OpenTemplate(resp.styleTemplate).then((content) => {
+            Mermaid.setStyleTemplate(resp.styleTemplate, content);
+          }).catch(() => {});
+        }
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
@@ -649,12 +658,12 @@ function Editor(props) {
    */
   const viewDiagram = async (txt) => {
 
-    Mermaid.parse(txt).then((data) => {
+    Mermaid.parse(txt, styleTemplateId).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
       setParseStatus({ status: "success", err: null });
-      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt });
+      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt, styleTemplateId });
 
       var svg = document.querySelector('#mermaidViewer svg');
       var left = 0;
@@ -783,7 +792,7 @@ function Editor(props) {
     if (mode === Mode.note) {
       elm = (await createMarked(id, text, false)).html;
     } else if (mode === Mode.diagram) {
-      var obj = await Mermaid.parse(text);
+      var obj = await Mermaid.parse(text, styleTemplateId);
       elm = obj.svg
     } else if (mode === Mode.template) {
       elm = text;

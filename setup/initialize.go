@@ -220,8 +220,9 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installManifest) error {
 	for _, d := range m.Diagrams {
 		jd := &json.Diagram{
-			ParentId: d.ParentId,
-			Name:     d.Name,
+			ParentId:      d.ParentId,
+			Name:          d.Name,
+			StyleTemplate: d.StyleTemplate,
 		}
 
 		// IDを生成
