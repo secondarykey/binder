@@ -36,6 +36,7 @@ type wrapper struct {
 	owner *Binder
 	note  *json.Note
 	Local bool
+	depth int // embed の再帰深度（循環参照防止）
 }
 
 func newWrapper(o *Binder, local bool, note *json.Note) (*wrapper, error) {
@@ -277,10 +278,60 @@ document.write(d.toLocaleString());
 </script>`, src))
 }
 
+// embed は指定 ID のノートの Markdown 本文をインライン展開する。
+// 返値は template.HTML（エスケープなし）のため、marked.js にそのまま渡される。
+// 循環参照を防ぐため depth >= 1 の場合は空文字を返す。
+func (w *wrapper) embed(id string) template.HTML {
+	if w.depth >= 1 {
+		return ""
+	}
+
+	note, err := w.owner.GetNote(id)
+	if err != nil {
+		log.ErrorE("embed GetNote()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	var buf strings.Builder
+	if err := w.owner.ReadNote(&buf, id); err != nil {
+		log.ErrorE("embed ReadNote()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	childWrap := &wrapper{
+		owner: w.owner,
+		note:  note,
+		Local: w.Local,
+		depth: w.depth + 1,
+	}
+
+	content := buf.String()
+	tmpl, err := template.New("").Funcs(defineFuncMap(childWrap)).Parse(content)
+	if err != nil {
+		log.ErrorE("embed Parse()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	dto, err := w.owner.createDto(childWrap, content)
+	if err != nil {
+		log.ErrorE("embed createDto()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	var out strings.Builder
+	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
+		log.ErrorE("embed writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	return template.HTML(out.String())
+}
+
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"drawDiagram":   w.drawSVG,
 		"replace":       strings.ReplaceAll,
+		"embed":         w.embed,
 		"assets":        w.assets,
 		"assetsImage":   w.assetsImage,
 		"childrenNotes": w.childrenNotes,
