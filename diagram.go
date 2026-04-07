@@ -57,7 +57,16 @@ func (b *Binder) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
 		}
-		if oldS.Alias != d.Alias {
+		willPrivatize := d.Private && !oldS.Publish.IsZero()
+		if willPrivatize {
+			// 非公開化: 旧aliasで公開済みファイルを削除（リネームはしない）
+			oldDiagram := &json.Diagram{Alias: oldS.Alias}
+			fn, err := b.fileSystem.UnpublishDiagram(oldDiagram)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.UnpublishDiagram() error: %w", err)
+			}
+			files = append(files, fn)
+		} else if oldS.Alias != d.Alias {
 			renamedFiles, err := b.fileSystem.RenamePublishedDiagram(oldS.Alias, d.Alias)
 			if err != nil {
 				return nil, xerrors.Errorf("fs.RenamePublishedDiagram() error: %w", err)
@@ -71,7 +80,7 @@ func (b *Binder) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 			return nil, xerrors.Errorf("db.UpdateDiagram() error: %w", err)
 		}
 
-		// Structure更新
+		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
 		err = b.updateStructure(d.Id, d.ParentId, d.Name, d.Detail, d.Alias, d.Private)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
@@ -217,10 +226,11 @@ func (b *Binder) GetUnpublishedDiagrams() ([]*json.Diagram, error) {
 			return nil, xerrors.Errorf("SetDiagramStatus() error: %w", err)
 		}
 
-		//最新じゃない場合は追加
-		if m.PublishStatus != json.LatestStatus {
-			pr = append(pr, m)
+		//非公開または最新の場合はスキップ
+		if m.Private || m.PublishStatus == json.LatestStatus {
+			continue
 		}
+		pr = append(pr, m)
 	}
 	return pr, nil
 }

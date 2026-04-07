@@ -260,6 +260,7 @@ function Editor(props) {
   // パースステータス（プレビュー下部のステータスバー用）
   const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -325,7 +326,7 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
-
+        setIsPrivate(!!resp.private);
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -347,6 +348,7 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
+        setIsPrivate(!!resp.private);
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -409,6 +411,7 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
+        setIsPrivate(!!resp.private);
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -1637,7 +1640,7 @@ function Editor(props) {
                   <div className="parseStatusRight">
                     <Tooltip title={t("preview.publish")} placement="top">
                       <span>
-                        <IconButton size="small" aria-label="publish" onClick={handlePublish} disabled={parseStatus.status === "error"} className="editorBtn">
+                        <IconButton size="small" aria-label="publish" onClick={handlePublish} disabled={parseStatus.status === "error" || isPrivate} className="editorBtn">
                           <PublishIcon sx={{ fontSize: '16px' }} />
                         </IconButton>
                       </span>

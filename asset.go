@@ -173,7 +173,16 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
 		}
-		if oldS.Alias != a.Alias {
+		willPrivatize := a.Private && !oldS.Publish.IsZero()
+		if willPrivatize {
+			// 非公開化: 旧aliasで公開済みファイルを削除（リネームはしない）
+			oldAsset := &json.Asset{Alias: oldS.Alias}
+			fn, err := b.fileSystem.UnpublishAsset(oldAsset)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.UnpublishAsset() error: %w", err)
+			}
+			files = append(files, fn)
+		} else if oldS.Alias != a.Alias {
 			renamedFiles, err := b.fileSystem.RenamePublishedAsset(oldS.Alias, a.Alias)
 			if err != nil {
 				return nil, xerrors.Errorf("fs.RenamePublishedAsset() error: %w", err)
@@ -188,7 +197,7 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}
 
-		// Structure更新
+		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
 		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias, a.Private)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
@@ -415,10 +424,11 @@ func (b *Binder) GetUnpublishedAssets() ([]*json.Asset, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
 		}
-		//最新じゃない場合は追加
-		if a.PublishStatus != json.LatestStatus {
-			pr = append(pr, a)
+		//非公開または最新の場合はスキップ
+		if a.Private || a.PublishStatus == json.LatestStatus {
+			continue
 		}
+		pr = append(pr, a)
 	}
 	return pr, nil
 }

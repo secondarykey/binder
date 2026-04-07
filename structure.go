@@ -4,6 +4,7 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"errors"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -37,7 +38,9 @@ func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) 
 	return nil
 }
 
-// updateStructure は既存のStructure行を更新する
+// updateStructure は既存のStructure行を更新する。
+// private=true かつ公開済み（publish_date != zero）の場合は
+// publish_date/republish_date を両方ゼロにリセットする。
 func (b *Binder) updateStructure(id, parentId, name, detail, alias string, private bool) error {
 
 	s, err := b.db.GetStructure(id)
@@ -50,6 +53,10 @@ func (b *Binder) updateStructure(id, parentId, name, detail, alias string, priva
 	s.Detail = detail
 	s.Alias = alias
 	s.Private = private
+	if private && !s.Publish.IsZero() {
+		s.Publish = time.Time{}
+		s.Republish = time.Time{}
+	}
 
 	err = b.db.UpdateStructure(s, b.op)
 	if err != nil {
