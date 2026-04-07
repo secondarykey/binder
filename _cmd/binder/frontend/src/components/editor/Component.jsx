@@ -71,6 +71,22 @@ function flattenNotes(nodes) {
 }
 
 /**
+ * ツリーからダイアグラムのみを再帰的に抽出する
+ */
+function flattenDiagrams(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    if (node.type === "diagram") {
+      result.push({ id: node.id, name: node.name });
+    }
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenDiagrams(node.children));
+    }
+  }
+  return result;
+}
+
+/**
  * ツリーから全Structureをフラットに抽出する
  */
 function flattenStructures(nodes) {
@@ -151,9 +167,10 @@ const debouncePromiss = (fn, delay) => {
   }
 }
 
-// テンプレートプレビューで前回選択したノート・テンプレートを記憶する
+// テンプレートプレビューで前回選択したノート・テンプレート・ダイアグラムを記憶する
 let lastPreviewNoteId = "";
 let lastPreviewOtherTemplateId = "";
+let lastPreviewDiagramId = "";
 
 //テキストの保存処理（デバウンス）
 const writeFn = debouncePromiss((mode, id, txt) => {
@@ -277,6 +294,9 @@ function Editor(props) {
   const [previewNotes, setPreviewNotes] = useState([]);
   const [previewNoteId, setPreviewNoteId] = useState("");
   const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
+  // ダイアグラムテンプレートプレビュー用
+  const [previewDiagrams, setPreviewDiagrams] = useState([]);
+  const [previewDiagramId, setPreviewDiagramId] = useState("");
 
   // Ctrl+F で検索バーを開く
   useEffect(() => {
@@ -391,7 +411,7 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用テンプレート一覧を取得
+      // プレビュー用データを取得（テンプレートタイプ確定後に分岐するため、ここではツリーとテンプレート一覧を両方取得）
       GetHTMLTemplates().then((tmpls) => {
         setPreviewLayouts(tmpls.layouts ?? []);
         setPreviewContents(tmpls.contents ?? []);
@@ -399,13 +419,20 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用ノート一覧を取得（前回選択があれば復元）
       GetBinderTree().then((tree) => {
+        // ノート一覧（layout/content テンプレート用）
         const notes = flattenNotes(tree.data ?? []);
         setPreviewNotes(notes);
         if (notes.length > 0) {
           const restored = lastPreviewNoteId && notes.some(n => n.id === lastPreviewNoteId);
           setPreviewNoteId(restored ? lastPreviewNoteId : notes[0].id);
+        }
+        // ダイアグラム一覧（diagram テンプレート用）
+        const diagrams = flattenDiagrams(tree.data ?? []);
+        setPreviewDiagrams(diagrams);
+        if (diagrams.length > 0) {
+          const restored = lastPreviewDiagramId && diagrams.some(d => d.id === lastPreviewDiagramId);
+          setPreviewDiagramId(restored ? lastPreviewDiagramId : diagrams[0].id);
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -499,13 +526,19 @@ function Editor(props) {
     }
   }, [templateType, previewLayouts, previewContents]);
 
-  // プレビュー設定が揃ったら自動プレビュー
+  // プレビュー設定が揃ったら自動プレビュー（layout/content テンプレート）
   useEffect(() => {
-    if (mode !== Mode.template || !previewNoteId || !previewOtherTemplateId || !templateType) return;
+    if (mode !== Mode.template || templateType === "diagram" || !previewNoteId || !previewOtherTemplateId || !templateType) return;
     runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
       .then((result) => setHTML(result))
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
+
+  // プレビューダイアグラム選択変更時に再描画（diagram テンプレート）
+  useEffect(() => {
+    if (mode !== Mode.template || templateType !== "diagram" || !previewDiagramId || !text) return;
+    viewDiagramTemplatePreview(text, previewDiagramId);
+  }, [previewDiagramId]);
 
   // モードに対応するスニペット一覧
   const snippetList = (() => {
@@ -584,12 +617,18 @@ function Editor(props) {
       setCursorLine(cursorLineRef.current);
       viewHTML(text);
     } else if (mode === Mode.template) {
-      if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
-      // テンプレートをファイルに即時保存してからプレビューを生成
-      await SaveTemplate(id, text);
-      runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-        .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
-        .catch((err) => setParseStatus({ status: "error", err }));
+      if (templateType === "diagram") {
+        // ダイアグラムテンプレート: 選択中のダイアグラムにテンプレートを適用して描画
+        if (!previewDiagramId) return;
+        viewDiagramTemplatePreview(text, previewDiagramId);
+      } else {
+        if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
+        // テンプレートをファイルに即時保存してからプレビューを生成
+        await SaveTemplate(id, text);
+        runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+          .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
+          .catch((err) => setParseStatus({ status: "error", err }));
+      }
     } else {
       //初回時の実行があるか
     }
@@ -699,6 +738,26 @@ function Editor(props) {
 
       transform();
 
+    }).catch((err) => {
+      setParseStatus({ status: "error", err });
+    });
+  }
+
+  /**
+   * ダイアグラムテンプレートのプレビュー: 選択ダイアグラムにテンプレートを適用して描画
+   */
+  const viewDiagramTemplatePreview = async (templateText, diagramId) => {
+    if (!diagramId || !templateText) return;
+    OpenDiagram(diagramId).then((diagramContent) => {
+      const prefix = `%%{init:${templateText}}%%\n`;
+      const fullTxt = prefix + diagramContent;
+      Mermaid.parse(fullTxt).then((data) => {
+        var elm = document.querySelector('#mermaidViewer');
+        if (elm) elm.innerHTML = data.svg;
+        setParseStatus({ status: "success", err: null });
+      }).catch((err) => {
+        setParseStatus({ status: "error", err });
+      });
     }).catch((err) => {
       setParseStatus({ status: "error", err });
     });
@@ -1562,6 +1621,23 @@ function Editor(props) {
               {/** プレビューメニュー */}
               <div id="previewMenu">
                 {mode === Mode.template && (() => {
+                  if (templateType === "diagram") {
+                    return (
+                      <div className="previewMenuLeft">
+                        <Select
+                          value={previewDiagramId}
+                          onChange={(e) => { lastPreviewDiagramId = e.target.value; setPreviewDiagramId(e.target.value); }}
+                          size="small"
+                          displayEmpty
+                          sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                        >
+                          {previewDiagrams.map((d) => (
+                            <MenuItem key={d.id} value={d.id} sx={{ fontSize: "0.8rem" }}>{d.name}</MenuItem>
+                          ))}
+                        </Select>
+                      </div>
+                    );
+                  }
                   const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                   return (
                     <div className="previewMenuLeft">
@@ -1632,7 +1708,10 @@ function Editor(props) {
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
                 }
-                {mode === Mode.template &&
+                {mode === Mode.template && templateType === "diagram" &&
+                  <div id="mermaidViewer"></div>
+                }
+                {mode === Mode.template && templateType !== "diagram" &&
                   <HTMLFrame html={html} cursorLine={cursorLine} />
                 }
               </div>
