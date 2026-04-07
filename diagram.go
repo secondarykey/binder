@@ -72,7 +72,7 @@ func (b *Binder) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 		}
 
 		// Structure更新
-		err = b.updateStructure(d.Id, d.ParentId, d.Name, d.Detail, d.Alias)
+		err = b.updateStructure(d.Id, d.ParentId, d.Name, d.Detail, d.Alias, d.Private)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}

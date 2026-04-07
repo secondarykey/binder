@@ -38,7 +38,8 @@
         "deleted" : "削除しました",
         "open" : "開く",
         "mime" : "MIMEタイプ",
-        "select" : "選択"
+        "select" : "選択",
+        "private" : "非公開"
     },
     "tree" : {
         "menu" : "メニュー",

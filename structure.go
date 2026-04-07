@@ -38,7 +38,7 @@ func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) 
 }
 
 // updateStructure は既存のStructure行を更新する
-func (b *Binder) updateStructure(id, parentId, name, detail, alias string) error {
+func (b *Binder) updateStructure(id, parentId, name, detail, alias string, private bool) error {
 
 	s, err := b.db.GetStructure(id)
 	if err != nil {
@@ -49,6 +49,7 @@ func (b *Binder) updateStructure(id, parentId, name, detail, alias string) error
 	s.Name = name
 	s.Detail = detail
 	s.Alias = alias
+	s.Private = private
 
 	err = b.db.UpdateStructure(s, b.op)
 	if err != nil {

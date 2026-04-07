@@ -38,7 +38,8 @@
         "deleted" : "Deleted.",
         "open" : "Open",
         "mime" : "MIME Type",
-        "select" : "Select"
+        "select" : "Select",
+        "private" : "Private"
     },
     "tree" : {
         "menu" : "Menu",
