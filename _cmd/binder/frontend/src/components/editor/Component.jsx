@@ -1640,7 +1640,7 @@ function Editor(props) {
                   <div className="parseStatusRight">
                     <Tooltip title={t("preview.publish")} placement="top">
                       <span>
-                        <IconButton size="small" aria-label="publish" onClick={handlePublish} disabled={parseStatus.status === "error" || isPrivate} className="editorBtn" sx={isPrivate ? { '&.Mui-disabled': { color: 'grey.500' } } : {}}>
+                        <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { color: 'grey.500', pointerEvents: 'none' } : {}}>
                           <PublishIcon sx={{ fontSize: '16px' }} />
                         </IconButton>
                       </span>
