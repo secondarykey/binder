@@ -337,7 +337,7 @@
     },
     "preview" : {
         "publish" : "公開",
-        "unpublish" : "非公開",
+        "unpublish" : "未公開状態にする",
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー"
