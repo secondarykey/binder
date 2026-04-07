@@ -1,9 +1,11 @@
 import { useContext } from "react";
 import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Typography,
 } from "@mui/material";
 import { Close, ContentCopy, Delete, Save } from "@mui/icons-material";
+import { useTranslation } from 'react-i18next';
+import "../../language";
 
 import { copyClipboard } from "../../app/App";
 import { EventContext } from "../../Event";
@@ -17,6 +19,8 @@ import { EventContext } from "../../Event";
  *   title: string,
  *   id?: string,
  *   showId?: boolean,
+ *   isPrivate?: boolean,
+ *   onPrivateChange?: (value: boolean) => void,
  *   onSave: () => void,
  *   onDelete?: () => void,
  *   showDelete?: boolean,
@@ -27,11 +31,13 @@ import { EventContext } from "../../Event";
 function MetaDialog({
   open, onClose, title, id,
   showId = true,
+  isPrivate, onPrivateChange,
   onSave,
   onDelete, showDelete = true, deleteDisabled = false,
   children,
 }) {
   const evt = useContext(EventContext);
+  const { t } = useTranslation();
 
   const handleCopyId = () => {
     copyClipboard(id);
@@ -65,6 +71,17 @@ function MetaDialog({
               <IconButton size="small" onClick={handleCopyId} title="Copy ID">
                 <ContentCopy fontSize="small" />
               </IconButton>
+              {onPrivateChange !== undefined && (
+                <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
+                  <Checkbox
+                    size="small"
+                    checked={!!isPrivate}
+                    onChange={(e) => onPrivateChange(e.target.checked)}
+                    sx={{ p: 0.5 }}
+                  />
+                  <Typography variant="body2">{t("common.private")}</Typography>
+                </Box>
+              )}
             </Box>
           )}
           {children}

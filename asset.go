@@ -189,7 +189,7 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 		}
 
 		// Structure更新
-		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias)
+		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias, a.Private)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}

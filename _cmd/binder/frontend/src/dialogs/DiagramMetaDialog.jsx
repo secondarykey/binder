@@ -22,16 +22,18 @@ function DiagramMetaDialog({ open, id, onClose }) {
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
   const [detail, setDetail] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!open || !id) return;
-    setName(""); setAlias(""); setDetail("");
+    setName(""); setAlias(""); setDetail(""); setIsPrivate(false);
 
     GetDiagram(id).then((data) => {
       setName(data.name);
       setAlias(data.alias);
       setDetail(data.detail);
+      setIsPrivate(data.private);
       setParentId(data.parentId);
     }).catch((err) => evt.showErrorMessage(err));
   }, [open, id]);
@@ -40,7 +42,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
     if (!name) { evt.showWarningMessage(t("diagram.nameRequired")); return; }
     if (!alias) { evt.showWarningMessage(t("diagram.aliasRequired")); return; }
 
-    EditDiagram({ id, parentId, name, detail, alias }).then(() => {
+    EditDiagram({ id, parentId, name, detail, alias, private: isPrivate }).then(() => {
       evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("diagram.updateSuccess"));
@@ -62,6 +64,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
     <MetaDialog
       open={open} onClose={onClose} title={t("diagram.editTitle")}
       id={id} onSave={handleSave} onDelete={() => setConfirmDelete(true)}
+      isPrivate={isPrivate} onPrivateChange={setIsPrivate}
     >
       <FormControl>
         <FormLabel>{t("common.name")}</FormLabel>

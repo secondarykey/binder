@@ -24,11 +24,12 @@ function AssetMetaDialog({ open, id, onClose }) {
   const [detail, setDetail] = useState("");
   const [binary, setBinary] = useState(false);
   const [mime, setMime] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!open || !id) return;
-    setName(""); setAlias(""); setDetail(""); setBinary(false); setMime("");
+    setName(""); setAlias(""); setDetail(""); setBinary(false); setMime(""); setIsPrivate(false);
 
     GetAsset(id).then((data) => {
       setName(data.name);
@@ -36,12 +37,13 @@ function AssetMetaDialog({ open, id, onClose }) {
       setDetail(data.detail);
       setBinary(data.binary);
       setMime(data.mime || "");
+      setIsPrivate(data.private);
       setParentId(data.parentId);
     }).catch((err) => evt.showErrorMessage(err));
   }, [open, id]);
 
   const handleSave = () => {
-    EditAsset({ id, parentId, name, alias, detail, binary, mime }, "").then(() => {
+    EditAsset({ id, parentId, name, alias, detail, binary, mime, private: isPrivate }, "").then(() => {
       evt.markModified(id);
       evt.refreshTree();
       evt.showSuccessMessage(t("asset.updateSuccess"));
@@ -63,6 +65,7 @@ function AssetMetaDialog({ open, id, onClose }) {
     <MetaDialog
       open={open} onClose={onClose} title={t("asset.editTitle")}
       id={id} onSave={handleSave} onDelete={() => setConfirmDelete(true)}
+      isPrivate={isPrivate} onPrivateChange={setIsPrivate}
     >
       <FormControl>
         <FormLabel>{t("common.name")}</FormLabel>

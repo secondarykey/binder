@@ -177,7 +177,7 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 		}
 
 		// Structure更新
-		err = b.updateStructure(n.Id, n.ParentId, n.Name, n.Detail, n.Alias)
+		err = b.updateStructure(n.Id, n.ParentId, n.Name, n.Detail, n.Alias, n.Private)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}

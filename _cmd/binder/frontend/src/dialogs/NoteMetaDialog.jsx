@@ -30,6 +30,7 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [parentId, setParentId] = useState("");
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [viewImage, setViewImage] = useState(noImage);
   const [hasImage, setHasImage] = useState(false);
   const [confirmDeleteImage, setConfirmDeleteImage] = useState(false);
@@ -51,13 +52,14 @@ function NoteMetaDialog({ open, id, onClose }) {
   // ダイアログが開くたびにデータ取得
   useEffect(() => {
     if (!open || !id) return;
-    setName(""); setAlias(""); setDetail("");
+    setName(""); setAlias(""); setDetail(""); setIsPrivate(false);
     setViewImage(noImage); setHasImage(false);
 
     GetNote(id).then((note) => {
       setName(note.name);
       setAlias(note.alias);
       setDetail(note.detail);
+      setIsPrivate(note.private);
       setParentId(note.parentId);
       setLayout(note.layoutTemplate);
       setContent(note.contentTemplate);
@@ -74,7 +76,7 @@ function NoteMetaDialog({ open, id, onClose }) {
     if (!layout || !content) { evt.showWarningMessage(t("note.chooseTemplate")); return; }
     if (!alias && id !== "index") { evt.showWarningMessage(t("note.aliasRequired")); return; }
 
-    const note = { id, parentId, name, alias, detail, layoutTemplate: layout, contentTemplate: content };
+    const note = { id, parentId, name, alias, detail, private: isPrivate, layoutTemplate: layout, contentTemplate: content };
     EditNote(note, "").then(() => {
       evt.markModified(id);
       evt.refreshTree();
@@ -128,6 +130,7 @@ function NoteMetaDialog({ open, id, onClose }) {
     <MetaDialog
       open={open} onClose={onClose} title={t("note.editTitle")}
       id={id} onSave={handleSave}
+      isPrivate={isPrivate} onPrivateChange={setIsPrivate}
       onDelete={() => setConfirmDelete(true)} deleteDisabled={isIndex}
     >
       <FormControl>

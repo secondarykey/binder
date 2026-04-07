@@ -11,6 +11,8 @@ type Note struct {
 	LayoutTemplate  string `json:"layoutTemplate"`
 	ContentTemplate string `json:"contentTemplate"`
 
+	Private bool `json:"private"`
+
 	Publish          time.Time `json:"publish"`
 	Republish        time.Time `json:"republish"`
 	StructureUpdated time.Time `json:"structureUpdated"`
@@ -56,6 +58,7 @@ func (n *Note) ApplyStructure(s *Structure) {
 	n.Name = s.Name
 	n.Detail = s.Detail
 	n.Alias = s.Alias
+	n.Private = s.Private
 	n.Publish = s.Publish
 	n.Republish = s.Republish
 	n.StructureUpdated = s.Updated
