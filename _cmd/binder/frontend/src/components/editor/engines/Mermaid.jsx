@@ -3,7 +3,7 @@ import { GetConfig, GetAllowedCDNs } from "../../../../bindings/binder/api/app";
 import mermaidVendorUrl from '../../../assets/vendor/mermaid.min.js?url';
 
 const Name = "mermaid";
-const DefaultOpts = { startOnLoad: false, theme: "dark", look: 'handDrawn', handDrawn: true };
+const DefaultOpts = { startOnLoad: false };
 
 // ダイアグラムスタイルテンプレートのキャッシュ（テンプレートID → 内容文字列）
 const _styleCache = {};
@@ -105,12 +105,15 @@ class MermaidScript {
    */
   static getStylePrefix(id) {
     if (!id || !_styleCache[id]) return '';
-    return `%%{init:${_styleCache[id]}}%%\n`;
+    return `%%%%{init:${_styleCache[id]}}%%%%\n`;
   }
 
   static async parse(txt, styleTemplateId) {
+
     const prefix = this.getStylePrefix(styleTemplateId);
     const fullTxt = prefix ? prefix + txt : txt;
+
+    console.log(fullTxt)
 
     var rtn = new Promise((res, rej) => {
 
