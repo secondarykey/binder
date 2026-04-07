@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"binder/db"
 	"binder/db/model"
 	"binder/fs"
 	"errors"
@@ -31,6 +32,16 @@ func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) 
 	s.Detail = detail
 	s.Alias = alias
 
+	if alias != "" {
+		exists, err := b.db.ExistsStructureAlias(alias, typ, "")
+		if err != nil {
+			return xerrors.Errorf("db.ExistsStructureAlias() error: %w", err)
+		}
+		if exists {
+			return db.DuplicateAlias
+		}
+	}
+
 	err = b.db.InsertStructure(&s, b.op)
 	if err != nil {
 		return xerrors.Errorf("db.InsertStructure() error: %w", err)
@@ -53,6 +64,17 @@ func (b *Binder) updateStructure(id, parentId, name, detail, alias string, priva
 	s.Detail = detail
 	s.Alias = alias
 	s.Private = private
+
+	if alias != "" {
+		exists, err := b.db.ExistsStructureAlias(alias, s.Typ, id)
+		if err != nil {
+			return xerrors.Errorf("db.ExistsStructureAlias() error: %w", err)
+		}
+		if exists {
+			return db.DuplicateAlias
+		}
+	}
+
 	if private && !s.Publish.IsZero() {
 		s.Publish = time.Time{}
 		s.Republish = time.Time{}

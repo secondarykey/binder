@@ -21,6 +21,22 @@ func (inst *Instance) FindInStructureId(ids ...interface{}) ([]*model.Structure,
 	return inst.findStructure("id in ("+csvQ(ids)+")", "parent_id,seq", -1, -1, ids...)
 }
 
+// ExistsStructureAlias は同一 type 内に alias が既に存在するか確認する。
+// excludeId が非空の場合はそのIDを除外する（更新時用）。
+func (inst *Instance) ExistsStructureAlias(alias, typ, excludeId string) (bool, error) {
+	var structures []*model.Structure
+	var err error
+	if excludeId != "" {
+		structures, err = inst.findStructure("alias = ? AND type = ? AND id != ?", "", 1, 0, alias, typ, excludeId)
+	} else {
+		structures, err = inst.findStructure("alias = ? AND type = ?", "", 1, 0, alias, typ)
+	}
+	if err != nil {
+		return false, xerrors.Errorf("findStructure() error: %w", err)
+	}
+	return len(structures) > 0, nil
+}
+
 func (inst *Instance) GetMaxSeq(parentId string) (int, error) {
 	structures, err := inst.findStructure("parent_id = ?", "seq desc", 1, 0, parentId)
 	if err != nil {

@@ -39,7 +39,8 @@
         "open" : "Open",
         "mime" : "MIME Type",
         "select" : "Select",
-        "private" : "Private"
+        "private" : "Private",
+        "aliasDuplicate" : "This alias is already in use"
     },
     "tree" : {
         "menu" : "Menu",

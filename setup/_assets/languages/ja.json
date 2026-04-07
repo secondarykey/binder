@@ -39,7 +39,8 @@
         "open" : "開く",
         "mime" : "MIMEタイプ",
         "select" : "選択",
-        "private" : "非公開"
+        "private" : "非公開",
+        "aliasDuplicate" : "このエイリアスは既に使用されています"
     },
     "tree" : {
         "menu" : "メニュー",

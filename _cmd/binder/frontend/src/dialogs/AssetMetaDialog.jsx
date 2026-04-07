@@ -48,7 +48,13 @@ function AssetMetaDialog({ open, id, onClose }) {
       evt.refreshTree();
       evt.showSuccessMessage(t("asset.updateSuccess"));
       onClose();
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => {
+      if (typeof err === 'string' && err.includes("duplicate alias")) {
+        evt.showWarningMessage(t("common.aliasDuplicate"));
+      } else {
+        evt.showErrorMessage(err);
+      }
+    });
   };
 
   const handleDeleteConfirm = () => {
