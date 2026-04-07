@@ -130,7 +130,7 @@ const processTreeData = (leafs, modifiedIds, showModified, unpublishedMap, showP
       nodeType: leaf.type,                                                                        // コンテキストメニュー判定用（元のtype）
       modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,                  // Git未コミット変更フラグ（トグルOFF時は強制false）
       publishStatus: showPublishStatus && unpublishedMap ? (unpublishedMap.get(leaf.id) ?? 0) : 0, // 未公開ステータス（0:最新 1:未公開新規 2:更新あり）
-      private: !!leaf.private,
+      private: showPublishStatus ? !!leaf.private : false,
       children: hasChildren ? children : undefined,
     };
   });
