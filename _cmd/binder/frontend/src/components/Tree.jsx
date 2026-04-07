@@ -64,7 +64,8 @@ const IconWrapper = styled.span`
   margin-right: 5px;
   display: flex;
   align-items: center;
-  ${({ $modified, $publishStatus }) => {
+  ${({ $modified, $publishStatus, $private }) => {
+    if ($private) return 'color: var(--text-muted); & .MuiSvgIcon-root { fill: var(--text-muted); }';
     if ($publishStatus === 1) return 'color: var(--accent-green); & .MuiSvgIcon-root { fill: var(--accent-green); }';
     if ($publishStatus === 2) return 'color: var(--accent-orange); & .MuiSvgIcon-root { fill: var(--accent-orange); }';
     if ($modified) return 'color: var(--accent-orange); & .MuiSvgIcon-root { fill: var(--accent-orange); }';
@@ -353,7 +354,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                     {isExpanded ? '−' : '+'}
                   </ExpandButton>
                 )}
-                <IconWrapper $modified={node.modified} $publishStatus={node.publishStatus ?? 0}>
+                <IconWrapper $modified={node.modified} $publishStatus={node.publishStatus ?? 0} $private={node.private}>
                     {typeof icon === 'string' ? icon : React.isValidElement(icon) ? icon : icon ? React.createElement(icon) : null}
                 </IconWrapper>
                 {isRenaming ? (
@@ -382,6 +383,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
                   />
                 ) : (
                   <span style={
+                    node.private ? { color: 'var(--text-muted)' } :
                     node.publishStatus === 1 ? { color: 'var(--accent-green)' } :
                     node.publishStatus === 2 ? { color: 'var(--accent-orange)' } :
                     node.modified ? { color: 'var(--accent-orange)' } : undefined

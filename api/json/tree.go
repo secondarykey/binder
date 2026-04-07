@@ -14,6 +14,7 @@ type Leaf struct {
 	Type          string  `json:"type"`
 	Modified      bool    `json:"modified"`
 	PublishStatus int     `json:"publishStatus"` // 0:最新 1:未公開(新規) 2:更新あり
+	Private       bool    `json:"private"`
 	Children      []*Leaf `json:"children"`
 }
 

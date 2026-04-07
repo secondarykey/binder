@@ -130,6 +130,7 @@ const processTreeData = (leafs, modifiedIds, showModified, unpublishedMap, showP
       nodeType: leaf.type,                                                                        // コンテキストメニュー判定用（元のtype）
       modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,                  // Git未コミット変更フラグ（トグルOFF時は強制false）
       publishStatus: showPublishStatus && unpublishedMap ? (unpublishedMap.get(leaf.id) ?? 0) : 0, // 未公開ステータス（0:最新 1:未公開新規 2:更新あり）
+      private: showPublishStatus ? !!leaf.private : false,
       children: hasChildren ? children : undefined,
     };
   });
@@ -590,7 +591,8 @@ function BinderTree(props) {
 
   /** ノートをデフォルト値で作成 → インラインリネーム → エディタへ */
   const handleRegisterNote = async () => {
-    const parentId = contextMenu.node.id;
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
     closeAllMenus();
     try {
       const tmpls = await GetHTMLTemplates();
@@ -602,6 +604,7 @@ function BinderTree(props) {
         detail: "",
         layoutTemplate: tmpls.layouts[0].id,
         contentTemplate: tmpls.contents[0].id,
+        private: !!parentNode.private,
       };
       const resp = await EditNote(note, "");
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
@@ -619,10 +622,11 @@ function BinderTree(props) {
 
   /** ダイアグラムをデフォルト値で作成 → インラインリネーム → エディタへ */
   const handleRegisterDiagram = async () => {
-    const parentId = contextMenu.node.id;
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
     closeAllMenus();
     try {
-      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "" };
+      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "", private: !!parentNode.private };
       const resp = await EditDiagram(diagram);
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
@@ -639,13 +643,14 @@ function BinderTree(props) {
 
   /** ファイル選択後にアセットを作成してエディタへ */
   const handleRegisterAssets = async () => {
-    const parentId = contextMenu.node.id;
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
     closeAllMenus();
     try {
       const filePath = await SelectFile("Any File", "*");
       if (!filePath) return;
       const name = filePath.split(/[/\\]/).pop() || "New Asset";
-      const asset = { id: "", parentId, name, alias: "", detail: "", binary: false };
+      const asset = { id: "", parentId, name, alias: "", detail: "", binary: false, private: !!parentNode.private };
       const resp = await EditAsset(asset, filePath);
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
