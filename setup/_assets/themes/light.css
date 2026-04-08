@@ -34,6 +34,7 @@
   --accent-red:       #f44336;
   --accent-error:     #ff8888;
   --accent-active:    #00ff00;
+  --accent-muted:     rgba(60, 120, 240, 0.15);
 
   /* --- 選択/ハイライト --- */
   --selected-bg:      #d0e0ff;

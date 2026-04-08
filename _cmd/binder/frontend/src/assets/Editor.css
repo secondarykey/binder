@@ -466,6 +466,14 @@ iframe.htmlViewer {
   background-color: var(--hover-overlay);
 }
 
+.editorSearchResultItem.active {
+  background-color: var(--accent-muted, rgba(100, 160, 255, 0.25));
+}
+
+.editorSearchResultItem.active mark {
+  background-color: rgba(255, 213, 79, 0.7);
+}
+
 .editorSearchLineNum {
   flex-shrink: 0;
   min-width: 3em;

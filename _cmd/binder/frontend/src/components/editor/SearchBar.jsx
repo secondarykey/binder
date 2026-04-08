@@ -24,8 +24,10 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
   const [query, setQuery] = useState(() => initialQuery || savedQuery);
   const [matches, setMatches] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(-1);
   const inputRef = useRef(null);
   const resultsRef = useRef(null);
+  const itemRefs = useRef([]);
 
   // ドラッグ状態
   const panelRef = useRef(null);
@@ -139,21 +141,41 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
       offset += line.length + 1;
     }
     setMatches(results);
+    if (results.length > 0) {
+      setCurrentIndex(0);
+      onNavigate(results[0].absoluteStart, results[0].absoluteEnd);
+    } else {
+      setCurrentIndex(-1);
+    }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      doSearchWith(query);
+      if (searched && matches.length > 0) {
+        const next = (currentIndex + 1) % matches.length;
+        setCurrentIndex(next);
+        onNavigate(matches[next].absoluteStart, matches[next].absoluteEnd);
+      } else {
+        doSearchWith(query);
+      }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
     }
   };
 
-  const handleClickResult = (match) => {
+  const handleClickResult = (match, idx) => {
+    setCurrentIndex(idx);
     onNavigate(match.absoluteStart, match.absoluteEnd);
   };
+
+  // アクティブアイテムを結果リスト内でスクロール表示
+  useEffect(() => {
+    if (currentIndex >= 0 && itemRefs.current[currentIndex]) {
+      itemRefs.current[currentIndex].scrollIntoView({ block: 'nearest' });
+    }
+  }, [currentIndex]);
 
   // 行テキストを表示（一致部分をハイライト）
   const renderLineText = (match) => {
@@ -213,7 +235,7 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
         <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
           {searched
             ? (matches.length > 0
-              ? t("editor.searchMatches", { count: matches.length })
+              ? `${currentIndex + 1} / ${matches.length}`
               : t("editor.searchNoMatches"))
             : ""}
         </span>
@@ -227,8 +249,9 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
           {matches.map((match, idx) => (
             <div
               key={idx}
-              className="editorSearchResultItem"
-              onClick={() => handleClickResult(match)}
+              ref={el => itemRefs.current[idx] = el}
+              className={`editorSearchResultItem${idx === currentIndex ? ' active' : ''}`}
+              onClick={() => handleClickResult(match, idx)}
             >
               <span className="editorSearchLineNum">{match.line}</span>
               <span className="editorSearchLineText">{renderLineText(match)}</span>
