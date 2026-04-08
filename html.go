@@ -228,6 +228,15 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 			return template.HTML(err.Error())
 		}
 		code = d.String()
+
+		// スタイルテンプレートのディレクティブを付与
+		diag, err := w.owner.GetDiagram(id)
+		if err == nil && diag.StyleTemplate != "" {
+			var sb strings.Builder
+			if err := w.owner.ReadTemplate(&sb, diag.StyleTemplate); err == nil {
+				code = fmt.Sprintf("%%%%{init:%s}%%%%\n%s", sb.String(), code)
+			}
+		}
 	} else {
 
 		f, err := w.getSVGFile(id)
