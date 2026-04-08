@@ -5,6 +5,7 @@ import (
 	"binder/log"
 
 	"fmt"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -110,6 +111,14 @@ func (b *Binder) RestoreHistory(typ, id, hash string) error {
 		return xerrors.Errorf("RestoreFile() error: %w", err)
 	}
 	return nil
+}
+
+func (b *Binder) GetCleanupInfo(before time.Time) (*fs.CleanupInfo, error) {
+	info, err := b.fileSystem.GetCleanupInfo(before)
+	if err != nil {
+		return nil, xerrors.Errorf("GetCleanupInfo() error: %w", err)
+	}
+	return info, nil
 }
 
 func (b *Binder) GetOverallHistory(limit, offset int) ([]*fs.CommitInfo, bool, error) {

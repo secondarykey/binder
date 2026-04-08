@@ -313,7 +313,16 @@
         "deleted" : "Deleted",
         "database" : "Database",
         "publish" : "Publish",
-        "other" : "Other"
+        "other" : "Other",
+        "cleanup" : "Cleanup History",
+        "cleanupTitle" : "Cleanup History",
+        "cleanupDesc" : "Squash commit history older than the specified date into a single commit. File contents will not change.",
+        "cleanupDateLabel" : "Squash history before this date",
+        "cleanupStats" : "Out of {{total}} commits, {{squash}} will be squashed and {{keep}} will be kept.",
+        "cleanupCurrentSize" : "Current objects size: {{size}}",
+        "cleanupWarning" : "This action cannot be undone. If a remote repository is configured, force push will be required.",
+        "cleanupConfirm" : "Run Cleanup",
+        "cleanupComplete" : "Cleanup complete: {{before}} → {{after}}"
     },
     "assetViewer" : {
         "loadError" : "Could not load file content. The file may not exist on disk.",

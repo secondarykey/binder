@@ -4,16 +4,17 @@ import { useNavigate, useParams } from 'react-router';
 import {
   List, ListSubheader, ListItemButton, ListItemText,
   Typography, CircularProgress, Box, Button, Tooltip,
-  Menu, MenuItem, ListItemIcon,
+  Menu, MenuItem, ListItemIcon, TextField,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RestoreIcon from '@mui/icons-material/Restore';
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 
 import { Events, Window } from '@wailsio/runtime';
 
-import { GetOverallHistory, GetOverallHistoryByPath, GetModifiedIds, RestoreToCommit, RestoreToCommitByPath } from '../../bindings/binder/api/app';
+import { GetOverallHistory, GetOverallHistoryByPath, GetModifiedIds, RestoreToCommit, RestoreToCommitByPath, GetCleanupInfo, SquashHistory } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import "../language";
@@ -41,6 +42,12 @@ function OverallHistoryMenu({ binderPath }) {
   const [ctxMenu, setCtxMenu] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [restoreHash, setRestoreHash] = useState(null);
+
+  // クリーンアップダイアログ用
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupDate, setCleanupDate] = useState('');
+  const [cleanupInfo, setCleanupInfo] = useState(null);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
 
   // 初回読み込み
   useEffect(() => {
@@ -137,6 +144,76 @@ function OverallHistoryMenu({ binderPath }) {
     }
   };
 
+  // サイズを読みやすい形式にフォーマット
+  const formatSize = (bytes) => {
+    if (bytes == null || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    let size = bytes;
+    while (size >= 1024 && i < units.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  };
+
+  // --- クリーンアップ ---
+
+  const handleOpenCleanup = () => {
+    // デフォルト: 1ヶ月前
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    const dateStr = d.toISOString().split('T')[0];
+    setCleanupDate(dateStr);
+    setCleanupInfo(null);
+    setCleanupOpen(true);
+    fetchCleanupInfo(dateStr);
+  };
+
+  const fetchCleanupInfo = (dateStr) => {
+    if (!dateStr) return;
+    setCleanupLoading(true);
+    const rfc3339 = dateStr + 'T00:00:00Z';
+    GetCleanupInfo(rfc3339).then((info) => {
+      setCleanupInfo(info);
+    }).catch((err) => {
+      setCleanupInfo(null);
+      evt.showErrorMessage(err);
+    }).finally(() => {
+      setCleanupLoading(false);
+    });
+  };
+
+  const handleCleanupDateChange = (e) => {
+    const val = e.target.value;
+    setCleanupDate(val);
+    fetchCleanupInfo(val);
+  };
+
+  const doSquashHistory = () => {
+    if (!cleanupDate) return;
+    setCleanupLoading(true);
+    const rfc3339 = cleanupDate + 'T00:00:00Z';
+    SquashHistory(rfc3339).then((result) => {
+      if (result?.status === 'success') {
+        const before = formatSize(result.beforeSize);
+        const after = formatSize(result.afterSize);
+        setCleanupOpen(false);
+        evt.showSuccessMessage(t('overallHistory.cleanupComplete', { before, after }));
+        setTimeout(() => {
+          Events.Emit("binder:restored", { address: result.address });
+          Window.Close();
+        }, 2000);
+      } else {
+        evt.showErrorMessage(result?.message || 'Cleanup failed');
+      }
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    }).finally(() => {
+      setCleanupLoading(false);
+    });
+  };
+
   return (
     <>
     <List dense disablePadding className="treeText" sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
@@ -222,6 +299,24 @@ function OverallHistoryMenu({ binderPath }) {
         </Box>
       )}
 
+      {/* クリーンアップボタン（ByPath モードでは非表示） */}
+      {!binderPath && !loading && entries.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)' }}>
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<CleaningServicesIcon fontSize="small" />}
+            onClick={handleOpenCleanup}
+            sx={{
+              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
+              '&:hover': { color: 'var(--text-primary)' },
+            }}
+          >
+            {t('overallHistory.cleanup')}
+          </Button>
+        </Box>
+      )}
+
     </List>
 
     {/* 右クリックコンテキストメニュー */}
@@ -252,6 +347,65 @@ function OverallHistoryMenu({ binderPath }) {
         <Button onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
         <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }}>
           {t('overallHistory.restore')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* クリーンアップ確認ダイアログ */}
+    <Dialog open={cleanupOpen} onClose={() => setCleanupOpen(false)} maxWidth="sm" fullWidth>
+      <DialogTitle>{t('overallHistory.cleanupTitle')}</DialogTitle>
+      <DialogContent>
+        <DialogContentText sx={{ mb: 2 }}>
+          {t('overallHistory.cleanupDesc')}
+        </DialogContentText>
+
+        <TextField
+          type="date"
+          label={t('overallHistory.cleanupDateLabel')}
+          value={cleanupDate}
+          onChange={handleCleanupDateChange}
+          size="small"
+          fullWidth
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ mb: 2 }}
+        />
+
+        {cleanupLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+            <CircularProgress size={20} thickness={4} />
+          </Box>
+        )}
+
+        {cleanupInfo && !cleanupLoading && (
+          <Box sx={{ p: 1.5, borderRadius: 1, backgroundColor: 'var(--bg-overlay)', fontSize: '0.875rem' }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              {t('overallHistory.cleanupStats', {
+                total: cleanupInfo.totalCommits,
+                squash: cleanupInfo.squashTarget,
+                keep: cleanupInfo.keepTarget,
+              })}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.7 }}>
+              {t('overallHistory.cleanupCurrentSize', {
+                size: formatSize(cleanupInfo.objectsSize),
+              })}
+            </Typography>
+            {cleanupInfo.squashTarget > 0 && (
+              <Typography variant="body2" color="warning.main" sx={{ mt: 1, fontSize: '0.8rem' }}>
+                {t('overallHistory.cleanupWarning')}
+              </Typography>
+            )}
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setCleanupOpen(false)}>{t('common.cancel')}</Button>
+        <Button
+          color="warning"
+          onClick={doSquashHistory}
+          disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0}
+        >
+          {t('overallHistory.cleanupConfirm')}
         </Button>
       </DialogActions>
     </Dialog>

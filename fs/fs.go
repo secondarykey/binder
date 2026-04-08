@@ -147,7 +147,7 @@ func newFileSystem(fs billy.Filesystem, defaultBranch string) (*FileSystem, erro
 }
 
 func (f *FileSystem) Close() error {
-	//return f.repo.Close()
+	f.GC()
 	return nil
 }
 
