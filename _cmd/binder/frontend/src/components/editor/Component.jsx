@@ -313,11 +313,9 @@ function Editor(props) {
   }, []);
 
   // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
-  const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
+  const handleSearchNavigate = useCallback((absoluteStart) => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
-    textarea.focus();
-    textarea.setSelectionRange(absoluteStart, absoluteEnd);
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
     const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
