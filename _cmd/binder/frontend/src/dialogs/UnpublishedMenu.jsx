@@ -156,13 +156,14 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
 
       if (errors.length > 0) {
         setErrorDlg({ open: true, names: errors });
+        setTimeout(() => { loadTree(); }, 800);
+      } else if (onClose) {
+        evt.showSuccessMessage(t("publishModal.generateSuccess"));
+        onClose();
       } else {
         evt.showSuccessMessage(t("publishModal.generateSuccess"));
+        setTimeout(() => { loadTree(); }, 800);
       }
-      // 一覧を再取得
-      setTimeout(() => {
-        loadTree();
-      }, 800);
     });
 
     loadTree();
