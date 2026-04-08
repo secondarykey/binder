@@ -159,6 +159,8 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
       } else {
         doSearchWith(query);
       }
+      // onNavigate がtextareaにフォーカスを移すため、検索入力欄に戻す
+      setTimeout(() => inputRef.current?.focus(), 0);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
