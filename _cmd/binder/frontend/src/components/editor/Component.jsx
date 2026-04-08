@@ -1676,14 +1676,16 @@ function Editor(props) {
                       </IconButton>
                     </Tooltip>
                   }
-                  <IconButton
-                    size="small"
-                    onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
-                    sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-                    className="editorBtn"
-                  >
-                    <MoreVertIcon sx={{ fontSize: '18px' }} />
-                  </IconButton>
+                  {mode !== Mode.template &&
+                    <IconButton
+                      size="small"
+                      onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
+                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+                      className="editorBtn"
+                    >
+                      <MoreVertIcon sx={{ fontSize: '18px' }} />
+                    </IconButton>
+                  }
                 </div>
               </div>
 
