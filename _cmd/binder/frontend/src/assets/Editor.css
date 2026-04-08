@@ -309,6 +309,12 @@ iframe.htmlViewer {
   white-space: nowrap;
 }
 
+.editorLineNumber.active {
+  background-color: var(--accent-muted, rgba(100, 160, 255, 0.25));
+  color: var(--text-primary);
+  border-radius: 3px;
+}
+
 #editor {
   --wails-draggable: no-drag;
 

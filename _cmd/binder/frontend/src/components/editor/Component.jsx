@@ -219,6 +219,8 @@ function Editor(props) {
   const [wordWrap, setWordWrap] = useState(true);
   // テキスト検索バーの表示状態
   const [searchOpen, setSearchOpen] = useState(false);
+  // 検索でアクティブな行番号（1始まり、null = なし）
+  const [activeMatchLine, setActiveMatchLine] = useState(null);
 
   // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
@@ -319,6 +321,7 @@ function Editor(props) {
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
     const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
+    setActiveMatchLine(linesBefore + 1);
   }, [text]);
 
   //開いた時の初期処理
@@ -1570,7 +1573,7 @@ function Editor(props) {
                 <SearchBar
                   key={restoredAt}
                   text={text}
-                  onClose={() => setSearchOpen(false)}
+                  onClose={() => { setSearchOpen(false); setActiveMatchLine(null); }}
                   onNavigate={handleSearchNavigate}
                   initialQuery={searchQuery}
                 />
@@ -1582,6 +1585,7 @@ function Editor(props) {
                 style={editorStyle}
                 showLineNumbers={showLineNumbers}
                 wordWrap={wordWrap}
+                activeLine={activeMatchLine}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onCompositionStart={handleCompositionStart}
