@@ -19,7 +19,7 @@ let savedQuery = "";
  *   onClose    - 検索バーを閉じるコールバック
  *   onNavigate - (absoluteStart, absoluteEnd) => void  一致箇所へ移動
  */
-function SearchBar({ text, onClose, onNavigate, initialQuery }) {
+function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState(() => initialQuery || savedQuery);
   const [matches, setMatches] = useState([]);
@@ -146,6 +146,7 @@ function SearchBar({ text, onClose, onNavigate, initialQuery }) {
       onNavigate(results[0].absoluteStart, results[0].absoluteEnd);
     } else {
       setCurrentIndex(-1);
+      onClearHighlight?.();
     }
   };
 
@@ -267,6 +268,7 @@ SearchBar.propTypes = {
   text: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   onNavigate: PropTypes.func.isRequired,
+  onClearHighlight: PropTypes.func,
   initialQuery: PropTypes.string,
 };
 
