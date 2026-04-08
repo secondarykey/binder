@@ -977,7 +977,10 @@ function Editor(props) {
             ta.value = newVal;
             ta.selectionStart = dropPos + tag.length;
             ta.selectionEnd = dropPos + tag.length;
-            setTimeout(() => setText(newVal), 500);
+            setTimeout(() => {
+              setText(newVal);
+              writeFn(mode, id, newVal);
+            }, 500);
           }
         }).catch((err) => {
           evt.showErrorMessage(err);
@@ -1023,7 +1026,9 @@ function Editor(props) {
 
     textarea.value = rtn;
     setTimeout(function () {
-      setText(textarea.value);
+      const val = textarea.value;
+      setText(val);
+      writeFn(mode, id, val);
     }, 500)
 
   }
@@ -1196,7 +1201,10 @@ function Editor(props) {
       newMarkdown +
       textarea.value.substring(tableRange.end);
     textarea.value = newText;
-    setTimeout(() => setText(newText), 500);
+    setTimeout(() => {
+      setText(newText);
+      writeFn(mode, id, newText);
+    }, 500);
   };
 
   /**
