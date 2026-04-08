@@ -33,6 +33,12 @@ type CleanupResult struct {
 	AfterSize  int64  `json:"afterSize"`  // 実行後 .git/objects サイズ（バイト）
 }
 
+// GCResult はGC実行結果
+type GCResult struct {
+	BeforeSize int64 `json:"beforeSize"` // GC 前の .git/objects サイズ（バイト）
+	AfterSize  int64 `json:"afterSize"`  // GC 後の .git/objects サイズ（バイト）
+}
+
 // CommitFileEntry はコミット内の変更ファイル1件
 type CommitFileEntry struct {
 	Typ    string `json:"typ"`    // note, diagram, asset, template

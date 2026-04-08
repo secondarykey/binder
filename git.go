@@ -113,6 +113,10 @@ func (b *Binder) RestoreHistory(typ, id, hash string) error {
 	return nil
 }
 
+func (b *Binder) GC() *fs.GCResult {
+	return b.fileSystem.GC()
+}
+
 func (b *Binder) GetCleanupInfo(before time.Time) (*fs.CleanupInfo, error) {
 	info, err := b.fileSystem.GetCleanupInfo(before)
 	if err != nil {

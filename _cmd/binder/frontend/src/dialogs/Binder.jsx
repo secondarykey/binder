@@ -9,7 +9,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
-import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs } from "../../bindings/binder/api/app";
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs, RunGC } from "../../bindings/binder/api/app";
 import MarkedScript from "../components/editor/engines/Marked";
 import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
@@ -66,6 +67,10 @@ function Binder({ isModal, ...props }) {
   const [deleteDialog, showDeleteDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState("");
 
+  // GC
+  const [gcConfirmOpen, setGcConfirmOpen] = useState(false);
+  const [gcLoading, setGcLoading] = useState(false);
+
   const getRemoteList = () => {
     RemoteList().then((res) => {
       setRemoteList(res || []);
@@ -116,6 +121,33 @@ function Binder({ isModal, ...props }) {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
       evt.showErrorMessage(err);
+    });
+  };
+
+  // --- GC ---
+  const formatSize = (bytes) => {
+    if (bytes == null || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    let size = bytes;
+    while (size >= 1024 && i < units.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  };
+
+  const handleRunGC = () => {
+    setGcConfirmOpen(false);
+    setGcLoading(true);
+    RunGC().then((result) => {
+      const before = formatSize(result.beforeSize);
+      const after = formatSize(result.afterSize);
+      evt.showSuccessMessage(t("binder.gcComplete", { before, after }));
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    }).finally(() => {
+      setGcLoading(false);
     });
   };
 
@@ -280,6 +312,22 @@ function Binder({ isModal, ...props }) {
               <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
                 <SaveIcon fontSize="large" />
               </IconButton>
+            </Box>
+
+            <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
+              <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
+              <Box sx={{ mt: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon fontSize="small" />}
+                  onClick={() => setGcConfirmOpen(true)}
+                  disabled={gcLoading}
+                  sx={{ textTransform: 'none', fontSize: '0.8rem' }}
+                >
+                  {t("binder.gcButton")}
+                </Button>
+              </Box>
             </Box>
 
           </div>
@@ -460,6 +508,24 @@ function Binder({ isModal, ...props }) {
         <DialogActions>
           <Button onClick={handleDeleteDialogClose}>{t("common.cancel")}</Button>
           <Button onClick={handleDeleteRemote} color="error">{t("common.delete")}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/** GC確認ダイアログ */}
+      <Dialog
+        open={gcConfirmOpen}
+        onClose={() => setGcConfirmOpen(false)}
+        PaperProps={{ style: { backgroundColor: "var(--bg-button)" } }}
+      >
+        <DialogTitle style={{ color: "var(--text-secondary)" }}>{t("binder.gcTitle")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText style={{ color: "var(--text-secondary)" }}>
+            {t("binder.gcConfirmMessage")}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGcConfirmOpen(false)}>{t("common.cancel")}</Button>
+          <Button onClick={handleRunGC} color="primary">{t("binder.gcRun")}</Button>
         </DialogActions>
       </Dialog>
 

@@ -878,6 +878,18 @@ func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 	}, nil
 }
 
+// RunGC は不要なgitオブジェクトを削除し、前後のサイズを返す。
+func (a *App) RunGC() (*json.GCResult, error) {
+
+	defer log.PrintTrace(log.Func("RunGC()"))
+
+	result := a.current.GC()
+	return &json.GCResult{
+		BeforeSize: result.BeforeSize,
+		AfterSize:  result.AfterSize,
+	}, nil
+}
+
 func (a *App) RenameBranch(oldName, newName string) error {
 
 	defer log.PrintTrace(log.Func("RenameBranch()", oldName, newName))

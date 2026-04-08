@@ -160,7 +160,13 @@
         "mermaidUrl" : "Mermaid.js CDN URL",
         "cdnHint" : "空欄の場合は内蔵バージョンを使用します。",
         "cdnOk" : "指定URLから正常に読み込みました。",
-        "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。"
+        "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。",
+        "gcLabel" : "リポジトリメンテナンス",
+        "gcButton" : "GC（不要オブジェクト削除）",
+        "gcTitle" : "GCの実行",
+        "gcConfirmMessage" : "不要なオブジェクトを削除しますか？",
+        "gcRun" : "実行",
+        "gcComplete" : "GC完了: {{before}} → {{after}}"
     },
     "binderHistory" : {
         "history" : "履歴"

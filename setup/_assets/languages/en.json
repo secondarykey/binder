@@ -160,7 +160,13 @@
         "mermaidUrl" : "Mermaid.js CDN URL",
         "cdnHint" : "Leave empty to use the bundled version.",
         "cdnOk" : "Loaded successfully from specified URL.",
-        "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used."
+        "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used.",
+        "gcLabel" : "Repository Maintenance",
+        "gcButton" : "GC (Remove unused objects)",
+        "gcTitle" : "Run GC",
+        "gcConfirmMessage" : "Remove unused objects?",
+        "gcRun" : "Run",
+        "gcComplete" : "GC complete: {{before}} → {{after}}"
     },
     "binderHistory" : {
         "history" : "History"

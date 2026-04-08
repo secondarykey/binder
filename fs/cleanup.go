@@ -110,8 +110,8 @@ func (f *FileSystem) SquashHistory(before time.Time) (*SquashResult, error) {
 		if err := f.updateBranchRef(orphanHash); err != nil {
 			return nil, xerrors.Errorf("updateBranchRef() error: %w", err)
 		}
-		f.GC()
-		return &SquashResult{BeforeSize: beforeSize, AfterSize: f.GetObjectsSize()}, nil
+		gcResult := f.GC()
+		return &SquashResult{BeforeSize: beforeSize, AfterSize: gcResult.AfterSize}, nil
 	}
 
 	// keep 側を古い順に再作成（親ハッシュを差し替え）
@@ -132,18 +132,29 @@ func (f *FileSystem) SquashHistory(before time.Time) (*SquashResult, error) {
 	}
 
 	// 不要オブジェクトの削除
-	f.GC()
+	gcResult := f.GC()
 
-	return &SquashResult{BeforeSize: beforeSize, AfterSize: f.GetObjectsSize()}, nil
+	return &SquashResult{BeforeSize: beforeSize, AfterSize: gcResult.AfterSize}, nil
+}
+
+// GCResult は GC の実行結果を保持する。
+type GCResult struct {
+	BeforeSize int64 // GC 前の .git/objects サイズ（バイト）
+	AfterSize  int64 // GC 後の .git/objects サイズ（バイト）
 }
 
 // GC は到達不能オブジェクトの削除とpackファイルの最適化を行う。
-// git gc 相当の処理。エラーはベストエフォートで無視する。
-func (f *FileSystem) GC() {
+// git gc 相当の処理。前後の .git/objects サイズを返す。
+func (f *FileSystem) GC() *GCResult {
+	before := f.GetObjectsSize()
 	_ = f.repo.Prune(git.PruneOptions{
 		Handler: f.repo.DeleteObject,
 	})
 	_ = f.repo.RepackObjects(&git.RepackConfig{})
+	return &GCResult{
+		BeforeSize: before,
+		AfterSize:  f.GetObjectsSize(),
+	}
 }
 
 // GetObjectsSize は .git/objects ディレクトリの合計サイズ（バイト）を返す。
