@@ -90,6 +90,15 @@ func (b *Binder) RemoveTemplate(id string) (*json.Template, error) {
 		return nil, &ErrTemplateInUse{NoteCount: len(notes)}
 	}
 
+	// 利用中のダイアグラムが存在する場合は削除不可
+	diagrams, err := b.db.FindDiagramsByTemplate(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindDiagramsByTemplate() error: %w", err)
+	}
+	if len(diagrams) > 0 {
+		return nil, &ErrTemplateInUse{NoteCount: len(diagrams)}
+	}
+
 	t, err := b.db.GetTemplate(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.GetTemplate() error: %w", err)

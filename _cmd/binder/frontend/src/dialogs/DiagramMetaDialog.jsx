@@ -94,8 +94,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
 
       <FormControl>
         <FormLabel>{t("diagram.styleTemplate")}</FormLabel>
-        <Select size="small" value={styleTemplate} onChange={(e) => setStyleTemplate(e.target.value)} displayEmpty>
-          <MenuItem value="">{t("common.none")}</MenuItem>
+        <Select size="small" value={styleTemplate} onChange={(e) => setStyleTemplate(e.target.value)}>
           {diagramTemplates.map((tmpl) => <MenuItem key={tmpl.id} value={tmpl.id}>{tmpl.name}</MenuItem>)}
         </Select>
       </FormControl>
