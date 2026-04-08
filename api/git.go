@@ -879,11 +879,35 @@ func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 }
 
 // RunGC は不要なgitオブジェクトを削除し、前後のサイズを返す。
+// RepackObjects がpackファイルを再作成するため、go-git の内部キャッシュが
+// 古いpackを参照し続ける問題を回避するため close→GC→reload パターンを使用。
 func (a *App) RunGC() (*json.GCResult, error) {
 
 	defer log.PrintTrace(log.Func("RunGC()"))
 
-	result := a.current.GC()
+	dir := a.current.Dir()
+
+	err := a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		a.LoadBinder(dir)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	result := tmpFs.GC()
+
+	_, err = a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("LoadBinder() error: %+v", err)
+	}
+
 	return &json.GCResult{
 		BeforeSize: result.BeforeSize,
 		AfterSize:  result.AfterSize,
