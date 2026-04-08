@@ -479,6 +479,11 @@ function Editor(props) {
     }
   }, [searchQuery, restoredAt]);
 
+  // ノートが切り替わったら行ハイライトをリセット
+  useEffect(() => {
+    setActiveMatchLine(null);
+  }, [id]);
+
   // プレビューウィンドウからの準備完了通知を受けて現在のHTMLを送信
   useEffect(() => {
     const cleanup = Events.On('binder:preview:ready', () => {
@@ -1573,6 +1578,7 @@ function Editor(props) {
                   text={text}
                   onClose={() => { setSearchOpen(false); setActiveMatchLine(null); }}
                   onNavigate={handleSearchNavigate}
+                  onClearHighlight={() => setActiveMatchLine(null)}
                   initialQuery={searchQuery}
                 />
               )}
