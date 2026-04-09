@@ -52,7 +52,8 @@ func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) 
 // updateStructure は既存のStructure行を更新する。
 // private=true かつ公開済み（publish_date != zero）の場合は
 // publish_date/republish_date を両方ゼロにリセットする。
-func (b *Binder) updateStructure(id, parentId, name, detail, alias string, private bool) error {
+// それ以外の場合は引数の publish/republish をそのまま適用する。
+func (b *Binder) updateStructure(id, parentId, name, detail, alias string, private bool, publish, republish time.Time) error {
 
 	s, err := b.db.GetStructure(id)
 	if err != nil {
@@ -78,6 +79,9 @@ func (b *Binder) updateStructure(id, parentId, name, detail, alias string, priva
 	if private && !s.Publish.IsZero() {
 		s.Publish = time.Time{}
 		s.Republish = time.Time{}
+	} else {
+		s.Publish = publish
+		s.Republish = republish
 	}
 
 	err = b.db.UpdateStructure(s, b.op)

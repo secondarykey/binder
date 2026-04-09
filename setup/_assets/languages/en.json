@@ -420,5 +420,12 @@
         "deleteRowConfirm" : "Delete this row?",
         "deleteColumnTitle" : "Delete Column",
         "deleteColumnConfirm" : "Delete this column?"
+    },
+    "meta" : {
+        "webPublish" : "Web Publishing",
+        "publishDate" : "Publish Date",
+        "republishDate" : "Republish Date",
+        "resetToday" : "Today",
+        "clearDate" : "Clear"
     }
 }

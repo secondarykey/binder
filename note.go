@@ -189,7 +189,7 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 		}
 
 		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
-		err = b.updateStructure(n.Id, n.ParentId, n.Name, n.Detail, n.Alias, n.Private)
+		err = b.updateStructure(n.Id, n.ParentId, n.Name, n.Detail, n.Alias, n.Private, n.Publish, n.Republish)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}

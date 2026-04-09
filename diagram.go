@@ -81,7 +81,7 @@ func (b *Binder) EditDiagram(d *json.Diagram) (*json.Diagram, error) {
 		}
 
 		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
-		err = b.updateStructure(d.Id, d.ParentId, d.Name, d.Detail, d.Alias, d.Private)
+		err = b.updateStructure(d.Id, d.ParentId, d.Name, d.Detail, d.Alias, d.Private, d.Publish, d.Republish)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}

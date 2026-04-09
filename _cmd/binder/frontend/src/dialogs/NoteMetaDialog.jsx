@@ -1,10 +1,12 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
+  Accordion, AccordionDetails, AccordionSummary,
   Container, FormControl, FormLabel, IconButton, InputAdornment,
-  Select, TextField, MenuItem,
+  Select, TextField, MenuItem, Typography,
 } from "@mui/material";
-import { DeleteOutline } from "@mui/icons-material";
+import { DeleteOutline, ExpandMore } from "@mui/icons-material";
+import PublishDateField from "./components/PublishDateField";
 
 import {
   GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage, UploadNoteImage,
@@ -17,6 +19,10 @@ import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import "../language";
 import { useTranslation } from 'react-i18next';
+
+// Go の time.Time ゼロ値 (0001-01-01T00:00:00Z) を表すセンチネル
+const ZERO_TIME = "0001-01-01T00:00:00Z";
+const isZeroTime = (v) => !v || (typeof v === 'string' && v.startsWith('0001-'));
 
 /**
  * ノートのメタデータ編集ダイアログ
@@ -40,6 +46,8 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [content, setContent] = useState("");
   const [layouts, setLayouts] = useState([]);
   const [contents, setContents] = useState([]);
+  const [publish, setPublish] = useState(null);
+  const [republish, setRepublish] = useState(null);
 
   // テンプレート一覧（起動時に1回取得）
   useEffect(() => {
@@ -54,6 +62,7 @@ function NoteMetaDialog({ open, id, onClose }) {
     if (!open || !id) return;
     setName(""); setAlias(""); setDetail(""); setIsPrivate(false);
     setViewImage(noImage); setHasImage(false);
+    setPublish(null); setRepublish(null);
 
     GetNote(id).then((note) => {
       setName(note.name);
@@ -63,6 +72,8 @@ function NoteMetaDialog({ open, id, onClose }) {
       setParentId(note.parentId);
       setLayout(note.layoutTemplate);
       setContent(note.contentTemplate);
+      setPublish(isZeroTime(note.publish) ? null : new Date(note.publish));
+      setRepublish(isZeroTime(note.republish) ? null : new Date(note.republish));
     }).catch((err) => evt.showErrorMessage(err));
 
     GetNoteImageURL(id).then((url) => {
@@ -76,7 +87,12 @@ function NoteMetaDialog({ open, id, onClose }) {
     if (!layout || !content) { evt.showWarningMessage(t("note.chooseTemplate")); return; }
     if (!alias && id !== "index") { evt.showWarningMessage(t("note.aliasRequired")); return; }
 
-    const note = { id, parentId, name, alias, detail, private: isPrivate, layoutTemplate: layout, contentTemplate: content };
+    const note = {
+      id, parentId, name, alias, detail, private: isPrivate,
+      layoutTemplate: layout, contentTemplate: content,
+      publish: publish || ZERO_TIME,
+      republish: republish || ZERO_TIME,
+    };
     EditNote(note, "").then(() => {
       evt.markModified(id);
       evt.refreshTree();
@@ -198,6 +214,26 @@ function NoteMetaDialog({ open, id, onClose }) {
           </div>
         </Container>
       </FormControl>
+
+      <Accordion disableGutters elevation={0} sx={{ mt: 1, backgroundColor: "transparent", "&:before": { display: "none" } }}>
+        <AccordionSummary expandIcon={<ExpandMore />} sx={{ px: 0, minHeight: "auto", "& .MuiAccordionSummary-content": { my: 0.5 } }}>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>{t("meta.webPublish")}</Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ px: 0, pt: 0 }}>
+          <PublishDateField
+            label={t("meta.publishDate")}
+            value={publish}
+            onReset={() => setPublish(new Date())}
+            onClear={() => setPublish(null)}
+          />
+          <PublishDateField
+            label={t("meta.republishDate")}
+            value={republish}
+            onReset={() => setRepublish(new Date())}
+            onClear={() => setRepublish(null)}
+          />
+        </AccordionDetails>
+      </Accordion>
     </MetaDialog>
 
     <ConfirmDialog

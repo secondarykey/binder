@@ -198,7 +198,7 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 		}
 
 		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
-		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias, a.Private)
+		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias, a.Private, a.Publish, a.Republish)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}
