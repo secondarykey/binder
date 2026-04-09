@@ -537,16 +537,40 @@ function BinderTree(props) {
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryAsset   = () => { closeAllMenus(); OpenHistoryWindow('asset',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
 
-  /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
-  const handleRenameStart = () => {
-    const node = contextMenu.node;
+  /** リネーム開始: node を受け取る共通処理 */
+  const startRename = (node, delay = 0) => {
     const { id, name } = node;
-    closeAllMenus();
-    // MUI メニューのアニメーション完了後に input を表示して autoFocus を確実に効かせる
     setTimeout(() => {
       setRenamingValue(name);
       setRenaming(id);
-    }, 150);
+    }, delay);
+  };
+
+  /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
+  const handleRenameStart = () => {
+    const node = contextMenu.node;
+    closeAllMenus();
+    // MUI メニューのアニメーション完了後に input を表示して autoFocus を確実に効かせる
+    startRename(node, 150);
+  };
+
+  /** F2/Ctrl+C キー操作: 選択中ノードに対して実行 */
+  const handleKeyDownTree = (e) => {
+    if (!selectedId) return;
+
+    if (e.key === 'F2') {
+      if (renaming) return;
+      const node = findNodeInTree(treeRef.current, selectedId);
+      if (!node || node.type === 'folder') return;
+      e.preventDefault();
+      startRename(node);
+      return;
+    }
+
+    if (e.key === 'c' && e.ctrlKey) {
+      e.preventDefault();
+      copyClipboard(selectedId);
+    }
   };
 
   /** リネーム確定: Enter 時に既存データを取得してから name のみ更新する */
@@ -725,7 +749,7 @@ function BinderTree(props) {
 
     {/** ツリースクロールエリア（MoreVert ボタンをフローティングで右上に配置） */}
     <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }}>
+      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }} onKeyDown={handleKeyDownTree} tabIndex={-1}>
       <div style={{ marginTop: '4px' }}><Tree
         data={treeData}
         selected={selectedId}
