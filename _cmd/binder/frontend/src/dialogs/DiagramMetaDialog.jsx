@@ -133,6 +133,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
           <Button
             size="small" variant="outlined"
             onClick={() => { const now = new Date(); setPublish(now); setRepublish(now); }}
+            disabled={!publish}
             sx={{ mt: 0.5, alignSelf: "flex-start", borderColor: "var(--accent-blue)", color: "var(--accent-blue)" }}
           >
             {t("meta.resetToday")}
