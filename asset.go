@@ -5,7 +5,6 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"binder/log"
-	"binder/settings"
 	"bytes"
 	"encoding/base64"
 	"errors"
@@ -151,9 +150,11 @@ func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*
 			return nil, xerrors.Errorf("base64.DecodeString() error: %w", err)
 		}
 
-		// WebP変換（設定が有効な場合）
-		if p := settings.GetPath(); p.OptimizeImage == nil || *p.OptimizeImage {
-			data, filename = convertToWebP(data, filename)
+		// WebP変換（バインダー設定が有効な場合。nil=未設定はデフォルトtrue）
+		if meta, err := b.fileSystem.LoadMetaData(); err == nil {
+			if meta == nil || meta.OptimizeImage == nil || *meta.OptimizeImage {
+				data, filename = convertToWebP(data, filename)
+			}
 		}
 
 		buf := bytes.NewBuffer(data)

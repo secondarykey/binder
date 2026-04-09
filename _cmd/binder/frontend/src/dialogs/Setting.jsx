@@ -35,7 +35,6 @@ function Setting({ isModal, ...props }) {
   const [pathDefault, setPathDefault] = useState("");
   const [pathRunWith, setPathRunWith] = useState(true);
   const [pathOpenWith, setPathOpenWith] = useState(false);
-  const [optimizeImage, setOptimizeImage] = useState(true);
   const [theme, setThemeState] = useState(
     document.documentElement.dataset.theme || 'dark'
   );
@@ -52,7 +51,6 @@ function Setting({ isModal, ...props }) {
       setPathDefault(p.default);
       setPathRunWith(p.runWithOpen);
       setPathOpenWith(p.openWithItem);
-      setOptimizeImage(p.optimizeImage !== false);
 
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -104,7 +102,6 @@ function Setting({ isModal, ...props }) {
     path.default = pathDefault;
     path.runWithOpen = pathRunWith;
     path.openWithItem = pathOpenWith;
-    path.optimizeImage = optimizeImage;
 
     SavePath(path).then((resp) => {
       evt.showSuccessMessage(t("common.updated"));
@@ -289,13 +286,6 @@ function Setting({ isModal, ...props }) {
                         color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
                       },
                     }}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch checked={optimizeImage} onChange={(e) => handleSwitch(e, setOptimizeImage)} size="small" />
-                    }
-                    label={t("setting.optimizeImage")}
-                    sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
                   />
                 </Paper>
                 {/** システムログ */}

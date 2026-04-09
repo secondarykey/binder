@@ -138,8 +138,7 @@
         "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
         "addDomain" : "Add Domain",
         "domainPlaceholder" : "e.g. cdn.jsdelivr.net",
-        "security" : "Security",
-        "optimizeImage" : "Optimize Images (convert to WebP)"
+        "security" : "Security"
     },
     "binder" : {
         "editTitle" : "Edit Binder",
@@ -167,7 +166,8 @@
         "gcTitle" : "Run GC",
         "gcConfirmMessage" : "Remove unused objects?",
         "gcRun" : "Run",
-        "gcComplete" : "GC complete: {{before}} → {{after}}"
+        "gcComplete" : "GC complete: {{before}} → {{after}}",
+        "optimizeImage" : "Optimize Images (convert to WebP)"
     },
     "binderHistory" : {
         "history" : "History"

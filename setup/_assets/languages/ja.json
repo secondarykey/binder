@@ -138,8 +138,7 @@
         "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
         "addDomain" : "ドメインを追加",
         "domainPlaceholder" : "例: cdn.jsdelivr.net",
-        "security" : "セキュリティ",
-        "optimizeImage" : "画像を軽量化する（WebPに変換）"
+        "security" : "セキュリティ"
     },
     "binder" : {
         "editTitle" : "Binder編集",
@@ -167,7 +166,8 @@
         "gcTitle" : "GCの実行",
         "gcConfirmMessage" : "不要なオブジェクトを削除しますか？",
         "gcRun" : "実行",
-        "gcComplete" : "GC完了: {{before}} → {{after}}"
+        "gcComplete" : "GC完了: {{before}} → {{after}}",
+        "optimizeImage" : "画像を軽量化する（WebPに変換）"
     },
     "binderHistory" : {
         "history" : "履歴"

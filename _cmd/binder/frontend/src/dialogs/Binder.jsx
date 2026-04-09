@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, TextField,
+  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -39,6 +39,7 @@ function Binder({ isModal, ...props }) {
   const [detail, setDetail] = useState("");
   const [markedUrl, setMarkedUrl] = useState("");
   const [mermaidUrl, setMermaidUrl] = useState("");
+  const [optimizeImage, setOptimizeImage] = useState(true);
   const [scriptSaving, setScriptSaving] = useState(false);
   const [markedStatus, setMarkedStatus] = useState("");  // "", "ok", "error"
   const [mermaidStatus, setMermaidStatus] = useState(""); // "", "ok", "error"
@@ -86,6 +87,7 @@ function Binder({ isModal, ...props }) {
       setDetail(conf.detail);
       setMarkedUrl(conf.markedUrl || "");
       setMermaidUrl(conf.mermaidUrl || "");
+      setOptimizeImage(conf.optimizeImage !== false);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -115,7 +117,7 @@ function Binder({ isModal, ...props }) {
   }, []);
 
   const handleSave = () => {
-    const config = { name, detail, markedUrl, mermaidUrl };
+    const config = { name, detail, markedUrl, mermaidUrl, optimizeImage };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
@@ -307,6 +309,14 @@ function Binder({ isModal, ...props }) {
               <FormLabel>{t("common.detail")}</FormLabel>
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
             </FormControl>
+
+            <FormControlLabel
+              control={
+                <Switch checked={optimizeImage} onChange={(e) => setOptimizeImage(e.target.checked)} size="small" />
+              }
+              label={t("binder.optimizeImage")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+            />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
               <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>

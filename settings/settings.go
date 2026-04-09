@@ -44,12 +44,11 @@ type Position struct {
 }
 
 type Path struct {
-	Default       string   `json:"default"`
-	RunWithOpen   bool     `json:"runWithOpen"`
-	OpenWithItem  bool     `json:"openWithItem"`
-	Histories     []string `json:"histories"`
-	LastNoteId    string   `json:"lastNoteId"`
-	OptimizeImage *bool    `json:"optimizeImage,omitempty"`
+	Default      string   `json:"default"`
+	RunWithOpen  bool     `json:"runWithOpen"`
+	OpenWithItem bool     `json:"openWithItem"`
+	Histories    []string `json:"histories"`
+	LastNoteId   string   `json:"lastNoteId"`
 }
 
 func (p *Path) AddHistory(h string) {
@@ -134,11 +133,6 @@ func Get() *Setting {
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
 	}
-	// 旧 setting.json に optimizeImage がない場合はデフォルト true を補完する
-	if pSet.Path != nil && pSet.Path.OptimizeImage == nil {
-		t := true
-		pSet.Path.OptimizeImage = &t
-	}
 	return pSet
 }
 
@@ -170,10 +164,6 @@ func def() *Setting {
 	path.RunWithOpen = true
 	//起動と同時に最終アイテムを開く
 	path.OpenWithItem = false
-	//画像をWebPに変換して軽量化する（デフォルトON）
-	t := true
-	path.OptimizeImage = &t
-
 	set.Path = &path
 	//最後に開いていたバインダーを開く
 
@@ -287,7 +277,6 @@ func SaveBasePath(p *Path) error {
 	obj.Path.Default = p.Default
 	obj.Path.RunWithOpen = p.RunWithOpen
 	obj.Path.OpenWithItem = p.OpenWithItem
-	obj.Path.OptimizeImage = p.OptimizeImage // *bool のまま渡す
 
 	return obj.save()
 }
