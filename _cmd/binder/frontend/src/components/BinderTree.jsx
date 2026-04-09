@@ -18,6 +18,11 @@ import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import UnfoldMoreDoubleIcon from '@mui/icons-material/UnfoldMoreDouble';
 import UnfoldLessDoubleIcon from '@mui/icons-material/UnfoldLessDouble';
 import HistoryIcon from '@mui/icons-material/History';
+import EditIcon from '@mui/icons-material/Edit';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -856,19 +861,19 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleEditNote}>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleRenameStart}>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleEditNote}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
       <Divider />
       <MenuItem onClick={handleAddMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("common.add")}</span><span>▶</span>
+        <span><AddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.add")}</span><span>▶</span>
       </MenuItem>
       <Divider />
-      <MenuItem onClick={handleHistoryNote}>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleHistoryNote}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
@@ -909,15 +914,15 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleEditDiagram}>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleRenameStart}>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleEditDiagram}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
       <Divider />
-      <MenuItem onClick={handleHistoryDiagram}>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleHistoryDiagram}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** アセットメニュー: Edit / Rename / Copy ▶ / History / Delete */}
@@ -928,15 +933,15 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleEditAsset}>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleRenameStart}>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleEditAsset}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
       <Divider />
-      <MenuItem onClick={handleHistoryAsset}>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleHistoryAsset}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** 削除確認ダイアログ */}
