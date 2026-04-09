@@ -42,6 +42,11 @@ func EnsureExists(ver *Version, devMode bool) error {
 		return xerrors.Errorf("installLanguages() error: %w", err)
 	}
 
+	// 旧サービス名のキーを新サービス名に移行
+	if err := migrateUserKeyService(); err != nil {
+		return xerrors.Errorf("migrateUserKeyService() error: %w", err)
+	}
+
 	//暗号化キーが存在しない場合
 	if !isExistsUserKey() {
 		err := setUserKey()
