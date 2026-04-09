@@ -125,12 +125,15 @@
 #editorMenu>div.buttonBarLeft {
   margin-left: 0px !important;
   padding-left: 0px !important;
-  min-width:380px;
+  padding-right: 0px !important;
+  min-width:320px;
 }
 
 #editorMenu>div.buttonBarRight {
   margin-right: 0px !important;
   padding-right: 0px !important;
+  padding-left: 0px !important;
+  min-width:40px;
 }
 
 /* =====================================================================
