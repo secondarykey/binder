@@ -152,7 +152,7 @@ func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*
 		}
 
 		// WebP変換（設定が有効な場合）
-		if settings.GetPath().OptimizeImage {
+		if p := settings.GetPath(); p.OptimizeImage == nil || *p.OptimizeImage {
 			data, filename = convertToWebP(data, filename)
 		}
 
