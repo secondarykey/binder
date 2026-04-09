@@ -530,6 +530,7 @@ function BinderTree(props) {
 
   const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
+  const handleHistoryAsset   = () => { closeAllMenus(); OpenHistoryWindow('asset',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
 
   /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
   const handleRenameStart = () => {
@@ -847,7 +848,7 @@ function BinderTree(props) {
       </MenuItem>
     </Menu>
 
-    {/** ノートメニュー: Edit / Add ▶ / History / Delete */}
+    {/** ノートメニュー: Edit / Rename / Copy ▶ / Add ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "note"}
       onClose={closeAllMenus}
@@ -855,15 +856,15 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
-      <MenuItem onClick={handleEditNote} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleEditNote}>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}>{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleAddMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span>{t("common.add")}</span><span>▶</span>
       </MenuItem>
       <MenuItem onClick={handleHistoryNote} divider>{t("common.history")}</MenuItem>
-      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
-      </MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
@@ -897,7 +898,7 @@ function BinderTree(props) {
       )}
     </Menu>
 
-    {/** ダイアグラムメニュー: Edit / History / Delete */}
+    {/** ダイアグラムメニュー: Edit / Rename / Copy ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
       onClose={closeAllMenus}
@@ -905,16 +906,16 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
-      <MenuItem onClick={handleEditDiagram} divider>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleHistoryDiagram} divider>{t("common.history")}</MenuItem>
+      <MenuItem onClick={handleEditDiagram}>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}>{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span>{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
+      <MenuItem onClick={handleHistoryDiagram} divider>{t("common.history")}</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
-    {/** アセットメニュー: Edit / Delete */}
+    {/** アセットメニュー: Edit / Rename / Copy ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "asset"}
       onClose={closeAllMenus}
@@ -922,11 +923,12 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
-      <MenuItem onClick={handleEditAsset} divider>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleEditAsset}>{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}>{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span>{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
+      <MenuItem onClick={handleHistoryAsset} divider>{t("common.history")}</MenuItem>
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
     </Menu>
 
