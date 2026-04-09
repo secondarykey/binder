@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Accordion, AccordionDetails, AccordionSummary, Button,
+  Accordion, AccordionDetails, AccordionSummary, Box, Button,
   Container, FormControl, FormLabel, IconButton, InputAdornment,
   Select, TextField, MenuItem, Typography,
 } from "@mui/material";
@@ -220,8 +220,10 @@ function NoteMetaDialog({ open, id, onClose }) {
             </Container>
           </FormControl>
 
-          <PublishDateField label={t("meta.publishDate")} value={publish} />
-          <PublishDateField label={t("meta.republishDate")} value={republish} />
+          <Box sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 12px", alignItems: "center" }}>
+            <PublishDateField label={t("meta.publishDate")} value={publish} />
+            <PublishDateField label={t("meta.republishDate")} value={republish} />
+          </Box>
           <Button
             size="small" variant="outlined"
             onClick={() => { const now = new Date(); setPublish(now); setRepublish(now); }}
