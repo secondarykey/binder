@@ -1,19 +1,10 @@
-import { Box, Button, Typography } from "@mui/material";
-import { useTranslation } from 'react-i18next';
-import "../../language";
+import { Box, Typography } from "@mui/material";
 
 /**
- * publish_date / republish_date の表示・リセット・クリア用フィールドコンポーネント
- * @param {{
- *   label: string,
- *   value: Date|null,
- *   onReset: () => void,
- *   onClear: () => void,
- * }} props
+ * 公開日時の読み取り専用表示行コンポーネント
+ * @param {{ label: string, value: Date|null }} props
  */
-function PublishDateField({ label, value, onReset, onClear }) {
-  const { t } = useTranslation();
-
+function PublishDateField({ label, value }) {
   const formatted = (() => {
     if (!value) return "—";
     const d = value instanceof Date ? value : new Date(value);
@@ -23,30 +14,13 @@ function PublishDateField({ label, value, onReset, onClear }) {
   })();
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.25 }}>
       <Typography variant="body2" sx={{ color: "var(--text-secondary)", minWidth: "90px", flexShrink: 0 }}>
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ flex: 1, fontFamily: "monospace", color: value ? "var(--text-primary)" : "var(--text-secondary)" }}>
+      <Typography variant="body2" sx={{ fontFamily: "monospace", color: value ? "var(--text-primary)" : "var(--text-secondary)" }}>
         {formatted}
       </Typography>
-      <Button
-        size="small"
-        variant="outlined"
-        onClick={onReset}
-        sx={{ minWidth: "auto", px: 1.5, fontSize: "0.7rem", borderColor: "var(--accent-blue)", color: "var(--accent-blue)" }}
-      >
-        {t("meta.resetToday")}
-      </Button>
-      <Button
-        size="small"
-        variant="outlined"
-        onClick={onClear}
-        disabled={!value}
-        sx={{ minWidth: "auto", px: 1.5, fontSize: "0.7rem" }}
-      >
-        {t("meta.clearDate")}
-      </Button>
     </Box>
   );
 }

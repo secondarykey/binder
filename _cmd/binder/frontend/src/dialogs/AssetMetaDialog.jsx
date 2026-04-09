@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Accordion, AccordionDetails, AccordionSummary,
+  Accordion, AccordionDetails, AccordionSummary, Button,
   FormControl, FormLabel, InputAdornment, TextField, Typography,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
@@ -116,18 +116,15 @@ function AssetMetaDialog({ open, id, onClose }) {
                 startAdornment: <InputAdornment position="start"><FormLabel>/assets/</FormLabel></InputAdornment>,
               }} />
           </FormControl>
-          <PublishDateField
-            label={t("meta.publishDate")}
-            value={publish}
-            onReset={() => setPublish(new Date())}
-            onClear={() => setPublish(null)}
-          />
-          <PublishDateField
-            label={t("meta.republishDate")}
-            value={republish}
-            onReset={() => setRepublish(new Date())}
-            onClear={() => setRepublish(null)}
-          />
+          <PublishDateField label={t("meta.publishDate")} value={publish} />
+          <PublishDateField label={t("meta.republishDate")} value={republish} />
+          <Button
+            size="small" variant="outlined"
+            onClick={() => { const now = new Date(); setPublish(now); setRepublish(now); }}
+            sx={{ mt: 0.5, alignSelf: "flex-start", borderColor: "var(--accent-blue)", color: "var(--accent-blue)" }}
+          >
+            {t("meta.resetToday")}
+          </Button>
         </AccordionDetails>
       </Accordion>
     </MetaDialog>
