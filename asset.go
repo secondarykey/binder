@@ -4,15 +4,24 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"binder/log"
+	"binder/settings"
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/chai2010/webp"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
 	"golang.org/x/xerrors"
 )
 
@@ -60,6 +69,34 @@ func detectMime(name string, binary bool) string {
 		return "application/octet-stream"
 	}
 	return "text/plain"
+}
+
+// convertToWebP は画像バイト列を WebP 形式に変換して返す。
+// SVG・GIF・WebP はそのまま返す。変換失敗時は元データを返す（ベストエフォート）。
+func convertToWebP(data []byte, filename string) ([]byte, string) {
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff":
+		// 変換対象
+	default:
+		return data, filename
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		log.WarnE("convertToWebP: image.Decode failed, keeping original", err)
+		return data, filename
+	}
+
+	var buf bytes.Buffer
+	if err := webp.Encode(&buf, img, &webp.Options{Quality: 80}); err != nil {
+		log.WarnE("convertToWebP: webp.Encode failed, keeping original", err)
+		return data, filename
+	}
+
+	newFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + ".webp"
+	log.Info("convertToWebP: " + filename + " -> " + newFilename)
+	return buf.Bytes(), newFilename
 }
 
 func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
@@ -112,6 +149,11 @@ func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*
 		data, err = base64.StdEncoding.DecodeString(base64data)
 		if err != nil {
 			return nil, xerrors.Errorf("base64.DecodeString() error: %w", err)
+		}
+
+		// WebP変換（設定が有効な場合）
+		if settings.GetPath().OptimizeImage {
+			data, filename = convertToWebP(data, filename)
 		}
 
 		buf := bytes.NewBuffer(data)

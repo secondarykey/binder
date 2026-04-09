@@ -138,7 +138,8 @@
         "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
         "addDomain" : "ドメインを追加",
         "domainPlaceholder" : "例: cdn.jsdelivr.net",
-        "security" : "セキュリティ"
+        "security" : "セキュリティ",
+        "optimizeImage" : "画像を軽量化する（WebPに変換）"
     },
     "binder" : {
         "editTitle" : "Binder編集",

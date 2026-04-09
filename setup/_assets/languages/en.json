@@ -138,7 +138,8 @@
         "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
         "addDomain" : "Add Domain",
         "domainPlaceholder" : "e.g. cdn.jsdelivr.net",
-        "security" : "Security"
+        "security" : "Security",
+        "optimizeImage" : "Optimize Images (convert to WebP)"
     },
     "binder" : {
         "editTitle" : "Edit Binder",

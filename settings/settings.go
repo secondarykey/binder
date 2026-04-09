@@ -44,11 +44,12 @@ type Position struct {
 }
 
 type Path struct {
-	Default      string   `json:"default"`
-	RunWithOpen  bool     `json:"runWithOpen"`
-	OpenWithItem bool     `json:"openWithItem"`
-	Histories    []string `json:"histories"`
-	LastNoteId   string   `json:"lastNoteId"`
+	Default       string   `json:"default"`
+	RunWithOpen   bool     `json:"runWithOpen"`
+	OpenWithItem  bool     `json:"openWithItem"`
+	Histories     []string `json:"histories"`
+	LastNoteId    string   `json:"lastNoteId"`
+	OptimizeImage bool     `json:"optimizeImage"`
 }
 
 func (p *Path) AddHistory(h string) {
@@ -164,6 +165,8 @@ func def() *Setting {
 	path.RunWithOpen = true
 	//起動と同時に最終アイテムを開く
 	path.OpenWithItem = false
+	//画像をWebPに変換して軽量化する
+	path.OptimizeImage = true
 
 	set.Path = &path
 	//最後に開いていたバインダーを開く
@@ -278,6 +281,7 @@ func SaveBasePath(p *Path) error {
 	obj.Path.Default = p.Default
 	obj.Path.RunWithOpen = p.RunWithOpen
 	obj.Path.OpenWithItem = p.OpenWithItem
+	obj.Path.OptimizeImage = p.OptimizeImage
 
 	return obj.save()
 }
