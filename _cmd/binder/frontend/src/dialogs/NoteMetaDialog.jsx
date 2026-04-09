@@ -166,18 +166,6 @@ function NoteMetaDialog({ open, id, onClose }) {
       </FormControl>
 
       <FormControl>
-        <FormLabel>{t("common.alias")}</FormLabel>
-        <TextField
-          size="small"
-          value={alias}
-          onChange={(e) => { if (!isIndex) setAlias(e.target.value); }}
-          InputProps={{
-            startAdornment: <InputAdornment position="start"><FormLabel>{aliasStart}</FormLabel></InputAdornment>,
-            endAdornment: <InputAdornment position="end"><FormLabel>.html</FormLabel></InputAdornment>,
-          }} />
-      </FormControl>
-
-      <FormControl>
         <FormLabel>{t("note.layoutTemplate")}</FormLabel>
         <Select size="small" value={layout} onChange={(e) => setLayout(e.target.value)}>
           {layouts.map((v) => <MenuItem key={"Layout-" + v.id} value={v.id}>{v.name}</MenuItem>)}
@@ -191,35 +179,47 @@ function NoteMetaDialog({ open, id, onClose }) {
         </Select>
       </FormControl>
 
-      <FormControl>
-        <FormLabel>{t("note.noteImage")}</FormLabel>
-        <Container style={{ marginTop: "4px", textAlign: "center" }}>
-          <div style={{ position: "relative", display: "inline-block" }}>
-            <img
-              src={viewImage}
-              onError={(e) => { e.target.src = noImage; }}
-              onClick={selectFile}
-              style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
-              title={t("note.clickToSelectImage")}
-            />
-            {hasImage && (
-              <IconButton
-                size="small"
-                onClick={handleDeleteImage}
-                style={{ position: "absolute", top: 2, right: 2, backgroundColor: "rgba(0,0,0,0.5)", color: "#fff", padding: "2px" }}
-              >
-                <DeleteOutline fontSize="small" />
-              </IconButton>
-            )}
-          </div>
-        </Container>
-      </FormControl>
-
       <Accordion disableGutters elevation={0} sx={{ mt: 1, backgroundColor: "transparent", "&:before": { display: "none" } }}>
         <AccordionSummary expandIcon={<ExpandMore />} sx={{ px: 0, minHeight: "auto", "& .MuiAccordionSummary-content": { my: 0.5 } }}>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>{t("meta.webPublish")}</Typography>
         </AccordionSummary>
-        <AccordionDetails sx={{ px: 0, pt: 0 }}>
+        <AccordionDetails sx={{ px: 0, pt: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+          <FormControl>
+            <FormLabel>{t("common.alias")}</FormLabel>
+            <TextField
+              size="small"
+              value={alias}
+              onChange={(e) => { if (!isIndex) setAlias(e.target.value); }}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><FormLabel>{aliasStart}</FormLabel></InputAdornment>,
+                endAdornment: <InputAdornment position="end"><FormLabel>.html</FormLabel></InputAdornment>,
+              }} />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>{t("note.noteImage")}</FormLabel>
+            <Container style={{ marginTop: "4px", textAlign: "center" }}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <img
+                  src={viewImage}
+                  onError={(e) => { e.target.src = noImage; }}
+                  onClick={selectFile}
+                  style={{ height: "160px", width: "fit-content", cursor: "pointer", opacity: 0.85, display: "block" }}
+                  title={t("note.clickToSelectImage")}
+                />
+                {hasImage && (
+                  <IconButton
+                    size="small"
+                    onClick={handleDeleteImage}
+                    style={{ position: "absolute", top: 2, right: 2, backgroundColor: "rgba(0,0,0,0.5)", color: "#fff", padding: "2px" }}
+                  >
+                    <DeleteOutline fontSize="small" />
+                  </IconButton>
+                )}
+              </div>
+            </Container>
+          </FormControl>
+
           <PublishDateField
             label={t("meta.publishDate")}
             value={publish}

@@ -112,23 +112,22 @@ function DiagramMetaDialog({ open, id, onClose }) {
         </Select>
       </FormControl>
 
-      <FormControl>
-        <FormLabel>{t("common.alias")}</FormLabel>
-        <TextField
-          size="small"
-          value={alias}
-          onChange={(e) => setAlias(e.target.value)}
-          InputProps={{
-            startAdornment: <InputAdornment position="start"><FormLabel>/images/</FormLabel></InputAdornment>,
-            endAdornment: <InputAdornment position="end"><FormLabel>.svg</FormLabel></InputAdornment>,
-          }} />
-      </FormControl>
-
       <Accordion disableGutters elevation={0} sx={{ mt: 1, backgroundColor: "transparent", "&:before": { display: "none" } }}>
         <AccordionSummary expandIcon={<ExpandMore />} sx={{ px: 0, minHeight: "auto", "& .MuiAccordionSummary-content": { my: 0.5 } }}>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>{t("meta.webPublish")}</Typography>
         </AccordionSummary>
-        <AccordionDetails sx={{ px: 0, pt: 0 }}>
+        <AccordionDetails sx={{ px: 0, pt: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+          <FormControl>
+            <FormLabel>{t("common.alias")}</FormLabel>
+            <TextField
+              size="small"
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><FormLabel>/images/</FormLabel></InputAdornment>,
+                endAdornment: <InputAdornment position="end"><FormLabel>.svg</FormLabel></InputAdornment>,
+              }} />
+          </FormControl>
           <PublishDateField
             label={t("meta.publishDate")}
             value={publish}
