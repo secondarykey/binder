@@ -128,18 +128,20 @@ function DiagramMetaDialog({ open, id, onClose }) {
                 endAdornment: <InputAdornment position="end"><FormLabel>.svg</FormLabel></InputAdornment>,
               }} />
           </FormControl>
-          <Box sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 12px", alignItems: "center" }}>
-            <PublishDateField label={t("meta.publishDate")} value={publish} />
-            <PublishDateField label={t("meta.republishDate")} value={republish} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 12px", alignItems: "center", flex: 1 }}>
+              <PublishDateField label={t("meta.publishDate")} value={publish} />
+              <PublishDateField label={t("meta.republishDate")} value={republish} />
+            </Box>
+            <Button
+              size="small" variant="outlined"
+              onClick={() => { const now = new Date(); setPublish(now); setRepublish(now); }}
+              disabled={!publish}
+              sx={{ borderColor: "var(--accent-blue)", color: "var(--accent-blue)", whiteSpace: "nowrap" }}
+            >
+              {t("meta.resetNow")}
+            </Button>
           </Box>
-          <Button
-            size="small" variant="outlined"
-            onClick={() => { const now = new Date(); setPublish(now); setRepublish(now); }}
-            disabled={!publish}
-            sx={{ mt: 0.5, alignSelf: "flex-start", borderColor: "var(--accent-blue)", color: "var(--accent-blue)" }}
-          >
-            {t("meta.resetToday")}
-          </Button>
         </AccordionDetails>
       </Accordion>
     </MetaDialog>

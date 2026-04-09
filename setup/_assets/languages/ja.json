@@ -425,6 +425,6 @@
         "webPublish" : "Web公開",
         "publishDate" : "公開日時",
         "republishDate" : "再公開日時",
-        "resetToday" : "今日にリセット"
+        "resetNow" : "現在時刻にリセット"
     }
 }

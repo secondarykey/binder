@@ -425,6 +425,6 @@
         "webPublish" : "Web Publishing",
         "publishDate" : "Publish Date",
         "republishDate" : "Republish Date",
-        "resetToday" : "Reset to Today"
+        "resetNow" : "Reset to Now"
     }
 }
