@@ -9,7 +9,9 @@ function PublishDateField({ label, value }) {
   const formatted = (() => {
     if (!value) return "—";
     const d = value instanceof Date ? value : new Date(value);
-    return isNaN(d.getTime()) ? "—" : d.toLocaleString();
+    if (isNaN(d.getTime())) return "—";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   })();
 
   return (
