@@ -20,6 +20,8 @@ var assets embed.FS
 var ver string
 
 var resetPosition bool
+var safe bool
+var debug bool
 
 // wailsSearchEmitter は api.SearchEmitter を Wails イベントで実装する
 type wailsSearchEmitter struct {
@@ -36,6 +38,8 @@ func (e *wailsSearchEmitter) EmitDone() {
 
 func init() {
 	flag.BoolVar(&resetPosition, "reset-position", false, "Windows Position reset")
+	flag.BoolVar(&safe, "safe", false, "Prevent files from opening automatically.")
+	flag.BoolVar(&debug, "debug", false, "Launch DevTools")
 }
 
 func main() {
@@ -82,7 +86,7 @@ func main() {
 		Frameless:              true,
 		BackgroundColour:       application.NewRGBA(27, 38, 54, 255),
 		URL:                    "/",
-		OpenInspectorOnStartup: false,
+		OpenInspectorOnStartup: debug,
 		EnableFileDrop:         true,
 	})
 
