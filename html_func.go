@@ -109,8 +109,15 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 func (w *wrapper) childrenNotes(v ...any) []*tempNote {
 	//件数
 	n := Arg[int](v, 0).Default(-1)
-	//指定ノートId
-	id := Arg[string](v, 1).Default(w.note.Id)
+	//指定ノートId（ダイアグラムコンテキストでは w.note が nil のため空文字をデフォルトとする）
+	defaultId := ""
+	if w.note != nil {
+		defaultId = w.note.Id
+	}
+	id := Arg[string](v, 1).Default(defaultId)
+	if id == "" {
+		return nil
+	}
 	return w.children(id, n, -1)
 }
 

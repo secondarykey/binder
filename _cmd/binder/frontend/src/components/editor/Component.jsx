@@ -4,7 +4,7 @@ import { useParams, useLocation } from "react-router";
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
-import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
+import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
@@ -704,7 +704,15 @@ function Editor(props) {
    */
   const viewDiagram = async (txt) => {
 
-    Mermaid.parse(txt, styleTemplateId).then((data) => {
+    let parsedTxt = txt;
+    try {
+      parsedTxt = await ParseDiagram(id, true, txt);
+    } catch (err) {
+      setParseStatus({ status: "error", err });
+      return;
+    }
+
+    Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;

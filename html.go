@@ -4,12 +4,24 @@ import (
 	"html/template"
 	"io"
 	"strings"
+	texttemplate "text/template"
 
 	"binder/api/json"
 	"binder/fs"
 
 	"golang.org/x/xerrors"
 )
+
+// テンプレートのダイアグラムデータ
+type tempDiagram struct {
+	Id      string
+	Name    string
+	Detail  string
+	Alias   string
+	Publish string
+	Created string
+	Updated string
+}
 
 // テンプレートのノートデータ
 type tempNote struct {
@@ -92,7 +104,7 @@ func (b *Binder) createHTMLTemplate(w *wrapper) (*template.Template, error) {
 }
 
 // ノートの要素を一度テンプレート処理を行う
-func (b *Binder) ParseElement(note *json.Note, local bool, elm string) (string, error) {
+func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
@@ -188,6 +200,53 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
 		return "", xerrors.Errorf("writeHTML() error: %w", err)
+	}
+	return builder.String(), nil
+}
+
+// ダイアグラムの要素を一度テンプレート処理を行う。
+// Mermaid 記法には `-->` や `&` が含まれるため、HTML エスケープを避けるため text/template を使用する。
+func (b *Binder) ParseDiagram(diag *json.Diagram, local bool, elm string) (string, error) {
+
+	if b == nil {
+		return "", EmptyError
+	}
+
+	wrap := &wrapper{owner: b, Local: local}
+
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
+	if err != nil {
+		return "", xerrors.Errorf("Diagram Parse() error: %w", err)
+	}
+
+	config, err := b.GetConfig()
+	if err != nil {
+		return "", xerrors.Errorf("GetConfig() error: %w", err)
+	}
+
+	home := struct {
+		Name   string
+		Detail string
+	}{config.Name, config.Detail}
+
+	td := &tempDiagram{
+		Id:      diag.Id,
+		Name:    diag.Name,
+		Detail:  diag.Detail,
+		Alias:   diag.Alias,
+		Publish: formatTime(diag.Publish),
+		Created: formatTime(diag.Created),
+		Updated: formatTime(diag.Updated),
+	}
+
+	dto := struct {
+		Home    interface{}
+		Diagram *tempDiagram
+	}{home, td}
+
+	var builder strings.Builder
+	if err := tmpl.Execute(&builder, dto); err != nil {
+		return "", xerrors.Errorf("Diagram Execute() error: %w", err)
 	}
 	return builder.String(), nil
 }
