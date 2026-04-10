@@ -763,9 +763,16 @@ function Editor(props) {
    */
   const viewDiagramTemplatePreview = async (templateText, diagramId) => {
     if (!diagramId || !templateText) return;
-    OpenDiagram(diagramId).then((diagramContent) => {
+    OpenDiagram(diagramId).then(async (diagramContent) => {
+      let parsedContent = diagramContent;
+      try {
+        parsedContent = await ParseDiagram(diagramId, true, diagramContent);
+      } catch (err) {
+        setParseStatus({ status: "error", err });
+        return;
+      }
       const prefix = `%%{init:${templateText}}%%\n`;
-      const fullTxt = prefix + diagramContent;
+      const fullTxt = prefix + parsedContent;
       Mermaid.parse(fullTxt).then((data) => {
         var elm = document.querySelector('#mermaidViewer');
         if (elm) elm.innerHTML = data.svg;
