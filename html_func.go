@@ -174,7 +174,11 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 			var sb strings.Builder
 			if err := w.owner.ReadTemplate(&sb, diag.StyleTemplate); err == nil {
 				code = fmt.Sprintf("%%%%{init:%s}%%%%\n%s", sb.String(), code)
+			} else {
+				//TODO error
 			}
+		} else {
+			//TODO error
 		}
 	} else {
 

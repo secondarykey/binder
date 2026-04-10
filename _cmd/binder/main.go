@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"log/slog"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -46,6 +47,9 @@ func main() {
 
 	flag.Parse()
 
+	if debug {
+		log.SetLevel(slog.LevelDebug)
+	}
 	if err := log.Init(); err != nil {
 		log.WarnE("ログファイルの初期化に失敗", err)
 	}
@@ -69,11 +73,15 @@ func main() {
 
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
 	app.SetDevMode(wailsApp.Env.Info().Debug)
-
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
 	set, err := app.Setup()
 	if err != nil {
 		log.PrintStackTrace(err)
+	}
+
+	//セーフモードの場合に起動時の読み込みをオフ
+	if safe {
+		set.Path.RunWithOpen = false
 	}
 
 	// 3. ウィンドウ作成
