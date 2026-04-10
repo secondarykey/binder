@@ -169,23 +169,27 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 	code := ""
 	if w.Local {
 		var d strings.Builder
-		err := w.owner.ReadDiagram(&d, id)
-		if err != nil {
+		if err := w.owner.ReadDiagram(&d, id); err != nil {
 			return template.HTML(err.Error())
 		}
 		code = d.String()
 
-		// スタイルテンプレートのディレクティブを付与
 		diag, err := w.owner.GetDiagram(id)
-		if err == nil && diag.StyleTemplate != "" {
+		if err != nil {
+			return template.HTML(err.Error())
+		}
+
+		// ダイアグラム内容のテンプレート関数を処理する
+		if parsed, err := w.owner.ParseDiagram(diag, w.Local, code); err == nil {
+			code = parsed
+		}
+
+		// スタイルテンプレートのディレクティブを付与
+		if diag.StyleTemplate != "" {
 			var sb strings.Builder
 			if err := w.owner.ReadTemplate(&sb, diag.StyleTemplate); err == nil {
 				code = fmt.Sprintf("%%%%{init:%s}%%%%\n%s", sb.String(), code)
-			} else {
-				//TODO error
 			}
-		} else {
-			//TODO error
 		}
 	} else {
 
