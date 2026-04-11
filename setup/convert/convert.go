@@ -31,11 +31,12 @@ var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097 *Vers
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
-	configMigrated   bool
-	configName       string
-	configDetail     string
-	docsMigrated     bool
-	gitignorCreated  bool
+	configMigrated        bool
+	configName            string
+	configDetail          string
+	docsMigrated          bool
+	gitignorCreated       bool
+	diagramStyleMigrated  bool
 }
 
 // migration はひとつのバージョン移行を表す。
@@ -167,9 +168,25 @@ func init() {
 			return applyDB(dbDir, convert092.Convert092)
 		}},
 		// 0.9.7: structures.csv に private 列を追加（デフォルト値: false）
-		// diagrams.csv に style_template 列を追加（デフォルト値: 空文字列）
-		{v097, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert097.Convert097)
+		// diagrams.csv に style_template 列を追加（デフォルト値: diagram_style）
+		// templates.csv に diagram_style レコードを追加
+		// templates/diagram_style.tmpl ファイルを作成（内容: {'theme':'base'}）
+		{v097, func(dir, dbDir string, state *migrateState) error {
+			if err := applyDB(dbDir, convert097.Convert097); err != nil {
+				return err
+			}
+			// diagram_style テンプレートファイルを作成（冪等）
+			tmplPath := filepath.Join(dir, fs.TemplateDir, "diagram_style.tmpl")
+			if _, statErr := os.Stat(tmplPath); os.IsNotExist(statErr) {
+				if err := os.MkdirAll(filepath.Dir(tmplPath), 0755); err != nil {
+					return xerrors.Errorf("MkdirAll(templates) error: %w", err)
+				}
+				if err := os.WriteFile(tmplPath, []byte("{'theme':'base'}"), 0644); err != nil {
+					return xerrors.Errorf("os.WriteFile(diagram_style.tmpl) error: %w", err)
+				}
+				state.diagramStyleMigrated = true
+			}
+			return nil
 		}},
 	}
 }
@@ -277,6 +294,13 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
 			return nil, xerrors.Errorf("AutoCommit(migrate 047) error: %w", commitErr)
+		}
+	}
+
+	// 0.9.7マイグレーション: diagram_style.tmpl をステージする
+	if state.diagramStyleMigrated {
+		if err = bfs.AddFile(fs.TemplateFile("diagram_style")); err != nil {
+			return nil, xerrors.Errorf("AddFile(diagram_style.tmpl) error: %w", err)
 		}
 	}
 

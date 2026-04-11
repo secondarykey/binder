@@ -3,16 +3,19 @@ package convert097
 import (
 	"binder/setup/convert/db/core"
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"golang.org/x/xerrors"
 )
 
 // Convert097 は0.9.7への移行。
 // structures.csv に private 列を追加する（デフォルト値: false）。
-// diagrams.csv に style_template 列を追加する（デフォルト値: 空文字列）。
+// diagrams.csv に style_template 列を追加する（デフォルト値: diagram_style）。
+// templates.csv に diagram_style レコードを追加する。
 func Convert097(p string, tables []*core.FileSet) ([]*core.FileSet, error) {
 
 	var rtn []*core.FileSet
@@ -30,6 +33,12 @@ func Convert097(p string, tables []*core.FileSet) ([]*core.FileSet, error) {
 			nf2, err := addStyleTemplateToDiagrams(p, f)
 			if err != nil {
 				return nil, xerrors.Errorf("addStyleTemplateToDiagrams() error: %w", err)
+			}
+			nf = nf2
+		} else if f.This("templates.csv") {
+			nf2, err := addDiagramStyleToTemplates(p, f)
+			if err != nil {
+				return nil, xerrors.Errorf("addDiagramStyleToTemplates() error: %w", err)
 			}
 			nf = nf2
 		}
@@ -207,11 +216,11 @@ func addStyleTemplateToDiagrams(p string, fs *core.FileSet) (*core.FileSet, erro
 
 		var newRow []string
 		if insertIdx < 0 || insertIdx > len(row) {
-			newRow = append(row, "")
+			newRow = append(row, "diagram_style")
 		} else {
 			newRow = make([]string, 0, len(row)+1)
 			newRow = append(newRow, row[:insertIdx]...)
-			newRow = append(newRow, "")
+			newRow = append(newRow, "diagram_style")
 			newRow = append(newRow, row[insertIdx:]...)
 		}
 
@@ -222,6 +231,75 @@ func addStyleTemplateToDiagrams(p string, fs *core.FileSet) (*core.FileSet, erro
 
 	if err = scanner.Err(); err != nil {
 		return nil, xerrors.Errorf("scanner error: %w", err)
+	}
+
+	nfs := core.NewFileSet(fs.Org)
+	nfs.Dst = nn
+	return nfs, nil
+}
+
+// addDiagramStyleToTemplates は templates.csv に diagram_style レコードを追加する。
+// 既に diagram_style が存在する場合はスキップする（冪等）。
+func addDiagramStyleToTemplates(p string, fs *core.FileSet) (*core.FileSet, error) {
+
+	of := filepath.Join(p, fs.Dst)
+	fp, err := os.Open(of)
+	if err != nil {
+		return nil, xerrors.Errorf("os.Open() error: %w", err)
+	}
+	defer fp.Close()
+
+	scanner := bufio.NewScanner(fp)
+
+	// ヘッダ行を読み込む
+	if !scanner.Scan() {
+		return fs, nil
+	}
+	headerLine := scanner.Text()
+
+	// 既存データ行をすべて読み込む
+	var rows []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
+		rows = append(rows, line)
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, xerrors.Errorf("scanner error: %w", err)
+	}
+	fp.Close()
+
+	// 冪等: diagram_style が既に存在すればスキップ
+	for _, row := range rows {
+		cols := strings.Split(row, ",")
+		if len(cols) > 0 && cols[0] == "diagram_style" {
+			return fs, nil
+		}
+	}
+
+	// diagram_style レコードを末尾に追加
+	now := time.Now().UTC().Format(time.RFC3339)
+	newRow := fmt.Sprintf("diagram_style,diagram,Base Theme,,1,%s,user,%s,user", now, now)
+	rows = append(rows, newRow)
+
+	// 新しいファイルに書き出す
+	nn := "templates097.csv"
+	nf := filepath.Join(p, nn)
+	np, err := os.Create(nf)
+	if err != nil {
+		return nil, xerrors.Errorf("os.Create() error: %w", err)
+	}
+	defer np.Close()
+
+	if _, err = np.Write([]byte(headerLine + "\n")); err != nil {
+		return nil, xerrors.Errorf("np.Write(header) error: %w", err)
+	}
+	for _, row := range rows {
+		if _, err = np.Write([]byte(row + "\n")); err != nil {
+			return nil, xerrors.Errorf("np.Write(row) error: %w", err)
+		}
 	}
 
 	nfs := core.NewFileSet(fs.Org)
