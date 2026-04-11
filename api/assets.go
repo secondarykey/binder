@@ -118,6 +118,17 @@ func (a *App) SaveAssetContent(assetId string, data string) error {
 	return nil
 }
 
+// AddTextAsset はテキストファイルアセットを空コンテンツで作成する。
+func (a *App) AddTextAsset(parentId string, isPrivate bool) (*json.Asset, error) {
+	defer log.PrintTrace(log.Func("AddTextAsset()", parentId))
+	rtn, err := a.current.AddTextAsset(parentId, isPrivate)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("AddTextAsset() error\n%+v", err)
+	}
+	return rtn, nil
+}
+
 func (a *App) RemoveAsset(id string) error {
 	defer log.PrintTrace(log.Func("RemoveAsset()"))
 	_, err := a.current.RemoveAsset(id)

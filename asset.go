@@ -268,6 +268,48 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 	return a, nil
 }
 
+// AddTextAsset はテキストファイルアセットを空コンテンツで作成する。
+// Name="Text"、MIME="text/plain"、Alias="{id}.txt" で即座に登録する。
+func (b *Binder) AddTextAsset(parentId string, isPrivate bool) (*json.Asset, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	a := &json.Asset{
+		ParentId: parentId,
+		Name:     "Text",
+		Binary:   false,
+		Mime:     "text/plain",
+		Private:  isPrivate,
+	}
+
+	// ID を事前生成して Alias に使用
+	a.Id = b.generateId()
+	a.Alias = a.Id + ".txt"
+
+	m := model.ConvertAsset(a)
+	if err := b.db.InsertAsset(m, b.op); err != nil {
+		return nil, xerrors.Errorf("db.InsertAsset() error: %w", err)
+	}
+
+	if err := b.createStructure(a.Id, a.ParentId, "asset", a.Name, a.Detail, a.Alias); err != nil {
+		return nil, xerrors.Errorf("createStructure() error: %w", err)
+	}
+
+	// 空ファイルを作成
+	fn, err := b.fileSystem.CreateAsset(a, []byte{})
+	if err != nil {
+		return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
+	}
+
+	files := []string{fn, fs.AssetTableFile(), fs.StructureTableFile()}
+	if err := b.fileSystem.Commit(fs.M("Created Asset", a.Name), files...); err != nil {
+		return nil, xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+
+	return a, nil
+}
+
 func (b *Binder) GetAsset(id string) (*json.Asset, error) {
 	if b == nil {
 		return nil, EmptyError

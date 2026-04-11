@@ -27,7 +27,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
+         EditNote, EditDiagram, EditAsset, AddTextAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
          IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
@@ -692,6 +692,22 @@ function BinderTree(props) {
     }
   };
 
+  /** テキストファイルアセットを空コンテンツで作成してエディタへ */
+  const handleRegisterTextAsset = async () => {
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
+    closeAllMenus();
+    try {
+      const resp = await AddTextAsset(parentId, !!parentNode.private);
+      setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
+      evt.refreshTree();
+      setSelectedId(resp.id);
+      nav("/editor/assets/" + resp.id);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
   /** 削除確認ダイアログを開く */
   const handleDeleteRequest = () => {
     const node = contextMenu.node;
@@ -911,7 +927,8 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleRegisterNote}>{t("tree.note")}</MenuItem>
       <MenuItem onClick={handleRegisterDiagram}>{t("tree.diagram")}</MenuItem>
-      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets")}</MenuItem>
+      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets_file")}</MenuItem>
+      <MenuItem onClick={handleRegisterTextAsset}>{t("tree.assets_text")}</MenuItem>
     </Menu>
 
     {/** Copy サブメニュー: ID / パス */}
