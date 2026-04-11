@@ -2,7 +2,8 @@
   "templates": [
     {"id": "layout",  "type": "layout",  "name": "Layout",  "file": "layout.tmpl"},
     {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"},
-    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"}
+    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"},
+    {"id": "diagram_style", "type": "diagram", "name": "Base Theme", "file": "diagram_style.tmpl"}
   ],
   "notes": [
     {
@@ -17,7 +18,7 @@
     }
   ],
   "diagrams": [
-    {"name": "Diagram", "parentId": "index", "file": "diagram.md"}
+    {"name": "Diagram", "parentId": "index", "styleTemplate": "diagram_style", "file": "diagram.md"}
   ],
   "assets": [
     {"name": "Asset", "alias": "DataAsset", "parentId": "index", "file": "assets.txt"}

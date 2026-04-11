@@ -35,9 +35,10 @@ type installNote struct {
 }
 
 type installDiagram struct {
-	Name     string `json:"name"`
-	ParentId string `json:"parentId"`
-	File     string `json:"file"`
+	Name          string `json:"name"`
+	ParentId      string `json:"parentId"`
+	StyleTemplate string `json:"styleTemplate"`
+	File          string `json:"file"`
 }
 
 type installAsset struct {

@@ -15,13 +15,19 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
-import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import UnfoldMoreDoubleIcon from '@mui/icons-material/UnfoldMoreDouble';
+import UnfoldLessDoubleIcon from '@mui/icons-material/UnfoldLessDouble';
 import HistoryIcon from '@mui/icons-material/History';
+import EditIcon from '@mui/icons-material/Edit';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
+         EditNote, EditDiagram, EditAsset, AddTextAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
          IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
@@ -130,6 +136,7 @@ const processTreeData = (leafs, modifiedIds, showModified, unpublishedMap, showP
       nodeType: leaf.type,                                                                        // コンテキストメニュー判定用（元のtype）
       modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,                  // Git未コミット変更フラグ（トグルOFF時は強制false）
       publishStatus: showPublishStatus && unpublishedMap ? (unpublishedMap.get(leaf.id) ?? 0) : 0, // 未公開ステータス（0:最新 1:未公開新規 2:更新あり）
+      private: showPublishStatus ? !!leaf.private : false,
       children: hasChildren ? children : undefined,
     };
   });
@@ -528,17 +535,42 @@ function BinderTree(props) {
 
   const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
+  const handleHistoryAsset   = () => { closeAllMenus(); OpenHistoryWindow('asset',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
+
+  /** リネーム開始: node を受け取る共通処理 */
+  const startRename = (node, delay = 0) => {
+    const { id, name } = node;
+    setTimeout(() => {
+      setRenamingValue(name);
+      setRenaming(id);
+    }, delay);
+  };
 
   /** リネーム開始: コンテキストメニューの "Rename" から呼び出す */
   const handleRenameStart = () => {
     const node = contextMenu.node;
-    const { id, name } = node;
     closeAllMenus();
     // MUI メニューのアニメーション完了後に input を表示して autoFocus を確実に効かせる
-    setTimeout(() => {
-      setRenamingValue(name);
-      setRenaming(id);
-    }, 150);
+    startRename(node, 150);
+  };
+
+  /** F2/Ctrl+C キー操作: 選択中ノードに対して実行 */
+  const handleKeyDownTree = (e) => {
+    if (!selectedId) return;
+
+    if (e.key === 'F2') {
+      if (renaming) return;
+      const node = findNodeInTree(treeRef.current, selectedId);
+      if (!node || node.type === 'folder') return;
+      e.preventDefault();
+      startRename(node);
+      return;
+    }
+
+    if (e.key === 'c' && e.ctrlKey) {
+      e.preventDefault();
+      copyClipboard(selectedId);
+    }
   };
 
   /** リネーム確定: Enter 時に既存データを取得してから name のみ更新する */
@@ -590,7 +622,8 @@ function BinderTree(props) {
 
   /** ノートをデフォルト値で作成 → インラインリネーム → エディタへ */
   const handleRegisterNote = async () => {
-    const parentId = contextMenu.node.id;
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
     closeAllMenus();
     try {
       const tmpls = await GetHTMLTemplates();
@@ -602,6 +635,7 @@ function BinderTree(props) {
         detail: "",
         layoutTemplate: tmpls.layouts[0].id,
         contentTemplate: tmpls.contents[0].id,
+        private: !!parentNode.private,
       };
       const resp = await EditNote(note, "");
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
@@ -619,10 +653,11 @@ function BinderTree(props) {
 
   /** ダイアグラムをデフォルト値で作成 → インラインリネーム → エディタへ */
   const handleRegisterDiagram = async () => {
-    const parentId = contextMenu.node.id;
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
     closeAllMenus();
     try {
-      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "" };
+      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "", private: !!parentNode.private };
       const resp = await EditDiagram(diagram);
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
@@ -639,14 +674,31 @@ function BinderTree(props) {
 
   /** ファイル選択後にアセットを作成してエディタへ */
   const handleRegisterAssets = async () => {
-    const parentId = contextMenu.node.id;
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
     closeAllMenus();
     try {
       const filePath = await SelectFile("Any File", "*");
       if (!filePath) return;
       const name = filePath.split(/[/\\]/).pop() || "New Asset";
-      const asset = { id: "", parentId, name, alias: "", detail: "", binary: false };
+      const asset = { id: "", parentId, name, alias: "", detail: "", binary: false, private: !!parentNode.private };
       const resp = await EditAsset(asset, filePath);
+      setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
+      evt.refreshTree();
+      setSelectedId(resp.id);
+      nav("/editor/assets/" + resp.id);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
+  /** テキストファイルアセットを空コンテンツで作成してエディタへ */
+  const handleRegisterTextAsset = async () => {
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
+    closeAllMenus();
+    try {
+      const resp = await AddTextAsset(parentId, !!parentNode.private);
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
       setSelectedId(resp.id);
@@ -713,7 +765,7 @@ function BinderTree(props) {
 
     {/** ツリースクロールエリア（MoreVert ボタンをフローティングで右上に配置） */}
     <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }}>
+      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }} onKeyDown={handleKeyDownTree} tabIndex={-1}>
       <div style={{ marginTop: '4px' }}><Tree
         data={treeData}
         selected={selectedId}
@@ -783,17 +835,17 @@ function BinderTree(props) {
         {t("tree.publish")}
       </MenuItem>
       <Divider />
-      {/** すべて展開 */}
-      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
-        <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
-      </MenuItem>
       {/** 対象を展開 */}
       <MenuItem onClick={handleExpandTargets} disabled={displayMode === 'none'}>
         <UnfoldMoreIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandTargets")}
       </MenuItem>
+      {/** すべて展開 */}
+      <MenuItem onClick={() => { closeMoreMenu(); setExpand(collectExpandableIds(treeRef.current)); }}>
+        <UnfoldMoreDoubleIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.expandAll")}
+      </MenuItem>
       {/** すべて閉じる */}
       <MenuItem onClick={() => { closeMoreMenu(); setExpand(["index"]); }}>
-        <UnfoldLessIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
+        <UnfoldLessDoubleIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.collapseAll")}
       </MenuItem>
       <Divider />
       {/** ブラウザで開く */}
@@ -841,7 +893,7 @@ function BinderTree(props) {
       </MenuItem>
     </Menu>
 
-    {/** ノートメニュー: Edit / Add ▶ / History / Delete */}
+    {/** ノートメニュー: Edit / Rename / Copy ▶ / Add ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "note"}
       onClose={closeAllMenus}
@@ -849,16 +901,19 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
-      <MenuItem onClick={handleEditNote} divider>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleAddMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("common.add")}</span><span>▶</span>
+      <MenuItem onClick={handleEditNote}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
-      <MenuItem onClick={handleHistoryNote} divider>{t("common.history")}</MenuItem>
-      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
+      <Divider />
+      <MenuItem onClick={handleAddMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><AddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.add")}</span><span>▶</span>
       </MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleHistoryNote}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** Add サブメニュー: Note / Diagram / Assets */}
@@ -872,7 +927,8 @@ function BinderTree(props) {
     >
       <MenuItem onClick={handleRegisterNote}>{t("tree.note")}</MenuItem>
       <MenuItem onClick={handleRegisterDiagram}>{t("tree.diagram")}</MenuItem>
-      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets")}</MenuItem>
+      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets_file")}</MenuItem>
+      <MenuItem onClick={handleRegisterTextAsset}>{t("tree.assets_text")}</MenuItem>
     </Menu>
 
     {/** Copy サブメニュー: ID / パス */}
@@ -891,7 +947,7 @@ function BinderTree(props) {
       )}
     </Menu>
 
-    {/** ダイアグラムメニュー: Edit / History / Delete */}
+    {/** ダイアグラムメニュー: Edit / Rename / Copy ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
       onClose={closeAllMenus}
@@ -899,16 +955,18 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
-      <MenuItem onClick={handleEditDiagram} divider>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleHistoryDiagram} divider>{t("common.history")}</MenuItem>
-      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
+      <MenuItem onClick={handleEditDiagram}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleHistoryDiagram}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
-    {/** アセットメニュー: Edit / Delete */}
+    {/** アセットメニュー: Edit / Rename / Copy ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "asset"}
       onClose={closeAllMenus}
@@ -916,12 +974,15 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRenameStart} divider>{t("common.rename")}</MenuItem>
-      <MenuItem onClick={handleEditAsset} divider>{t("common.edit")}</MenuItem>
-      <MenuItem onClick={handleCopyMenuOpen} divider sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>{t("tree.copy")}</span><span>▶</span>
+      <MenuItem onClick={handleEditAsset}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
-      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}>{t("common.delete")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleHistoryAsset}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
     {/** 削除確認ダイアログ */}

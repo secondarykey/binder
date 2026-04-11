@@ -21,3 +21,9 @@ func (inst *Instance) FindDiagrams() ([]*model.Diagram, error) {
 func (inst *Instance) FindInDiagramId(ids ...interface{}) ([]*model.Diagram, error) {
 	return inst.findDiagram("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
 }
+
+// FindDiagramsByTemplate はstyle_templateに指定IDを持つダイアグラムを返す。
+// テンプレート削除前の参照チェックに使用する。
+func (inst *Instance) FindDiagramsByTemplate(templateId string) ([]*model.Diagram, error) {
+	return inst.findDiagram("style_template = ?", "", -1, -1, templateId)
+}

@@ -16,6 +16,7 @@ type Structure struct {
 	Alias     string    `db:"alias"`
 	Publish   time.Time `db:"publish_date"`
 	Republish time.Time `db:"republish_date"`
+	Private   bool      `db:"private"`
 	Created   time.Time `db:"created_date:insert"`
 	CreatedUser string    `db:"created_user:insert"`
 	Updated     time.Time `db:"updated_date"`
@@ -37,6 +38,7 @@ func (s *Structure) To() *json.Structure {
 	rtn.Alias = s.Alias
 	rtn.Publish = s.Publish
 	rtn.Republish = s.Republish
+	rtn.Private = s.Private
 	rtn.Created = s.Created
 	rtn.CreatedUser = s.CreatedUser
 	rtn.Updated = s.Updated
@@ -55,6 +57,7 @@ func ConvertStructure(s *json.Structure) *Structure {
 	rtn.Alias = s.Alias
 	rtn.Publish = s.Publish
 	rtn.Republish = s.Republish
+	rtn.Private = s.Private
 	rtn.Created = s.Created
 	rtn.CreatedUser = s.CreatedUser
 	rtn.Updated = s.Updated

@@ -21,20 +21,22 @@ import (
 	convert047 "binder/setup/convert/db/047"
 	convert048 "binder/setup/convert/db/048"
 	convert092 "binder/setup/convert/db/092"
+	convert097 "binder/setup/convert/db/097"
 	fsconvert "binder/setup/convert/fs"
 
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092 *Version
+var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097 *Version
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
-	configMigrated   bool
-	configName       string
-	configDetail     string
-	docsMigrated     bool
-	gitignorCreated  bool
+	configMigrated        bool
+	configName            string
+	configDetail          string
+	docsMigrated          bool
+	gitignorCreated       bool
+	diagramStyleMigrated  bool
 }
 
 // migration はひとつのバージョン移行を表す。
@@ -95,7 +97,10 @@ func init() {
 	if err != nil {
 		panic("v092 version parse error: " + err.Error())
 	}
-
+	v097, err = NewVersion("0.9.7")
+	if err != nil {
+		panic("v097 version parse error: " + err.Error())
+	}
 	migrations = []migration{
 		// 0.1.0: assets.csv に binary 列を追加
 		{v010, func(_, dbDir string, _ *migrateState) error {
@@ -161,6 +166,27 @@ func init() {
 		// 0.9.2: assets.csv に mime 列を追加（ファイル名の拡張子からMIMEタイプを判定）
 		{v092, func(_, dbDir string, _ *migrateState) error {
 			return applyDB(dbDir, convert092.Convert092)
+		}},
+		// 0.9.7: structures.csv に private 列を追加（デフォルト値: false）
+		// diagrams.csv に style_template 列を追加（デフォルト値: diagram_style）
+		// templates.csv に diagram_style レコードを追加
+		// templates/diagram_style.tmpl ファイルを作成（内容: {'theme':'base'}）
+		{v097, func(dir, dbDir string, state *migrateState) error {
+			if err := applyDB(dbDir, convert097.Convert097); err != nil {
+				return err
+			}
+			// diagram_style テンプレートファイルを作成（冪等）
+			tmplPath := filepath.Join(dir, fs.TemplateDir, "diagram_style.tmpl")
+			if _, statErr := os.Stat(tmplPath); os.IsNotExist(statErr) {
+				if err := os.MkdirAll(filepath.Dir(tmplPath), 0755); err != nil {
+					return xerrors.Errorf("MkdirAll(templates) error: %w", err)
+				}
+				if err := os.WriteFile(tmplPath, []byte("{'theme':'base'}"), 0644); err != nil {
+					return xerrors.Errorf("os.WriteFile(diagram_style.tmpl) error: %w", err)
+				}
+				state.diagramStyleMigrated = true
+			}
+			return nil
 		}},
 	}
 }
@@ -268,6 +294,13 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
 		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
 			return nil, xerrors.Errorf("AutoCommit(migrate 047) error: %w", commitErr)
+		}
+	}
+
+	// 0.9.7マイグレーション: diagram_style.tmpl をステージする
+	if state.diagramStyleMigrated {
+		if err = bfs.AddFile(fs.TemplateFile("diagram_style")); err != nil {
+			return nil, xerrors.Errorf("AddFile(diagram_style.tmpl) error: %w", err)
 		}
 	}
 

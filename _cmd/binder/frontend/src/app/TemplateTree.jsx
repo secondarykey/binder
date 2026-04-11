@@ -77,6 +77,7 @@ function TemplateTree(props) {
 
   const [layoutItems, setLayoutItems] = useState([]);
   const [contentItems, setContentItems] = useState([]);
+  const [diagramItems, setDiagramItems] = useState([]);
   const [id, setId] = useState(undefined);
   const [name, setName] = useState('');
   const [selectedId, setSelectedId] = useState(undefined);
@@ -105,6 +106,7 @@ function TemplateTree(props) {
       const tree = resp.data;
       setLayoutItems(getSection(tree, "DIR_HTML_Layout"));
       setContentItems(getSection(tree, "DIR_HTML_Content"));
+      setDiagramItems(getSection(tree, "DIR_Diagram_Style"));
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -154,7 +156,7 @@ function TemplateTree(props) {
 
   // テンプレート新規作成ダイアログを開く（セクションヘッダーの + ボタン）
   const handleRegisterTemplate = (dirId) => {
-    const type = dirId === "DIR_HTML_Layout" ? "layout" : "content";
+    const type = dirId === "DIR_HTML_Layout" ? "layout" : dirId === "DIR_Diagram_Style" ? "diagram" : "content";
     setMetaDialog({ open: true, id: null, type });
   };
 
@@ -244,6 +246,31 @@ function TemplateTree(props) {
         onDragEnd={(e) => handleDragEnd(e, setContentItems)}>
         <SortableContext items={contentItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
           {contentItems.map(item => (
+            <SortableTemplateItem
+              key={item.id}
+              item={item}
+              selectedId={selectedId}
+              onOpen={handleTemplateOpen}
+              onContextMenu={handleContextMenu}
+              onDelete={handleDeleteClick}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+
+      {/** Diagram セクション */}
+      <ListSubheader disableSticky
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
+        Diagram
+        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_Diagram_Style")}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </ListSubheader>
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter}
+        onDragEnd={(e) => handleDragEnd(e, setDiagramItems)}>
+        <SortableContext items={diagramItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          {diagramItems.map(item => (
             <SortableTemplateItem
               key={item.id}
               item={item}

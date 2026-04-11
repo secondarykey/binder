@@ -3,6 +3,7 @@ module binder
 go 1.25.0
 
 require (
+	github.com/chai2010/webp v1.4.0
 	github.com/flopp/go-findfont v0.1.0
 	github.com/go-git/go-billy/v5 v5.8.0
 	github.com/go-git/go-git/v5 v5.17.0

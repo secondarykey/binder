@@ -311,8 +311,12 @@ export namespace json {
 	export class Leaf {
 	    id: string;
 	    parentId: string;
+	    seq: number;
 	    name: string;
 	    type: string;
+	    modified: boolean;
+	    publishStatus: number;
+	    private: boolean;
 	    children: Leaf[];
 	
 	    static createFrom(source: any = {}) {
@@ -323,8 +327,12 @@ export namespace json {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.parentId = source["parentId"];
+	        this.seq = source["seq"];
 	        this.name = source["name"];
 	        this.type = source["type"];
+	        this.modified = source["modified"];
+	        this.publishStatus = source["publishStatus"];
+	        this.private = source["private"];
 	        this.children = this.convertValues(source["children"], Leaf);
 	    }
 	

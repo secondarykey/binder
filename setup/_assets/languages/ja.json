@@ -38,7 +38,10 @@
         "deleted" : "削除しました",
         "open" : "開く",
         "mime" : "MIMEタイプ",
-        "select" : "選択"
+        "select" : "選択",
+        "private" : "非公開",
+        "aliasDuplicate" : "このエイリアスは既に使用されています",
+        "none" : "なし"
     },
     "tree" : {
         "menu" : "メニュー",
@@ -51,7 +54,8 @@
         "publish" : "未公開",
         "note" : "ノート",
         "diagram" : "ダイアグラム",
-        "assets" : "アセット",
+        "assets_file" : "アセット（ファイル選択）",
+        "assets_text" : "アセット（テキストファイル）",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "clipboardEmpty" : "クリップボード画像のデータが空です",
         "download" : "ダウンロード",
@@ -91,7 +95,8 @@
         "updateSuccess" : "ダイアグラムを更新しました",
         "removeSuccess" : "ダイアグラムを削除しました",
         "deleteTitle" : "ダイアグラムの削除",
-        "deleteConfirm" : "「{{name}}」を削除しますか？"
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "styleTemplate" : "スタイルテンプレート"
     },
     "asset" : {
         "editTitle" : "アセット編集",
@@ -156,7 +161,14 @@
         "mermaidUrl" : "Mermaid.js CDN URL",
         "cdnHint" : "空欄の場合は内蔵バージョンを使用します。",
         "cdnOk" : "指定URLから正常に読み込みました。",
-        "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。"
+        "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。",
+        "gcLabel" : "リポジトリメンテナンス",
+        "gcButton" : "GC（不要オブジェクト削除）",
+        "gcTitle" : "GCの実行",
+        "gcConfirmMessage" : "不要なオブジェクトを削除しますか？",
+        "gcRun" : "実行",
+        "gcComplete" : "GC完了: {{before}} → {{after}}",
+        "optimizeImage" : "画像を軽量化する（WebPに変換）"
     },
     "binderHistory" : {
         "history" : "履歴"
@@ -309,7 +321,16 @@
         "deleted" : "削除",
         "database" : "データベース",
         "publish" : "公開",
-        "other" : "その他"
+        "other" : "その他",
+        "cleanup" : "履歴のクリーンアップ",
+        "cleanupTitle" : "履歴のクリーンアップ",
+        "cleanupDesc" : "指定日より古いコミット履歴を1つのコミットに圧縮します。ファイルの内容は変更されません。",
+        "cleanupDateLabel" : "この日付より前の履歴を圧縮",
+        "cleanupStats" : "全{{total}}件のコミットのうち、{{squash}}件を圧縮し、{{keep}}件を保持します。",
+        "cleanupCurrentSize" : "現在のオブジェクトサイズ: {{size}}",
+        "cleanupWarning" : "この操作は元に戻せません。リモートリポジトリがある場合、force pushが必要になります。",
+        "cleanupConfirm" : "クリーンアップ実行",
+        "cleanupComplete" : "クリーンアップ完了: {{before}} → {{after}}"
     },
     "assetViewer" : {
         "loadError" : "ファイルの内容を読み込めませんでした。ファイルがディスク上に存在しない可能性があります。",
@@ -336,7 +357,7 @@
     },
     "preview" : {
         "publish" : "公開",
-        "unpublish" : "非公開",
+        "unpublish" : "未公開状態にする",
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー"
@@ -401,5 +422,11 @@
         "deleteRowConfirm" : "この行を削除しますか？",
         "deleteColumnTitle" : "列削除",
         "deleteColumnConfirm" : "この列を削除しますか？"
+    },
+    "meta" : {
+        "webPublish" : "Web公開",
+        "publishDate" : "公開日時",
+        "republishDate" : "再公開日時",
+        "resetNow" : "現在時刻にリセット"
     }
 }

@@ -38,7 +38,10 @@
         "deleted" : "Deleted.",
         "open" : "Open",
         "mime" : "MIME Type",
-        "select" : "Select"
+        "select" : "Select",
+        "private" : "Private",
+        "aliasDuplicate" : "This alias is already in use",
+        "none" : "None"
     },
     "tree" : {
         "menu" : "Menu",
@@ -51,7 +54,8 @@
         "publish" : "Unpublished",
         "note" : "Note",
         "diagram" : "Diagram",
-        "assets" : "Assets",
+        "assets_file" : "Asset (File Select)",
+        "assets_text" : "Asset (Text File)",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "clipboardEmpty" : "Clipboard image data is empty.",
         "download" : "Download",
@@ -91,7 +95,8 @@
         "updateSuccess" : "Diagram updated.",
         "removeSuccess" : "Diagram removed.",
         "deleteTitle" : "Delete Diagram",
-        "deleteConfirm" : "Delete \"{{name}}\"?"
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "styleTemplate" : "Style Template"
     },
     "asset" : {
         "editTitle" : "Edit Assets",
@@ -156,7 +161,14 @@
         "mermaidUrl" : "Mermaid.js CDN URL",
         "cdnHint" : "Leave empty to use the bundled version.",
         "cdnOk" : "Loaded successfully from specified URL.",
-        "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used."
+        "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used.",
+        "gcLabel" : "Repository Maintenance",
+        "gcButton" : "GC (Remove unused objects)",
+        "gcTitle" : "Run GC",
+        "gcConfirmMessage" : "Remove unused objects?",
+        "gcRun" : "Run",
+        "gcComplete" : "GC complete: {{before}} → {{after}}",
+        "optimizeImage" : "Optimize Images (convert to WebP)"
     },
     "binderHistory" : {
         "history" : "History"
@@ -309,7 +321,16 @@
         "deleted" : "Deleted",
         "database" : "Database",
         "publish" : "Publish",
-        "other" : "Other"
+        "other" : "Other",
+        "cleanup" : "Cleanup History",
+        "cleanupTitle" : "Cleanup History",
+        "cleanupDesc" : "Squash commit history older than the specified date into a single commit. File contents will not change.",
+        "cleanupDateLabel" : "Squash history before this date",
+        "cleanupStats" : "Out of {{total}} commits, {{squash}} will be squashed and {{keep}} will be kept.",
+        "cleanupCurrentSize" : "Current objects size: {{size}}",
+        "cleanupWarning" : "This action cannot be undone. If a remote repository is configured, force push will be required.",
+        "cleanupConfirm" : "Run Cleanup",
+        "cleanupComplete" : "Cleanup complete: {{before}} → {{after}}"
     },
     "assetViewer" : {
         "loadError" : "Could not load file content. The file may not exist on disk.",
@@ -401,5 +422,11 @@
         "deleteRowConfirm" : "Delete this row?",
         "deleteColumnTitle" : "Delete Column",
         "deleteColumnConfirm" : "Delete this column?"
+    },
+    "meta" : {
+        "webPublish" : "Web Publishing",
+        "publishDate" : "Publish Date",
+        "republishDate" : "Republish Date",
+        "resetNow" : "Reset to Now"
     }
 }

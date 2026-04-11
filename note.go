@@ -162,7 +162,19 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
 		}
-		if oldS.Alias != n.Alias {
+		willPrivatize := n.Private && !oldS.Publish.IsZero()
+		if willPrivatize {
+			// 非公開化: 旧aliasで公開済みファイルを削除（リネームはしない）
+			oldNote := &json.Note{Id: n.Id, Alias: oldS.Alias}
+			fn, err := b.fileSystem.UnpublishNote(oldNote)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.UnpublishNote() error: %w", err)
+			}
+			files = append(files, fn)
+			if mf, ok := b.fileSystem.UnpublishNoteMeta(oldNote); ok {
+				files = append(files, mf)
+			}
+		} else if oldS.Alias != n.Alias {
 			renamedFiles, err := b.fileSystem.RenamePublishedNote(oldS.Alias, n.Alias)
 			if err != nil {
 				return nil, xerrors.Errorf("fs.RenamePublishedNote() error: %w", err)
@@ -176,8 +188,8 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 			return nil, xerrors.Errorf("db.UpdateNote() error: %w", err)
 		}
 
-		// Structure更新
-		err = b.updateStructure(n.Id, n.ParentId, n.Name, n.Detail, n.Alias)
+		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
+		err = b.updateStructure(n.Id, n.ParentId, n.Name, n.Detail, n.Alias, n.Private, n.Publish, n.Republish)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}
@@ -338,10 +350,11 @@ func (b *Binder) GetUnpublishedNotes() ([]*json.Note, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("fs.SetNoteStatus() error: %w", err)
 		}
-		//最新じゃない場合は追加
-		if m.PublishStatus != json.LatestStatus {
-			pr = append(pr, m)
+		//非公開または最新の場合はスキップ
+		if m.Private || m.PublishStatus == json.LatestStatus {
+			continue
 		}
+		pr = append(pr, m)
 	}
 	return pr, nil
 }
@@ -421,7 +434,7 @@ func (b *Binder) GetPublishedNotesByTemplate(templateId string) ([]*json.Leaf, e
 	var leaves []*json.Leaf
 	for _, n := range notes {
 		s, ok := structMap[n.Id]
-		if !ok || s.Publish.IsZero() {
+		if !ok || s.Publish.IsZero() || s.Private {
 			continue
 		}
 		leaves = append(leaves, &json.Leaf{Id: n.Id, Name: s.Name, Type: "note"})

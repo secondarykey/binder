@@ -164,7 +164,6 @@ func def() *Setting {
 	path.RunWithOpen = true
 	//起動と同時に最終アイテムを開く
 	path.OpenWithItem = false
-
 	set.Path = &path
 	//最後に開いていたバインダーを開く
 

@@ -18,6 +18,7 @@ type Template struct {
 type Templates struct {
 	Layouts  []*Template `json:"layouts"`
 	Contents []*Template `json:"contents"`
+	Diagrams []*Template `json:"diagrams"`
 }
 
 type TemplateType string
@@ -25,6 +26,7 @@ type TemplateType string
 const (
 	LayoutTemplateType  TemplateType = "layout"
 	ContentTemplateType TemplateType = "content"
+	DiagramTemplateType TemplateType = "diagram"
 )
 
 func (t TemplateType) IsHTML() bool {

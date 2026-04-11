@@ -4,15 +4,23 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"binder/log"
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/chai2010/webp"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
 	"golang.org/x/xerrors"
 )
 
@@ -60,6 +68,34 @@ func detectMime(name string, binary bool) string {
 		return "application/octet-stream"
 	}
 	return "text/plain"
+}
+
+// convertToWebP は画像バイト列を WebP 形式に変換して返す。
+// SVG・GIF・WebP はそのまま返す。変換失敗時は元データを返す（ベストエフォート）。
+func convertToWebP(data []byte, filename string) ([]byte, string) {
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff":
+		// 変換対象
+	default:
+		return data, filename
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		log.WarnE("convertToWebP: image.Decode failed, keeping original", err)
+		return data, filename
+	}
+
+	var buf bytes.Buffer
+	if err := webp.Encode(&buf, img, &webp.Options{Quality: 80}); err != nil {
+		log.WarnE("convertToWebP: webp.Encode failed, keeping original", err)
+		return data, filename
+	}
+
+	newFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + ".webp"
+	log.Info("convertToWebP: " + filename + " -> " + newFilename)
+	return buf.Bytes(), newFilename
 }
 
 func (b *Binder) EditAsset(a *json.Asset, f string) (*json.Asset, error) {
@@ -112,6 +148,13 @@ func (b *Binder) DropAsset(a *json.Asset, filename string, base64data string) (*
 		data, err = base64.StdEncoding.DecodeString(base64data)
 		if err != nil {
 			return nil, xerrors.Errorf("base64.DecodeString() error: %w", err)
+		}
+
+		// WebP変換（バインダー設定が有効な場合。nil=未設定はデフォルトtrue）
+		if meta, err := b.fileSystem.LoadMetaData(); err == nil {
+			if meta == nil || meta.OptimizeImage == nil || *meta.OptimizeImage {
+				data, filename = convertToWebP(data, filename)
+			}
 		}
 
 		buf := bytes.NewBuffer(data)
@@ -173,7 +216,16 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
 		}
-		if oldS.Alias != a.Alias {
+		willPrivatize := a.Private && !oldS.Publish.IsZero()
+		if willPrivatize {
+			// 非公開化: 旧aliasで公開済みファイルを削除（リネームはしない）
+			oldAsset := &json.Asset{Alias: oldS.Alias}
+			fn, err := b.fileSystem.UnpublishAsset(oldAsset)
+			if err != nil {
+				return nil, xerrors.Errorf("fs.UnpublishAsset() error: %w", err)
+			}
+			files = append(files, fn)
+		} else if oldS.Alias != a.Alias {
 			renamedFiles, err := b.fileSystem.RenamePublishedAsset(oldS.Alias, a.Alias)
 			if err != nil {
 				return nil, xerrors.Errorf("fs.RenamePublishedAsset() error: %w", err)
@@ -188,8 +240,8 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 			return nil, xerrors.Errorf("db.UpdateAsset() error: %w", err)
 		}
 
-		// Structure更新
-		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias)
+		// Structure更新（willPrivatize の場合は publish/republish もゼロにリセット）
+		err = b.updateStructure(a.Id, a.ParentId, a.Name, a.Detail, a.Alias, a.Private, a.Publish, a.Republish)
 		if err != nil {
 			return nil, xerrors.Errorf("updateStructure() error: %w", err)
 		}
@@ -210,6 +262,48 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 	files = append(files, fs.AssetTableFile(), fs.StructureTableFile())
 	err := b.fileSystem.Commit(fs.M(prefix, a.Name), files...)
 	if err != nil {
+		return nil, xerrors.Errorf("fs.Commit() error: %w", err)
+	}
+
+	return a, nil
+}
+
+// AddTextAsset はテキストファイルアセットを空コンテンツで作成する。
+// Name="Text"、MIME="text/plain"、Alias="{id}.txt" で即座に登録する。
+func (b *Binder) AddTextAsset(parentId string, isPrivate bool) (*json.Asset, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	a := &json.Asset{
+		ParentId: parentId,
+		Name:     "Text",
+		Binary:   false,
+		Mime:     "text/plain",
+		Private:  isPrivate,
+	}
+
+	// ID を事前生成して Alias に使用
+	a.Id = b.generateId()
+	a.Alias = a.Id + ".txt"
+
+	m := model.ConvertAsset(a)
+	if err := b.db.InsertAsset(m, b.op); err != nil {
+		return nil, xerrors.Errorf("db.InsertAsset() error: %w", err)
+	}
+
+	if err := b.createStructure(a.Id, a.ParentId, "asset", a.Name, a.Detail, a.Alias); err != nil {
+		return nil, xerrors.Errorf("createStructure() error: %w", err)
+	}
+
+	// 空ファイルを作成
+	fn, err := b.fileSystem.CreateAsset(a, []byte{})
+	if err != nil {
+		return nil, xerrors.Errorf("fs.CreateAsset() error: %w", err)
+	}
+
+	files := []string{fn, fs.AssetTableFile(), fs.StructureTableFile()}
+	if err := b.fileSystem.Commit(fs.M("Created Asset", a.Name), files...); err != nil {
 		return nil, xerrors.Errorf("fs.Commit() error: %w", err)
 	}
 
@@ -415,10 +509,11 @@ func (b *Binder) GetUnpublishedAssets() ([]*json.Asset, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("fs.SetAssetStatus() error: %w", err)
 		}
-		//最新じゃない場合は追加
-		if a.PublishStatus != json.LatestStatus {
-			pr = append(pr, a)
+		//非公開または最新の場合はスキップ
+		if a.Private || a.PublishStatus == json.LatestStatus {
+			continue
 		}
+		pr = append(pr, a)
 	}
 	return pr, nil
 }

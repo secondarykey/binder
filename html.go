@@ -1,19 +1,27 @@
 package binder
 
 import (
-	"fmt"
 	"html/template"
 	"io"
 	"strings"
-	"time"
+	texttemplate "text/template"
 
 	"binder/api/json"
-	"binder/db/model"
 	"binder/fs"
-	"binder/log"
 
 	"golang.org/x/xerrors"
 )
+
+// テンプレートのダイアグラムデータ
+type tempDiagram struct {
+	Id      string
+	Name    string
+	Detail  string
+	Alias   string
+	Publish string
+	Created string
+	Updated string
+}
 
 // テンプレートのノートデータ
 type tempNote struct {
@@ -26,285 +34,6 @@ type tempNote struct {
 	Created string
 	Link    string
 	Image   string
-}
-
-func formatTime(t time.Time) string {
-	return t.Format(time.RFC3339)
-}
-
-type wrapper struct {
-	owner *Binder
-	note  *json.Note
-	Local bool
-}
-
-func newWrapper(o *Binder, local bool, note *json.Note) (*wrapper, error) {
-	var w wrapper
-	w.owner = o
-	w.Local = local
-	w.note = note
-	return &w, nil
-}
-
-func (w *wrapper) localAddr() string {
-	return fmt.Sprintf("http://%s", w.owner.ServerAddress())
-}
-
-// relativePrefix は公開HTMLでのリソース参照用の相対パスプレフィックスを返す。
-// index.html は docs/ 直下にあるため "./"、サブページは docs/pages/ 配下にあるため "../"。
-func (w *wrapper) relativePrefix() string {
-	if w.note != nil && w.note.Id != "index" {
-		return "../"
-	}
-	return "./"
-}
-
-func (w *wrapper) assets(id string) string {
-	if w.Local {
-		// エディタプレビュー用: HTTPサーバーのプライベートアセットエンドポイントを使用
-		addr := w.owner.ServerAddress()
-		if addr == "" {
-			return "assets/error"
-		}
-		return fmt.Sprintf("http://%s/binder-assets/%s", addr, id)
-	}
-
-	// パブリッシュ用: 従来の相対URL（公開済みアセット）
-	a, err := w.owner.GetAssetWithParent(id)
-	if err != nil {
-		return "assets/error"
-	}
-
-	p := fs.PublicAssetFile(a)
-	return w.convertURL(p)
-}
-
-// assetsImage はアセットIDから <img> タグを生成するテンプレート関数
-func (w *wrapper) assetsImage(id string) template.HTML {
-	src := w.assets(id)
-	return template.HTML(fmt.Sprintf(`<img src="%s">`, src))
-}
-
-func (w *wrapper) childrenNotes(v ...any) []*tempNote {
-
-	lg := len(v)
-
-	//第一引数は件数
-	n := -1
-	if lg >= 1 {
-		wk, ok := v[0].(int)
-		if ok {
-			n = wk
-		} else {
-			log.Warn("Tepmpalte children() validation error: number")
-		}
-	}
-
-	//第二引数はノートId
-	id := w.note.Id
-	if lg >= 2 {
-		wk, ok := v[1].(string)
-		if ok {
-			id = wk
-		} else {
-			log.Warn("Tepmpalte children() validation error: note id")
-		}
-	}
-
-	return w.children(id, n, -1)
-}
-
-func (w *wrapper) children(id string, n int, offset int) []*tempNote {
-	return w.getNotes(id, n, -1)
-}
-
-func (w *wrapper) latestNotes(n int) []*tempNote {
-	return w.getNotes("", n, -1)
-}
-
-func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
-
-	var err error
-	var notes []*model.Note
-	if w.Local {
-		//TODO いるか？
-		notes, err = w.owner.db.FindUpdatedNotes(id, limit, offset)
-	} else {
-		notes, err = w.owner.db.FindPublishNotes(id, limit, offset)
-	}
-
-	if err != nil {
-		log.ErrorE("FindNote()", err)
-		return nil
-	}
-
-	rtn := make([]*tempNote, len(notes))
-
-	// Structure情報を取得
-	ids := make([]interface{}, len(notes))
-	for i, n := range notes {
-		ids[i] = n.Id
-	}
-	structMap, _ := w.owner.getStructureMap(ids...)
-
-	for idx, n := range notes {
-		jn := n.To()
-		if s, ok := structMap[n.Id]; ok {
-			jn.ApplyStructure(s.To())
-		}
-		rtn[idx] = w.convertNote(jn)
-	}
-	return rtn
-}
-
-// 出力形式に変更
-func (w *wrapper) convertNote(n *json.Note) *tempNote {
-
-	var t tempNote
-
-	t.Id = n.Id
-	t.Name = n.Name
-	t.Detail = n.Detail
-	t.Publish = formatTime(n.Publish)
-	t.Created = formatTime(n.Created)
-	t.Updated = formatTime(w.getUpdatedNoteFile(n))
-
-	p := fs.HTMLFile(n)
-	t.Link = w.convertURL(p)
-
-	// メタ画像URL: ローカルプレビュー時は絶対URLでファイルサーバー経由でアクセス
-	m := fs.PublicMetaFile(n)
-	if w.Local {
-		addr := w.owner.ServerAddress()
-		if addr != "" {
-			t.Image = fmt.Sprintf("http://%s/%s", addr, w.publishRelPath(m))
-		}
-	} else {
-		t.Image = w.convertURL(m)
-	}
-
-	//TODO PREV NEXTは？
-
-	return &t
-}
-
-func (w *wrapper) getUpdatedNoteFile(n *json.Note) time.Time {
-
-	info, err := w.owner.fileSystem.Stat(fs.HTMLFile(n))
-	if err != nil {
-		return time.Time{}
-	}
-	return info.ModTime()
-}
-
-func (w *wrapper) getCurrentNote() *tempNote {
-	if w.note == nil {
-		return nil
-	}
-	return w.convertNote(w.note)
-}
-
-// publishRelPath は公開ディレクトリ(docs/)を除去した相対パスを返す。
-func (w *wrapper) publishRelPath(p string) string {
-	np := strings.ReplaceAll(p, "\\", "/")
-	cp := w.owner.fileSystem.GetPublic() + "/"
-	return strings.Replace(np, cp, "", 1)
-}
-
-// 取得してきたパスからURL変換
-// 公開ディレクトリ(docs/)を除去し、ノートの階層に応じた相対プレフィックスを付与する。
-func (w *wrapper) convertURL(p string) string {
-	return w.relativePrefix() + w.publishRelPath(p)
-}
-
-func (w *wrapper) drawSVG(id string) template.HTML {
-
-	code := ""
-	if w.Local {
-		var d strings.Builder
-		err := w.owner.ReadDiagram(&d, id)
-		if err != nil {
-			return template.HTML(err.Error())
-		}
-		code = d.String()
-	} else {
-
-		f, err := w.getSVGFile(id)
-		if err != nil {
-			code = fmt.Sprintf("SVG File error: %v", err)
-		} else {
-			code = fmt.Sprintf(`<img src="%s">`, f)
-		}
-
-		//TODO 公開しているかを確認するのOKかも
-	}
-
-	return template.HTML(fmt.Sprintf(`
-<div class="%s" id="%s">
-%s
-</div>`, "binderSVG", id, code))
-}
-
-func (w *wrapper) getSVGFile(id string) (string, error) {
-	d, err := w.owner.GetDiagram(id)
-	if err != nil {
-		return "", xerrors.Errorf("GetDiagram() error: %w", err)
-	}
-
-	f := fs.SVGFile(d)
-	return w.convertURL(f), nil
-}
-
-func safeTemplate(src string) string {
-	return src
-}
-
-func formatDate(d string, f string) string {
-
-	t, e := time.Parse(time.RFC3339, d)
-	if e != nil {
-		log.WarnE("format error:"+d, e)
-		return d
-	}
-	return t.Format(f)
-}
-
-func localeDateScript(src string) template.HTML {
-	return template.HTML(fmt.Sprintf(`
-<script>
-var d = new Date("%s");
-document.write(d.toLocaleString());
-</script>`, src))
-}
-
-func defineFuncMap(w *wrapper) map[string]interface{} {
-	funcMap := map[string]interface{}{
-		"drawDiagram":   w.drawSVG,
-		"replace":       strings.ReplaceAll,
-		"assets":        w.assets,
-		"assetsImage":   w.assetsImage,
-		"childrenNotes": w.childrenNotes,
-		"latestNotes":   w.latestNotes,
-		"safe":          safeTemplate,
-		"localeDate":    localeDateScript,
-		"formatDate":    formatDate,
-		"lf2br":         convertLF2BR,
-		"lf2sp":         convertLF2SP,
-		"lf2comma":      convertLF2Comma,
-	}
-	return funcMap
-}
-
-func convertLF2BR(src string) string {
-	return strings.ReplaceAll(src, "\n", "<br/>")
-}
-
-func convertLF2SP(src string) string {
-	return strings.ReplaceAll(src, "\n", " ")
-}
-
-func convertLF2Comma(src string) string {
-	return strings.ReplaceAll(src, "\n", ",")
 }
 
 // parseTemplateFile はファイルシステムからテンプレートを読み込み、
@@ -346,7 +75,6 @@ func (b *Binder) parseTemplateFile(tmpl *template.Template, path string, typ jso
 // テンプレートを作成
 // text が指定してある場合、テンプレート編集時になる為、
 // 指定してあるテンプレートではなく、文字列を使用して描画を行う
-// TODO 現在テンプレート編集時の描画を止めている為、再度実装する際に考慮する
 func (b *Binder) createHTMLTemplate(w *wrapper) (*template.Template, error) {
 
 	if b == nil {
@@ -376,7 +104,7 @@ func (b *Binder) createHTMLTemplate(w *wrapper) (*template.Template, error) {
 }
 
 // ノートの要素を一度テンプレート処理を行う
-func (b *Binder) ParseElement(note *json.Note, local bool, elm string) (string, error) {
+func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
@@ -446,39 +174,6 @@ func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}
 	return nil
 }
 
-// HTMLファイル出力用
-func (b *Binder) testgenerateHTML(w *wrapper) error {
-
-	if b == nil {
-		return EmptyError
-	}
-
-	//HTMLファイルの設定
-	n := fs.HTMLFile(w.note)
-
-	fp, err := b.fileSystem.Create(n)
-	if err != nil {
-		return xerrors.Errorf("Create() error: %w", err)
-	}
-	defer fp.Close()
-
-	tmpl, err := b.createHTMLTemplate(w)
-	if err != nil {
-		return xerrors.Errorf("createHTMLTemplate() error: %w", err)
-	}
-
-	dto, err := b.createDto(w, "")
-	if err != nil {
-		return xerrors.Errorf("creteDto() error: %w", err)
-	}
-
-	err = b.writeHTML(fp, tmpl, dto)
-	if err != nil {
-		return xerrors.Errorf("writeHTML() error: %w", err)
-	}
-	return nil
-}
-
 // HTMLメモリ作成
 func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string, error) {
 
@@ -505,6 +200,53 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
 		return "", xerrors.Errorf("writeHTML() error: %w", err)
+	}
+	return builder.String(), nil
+}
+
+// ダイアグラムの要素を一度テンプレート処理を行う。
+// Mermaid 記法には `-->` や `&` が含まれるため、HTML エスケープを避けるため text/template を使用する。
+func (b *Binder) ParseDiagram(diag *json.Diagram, local bool, elm string) (string, error) {
+
+	if b == nil {
+		return "", EmptyError
+	}
+
+	wrap := &wrapper{owner: b, Local: local}
+
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
+	if err != nil {
+		return "", xerrors.Errorf("Diagram Parse() error: %w", err)
+	}
+
+	config, err := b.GetConfig()
+	if err != nil {
+		return "", xerrors.Errorf("GetConfig() error: %w", err)
+	}
+
+	home := struct {
+		Name   string
+		Detail string
+	}{config.Name, config.Detail}
+
+	td := &tempDiagram{
+		Id:      diag.Id,
+		Name:    diag.Name,
+		Detail:  diag.Detail,
+		Alias:   diag.Alias,
+		Publish: formatTime(diag.Publish),
+		Created: formatTime(diag.Created),
+		Updated: formatTime(diag.Updated),
+	}
+
+	dto := struct {
+		Home    interface{}
+		Diagram *tempDiagram
+	}{home, td}
+
+	var builder strings.Builder
+	if err := tmpl.Execute(&builder, dto); err != nil {
+		return "", xerrors.Errorf("Diagram Execute() error: %w", err)
 	}
 	return builder.String(), nil
 }

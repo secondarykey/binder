@@ -26,6 +26,7 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 	meta.Detail = conf.Detail
 	meta.MarkedURL = conf.MarkedURL
 	meta.MermaidURL = conf.MermaidURL
+	meta.OptimizeImage = &conf.OptimizeImage
 
 	if err = b.fileSystem.SaveMetaData(meta); err != nil {
 		return xerrors.Errorf("SaveMetaData() error: %w", err)
@@ -57,6 +58,10 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 	conf.Detail = meta.Detail
 	conf.MarkedURL = meta.MarkedURL
 	conf.MermaidURL = meta.MermaidURL
+	// nil（未設定）の場合はデフォルト true
+	if meta.OptimizeImage == nil || *meta.OptimizeImage {
+		conf.OptimizeImage = true
+	}
 	return &conf, nil
 }
 

@@ -1,9 +1,11 @@
 package binder
 
 import (
+	"binder/db"
 	"binder/db/model"
 	"binder/fs"
 	"errors"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -30,6 +32,16 @@ func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) 
 	s.Detail = detail
 	s.Alias = alias
 
+	if alias != "" {
+		exists, err := b.db.ExistsStructureAlias(alias, typ, "")
+		if err != nil {
+			return xerrors.Errorf("db.ExistsStructureAlias() error: %w", err)
+		}
+		if exists {
+			return db.DuplicateAlias
+		}
+	}
+
 	err = b.db.InsertStructure(&s, b.op)
 	if err != nil {
 		return xerrors.Errorf("db.InsertStructure() error: %w", err)
@@ -37,8 +49,11 @@ func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) 
 	return nil
 }
 
-// updateStructure は既存のStructure行を更新する
-func (b *Binder) updateStructure(id, parentId, name, detail, alias string) error {
+// updateStructure は既存のStructure行を更新する。
+// private=true かつ公開済み（publish_date != zero）の場合は
+// publish_date/republish_date を両方ゼロにリセットする。
+// それ以外の場合は引数の publish/republish をそのまま適用する。
+func (b *Binder) updateStructure(id, parentId, name, detail, alias string, private bool, publish, republish time.Time) error {
 
 	s, err := b.db.GetStructure(id)
 	if err != nil {
@@ -49,6 +64,25 @@ func (b *Binder) updateStructure(id, parentId, name, detail, alias string) error
 	s.Name = name
 	s.Detail = detail
 	s.Alias = alias
+	s.Private = private
+
+	if alias != "" {
+		exists, err := b.db.ExistsStructureAlias(alias, s.Typ, id)
+		if err != nil {
+			return xerrors.Errorf("db.ExistsStructureAlias() error: %w", err)
+		}
+		if exists {
+			return db.DuplicateAlias
+		}
+	}
+
+	if private && !s.Publish.IsZero() {
+		s.Publish = time.Time{}
+		s.Republish = time.Time{}
+	} else {
+		s.Publish = publish
+		s.Republish = republish
+	}
 
 	err = b.db.UpdateStructure(s, b.op)
 	if err != nil {

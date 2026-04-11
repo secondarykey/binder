@@ -125,12 +125,15 @@
 #editorMenu>div.buttonBarLeft {
   margin-left: 0px !important;
   padding-left: 0px !important;
-  min-width:380px;
+  padding-right: 0px !important;
+  min-width:320px;
 }
 
 #editorMenu>div.buttonBarRight {
   margin-right: 0px !important;
   padding-right: 0px !important;
+  padding-left: 0px !important;
+  min-width:40px;
 }
 
 /* =====================================================================
@@ -309,6 +312,12 @@ iframe.htmlViewer {
   white-space: nowrap;
 }
 
+.editorLineNumber.active {
+  background-color: var(--accent-muted, rgba(100, 160, 255, 0.25));
+  color: var(--text-primary);
+  border-radius: 3px;
+}
+
 #editor {
   --wails-draggable: no-drag;
 
@@ -464,6 +473,14 @@ iframe.htmlViewer {
 
 .editorSearchResultItem:hover {
   background-color: var(--hover-overlay);
+}
+
+.editorSearchResultItem.active {
+  background-color: var(--accent-muted, rgba(100, 160, 255, 0.25));
+}
+
+.editorSearchResultItem.active mark {
+  background-color: rgba(255, 213, 79, 0.7);
 }
 
 .editorSearchLineNum {

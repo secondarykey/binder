@@ -9,8 +9,9 @@ type Asset struct {
 	Name     string `json:"name"`
 	Detail   string `json:"detail"`
 
-	Binary bool   `json:"binary"`
-	Mime   string `json:"mime"`
+	Binary  bool   `json:"binary"`
+	Mime    string `json:"mime"`
+	Private bool   `json:"private"`
 
 	Publish          time.Time `json:"publish"`
 	Republish        time.Time `json:"republish"`
@@ -37,6 +38,7 @@ func (a *Asset) ApplyStructure(s *Structure) {
 	a.Name = s.Name
 	a.Detail = s.Detail
 	a.Alias = s.Alias
+	a.Private = s.Private
 	a.Publish = s.Publish
 	a.Republish = s.Republish
 	a.StructureUpdated = s.Updated

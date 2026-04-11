@@ -4,7 +4,7 @@ import { useParams, useLocation } from "react-router";
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
-import { GetDiagram, OpenDiagram, SaveDiagram } from "../../../bindings/binder/api/app";
+import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
@@ -65,6 +65,22 @@ function flattenNotes(nodes) {
     }
     if (node.children && node.children.length > 0) {
       result.push(...flattenNotes(node.children));
+    }
+  }
+  return result;
+}
+
+/**
+ * ツリーからダイアグラムのみを再帰的に抽出する
+ */
+function flattenDiagrams(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    if (node.type === "diagram") {
+      result.push({ id: node.id, name: node.name });
+    }
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenDiagrams(node.children));
     }
   }
   return result;
@@ -151,9 +167,10 @@ const debouncePromiss = (fn, delay) => {
   }
 }
 
-// テンプレートプレビューで前回選択したノート・テンプレートを記憶する
+// テンプレートプレビューで前回選択したノート・テンプレート・ダイアグラムを記憶する
 let lastPreviewNoteId = "";
 let lastPreviewOtherTemplateId = "";
+let lastPreviewDiagramId = "";
 
 //テキストの保存処理（デバウンス）
 const writeFn = debouncePromiss((mode, id, txt) => {
@@ -202,6 +219,8 @@ function Editor(props) {
   const [wordWrap, setWordWrap] = useState(true);
   // テキスト検索バーの表示状態
   const [searchOpen, setSearchOpen] = useState(false);
+  // 検索でアクティブな行番号（1始まり、null = なし）
+  const [activeMatchLine, setActiveMatchLine] = useState(null);
 
   // エディタ/ビューア間のスプリッター幅（エディタ側の幅）
   const [width, setWidth] = useState(500);
@@ -260,6 +279,9 @@ function Editor(props) {
   // パースステータス（プレビュー下部のステータスバー用）
   const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
+  // ダイアグラムスタイルテンプレートID
+  const [styleTemplateId, setStyleTemplateId] = useState("");
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -274,6 +296,9 @@ function Editor(props) {
   const [previewNotes, setPreviewNotes] = useState([]);
   const [previewNoteId, setPreviewNoteId] = useState("");
   const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
+  // ダイアグラムテンプレートプレビュー用
+  const [previewDiagrams, setPreviewDiagrams] = useState([]);
+  const [previewDiagramId, setPreviewDiagramId] = useState("");
 
   // Ctrl+F で検索バーを開く
   useEffect(() => {
@@ -288,14 +313,13 @@ function Editor(props) {
   }, []);
 
   // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
-  const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
+  const handleSearchNavigate = useCallback((absoluteStart) => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
-    textarea.focus();
-    textarea.setSelectionRange(absoluteStart, absoluteEnd);
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
     const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
+    setActiveMatchLine(linesBefore + 1);
   }, [text]);
 
   //開いた時の初期処理
@@ -313,20 +337,28 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
-      OpenDiagram(id).then((resp) => {
-        setText(resp);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
 
-      GetDiagram(id).then((resp) => {
+      // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
+      // setText が先に走ると styleTemplateId が空のまま初回描画されるため
+      const metaReady = GetDiagram(id).then(async (resp) => {
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
           setUpdated(false);
         }
-
+        setIsPrivate(!!resp.private);
         setName(resp.name);
+        setStyleTemplateId(resp.styleTemplate || "");
+        if (resp.styleTemplate) {
+          const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
+          Mermaid.setStyleTemplate(resp.styleTemplate, content);
+        }
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      });
+
+      Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        setText(diagramText);
       }).catch((err) => {
         evt.showErrorMessage(err);
       })
@@ -347,6 +379,7 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
+        setIsPrivate(!!resp.private);
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -380,7 +413,7 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用テンプレート一覧を取得
+      // プレビュー用データを取得（テンプレートタイプ確定後に分岐するため、ここではツリーとテンプレート一覧を両方取得）
       GetHTMLTemplates().then((tmpls) => {
         setPreviewLayouts(tmpls.layouts ?? []);
         setPreviewContents(tmpls.contents ?? []);
@@ -388,13 +421,20 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
 
-      // プレビュー用ノート一覧を取得（前回選択があれば復元）
       GetBinderTree().then((tree) => {
+        // ノート一覧（layout/content テンプレート用）
         const notes = flattenNotes(tree.data ?? []);
         setPreviewNotes(notes);
         if (notes.length > 0) {
           const restored = lastPreviewNoteId && notes.some(n => n.id === lastPreviewNoteId);
           setPreviewNoteId(restored ? lastPreviewNoteId : notes[0].id);
+        }
+        // ダイアグラム一覧（diagram テンプレート用）
+        const diagrams = flattenDiagrams(tree.data ?? []);
+        setPreviewDiagrams(diagrams);
+        if (diagrams.length > 0) {
+          const restored = lastPreviewDiagramId && diagrams.some(d => d.id === lastPreviewDiagramId);
+          setPreviewDiagramId(restored ? lastPreviewDiagramId : diagrams[0].id);
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -409,6 +449,7 @@ function Editor(props) {
         } else {
           setUpdated(false);
         }
+        setIsPrivate(!!resp.private);
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -437,6 +478,11 @@ function Editor(props) {
       setSearchOpen(true);
     }
   }, [searchQuery, restoredAt]);
+
+  // ノートが切り替わったら行ハイライトをリセット
+  useEffect(() => {
+    setActiveMatchLine(null);
+  }, [id]);
 
   // プレビューウィンドウからの準備完了通知を受けて現在のHTMLを送信
   useEffect(() => {
@@ -487,13 +533,19 @@ function Editor(props) {
     }
   }, [templateType, previewLayouts, previewContents]);
 
-  // プレビュー設定が揃ったら自動プレビュー
+  // プレビュー設定が揃ったら自動プレビュー（layout/content テンプレート）
   useEffect(() => {
-    if (mode !== Mode.template || !previewNoteId || !previewOtherTemplateId || !templateType) return;
+    if (mode !== Mode.template || templateType === "diagram" || !previewNoteId || !previewOtherTemplateId || !templateType) return;
     runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
       .then((result) => setHTML(result))
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
+
+  // プレビューダイアグラム選択変更時に再描画（diagram テンプレート）
+  useEffect(() => {
+    if (mode !== Mode.template || templateType !== "diagram" || !previewDiagramId || !text) return;
+    viewDiagramTemplatePreview(text, previewDiagramId);
+  }, [previewDiagramId]);
 
   // モードに対応するスニペット一覧
   const snippetList = (() => {
@@ -572,12 +624,18 @@ function Editor(props) {
       setCursorLine(cursorLineRef.current);
       viewHTML(text);
     } else if (mode === Mode.template) {
-      if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
-      // テンプレートをファイルに即時保存してからプレビューを生成
-      await SaveTemplate(id, text);
-      runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-        .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
-        .catch((err) => setParseStatus({ status: "error", err }));
+      if (templateType === "diagram") {
+        // ダイアグラムテンプレート: 選択中のダイアグラムにテンプレートを適用して描画
+        if (!previewDiagramId) return;
+        viewDiagramTemplatePreview(text, previewDiagramId);
+      } else {
+        if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
+        // テンプレートをファイルに即時保存してからプレビューを生成
+        await SaveTemplate(id, text);
+        runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
+          .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
+          .catch((err) => setParseStatus({ status: "error", err }));
+      }
     } else {
       //初回時の実行があるか
     }
@@ -646,12 +704,20 @@ function Editor(props) {
    */
   const viewDiagram = async (txt) => {
 
-    Mermaid.parse(txt).then((data) => {
+    let parsedTxt = txt;
+    try {
+      parsedTxt = await ParseDiagram(id, true, txt);
+    } catch (err) {
+      setParseStatus({ status: "error", err });
+      return;
+    }
+
+    Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
       elm.innerHTML = data.svg;
       setParseStatus({ status: "success", err: null });
-      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt });
+      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt, styleTemplateId });
 
       var svg = document.querySelector('#mermaidViewer svg');
       var left = 0;
@@ -687,6 +753,33 @@ function Editor(props) {
 
       transform();
 
+    }).catch((err) => {
+      setParseStatus({ status: "error", err });
+    });
+  }
+
+  /**
+   * ダイアグラムテンプレートのプレビュー: 選択ダイアグラムにテンプレートを適用して描画
+   */
+  const viewDiagramTemplatePreview = async (templateText, diagramId) => {
+    if (!diagramId || !templateText) return;
+    OpenDiagram(diagramId).then(async (diagramContent) => {
+      let parsedContent = diagramContent;
+      try {
+        parsedContent = await ParseDiagram(diagramId, true, diagramContent);
+      } catch (err) {
+        setParseStatus({ status: "error", err });
+        return;
+      }
+      const prefix = `%%{init:${templateText}}%%\n`;
+      const fullTxt = prefix + parsedContent;
+      Mermaid.parse(fullTxt).then((data) => {
+        var elm = document.querySelector('#mermaidViewer');
+        if (elm) elm.innerHTML = data.svg;
+        setParseStatus({ status: "success", err: null });
+      }).catch((err) => {
+        setParseStatus({ status: "error", err });
+      });
     }).catch((err) => {
       setParseStatus({ status: "error", err });
     });
@@ -780,7 +873,7 @@ function Editor(props) {
     if (mode === Mode.note) {
       elm = (await createMarked(id, text, false)).html;
     } else if (mode === Mode.diagram) {
-      var obj = await Mermaid.parse(text);
+      var obj = await Mermaid.parse(text, styleTemplateId);
       elm = obj.svg
     } else if (mode === Mode.template) {
       elm = text;
@@ -899,7 +992,10 @@ function Editor(props) {
             ta.value = newVal;
             ta.selectionStart = dropPos + tag.length;
             ta.selectionEnd = dropPos + tag.length;
-            setTimeout(() => setText(newVal), 500);
+            setTimeout(() => {
+              setText(newVal);
+              writeFn(mode, id, newVal);
+            }, 500);
           }
         }).catch((err) => {
           evt.showErrorMessage(err);
@@ -945,7 +1041,9 @@ function Editor(props) {
 
     textarea.value = rtn;
     setTimeout(function () {
-      setText(textarea.value);
+      const val = textarea.value;
+      setText(val);
+      writeFn(mode, id, val);
     }, 500)
 
   }
@@ -1118,7 +1216,10 @@ function Editor(props) {
       newMarkdown +
       textarea.value.substring(tableRange.end);
     textarea.value = newText;
-    setTimeout(() => setText(newText), 500);
+    setTimeout(() => {
+      setText(newText);
+      writeFn(mode, id, newText);
+    }, 500);
   };
 
   /**
@@ -1498,8 +1599,9 @@ function Editor(props) {
                 <SearchBar
                   key={restoredAt}
                   text={text}
-                  onClose={() => setSearchOpen(false)}
+                  onClose={() => { setSearchOpen(false); setActiveMatchLine(null); }}
                   onNavigate={handleSearchNavigate}
+                  onClearHighlight={() => setActiveMatchLine(null)}
                   initialQuery={searchQuery}
                 />
               )}
@@ -1510,6 +1612,7 @@ function Editor(props) {
                 style={editorStyle}
                 showLineNumbers={showLineNumbers}
                 wordWrap={wordWrap}
+                activeLine={activeMatchLine}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onCompositionStart={handleCompositionStart}
@@ -1550,6 +1653,23 @@ function Editor(props) {
               {/** プレビューメニュー */}
               <div id="previewMenu">
                 {mode === Mode.template && (() => {
+                  if (templateType === "diagram") {
+                    return (
+                      <div className="previewMenuLeft">
+                        <Select
+                          value={previewDiagramId}
+                          onChange={(e) => { lastPreviewDiagramId = e.target.value; setPreviewDiagramId(e.target.value); }}
+                          size="small"
+                          displayEmpty
+                          sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
+                        >
+                          {previewDiagrams.map((d) => (
+                            <MenuItem key={d.id} value={d.id} sx={{ fontSize: "0.8rem" }}>{d.name}</MenuItem>
+                          ))}
+                        </Select>
+                      </div>
+                    );
+                  }
                   const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
                   return (
                     <div className="previewMenuLeft">
@@ -1587,14 +1707,16 @@ function Editor(props) {
                       </IconButton>
                     </Tooltip>
                   }
-                  <IconButton
-                    size="small"
-                    onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
-                    sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-                    className="editorBtn"
-                  >
-                    <MoreVertIcon sx={{ fontSize: '18px' }} />
-                  </IconButton>
+                  {mode !== Mode.template &&
+                    <IconButton
+                      size="small"
+                      onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
+                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+                      className="editorBtn"
+                    >
+                      <MoreVertIcon sx={{ fontSize: '18px' }} />
+                    </IconButton>
+                  }
                 </div>
               </div>
 
@@ -1620,7 +1742,10 @@ function Editor(props) {
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
                 }
-                {mode === Mode.template &&
+                {mode === Mode.template && templateType === "diagram" &&
+                  <div id="mermaidViewer"></div>
+                }
+                {mode === Mode.template && templateType !== "diagram" &&
                   <HTMLFrame html={html} cursorLine={cursorLine} />
                 }
               </div>
@@ -1637,8 +1762,8 @@ function Editor(props) {
                   <div className="parseStatusRight">
                     <Tooltip title={t("preview.publish")} placement="top">
                       <span>
-                        <IconButton size="small" aria-label="publish" onClick={handlePublish} disabled={parseStatus.status === "error"} className="editorBtn">
-                          <PublishIcon sx={{ fontSize: '16px' }} />
+                        <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { pointerEvents: 'none' } : {}}>
+                          <PublishIcon sx={{ fontSize: '16px', ...(isPrivate && { color: '#9e9e9e' }) }} />
                         </IconButton>
                       </span>
                     </Tooltip>

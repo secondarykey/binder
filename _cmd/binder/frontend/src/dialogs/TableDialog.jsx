@@ -598,7 +598,7 @@ function TableDialog({ open, tableLines, onClose }) {
             gap: 1,
             alignItems: "flex-start",
             borderTop: "1px solid var(--border-subtle)",
-            pt: 1.5,
+            pt: 1,
           }}
         >
           <TextField

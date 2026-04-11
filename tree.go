@@ -25,7 +25,7 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 
 	treeMap := make(map[string][]*json.Leaf)
 	for _, s := range structures {
-		log.Debug(fmt.Sprintf("GetTree() : %v", s.Id))
+		log.Trace(fmt.Sprintf("GetTree() : %v", s.Id))
 		list := treeMap[s.ParentId]
 		treeMap[s.ParentId] = append(list, convertStructure2Leaf(s))
 	}
@@ -64,6 +64,7 @@ func convertStructure2Leaf(s *model.Structure) *json.Leaf {
 	l.Seq = s.Seq
 	l.Name = s.Name
 	l.Type = s.Typ
+	l.Private = s.Private
 	return &l
 }
 
@@ -76,11 +77,13 @@ func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 	htmlLeaf := json.NewLeaf("DIR_HTML", "HTML")
 	layoutLeaf := json.NewLeaf("DIR_HTML_Layout", "Layout")
 	contentLeaf := json.NewLeaf("DIR_HTML_Content", "Content")
+	diagramLeaf := json.NewLeaf("DIR_Diagram_Style", "Diagram")
 
 	htmlLeaf.AddChild(layoutLeaf)
 	htmlLeaf.AddChild(contentLeaf)
+	htmlLeaf.AddChild(diagramLeaf)
 
-	//大枠のツリーを作成（HTMLテンプレートのみ）
+	//大枠のツリーを作成
 	root := []*json.Leaf{htmlLeaf}
 
 	templates, err := b.db.FindTemplates()
@@ -94,6 +97,8 @@ func (b *Binder) GetTemplateTree() (*json.Tree, error) {
 			layoutLeaf.AddChild(convertTemplateLeaf(temp))
 		case json.ContentTemplateType:
 			contentLeaf.AddChild(convertTemplateLeaf(temp))
+		case json.DiagramTemplateType:
+			diagramLeaf.AddChild(convertTemplateLeaf(temp))
 		}
 	}
 

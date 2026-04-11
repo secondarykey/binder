@@ -50,6 +50,8 @@ func Init() error {
 	slog.SetDefault(logger)
 	def = logger
 
+	Notice(fmt.Sprintf("Log Level:%v", logLevel.Level()))
+
 	return nil
 }
 

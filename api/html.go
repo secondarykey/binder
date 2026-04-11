@@ -34,12 +34,30 @@ func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
 	}
 
-	html, err := a.current.ParseElement(n, local, elm)
+	html, err := a.current.ParseNote(n, local, elm)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("ParseElement() error\n%+v", err)
+		return "", fmt.Errorf("ParseNote() error\n%+v", err)
 	}
 	return html, nil
+}
+
+func (a *App) ParseDiagram(id string, local bool, elm string) (string, error) {
+
+	defer log.PrintTrace(log.Func("ParseDiagram()"))
+
+	d, err := a.current.GetDiagram(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("ParseDiagram() error\n%+v", err)
+	}
+
+	result, err := a.current.ParseDiagram(d, local, elm)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("ParseDiagram() error\n%+v", err)
+	}
+	return result, nil
 }
 
 func (a *App) CreateTemplateHTML(id string, typ json.TemplateType, oId string, noteId string, elm string) (string, error) {

@@ -28,6 +28,7 @@ func init() {
 }
 
 var DuplicateKey = fmt.Errorf("duplicate key error")
+var DuplicateAlias = fmt.Errorf("duplicate alias error")
 
 const TimeZero = "0001-01-01T00:00:00Z"
 

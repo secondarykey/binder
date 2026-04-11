@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"log/slog"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -20,6 +21,8 @@ var assets embed.FS
 var ver string
 
 var resetPosition bool
+var safe bool
+var debug bool
 
 // wailsSearchEmitter は api.SearchEmitter を Wails イベントで実装する
 type wailsSearchEmitter struct {
@@ -36,12 +39,17 @@ func (e *wailsSearchEmitter) EmitDone() {
 
 func init() {
 	flag.BoolVar(&resetPosition, "reset-position", false, "Windows Position reset")
+	flag.BoolVar(&safe, "safe", false, "Prevent files from opening automatically.")
+	flag.BoolVar(&debug, "debug", false, "Launch DevTools")
 }
 
 func main() {
 
 	flag.Parse()
 
+	if debug {
+		log.SetLevel(slog.LevelDebug)
+	}
 	if err := log.Init(); err != nil {
 		log.WarnE("ログファイルの初期化に失敗", err)
 	}
@@ -65,11 +73,15 @@ func main() {
 
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
 	app.SetDevMode(wailsApp.Env.Info().Debug)
-
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
 	set, err := app.Setup()
 	if err != nil {
 		log.PrintStackTrace(err)
+	}
+
+	//セーフモードの場合に起動時の読み込みをオフ
+	if safe {
+		set.Path.RunWithOpen = false
 	}
 
 	// 3. ウィンドウ作成
@@ -82,7 +94,7 @@ func main() {
 		Frameless:              true,
 		BackgroundColour:       application.NewRGBA(27, 38, 54, 255),
 		URL:                    "/",
-		OpenInspectorOnStartup: false,
+		OpenInspectorOnStartup: debug,
 		EnableFileDrop:         true,
 	})
 

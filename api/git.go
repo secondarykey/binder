@@ -8,6 +8,7 @@ import (
 
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -787,6 +788,130 @@ func (a *App) CreateBranch(name string) (*json.BranchResult, error) {
 	}
 
 	return &json.BranchResult{Status: "success", Address: address}, nil
+}
+
+// GetCleanupInfo は指定日時でのクリーンアップ統計情報を返す。
+func (a *App) GetCleanupInfo(beforeRFC3339 string) (*json.CleanupInfo, error) {
+
+	defer log.PrintTrace(log.Func("GetCleanupInfo()", beforeRFC3339))
+
+	before, err := time.Parse(time.RFC3339, beforeRFC3339)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date format: %+v", err)
+	}
+
+	info, err := a.current.GetCleanupInfo(before)
+	if err != nil {
+		return nil, fmt.Errorf("GetCleanupInfo() error: %+v", err)
+	}
+
+	return &json.CleanupInfo{
+		TotalCommits: info.TotalCommits,
+		OldestCommit: info.OldestCommit.Format(time.RFC3339),
+		NewestCommit: info.NewestCommit.Format(time.RFC3339),
+		BranchName:   info.BranchName,
+		SquashTarget: info.SquashTarget,
+		KeepTarget:   info.KeepTarget,
+		ObjectsSize:  info.ObjectsSize,
+	}, nil
+}
+
+// SquashHistory は指定日時より古い履歴を圧縮する。
+// RestoreToCommit と同じ close→操作→reload パターンを使用。
+func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
+
+	defer log.PrintTrace(log.Func("SquashHistory()", beforeRFC3339))
+
+	before, err := time.Parse(time.RFC3339, beforeRFC3339)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date format: %+v", err)
+	}
+
+	// 未コミット変更のチェック
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+	}
+	if len(ids) > 0 {
+		return nil, fmt.Errorf("uncommitted changes exist")
+	}
+
+	dir := a.current.Dir()
+
+	err = a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.CleanupResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.CleanupResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+
+	result, err := tmpFs.SquashHistory(before)
+	if err != nil {
+		log.PrintStackTrace(err)
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.CleanupResult{Status: "error", Message: err.Error(), Address: address}, nil
+		}
+		return &json.CleanupResult{Status: "error", Message: err.Error()}, nil
+	}
+
+	address, err := a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.CleanupResult{Status: "reload_error", Message: err.Error()}, nil
+	}
+
+	return &json.CleanupResult{
+		Status:     "success",
+		Address:    address,
+		BeforeSize: result.BeforeSize,
+		AfterSize:  result.AfterSize,
+	}, nil
+}
+
+// RunGC は不要なgitオブジェクトを削除し、前後のサイズを返す。
+// RepackObjects がpackファイルを再作成するため、go-git の内部キャッシュが
+// 古いpackを参照し続ける問題を回避するため close→GC→reload パターンを使用。
+func (a *App) RunGC() (*json.GCResult, error) {
+
+	defer log.PrintTrace(log.Func("RunGC()"))
+
+	dir := a.current.Dir()
+
+	err := a.CloseBinder()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+	}
+
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		a.LoadBinder(dir)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	result := tmpFs.GC()
+
+	_, err = a.LoadBinder(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("LoadBinder() error: %+v", err)
+	}
+
+	return &json.GCResult{
+		BeforeSize: result.BeforeSize,
+		AfterSize:  result.AfterSize,
+	}, nil
 }
 
 func (a *App) RenameBranch(oldName, newName string) error {
