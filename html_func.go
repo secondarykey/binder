@@ -219,14 +219,34 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 	return w.convertURL(f), nil
 }
 
-// embed は指定 ID のノートの Markdown 本文をインライン展開する。
+// embed は指定 ID のノートまたはテキストアセットの内容をインライン展開する。
 // 返値は template.HTML（エスケープなし）のため、marked.js にそのまま渡される。
 // 循環参照を防ぐため depth >= 1 の場合は空文字を返す。
+// structure で type を確認し、note と（テキスト）asset のみをサポートする。
 func (w *wrapper) embed(id string) template.HTML {
 	if w.depth >= 1 {
 		return ""
 	}
 
+	s, err := w.owner.db.GetStructure(id)
+	if err != nil {
+		log.ErrorE("embed GetStructure()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	switch s.Typ {
+	case "note":
+		return w.embedNote(id)
+	case "asset":
+		return w.embedTextAsset(id)
+	default:
+		log.Warn("embed: unsupported type=" + s.Typ + " id=" + id)
+		return ""
+	}
+}
+
+// embedNote はノートの Markdown 本文をテンプレート処理してインライン展開する。
+func (w *wrapper) embedNote(id string) template.HTML {
 	note, err := w.owner.GetNote(id)
 	if err != nil {
 		log.ErrorE("embed GetNote()", xerrors.Errorf("id=%s: %w", id, err))
@@ -262,6 +282,54 @@ func (w *wrapper) embed(id string) template.HTML {
 	var out strings.Builder
 	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
 		log.ErrorE("embed writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	return template.HTML(out.String())
+}
+
+// embedTextAsset はテキストアセットの内容をテンプレート処理してインライン展開する。
+// バイナリアセットは対象外。親ノートのコンテキストを継承してテンプレート関数を使用できる。
+func (w *wrapper) embedTextAsset(id string) template.HTML {
+	a, err := w.owner.db.GetAsset(id)
+	if err != nil {
+		log.ErrorE("embed GetAsset()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+	if a.Binary {
+		log.Warn("embed: asset is binary, skipping id=" + id)
+		return ""
+	}
+
+	data, _, err := w.owner.ReadAssetBytes(id)
+	if err != nil {
+		log.ErrorE("embed ReadAssetBytes()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	childWrap := &wrapper{
+		owner: w.owner,
+		note:  w.note,
+		Local: w.Local,
+		depth: w.depth + 1,
+	}
+
+	content := string(data)
+	tmpl, err := template.New("").Funcs(defineFuncMap(childWrap)).Parse(content)
+	if err != nil {
+		log.ErrorE("embed asset Parse()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	dto, err := w.owner.createDto(childWrap, content)
+	if err != nil {
+		log.ErrorE("embed asset createDto()", xerrors.Errorf("id=%s: %w", id, err))
+		return ""
+	}
+
+	var out strings.Builder
+	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
+		log.ErrorE("embed asset writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
 	}
 
