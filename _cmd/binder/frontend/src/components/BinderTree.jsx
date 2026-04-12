@@ -518,8 +518,8 @@ function BinderTree(props) {
   const handleChange = (changeInfo) => {
     const parentId = changeInfo.parentId ?? "";
     MoveNode(parentId, changeInfo.childIds).then(() => {
-      // 移動した全子ノードをローカルダーティとしてマーク
-      changeInfo.childIds.forEach(id => evt.markModified(id));
+      // 移動した要素のみをローカルダーティとしてマーク（兄弟要素は対象外）
+      evt.markModified(changeInfo.draggedId);
       viewTree();
     }).catch((err) => {
       evt.showErrorMessage(err);
