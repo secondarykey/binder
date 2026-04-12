@@ -657,7 +657,12 @@ function BinderTree(props) {
     const parentId = parentNode.id;
     closeAllMenus();
     try {
-      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "", private: !!parentNode.private };
+      const tmpls = await GetHTMLTemplates();
+      const diagram = {
+        id: "", parentId, name: "New Diagram", alias: "", detail: "",
+        private: !!parentNode.private,
+        styleTemplate: tmpls.diagrams?.[0]?.id ?? "",
+      };
       const resp = await EditDiagram(diagram);
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
