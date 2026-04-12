@@ -13,6 +13,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// embedMaxDepth は embed の最大再帰深度。循環参照防止のため上限を設ける。
+const embedMaxDepth = 2
+
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
@@ -221,10 +224,10 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 
 // embed は指定 ID のノートまたはテキストアセットの内容をインライン展開する。
 // 返値は template.HTML（エスケープなし）のため、marked.js にそのまま渡される。
-// 循環参照を防ぐため depth >= 1 の場合は空文字を返す。
+// 循環参照を防ぐため depth >= embedMaxDepth の場合は空文字を返す。
 // structure で type を確認し、note と（テキスト）asset のみをサポートする。
 func (w *wrapper) embed(id string) template.HTML {
-	if w.depth >= 1 {
+	if w.depth >= embedMaxDepth {
 		return ""
 	}
 
