@@ -31,8 +31,8 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    margin-right: 5px;
-    margin-bottom: 5px;
+    margin-right: 2px;
+    margin-bottom: 2px;
 }
 
 #historyLeft {
