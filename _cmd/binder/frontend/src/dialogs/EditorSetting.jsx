@@ -8,6 +8,7 @@ import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import { GetEditor, SaveEditor, GetFont, SaveFont } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
 import FontDialog from "./FontDialog";
@@ -18,6 +19,7 @@ import FontDialog from "./FontDialog";
 function EditorSetting() {
 
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
   const [editorProgram, setEditorProgram] = useState("");
@@ -74,7 +76,7 @@ function EditorSetting() {
     SelectFile("Executable Files", "*.exe;*").then((path) => {
       if (path) setEditorProgram(path);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -104,7 +106,7 @@ function EditorSetting() {
       // エディタ側のstateを同期
       Events.Emit('binder:editor:settingChanged', { showLineNumbers, wordWrap, showPreview });
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -115,7 +117,7 @@ function EditorSetting() {
       SaveFont(result).then(() => {
         Events.Emit('binder:editor:fontChanged', result);
       }).catch((err) => {
-        evt.showErrorMessage(err);
+        showError(err);
       });
     }
   };

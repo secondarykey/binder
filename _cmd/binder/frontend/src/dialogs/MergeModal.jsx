@@ -15,6 +15,7 @@ import AuthFields from '../components/AuthFields';
 import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListRemoteBranches, MergeFromRemote, ApplyMergeResolution } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +25,7 @@ import { useTranslation } from 'react-i18next';
  */
 function MergeModal({ open, onClose }) {
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const { t } = useTranslation();
 
   // フェーズ管理
@@ -73,16 +75,16 @@ function MergeModal({ open, onClose }) {
       const list = res || [];
       setRemotes(list);
       if (list.length > 0) setRemoteName(list[0].name);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     CurrentBranch().then((name) => {
       setLocalBranch(name || '');
       setRemoteBranch(name || '');
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     GetModifiedIds().then((ids) => {
       setHasUncommitted(ids && ids.length > 0);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     GetUserInfo().then((info) => {
       setUserName(info.name || '');
@@ -105,7 +107,7 @@ function MergeModal({ open, onClose }) {
         (at === 'ssh_key' && info.bytes) ||
         (at === 'ssh_agent');
       setAuthExpanded(!hasValues);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     setRemoteBranches([]);
     setMerging(false);
@@ -133,7 +135,7 @@ function MergeModal({ open, onClose }) {
     ListRemoteBranches(remote.url, buildAuthInfo()).then((branches) => {
       setRemoteBranches(branches || []);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoadingBranches(false);
     });
@@ -173,15 +175,15 @@ function MergeModal({ open, onClose }) {
           setPhase('conflicts');
           break;
         case 'reload_error':
-          evt.showErrorMessage(result.message || t('merge.reloadError'));
+          showError(result.message || t('merge.reloadError'));
           onClose();
           break;
         default:
-          if (result.message) evt.showErrorMessage(result.message);
+          if (result.message) showError(result.message);
           break;
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setMerging(false);
     });
@@ -208,13 +210,13 @@ function MergeModal({ open, onClose }) {
         evt.refreshTree();
         onClose();
       } else if (result.status === 'reload_error') {
-        evt.showErrorMessage(result.message || t('merge.reloadError'));
+        showError(result.message || t('merge.reloadError'));
         onClose();
       } else {
-        evt.showErrorMessage(result.message || 'Merge failed');
+        showError(result.message || 'Merge failed');
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setApplying(false);
     });

@@ -12,6 +12,7 @@ import AuthFields from '../components/AuthFields';
 import { GetUserInfo, RemoteList, Push, CurrentBranch } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +22,7 @@ import { useTranslation } from 'react-i18next';
  */
 function PushModal({ open, onClose }) {
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const { t } = useTranslation();
 
   const [remotes, setRemotes] = useState([]);
@@ -48,12 +50,12 @@ function PushModal({ open, onClose }) {
       const list = res || [];
       setRemotes(list);
       if (list.length > 0) setRemoteName(list[0].name);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     // 現在のブランチ名を取得
     CurrentBranch().then((name) => {
       setBranchName(name || '');
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     // 保存済みUserInfo（認証情報含む）を読み込み
     GetUserInfo().then((info) => {
@@ -79,7 +81,7 @@ function PushModal({ open, onClose }) {
         (at === 'ssh_key' && info.bytes) ||
         (at === 'ssh_agent');
       setAuthExpanded(!hasValues);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
   }, [open]);
 
@@ -103,7 +105,7 @@ function PushModal({ open, onClose }) {
       evt.showSuccessMessage(t('push.pushSuccess'));
       onClose();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setPushing(false);
     });

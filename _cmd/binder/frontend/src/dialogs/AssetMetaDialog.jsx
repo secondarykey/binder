@@ -8,6 +8,7 @@ import { ExpandMore } from "@mui/icons-material";
 
 import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import PublishDateField from "./components/PublishDateField";
@@ -23,6 +24,7 @@ const isZeroTime = (v) => !v || (typeof v === 'string' && v.startsWith('0001-'))
  */
 function AssetMetaDialog({ open, id, onClose }) {
   const evt = useContext(EventContext);
+  const { showError, showWarning } = useDialogMessage();
   const nav = useNavigate();
   const {t} = useTranslation();
 
@@ -52,7 +54,7 @@ function AssetMetaDialog({ open, id, onClose }) {
       setParentId(data.parentId);
       setPublish(isZeroTime(data.publish) ? null : new Date(data.publish));
       setRepublish(isZeroTime(data.republish) ? null : new Date(data.republish));
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   }, [open, id]);
 
   const handleSave = () => {
@@ -63,9 +65,9 @@ function AssetMetaDialog({ open, id, onClose }) {
       onClose();
     }).catch((err) => {
       if (typeof err === 'string' && err.includes("duplicate alias")) {
-        evt.showWarningMessage(t("common.aliasDuplicate"));
+        showWarning(t("common.aliasDuplicate"));
       } else {
-        evt.showErrorMessage(err);
+        showError(err);
       }
     });
   };
@@ -77,7 +79,7 @@ function AssetMetaDialog({ open, id, onClose }) {
       evt.showSuccessMessage(t("asset.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   return (<>

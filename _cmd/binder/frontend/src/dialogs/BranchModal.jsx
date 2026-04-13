@@ -12,11 +12,13 @@ import ModalWrapper from './components/ModalWrapper';
 import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
 function BranchModal({ open, onClose }) {
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const { t } = useTranslation();
 
   const [branches, setBranches] = useState([]);
@@ -36,12 +38,12 @@ function BranchModal({ open, onClose }) {
     setRenamingBranch(null);
     GetModifiedIds().then((ids) => {
       setHasUncommitted(ids && ids.length > 0);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   }, [open]);
 
   const reload = () => {
-    ListBranches().then(setBranches).catch((err) => evt.showErrorMessage(err));
-    CurrentBranch().then(setCurrentBranch).catch((err) => evt.showErrorMessage(err));
+    ListBranches().then(setBranches).catch((err) => showError(err));
+    CurrentBranch().then(setCurrentBranch).catch((err) => showError(err));
   };
 
   const doSwitch = (name) => {
@@ -54,14 +56,14 @@ function BranchModal({ open, onClose }) {
         evt.showSuccessMessage(t('branch.switchSuccess', { name }));
         onClose();
       } else if (result.status === 'reload_error') {
-        evt.showErrorMessage(t('branch.reloadError'));
+        showError(t('branch.reloadError'));
         onClose();
       } else if (result.status === 'error') {
-        evt.showErrorMessage(result.message);
+        showError(result.message);
         reload();
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoading(false);
     });
@@ -78,14 +80,14 @@ function BranchModal({ open, onClose }) {
         evt.showSuccessMessage(t('branch.createSuccess', { name: newBranchName.trim() }));
         onClose();
       } else if (result.status === 'reload_error') {
-        evt.showErrorMessage(t('branch.reloadError'));
+        showError(t('branch.reloadError'));
         onClose();
       } else if (result.status === 'error') {
-        evt.showErrorMessage(result.message);
+        showError(result.message);
         reload();
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoading(false);
     });
@@ -102,7 +104,7 @@ function BranchModal({ open, onClose }) {
       setRenamingBranch(null);
       reload();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoading(false);
     });
