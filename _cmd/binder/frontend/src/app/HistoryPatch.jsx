@@ -328,16 +328,25 @@ function HistoryPatch({ typ, id }) {
                     {/* 左: Historical ラベル + Restore ボタン */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>Historical</span>
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<RestoreIcon fontSize="small" />}
-                            onClick={handleRestoreClick}
-                            disabled={!hash}
-                            sx={btnSx}
-                        >
-                            Restore
-                        </Button>
+                        <Tooltip title="Restore">
+                            <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleRestoreClick}
+                                    disabled={!hash}
+                                    sx={{
+                                        borderRadius: "4px",
+                                        border: "1px solid var(--border-strong)",
+                                        color: "var(--text-muted)",
+                                        padding: "1px 4px",
+                                        "&:hover": { borderColor: "var(--text-muted)", color: "var(--text-primary)" },
+                                        "&.Mui-disabled": { opacity: 0.3 },
+                                    }}
+                                >
+                                    <RestoreIcon fontSize="small" />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
                     </div>
                     {/* 右: Diff トグルボタン */}
                     <Tooltip title="Diff">
