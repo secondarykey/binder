@@ -323,7 +323,7 @@ function HistoryPatch({ typ, id }) {
         <div style={{ display: "flex", width: "100%", height: "100%" }}>
 
             {/* 履歴ファイル表示パネル */}
-            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid var(--border-primary)" : "none" }}>
+            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid var(--border-strong)" : "none" }}>
                 <div style={panelLabelStyle}>
                     {/* 左: Historical ラベル + Restore ボタン */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
