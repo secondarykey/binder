@@ -10,7 +10,7 @@ import {
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate,
   OpenNote, OpenDiagram,
-  ParseNote, Generate,
+  ParseNote, GenerateAll,
 } from '../../bindings/binder/api/app';
 
 import Marked from '../components/editor/engines/Marked';
@@ -113,7 +113,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   useEffect(() => {
 
     // GenerateForm からの Generate 実行イベント
-    evt.register("UnpublishedMenu", Event.PublishGenerate, async function () {
+    evt.register("UnpublishedMenu", Event.PublishGenerate, async function (comment) {
 
       const selected = [
         ...(noteRef.current?.checked() ?? []),
@@ -129,6 +129,8 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       const total = selected.length;
       evt.raise(Event.PublishProgress, { running: true, current: 0, total });
 
+      // 各アイテムをレンダリングして items 配列に積む（レンダリング失敗分は errors に記録）
+      const items = [];
       const errors = [];
       for (let i = 0; i < selected.length; i++) {
         const leaf = selected[i];
@@ -138,17 +140,26 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
             const text = await OpenNote(leaf.id);
             const parsed = await ParseNote(leaf.id, false, text);
             const html = await Marked.parse(parsed);
-            await Generate("note", leaf.id, html);
+            items.push({ mode: "note", id: leaf.id, data: html });
           } else if (leaf.type === "diagram") {
             const text = await OpenDiagram(leaf.id);
             const obj = await Mermaid.parse(text);
-            await Generate("diagram", leaf.id, obj.svg);
+            items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
           } else {
             // asset
-            await Generate("assets", leaf.id, "");
+            items.push({ mode: "assets", id: leaf.id, data: "" });
           }
         } catch (err) {
           errors.push(leaf.name);
+        }
+      }
+
+      // レンダリングに成功したアイテムを1回のコミットにまとめて公開
+      if (items.length > 0) {
+        try {
+          await GenerateAll(items, comment);
+        } catch (err) {
+          evt.showErrorMessage(err);
         }
       }
 

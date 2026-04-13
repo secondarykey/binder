@@ -235,13 +235,15 @@ func (b *Binder) GetUnpublishedDiagrams() ([]*json.Diagram, error) {
 	return pr, nil
 }
 
-func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
+// PublishDiagramStage はダイアグラムを公開ファイルに書き出し、DBを更新するが git コミットは行わない。
+// 変更したファイルパス一覧と更新済みの Diagram を返す。
+func (b *Binder) PublishDiagramStage(id string, data []byte) ([]string, *json.Diagram, error) {
 
 	var files []string
 
 	d, err := b.db.GetDiagram(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
+		return nil, nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
 	}
 
 	m := d.To()
@@ -249,7 +251,7 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 	// publish/republish タイムスタンプを設定（updated_date と republish_date を同一時刻にするため PublishStructure を使用）
 	s, err := b.db.PublishStructure(id, b.op)
 	if err != nil {
-		return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
+		return nil, nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
 	}
 	m.ApplyStructure(s.To())
 
@@ -257,11 +259,21 @@ func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
 
 	fn, err := b.fileSystem.PublishDiagram(data, m)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.PublishNote() error: %w", err)
+		return nil, nil, xerrors.Errorf("fs.PublishDiagram() error: %w", err)
 	}
 
 	files = append(files, fn)
-	//コミット
+
+	return files, m, nil
+}
+
+func (b *Binder) PublishDiagram(id string, data []byte) (*json.Diagram, error) {
+
+	files, m, err := b.PublishDiagramStage(id, data)
+	if err != nil {
+		return nil, err
+	}
+
 	err = b.fileSystem.Commit(fs.M("Publish Diagram", m.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)

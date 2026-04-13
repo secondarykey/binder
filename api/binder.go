@@ -126,6 +126,47 @@ func (a *App) Generate(mode string, id string, data string) error {
 	return nil
 }
 
+// GenerateAll は複数の公開アイテムをまとめて処理し、全ファイルを1つのコミットにまとめる。
+func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
+
+	defer log.PrintTrace(log.Func("GenerateAll()", len(items)))
+
+	var allFiles []string
+	for _, item := range items {
+		switch item.Mode {
+		case "note":
+			html, err := a.CreateNoteHTML(item.Id, item.Data)
+			if err != nil {
+				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
+			}
+			files, _, err := a.current.PublishNoteStage(item.Id, []byte(html))
+			if err != nil {
+				return xerrors.Errorf("PublishNoteStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		case "diagram":
+			files, _, err := a.current.PublishDiagramStage(item.Id, []byte(item.Data))
+			if err != nil {
+				return xerrors.Errorf("PublishDiagramStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		case "assets":
+			files, _, err := a.current.PublishAssetStage(item.Id)
+			if err != nil {
+				return xerrors.Errorf("PublishAssetStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		default:
+			log.Warn("Unknown Mode:" + item.Mode)
+		}
+	}
+
+	if err := a.current.CommitFiles(message, allFiles...); err != nil {
+		return xerrors.Errorf("CommitFiles() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) Unpublish(mode string, id string) error {
 
 	defer log.PrintTrace(log.Func("Unpublish()", mode, id))

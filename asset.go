@@ -442,26 +442,38 @@ func (b *Binder) SetAssetAsMetaImage(assetId string, deleteAsset bool) error {
 	return nil
 }
 
-func (b *Binder) PublishAsset(id string) (*json.Asset, error) {
+// PublishAssetStage はアセットを公開ディレクトリにコピーし、DBを更新するが git コミットは行わない。
+// 変更したファイルパス一覧と更新済みの Asset を返す。
+func (b *Binder) PublishAssetStage(id string) ([]string, *json.Asset, error) {
 
 	a, err := b.db.GetAssetWithParent(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
+		return nil, nil, xerrors.Errorf("db.GetAsset() error: %w", err)
 	}
 
 	// publish/republish タイムスタンプを更新（updated_date と republish_date を同一時刻にするため PublishStructure を使用）
 	s, err := b.db.PublishStructure(id, b.op)
 	if err != nil {
-		return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
+		return nil, nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
 	}
 	a.ApplyStructure(s.To())
 
 	fn, err := b.fileSystem.PublishAsset(a)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.PublishAsset() error: %w", err)
+		return nil, nil, xerrors.Errorf("fs.PublishAsset() error: %w", err)
 	}
 
-	err = b.fileSystem.Commit(fs.M("Publish Asset", a.Name), fn, fs.StructureTableFile())
+	return []string{fn, fs.StructureTableFile()}, a, nil
+}
+
+func (b *Binder) PublishAsset(id string) (*json.Asset, error) {
+
+	files, a, err := b.PublishAssetStage(id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = b.fileSystem.Commit(fs.M("Publish Asset", a.Name), files...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
