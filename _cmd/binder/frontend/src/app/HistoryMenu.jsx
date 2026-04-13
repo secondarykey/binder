@@ -160,8 +160,8 @@ function HistoryMenu({ typ, id }) {
             selected={entry.hash === hash}
             sx={{
               pl: 2, py: 0.5, borderRadius: '2px',
-              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
-              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
+              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)', color: 'inherit' },
+              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)', color: 'inherit' },
             }}
             onClick={() => handleClick(entry)}
             onContextMenu={(e) => handleContextMenu(e, entry)}>

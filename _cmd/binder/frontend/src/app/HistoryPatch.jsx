@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router";
 
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
+import { Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
 import RestoreIcon from "@mui/icons-material/Restore";
 import DiffIcon from "@mui/icons-material/Difference";
 
@@ -200,7 +200,7 @@ function HistoryPatch({ typ, id }) {
     const [fontBgColor, setFontBgColor] = useState("var(--bg-overlay)");
     const [confirmOpen, setConfirmOpen] = useState(false);
     // デフォルトは履歴ファイルのみ表示。Diff ボタンで差分パネルをトグル
-    const [showDiff, setShowDiff] = useState(false);
+    const [showDiff, setShowDiff] = useState(true);
     const [loading, setLoading] = useState(false);
 
     const histScrollRef = useRef();
@@ -340,20 +340,31 @@ function HistoryPatch({ typ, id }) {
                         </Button>
                     </div>
                     {/* 右: Diff トグルボタン */}
-                    <Button
-                        size="small"
-                        variant={showDiff ? "contained" : "outlined"}
-                        startIcon={<DiffIcon fontSize="small" />}
-                        onClick={() => setShowDiff(v => !v)}
-                        disabled={!hash || !patch}
-                        sx={{
-                            ...btnSx,
-                            ...(showDiff ? { color: "var(--text-primary)", backgroundColor: "var(--selected-bg)", borderColor: "var(--selected-bg)",
-                                "&:hover": { backgroundColor: "var(--selected-hover)" } } : {}),
-                        }}
-                    >
-                        Diff
-                    </Button>
+                    <Tooltip title="Diff">
+                        <span>
+                            <IconButton
+                                size="small"
+                                onClick={() => setShowDiff(v => !v)}
+                                disabled={!hash || !patch}
+                                sx={{
+                                    borderRadius: "4px",
+                                    border: "1px solid",
+                                    borderColor: showDiff ? "var(--selected-bg)" : "var(--border-strong)",
+                                    color: showDiff ? "var(--text-primary)" : "var(--text-muted)",
+                                    backgroundColor: showDiff ? "var(--selected-bg)" : "transparent",
+                                    padding: "1px 4px",
+                                    "&:hover": {
+                                        borderColor: showDiff ? "var(--selected-bg)" : "var(--text-muted)",
+                                        color: "var(--text-primary)",
+                                        backgroundColor: showDiff ? "var(--selected-hover)" : "transparent",
+                                    },
+                                    "&.Mui-disabled": { opacity: 0.3 },
+                                }}
+                            >
+                                <DiffIcon fontSize="small" />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     {loading && (
