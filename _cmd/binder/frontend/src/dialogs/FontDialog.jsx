@@ -7,6 +7,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
 import { Box, Button, DialogContent, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import { MenuItem, Select } from "@mui/material";
 import { Close } from "@mui/icons-material";
 
@@ -21,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 export default function FontDialog({ show, font, onClose }) {
 
   const evt = useContext(EventContext)
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
   const [name, setName] = useState(font === undefined ? "Araial" : font.name);
   const [size, setSize] = useState(font === undefined ? 16:font.size);
@@ -49,7 +51,7 @@ func main() {
       setFonts(names);
     }).catch((err) => {
       console.log(err)
-      evt.showErrorMessage(err);
+      showError(err);
     })
   }, []);
 

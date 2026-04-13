@@ -9,6 +9,7 @@ import {
 import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
 
 import Event, { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext)
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
   const params = useParams();
   const routerNav = useNavigate();
@@ -83,7 +85,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
           }, 1000);
         }
       }).catch((err) => {
-        evt.showErrorMessage(err);
+        showError(err);
       }).finally(() => {
         evt.raise(Event.ModifiedProgress, { running: false });
       })
@@ -137,7 +139,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       evt.raise(Event.ModifiedComment, comment);
 
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     })
 
   }, [date])

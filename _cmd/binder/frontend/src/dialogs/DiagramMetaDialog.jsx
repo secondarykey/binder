@@ -8,6 +8,7 @@ import { ExpandMore } from "@mui/icons-material";
 
 import { EditDiagram, GetDiagram, GetHTMLTemplates, RemoveDiagram } from "../../bindings/binder/api/app";
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import PublishDateField from "./components/PublishDateField";
@@ -23,6 +24,7 @@ const isZeroTime = (v) => !v || (typeof v === 'string' && v.startsWith('0001-'))
  */
 function DiagramMetaDialog({ open, id, onClose }) {
   const evt = useContext(EventContext);
+  const { showError, showWarning } = useDialogMessage();
   const nav = useNavigate();
   const {t} = useTranslation();
 
@@ -58,12 +60,12 @@ function DiagramMetaDialog({ open, id, onClose }) {
       setStyleTemplate(data.styleTemplate || "");
       setPublish(isZeroTime(data.publish) ? null : new Date(data.publish));
       setRepublish(isZeroTime(data.republish) ? null : new Date(data.republish));
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   }, [open, id]);
 
   const handleSave = () => {
-    if (!name) { evt.showWarningMessage(t("diagram.nameRequired")); return; }
-    if (!alias) { evt.showWarningMessage(t("diagram.aliasRequired")); return; }
+    if (!name) { showWarning(t("diagram.nameRequired")); return; }
+    if (!alias) { showWarning(t("diagram.aliasRequired")); return; }
 
     EditDiagram({ id, parentId, name, detail, alias, private: isPrivate, styleTemplate, publish: publish || ZERO_TIME, republish: republish || ZERO_TIME }).then(() => {
       evt.markModified(id);
@@ -72,9 +74,9 @@ function DiagramMetaDialog({ open, id, onClose }) {
       onClose();
     }).catch((err) => {
       if (typeof err === 'string' && err.includes("duplicate alias")) {
-        evt.showWarningMessage(t("common.aliasDuplicate"));
+        showWarning(t("common.aliasDuplicate"));
       } else {
-        evt.showErrorMessage(err);
+        showError(err);
       }
     });
   };
@@ -86,7 +88,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
       evt.showSuccessMessage(t("diagram.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   return (<>

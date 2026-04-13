@@ -15,6 +15,7 @@ import {
 import { SelectFile } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png';
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import "../language";
@@ -30,6 +31,7 @@ const isZeroTime = (v) => !v || (typeof v === 'string' && v.startsWith('0001-'))
  */
 function NoteMetaDialog({ open, id, onClose }) {
   const evt = useContext(EventContext);
+  const { showError, showWarning } = useDialogMessage();
   const nav = useNavigate();
   const {t} = useTranslation();
 
@@ -74,7 +76,7 @@ function NoteMetaDialog({ open, id, onClose }) {
       setContent(note.contentTemplate);
       setPublish(isZeroTime(note.publish) ? null : new Date(note.publish));
       setRepublish(isZeroTime(note.republish) ? null : new Date(note.republish));
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     GetNoteImageURL(id).then((url) => {
       setViewImage(url || noImage);
@@ -83,9 +85,9 @@ function NoteMetaDialog({ open, id, onClose }) {
   }, [open, id]);
 
   const handleSave = () => {
-    if (!name) { evt.showWarningMessage(t("note.nameRequired")); return; }
-    if (!layout || !content) { evt.showWarningMessage(t("note.chooseTemplate")); return; }
-    if (!alias && id !== "index") { evt.showWarningMessage(t("note.aliasRequired")); return; }
+    if (!name) { showWarning(t("note.nameRequired")); return; }
+    if (!layout || !content) { showWarning(t("note.chooseTemplate")); return; }
+    if (!alias && id !== "index") { showWarning(t("note.aliasRequired")); return; }
 
     const note = {
       id, parentId, name, alias, detail, private: isPrivate,
@@ -100,9 +102,9 @@ function NoteMetaDialog({ open, id, onClose }) {
       onClose();
     }).catch((err) => {
       if (typeof err === 'string' && err.includes("duplicate alias")) {
-        evt.showWarningMessage(t("common.aliasDuplicate"));
+        showWarning(t("common.aliasDuplicate"));
       } else {
-        evt.showErrorMessage(err);
+        showError(err);
       }
     });
   };
@@ -114,7 +116,7 @@ function NoteMetaDialog({ open, id, onClose }) {
       evt.showSuccessMessage(t("note.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   const selectFile = () => {
@@ -127,7 +129,7 @@ function NoteMetaDialog({ open, id, onClose }) {
           setViewImage(url ? url + "?t=" + Date.now() : noImage);
         }).catch(() => {});
         evt.showSuccessMessage(t("note.imageUploaded"));
-      }).catch((err) => evt.showErrorMessage(err));
+      }).catch((err) => showError(err));
     }).catch(() => {});
   };
 
@@ -142,7 +144,7 @@ function NoteMetaDialog({ open, id, onClose }) {
       setViewImage(noImage);
       setHasImage(false);
       evt.showSuccessMessage(t("note.imageRemoved"));
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   const isIndex = id === "index";

@@ -4,6 +4,7 @@ import { Box, Typography } from "@mui/material";
 
 import { GetLicense, GetThirdPartyLicenses, GetVersionInfo } from "../../bindings/binder/api/app";
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -13,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 function LicenseSetting() {
 
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
   const [license, setLicense] = useState("");
@@ -23,17 +25,17 @@ function LicenseSetting() {
     GetVersionInfo().then((info) => {
       setVersionInfo(info);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     GetLicense().then((text) => {
       setLicense(text);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     GetThirdPartyLicenses().then((text) => {
       setThirdParty(text);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   }, []);
 

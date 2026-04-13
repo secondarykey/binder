@@ -12,6 +12,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -83,6 +84,7 @@ function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
 function SnippetSetting() {
 
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
@@ -98,7 +100,7 @@ function SnippetSetting() {
     GetSnippets().then((s) => {
       setSnippets(s);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   }, []);
 
@@ -131,7 +133,7 @@ function SnippetSetting() {
       setSnippets(updated);
       evt.showSuccessMessage(t("common.updated"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -148,7 +150,7 @@ function SnippetSetting() {
       setEditName(newSnippet.name);
       setBody("");
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -174,7 +176,7 @@ function SnippetSetting() {
         setBody("");
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -194,7 +196,7 @@ function SnippetSetting() {
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 

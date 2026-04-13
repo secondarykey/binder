@@ -16,6 +16,7 @@ import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +32,7 @@ const MENU_ITEMS_KEYS = [
 function Binder({ isModal, ...props }) {
 
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
   const [activeSection, setActiveSection] = useState("basic");
@@ -76,7 +78,7 @@ function Binder({ isModal, ...props }) {
     RemoteList().then((res) => {
       setRemoteList(res || []);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -89,7 +91,7 @@ function Binder({ isModal, ...props }) {
       setMermaidUrl(conf.mermaidUrl || "");
       setOptimizeImage(conf.optimizeImage !== false);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     GetUserInfo().then((info) => {
       setGitName(info.name || "");
@@ -106,12 +108,12 @@ function Binder({ isModal, ...props }) {
         setAuthSSHKey("");
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     CurrentBranch().then((name) => {
       setBranchName(name || "");
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     getRemoteList();
   }, []);
@@ -122,7 +124,7 @@ function Binder({ isModal, ...props }) {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -147,7 +149,7 @@ function Binder({ isModal, ...props }) {
       const after = formatSize(result.afterSize);
       evt.showSuccessMessage(t("binder.gcComplete", { before, after }));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setGcLoading(false);
     });
@@ -195,7 +197,7 @@ function Binder({ isModal, ...props }) {
 
       evt.showSuccessMessage(t("binder.updateSuccess"));
     } catch (err) {
-      evt.showErrorMessage(err);
+      showError(err);
     } finally {
       setScriptSaving(false);
     }
@@ -210,7 +212,7 @@ function Binder({ isModal, ...props }) {
     }).then(() => {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -241,7 +243,7 @@ function Binder({ isModal, ...props }) {
       getRemoteList();
       handleRemoteDialogClose();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -258,7 +260,7 @@ function Binder({ isModal, ...props }) {
       getRemoteList();
       handleDeleteDialogClose();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 

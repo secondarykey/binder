@@ -17,6 +17,7 @@ import Marked from '../components/editor/engines/Marked';
 import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -28,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext);
+  const { showError, showWarning } = useDialogMessage();
   const {t} = useTranslation();
   const nav = useNavigate();
 
@@ -73,7 +75,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         const comment = t("template.batchPublishComment", { name: template.name });
         evt.raise(Event.PublishComment, comment);
       }).catch((err) => {
-        evt.showErrorMessage(err);
+        showError(err);
       });
       return;
     }
@@ -106,7 +108,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       evt.raise(Event.PublishComment, comment);
 
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -122,7 +124,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       ];
 
       if (selected.length === 0) {
-        evt.showWarningMessage(t("publishModal.noFilesSelected"));
+        showWarning(t("publishModal.noFilesSelected"));
         return;
       }
 
