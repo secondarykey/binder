@@ -49,6 +49,10 @@ type Path struct {
 	OpenWithItem bool     `json:"openWithItem"`
 	Histories    []string `json:"histories"`
 	LastNoteId   string   `json:"lastNoteId"`
+	// StartupOk は前回の起動が正常終了したかを記録するフラグ。
+	// 起動時に false に設定され、正常終了時に true になる。
+	// 起動時に false のままなら前回クラッシュと判断し、自動オープンをスキップする。
+	StartupOk bool `json:"startupOk"`
 }
 
 func (p *Path) AddHistory(h string) {
@@ -295,6 +299,15 @@ func SaveHistory(h string) error {
 		}
 	}
 	obj.Path.Histories = list
+	return obj.save()
+}
+
+// SaveStartupOk は StartupOk フラグを保存する。
+// 起動時: false（クラッシュ検出用マーク）
+// 正常終了時: true（次回起動で自動オープンを許可）
+func SaveStartupOk(ok bool) error {
+	obj := Get()
+	obj.Path.StartupOk = ok
 	return obj.save()
 }
 

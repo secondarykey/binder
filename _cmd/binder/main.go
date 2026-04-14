@@ -12,6 +12,7 @@ import (
 	"binder"
 	"binder/api"
 	"binder/log"
+	"binder/settings"
 )
 
 //go:embed all:frontend/dist
@@ -79,9 +80,16 @@ func main() {
 		log.PrintStackTrace(err)
 	}
 
-	//セーフモードの場合に起動時の読み込みをオフ
-	if safe {
+	// セーフモードまたは前回クラッシュ検出時は、今セッションの自動オープンをオフにする。
+	// RunWithOpen 自体は setting.json に保存しない（次回以降の設定は保持する）。
+	if safe || !set.Path.StartupOk {
 		set.Path.RunWithOpen = false
+	}
+
+	// 起動中フラグを false に設定して保存（正常終了しなかった場合のクラッシュ検出用）。
+	// アプリが正常終了したときに true に書き戻す。
+	if err := settings.SaveStartupOk(false); err != nil {
+		log.WarnE("SaveStartupOk(false) error", err)
 	}
 
 	// 3. ウィンドウ作成
@@ -148,5 +156,11 @@ func main() {
 	err = wailsApp.Run()
 	if err != nil {
 		println("Error:", err.Error())
+	}
+
+	// wailsApp.Run() が正常リターンした = 正常終了。
+	// 次回起動で自動オープンが動くよう StartupOk を true に戻す。
+	if err := settings.SaveStartupOk(true); err != nil {
+		log.WarnE("SaveStartupOk(true) error", err)
 	}
 }

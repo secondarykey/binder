@@ -11,9 +11,17 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (a *App) LoadBinder(dir string) (string, error) {
+func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
+
+	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
+	defer func() {
+		if r := recover(); r != nil {
+			log.PrintStackTrace(fmt.Errorf("panic in LoadBinder: %v", r))
+			err = fmt.Errorf("unexpected error opening binder: %v", r)
+		}
+	}()
 
 	if dir == "" {
 		return "", xerrors.Errorf("empty directory error")
