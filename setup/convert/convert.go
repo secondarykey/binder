@@ -9,7 +9,6 @@ import (
 	. "binder/internal"
 
 	"binder/db"
-	"binder/db/model"
 	"binder/fs"
 	dbconvert "binder/setup/convert/db"
 	convert010 "binder/setup/convert/db/010"
@@ -272,11 +271,6 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 		}
 	}
 
-	// ルートノート（index）が存在しない場合は作成する。
-	// 旧バインダーや旧ブランチで index ノートが未コミットの場合に対応する。
-	if err = ensureRootNote(dir, dbDir, bfs); err != nil {
-		return nil, xerrors.Errorf("ensureRootNote() error: %w", err)
-	}
 
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
 	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
@@ -351,64 +345,3 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 	return result, nil
 }
 
-// migrateOp は移行処理専用の db.Op 実装
-type migrateOp struct{}
-
-func (o migrateOp) GetOperationId() string { return "migrate" }
-
-// ensureRootNote はルートノート（id="index"）が存在しない場合に作成する。
-// 旧バインダーや旧ブランチで index ノートが未コミットの場合に対応する。
-func ensureRootNote(dir, dbDir string, bfs *fs.FileSystem) error {
-	inst, err := db.New(dbDir)
-	if err != nil {
-		return xerrors.Errorf("db.New() error: %w", err)
-	}
-	if err = inst.Open(); err != nil {
-		return xerrors.Errorf("db.Open() error: %w", err)
-	}
-	defer inst.Close()
-
-	// index ノートが既に存在する場合はスキップ
-	if n, getErr := inst.GetNote("index"); getErr == nil && n != nil {
-		return nil
-	}
-
-	op := migrateOp{}
-
-	// notes テーブルに index レコードを作成
-	n := &model.Note{
-		Id:              "index",
-		LayoutTemplate:  "layout",
-		ContentTemplate: "index",
-	}
-	if err = inst.InsertNote(n, op); err != nil {
-		return xerrors.Errorf("InsertNote(index) error: %w", err)
-	}
-
-	// structures テーブルに index レコードを作成
-	s := &model.Structure{
-		Id:    "index",
-		Seq:   1,
-		Typ:   "note",
-		Name:  "Index",
-		Alias: "index",
-	}
-	if err = inst.InsertStructure(s, op); err != nil {
-		return xerrors.Errorf("InsertStructure(index) error: %w", err)
-	}
-
-	// notes/index.md ファイルが存在しない場合は作成
-	notePath := filepath.Join(dir, fs.NoteFile("index"))
-	if _, statErr := os.Stat(notePath); os.IsNotExist(statErr) {
-		if writeErr := os.WriteFile(notePath, []byte("# \n"), 0644); writeErr != nil {
-			return xerrors.Errorf("WriteFile(notes/index.md) error: %w", writeErr)
-		}
-	}
-
-	// 汎用コミット前に git ステージング
-	if err = bfs.AddFile(fs.NoteFile("index")); err != nil {
-		return xerrors.Errorf("AddFile(notes/index.md) error: %w", err)
-	}
-
-	return nil
-}
