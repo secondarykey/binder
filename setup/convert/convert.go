@@ -256,6 +256,12 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 	// binder.jsonへの移行後に旧スキーマファイルを削除
 	removeOldSchemaFiles(dir)
 
+	// 旧バインダーに欠損テーブルがある場合（git の旧ブランチ等）は現在のスキーマで作成する。
+	// AddDBFiles() を呼ぶ前にすべてのテーブルファイルが存在する状態にする。
+	if err = db.EnsureTableFiles(dbDir); err != nil {
+		return nil, xerrors.Errorf("EnsureTableFiles() error: %w", err)
+	}
+
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
 	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
 	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
@@ -308,12 +314,6 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 	// バージョンアップのみ（マイグレーション不要）の場合や、個別コミットを持たない
 	// マイグレーション（0.1.0, 0.2.0 等）でも binder.json と DB ファイルが確実にコミットされる。
 	// 既にコミット済みで変更がない場合は UpdatedFilesError を無視する。
-
-	// 旧バインダーに欠損テーブルがある場合（git の旧ブランチ等）は現在のスキーマで作成する
-	if err = db.EnsureTableFiles(dbDir); err != nil {
-		return nil, xerrors.Errorf("EnsureTableFiles() error: %w", err)
-	}
-
 	if err = bfs.AddDBFiles(); err != nil {
 		return nil, xerrors.Errorf("AddDBFiles() error: %w", err)
 	}
