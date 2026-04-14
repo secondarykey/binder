@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Box, Dialog, IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -19,12 +19,47 @@ function BranchHistoryModal({ open, onClose }) {
   const { t } = useTranslation();
   const [selectedHash, setSelectedHash] = useState(null);
 
+  const paperRef = useRef(null);
+  const posRef = useRef({ x: 0, y: 0 });
+  const dragRef = useRef({ isDragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+
+  const handleMouseDown = useCallback((e) => {
+    if (e.target.closest('button')) return;
+    dragRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: posRef.current.x,
+      origY: posRef.current.y,
+    };
+
+    const handleMouseMove = (ev) => {
+      if (!dragRef.current.isDragging) return;
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      posRef.current = { x: dragRef.current.origX + dx, y: dragRef.current.origY + dy };
+      if (paperRef.current) {
+        paperRef.current.style.transform = `translate(${posRef.current.x}px, ${posRef.current.y}px)`;
+      }
+    };
+
+    const handleMouseUp = () => {
+      dragRef.current.isDragging = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
   const handleSelect = (hash) => {
     setSelectedHash(hash);
   };
 
   const handleClose = () => {
     setSelectedHash(null);
+    posRef.current = { x: 0, y: 0 };
     onClose();
   };
 
@@ -37,6 +72,7 @@ function BranchHistoryModal({ open, onClose }) {
       }}
       maxWidth={false}
       PaperProps={{
+        ref: paperRef,
         sx: {
           backgroundColor: 'var(--bg-surface)',
           color: 'var(--text-primary)',
@@ -51,8 +87,9 @@ function BranchHistoryModal({ open, onClose }) {
         }
       }}
     >
-      {/** タイトルバー */}
+      {/** タイトルバー（ドラッグハンドル） */}
       <Toolbar
+        onMouseDown={handleMouseDown}
         sx={{
           minHeight: '40px !important',
           paddingLeft: '16px !important',
@@ -61,6 +98,8 @@ function BranchHistoryModal({ open, onClose }) {
           borderBottom: '1px solid var(--border-subtle)',
           backgroundColor: 'var(--bg-titlebar)',
           flexShrink: 0,
+          cursor: 'move',
+          userSelect: 'none',
         }}
       >
         <Typography variant="body1" sx={{ flex: 1 }}>
