@@ -1,6 +1,9 @@
 package setup
 
 import (
+	"path/filepath"
+
+	"binder/db"
 	"binder/fs"
 	. "binder/internal"
 	"binder/log"
@@ -93,6 +96,15 @@ func loadBinderMeta(dir string) (*fs.BinderMeta, error) {
 	meta, err := fs.LoadMeta(dir)
 	if err != nil {
 		return nil, err
+	}
+	if meta == nil {
+		// binder.json が存在しない場合は db/schema.version にフォールバック
+		dbDir := filepath.Join(dir, "db")
+		ver, err := db.SchemaVersion(dbDir)
+		if err != nil {
+			return &fs.BinderMeta{Version: "0.0.0"}, nil
+		}
+		return &fs.BinderMeta{Version: ver.String()}, nil
 	}
 	return meta, nil
 }
