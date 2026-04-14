@@ -96,7 +96,8 @@ function BranchHistoryModal({ open, onClose }) {
         {/** 右ペイン: ブランチ管理（初期）/ コミット詳細（選択時） */}
         <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           {selectedHash
-            ? <OverallHistoryDetail binderPath="" hash={selectedHash} />
+            ? <OverallHistoryDetail binderPath="" hash={selectedHash}
+                onBack={() => setSelectedHash(null)} />
             : open && <BranchPanel onClose={handleClose} />
           }
         </Box>
