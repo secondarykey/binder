@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContentText, DialogTitle,
-  IconButton, List, ListItem, ListItemText, TextField, Typography, Chip, Divider,
+  IconButton, List, ListItem, ListItemText, TextField, Typography, Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
@@ -16,7 +16,12 @@ import { useDialogMessage } from './components/DialogError';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
-function BranchModal({ open, onClose }) {
+/**
+ * ブランチ操作パネル（ダイアログラッパーなし）
+ * BranchModal と OverallHistoryApp の右ペインで共用する
+ * @param {{ onClose?: () => void }} props
+ */
+export function BranchPanel({ onClose = () => {} }) {
   const evt = useContext(EventContext);
   const { showError } = useDialogMessage();
   const { t } = useTranslation();
@@ -32,14 +37,14 @@ function BranchModal({ open, onClose }) {
   const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
     reload();
     setNewBranchName('');
     setRenamingBranch(null);
     GetModifiedIds().then((ids) => {
       setHasUncommitted(ids && ids.length > 0);
     }).catch((err) => showError(err));
-  }, [open]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const reload = () => {
     ListBranches().then(setBranches).catch((err) => showError(err));
@@ -54,6 +59,7 @@ function BranchModal({ open, onClose }) {
       if (result.status === 'success') {
         evt.refreshTree();
         evt.showSuccessMessage(t('branch.switchSuccess', { name }));
+        reload();
         onClose();
       } else if (result.status === 'reload_error') {
         showError(t('branch.reloadError'));
@@ -78,6 +84,7 @@ function BranchModal({ open, onClose }) {
       if (result.status === 'success') {
         evt.refreshTree();
         evt.showSuccessMessage(t('branch.createSuccess', { name: newBranchName.trim() }));
+        reload();
         onClose();
       } else if (result.status === 'reload_error') {
         showError(t('branch.reloadError'));
@@ -116,118 +123,108 @@ function BranchModal({ open, onClose }) {
   };
 
   return (
-    <ModalWrapper
-      open={open}
-      onClose={onClose}
-      title={t("branch.title")}
-      width="480px"
-      height="auto"
-      maxHeight="80vh"
-    >
-      <Box sx={{ p: 2, overflowY: 'auto' }}>
+    <Box sx={{ p: 2, overflowY: 'auto' }}>
 
-        {hasUncommitted && (
-          <Alert severity="warning" sx={{ mb: 2, fontSize: '13px' }}>
-            {t('branch.uncommittedError')}
-          </Alert>
-        )}
+      {hasUncommitted && (
+        <Alert severity="warning" sx={{ mb: 2, fontSize: '13px' }}>
+          {t('branch.uncommittedError')}
+        </Alert>
+      )}
 
-        {/** ブランチ一覧 */}
-        <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
-          {t("branch.list")}
-        </Typography>
+      {/** ブランチ一覧 */}
+      <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
+        {t("branch.list")}
+      </Typography>
 
-        <List dense sx={{ mb: 2 }}>
-          {branches.map((name) => (
-            <ListItem
-              key={name}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                backgroundColor: name === currentBranch ? 'var(--bg-elevated)' : 'transparent',
-              }}
-              secondaryAction={
-                renamingBranch === name ? (
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton size="small" onClick={() => handleRename(name)} disabled={loading}>
-                      <CheckIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => setRenamingBranch(null)}>
-                      <CloseIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    {name === currentBranch && (
-                      <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
-                        title={t("branch.rename")}>
-                        <EditIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    )}
-                    {name !== currentBranch && (
-                      <Button size="small" variant="outlined" onClick={() => setConfirmSwitchName(name)}
-                        disabled={loading || hasUncommitted} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
-                        {t("branch.switch")}
-                      </Button>
-                    )}
-                  </Box>
-                )
-              }
-            >
-              {renamingBranch === name ? (
-                <TextField
-                  size="small"
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRename(name);
-                    if (e.key === 'Escape') setRenamingBranch(null);
-                  }}
-                  autoFocus
-                  sx={{ mr: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
-                />
+      <List dense sx={{ mb: 2 }}>
+        {branches.map((name) => (
+          <ListItem
+            key={name}
+            sx={{
+              borderRadius: 1,
+              mb: 0.5,
+              backgroundColor: name === currentBranch ? 'var(--bg-elevated)' : 'transparent',
+            }}
+            secondaryAction={
+              renamingBranch === name ? (
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <IconButton size="small" onClick={() => handleRename(name)} disabled={loading}>
+                    <CheckIcon sx={{ fontSize: '16px' }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => setRenamingBranch(null)}>
+                    <CloseIcon sx={{ fontSize: '16px' }} />
+                  </IconButton>
+                </Box>
               ) : (
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {name === currentBranch && <CheckIcon sx={{ fontSize: '14px', color: 'var(--accent-primary)' }} />}
-                      <span style={{ fontWeight: name === currentBranch ? 'bold' : 'normal' }}>{name}</span>
-                    </Box>
-                  }
-                />
-              )}
-            </ListItem>
-          ))}
-        </List>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/** 新規作成 */}
-        <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
-          {t("branch.create")}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <TextField
-            size="small"
-            placeholder={t("branch.branchName")}
-            value={newBranchName}
-            onChange={(e) => setNewBranchName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') setConfirmCreateOpen(true); }}
-            disabled={loading}
-            sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
-          />
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setConfirmCreateOpen(true)}
-            disabled={loading || hasUncommitted || !newBranchName.trim()}
-            sx={{ whiteSpace: 'nowrap' }}
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {name === currentBranch && (
+                    <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
+                      title={t("branch.rename")}>
+                      <EditIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  )}
+                  {name !== currentBranch && (
+                    <Button size="small" variant="outlined" onClick={() => setConfirmSwitchName(name)}
+                      disabled={loading || hasUncommitted} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
+                      {t("branch.switch")}
+                    </Button>
+                  )}
+                </Box>
+              )
+            }
           >
-            {t("branch.create")}
-          </Button>
-        </Box>
+            {renamingBranch === name ? (
+              <TextField
+                size="small"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename(name);
+                  if (e.key === 'Escape') setRenamingBranch(null);
+                }}
+                autoFocus
+                sx={{ mr: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
+              />
+            ) : (
+              <ListItemText
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {name === currentBranch && <CheckIcon sx={{ fontSize: '14px', color: 'var(--accent-primary)' }} />}
+                    <span style={{ fontWeight: name === currentBranch ? 'bold' : 'normal' }}>{name}</span>
+                  </Box>
+                }
+              />
+            )}
+          </ListItem>
+        ))}
+      </List>
 
+      <Divider sx={{ my: 2 }} />
+
+      {/** 新規作成 */}
+      <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
+        {t("branch.create")}
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <TextField
+          size="small"
+          placeholder={t("branch.branchName")}
+          value={newBranchName}
+          onChange={(e) => setNewBranchName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') setConfirmCreateOpen(true); }}
+          disabled={loading}
+          sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
+        />
+        <Button
+          size="small"
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setConfirmCreateOpen(true)}
+          disabled={loading || hasUncommitted || !newBranchName.trim()}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          {t("branch.create")}
+        </Button>
       </Box>
 
       {/** ブランチ切替確認ダイアログ */}
@@ -262,6 +259,23 @@ function BranchModal({ open, onClose }) {
         </DialogActions>
       </Dialog>
 
+    </Box>
+  );
+}
+
+function BranchModal({ open, onClose }) {
+  const { t } = useTranslation();
+
+  return (
+    <ModalWrapper
+      open={open}
+      onClose={onClose}
+      title={t("branch.title")}
+      width="480px"
+      height="auto"
+      maxHeight="80vh"
+    >
+      {open && <BranchPanel onClose={onClose} />}
     </ModalWrapper>
   );
 }
