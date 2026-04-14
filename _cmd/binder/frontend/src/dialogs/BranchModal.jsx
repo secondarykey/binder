@@ -8,7 +8,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
-import ModalWrapper from './components/ModalWrapper';
 import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
@@ -263,21 +262,3 @@ export function BranchPanel({ onClose = () => {} }) {
   );
 }
 
-function BranchModal({ open, onClose }) {
-  const { t } = useTranslation();
-
-  return (
-    <ModalWrapper
-      open={open}
-      onClose={onClose}
-      title={t("branch.title")}
-      width="480px"
-      height="auto"
-      maxHeight="80vh"
-    >
-      {open && <BranchPanel onClose={onClose} />}
-    </ModalWrapper>
-  );
-}
-
-export default BranchModal;

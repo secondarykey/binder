@@ -43,11 +43,14 @@ const actionColors = {
 
 /**
  * 全体履歴 コミット詳細（変更ファイル一覧）
- * @param {{ binderPath?: string }} props binderPath が指定されていれば ByPath API を使用
+ * @param {{ binderPath?: string, hash?: string }} props
+ *   - hash が指定された場合はそちらを優先（モーダル統合用）
+ *   - 未指定の場合は react-router の useParams から取得（OverallHistoryApp ウィンドウ用）
  */
-function OverallHistoryDetail({ binderPath }) {
+function OverallHistoryDetail({ binderPath, hash: hashProp }) {
 
-  const { hash } = useParams();
+  const { hash: routerHash } = useParams();
+  const hash = hashProp !== undefined ? hashProp : routerHash;
   const evt = useContext(EventContext);
   const { t } = useTranslation();
 

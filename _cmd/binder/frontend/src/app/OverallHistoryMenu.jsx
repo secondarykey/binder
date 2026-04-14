@@ -24,14 +24,19 @@ const PAGE_SIZE = 10;
 
 /**
  * 全体履歴 コミット一覧
- * @param {{ binderPath?: string }} props binderPath が指定されていれば ByPath API を使用
+ * @param {{ binderPath?: string, selectedHash?: string, onSelect?: (hash: string) => void, onClose?: () => void }} props
+ *   - selectedHash / onSelect / onClose が指定された場合は react-router を使わずコールバックで動作（モーダル統合用）
+ *   - 未指定の場合は従来通り react-router で動作（OverallHistoryApp ウィンドウ用）
  */
-function OverallHistoryMenu({ binderPath }) {
+function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSelect, onClose }) {
 
   const evt = useContext(EventContext);
-  const { hash } = useParams();
+  const { hash: routerHash } = useParams();
   const nav = useNavigate();
   const { t } = useTranslation();
+
+  // モーダルモード（onSelect あり）か否かで hash の取得元を切り替える
+  const hash = onSelect !== undefined ? (selectedHashProp ?? null) : routerHash;
 
   const [entries, setEntries] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -86,7 +91,12 @@ function OverallHistoryMenu({ binderPath }) {
   }, [offset]);
 
   const handleClick = (entry) => {
-    nav('/overall/detail/' + entry.hash);
+    if (onSelect) {
+      // モーダルモード: コールバックで選択状態を親に通知（同じhashをクリックで解除）
+      onSelect(selectedHashProp === entry.hash ? null : entry.hash);
+    } else {
+      nav('/overall/detail/' + entry.hash);
+    }
   };
 
   const handleContextMenu = (e, entry) => {
@@ -125,8 +135,15 @@ function OverallHistoryMenu({ binderPath }) {
       : RestoreToCommit(targetHash);
     restoreCall.then((result) => {
       if (result?.status === 'success') {
-        Events.Emit("binder:restored", { address: result.address });
-        Window.Close();
+        if (onClose) {
+          // モーダルモード: ツリー更新してモーダルを閉じる
+          if (result.address) evt.changeAddress(result.address);
+          evt.refreshTree();
+          onClose();
+        } else {
+          Events.Emit("binder:restored", { address: result.address });
+          Window.Close();
+        }
       } else {
         evt.showErrorMessage(result?.message || 'Restore failed');
       }
@@ -201,8 +218,13 @@ function OverallHistoryMenu({ binderPath }) {
         setCleanupOpen(false);
         evt.showSuccessMessage(t('overallHistory.cleanupComplete', { before, after }));
         setTimeout(() => {
-          Events.Emit("binder:restored", { address: result.address });
-          Window.Close();
+          if (onClose) {
+            evt.refreshTree();
+            onClose();
+          } else {
+            Events.Emit("binder:restored", { address: result.address });
+            Window.Close();
+          }
         }, 2000);
       } else {
         evt.showErrorMessage(result?.message || 'Cleanup failed');

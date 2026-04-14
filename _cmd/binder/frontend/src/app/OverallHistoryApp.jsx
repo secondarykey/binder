@@ -10,7 +10,6 @@ import { EventContext } from '../Event';
 import { SystemMessage } from '../Message';
 import OverallHistoryMenu from './OverallHistoryMenu';
 import OverallHistoryDetail from './OverallHistoryDetail';
-import { BranchPanel } from '../dialogs/BranchModal';
 
 import '../assets/App.css';
 import '../assets/OverallHistoryApp.css';
@@ -65,7 +64,7 @@ function OverallHistoryApp() {
 
         <div id="overallHistoryRight">
           <Routes>
-            <Route path="/overall/list"          element={binderPath === '' ? <BranchPanel /> : <div id="overallHistoryEmpty" />} />
+            <Route path="/overall/list"          element={<div id="overallHistoryEmpty" />} />
             <Route path="/overall/detail/:hash"  element={<OverallHistoryDetail binderPath={binderPath} />} />
             <Route path="*"                      element={<div id="overallHistoryEmpty" />} />
           </Routes>

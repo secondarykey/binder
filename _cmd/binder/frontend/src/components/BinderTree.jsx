@@ -30,7 +30,7 @@ import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset,
          EditNote, EditDiagram, EditAsset, AddTextAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
          IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
+import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -862,13 +862,9 @@ function BinderTree(props) {
         <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
       </MenuItem>
       <Divider />
-      {/** ブランチ変更 */}
+      {/** ブランチ変更 + 全体履歴 */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
         <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
-      </MenuItem>
-      {/** 全体の履歴 */}
-      <MenuItem onClick={() => { closeMoreMenu(); OpenOverallHistoryWindow(""); }}>
-        <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.overallHistory")}
       </MenuItem>
       <Divider />
       {/** リモートにPush */}
