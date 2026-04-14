@@ -605,6 +605,77 @@ func (a *App) RestoreToCommitByPath(dir string, hash string) (*json.BranchResult
 	return &json.BranchResult{Status: "success"}, nil
 }
 
+// ListBranchesByPath はバインダーを開かずにディレクトリパスからブランチ一覧を取得する。
+func (a *App) ListBranchesByPath(dir string) ([]string, error) {
+
+	defer log.PrintTrace(log.Func("ListBranchesByPath()", dir))
+
+	if a.current != nil && a.current.Dir() == dir {
+		return a.ListBranches()
+	}
+
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	branches, err := tmpFs.ListBranches()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("ListBranches() error: %+v", err)
+	}
+	return branches, nil
+}
+
+// CurrentBranchByPath はバインダーを開かずにディレクトリパスから現在のブランチ名を取得する。
+func (a *App) CurrentBranchByPath(dir string) (string, error) {
+
+	defer log.PrintTrace(log.Func("CurrentBranchByPath()", dir))
+
+	if a.current != nil && a.current.Dir() == dir {
+		return a.CurrentBranch()
+	}
+
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	name, err := tmpFs.CurrentBranch()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("CurrentBranch() error: %+v", err)
+	}
+	return name, nil
+}
+
+// SwitchBranchByPath はバインダーを開かずにディレクトリパスから指定ブランチに切り替える。
+// もし a.current が同じディレクトリを開いていたら SwitchBranch と同じフローにする。
+func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, error) {
+
+	defer log.PrintTrace(log.Func("SwitchBranchByPath()", dir, name))
+
+	if a.current != nil && a.current.Dir() == dir {
+		return a.SwitchBranch(name)
+	}
+
+	tmpFs, err := fs.Load(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	err = tmpFs.CheckoutBranch(name)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return &json.BranchResult{Status: "error", Message: err.Error()}, nil
+	}
+
+	return &json.BranchResult{Status: "success"}, nil
+}
+
 // toHistoryPage は CommitInfo スライスを HistoryPage JSON に変換する。
 func toHistoryPage(commits []*fs.CommitInfo, hasMore bool) *json.HistoryPage {
 	entries := make([]*json.HistoryEntry, len(commits))

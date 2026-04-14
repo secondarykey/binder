@@ -8,7 +8,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 
-import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
+import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds,
+  ListBranchesByPath, CurrentBranchByPath, SwitchBranchByPath } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
@@ -18,12 +19,16 @@ import { useTranslation } from 'react-i18next';
 /**
  * ブランチ操作パネル（ダイアログラッパーなし）
  * BranchModal と OverallHistoryApp の右ペインで共用する
- * @param {{ onClose?: () => void }} props
+ * @param {{ onClose?: () => void, binderPath?: string }} props
+ *   binderPath が指定された場合はバインダー未オープン状態でByPath系APIを使用する
  */
-export function BranchPanel({ onClose = () => {} }) {
+export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
   const evt = useContext(EventContext);
   const { showError } = useDialogMessage();
   const { t } = useTranslation();
+
+  // binderPath が指定された場合はByPath系APIを使用する
+  const byPath = !!binderPath;
 
   const [branches, setBranches] = useState([]);
   const [currentBranch, setCurrentBranch] = useState('');
@@ -39,24 +44,35 @@ export function BranchPanel({ onClose = () => {} }) {
     reload();
     setNewBranchName('');
     setRenamingBranch(null);
-    GetModifiedIds().then((ids) => {
-      setHasUncommitted(ids && ids.length > 0);
-    }).catch((err) => showError(err));
+    // byPath モードでは未コミット変更チェックをスキップ（バインダー未オープン）
+    if (!byPath) {
+      GetModifiedIds().then((ids) => {
+        setHasUncommitted(ids && ids.length > 0);
+      }).catch((err) => showError(err));
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const reload = () => {
-    ListBranches().then(setBranches).catch((err) => showError(err));
-    CurrentBranch().then(setCurrentBranch).catch((err) => showError(err));
+    if (byPath) {
+      ListBranchesByPath(binderPath).then(setBranches).catch((err) => showError(err));
+      CurrentBranchByPath(binderPath).then(setCurrentBranch).catch((err) => showError(err));
+    } else {
+      ListBranches().then(setBranches).catch((err) => showError(err));
+      CurrentBranch().then(setCurrentBranch).catch((err) => showError(err));
+    }
   };
 
   const doSwitch = (name) => {
     setConfirmSwitchName(null);
     setLoading(true);
-    SwitchBranch(name).then((result) => {
+    const switchFn = byPath ? SwitchBranchByPath(binderPath, name) : SwitchBranch(name);
+    switchFn.then((result) => {
       if (result.address) evt.changeAddress(result.address);
       if (result.status === 'success') {
-        evt.refreshTree();
+        if (!byPath) {
+          evt.refreshTree();
+        }
         evt.showSuccessMessage(t('branch.switchSuccess', { name }));
         reload();
         onClose();
@@ -156,7 +172,7 @@ export function BranchPanel({ onClose = () => {} }) {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  {name === currentBranch && (
+                  {name === currentBranch && !byPath && (
                     <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
                       title={t("branch.rename")}>
                       <EditIcon sx={{ fontSize: '16px' }} />
@@ -198,33 +214,35 @@ export function BranchPanel({ onClose = () => {} }) {
         ))}
       </List>
 
-      <Divider sx={{ my: 2 }} />
+      {!byPath && <Divider sx={{ my: 2 }} />}
 
-      {/** 新規作成 */}
-      <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
+      {/** 新規作成（byPath モードでは非表示: バインダー未オープン状態でのブランチ作成は未サポート） */}
+      {!byPath && <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
         {t("branch.create")}
-      </Typography>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        <TextField
-          size="small"
-          placeholder={t("branch.branchName")}
-          value={newBranchName}
-          onChange={(e) => setNewBranchName(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') setConfirmCreateOpen(true); }}
-          disabled={loading}
-          sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
-        />
-        <Button
-          size="small"
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setConfirmCreateOpen(true)}
-          disabled={loading || hasUncommitted || !newBranchName.trim()}
-          sx={{ whiteSpace: 'nowrap' }}
-        >
-          {t("branch.create")}
-        </Button>
-      </Box>
+      </Typography>}
+      {!byPath && (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <TextField
+            size="small"
+            placeholder={t("branch.branchName")}
+            value={newBranchName}
+            onChange={(e) => setNewBranchName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') setConfirmCreateOpen(true); }}
+            disabled={loading}
+            sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
+          />
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setConfirmCreateOpen(true)}
+            disabled={loading || hasUncommitted || !newBranchName.trim()}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            {t("branch.create")}
+          </Button>
+        </Box>
+      )}
 
       {/** ブランチ切替確認ダイアログ */}
       <Dialog

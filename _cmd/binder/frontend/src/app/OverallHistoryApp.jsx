@@ -1,5 +1,4 @@
-import { useEffect, useContext } from 'react';
-import { Routes, Route, useNavigate } from 'react-router';
+import { useState, useContext } from 'react';
 
 import { Toolbar, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -10,6 +9,7 @@ import { EventContext } from '../Event';
 import { SystemMessage } from '../Message';
 import OverallHistoryMenu from './OverallHistoryMenu';
 import OverallHistoryDetail from './OverallHistoryDetail';
+import { BranchPanel } from '../dialogs/BranchModal';
 
 import '../assets/App.css';
 import '../assets/OverallHistoryApp.css';
@@ -18,21 +18,22 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * 全体履歴表示ウィンドウ
- * コミット一覧（左）とファイル一覧（右）を並べたスタンドアロンウィンドウ
+ * コミット一覧（左）とブランチ管理 or コミット詳細（右）を並べたスタンドアロンウィンドウ
  */
 function OverallHistoryApp() {
 
   const evt = useContext(EventContext);
-  const nav = useNavigate();
   const { t } = useTranslation();
 
   // URL search params から binderPath を取得（未オープン状態での起動用）
   const params = new URLSearchParams(window.location.search);
   const binderPath = params.get('binderPath') ?? '';
 
-  useEffect(() => {
-    nav('/overall/list');
-  }, []);
+  const [selectedHash, setSelectedHash] = useState(null);
+
+  const handleSelect = (hash) => {
+    setSelectedHash(hash);
+  };
 
   const handleClose = () => {
     Window.Close();
@@ -51,23 +52,23 @@ function OverallHistoryApp() {
         </IconButton>
       </Toolbar>
 
-      {/** メインエリア: 左=コミット一覧、右=ファイル一覧 */}
+      {/** メインエリア: 左=コミット一覧、右=ブランチ管理 or コミット詳細 */}
       <div id="overallHistoryArea">
 
         <div id="overallHistoryLeft">
-          <Routes>
-            <Route path="/overall/list"          element={<OverallHistoryMenu binderPath={binderPath} />} />
-            <Route path="/overall/detail/:hash"  element={<OverallHistoryMenu binderPath={binderPath} />} />
-            <Route path="*"                      element={<OverallHistoryMenu binderPath={binderPath} />} />
-          </Routes>
+          <OverallHistoryMenu
+            binderPath={binderPath}
+            selectedHash={selectedHash}
+            onSelect={handleSelect}
+            onClose={handleClose}
+          />
         </div>
 
         <div id="overallHistoryRight">
-          <Routes>
-            <Route path="/overall/list"          element={<div id="overallHistoryEmpty" />} />
-            <Route path="/overall/detail/:hash"  element={<OverallHistoryDetail binderPath={binderPath} />} />
-            <Route path="*"                      element={<div id="overallHistoryEmpty" />} />
-          </Routes>
+          {selectedHash
+            ? <OverallHistoryDetail binderPath={binderPath} hash={selectedHash} />
+            : <BranchPanel binderPath={binderPath} onClose={handleClose} />
+          }
         </div>
 
       </div>
