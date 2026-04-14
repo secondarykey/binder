@@ -375,6 +375,20 @@ func (f *FileSystem) ListBranches() ([]string, error) {
 	return branches, nil
 }
 
+// ResetHard は git reset --hard HEAD を実行し、ワークツリーをHEADの状態に戻す。
+// 移行処理失敗時のロールバックなど、uncommitted な変更を破棄する用途で使用する。
+func (f *FileSystem) ResetHard() error {
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
+	if err != nil {
+		return xerrors.Errorf("Reset(hard) error: %w", err)
+	}
+	return nil
+}
+
 // CheckoutBranch は既存ブランチにチェックアウトする。
 func (f *FileSystem) CheckoutBranch(name string) error {
 	branch := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", name))

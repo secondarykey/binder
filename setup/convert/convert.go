@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	. "binder/internal"
+	"binder/log"
 
 	"binder/db"
 	"binder/fs"
@@ -206,9 +207,10 @@ type MigrateResult struct {
 // binder.json を読み込んで現在のスキーマバージョンを取得し、必要な移行を順番に適用する。
 // 移行後は binder.json を更新して保存し、git コミットまで完結させる。
 // 各移行は CSV スキーマ変換とファイルシステム移行を含む自己完結した処理単位。
-func Run(dir string, ver *Version) (*MigrateResult, error) {
+// 移行処理が失敗した場合は git reset --hard HEAD でワークツリーをロールバックする。
+func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 
-	result := &MigrateResult{}
+	result = &MigrateResult{}
 
 	if ver == nil {
 		return result, nil
@@ -228,6 +230,18 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("Load() error: %w", err)
 	}
+
+	// 移行処理が失敗した場合、ワークツリーをHEADの状態にロールバックする。
+	// 中途半端に変更されたCSVや作成されたファイルを残さないことで、
+	// ブランチ切替など後続の操作を安全に行えるようにする。
+	defer func() {
+		if err != nil {
+			log.Warn("convert.Run: migration failed, resetting worktree to HEAD")
+			if resetErr := bfs.ResetHard(); resetErr != nil {
+				log.WarnE("convert.Run: ResetHard() failed", resetErr)
+			}
+		}
+	}()
 
 	dbDir := bfs.DatabaseDir()
 

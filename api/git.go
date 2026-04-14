@@ -653,6 +653,8 @@ func (a *App) CurrentBranchByPath(dir string) (string, error) {
 
 // SwitchBranchByPath はバインダーを開かずにディレクトリパスから指定ブランチに切り替える。
 // もし a.current が同じディレクトリを開いていたら SwitchBranch と同じフローにする。
+// ワークツリーに未コミット変更がある場合（移行処理失敗後など）は
+// git reset --hard HEAD でリセットしてからチェックアウトする。
 func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, error) {
 
 	defer log.PrintTrace(log.Func("SwitchBranchByPath()", dir, name))
@@ -665,6 +667,14 @@ func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, e
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+	}
+
+	// 未コミット変更がある場合（移行失敗後など）はリセットしてからチェックアウトする。
+	// ワークツリーがクリーンでない状態のままブランチ切替すると、
+	// dirty な変更が切替先ブランチに持ち込まれるのを防ぐ。
+	if err = tmpFs.ResetHard(); err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("ResetHard() error: %+v", err)
 	}
 
 	err = tmpFs.CheckoutBranch(name)
