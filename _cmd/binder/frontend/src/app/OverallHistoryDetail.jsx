@@ -3,8 +3,9 @@ import { useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText, ListItemIcon,
-  Typography, CircularProgress, Box, Chip,
+  Typography, CircularProgress, Box, Chip, IconButton,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CodeIcon from '@mui/icons-material/Code';
@@ -43,11 +44,12 @@ const actionColors = {
 
 /**
  * 全体履歴 コミット詳細（変更ファイル一覧）
- * @param {{ binderPath?: string, hash?: string }} props
+ * @param {{ binderPath?: string, hash?: string, onBack?: () => void }} props
  *   - hash が指定された場合はそちらを優先（モーダル統合用）
  *   - 未指定の場合は react-router の useParams から取得（OverallHistoryApp ウィンドウ用）
+ *   - onBack が指定された場合は先頭に戻るボタンを表示する
  */
-function OverallHistoryDetail({ binderPath, hash: hashProp }) {
+function OverallHistoryDetail({ binderPath, hash: hashProp, onBack }) {
 
   const { hash: routerHash } = useParams();
   const hash = hashProp !== undefined ? hashProp : routerHash;
@@ -98,6 +100,19 @@ function OverallHistoryDetail({ binderPath, hash: hashProp }) {
 
   return (
     <Box sx={{ p: 1 }}>
+
+      {/** 戻るボタン（onBack が指定された場合のみ表示） */}
+      {onBack && (
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+          <IconButton size="small" onClick={onBack} title={t('common.back')}
+            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}>
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.75rem' }}>
+            {hash}
+          </Typography>
+        </Box>
+      )}
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>

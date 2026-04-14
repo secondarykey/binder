@@ -66,7 +66,8 @@ function OverallHistoryApp() {
 
         <div id="overallHistoryRight">
           {selectedHash
-            ? <OverallHistoryDetail binderPath={binderPath} hash={selectedHash} />
+            ? <OverallHistoryDetail binderPath={binderPath} hash={selectedHash}
+                onBack={() => setSelectedHash(null)} />
             : <BranchPanel binderPath={binderPath} onClose={handleClose} />
           }
         </div>

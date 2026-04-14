@@ -41,7 +41,8 @@
         "select" : "選択",
         "private" : "非公開",
         "aliasDuplicate" : "このエイリアスは既に使用されています",
-        "none" : "なし"
+        "none" : "なし",
+        "back" : "戻る"
     },
     "tree" : {
         "menu" : "メニュー",
