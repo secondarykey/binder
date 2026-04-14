@@ -262,6 +262,15 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 		return nil, xerrors.Errorf("EnsureTableFiles() error: %w", err)
 	}
 
+	// 旧バインダーに欠損ディレクトリがある場合（git の旧ブランチ等）は作成する。
+	// binder.Load() の CheckDirectory で存在を要求されるディレクトリ群を保証する。
+	for _, d := range []string{fs.NoteDir, fs.DiagramDir, fs.TemplateDir, fs.AssetDir} {
+		target := filepath.Join(dir, d)
+		if err = os.MkdirAll(target, 0755); err != nil {
+			return nil, xerrors.Errorf("MkdirAll(%s) error: %w", d, err)
+		}
+	}
+
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
 	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
 	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
