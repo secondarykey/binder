@@ -9,12 +9,7 @@ import (
 )
 
 const (
-	UserFileName  = "user_data.enc"
-	GitIgnoreFile = ".gitignore"
-	IgnoreFiles   = UserFileName + `
-.DS_Store
-.worktree
-`
+	UserFileName = "user_data.enc"
 )
 
 // AuthType は認証方式の種別
