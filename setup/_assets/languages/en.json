@@ -193,7 +193,11 @@
         "pushButton" : "Push"
     },
     "merge" : {
-        "title" : "Merge from Remote",
+        "title" : "Merge",
+        "modeLocal" : "Local",
+        "modeRemote" : "Remote",
+        "sourceBranch" : "Source Branch",
+        "targetBranch" : "Target Branch (Current)",
         "remote" : "Remote",
         "localBranch" : "Local Branch",
         "remoteBranch" : "Remote Branch",
@@ -210,6 +214,8 @@
         "selectResolution" : "Files requiring resolution",
         "keepOurs" : "Keep Local",
         "keepTheirs" : "Keep Remote",
+        "keepOursLocal" : "Keep Current Branch",
+        "keepTheirsLocal" : "Keep Source Branch",
         "keepBoth" : "Keep Both",
         "applyResolution" : "Apply Merge",
         "modified" : "Modified",
@@ -217,6 +223,7 @@
         "added" : "Added",
         "localLabel" : "Local",
         "remoteLabel" : "Remote",
+        "sourceLabel" : "Source",
         "selectFile" : "Select a file from the list."
     },
     "branch" : {

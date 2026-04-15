@@ -7,12 +7,13 @@ import {
   ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import MergeIcon from '@mui/icons-material/Merge';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import ModalWrapper from './components/ModalWrapper';
 import AuthFields from '../components/AuthFields';
-import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListRemoteBranches, MergeFromRemote, ApplyMergeResolution } from '../../bindings/binder/api/app';
+import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListBranches, ListRemoteBranches, MergeFromRemote, MergeFromLocal, ApplyMergeResolution } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
@@ -21,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * Mergeモーダル
+ * mergeMode: 'local' | 'remote'
  * 3フェーズ: form → conflicts → applying
  */
 function MergeModal({ open, onClose }) {
@@ -31,10 +33,21 @@ function MergeModal({ open, onClose }) {
   // フェーズ管理
   const [phase, setPhase] = useState('form'); // form, conflicts, applying
 
-  // form フェーズの状態
+  // モード管理
+  const [mergeMode, setMergeMode] = useState('local'); // local, remote
+
+  // ローカルモードの状態
+  const [localBranches, setLocalBranches] = useState([]);
+  const [sourceBranch, setSourceBranch] = useState('');
+
+  // form フェーズの状態（共通）
+  const [localBranch, setLocalBranch] = useState('');
+  const [merging, setMerging] = useState(false);
+  const [hasUncommitted, setHasUncommitted] = useState(false);
+
+  // form フェーズの状態（リモート専用）
   const [remotes, setRemotes] = useState([]);
   const [remoteName, setRemoteName] = useState('');
-  const [localBranch, setLocalBranch] = useState('');
   const [remoteBranch, setRemoteBranch] = useState('');
   const [remoteBranches, setRemoteBranches] = useState([]);
   const [authType, setAuthType] = useState('');
@@ -44,10 +57,8 @@ function MergeModal({ open, onClose }) {
   const [passphrase, setPassphrase] = useState('');
   const [sshKey, setSSHKey] = useState('');
   const [save, setSave] = useState(false);
-  const [merging, setMerging] = useState(false);
   const [loadingBranches, setLoadingBranches] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(true);
-  const [hasUncommitted, setHasUncommitted] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
 
@@ -70,12 +81,7 @@ function MergeModal({ open, onClose }) {
     setAutoResolved(0);
     setSelectedPath(null);
     setApplying(false);
-
-    RemoteList().then((res) => {
-      const list = res || [];
-      setRemotes(list);
-      if (list.length > 0) setRemoteName(list[0].name);
-    }).catch((err) => showError(err));
+    setMerging(false);
 
     CurrentBranch().then((name) => {
       setLocalBranch(name || '');
@@ -84,6 +90,18 @@ function MergeModal({ open, onClose }) {
 
     GetModifiedIds().then((ids) => {
       setHasUncommitted(ids && ids.length > 0);
+    }).catch((err) => showError(err));
+
+    // ローカルブランチ一覧を取得
+    ListBranches().then((branches) => {
+      setLocalBranches(branches || []);
+    }).catch((err) => showError(err));
+
+    // リモート一覧を取得
+    RemoteList().then((res) => {
+      const list = res || [];
+      setRemotes(list);
+      if (list.length > 0) setRemoteName(list[0].name);
     }).catch((err) => showError(err));
 
     GetUserInfo().then((info) => {
@@ -110,9 +128,19 @@ function MergeModal({ open, onClose }) {
     }).catch((err) => showError(err));
 
     setRemoteBranches([]);
-    setMerging(false);
     setLoadingBranches(false);
   }, [open]);
+
+  // ローカルブランチ一覧から現在のブランチを除いたもの
+  const selectableBranches = localBranches.filter((b) => b !== localBranch);
+
+  // sourceBranch が未選択またはリストにない場合はリストの先頭を選択
+  useEffect(() => {
+    if (mergeMode !== 'local') return;
+    if (selectableBranches.length > 0 && !selectableBranches.includes(sourceBranch)) {
+      setSourceBranch(selectableBranches[0]);
+    }
+  }, [mergeMode, selectableBranches]);
 
   const buildAuthInfo = () => ({
     name: userName,
@@ -141,48 +169,52 @@ function MergeModal({ open, onClose }) {
     });
   };
 
+  const handleMergeResult = (result) => {
+    if (result.address) evt.changeAddress(result.address);
+
+    switch (result.status) {
+      case 'success':
+        evt.showSuccessMessage(
+          result.auto_resolved > 0
+            ? t('merge.mergeSuccess') + ` (${result.auto_resolved} ${t('merge.autoResolved')})`
+            : t('merge.mergeSuccess')
+        );
+        evt.refreshTree();
+        onClose();
+        break;
+      case 'uptodate':
+        evt.showInfoMessage(t('merge.upToDate'));
+        break;
+      case 'conflicts':
+        setConflicts(result.conflicts || []);
+        setMergeHashes({
+          base: result.base_hash,
+          ours: result.ours_hash,
+          theirs: result.theirs_hash,
+        });
+        setAutoResolved(result.auto_resolved || 0);
+        setResolutions({});
+        setSelectedPath(result.conflicts && result.conflicts.length > 0 ? result.conflicts[0].path : null);
+        setPhase('conflicts');
+        break;
+      case 'reload_error':
+        showError(result.message || t('merge.reloadError'));
+        onClose();
+        break;
+      default:
+        if (result.message) showError(result.message);
+        break;
+    }
+  };
+
   const handleMerge = () => {
-    if (!remoteName || !remoteBranch) return;
-
     setMerging(true);
-    MergeFromRemote(remoteName, remoteBranch, buildAuthInfo(), save).then((result) => {
-      if (result.address) evt.changeAddress(result.address);
 
-      switch (result.status) {
-        case 'success':
-          evt.showSuccessMessage(
-            result.auto_resolved > 0
-              ? t('merge.mergeSuccess') + ` (${result.auto_resolved} ${t('merge.autoResolved')})`
-              : t('merge.mergeSuccess')
-          );
-          evt.refreshTree();
-          onClose();
-          break;
-        case 'uptodate':
-          evt.showInfoMessage(t('merge.upToDate'));
-          break;
-        case 'conflicts':
-          // コンフリクトフェーズに遷移
-          setConflicts(result.conflicts || []);
-          setMergeHashes({
-            base: result.base_hash,
-            ours: result.ours_hash,
-            theirs: result.theirs_hash,
-          });
-          setAutoResolved(result.auto_resolved || 0);
-          setResolutions({});
-          setSelectedPath(result.conflicts && result.conflicts.length > 0 ? result.conflicts[0].path : null);
-          setPhase('conflicts');
-          break;
-        case 'reload_error':
-          showError(result.message || t('merge.reloadError'));
-          onClose();
-          break;
-        default:
-          if (result.message) showError(result.message);
-          break;
-      }
-    }).catch((err) => {
+    const promise = mergeMode === 'local'
+      ? MergeFromLocal(sourceBranch)
+      : MergeFromRemote(remoteName, remoteBranch, buildAuthInfo(), save);
+
+    promise.then(handleMergeResult).catch((err) => {
       showError(err);
     }).finally(() => {
       setMerging(false);
@@ -199,8 +231,9 @@ function MergeModal({ open, onClose }) {
       base_hash: mergeHashes.base,
       ours_hash: mergeHashes.ours,
       theirs_hash: mergeHashes.theirs,
-      remote_name: remoteName,
-      remote_branch: remoteBranch,
+      remote_name: mergeMode === 'remote' ? remoteName : '',
+      remote_branch: mergeMode === 'remote' ? remoteBranch : '',
+      source_branch: mergeMode === 'local' ? sourceBranch : '',
       resolutions: resolutionList,
     }).then((result) => {
       if (result.address) evt.changeAddress(result.address);
@@ -221,6 +254,10 @@ function MergeModal({ open, onClose }) {
       setApplying(false);
     });
   };
+
+  const isMergeDisabled = mergeMode === 'local'
+    ? merging || !sourceBranch || hasUncommitted
+    : merging || !remoteName || !remoteBranch || !authType || hasUncommitted;
 
   const allResolved = conflicts.length > 0 && Object.keys(resolutions).length === conflicts.length;
   const selectedConflict = conflicts.find((c) => c.path === selectedPath);
@@ -248,91 +285,146 @@ function MergeModal({ open, onClose }) {
       {phase === 'form' && (
         <Box sx={{ p: 3, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
 
+          {/* モード切替 */}
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <ToggleButtonGroup
+              value={mergeMode}
+              exclusive
+              onChange={(_, val) => { if (val) setMergeMode(val); }}
+              size="small"
+            >
+              <ToggleButton value="local" sx={{ textTransform: 'none', px: 3, fontSize: '13px' }}>
+                <MergeIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('merge.modeLocal')}
+              </ToggleButton>
+              <ToggleButton value="remote" sx={{ textTransform: 'none', px: 3, fontSize: '13px' }}>
+                <CloudDownloadIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('merge.modeRemote')}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
           {hasUncommitted && (
             <Alert severity="warning" sx={{ fontSize: '13px' }}>
               {t('merge.uncommittedWarning')}
             </Alert>
           )}
 
-          <FormControl size="small">
-            <FormLabel>{t('merge.remote')}</FormLabel>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
-              <Select
-                value={remoteName}
-                onChange={(e) => setRemoteName(e.target.value)}
-                size="small"
-                sx={{ flex: 1, minWidth: 0 }}
-              >
-                {remotes.map((r) => (
-                  <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
-                ))}
-              </Select>
-              <Button
-                variant="text" size="small"
-                onClick={handleLoadBranches}
-                disabled={loadingBranches || !remoteName || !authType}
-                sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
-              >
-                {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
-              </Button>
-            </Box>
-          </FormControl>
+          {/* ローカルモード */}
+          {mergeMode === 'local' && (
+            <>
+              <FormControl size="small">
+                <FormLabel>{t('merge.sourceBranch')}</FormLabel>
+                {selectableBranches.length > 0 ? (
+                  <Select
+                    value={sourceBranch}
+                    onChange={(e) => setSourceBranch(e.target.value)}
+                    size="small"
+                  >
+                    {selectableBranches.map((b) => (
+                      <MenuItem key={b} value={b}>{b}</MenuItem>
+                    ))}
+                  </Select>
+                ) : (
+                  <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 0.5 }}>
+                    {/* 他にブランチがない場合 */}
+                    —
+                  </Typography>
+                )}
+              </FormControl>
 
-          <FormControl size="small">
-            <FormLabel>{t('merge.remoteBranch')}</FormLabel>
-            {remoteBranches.length > 0 ? (
-              <Select value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} size="small">
-                {remoteBranches.map((b) => (<MenuItem key={b} value={b}>{b}</MenuItem>))}
-              </Select>
-            ) : (
-              <TextField size="small" value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} />
-            )}
-          </FormControl>
+              <FormControl size="small">
+                <FormLabel>{t('merge.targetBranch')}</FormLabel>
+                <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
+              </FormControl>
+            </>
+          )}
 
-          <FormControl size="small">
-            <FormLabel>{t('merge.localBranch')}</FormLabel>
-            <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
-          </FormControl>
+          {/* リモートモード */}
+          {mergeMode === 'remote' && (
+            <>
+              <FormControl size="small">
+                <FormLabel>{t('merge.remote')}</FormLabel>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
+                  <Select
+                    value={remoteName}
+                    onChange={(e) => setRemoteName(e.target.value)}
+                    size="small"
+                    sx={{ flex: 1, minWidth: 0 }}
+                  >
+                    {remotes.map((r) => (
+                      <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
+                    ))}
+                  </Select>
+                  <Button
+                    variant="text" size="small"
+                    onClick={handleLoadBranches}
+                    disabled={loadingBranches || !remoteName || !authType}
+                    sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
+                  >
+                    {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
+                  </Button>
+                </Box>
+              </FormControl>
+
+              <FormControl size="small">
+                <FormLabel>{t('merge.remoteBranch')}</FormLabel>
+                {remoteBranches.length > 0 ? (
+                  <Select value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} size="small">
+                    {remoteBranches.map((b) => (<MenuItem key={b} value={b}>{b}</MenuItem>))}
+                  </Select>
+                ) : (
+                  <TextField size="small" value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} />
+                )}
+              </FormControl>
+
+              <FormControl size="small">
+                <FormLabel>{t('merge.localBranch')}</FormLabel>
+                <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
+              </FormControl>
+            </>
+          )}
 
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
             <Button
               variant="outlined"
-              startIcon={merging ? <CircularProgress size={16} /> : <CloudDownloadIcon />}
+              startIcon={merging ? <CircularProgress size={16} /> : (mergeMode === 'local' ? <MergeIcon /> : <CloudDownloadIcon />)}
               onClick={handleMerge}
-              disabled={merging || !remoteName || !remoteBranch || !authType || hasUncommitted}
+              disabled={isMergeDisabled}
               sx={{ textTransform: 'none' }}
             >
               {t('merge.mergeButton')}
             </Button>
           </Box>
 
-          <Accordion
-            expanded={authExpanded}
-            onChange={(_, expanded) => setAuthExpanded(expanded)}
-            disableGutters
-            sx={{ backgroundColor: 'transparent', boxShadow: 'none', '&::before': { display: 'none' } }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-secondary)' }} />}>
-              <Typography sx={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                {t('merge.authType')}
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0 }}>
-              <AuthFields
-                authType={authType} onAuthTypeChange={setAuthType}
-                username={username} onUsernameChange={setUsername}
-                password={password} onPasswordChange={setPassword}
-                token={token} onTokenChange={setToken}
-                passphrase={passphrase} onPassphraseChange={setPassphrase}
-                sshKey={sshKey} onSSHKeyChange={setSSHKey}
-              />
-              <FormControlLabel
-                control={<Checkbox checked={save} onChange={(e) => setSave(e.target.checked)} size="small" />}
-                label={t('merge.saveCredentials')}
-                sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
-              />
-            </AccordionDetails>
-          </Accordion>
+          {/* 認証（リモートモード時のみ表示） */}
+          {mergeMode === 'remote' && (
+            <Accordion
+              expanded={authExpanded}
+              onChange={(_, expanded) => setAuthExpanded(expanded)}
+              disableGutters
+              sx={{ backgroundColor: 'transparent', boxShadow: 'none', '&::before': { display: 'none' } }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-secondary)' }} />}>
+                <Typography sx={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  {t('merge.authType')}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0 }}>
+                <AuthFields
+                  authType={authType} onAuthTypeChange={setAuthType}
+                  username={username} onUsernameChange={setUsername}
+                  password={password} onPasswordChange={setPassword}
+                  token={token} onTokenChange={setToken}
+                  passphrase={passphrase} onPassphraseChange={setPassphrase}
+                  sshKey={sshKey} onSSHKeyChange={setSSHKey}
+                />
+                <FormControlLabel
+                  control={<Checkbox checked={save} onChange={(e) => setSave(e.target.checked)} size="small" />}
+                  label={t('merge.saveCredentials')}
+                  sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+                />
+              </AccordionDetails>
+            </Accordion>
+          )}
         </Box>
       )}
 
@@ -416,7 +508,7 @@ function MergeModal({ open, onClose }) {
 
                 <Box sx={{ display: 'flex', gap: 2, fontSize: '12px', color: 'var(--text-secondary)' }}>
                   <span>{t('merge.localLabel')}: {actionLabel(selectedConflict.ours_action)}</span>
-                  <span>{t('merge.remoteLabel')}: {actionLabel(selectedConflict.their_action)}</span>
+                  <span>{mergeMode === 'local' ? t('merge.sourceLabel') : t('merge.remoteLabel')}: {actionLabel(selectedConflict.their_action)}</span>
                 </Box>
 
                 <ToggleButtonGroup
@@ -428,10 +520,10 @@ function MergeModal({ open, onClose }) {
                   sx={{ mt: 2 }}
                 >
                   <ToggleButton value="ours" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
-                    {t('merge.keepOurs')}
+                    {mergeMode === 'local' ? t('merge.keepOursLocal') : t('merge.keepOurs')}
                   </ToggleButton>
                   <ToggleButton value="theirs" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
-                    {t('merge.keepTheirs')}
+                    {mergeMode === 'local' ? t('merge.keepTheirsLocal') : t('merge.keepTheirs')}
                   </ToggleButton>
                   {['note', 'diagram', 'template'].includes(selectedConflict.type) && (
                     <ToggleButton value="both" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
@@ -442,7 +534,11 @@ function MergeModal({ open, onClose }) {
 
                 {resolutions[selectedConflict.path] && (
                   <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 1 }}>
-                    → {resolutions[selectedConflict.path] === 'ours' ? t('merge.keepOurs') : resolutions[selectedConflict.path] === 'theirs' ? t('merge.keepTheirs') : t('merge.keepBoth')}
+                    → {resolutions[selectedConflict.path] === 'ours'
+                      ? (mergeMode === 'local' ? t('merge.keepOursLocal') : t('merge.keepOurs'))
+                      : resolutions[selectedConflict.path] === 'theirs'
+                        ? (mergeMode === 'local' ? t('merge.keepTheirsLocal') : t('merge.keepTheirs'))
+                        : t('merge.keepBoth')}
                   </Typography>
                 )}
               </>

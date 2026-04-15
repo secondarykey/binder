@@ -57,6 +57,7 @@ type MergeResolution struct {
 	TheirsHash   string            `json:"theirs_hash"`
 	RemoteName   string            `json:"remote_name"`
 	RemoteBranch string            `json:"remote_branch"`
+	SourceBranch string            `json:"source_branch"` // ローカルブランチマージ時のマージ元
 	Resolutions  []*FileResolution `json:"resolutions"`
 }
 

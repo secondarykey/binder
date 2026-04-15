@@ -258,6 +258,71 @@ func (f *FileSystem) MergeFFOnly(remoteName, branchName string) (string, error) 
 	return "success", nil
 }
 
+// MergeFFOnlyLocal はローカルブランチを fast-forward マージする。
+// "success" / "uptodate" / "diverged" のいずれかを返す。
+func (f *FileSystem) MergeFFOnlyLocal(branchName string) (string, error) {
+
+	// HEAD のコミットハッシュを取得
+	head, err := f.repo.Head()
+	if err != nil {
+		return "", xerrors.Errorf("repository Head() error: %w", err)
+	}
+	headHash := head.Hash()
+
+	// ローカルブランチの ref を取得
+	branchRef, err := f.repo.Reference(
+		plumbing.NewBranchReferenceName(branchName), true)
+	if err != nil {
+		return "", xerrors.Errorf("Reference(%s) error: %w", branchName, err)
+	}
+	sourceHash := branchRef.Hash()
+
+	// 同一ハッシュなら更新不要
+	if headHash == sourceHash {
+		return "uptodate", nil
+	}
+
+	// HEAD がソースの祖先かチェック（fast-forward 可能か）
+	headCommit, err := f.repo.CommitObject(headHash)
+	if err != nil {
+		return "", xerrors.Errorf("CommitObject(HEAD) error: %w", err)
+	}
+	sourceCommit, err := f.repo.CommitObject(sourceHash)
+	if err != nil {
+		return "", xerrors.Errorf("CommitObject(source) error: %w", err)
+	}
+
+	isAncestor, err := headCommit.IsAncestor(sourceCommit)
+	if err != nil {
+		return "", xerrors.Errorf("IsAncestor() error: %w", err)
+	}
+	if !isAncestor {
+		return "diverged", nil
+	}
+
+	// fast-forward: HEAD をソースブランチのコミットに進める
+	wt, err := f.repo.Worktree()
+	if err != nil {
+		return "", xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	err = wt.Checkout(&git.CheckoutOptions{
+		Hash: sourceHash,
+	})
+	if err != nil {
+		return "", xerrors.Errorf("Checkout() error: %w", err)
+	}
+
+	// ブランチ参照を更新
+	branchHeadRef := plumbing.NewHashReference(head.Name(), sourceHash)
+	err = f.repo.Storer.SetReference(branchHeadRef)
+	if err != nil {
+		return "", xerrors.Errorf("SetReference() error: %w", err)
+	}
+
+	return "success", nil
+}
+
 // Repo はリポジトリを返す（低レベル操作用）。
 func (f *FileSystem) Repo() *git.Repository {
 	return f.repo

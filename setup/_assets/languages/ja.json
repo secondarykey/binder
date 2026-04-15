@@ -193,7 +193,11 @@
         "pushButton" : "Push"
     },
     "merge" : {
-        "title" : "リモートからマージ",
+        "title" : "マージ",
+        "modeLocal" : "ローカル",
+        "modeRemote" : "リモート",
+        "sourceBranch" : "マージ元ブランチ",
+        "targetBranch" : "マージ先ブランチ（現在）",
         "remote" : "リモート",
         "localBranch" : "ローカルブランチ",
         "remoteBranch" : "リモートブランチ",
@@ -210,6 +214,8 @@
         "selectResolution" : "解決が必要なファイル",
         "keepOurs" : "ローカルを採用",
         "keepTheirs" : "リモートを採用",
+        "keepOursLocal" : "現在のブランチを採用",
+        "keepTheirsLocal" : "マージ元を採用",
         "keepBoth" : "両方残す",
         "applyResolution" : "マージを適用",
         "modified" : "変更あり",
@@ -217,6 +223,7 @@
         "added" : "追加",
         "localLabel" : "ローカル",
         "remoteLabel" : "リモート",
+        "sourceLabel" : "マージ元",
         "selectFile" : "左のファイルを選択してください"
     },
     "branch" : {
