@@ -47,7 +47,7 @@
     "tree" : {
         "menu" : "メニュー",
         "openBrowser" : "ブラウザで開く",
-        "changeBranch" : "ブランチ変更",
+        "changeBranch" : "全体履歴",
         "pushRemote" : "リモートにPush",
         "mergeRemote" : "リモートからマージ",
         "none" : "表示なし",
@@ -220,7 +220,7 @@
         "selectFile" : "左のファイルを選択してください"
     },
     "branch" : {
-        "title" : "ブランチ管理",
+        "title" : "全体履歴",
         "current" : "現在のブランチ",
         "list" : "ブランチ一覧",
         "switch" : "切替",

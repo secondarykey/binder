@@ -47,7 +47,7 @@
     "tree" : {
         "menu" : "Menu",
         "openBrowser" : "Open Browser",
-        "changeBranch" : "Change Branch",
+        "changeBranch" : "Overall History",
         "pushRemote" : "Push to Remote",
         "mergeRemote" : "Merge from Remote",
         "none" : "No Display",
@@ -220,7 +220,7 @@
         "selectFile" : "Select a file from the list."
     },
     "branch" : {
-        "title" : "Branch Management",
+        "title" : "Overall History",
         "current" : "Current Branch",
         "list" : "Branches",
         "switch" : "Switch",
