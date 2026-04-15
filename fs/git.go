@@ -22,6 +22,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	GitIgnoreFile = ".gitignore"
+	IgnoreFiles   = UserFileName + `
+.DS_Store
+.worktree
+`
+)
+
 var NoUpdated = fmt.Errorf("updates to the file")
 var UpdatedFilesError = fmt.Errorf("No updated files")
 
