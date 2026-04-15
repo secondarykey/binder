@@ -34,7 +34,7 @@ function MergeModal({ open, onClose }) {
   const [phase, setPhase] = useState('form'); // form, conflicts, applying
 
   // モード管理
-  const [mergeMode, setMergeMode] = useState('local'); // local, remote
+  const [mergeMode, setMergeMode] = useState('remote'); // local, remote
 
   // ローカルモードの状態
   const [localBranches, setLocalBranches] = useState([]);
