@@ -49,7 +49,7 @@
         "openBrowser" : "ブラウザで開く",
         "changeBranch" : "全体履歴",
         "pushRemote" : "リモートにPush",
-        "mergeRemote" : "リモートからマージ",
+        "mergeRemote" : "マージ",
         "none" : "表示なし",
         "commit" : "未コミット",
         "publish" : "未公開",

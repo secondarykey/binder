@@ -49,7 +49,7 @@
         "openBrowser" : "Open Browser",
         "changeBranch" : "Overall History",
         "pushRemote" : "Push to Remote",
-        "mergeRemote" : "Merge from Remote",
+        "mergeRemote" : "Merge",
         "none" : "No Display",
         "commit" : "Uncommitted",
         "publish" : "Unpublished",

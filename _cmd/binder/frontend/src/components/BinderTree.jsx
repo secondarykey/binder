@@ -866,14 +866,14 @@ function BinderTree(props) {
       <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
         <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
       </MenuItem>
+      {/** マージ */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openMergeModal(); }}>
+        <CloudDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.mergeRemote")}
+      </MenuItem>
       <Divider />
       {/** リモートにPush */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
         <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
-      </MenuItem>
-      {/** リモートからマージ */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openMergeModal(); }}>
-        <CloudDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.mergeRemote")}
       </MenuItem>
     </Menu>
 
