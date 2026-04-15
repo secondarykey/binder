@@ -1,15 +1,19 @@
 package api
 
 import (
+	. "binder/internal"
+
 	"binder"
 	"binder/api/json"
 	"binder/fs"
 	"binder/log"
+	"binder/setup/convert"
 
 	"errors"
 	"fmt"
 	"time"
 
+	gogitplumbing "github.com/go-git/go-git/v5/plumbing"
 	"golang.org/x/xerrors"
 )
 
@@ -201,10 +205,9 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
 	}
 
-	// 6. リポジトリを直接開いて fast-forward マージ
+	// 6. リポジトリを直接開く
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
-		// マージできなくても Binder を再オープン
 		address, reloadErr := a.LoadBinder(dir)
 		if reloadErr != nil {
 			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
@@ -212,9 +215,9 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	status, err := tmpFs.MergeFFOnly(remoteName, remoteBranch)
+	// 7. バージョンチェックと移行処理
+	sourceHash, err := tmpFs.RemoteBranchHash(remoteName, remoteBranch)
 	if err != nil {
-		// エラー時も Binder を再オープン
 		address, reloadErr := a.LoadBinder(dir)
 		if reloadErr != nil {
 			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
@@ -222,9 +225,30 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	// 7. diverged の場合はコンフリクト検出
-	if status == "diverged" {
-		analysis, err := tmpFs.DetectConflicts(remoteName, remoteBranch)
+	effectiveHash, versionNewer, err := a.checkMergeSourceVersion(dir, tmpFs, sourceHash)
+	if err != nil {
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+	if versionNewer {
+		address, _ := a.LoadBinder(dir)
+		return &json.MergeResult{Status: "version_error", Address: address}, nil
+	}
+
+	logSetter := func(ml *fs.MergeLog) {
+		ml.RemoteName = remoteName
+		ml.RemoteBranch = remoteBranch
+		if branch, err := a.current.GetCurrentBranch(); err == nil {
+			ml.LocalBranch = branch
+		}
+	}
+
+	// 8a. 移行不要: FF マージを試み、diverged ならコンフリクト検出
+	if effectiveHash == sourceHash {
+		status, err := tmpFs.MergeFFOnly(remoteName, remoteBranch)
 		if err != nil {
 			address, reloadErr := a.LoadBinder(dir)
 			if reloadErr != nil {
@@ -233,9 +257,8 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 			return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 		}
 
-		if len(analysis.Conflicts) == 0 {
-			// 全て自動解決可能 → 即マージ
-			mergeLog, err := tmpFs.ApplyResolutions(analysis, nil)
+		if status == "diverged" {
+			analysis, err := tmpFs.DetectConflicts(remoteName, remoteBranch)
 			if err != nil {
 				address, reloadErr := a.LoadBinder(dir)
 				if reloadErr != nil {
@@ -243,66 +266,36 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 				}
 				return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 			}
-			address, err := a.LoadBinder(dir)
-			if err != nil {
-				return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
-			}
-
-			// マージログノートを作成（失敗してもマージ自体は成功とする）
-			if mergeLog != nil {
-				mergeLog.RemoteName = remoteName
-				mergeLog.RemoteBranch = remoteBranch
-				if branch, err := a.current.GetCurrentBranch(); err == nil {
-					mergeLog.LocalBranch = branch
-				}
-				if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-					log.WarnE("CreateMergeLogNote() error", err)
-				}
-			}
-
-			return &json.MergeResult{
-				Status:       "success",
-				Address:      address,
-				AutoResolved: len(analysis.AutoFiles),
-			}, nil
+			return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
 		}
 
-		// コンフリクトあり → Binder を再オープンしてユーザー選択を待つ
+		address, err := a.LoadBinder(dir)
+		if err != nil {
+			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+		}
+		return &json.MergeResult{Status: status, Address: address}, nil
+	}
+
+	// 8b. 移行あり: ハッシュ直接指定でコンフリクト検出
+	currentHash, err := tmpFs.HeadHash()
+	if err != nil {
 		address, reloadErr := a.LoadBinder(dir)
 		if reloadErr != nil {
 			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
 		}
-
-		conflicts := make([]*json.ConflictFile, len(analysis.Conflicts))
-		for i, c := range analysis.Conflicts {
-			conflicts[i] = &json.ConflictFile{
-				Path:        c.Path,
-				Type:        c.Type,
-				Id:          c.Id,
-				Name:        c.Name,
-				OursAction:  c.OursAction,
-				TheirAction: c.TheirAction,
-			}
-		}
-
-		return &json.MergeResult{
-			Status:       "conflicts",
-			Address:      address,
-			Conflicts:    conflicts,
-			BaseHash:     analysis.BaseHash.String(),
-			OursHash:     analysis.OursHash.String(),
-			TheirsHash:   analysis.TheirsHash.String(),
-			AutoResolved: len(analysis.AutoFiles),
-		}, nil
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	// 8. Binder を再オープン
-	address, err := a.LoadBinder(dir)
+	analysis, err := tmpFs.DetectConflictsByHash(currentHash.String(), effectiveHash.String())
 	if err != nil {
-		return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	return &json.MergeResult{Status: status, Address: address}, nil
+	return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
 }
 
 func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.MergeResult, error) {
@@ -389,6 +382,131 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 	return &json.MergeResult{Status: "success", Address: address}, nil
 }
 
+// migrateSourceInPlace はデタッチドHEADでソースをチェックアウトし、
+// convert.Run() で移行処理を実行して移行後のコミットハッシュを返す。
+// 処理後は元のブランチに戻す。移行コミットはリポジトリのオブジェクトストアに残り、
+// ハッシュ経由でアクセス可能。
+func migrateSourceInPlace(dir string, tmpFs *fs.FileSystem, sourceHash gogitplumbing.Hash, appVer *Version) (gogitplumbing.Hash, error) {
+	currentBranch, err := tmpFs.CurrentBranch()
+	if err != nil {
+		return gogitplumbing.ZeroHash, xerrors.Errorf("CurrentBranch() error: %w", err)
+	}
+
+	if err := tmpFs.CheckoutDetached(sourceHash); err != nil {
+		return gogitplumbing.ZeroHash, xerrors.Errorf("CheckoutDetached() error: %w", err)
+	}
+
+	// エラー時も元のブランチに戻す
+	defer func() {
+		if restoreErr := tmpFs.CheckoutBranch(currentBranch); restoreErr != nil {
+			log.WarnE("migrateSourceInPlace: CheckoutBranch() error", restoreErr)
+		}
+	}()
+
+	if _, err := convert.Run(dir, appVer); err != nil {
+		return gogitplumbing.ZeroHash, xerrors.Errorf("convert.Run() error: %w", err)
+	}
+
+	migratedHash, err := tmpFs.HeadHash()
+	if err != nil {
+		return gogitplumbing.ZeroHash, xerrors.Errorf("HeadHash() error: %w", err)
+	}
+
+	return migratedHash, nil
+}
+
+// checkMergeSourceVersion はマージ元のバージョンを確認し、必要なら移行処理を実行する。
+// 戻り値:
+//   - resultHash: 使用すべきハッシュ（移行後はmigratedHash、不要ならsourceHashのまま）
+//   - versionNewer: マージ元がアプリより新しい場合 true（バージョンアップを促す）
+func (a *App) checkMergeSourceVersion(dir string, tmpFs *fs.FileSystem, sourceHash gogitplumbing.Hash) (resultHash gogitplumbing.Hash, versionNewer bool, err error) {
+	meta, err := tmpFs.ReadMetaFromHash(sourceHash)
+	if err != nil {
+		return sourceHash, false, xerrors.Errorf("ReadMetaFromHash() error: %w", err)
+	}
+
+	sourceVer, verErr := NewVersion(meta.Version)
+	if verErr != nil {
+		// パースできない場合は古いバインダーとして扱う
+		sourceVer, _ = NewVersion("0.0.0")
+	}
+
+	// マージ元がアプリより新しい場合はバージョンアップが必要
+	if sourceVer.Gt(a.version) {
+		return sourceHash, true, nil
+	}
+
+	// 移行が不要な場合はそのまま返す
+	if !convert.NeedsMigration(sourceVer) {
+		return sourceHash, false, nil
+	}
+
+	// 移行が必要: インプレースで実行してハッシュを返す
+	migratedHash, err := migrateSourceInPlace(dir, tmpFs, sourceHash, a.version)
+	if err != nil {
+		return sourceHash, false, xerrors.Errorf("migrateSourceInPlace() error: %w", err)
+	}
+
+	return migratedHash, false, nil
+}
+
+// MergeFromLocal はローカルブランチを現在のブランチにマージする。
+// handleMergeAnalysis はコンフリクト分析結果を処理し、自動解決またはユーザー選択待ちの結果を返す。
+func (a *App) handleMergeAnalysis(dir string, tmpFs *fs.FileSystem, analysis *fs.MergeAnalysis, logSetter func(*fs.MergeLog)) (*json.MergeResult, error) {
+	if len(analysis.Conflicts) == 0 {
+		// 全て自動解決可能 → 即マージ
+		mergeLog, err := tmpFs.ApplyResolutions(analysis, nil)
+		if err != nil {
+			address, reloadErr := a.LoadBinder(dir)
+			if reloadErr != nil {
+				return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+			}
+			return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+		}
+		address, err := a.LoadBinder(dir)
+		if err != nil {
+			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+		}
+		if mergeLog != nil {
+			logSetter(mergeLog)
+			if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
+				log.WarnE("CreateMergeLogNote() error", err)
+			}
+		}
+		return &json.MergeResult{
+			Status:       "success",
+			Address:      address,
+			AutoResolved: len(analysis.AutoFiles),
+		}, nil
+	}
+
+	// コンフリクトあり → Binder を再オープンしてユーザー選択を待つ
+	address, reloadErr := a.LoadBinder(dir)
+	if reloadErr != nil {
+		return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+	}
+	conflicts := make([]*json.ConflictFile, len(analysis.Conflicts))
+	for i, c := range analysis.Conflicts {
+		conflicts[i] = &json.ConflictFile{
+			Path:        c.Path,
+			Type:        c.Type,
+			Id:          c.Id,
+			Name:        c.Name,
+			OursAction:  c.OursAction,
+			TheirAction: c.TheirAction,
+		}
+	}
+	return &json.MergeResult{
+		Status:       "conflicts",
+		Address:      address,
+		Conflicts:    conflicts,
+		BaseHash:     analysis.BaseHash.String(),
+		OursHash:     analysis.OursHash.String(),
+		TheirsHash:   analysis.TheirsHash.String(),
+		AutoResolved: len(analysis.AutoFiles),
+	}, nil
+}
+
 // MergeFromLocal はローカルブランチを現在のブランチにマージする。
 func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 
@@ -412,7 +530,7 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
 	}
 
-	// 3. リポジトリを直接開いて fast-forward マージ
+	// 3. リポジトリを直接開く
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		address, reloadErr := a.LoadBinder(dir)
@@ -422,7 +540,8 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	status, err := tmpFs.MergeFFOnlyLocal(sourceBranch)
+	// 4. バージョンチェックと移行処理
+	sourceHash, err := tmpFs.LocalBranchHash(sourceBranch)
 	if err != nil {
 		address, reloadErr := a.LoadBinder(dir)
 		if reloadErr != nil {
@@ -431,9 +550,29 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	// 4. diverged の場合はコンフリクト検出
-	if status == "diverged" {
-		analysis, err := tmpFs.DetectConflictsFromLocalBranch(sourceBranch)
+	effectiveHash, versionNewer, err := a.checkMergeSourceVersion(dir, tmpFs, sourceHash)
+	if err != nil {
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+	}
+	if versionNewer {
+		address, _ := a.LoadBinder(dir)
+		return &json.MergeResult{Status: "version_error", Address: address}, nil
+	}
+
+	logSetter := func(ml *fs.MergeLog) {
+		ml.SourceBranch = sourceBranch
+		if branch, err := a.current.GetCurrentBranch(); err == nil {
+			ml.LocalBranch = branch
+		}
+	}
+
+	// 5a. 移行不要: FF マージを試み、diverged ならコンフリクト検出
+	if effectiveHash == sourceHash {
+		status, err := tmpFs.MergeFFOnlyLocal(sourceBranch)
 		if err != nil {
 			address, reloadErr := a.LoadBinder(dir)
 			if reloadErr != nil {
@@ -442,9 +581,8 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 			return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 		}
 
-		if len(analysis.Conflicts) == 0 {
-			// 全て自動解決可能 → 即マージ
-			mergeLog, err := tmpFs.ApplyResolutions(analysis, nil)
+		if status == "diverged" {
+			analysis, err := tmpFs.DetectConflictsFromLocalBranch(sourceBranch)
 			if err != nil {
 				address, reloadErr := a.LoadBinder(dir)
 				if reloadErr != nil {
@@ -452,64 +590,36 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 				}
 				return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 			}
-			address, err := a.LoadBinder(dir)
-			if err != nil {
-				return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
-			}
-
-			if mergeLog != nil {
-				mergeLog.SourceBranch = sourceBranch
-				if branch, err := a.current.GetCurrentBranch(); err == nil {
-					mergeLog.LocalBranch = branch
-				}
-				if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-					log.WarnE("CreateMergeLogNote() error", err)
-				}
-			}
-
-			return &json.MergeResult{
-				Status:       "success",
-				Address:      address,
-				AutoResolved: len(analysis.AutoFiles),
-			}, nil
+			return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
 		}
 
-		// コンフリクトあり → Binder を再オープンしてユーザー選択を待つ
+		address, err := a.LoadBinder(dir)
+		if err != nil {
+			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+		}
+		return &json.MergeResult{Status: status, Address: address}, nil
+	}
+
+	// 5b. 移行あり: ハッシュ直接指定でコンフリクト検出
+	currentHash, err := tmpFs.HeadHash()
+	if err != nil {
 		address, reloadErr := a.LoadBinder(dir)
 		if reloadErr != nil {
 			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
 		}
-
-		conflicts := make([]*json.ConflictFile, len(analysis.Conflicts))
-		for i, c := range analysis.Conflicts {
-			conflicts[i] = &json.ConflictFile{
-				Path:        c.Path,
-				Type:        c.Type,
-				Id:          c.Id,
-				Name:        c.Name,
-				OursAction:  c.OursAction,
-				TheirAction: c.TheirAction,
-			}
-		}
-
-		return &json.MergeResult{
-			Status:       "conflicts",
-			Address:      address,
-			Conflicts:    conflicts,
-			BaseHash:     analysis.BaseHash.String(),
-			OursHash:     analysis.OursHash.String(),
-			TheirsHash:   analysis.TheirsHash.String(),
-			AutoResolved: len(analysis.AutoFiles),
-		}, nil
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	// 5. Binder を再オープン
-	address, err := a.LoadBinder(dir)
+	analysis, err := tmpFs.DetectConflictsByHash(currentHash.String(), effectiveHash.String())
 	if err != nil {
-		return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
+		address, reloadErr := a.LoadBinder(dir)
+		if reloadErr != nil {
+			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+		}
+		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 	}
 
-	return &json.MergeResult{Status: status, Address: address}, nil
+	return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
 }
 
 func (a *App) GetModifiedIds() ([]string, error) {

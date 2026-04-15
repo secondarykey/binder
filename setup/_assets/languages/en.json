@@ -209,6 +209,7 @@
         "mergeSuccess" : "Merged successfully.",
         "upToDate" : "Already up to date.",
         "reloadError" : "Failed to reload Binder after merge. Please reopen the Binder.",
+        "versionNewerError" : "The source binder is a newer version. Please update the app before merging.",
         "conflictsTitle" : "Resolve Conflicts",
         "autoResolved" : "files auto-resolved",
         "selectResolution" : "Files requiring resolution",

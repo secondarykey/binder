@@ -203,6 +203,17 @@ type MigrateResult struct {
 	UserDataRequired bool
 }
 
+// NeedsMigration は指定バージョンから現在のスキーマへの移行処理が必要かを返す。
+// ov が全ての migration エントリより新しい（または同じ）場合は false を返す。
+func NeedsMigration(ov *Version) bool {
+	for _, m := range migrations {
+		if ov.Lt(m.ver) {
+			return true
+		}
+	}
+	return false
+}
+
 // Run はバインダーレベルの全移行処理を実行する。
 // binder.json を読み込んで現在のスキーマバージョンを取得し、必要な移行を順番に適用する。
 // 移行後は binder.json を更新して保存し、git コミットまで完結させる。

@@ -197,6 +197,9 @@ function MergeModal({ open, onClose }) {
         setSelectedPath(result.conflicts && result.conflicts.length > 0 ? result.conflicts[0].path : null);
         setPhase('conflicts');
         break;
+      case 'version_error':
+        showError(t('merge.versionNewerError'));
+        break;
       case 'reload_error':
         showError(result.message || t('merge.reloadError'));
         onClose();

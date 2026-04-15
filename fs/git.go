@@ -3,6 +3,7 @@ package fs
 import (
 	"binder/log"
 	"binder/settings"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -326,6 +327,76 @@ func (f *FileSystem) MergeFFOnlyLocal(branchName string) (string, error) {
 // Repo はリポジトリを返す（低レベル操作用）。
 func (f *FileSystem) Repo() *git.Repository {
 	return f.repo
+}
+
+// ReadMetaFromHash はコミットハッシュのツリーから binder.json を読む。
+// binder.json が存在しない場合は Version="0.0.0" のメタを返す（古いバインダー）。
+func (f *FileSystem) ReadMetaFromHash(hash plumbing.Hash) (*BinderMeta, error) {
+	commit, err := f.repo.CommitObject(hash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject() error: %w", err)
+	}
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, xerrors.Errorf("commit.Tree() error: %w", err)
+	}
+	file, err := tree.File(BinderMetaFile)
+	if err != nil {
+		// binder.json が存在しない = 旧バインダー（v0.0.0 として扱う）
+		return &BinderMeta{Version: "0.0.0"}, nil
+	}
+	content, err := file.Contents()
+	if err != nil {
+		return nil, xerrors.Errorf("file.Contents() error: %w", err)
+	}
+	var meta BinderMeta
+	if err = json.Unmarshal([]byte(content), &meta); err != nil {
+		return nil, xerrors.Errorf("json.Unmarshal() error: %w", err)
+	}
+	if meta.Version == "" {
+		meta.Version = "0.0.0"
+	}
+	return &meta, nil
+}
+
+// LocalBranchHash はローカルブランチの HEAD ハッシュを返す。
+func (f *FileSystem) LocalBranchHash(branchName string) (plumbing.Hash, error) {
+	ref, err := f.repo.Reference(plumbing.NewBranchReferenceName(branchName), true)
+	if err != nil {
+		return plumbing.ZeroHash, xerrors.Errorf("Reference(%s) error: %w", branchName, err)
+	}
+	return ref.Hash(), nil
+}
+
+// RemoteBranchHash はリモートブランチ参照のハッシュを返す。
+func (f *FileSystem) RemoteBranchHash(remoteName, branchName string) (plumbing.Hash, error) {
+	refName := plumbing.ReferenceName(fmt.Sprintf("refs/remotes/%s/%s", remoteName, branchName))
+	ref, err := f.repo.Reference(refName, true)
+	if err != nil {
+		return plumbing.ZeroHash, xerrors.Errorf("Reference(%s/%s) error: %w", remoteName, branchName, err)
+	}
+	return ref.Hash(), nil
+}
+
+// CheckoutDetached は指定ハッシュでデタッチドHEADにチェックアウトする。
+func (f *FileSystem) CheckoutDetached(hash plumbing.Hash) error {
+	wt, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+	if err = wt.Checkout(&git.CheckoutOptions{Hash: hash, Force: true}); err != nil {
+		return xerrors.Errorf("Checkout(detached) error: %w", err)
+	}
+	return nil
+}
+
+// HeadHash は現在の HEAD コミットハッシュを返す。
+func (f *FileSystem) HeadHash() (plumbing.Hash, error) {
+	head, err := f.repo.Head()
+	if err != nil {
+		return plumbing.ZeroHash, xerrors.Errorf("Head() error: %w", err)
+	}
+	return head.Hash(), nil
 }
 
 func (f *FileSystem) Push(r, name string, info *UserInfo) error {

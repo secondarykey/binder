@@ -209,6 +209,7 @@
         "mergeSuccess" : "マージしました",
         "upToDate" : "既に最新です",
         "reloadError" : "マージ後のBinder再読み込みに失敗しました。Binderを開き直してください。",
+        "versionNewerError" : "マージ元のバインダーはより新しいバージョンです。アプリをアップデートしてからマージしてください。",
         "conflictsTitle" : "コンフリクトの解決",
         "autoResolved" : "件を自動解決済み",
         "selectResolution" : "解決が必要なファイル",
