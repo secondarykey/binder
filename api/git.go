@@ -392,14 +392,25 @@ func migrateSourceInPlace(dir string, tmpFs *fs.FileSystem, sourceHash gogitplum
 		return gogitplumbing.ZeroHash, xerrors.Errorf("CurrentBranch() error: %w", err)
 	}
 
+	// 元のHEADハッシュを保存しておく（CheckoutBranch失敗時の強制復元用）
+	currentHash, err := tmpFs.HeadHash()
+	if err != nil {
+		return gogitplumbing.ZeroHash, xerrors.Errorf("HeadHash() error: %w", err)
+	}
+
 	if err := tmpFs.CheckoutDetached(sourceHash); err != nil {
 		return gogitplumbing.ZeroHash, xerrors.Errorf("CheckoutDetached() error: %w", err)
 	}
 
-	// エラー時も元のブランチに戻す
+	// エラー時も必ず元のブランチに戻す。
+	// CheckoutBranch が失敗した場合は currentHash で強制チェックアウトし、
+	// ワークツリーが不整合な状態で残らないようにする。
 	defer func() {
 		if restoreErr := tmpFs.CheckoutBranch(currentBranch); restoreErr != nil {
-			log.WarnE("migrateSourceInPlace: CheckoutBranch() error", restoreErr)
+			log.WarnE("migrateSourceInPlace: CheckoutBranch() error, forcing checkout to current hash", restoreErr)
+			if forceErr := tmpFs.CheckoutDetached(currentHash); forceErr != nil {
+				log.WarnE("migrateSourceInPlace: force CheckoutDetached() also failed", forceErr)
+			}
 		}
 	}()
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary,
-  Alert, Box, Button, FormControl, FormLabel, TextField, Select, MenuItem,
+  Alert, Box, Button, Collapse, FormControl, FormLabel, TextField, Select, MenuItem,
   FormControlLabel, Checkbox, Typography, CircularProgress,
   List, ListItemButton, ListItemText, ListSubheader, Divider,
   ToggleButton, ToggleButtonGroup,
@@ -283,6 +283,7 @@ function MergeModal({ open, onClose }) {
     <ModalWrapper
       open={open} onClose={onClose} title={phase === 'conflicts' ? t('merge.conflictsTitle') : t('merge.title')}
       width={modalWidth} height={modalHeight} maxHeight={modalMaxHeight}
+      transition="width 0.25s ease"
     >
       {/* form フェーズ */}
       {phase === 'form' && (
@@ -311,80 +312,81 @@ function MergeModal({ open, onClose }) {
             </Alert>
           )}
 
-          {/* ローカルモード */}
-          {mergeMode === 'local' && (
-            <>
-              <FormControl size="small">
-                <FormLabel>{t('merge.sourceBranch')}</FormLabel>
-                {selectableBranches.length > 0 ? (
-                  <Select
-                    value={sourceBranch}
-                    onChange={(e) => setSourceBranch(e.target.value)}
-                    size="small"
-                  >
-                    {selectableBranches.map((b) => (
-                      <MenuItem key={b} value={b}>{b}</MenuItem>
-                    ))}
-                  </Select>
-                ) : (
-                  <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 0.5 }}>
-                    {/* 他にブランチがない場合 */}
-                    —
-                  </Typography>
-                )}
-              </FormControl>
+          {/* ローカルモード / リモートモード（Collapseでアニメーション切替） */}
+          <Box>
+            <Collapse in={mergeMode === 'local'} timeout={150} unmountOnExit>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <FormControl size="small">
+                  <FormLabel>{t('merge.sourceBranch')}</FormLabel>
+                  {selectableBranches.length > 0 ? (
+                    <Select
+                      value={sourceBranch}
+                      onChange={(e) => setSourceBranch(e.target.value)}
+                      size="small"
+                    >
+                      {selectableBranches.map((b) => (
+                        <MenuItem key={b} value={b}>{b}</MenuItem>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 0.5 }}>
+                      {/* 他にブランチがない場合 */}
+                      —
+                    </Typography>
+                  )}
+                </FormControl>
 
-              <FormControl size="small">
-                <FormLabel>{t('merge.targetBranch')}</FormLabel>
-                <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
-              </FormControl>
-            </>
-          )}
+                <FormControl size="small">
+                  <FormLabel>{t('merge.targetBranch')}</FormLabel>
+                  <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
+                </FormControl>
+              </Box>
+            </Collapse>
 
-          {/* リモートモード */}
-          {mergeMode === 'remote' && (
-            <>
-              <FormControl size="small">
-                <FormLabel>{t('merge.remote')}</FormLabel>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
-                  <Select
-                    value={remoteName}
-                    onChange={(e) => setRemoteName(e.target.value)}
-                    size="small"
-                    sx={{ flex: 1, minWidth: 0 }}
-                  >
-                    {remotes.map((r) => (
-                      <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
-                    ))}
-                  </Select>
-                  <Button
-                    variant="text" size="small"
-                    onClick={handleLoadBranches}
-                    disabled={loadingBranches || !remoteName || !authType}
-                    sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
-                  >
-                    {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
-                  </Button>
-                </Box>
-              </FormControl>
+            <Collapse in={mergeMode === 'remote'} timeout={150} unmountOnExit>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <FormControl size="small">
+                  <FormLabel>{t('merge.remote')}</FormLabel>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
+                    <Select
+                      value={remoteName}
+                      onChange={(e) => setRemoteName(e.target.value)}
+                      size="small"
+                      sx={{ flex: 1, minWidth: 0 }}
+                    >
+                      {remotes.map((r) => (
+                        <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
+                      ))}
+                    </Select>
+                    <Button
+                      variant="text" size="small"
+                      onClick={handleLoadBranches}
+                      disabled={loadingBranches || !remoteName || !authType}
+                      sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
+                    >
+                      {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
+                    </Button>
+                  </Box>
+                </FormControl>
 
-              <FormControl size="small">
-                <FormLabel>{t('merge.remoteBranch')}</FormLabel>
-                {remoteBranches.length > 0 ? (
-                  <Select value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} size="small">
-                    {remoteBranches.map((b) => (<MenuItem key={b} value={b}>{b}</MenuItem>))}
-                  </Select>
-                ) : (
-                  <TextField size="small" value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} />
-                )}
-              </FormControl>
+                <FormControl size="small">
+                  <FormLabel>{t('merge.remoteBranch')}</FormLabel>
+                  {remoteBranches.length > 0 ? (
+                    <Select value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} size="small">
+                      {remoteBranches.map((b) => (<MenuItem key={b} value={b}>{b}</MenuItem>))}
+                    </Select>
+                  ) : (
+                    <TextField size="small" value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} />
+                  )}
+                </FormControl>
 
-              <FormControl size="small">
-                <FormLabel>{t('merge.localBranch')}</FormLabel>
-                <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
-              </FormControl>
-            </>
-          )}
+                <FormControl size="small">
+                  <FormLabel>{t('merge.localBranch')}</FormLabel>
+                  <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
+                </FormControl>
+              </Box>
+            </Collapse>
+          </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
             <Button
@@ -399,7 +401,7 @@ function MergeModal({ open, onClose }) {
           </Box>
 
           {/* 認証（リモートモード時のみ表示） */}
-          {mergeMode === 'remote' && (
+          <Collapse in={mergeMode === 'remote'} timeout={150} unmountOnExit>
             <Accordion
               expanded={authExpanded}
               onChange={(_, expanded) => setAuthExpanded(expanded)}
@@ -427,7 +429,7 @@ function MergeModal({ open, onClose }) {
                 />
               </AccordionDetails>
             </Accordion>
-          )}
+          </Collapse>
         </Box>
       )}
 

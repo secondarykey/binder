@@ -10,7 +10,7 @@ import { DialogErrorContext } from './DialogError';
  * DialogErrorContext を提供し、子コンポーネントのエラーをインライン Alert で表示する
  * @param {{ open: boolean, onClose: () => void, title: string, width?: string, height?: string, maxWidth?: string, maxHeight?: string, children: React.ReactNode }} props
  */
-function ModalWrapper({ open, onClose, title, width = "1000px", height = "75vh", maxWidth, maxHeight, children }) {
+function ModalWrapper({ open, onClose, title, width = "1000px", height = "75vh", maxWidth, maxHeight, transition, children }) {
   const paperRef = useRef(null);
   const posRef = useRef({ x: 0, y: 0 });
   const dragRef = useRef({ isDragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
@@ -79,6 +79,7 @@ function ModalWrapper({ open, onClose, title, width = "1000px", height = "75vh",
             flexDirection: 'column',
             overflow: 'hidden',
             borderRadius: '4px',
+            transition: transition,
           }
         }}
       >
