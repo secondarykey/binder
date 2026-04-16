@@ -296,11 +296,25 @@ function MergeModal({ open, onClose }) {
               exclusive
               onChange={(_, val) => { if (val) setMergeMode(val); }}
               size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  textTransform: 'none',
+                  px: 3,
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  borderColor: 'var(--border-input)',
+                  '&.Mui-selected': {
+                    color: 'var(--text-primary)',
+                    backgroundColor: 'var(--selected-bg)',
+                  },
+                  '&:hover': { backgroundColor: 'var(--hover-overlay)' },
+                },
+              }}
             >
-              <ToggleButton value="local" sx={{ textTransform: 'none', px: 3, fontSize: '13px' }}>
+              <ToggleButton value="local">
                 <MergeIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('merge.modeLocal')}
               </ToggleButton>
-              <ToggleButton value="remote" sx={{ textTransform: 'none', px: 3, fontSize: '13px' }}>
+              <ToggleButton value="remote">
                 <CloudDownloadIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('merge.modeRemote')}
               </ToggleButton>
             </ToggleButtonGroup>
@@ -394,7 +408,13 @@ function MergeModal({ open, onClose }) {
               startIcon={merging ? <CircularProgress size={16} /> : (mergeMode === 'local' ? <MergeIcon /> : <CloudDownloadIcon />)}
               onClick={handleMerge}
               disabled={isMergeDisabled}
-              sx={{ textTransform: 'none' }}
+              sx={{
+                textTransform: 'none',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-input)',
+                '&:hover': { borderColor: 'var(--border-strong)', backgroundColor: 'var(--hover-overlay)' },
+                '&.Mui-disabled': { color: 'var(--text-disabled)', borderColor: 'var(--border-subtle)' },
+              }}
             >
               {t('merge.mergeButton')}
             </Button>
@@ -486,7 +506,14 @@ function MergeModal({ open, onClose }) {
                 onClick={handleApplyResolution}
                 disabled={!allResolved || applying}
                 startIcon={applying ? <CircularProgress size={14} /> : null}
-                sx={{ textTransform: 'none', fontSize: '12px' }}
+                sx={{
+                  textTransform: 'none',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-input)',
+                  '&:hover': { borderColor: 'var(--border-strong)', backgroundColor: 'var(--hover-overlay)' },
+                  '&.Mui-disabled': { color: 'var(--text-disabled)', borderColor: 'var(--border-subtle)' },
+                }}
               >
                 {t('merge.applyResolution')}
               </Button>
@@ -522,16 +549,30 @@ function MergeModal({ open, onClose }) {
                   onChange={(_, val) => {
                     if (val) setResolutions((prev) => ({ ...prev, [selectedConflict.path]: val }));
                   }}
-                  sx={{ mt: 2 }}
+                  sx={{
+                    mt: 2,
+                    '& .MuiToggleButton-root': {
+                      textTransform: 'none',
+                      fontSize: '13px',
+                      px: 3,
+                      color: 'var(--text-muted)',
+                      borderColor: 'var(--border-input)',
+                      '&.Mui-selected': {
+                        color: 'var(--text-primary)',
+                        backgroundColor: 'var(--selected-bg)',
+                      },
+                      '&:hover': { backgroundColor: 'var(--hover-overlay)' },
+                    },
+                  }}
                 >
-                  <ToggleButton value="ours" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
+                  <ToggleButton value="ours">
                     {mergeMode === 'local' ? t('merge.keepOursLocal') : t('merge.keepOurs')}
                   </ToggleButton>
-                  <ToggleButton value="theirs" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
+                  <ToggleButton value="theirs">
                     {mergeMode === 'local' ? t('merge.keepTheirsLocal') : t('merge.keepTheirs')}
                   </ToggleButton>
                   {['note', 'diagram', 'template'].includes(selectedConflict.type) && (
-                    <ToggleButton value="both" sx={{ textTransform: 'none', fontSize: '13px', px: 3 }}>
+                    <ToggleButton value="both">
                       {t('merge.keepBoth')}
                     </ToggleButton>
                   )}
