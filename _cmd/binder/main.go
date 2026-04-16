@@ -99,6 +99,8 @@ func main() {
 		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
 		Height:                 set.Position.Height,
+		MinWidth:               480,
+		MinHeight:              320,
 		Frameless:              true,
 		BackgroundColour:       application.NewRGBA(27, 38, 54, 255),
 		URL:                    "/",
