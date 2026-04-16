@@ -375,7 +375,7 @@ function MergeModal({ open, onClose }) {
                     <Button
                       variant="text" size="small"
                       onClick={handleLoadBranches}
-                      disabled={loadingBranches || !remoteName || !authType}
+                      disabled={loadingBranches || !remoteName}
                       sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
                     >
                       {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
