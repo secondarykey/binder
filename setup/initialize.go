@@ -50,11 +50,6 @@ func initialize(f *fs.FileSystem, inst *db.Instance, name string) error {
 		return xerrors.Errorf("initializeAsset() error: %w", err)
 	}
 
-	err = f.CommitAll(fs.M("Initialize", "Diagrams/Assets"))
-	if err != nil {
-		return xerrors.Errorf("CommitAll(diagrams/assets) error: %w", err)
-	}
-
 	return nil
 }
 

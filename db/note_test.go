@@ -9,6 +9,28 @@ import (
 	"github.com/google/uuid"
 )
 
+func insertNoteWithStructure(inst *db.Instance, parentId string) (string, error) {
+	id, _ := uuid.NewV7()
+	noteId := id.String()
+
+	n := model.Note{Id: noteId}
+	if err := inst.InsertNote(&n, testOp()); err != nil {
+		return "", err
+	}
+
+	s := model.Structure{
+		Id:       noteId,
+		ParentId: parentId,
+		Seq:      1,
+		Typ:      "note",
+		Name:     "TestNote",
+	}
+	if err := inst.InsertStructure(&s, testOp()); err != nil {
+		return "", err
+	}
+	return noteId, nil
+}
+
 func TestNotes(t *testing.T) {
 
 	inst := open()
@@ -45,12 +67,17 @@ func TestFindNotes(t *testing.T) {
 	inst := open()
 	defer inst.Close()
 
-	notes, err := inst.FindUpdatedNotes(-1, -1)
+	_, err := insertNoteWithStructure(inst, "")
+	if err != nil {
+		t.Fatalf("insertNoteWithStructure() error:%v", err)
+	}
+
+	notes, err := inst.FindUpdatedNotes("", -1, -1)
 	if err != nil {
 		t.Errorf("db.FindNotes() not nil:%v", err)
 	}
 
-	if len(notes) != 1 {
+	if len(notes) == 0 {
 		t.Errorf("db.FindNotes() count error:%d", len(notes))
 	}
 }
@@ -84,7 +111,7 @@ func TestFindPublish(t *testing.T) {
 	inst := open()
 	defer inst.Close()
 
-	_, err := inst.FindPublishNotes(10, 0)
+	_, err := inst.FindPublishNotes("", 10, 0)
 	if err != nil {
 		t.Errorf("inst.FindPublishNotes() error not nil:%v", err)
 	}

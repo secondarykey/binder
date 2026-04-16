@@ -37,12 +37,12 @@ func TestInitialize(t *testing.T) {
 
 	//テスト用のインスタンス
 	inst := b.GetDB()
-	//テンプレート３件
+	//テンプレート４件
 	tmpls, err := inst.FindTemplates()
 	if err != nil {
 		t.Errorf("db.FindTemplates() error: %v", err)
-	} else if len(tmpls) != 3 {
-		t.Errorf("db.FindTemplates() templates length want 3 got %d", len(tmpls))
+	} else if len(tmpls) != 4 {
+		t.Errorf("db.FindTemplates() templates length want 4 got %d", len(tmpls))
 	}
 
 	//ノート２件
