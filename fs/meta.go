@@ -22,6 +22,8 @@ type BinderMeta struct {
 	MarkedURL     string `json:"markedUrl,omitempty"`
 	MermaidURL    string `json:"mermaidUrl,omitempty"`
 	OptimizeImage *bool  `json:"optimizeImage,omitempty"` // nil = デフォルト(true)
+	PublishOnly   bool   `json:"publishOnly,omitempty"`   // docs/のみpushする場合 true
+	PublishBranch string `json:"publishBranch,omitempty"` // docs/のpush先ブランチ名
 	Schema        string `json:"schema,omitempty"`        // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
 }
 

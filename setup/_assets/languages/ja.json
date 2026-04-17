@@ -189,7 +189,10 @@
         "sshKey" : "SSH鍵データ",
         "loadFromFile" : "ファイルから読み込み",
         "saveCredentials" : "認証情報を保存する",
+        "publishOnly" : "docs/ のみ push（ページ公開）",
+        "publishBranch" : "公開先ブランチ名",
         "pushSuccess" : "Pushしました",
+        "pushDocsSuccess" : "docs/ をPushしました",
         "pushButton" : "Push"
     },
     "merge" : {

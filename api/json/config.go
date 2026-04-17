@@ -25,6 +25,12 @@ type Remote struct {
 	URL  string `json:"url"`
 }
 
+// PublishSettings は docs/ のみ push する公開設定。
+type PublishSettings struct {
+	PublishOnly   bool   `json:"publishOnly"`
+	PublishBranch string `json:"publishBranch"`
+}
+
 type BranchResult struct {
 	Status  string `json:"status"`  // success, error, reload_error
 	Message string `json:"message"`

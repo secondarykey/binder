@@ -189,7 +189,10 @@
         "sshKey" : "SSH Key Data",
         "loadFromFile" : "Load from File",
         "saveCredentials" : "Save credentials",
+        "publishOnly" : "Push docs/ only (page publish)",
+        "publishBranch" : "Publish branch name",
         "pushSuccess" : "Pushed successfully.",
+        "pushDocsSuccess" : "docs/ pushed successfully.",
         "pushButton" : "Push"
     },
     "merge" : {

@@ -133,6 +133,18 @@ func (a *App) Push(remoteName string, info *json.UserInfo, save bool) error {
 	return nil
 }
 
+func (a *App) PushDocs(remoteName, publishBranch string, info *json.UserInfo, save bool) error {
+
+	defer log.PrintTrace(log.Func("PushDocs()"))
+
+	err := a.current.PushDocs(remoteName, publishBranch, info, save)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("PushDocs() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) ListRemoteBranches(url string, info *json.UserInfo) ([]string, error) {
 
 	defer log.PrintTrace(log.Func("ListRemoteBranches()"))

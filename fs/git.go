@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -423,6 +425,142 @@ func (f *FileSystem) Push(r, name string, info *UserInfo) error {
 		return xerrors.Errorf("remote Push() error: %w", err)
 	}
 
+	return nil
+}
+
+// PushDocs は docs/ ディレクトリのみを指定ブランチに force push する。
+// in-memory リポジトリで orphan commit を生成し、リモートの指定ブランチへ強制 push する。
+func (f *FileSystem) PushDocs(r, branch string, info *UserInfo) error {
+	auth, err := authMethod(info)
+	if err != nil {
+		return xerrors.Errorf("authMethod() error: %w", err)
+	}
+
+	// リモートURL を取得
+	remote, err := f.repo.Remote(r)
+	if err != nil {
+		return xerrors.Errorf("Remote(%s) error: %w", r, err)
+	}
+	remoteURL := remote.Config().URLs[0]
+
+	// in-memory ストレージ + memfs で一時リポジトリ作成
+	store := memory.NewStorage()
+	mfs := memfs.New()
+	tmpRepo, err := git.Init(store, mfs)
+	if err != nil {
+		return xerrors.Errorf("git.Init() error: %w", err)
+	}
+
+	wt, err := tmpRepo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	// docs/ 以下のファイルを memfs にコピーし、追加したパス一覧を取得
+	var files []string
+	if err = f.copyDocsToMemFS(publishDir, "", mfs, &files); err != nil {
+		return xerrors.Errorf("copyDocsToMemFS() error: %w", err)
+	}
+	if len(files) == 0 {
+		return fmt.Errorf("no published files found in %s directory", publishDir)
+	}
+
+	// コピーした全ファイルをインデックスに追加
+	for _, file := range files {
+		if _, err = wt.Add(file); err != nil {
+			return xerrors.Errorf("Add(%s) error: %w", file, err)
+		}
+	}
+
+	// orphan commit（親なし）を作成
+	sig := f.userSigOrDefault()
+	if _, err = wt.Commit("publish docs", &git.CommitOptions{
+		Author: sig,
+	}); err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	// in-memory リポジトリにリモートを登録して force push
+	head, err := tmpRepo.Head()
+	if err != nil {
+		return xerrors.Errorf("Head() error: %w", err)
+	}
+
+	tmpRemote, err := tmpRepo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{remoteURL},
+	})
+	if err != nil {
+		return xerrors.Errorf("CreateRemote() error: %w", err)
+	}
+
+	refSpec := config.RefSpec(fmt.Sprintf("+%s:refs/heads/%s", head.Name(), branch))
+	if err = tmpRemote.Push(&git.PushOptions{
+		Progress: os.Stdout,
+		RefSpecs: []config.RefSpec{refSpec},
+		Auth:     auth,
+		Force:    true,
+	}); err != nil {
+		return xerrors.Errorf("remote Push() error: %w", err)
+	}
+
+	return nil
+}
+
+// copyDocsToMemFS は srcDir 以下のファイルを再帰的に memfs にコピーする。
+// relPath は memfs 内の相対ディレクトリ（ルートは ""）。
+// files にはコピーしたファイルのパス（memfs 内、/ 区切り）を追記する。
+func (f *FileSystem) copyDocsToMemFS(srcDir, relPath string, mfs billy.Filesystem, files *[]string) error {
+	infos, err := f.fs.ReadDir(srcDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%s directory not found", srcDir)
+		}
+		return xerrors.Errorf("ReadDir(%s) error: %w", srcDir, err)
+	}
+
+	for _, info := range infos {
+		name := info.Name()
+		// go-git は / 区切りを期待するため strings.Join で構築する
+		var dstPath string
+		if relPath == "" {
+			dstPath = name
+		} else {
+			dstPath = relPath + "/" + name
+		}
+		srcPath := srcDir + "/" + name
+
+		if info.IsDir() {
+			if err = mfs.MkdirAll(dstPath, 0755); err != nil {
+				return xerrors.Errorf("MkdirAll(%s) error: %w", dstPath, err)
+			}
+			if err = f.copyDocsToMemFS(srcPath, dstPath, mfs, files); err != nil {
+				return err
+			}
+		} else {
+			src, err := f.fs.Open(srcPath)
+			if err != nil {
+				return xerrors.Errorf("Open(%s) error: %w", srcPath, err)
+			}
+			data, readErr := io.ReadAll(src)
+			src.Close()
+			if readErr != nil {
+				return xerrors.Errorf("ReadAll(%s) error: %w", srcPath, readErr)
+			}
+
+			dst, err := mfs.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			if err != nil {
+				return xerrors.Errorf("OpenFile(%s) error: %w", dstPath, err)
+			}
+			_, writeErr := dst.Write(data)
+			dst.Close()
+			if writeErr != nil {
+				return xerrors.Errorf("Write(%s) error: %w", dstPath, writeErr)
+			}
+
+			*files = append(*files, dstPath)
+		}
+	}
 	return nil
 }
 

@@ -9,7 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import ModalWrapper from './components/ModalWrapper';
 import AuthFields from '../components/AuthFields';
-import { GetUserInfo, RemoteList, Push, CurrentBranch } from '../../bindings/binder/api/app';
+import { GetUserInfo, RemoteList, Push, PushDocs, CurrentBranch, GetPublishSettings } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
@@ -38,6 +38,10 @@ function PushModal({ open, onClose }) {
   const [pushing, setPushing] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(true);
 
+  // 公開設定
+  const [publishOnly, setPublishOnly] = useState(false);
+  const [publishBranch, setPublishBranch] = useState('gh-pages');
+
   // UserInfoのname/email（Push時にそのまま渡す）
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
@@ -55,6 +59,14 @@ function PushModal({ open, onClose }) {
     // 現在のブランチ名を取得
     CurrentBranch().then((name) => {
       setBranchName(name || '');
+    }).catch((err) => showError(err));
+
+    // 公開設定を読み込み
+    GetPublishSettings().then((s) => {
+      if (s) {
+        setPublishOnly(s.publishOnly || false);
+        setPublishBranch(s.publishBranch || 'gh-pages');
+      }
     }).catch((err) => showError(err));
 
     // 保存済みUserInfo（認証情報含む）を読み込み
@@ -101,14 +113,25 @@ function PushModal({ open, onClose }) {
       bytes: Array.from(new TextEncoder().encode(sshKey)),
     };
 
-    Push(remoteName, info, save).then(() => {
-      evt.showSuccessMessage(t('push.pushSuccess'));
-      onClose();
-    }).catch((err) => {
-      showError(err);
-    }).finally(() => {
-      setPushing(false);
-    });
+    if (publishOnly) {
+      PushDocs(remoteName, publishBranch, info, save).then(() => {
+        evt.showSuccessMessage(t('push.pushDocsSuccess'));
+        onClose();
+      }).catch((err) => {
+        showError(err);
+      }).finally(() => {
+        setPushing(false);
+      });
+    } else {
+      Push(remoteName, info, save).then(() => {
+        evt.showSuccessMessage(t('push.pushSuccess'));
+        onClose();
+      }).catch((err) => {
+        showError(err);
+      }).finally(() => {
+        setPushing(false);
+      });
+    }
   };
 
   return (
@@ -150,6 +173,31 @@ function PushModal({ open, onClose }) {
           <FormLabel>{t('binder.currentBranch')}</FormLabel>
           <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
         </FormControl>
+
+        {/* 公開設定 */}
+        <Box>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={publishOnly}
+                onChange={(e) => setPublishOnly(e.target.checked)}
+                size="small"
+              />
+            }
+            label={t('push.publishOnly')}
+            sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+          />
+          {publishOnly && (
+            <FormControl size="small" fullWidth sx={{ mt: 1 }}>
+              <FormLabel>{t('push.publishBranch')}</FormLabel>
+              <TextField
+                size="small"
+                value={publishBranch}
+                onChange={(e) => setPublishBranch(e.target.value)}
+              />
+            </FormControl>
+          )}
+        </Box>
 
         {/* 認証情報（折りたたみ） */}
         <Accordion

@@ -389,6 +389,49 @@ func (b *Binder) Push(remoteName string, info *json.UserInfo, save bool) error {
 	return nil
 }
 
+// PushDocs は docs/ ディレクトリのみを指定ブランチに force push する。
+// save が true の場合、認証情報を user_data.enc に保存する。
+// 公開設定（publishBranch）は binder.json に保存しコミットする。
+func (b *Binder) PushDocs(remoteName, publishBranch string, info *json.UserInfo, save bool) error {
+	if b == nil {
+		return EmptyError
+	}
+
+	fsInfo := &fs.UserInfo{
+		Name:       info.Name,
+		Email:      info.Email,
+		AuthType:   fs.AuthType(info.AuthType),
+		Username:   info.Username,
+		Password:   info.Password,
+		Token:      info.Token,
+		Passphrase: info.Passphrase,
+		Filename:   info.Filename,
+		Bytes:      info.Bytes,
+	}
+
+	if save {
+		key, err := setup.GetUserKey()
+		if err != nil {
+			return xerrors.Errorf("setup.GetUserKey() error: %w", err)
+		}
+		if err = b.fileSystem.SaveUserData(key, fsInfo); err != nil {
+			return xerrors.Errorf("SaveUserData() error: %w", err)
+		}
+		b.fileSystem.SetUserSig(fsInfo)
+	}
+
+	// 公開設定を保存（変更があった場合のみコミット）
+	if err := b.SavePublishSettings(true, publishBranch); err != nil {
+		return xerrors.Errorf("SavePublishSettings() error: %w", err)
+	}
+
+	if err := b.fileSystem.PushDocs(remoteName, publishBranch, fsInfo); err != nil {
+		return xerrors.Errorf("PushDocs() error: %w", err)
+	}
+
+	return nil
+}
+
 // Dir はバインダーのディレクトリパスを返す。
 func (b *Binder) Dir() string {
 	return b.dir
