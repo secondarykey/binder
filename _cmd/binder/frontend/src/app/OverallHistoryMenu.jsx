@@ -240,8 +240,8 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
   };
 
   return (
-    <>
-    <List dense disablePadding className="treeText" sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <List dense disablePadding className="treeText" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
 
       <ListSubheader disableSticky sx={{
         lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5,
@@ -320,21 +320,21 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
         </Box>
       )}
 
-      {/* クリーンアップボタン（ByPath モードでは非表示） */}
-      {!binderPath && !loading && entries.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)' }}>
-          <Button
-            startIcon={<CleaningServicesIcon fontSize="small" />}
-            onClick={handleOpenCleanup}
-            size="small"
-            sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
-          >
-            {t('overallHistory.cleanup')}
-          </Button>
-        </Box>
-      )}
-
     </List>
+
+    {/* クリーンアップボタン（ByPath モードでは非表示・下部固定） */}
+    {!binderPath && !loading && entries.length > 0 && (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+        <Button
+          startIcon={<CleaningServicesIcon fontSize="small" />}
+          onClick={handleOpenCleanup}
+          size="small"
+          sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
+        >
+          {t('overallHistory.cleanup')}
+        </Button>
+      </Box>
+    )}
 
     {/* 右クリックコンテキストメニュー */}
     <Menu
@@ -418,7 +418,7 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
         <ActionButton variant="confirm" label={t('overallHistory.cleanupConfirm')} icon={<CleaningServicesIcon />} onClick={doSquashHistory} disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0} />
       </DialogActions>
     </Dialog>
-    </>
+    </Box>
   );
 }
 
