@@ -238,9 +238,7 @@ function SnippetSetting() {
               </MenuItem>
             ))}
           </Select>
-          <IconButton size="small" onClick={handleAdd} sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--selected-text)' }, flexShrink: 0 }}>
-            <AddIcon fontSize="small" />
-          </IconButton>
+          <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={handleAdd} size="small" />
         </Box>
 
         {/** ドラッグ＆ドロップ対応スニペット名リスト */}

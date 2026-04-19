@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 
 import Event, { EventContext } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
@@ -214,9 +215,7 @@ function TemplateTree(props) {
       <ListSubheader disableSticky
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Layout
-        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Layout")}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={() => handleRegisterTemplate("DIR_HTML_Layout")} size="small" />
       </ListSubheader>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter}
@@ -239,9 +238,7 @@ function TemplateTree(props) {
       <ListSubheader disableSticky
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Content
-        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Content")}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={() => handleRegisterTemplate("DIR_HTML_Content")} size="small" />
       </ListSubheader>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter}
@@ -264,9 +261,7 @@ function TemplateTree(props) {
       <ListSubheader disableSticky
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Diagram
-        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_Diagram_Style")}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={() => handleRegisterTemplate("DIR_Diagram_Style")} size="small" />
       </ListSubheader>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter}
