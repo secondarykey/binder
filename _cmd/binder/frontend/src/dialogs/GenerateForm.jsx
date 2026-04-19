@@ -1,7 +1,9 @@
 import { useEffect, useState, useContext } from "react";
-import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress, Typography } from "@mui/material";
+import { Grid, TextField, FormControl, FormLabel, LinearProgress, Typography } from "@mui/material";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 
 import Event, { EventContext } from '../Event';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -62,7 +64,7 @@ function GenerateForm({ date, template }) {
       )}
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px", justifyContent: "flex-end" }}>
-        <Button variant="contained" onClick={handleGenerate} disabled={progress.running}>{t("publishModal.generate")}</Button>
+        <ActionButton variant="confirm" label={t("publishModal.generate")} icon={<AutoFixHighIcon />} onClick={handleGenerate} disabled={progress.running} />
       </FormControl>
 
     </Grid>
