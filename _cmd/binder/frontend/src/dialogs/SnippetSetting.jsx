@@ -292,7 +292,7 @@ function SnippetSetting() {
           inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-primary)', resize: 'none' } }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} disabled={selectedId === null} />
+          <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} disabled={selectedId === null} />
         </Box>
       </Box>
 

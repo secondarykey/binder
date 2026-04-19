@@ -503,7 +503,7 @@ function AssetViewer() {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
-          <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon />} onClick={handleMigrateConfirm} />
+          <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleMigrateConfirm} />
         </DialogActions>
       </Dialog>
 
@@ -527,7 +527,7 @@ function AssetViewer() {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setMetaImageDlg(false)} />
-          <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon />} onClick={handleSetMetaImageConfirm} />
+          <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSetMetaImageConfirm} />
         </DialogActions>
       </Dialog>
     </div>

@@ -249,7 +249,7 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
         </DialogContentText>
         <DialogActions>
           <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmSwitchName(null)} />
-          <ActionButton variant="confirm" label={t('branch.switch')} icon={<CheckIcon />} onClick={() => doSwitch(confirmSwitchName)} />
+          <ActionButton variant="confirm" label={t('branch.switch')} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={() => doSwitch(confirmSwitchName)} />
         </DialogActions>
       </Dialog>
 
@@ -265,7 +265,7 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
         </DialogContentText>
         <DialogActions>
           <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmCreateOpen(false)} />
-          <ActionButton variant="save" label={t('branch.create')} icon={<CheckIcon />} onClick={doCreate} />
+          <ActionButton variant="save" label={t('branch.create')} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={doCreate} />
         </DialogActions>
       </Dialog>
 

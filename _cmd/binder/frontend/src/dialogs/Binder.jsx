@@ -323,7 +323,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} />
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
@@ -379,7 +379,7 @@ function Binder({ isModal, ...props }) {
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
               {scriptSaving && <CircularProgress size={24} />}
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSaveScript} disabled={scriptSaving} />
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveScript} disabled={scriptSaving} />
             </Box>
 
           </div>
@@ -416,7 +416,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSaveUserInfo} />
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
             </Box>
 
             {/** リモート一覧 */}
@@ -490,7 +490,7 @@ function Binder({ isModal, ...props }) {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleRemoteDialogClose} />
-          <ActionButton variant="save" label={t("common.set")} icon={<CheckIcon />} type="submit" />
+          <ActionButton variant="save" label={t("common.set")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} type="submit" />
         </DialogActions>
       </Dialog>
 

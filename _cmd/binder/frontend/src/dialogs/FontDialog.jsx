@@ -181,7 +181,7 @@ func main() {
       </DialogContent>
 
       <DialogActions>
-        <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon />} onClick={handleSubmit} />
+        <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSubmit} />
       </DialogActions>
     </Dialog>
   );

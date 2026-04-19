@@ -111,7 +111,7 @@ function MetaDialog({
               <Delete style={{ color: deleteDisabled ? undefined : "var(--accent-red)" }} />
             </IconButton>
           )}
-          <ActionButton variant="save" label="Save" icon={<Check />} onClick={onSave} />
+          <ActionButton variant="save" label="Save" icon={<Check style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={onSave} />
         </DialogActions>
       </Dialog>
     </DialogErrorContext.Provider>

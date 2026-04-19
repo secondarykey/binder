@@ -316,7 +316,7 @@ function Setting({ isModal, ...props }) {
 
             {/** 保存 */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} />
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
           </Box>
         )}

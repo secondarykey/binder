@@ -643,7 +643,7 @@ function TableDialog({ open, tableLines, onClose }) {
           backgroundColor: "var(--bg-surface)",
         }}
       >
-        <ActionButton variant="save" label={t("tableDialog.updateCell")} icon={<CheckIcon />} onClick={handleClose} />
+        <ActionButton variant="save" label={t("tableDialog.updateCell")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleClose} />
       </DialogActions>
 
       <ConfirmDialog

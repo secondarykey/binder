@@ -35,7 +35,7 @@ function ConvertDialog({ open, appVersion, binderVersion, onCancel, onConfirm })
       )}
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={onCancel} />
-        <ActionButton variant="save" label={t("convert.confirm")} icon={<CheckIcon />} onClick={onConfirm} />
+        <ActionButton variant="save" label={t("convert.confirm")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={onConfirm} />
       </DialogActions>
     </Dialog>
   );
@@ -82,7 +82,7 @@ export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose, onF
       />
       <DialogActions>
         {forceOpen
-          ? <ActionButton variant="confirm" label={t("common.open")} icon={<CheckIcon />} onClick={handleForceOpen} />
+          ? <ActionButton variant="confirm" label={t("common.open")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleForceOpen} />
           : <ActionButton variant="cancel" label={t("common.ok")} icon={<CloseIcon />} onClick={handleClose} />
         }
       </DialogActions>
