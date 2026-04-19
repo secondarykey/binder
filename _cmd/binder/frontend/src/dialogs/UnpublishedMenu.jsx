@@ -2,10 +2,11 @@ import { useEffect, useRef, useState, forwardRef, useContext, useImperativeHandl
 import { useNavigate } from 'react-router';
 
 import {
-  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
-  Checkbox, Menu, MenuItem,
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  IconButton, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
+  Checkbox, Menu, MenuItem, Tooltip,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate,
@@ -18,6 +19,7 @@ import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -206,7 +208,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setErrorDlg({ open: false, names: [] })}>{t("common.close")}</Button>
+        <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setErrorDlg({ open: false, names: [] })} />
       </DialogActions>
     </Dialog>
   </>);

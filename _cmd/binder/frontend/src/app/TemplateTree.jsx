@@ -5,9 +5,10 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton, Dialog, DialogTitle, DialogContentText, DialogActions, Button } from '@mui/material';
+import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton, Dialog, DialogTitle, DialogContentText, DialogActions, Tooltip } from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../bindings/binder/api/app';
@@ -17,6 +18,7 @@ import "../language";
 import { useTranslation } from 'react-i18next';
 
 import Event, { EventContext } from '../Event';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
@@ -317,8 +319,8 @@ function TemplateTree(props) {
         {t("template.deleteConfirm", { name: confirmDelete.name })}
       </DialogContentText>
       <DialogActions>
-        <Button onClick={() => setConfirmDelete({ open: false, id: null, name: '' })}>{t("common.cancel")}</Button>
-        <Button color="error" onClick={handleDeleteConfirm}>{t("common.delete")}</Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setConfirmDelete({ open: false, id: null, name: '' })} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} />
       </DialogActions>
     </Dialog>
 

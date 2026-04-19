@@ -2,9 +2,11 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField,
+  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -17,6 +19,7 @@ import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -500,8 +503,8 @@ function Binder({ isModal, ...props }) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleRemoteDialogClose}>{t("common.cancel")}</Button>
-          <Button type="submit">{t("common.set")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleRemoteDialogClose} />
+          <ActionButton variant="confirm" label={t("common.set")} icon={<CheckIcon />} type="submit" />
         </DialogActions>
       </Dialog>
 
@@ -518,8 +521,8 @@ function Binder({ isModal, ...props }) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteDialogClose}>{t("common.cancel")}</Button>
-          <Button onClick={handleDeleteRemote} color="error">{t("common.delete")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteDialogClose} />
+          <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteRemote} />
         </DialogActions>
       </Dialog>
 
@@ -536,8 +539,8 @@ function Binder({ isModal, ...props }) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setGcConfirmOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={handleRunGC} color="primary">{t("binder.gcRun")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setGcConfirmOpen(false)} />
+          <ActionButton variant="confirm" label={t("binder.gcRun")} icon={<CleaningServicesIcon />} onClick={handleRunGC} />
         </DialogActions>
       </Dialog>
 

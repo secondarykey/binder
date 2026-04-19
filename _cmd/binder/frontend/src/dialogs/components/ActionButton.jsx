@@ -10,11 +10,12 @@ const variantColors = {
  * ダイアログ用アイコンボタン
  * variant: 'confirm' (青) | 'delete' (赤) | 'cancel' (デフォルト)
  */
-export function ActionButton({ label, icon, onClick, disabled, variant = 'cancel', size = 'medium', sx }) {
+export function ActionButton({ label, icon, onClick, disabled, variant = 'cancel', size = 'medium', type, sx }) {
   return (
     <Tooltip title={label}>
       <span>
         <IconButton
+          type={type}
           onClick={onClick}
           disabled={disabled}
           size={size}
