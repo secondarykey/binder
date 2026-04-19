@@ -1,10 +1,10 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { Events } from '@wailsio/runtime';
 
-import { Box, FormControl, FormControlLabel, FormLabel, IconButton, Switch, TextField } from "@mui/material";
+import { Box, FormControl, FormControlLabel, FormLabel, Switch, TextField } from "@mui/material";
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
-import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 
 import { GetEditor, SaveEditor, GetFont, SaveFont } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
@@ -206,9 +206,7 @@ function EditorSetting() {
 
       {/** 保存 */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-        <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-          <SaveIcon fontSize="large" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} />
       </Box>
 
       {/** フォントダイアログ */}

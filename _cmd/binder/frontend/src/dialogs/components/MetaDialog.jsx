@@ -3,13 +3,14 @@ import {
   Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Typography,
 } from "@mui/material";
-import { Close, ContentCopy, Delete, Save } from "@mui/icons-material";
+import { Check, Close, ContentCopy, Delete } from "@mui/icons-material";
 import { useTranslation } from 'react-i18next';
 import "../../language";
 
 import { copyClipboard } from "../../app/App";
 import { EventContext } from "../../Event";
 import { DialogErrorContext } from "./DialogError";
+import { ActionButton } from "./ActionButton";
 
 /**
  * メタデータ編集ダイアログの共通ラッパー
@@ -110,9 +111,7 @@ function MetaDialog({
               <Delete style={{ color: deleteDisabled ? undefined : "var(--accent-red)" }} />
             </IconButton>
           )}
-          <IconButton onClick={onSave} aria-label="save">
-            <Save style={{ color: "var(--accent-blue)" }} />
-          </IconButton>
+          <ActionButton variant="save" label="Save" icon={<Check />} onClick={onSave} />
         </DialogActions>
       </Dialog>
     </DialogErrorContext.Provider>

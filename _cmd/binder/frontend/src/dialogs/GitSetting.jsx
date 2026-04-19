@@ -1,9 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
-import SaveIcon from '@mui/icons-material/Save';
+import { Box, FormControl, FormLabel, TextField } from "@mui/material";
+import CheckIcon from '@mui/icons-material/Check';
 
 import { GetGit, SaveGit } from "../../bindings/binder/api/app";
+import { ActionButton } from './components/ActionButton';
 import { EventContext } from "../Event";
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -70,9 +71,7 @@ function GitSetting() {
 
       {/** 保存 */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-        <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-          <SaveIcon fontSize="large" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} />
       </Box>
     </Box>
   );

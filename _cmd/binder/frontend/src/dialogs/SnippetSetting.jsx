@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import { Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
-import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -292,9 +292,7 @@ function SnippetSetting() {
           inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-primary)', resize: 'none' } }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <IconButton onClick={handleSave} aria-label="save" disabled={selectedId === null}>
-            <SaveIcon fontSize="medium" color={selectedId !== null ? "primary" : "disabled"} />
-          </IconButton>
+          <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} disabled={selectedId === null} />
         </Box>
       </Box>
 

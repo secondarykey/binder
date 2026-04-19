@@ -8,7 +8,6 @@ import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SaveIcon from '@mui/icons-material/Save';
 import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
@@ -324,9 +323,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSave} />
             </Box>
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
@@ -382,9 +379,7 @@ function Binder({ isModal, ...props }) {
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
               {scriptSaving && <CircularProgress size={24} />}
-              <IconButton onClick={handleSaveScript} disabled={scriptSaving} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSaveScript} disabled={scriptSaving} />
             </Box>
 
           </div>
@@ -421,9 +416,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleSaveUserInfo} />
             </Box>
 
             {/** リモート一覧 */}
