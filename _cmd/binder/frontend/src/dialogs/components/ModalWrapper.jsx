@@ -98,7 +98,7 @@ function ModalWrapper({ open, onClose, title, width = "1000px", height = "75vh",
           }}
         >
           <Typography variant="body1" sx={{ flex: 1 }}>{title}</Typography>
-          <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={onClose}>
+          <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 0 }} onClick={onClose}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Toolbar>
