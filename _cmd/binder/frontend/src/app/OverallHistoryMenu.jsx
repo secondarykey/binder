@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, Button, IconButton, Tooltip,
+  Typography, CircularProgress, Box, IconButton, Tooltip,
   Menu, MenuItem, ListItemIcon, TextField,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
@@ -309,36 +309,28 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
 
       {!loading && hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<ExpandMoreIcon fontSize="small" />}
+          <ActionButton
+            variant="cancel"
+            label={t('history.loadMore')}
+            icon={<ExpandMoreIcon fontSize="small" />}
             onClick={() => setOffset(prev => prev + PAGE_SIZE)}
-            sx={{
-              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
-              '&:hover': { color: 'var(--text-primary)' },
-            }}
-          >
-            {t('history.loadMore')}
-          </Button>
+            size="small"
+            sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
+          />
         </Box>
       )}
 
       {/* クリーンアップボタン（ByPath モードでは非表示） */}
       {!binderPath && !loading && entries.length > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)' }}>
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<CleaningServicesIcon fontSize="small" />}
+          <ActionButton
+            variant="cancel"
+            label={t('overallHistory.cleanup')}
+            icon={<CleaningServicesIcon fontSize="small" />}
             onClick={handleOpenCleanup}
-            sx={{
-              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
-              '&:hover': { color: 'var(--text-primary)' },
-            }}
-          >
-            {t('overallHistory.cleanup')}
-          </Button>
+            size="small"
+            sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
+          />
         </Box>
       )}
 

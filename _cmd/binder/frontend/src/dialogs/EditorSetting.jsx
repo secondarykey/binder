@@ -1,14 +1,16 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { Events } from '@wailsio/runtime';
 
-import { Box, Button, FormControl, FormControlLabel, FormLabel, IconButton, Switch, TextField } from "@mui/material";
-import SaveIcon from '@mui/icons-material/Save';
+import { Box, FormControl, FormControlLabel, FormLabel, IconButton, Switch, TextField } from "@mui/material";
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
+import SaveIcon from '@mui/icons-material/Save';
 
 import { GetEditor, SaveEditor, GetFont, SaveFont } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 import FontDialog from "./FontDialog";
@@ -129,14 +131,8 @@ function EditorSetting() {
 
           {/** フォント設定ボタン */}
           <FormControl>
-            <Button
-              variant="outlined"
-              startIcon={<FontDownloadIcon />}
-              onClick={() => setFontDialogOpen(true)}
-              sx={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}
-            >
-              {t("setting.fontSetting")}
-            </Button>
+            <ActionButton variant="cancel" label={t("setting.fontSetting")} icon={<FontDownloadIcon />}
+              onClick={() => setFontDialogOpen(true)} />
           </FormControl>
 
           {/** 行番号表示 */}
@@ -188,13 +184,8 @@ function EditorSetting() {
                 InputProps={{ readOnly: true }}
                 sx={{ flex: 1 }}
               />
-              <Button
-                variant="outlined"
-                onClick={handleSelectProgram}
-                sx={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)', whiteSpace: 'nowrap' }}
-              >
-                {t("common.select")}
-              </Button>
+              <ActionButton variant="cancel" label={t("common.select")} icon={<FolderOpenIcon />}
+                onClick={handleSelectProgram} />
             </Box>
           </FormControl>
 

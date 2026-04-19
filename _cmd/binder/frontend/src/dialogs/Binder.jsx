@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 
 import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
@@ -332,16 +332,9 @@ function Binder({ isModal, ...props }) {
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
               <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
               <Box sx={{ mt: 1 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon fontSize="small" />}
-                  onClick={() => setGcConfirmOpen(true)}
-                  disabled={gcLoading}
-                  sx={{ textTransform: 'none', fontSize: '0.8rem' }}
-                >
-                  {t("binder.gcButton")}
-                </Button>
+                <ActionButton variant="cancel" label={t("binder.gcButton")}
+                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
+                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
               </Box>
             </Box>
 

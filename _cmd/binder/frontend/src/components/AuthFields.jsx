@@ -1,6 +1,7 @@
-import { Box, Button, FormControl, FormLabel, MenuItem, Select, TextField } from "@mui/material";
+import { Box, FormControl, FormLabel, MenuItem, Select, TextField } from "@mui/material";
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { SelectFileContent } from "../../bindings/main/window";
+import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -83,14 +84,8 @@ function AuthFields({
         <FormControl size="small">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FormLabel sx={{ mb: 0 }}>{t('push.sshKey')}</FormLabel>
-            <Button
-              size="small"
-              startIcon={<FileOpenIcon />}
-              onClick={handleLoadKeyFile}
-              sx={{ textTransform: 'none', fontSize: '12px', minWidth: 'auto' }}
-            >
-              {t('push.loadFromFile')}
-            </Button>
+            <ActionButton variant="cancel" label={t('push.loadFromFile')} icon={<FileOpenIcon />}
+              onClick={handleLoadKeyFile} size="small" />
           </Box>
           <TextField
             size="small"

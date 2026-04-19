@@ -1,13 +1,15 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary,
-  Alert, Box, Button, Collapse, FormControl, FormLabel, TextField, Select, MenuItem,
+  Alert, Box, Collapse, FormControl, FormLabel, TextField, Select, MenuItem,
   FormControlLabel, Checkbox, Typography, CircularProgress,
   List, ListItemButton, ListItemText, ListSubheader, Divider,
   ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import MergeIcon from '@mui/icons-material/Merge';
+import SyncIcon from '@mui/icons-material/Sync';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -17,6 +19,7 @@ import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListBranches, L
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
@@ -372,14 +375,9 @@ function MergeModal({ open, onClose }) {
                         <MenuItem key={r.name} value={r.name}>{r.name} ({r.url})</MenuItem>
                       ))}
                     </Select>
-                    <Button
-                      variant="text" size="small"
-                      onClick={handleLoadBranches}
-                      disabled={loadingBranches || !remoteName}
-                      sx={{ textTransform: 'none', whiteSpace: 'nowrap', fontSize: '12px' }}
-                    >
-                      {loadingBranches ? <CircularProgress size={16} /> : t('merge.connect')}
-                    </Button>
+                    <ActionButton variant="confirm" label={t('merge.connect')}
+                      icon={loadingBranches ? <CircularProgress size={16} /> : <SyncIcon />}
+                      onClick={handleLoadBranches} disabled={loadingBranches || !remoteName} size="small" />
                   </Box>
                 </FormControl>
 
@@ -403,21 +401,9 @@ function MergeModal({ open, onClose }) {
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={merging ? <CircularProgress size={16} /> : (mergeMode === 'local' ? <MergeIcon /> : <CloudDownloadIcon />)}
-              onClick={handleMerge}
-              disabled={isMergeDisabled}
-              sx={{
-                textTransform: 'none',
-                color: 'var(--text-primary)',
-                borderColor: 'var(--border-input)',
-                '&:hover': { borderColor: 'var(--border-strong)', backgroundColor: 'var(--hover-overlay)' },
-                '&.Mui-disabled': { color: 'var(--text-disabled)', borderColor: 'var(--border-subtle)' },
-              }}
-            >
-              {t('merge.mergeButton')}
-            </Button>
+            <ActionButton variant="confirm" label={t('merge.mergeButton')}
+              icon={merging ? <CircularProgress size={16} /> : (mergeMode === 'local' ? <MergeIcon /> : <CloudDownloadIcon />)}
+              onClick={handleMerge} disabled={isMergeDisabled} />
           </Box>
 
           {/* 認証（リモートモード時のみ表示） */}
@@ -499,24 +485,9 @@ function MergeModal({ open, onClose }) {
             </List>
             <Divider />
             <Box sx={{ p: 2 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                fullWidth
-                onClick={handleApplyResolution}
-                disabled={!allResolved || applying}
-                startIcon={applying ? <CircularProgress size={14} /> : null}
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '12px',
-                  color: 'var(--text-primary)',
-                  borderColor: 'var(--border-input)',
-                  '&:hover': { borderColor: 'var(--border-strong)', backgroundColor: 'var(--hover-overlay)' },
-                  '&.Mui-disabled': { color: 'var(--text-disabled)', borderColor: 'var(--border-subtle)' },
-                }}
-              >
-                {t('merge.applyResolution')}
-              </Button>
+              <ActionButton variant="confirm" label={t('merge.applyResolution')}
+                icon={applying ? <CircularProgress size={14} /> : <CheckIcon />}
+                onClick={handleApplyResolution} disabled={!allResolved || applying} size="small" />
             </Box>
           </Box>
 

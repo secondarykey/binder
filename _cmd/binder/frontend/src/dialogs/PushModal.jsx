@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary,
-  Box, Button, FormControl, FormLabel, TextField, Select, MenuItem,
+  Box, FormControl, FormLabel, TextField, Select, MenuItem,
   FormControlLabel, Checkbox, Typography,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -13,6 +13,7 @@ import { GetUserInfo, RemoteList, Push, PushDocs, CurrentBranch, GetPublishSetti
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
@@ -157,15 +158,9 @@ function PushModal({ open, onClose }) {
 
         {/* Pushボタン（中央表示） */}
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<CloudUploadIcon />}
-            onClick={handlePush}
-            disabled={pushing || !remoteName || !authType}
-            sx={{ textTransform: 'none' }}
-          >
-            {t('push.pushButton')}
-          </Button>
+          <ActionButton variant="confirm" label={t('push.pushButton')}
+            icon={<CloudUploadIcon />} onClick={handlePush}
+            disabled={pushing || !remoteName || !authType} />
         </Box>
 
         {/* ブランチ名（読み取り専用） */}

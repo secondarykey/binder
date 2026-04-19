@@ -4,9 +4,10 @@ import {
   IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography, Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
 import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds,
   ListBranchesByPath, CurrentBranchByPath, SwitchBranchByPath } from '../../bindings/binder/api/app';
@@ -180,10 +181,8 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
                     </IconButton>
                   )}
                   {name !== currentBranch && (
-                    <Button size="small" variant="outlined" onClick={() => setConfirmSwitchName(name)}
-                      disabled={loading || hasUncommitted} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
-                      {t("branch.switch")}
-                    </Button>
+                    <ActionButton variant="confirm" label={t("branch.switch")} icon={<SwapHorizIcon />}
+                      onClick={() => setConfirmSwitchName(name)} disabled={loading || hasUncommitted} size="small" />
                   )}
                 </Box>
               )
@@ -232,16 +231,9 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
             disabled={loading}
             sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
           />
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setConfirmCreateOpen(true)}
-            disabled={loading || hasUncommitted || !newBranchName.trim()}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            {t("branch.create")}
-          </Button>
+          <ActionButton variant="confirm" label={t("branch.create")} icon={<AddIcon />}
+            onClick={() => setConfirmCreateOpen(true)} disabled={loading || hasUncommitted || !newBranchName.trim()}
+            size="small" />
         </Box>
       )}
 

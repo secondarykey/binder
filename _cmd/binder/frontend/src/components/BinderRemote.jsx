@@ -5,15 +5,18 @@ import { CreateRemoteBinder, GetGit, ListRemoteBranches } from "../../bindings/b
 import { SelectDirectory } from "../../bindings/main/window";
 import {
   Accordion, AccordionDetails, AccordionSummary,
-  Box, Button, Checkbox, CircularProgress,
+  Box, Checkbox, CircularProgress,
   FormControl, FormControlLabel, FormLabel,
   Grid, InputAdornment, MenuItem, Select, TextField, Typography,
 } from "@mui/material";
-import FolderIcon from '@mui/icons-material/Folder';
+import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FolderIcon from '@mui/icons-material/Folder';
+import LinkIcon from '@mui/icons-material/Link';
 
 import AuthFields from "../components/AuthFields";
 import Event, { EventContext } from "../Event";
+import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -146,14 +149,13 @@ function BinderRemote(props) {
         <FormLabel>Repository(URL)</FormLabel>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <TextField value={remote} onChange={handleRemoteChange} sx={{ flex: 1 }} />
-          <Button
-            variant="outlined"
+          <ActionButton
+            variant="confirm"
+            label={t('binderRemote.connect')}
+            icon={connecting ? <CircularProgress size={20} /> : <LinkIcon />}
             onClick={handleConnect}
             disabled={!remote || connecting}
-            sx={{ minWidth: 80 }}
-          >
-            {connecting ? <CircularProgress size={20} /> : t('binderRemote.connect')}
-          </Button>
+          />
         </Box>
       </FormControl>
 
@@ -239,9 +241,7 @@ function BinderRemote(props) {
       </Accordion>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleSave}>
-          <> Create </>
-        </Button>
+        <ActionButton variant="confirm" label={t('common.create')} icon={<AddIcon />} onClick={handleSave} />
       </FormControl>
     </Grid>
   </>);
