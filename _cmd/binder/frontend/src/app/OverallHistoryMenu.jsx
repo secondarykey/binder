@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, IconButton, Tooltip,
+  Typography, CircularProgress, Box, IconButton, Tooltip, Button,
   Menu, MenuItem, ListItemIcon, TextField,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
@@ -309,28 +309,28 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
 
       {!loading && hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
-          <ActionButton
-            variant="cancel"
-            label={t('history.loadMore')}
-            icon={<ExpandMoreIcon fontSize="small" />}
+          <Button
+            startIcon={<ExpandMoreIcon fontSize="small" />}
             onClick={() => setOffset(prev => prev + PAGE_SIZE)}
             size="small"
             sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
-          />
+          >
+            {t('history.loadMore')}
+          </Button>
         </Box>
       )}
 
       {/* クリーンアップボタン（ByPath モードでは非表示） */}
       {!binderPath && !loading && entries.length > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)' }}>
-          <ActionButton
-            variant="cancel"
-            label={t('overallHistory.cleanup')}
-            icon={<CleaningServicesIcon fontSize="small" />}
+          <Button
+            startIcon={<CleaningServicesIcon fontSize="small" />}
             onClick={handleOpenCleanup}
             size="small"
             sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
-          />
+          >
+            {t('overallHistory.cleanup')}
+          </Button>
         </Box>
       )}
 

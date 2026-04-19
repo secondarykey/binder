@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, IconButton, Tooltip,
+  Typography, CircularProgress, Box, IconButton, Tooltip, Button,
   Menu, MenuItem, ListItemIcon,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
@@ -194,14 +194,14 @@ function HistoryMenu({ typ, id }) {
 
       {!loading && hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
-          <ActionButton
-            variant="cancel"
-            label={t('history.loadMore')}
-            icon={<ExpandMoreIcon fontSize="small" />}
+          <Button
+            startIcon={<ExpandMoreIcon fontSize="small" />}
             onClick={() => setOffset(prev => prev + PAGE_SIZE)}
             size="small"
             sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
-          />
+          >
+            {t('history.loadMore')}
+          </Button>
         </Box>
       )}
 
