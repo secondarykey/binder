@@ -2,6 +2,7 @@ import { cloneElement } from 'react';
 import { Tooltip, IconButton } from '@mui/material';
 
 const variantColors = {
+  save:    'var(--accent-green)',
   confirm: 'var(--accent-blue)',
   delete:  'var(--accent-red)',
   cancel:  undefined,

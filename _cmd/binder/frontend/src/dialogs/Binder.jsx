@@ -497,7 +497,7 @@ function Binder({ isModal, ...props }) {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleRemoteDialogClose} />
-          <ActionButton variant="confirm" label={t("common.set")} icon={<CheckIcon />} type="submit" />
+          <ActionButton variant="save" label={t("common.set")} icon={<CheckIcon />} type="submit" />
         </DialogActions>
       </Dialog>
 

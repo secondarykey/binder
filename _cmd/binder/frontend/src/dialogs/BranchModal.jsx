@@ -231,7 +231,7 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
             disabled={loading}
             sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
           />
-          <ActionButton variant="confirm" label={t("branch.create")} icon={<AddIcon />}
+          <ActionButton variant="save" label={t("branch.create")} icon={<AddIcon />}
             onClick={() => setConfirmCreateOpen(true)} disabled={loading || hasUncommitted || !newBranchName.trim()}
             size="small" />
         </Box>
@@ -265,7 +265,7 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
         </DialogContentText>
         <DialogActions>
           <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmCreateOpen(false)} />
-          <ActionButton variant="confirm" label={t('branch.create')} icon={<CheckIcon />} onClick={doCreate} />
+          <ActionButton variant="save" label={t('branch.create')} icon={<CheckIcon />} onClick={doCreate} />
         </DialogActions>
       </Dialog>
 

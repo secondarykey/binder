@@ -485,7 +485,7 @@ function MergeModal({ open, onClose }) {
             </List>
             <Divider />
             <Box sx={{ p: 2 }}>
-              <ActionButton variant="confirm" label={t('merge.applyResolution')}
+              <ActionButton variant="save" label={t('merge.applyResolution')}
                 icon={applying ? <CircularProgress size={14} /> : <CheckIcon />}
                 onClick={handleApplyResolution} disabled={!allResolved || applying} size="small" />
             </Box>

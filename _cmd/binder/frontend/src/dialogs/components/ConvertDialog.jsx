@@ -35,7 +35,7 @@ function ConvertDialog({ open, appVersion, binderVersion, onCancel, onConfirm })
       )}
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={onCancel} />
-        <ActionButton variant="confirm" label={t("convert.confirm")} icon={<CheckIcon />} onClick={onConfirm} />
+        <ActionButton variant="save" label={t("convert.confirm")} icon={<CheckIcon />} onClick={onConfirm} />
       </DialogActions>
     </Dialog>
   );
