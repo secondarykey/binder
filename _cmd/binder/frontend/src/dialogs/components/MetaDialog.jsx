@@ -66,7 +66,7 @@ function MetaDialog({
         fullWidth
         PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
       >
-        <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", pr: '12px' }}>
           <span style={{ flex: 1 }}>{title}</span>
           <IconButton size="small" onClick={onClose} aria-label="close">
             <Close fontSize="small" />

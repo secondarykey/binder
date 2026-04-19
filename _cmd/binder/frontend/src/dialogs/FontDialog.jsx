@@ -119,7 +119,7 @@ func main() {
     <Dialog open={show} onClose={handleClose}
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "600px" } }}
     >
-      <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", pr: '12px' }}>
         <span style={{ flex: 1 }}>{t("font.title")}</span>
         <IconButton size="small" onClick={handleClose} aria-label="close">
           <Close fontSize="small" />

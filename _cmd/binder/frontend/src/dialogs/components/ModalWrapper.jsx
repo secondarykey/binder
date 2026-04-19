@@ -88,7 +88,7 @@ function ModalWrapper({ open, onClose, title, width = "1000px", height = "75vh",
           sx={{
             minHeight: '40px !important',
             paddingLeft: '16px !important',
-            paddingRight: '0px',
+            paddingRight: '4px',
             color: 'var(--text-primary)',
             borderBottom: '1px solid var(--border-subtle)',
             backgroundColor: 'var(--bg-titlebar)',
