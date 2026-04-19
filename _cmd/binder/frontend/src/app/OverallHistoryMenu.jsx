@@ -414,7 +414,6 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
         )}
       </DialogContent>
       <DialogActions>
-        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setCleanupOpen(false)} />
         <ActionButton variant="confirm" label={t('overallHistory.cleanupConfirm')} icon={<CleaningServicesIcon />} onClick={doSquashHistory} disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0} />
       </DialogActions>
     </Dialog>
