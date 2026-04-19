@@ -19,7 +19,6 @@ import { useTranslation } from 'react-i18next';
 
 import Event, { EventContext } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
-import { ActionButton } from '../dialogs/components/ActionButton';
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
