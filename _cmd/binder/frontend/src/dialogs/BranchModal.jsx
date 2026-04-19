@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContentText, DialogTitle,
-  IconButton, List, ListItem, ListItemText, TextField, Typography, Divider,
+  IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography, Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
@@ -13,6 +13,7 @@ import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, 
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
@@ -255,8 +256,8 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
           {t('branch.confirmSwitch')}
         </DialogContentText>
         <DialogActions>
-          <Button onClick={() => setConfirmSwitchName(null)}>{t('common.cancel')}</Button>
-          <Button variant="contained" onClick={() => doSwitch(confirmSwitchName)}>{t('branch.switch')}</Button>
+          <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmSwitchName(null)} />
+          <ActionButton variant="confirm" label={t('branch.switch')} icon={<CheckIcon />} onClick={() => doSwitch(confirmSwitchName)} />
         </DialogActions>
       </Dialog>
 
@@ -271,8 +272,8 @@ export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
           {t('branch.confirmCreate', { name: newBranchName.trim(), from: currentBranch })}
         </DialogContentText>
         <DialogActions>
-          <Button onClick={() => setConfirmCreateOpen(false)}>{t('common.cancel')}</Button>
-          <Button variant="contained" onClick={doCreate}>{t('branch.create')}</Button>
+          <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmCreateOpen(false)} />
+          <ActionButton variant="confirm" label={t('branch.create')} icon={<CheckIcon />} onClick={doCreate} />
         </DialogActions>
       </Dialog>
 

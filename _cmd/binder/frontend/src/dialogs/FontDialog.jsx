@@ -5,9 +5,11 @@ import { GetFontNames } from "../../bindings/binder/api/app";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Box, Button, DialogContent, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
+import { Box, DialogContent, FormControl, FormLabel, IconButton, TextField, Tooltip } from "@mui/material";
 import { EventContext } from "../Event";
+import CheckIcon from "@mui/icons-material/Check";
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import { MenuItem, Select } from "@mui/material";
 import { Close } from "@mui/icons-material";
 
@@ -179,7 +181,7 @@ func main() {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleSubmit}>{t("common.ok")}</Button>
+        <ActionButton variant="confirm" label={t("common.ok")} icon={<CheckIcon />} onClick={handleSubmit} />
       </DialogActions>
     </Dialog>
   );

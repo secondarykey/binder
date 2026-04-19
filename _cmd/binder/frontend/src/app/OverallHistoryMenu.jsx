@@ -3,14 +3,17 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, Button, Tooltip,
+  Typography, CircularProgress, Box, Button, IconButton, Tooltip,
   Menu, MenuItem, ListItemIcon, TextField,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RestoreIcon from '@mui/icons-material/Restore';
+import CloseIcon from '@mui/icons-material/Close';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+
+import { ActionButton } from '../dialogs/components/ActionButton';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -366,10 +369,8 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
-        <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }}>
-          {t('overallHistory.restore')}
-        </Button>
+        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+        <ActionButton variant="confirm" label={t('overallHistory.restore')} icon={<RestoreIcon />} onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }} />
       </DialogActions>
     </Dialog>
 
@@ -421,14 +422,8 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setCleanupOpen(false)}>{t('common.cancel')}</Button>
-        <Button
-          color="warning"
-          onClick={doSquashHistory}
-          disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0}
-        >
-          {t('overallHistory.cleanupConfirm')}
-        </Button>
+        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setCleanupOpen(false)} />
+        <ActionButton variant="confirm" label={t('overallHistory.cleanupConfirm')} icon={<CleaningServicesIcon />} onClick={doSquashHistory} disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0} />
       </DialogActions>
     </Dialog>
     </>

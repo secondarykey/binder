@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, IconButton, Divider } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Tooltip, IconButton, Divider } from '@mui/material';
 
+import CloseIcon from '@mui/icons-material/Close';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -38,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import { copyClipboard } from '../app/App';
 
 import Event, { EventContext } from '../Event';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
 import DiagramMetaDialog from '../dialogs/DiagramMetaDialog';
@@ -926,10 +928,10 @@ function BinderTree(props) {
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRegisterNote}>{t("tree.note")}</MenuItem>
-      <MenuItem onClick={handleRegisterDiagram}>{t("tree.diagram")}</MenuItem>
-      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets_file")}</MenuItem>
-      <MenuItem onClick={handleRegisterTextAsset}>{t("tree.assets_text")}</MenuItem>
+      <MenuItem onClick={handleRegisterNote}><TextSnippetIcon fontSize="small" sx={{ mr: 1 }} />{t("tree.note")}</MenuItem>
+      <MenuItem onClick={handleRegisterDiagram}><MermaidIcon /><span style={{ marginLeft: 8 }}>{t("tree.diagram")}</span></MenuItem>
+      <MenuItem onClick={handleRegisterAssets}><AttachFileIcon fontSize="small" sx={{ mr: 1 }} />{t("tree.assets_file")}</MenuItem>
+      <MenuItem onClick={handleRegisterTextAsset}><AttachFileIcon fontSize="small" sx={{ mr: 1 }} />{t("tree.assets_text")}</MenuItem>
     </Menu>
 
     {/** Copy サブメニュー: ID / パス */}
@@ -992,8 +994,8 @@ function BinderTree(props) {
         {t("tree.deleteConfirm", { name: deleteConfirm.node?.name })}
       </DialogTitle>
       <DialogActions>
-        <Button onClick={handleDeleteCancel}>{t("common.cancel")}</Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained">{t("common.delete")}</Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteCancel} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} />
       </DialogActions>
     </Dialog>
 

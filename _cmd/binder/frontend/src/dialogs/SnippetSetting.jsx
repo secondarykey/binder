@@ -1,9 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
+import { Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
@@ -13,6 +14,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -311,12 +313,8 @@ function SnippetSetting() {
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ px: 2, pb: 1.5 }}>
-        <Button onClick={handleDeleteCancel} size="small" sx={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-          {t("common.cancel")}
-        </Button>
-        <Button onClick={handleDeleteConfirm} size="small" color="error" variant="contained" sx={{ fontSize: '12px' }}>
-          {t("common.delete")}
-        </Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteCancel} size="small" />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} size="small" />
       </DialogActions>
     </Dialog>
     </>

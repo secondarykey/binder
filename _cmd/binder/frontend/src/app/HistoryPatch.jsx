@@ -2,7 +2,10 @@ import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router";
 
 import { Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import RestoreIcon from "@mui/icons-material/Restore";
+
+import { ActionButton } from '../dialogs/components/ActionButton';
 import DiffIcon from "@mui/icons-material/Difference";
 
 import { Events, Window } from "@wailsio/runtime";
@@ -430,10 +433,8 @@ function HistoryPatch({ typ, id }) {
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
-                <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(); }}>
-                    {t("history.restore")}
-                </Button>
+                <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+                <ActionButton variant="confirm" label={t("history.restore")} icon={<RestoreIcon />} onClick={() => { setConfirmOpen(false); doRestore(); }} />
             </DialogActions>
         </Dialog>
         </>

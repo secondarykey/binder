@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Box, Button, DialogActions, DialogContent, IconButton,
+  Box, DialogActions, DialogContent, IconButton,
   TextField, ToggleButton, ToggleButtonGroup, Tooltip,
 } from "@mui/material";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import FormatAlignLeftIcon from "@mui/icons-material/FormatAlignLeft";
@@ -19,6 +20,7 @@ import FormatAlignCenterIcon from "@mui/icons-material/FormatAlignCenter";
 import FormatAlignRightIcon from "@mui/icons-material/FormatAlignRight";
 import ModalWrapper from "./components/ModalWrapper.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
+import { ActionButton } from "./components/ActionButton.jsx";
 import "../language";
 import { useTranslation } from "react-i18next";
 
@@ -641,9 +643,7 @@ function TableDialog({ open, tableLines, onClose }) {
           backgroundColor: "var(--bg-surface)",
         }}
       >
-        <Button variant="contained" onClick={handleClose}>
-          {t("tableDialog.updateCell")}
-        </Button>
+        <ActionButton variant="confirm" label={t("tableDialog.updateCell")} icon={<CheckIcon />} onClick={handleClose} />
       </DialogActions>
 
       <ConfirmDialog

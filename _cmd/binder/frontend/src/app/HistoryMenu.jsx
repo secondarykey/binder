@@ -3,13 +3,16 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, Button, Tooltip,
+  Typography, CircularProgress, Box, Button, IconButton, Tooltip,
   Menu, MenuItem, ListItemIcon,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 import RestoreIcon from '@mui/icons-material/Restore';
+
+import { ActionButton } from '../dialogs/components/ActionButton';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -233,10 +236,8 @@ function HistoryMenu({ typ, id }) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
-        <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }}>
-          {t('history.restore')}
-        </Button>
+        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+        <ActionButton variant="confirm" label={t('history.restore')} icon={<RestoreIcon />} onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }} />
       </DialogActions>
     </Dialog>
     </>
