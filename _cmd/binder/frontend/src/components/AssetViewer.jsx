@@ -65,6 +65,7 @@ function ImageViewer({ src, alt }) {
   const imgRef      = useRef(null);
   // React state を使わず ref で transform 値を保持（ポインタ移動ごとの再レンダーを避ける）
   const tfRef = useRef({ left: 0, top: 0, scale: 1 });
+  const [displayScale, setDisplayScale] = useState(null);
 
   const applyTransform = () => {
     if (!imgRef.current) return;
@@ -82,12 +83,13 @@ function ImageViewer({ src, alt }) {
       const s = e.deltaY > 0 ? -0.1 : 0.1;
       tfRef.current.scale = Math.max(0.1, tfRef.current.scale + s);
       applyTransform();
+      setDisplayScale(Math.round(tfRef.current.scale * 100));
     };
     container.addEventListener('wheel', onWheel, { passive: false });
     return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
-  // 画像読み込み後: コンテナにフィットするスケールで中央配置
+  // 画像読み込み後: 100%表示を基本とし、画像がコンテナより大きい場合はフィット
   const handleLoad = () => {
     const container = containerRef.current;
     const img       = imgRef.current;
@@ -98,12 +100,14 @@ function ImageViewer({ src, alt }) {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
 
-    const scale = Math.min(cw / iw, ch / ih);
+    const fitScale = Math.min(cw / iw, ch / ih);
+    const scale = Math.min(1.0, fitScale);
     const left  = (cw - iw * scale) / 2;
     const top   = (ch - ih * scale) / 2;
 
     tfRef.current = { left, top, scale };
     applyTransform();
+    setDisplayScale(Math.round(scale * 100));
   };
 
   // ドラッグ移動（SVGビューアと同じ pointermove + movementX/Y）
@@ -142,6 +146,22 @@ function ImageViewer({ src, alt }) {
           userSelect: 'none',
         }}
       />
+      {displayScale !== null && (
+        <div style={{
+          position: 'absolute',
+          bottom: '8px',
+          right: '8px',
+          background: 'rgba(0,0,0,0.45)',
+          color: '#fff',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}>
+          {displayScale}%
+        </div>
+      )}
     </div>
   );
 }
