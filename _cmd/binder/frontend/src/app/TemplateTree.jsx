@@ -5,9 +5,10 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton, Dialog, DialogTitle, DialogContentText, DialogActions, Button } from '@mui/material';
+import { Menu, MenuItem, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText, IconButton, Dialog, DialogTitle, DialogContentText, DialogActions, Tooltip } from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { GetTemplateTree, UpdateTemplateSeqs, RemoveTemplate } from '../../bindings/binder/api/app';
@@ -17,6 +18,7 @@ import "../language";
 import { useTranslation } from 'react-i18next';
 
 import Event, { EventContext } from '../Event';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
 {/** ドラッグ可能なテンプレートアイテム */}
@@ -212,9 +214,7 @@ function TemplateTree(props) {
       <ListSubheader disableSticky
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Layout
-        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Layout")}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={() => handleRegisterTemplate("DIR_HTML_Layout")} size="small" />
       </ListSubheader>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter}
@@ -237,9 +237,7 @@ function TemplateTree(props) {
       <ListSubheader disableSticky
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Content
-        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_HTML_Content")}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={() => handleRegisterTemplate("DIR_HTML_Content")} size="small" />
       </ListSubheader>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter}
@@ -262,9 +260,7 @@ function TemplateTree(props) {
       <ListSubheader disableSticky
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.6, backgroundColor: 'var(--bg-overlay)', color: 'inherit' }}>
         Diagram
-        <IconButton size="small" onClick={() => handleRegisterTemplate("DIR_Diagram_Style")}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={() => handleRegisterTemplate("DIR_Diagram_Style")} size="small" />
       </ListSubheader>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter}
@@ -317,8 +313,8 @@ function TemplateTree(props) {
         {t("template.deleteConfirm", { name: confirmDelete.name })}
       </DialogContentText>
       <DialogActions>
-        <Button onClick={() => setConfirmDelete({ open: false, id: null, name: '' })}>{t("common.cancel")}</Button>
-        <Button color="error" onClick={handleDeleteConfirm}>{t("common.delete")}</Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setConfirmDelete({ open: false, id: null, name: '' })} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} />
       </DialogActions>
     </Dialog>
 

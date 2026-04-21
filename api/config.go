@@ -30,6 +30,21 @@ func (a *App) GetConfig() (*json.Config, error) {
 	return conf, nil
 }
 
+func (a *App) GetPublishSettings() (*json.PublishSettings, error) {
+
+	defer log.PrintTrace(log.Func("GetPublishSettings()"))
+
+	publishOnly, publishBranch, err := a.current.GetPublishSettings()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetPublishSettings() error\n%+v", err)
+	}
+	return &json.PublishSettings{
+		PublishOnly:   publishOnly,
+		PublishBranch: publishBranch,
+	}, nil
+}
+
 func (a *App) GetUserInfo() (*json.UserInfo, error) {
 
 	defer log.PrintTrace(log.Func("GetUserInfo()"))

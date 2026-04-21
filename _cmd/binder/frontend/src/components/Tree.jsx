@@ -263,6 +263,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
       }
     }
     draggedNodeId.current = null;
+    setDraggingId(null);
     setDropTargetInfo(null);
   };
 

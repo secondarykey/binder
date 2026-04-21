@@ -1,8 +1,10 @@
 import { useEffect, useState,useContext } from "react";
 import { useParams } from "react-router";
-import { Grid, TextField, FormControl, FormLabel, Button, LinearProgress } from "@mui/material";
+import { Grid, TextField, FormControl, FormLabel, IconButton, LinearProgress, Tooltip } from "@mui/material";
+import CheckIcon from '@mui/icons-material/Check';
 
 import Event,{EventContext} from '../Event';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -54,7 +56,7 @@ function Commit({ date: dateProp, ...props }) {
       {running && <LinearProgress sx={{ mx: 1 }} />}
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px", justifyContent: "flex-end" }}>
-        <Button variant="contained" onClick={handleCommit} disabled={running}>{t("commitModal.commit")}</Button>
+        <ActionButton variant="save" label={t("commitModal.commit")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleCommit} disabled={running} />
        </FormControl>
     </Grid>
   </>);

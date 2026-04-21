@@ -5,8 +5,11 @@ import { GetFontNames } from "../../bindings/binder/api/app";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Box, Button, DialogContent, FormControl, FormLabel, IconButton, TextField } from "@mui/material";
+import { Box, DialogContent, FormControl, FormLabel, IconButton, TextField, Tooltip } from "@mui/material";
 import { EventContext } from "../Event";
+import CheckIcon from "@mui/icons-material/Check";
+import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import { MenuItem, Select } from "@mui/material";
 import { Close } from "@mui/icons-material";
 
@@ -21,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 export default function FontDialog({ show, font, onClose }) {
 
   const evt = useContext(EventContext)
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
   const [name, setName] = useState(font === undefined ? "Araial" : font.name);
   const [size, setSize] = useState(font === undefined ? 16:font.size);
@@ -49,7 +53,7 @@ func main() {
       setFonts(names);
     }).catch((err) => {
       console.log(err)
-      evt.showErrorMessage(err);
+      showError(err);
     })
   }, []);
 
@@ -115,7 +119,7 @@ func main() {
     <Dialog open={show} onClose={handleClose}
       PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", width: "100%", maxWidth: "600px" } }}
     >
-      <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", pr: '12px' }}>
         <span style={{ flex: 1 }}>{t("font.title")}</span>
         <IconButton size="small" onClick={handleClose} aria-label="close">
           <Close fontSize="small" />
@@ -177,7 +181,7 @@ func main() {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleSubmit}>{t("common.ok")}</Button>
+        <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSubmit} />
       </DialogActions>
     </Dialog>
   );

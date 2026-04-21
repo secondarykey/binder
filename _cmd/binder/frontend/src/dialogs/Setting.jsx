@@ -6,15 +6,17 @@ import AddIcon from '@mui/icons-material/Add';
 import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetThemeList, GetLanguageList, GetAllowedCDNs, SaveAllowedCDNs } from "../../bindings/binder/api/app";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog, OpenSyslogWindow } from "../../bindings/main/window";
-import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 import FolderIcon from '@mui/icons-material/Folder';
 import TerminalIcon from '@mui/icons-material/Terminal';
 
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import SnippetSetting from "./SnippetSetting";
 import EditorSetting from "./EditorSetting";
 import GitSetting from "./GitSetting";
 import LicenseSetting from "./LicenseSetting";
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 import { applyTheme } from '../theme';
@@ -28,6 +30,7 @@ import { loadLanguage } from '../language';
 function Setting({ isModal, ...props }) {
 
   const evt = useContext(EventContext)
+  const { showError } = useDialogMessage();
   const {t, i18n} = useTranslation();
 
   const [activeSection, setActiveSection] = useState("basic");
@@ -53,7 +56,7 @@ function Setting({ isModal, ...props }) {
       setPathOpenWith(p.openWithItem);
 
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     GetTheme().then((t) => {
       setThemeState(t || 'dark');
@@ -84,7 +87,7 @@ function Setting({ isModal, ...props }) {
         if (f) Events.Emit('binder:editor:fontChanged', f);
       }).catch(() => {});
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -92,7 +95,7 @@ function Setting({ isModal, ...props }) {
     const lang = e.target.value;
     loadLanguage(lang);
     SetLanguage(lang).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -106,7 +109,7 @@ function Setting({ isModal, ...props }) {
     SavePath(path).then((resp) => {
       evt.showSuccessMessage(t("common.updated"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   }
 
@@ -114,7 +117,7 @@ function Setting({ isModal, ...props }) {
     OpenFileDialog(false, pathDefault).then((dir) => {
       if (dir) setPathDefault(dir);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -126,7 +129,7 @@ function Setting({ isModal, ...props }) {
     setNewDomain("");
     SaveAllowedCDNs(updated).then(() => {
       evt.showSuccessMessage(t("common.updated"));
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   const handleRemoveDomain = (domain) => {
@@ -134,7 +137,7 @@ function Setting({ isModal, ...props }) {
     setAllowedCDNs(updated);
     SaveAllowedCDNs(updated).then(() => {
       evt.showSuccessMessage(t("common.updated"));
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   const handleSwitch = (e, caller) => {
@@ -292,7 +295,7 @@ function Setting({ isModal, ...props }) {
                 <FormControl>
                   <FormLabel>{t("setting.systemLog")}</FormLabel>
                   <IconButton
-                    onClick={() => OpenSyslogWindow().catch((err) => evt.showErrorMessage(err))}
+                    onClick={() => OpenSyslogWindow().catch((err) => showError(err))}
                     sx={{
                       width: 'fit-content',
                       color: 'var(--text-primary)',
@@ -313,9 +316,7 @@ function Setting({ isModal, ...props }) {
 
             {/** 保存 */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
           </Box>
         )}
@@ -375,14 +376,7 @@ function Setting({ isModal, ...props }) {
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddDomain(); } }}
                   sx={{ flex: 1 }}
                 />
-                <IconButton
-                  size="small"
-                  onClick={handleAddDomain}
-                  disabled={!newDomain.trim()}
-                  sx={{ '& svg': { fill: 'var(--accent-blue)' } }}
-                >
-                  <AddIcon />
-                </IconButton>
+                <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={handleAddDomain} disabled={!newDomain.trim()} size="small" />
               </Box>
             </FormControl>
           </div>

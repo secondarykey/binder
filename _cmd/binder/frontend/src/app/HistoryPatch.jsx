@@ -1,8 +1,11 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router";
 
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
+import { Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import RestoreIcon from "@mui/icons-material/Restore";
+
+import { ActionButton } from '../dialogs/components/ActionButton';
 import DiffIcon from "@mui/icons-material/Difference";
 
 import { Events, Window } from "@wailsio/runtime";
@@ -200,7 +203,7 @@ function HistoryPatch({ typ, id }) {
     const [fontBgColor, setFontBgColor] = useState("var(--bg-overlay)");
     const [confirmOpen, setConfirmOpen] = useState(false);
     // デフォルトは履歴ファイルのみ表示。Diff ボタンで差分パネルをトグル
-    const [showDiff, setShowDiff] = useState(false);
+    const [showDiff, setShowDiff] = useState(true);
     const [loading, setLoading] = useState(false);
 
     const histScrollRef = useRef();
@@ -323,37 +326,57 @@ function HistoryPatch({ typ, id }) {
         <div style={{ display: "flex", width: "100%", height: "100%" }}>
 
             {/* 履歴ファイル表示パネル */}
-            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid var(--border-primary)" : "none" }}>
+            <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid var(--border-strong)" : "none" }}>
                 <div style={panelLabelStyle}>
                     {/* 左: Historical ラベル + Restore ボタン */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>Historical</span>
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<RestoreIcon fontSize="small" />}
-                            onClick={handleRestoreClick}
-                            disabled={!hash}
-                            sx={btnSx}
-                        >
-                            Restore
-                        </Button>
+                        <Tooltip title="Restore">
+                            <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleRestoreClick}
+                                    disabled={!hash}
+                                    sx={{
+                                        borderRadius: "4px",
+                                        border: "1px solid var(--border-strong)",
+                                        color: "var(--text-muted)",
+                                        padding: "1px 4px",
+                                        "&:hover": { borderColor: "var(--text-muted)", color: "var(--text-primary)" },
+                                        "&.Mui-disabled": { opacity: 0.3 },
+                                    }}
+                                >
+                                    <RestoreIcon fontSize="small" />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
                     </div>
                     {/* 右: Diff トグルボタン */}
-                    <Button
-                        size="small"
-                        variant={showDiff ? "contained" : "outlined"}
-                        startIcon={<DiffIcon fontSize="small" />}
-                        onClick={() => setShowDiff(v => !v)}
-                        disabled={!hash || !patch}
-                        sx={{
-                            ...btnSx,
-                            ...(showDiff ? { color: "var(--text-primary)", backgroundColor: "var(--selected-bg)", borderColor: "var(--selected-bg)",
-                                "&:hover": { backgroundColor: "var(--selected-hover)" } } : {}),
-                        }}
-                    >
-                        Diff
-                    </Button>
+                    <Tooltip title="Diff">
+                        <span>
+                            <IconButton
+                                size="small"
+                                onClick={() => setShowDiff(v => !v)}
+                                disabled={!hash || !patch}
+                                sx={{
+                                    borderRadius: "4px",
+                                    border: "1px solid",
+                                    borderColor: showDiff ? "var(--selected-bg)" : "var(--border-strong)",
+                                    color: showDiff ? "var(--text-primary)" : "var(--text-muted)",
+                                    backgroundColor: showDiff ? "var(--selected-bg)" : "transparent",
+                                    padding: "1px 4px",
+                                    "&:hover": {
+                                        borderColor: showDiff ? "var(--selected-bg)" : "var(--text-muted)",
+                                        color: "var(--text-primary)",
+                                        backgroundColor: showDiff ? "var(--selected-hover)" : "transparent",
+                                    },
+                                    "&.Mui-disabled": { opacity: 0.3 },
+                                }}
+                            >
+                                <DiffIcon fontSize="small" />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     {loading && (
@@ -410,10 +433,8 @@ function HistoryPatch({ typ, id }) {
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
-                <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(); }}>
-                    {t("history.restore")}
-                </Button>
+                <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+                <ActionButton variant="confirm" label={t("history.restore")} icon={<RestoreIcon />} onClick={() => { setConfirmOpen(false); doRestore(); }} />
             </DialogActions>
         </Dialog>
         </>

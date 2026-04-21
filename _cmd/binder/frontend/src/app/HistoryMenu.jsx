@@ -3,13 +3,16 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, Button, Tooltip,
+  Typography, CircularProgress, Box, IconButton, Tooltip, Button,
   Menu, MenuItem, ListItemIcon,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 import RestoreIcon from '@mui/icons-material/Restore';
+
+import { ActionButton } from '../dialogs/components/ActionButton';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -160,8 +163,8 @@ function HistoryMenu({ typ, id }) {
             selected={entry.hash === hash}
             sx={{
               pl: 2, py: 0.5, borderRadius: '2px',
-              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
-              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
+              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)', color: 'inherit' },
+              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)', color: 'inherit' },
             }}
             onClick={() => handleClick(entry)}
             onContextMenu={(e) => handleContextMenu(e, entry)}>
@@ -192,14 +195,10 @@ function HistoryMenu({ typ, id }) {
       {!loading && hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
           <Button
-            size="small"
-            variant="text"
             startIcon={<ExpandMoreIcon fontSize="small" />}
             onClick={() => setOffset(prev => prev + PAGE_SIZE)}
-            sx={{
-              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
-              '&:hover': { color: 'var(--text-primary)' },
-            }}
+            size="small"
+            sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
           >
             {t('history.loadMore')}
           </Button>
@@ -233,10 +232,8 @@ function HistoryMenu({ typ, id }) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
-        <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }}>
-          {t('history.restore')}
-        </Button>
+        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+        <ActionButton variant="confirm" label={t('history.restore')} icon={<RestoreIcon />} onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }} />
       </DialogActions>
     </Dialog>
     </>

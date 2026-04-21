@@ -3,14 +3,17 @@ import { useNavigate, useParams } from 'react-router';
 
 import {
   List, ListSubheader, ListItemButton, ListItemText,
-  Typography, CircularProgress, Box, Button, Tooltip,
+  Typography, CircularProgress, Box, IconButton, Tooltip, Button,
   Menu, MenuItem, ListItemIcon, TextField,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RestoreIcon from '@mui/icons-material/Restore';
+import CloseIcon from '@mui/icons-material/Close';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+
+import { ActionButton } from '../dialogs/components/ActionButton';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -24,14 +27,19 @@ const PAGE_SIZE = 10;
 
 /**
  * 全体履歴 コミット一覧
- * @param {{ binderPath?: string }} props binderPath が指定されていれば ByPath API を使用
+ * @param {{ binderPath?: string, selectedHash?: string, onSelect?: (hash: string) => void, onClose?: () => void }} props
+ *   - selectedHash / onSelect / onClose が指定された場合は react-router を使わずコールバックで動作（モーダル統合用）
+ *   - 未指定の場合は従来通り react-router で動作（OverallHistoryApp ウィンドウ用）
  */
-function OverallHistoryMenu({ binderPath }) {
+function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSelect, onClose }) {
 
   const evt = useContext(EventContext);
-  const { hash } = useParams();
+  const { hash: routerHash } = useParams();
   const nav = useNavigate();
   const { t } = useTranslation();
+
+  // モーダルモード（onSelect あり）か否かで hash の取得元を切り替える
+  const hash = onSelect !== undefined ? (selectedHashProp ?? null) : routerHash;
 
   const [entries, setEntries] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -86,7 +94,12 @@ function OverallHistoryMenu({ binderPath }) {
   }, [offset]);
 
   const handleClick = (entry) => {
-    nav('/overall/detail/' + entry.hash);
+    if (onSelect) {
+      // モーダルモード: コールバックで選択状態を親に通知（同じhashをクリックで解除）
+      onSelect(selectedHashProp === entry.hash ? null : entry.hash);
+    } else {
+      nav('/overall/detail/' + entry.hash);
+    }
   };
 
   const handleContextMenu = (e, entry) => {
@@ -125,8 +138,15 @@ function OverallHistoryMenu({ binderPath }) {
       : RestoreToCommit(targetHash);
     restoreCall.then((result) => {
       if (result?.status === 'success') {
-        Events.Emit("binder:restored", { address: result.address });
-        Window.Close();
+        if (onClose) {
+          // モーダルモード: ツリー更新してモーダルを閉じる
+          if (result.address) evt.changeAddress(result.address);
+          evt.refreshTree();
+          onClose();
+        } else {
+          Events.Emit("binder:restored", { address: result.address });
+          Window.Close();
+        }
       } else {
         evt.showErrorMessage(result?.message || 'Restore failed');
       }
@@ -201,8 +221,13 @@ function OverallHistoryMenu({ binderPath }) {
         setCleanupOpen(false);
         evt.showSuccessMessage(t('overallHistory.cleanupComplete', { before, after }));
         setTimeout(() => {
-          Events.Emit("binder:restored", { address: result.address });
-          Window.Close();
+          if (onClose) {
+            evt.refreshTree();
+            onClose();
+          } else {
+            Events.Emit("binder:restored", { address: result.address });
+            Window.Close();
+          }
         }, 2000);
       } else {
         evt.showErrorMessage(result?.message || 'Cleanup failed');
@@ -215,8 +240,8 @@ function OverallHistoryMenu({ binderPath }) {
   };
 
   return (
-    <>
-    <List dense disablePadding className="treeText" sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <List dense disablePadding className="treeText" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
 
       <ListSubheader disableSticky sx={{
         lineHeight: '28px', pt: 0, pb: 0, pl: 1, pr: 0.5,
@@ -253,8 +278,8 @@ function OverallHistoryMenu({ binderPath }) {
             selected={entry.hash === hash}
             sx={{
               pl: 2, py: 0.5, borderRadius: '2px',
-              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)' },
-              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)' },
+              '&.Mui-selected': { backgroundColor: 'var(--selected-bg)', color: 'inherit' },
+              '&.Mui-selected:hover': { backgroundColor: 'var(--selected-bg)', color: 'inherit' },
             }}
             onClick={() => handleClick(entry)}
             onContextMenu={(e) => handleContextMenu(e, entry)}>
@@ -285,39 +310,31 @@ function OverallHistoryMenu({ binderPath }) {
       {!loading && hasMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
           <Button
-            size="small"
-            variant="text"
             startIcon={<ExpandMoreIcon fontSize="small" />}
             onClick={() => setOffset(prev => prev + PAGE_SIZE)}
-            sx={{
-              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
-              '&:hover': { color: 'var(--text-primary)' },
-            }}
+            size="small"
+            sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
           >
             {t('history.loadMore')}
           </Button>
         </Box>
       )}
 
-      {/* クリーンアップボタン（ByPath モードでは非表示） */}
-      {!binderPath && !loading && entries.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)' }}>
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<CleaningServicesIcon fontSize="small" />}
-            onClick={handleOpenCleanup}
-            sx={{
-              fontSize: '0.72rem', color: 'var(--text-disabled)', textTransform: 'none',
-              '&:hover': { color: 'var(--text-primary)' },
-            }}
-          >
-            {t('overallHistory.cleanup')}
-          </Button>
-        </Box>
-      )}
-
     </List>
+
+    {/* クリーンアップボタン（ByPath モードでは非表示・下部固定） */}
+    {!binderPath && !loading && entries.length > 0 && (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+        <Button
+          startIcon={<CleaningServicesIcon fontSize="small" />}
+          onClick={handleOpenCleanup}
+          size="small"
+          sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
+        >
+          {t('overallHistory.cleanup')}
+        </Button>
+      </Box>
+    )}
 
     {/* 右クリックコンテキストメニュー */}
     <Menu
@@ -344,10 +361,8 @@ function OverallHistoryMenu({ binderPath }) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
-        <Button color="warning" onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }}>
-          {t('overallHistory.restore')}
-        </Button>
+        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+        <ActionButton variant="confirm" label={t('overallHistory.restore')} icon={<RestoreIcon />} onClick={() => { setConfirmOpen(false); doRestore(restoreHash); }} />
       </DialogActions>
     </Dialog>
 
@@ -399,17 +414,10 @@ function OverallHistoryMenu({ binderPath }) {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setCleanupOpen(false)}>{t('common.cancel')}</Button>
-        <Button
-          color="warning"
-          onClick={doSquashHistory}
-          disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0}
-        >
-          {t('overallHistory.cleanupConfirm')}
-        </Button>
+        <ActionButton variant="confirm" label={t('overallHistory.cleanupConfirm')} icon={<CleaningServicesIcon />} onClick={doSquashHistory} disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0} />
       </DialogActions>
     </Dialog>
-    </>
+    </Box>
   );
 }
 

@@ -22,4 +22,8 @@ func TestTableName(t *testing.T) {
 	if fn != "db/templates.csv" {
 		t.Errorf("TemplateTableFile() is not db/templates.csv")
 	}
+	fn = fs.StructureTableFile()
+	if fn != "db/structures.csv" {
+		t.Errorf("StructureTableFile() is not db/structures.csv")
+	}
 }

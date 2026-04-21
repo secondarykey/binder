@@ -8,7 +8,7 @@ import SettingModal from '../dialogs/SettingModal.jsx';
 import BinderModal from '../dialogs/BinderModal.jsx';
 import PushModal from '../dialogs/PushModal.jsx';
 import MergeModal from '../dialogs/MergeModal.jsx';
-import BranchModal from '../dialogs/BranchModal.jsx';
+import BranchHistoryModal from './BranchHistoryModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
@@ -428,8 +428,8 @@ function App() {
       {/** Mergeモーダル */}
       <MergeModal open={mergeModalOpen} onClose={() => setMergeModalOpen(false)} />
 
-      {/** ブランチ変更モーダル */}
-      <BranchModal open={branchModalOpen} onClose={() => setBranchModalOpen(false)} />
+      {/** ブランチ変更 + 全体履歴モーダル */}
+      <BranchHistoryModal open={branchModalOpen} onClose={() => setBranchModalOpen(false)} />
 
       {/** データ移行確認ダイアログ */}
       <ConvertDialog

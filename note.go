@@ -359,12 +359,14 @@ func (b *Binder) GetUnpublishedNotes() ([]*json.Note, error) {
 	return pr, nil
 }
 
-func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
+// PublishNoteStage はノートを公開ファイルに書き出し、DBを更新するが git コミットは行わない。
+// 変更したファイルパス一覧と更新済みの Note を返す。
+func (b *Binder) PublishNoteStage(id string, data []byte) ([]string, *json.Note, error) {
 
 	var files []string
 	n, err := b.db.GetNote(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+		return nil, nil, xerrors.Errorf("db.GetNote() error: %w", err)
 	}
 
 	rtn := n.To()
@@ -372,7 +374,7 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 	// publish/republish タイムスタンプを設定（updated_date と republish_date を同一時刻にするため PublishStructure を使用）
 	s, err := b.db.PublishStructure(id, b.op)
 	if err != nil {
-		return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
+		return nil, nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
 	}
 	rtn.ApplyStructure(s.To())
 
@@ -380,7 +382,7 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 
 	fn, err := b.fileSystem.PublishNote(data, rtn)
 	if err != nil {
-		return nil, xerrors.Errorf("fs.PublishNote() error: %w", err)
+		return nil, nil, xerrors.Errorf("fs.PublishNote() error: %w", err)
 	}
 
 	files = append(files, fn)
@@ -388,14 +390,24 @@ func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
 	// メタ画像が存在する場合は docs/images/meta/{alias} にコピー
 	metaData, err := b.ReadMetaBytes(id)
 	if err != nil {
-		return nil, xerrors.Errorf("ReadMetaBytes() error: %w", err)
+		return nil, nil, xerrors.Errorf("ReadMetaBytes() error: %w", err)
 	}
 	if metaData != nil {
 		mf, err := b.fileSystem.PublishNoteMeta(metaData, rtn)
 		if err != nil {
-			return nil, xerrors.Errorf("fs.PublishNoteMeta() error: %w", err)
+			return nil, nil, xerrors.Errorf("fs.PublishNoteMeta() error: %w", err)
 		}
 		files = append(files, mf)
+	}
+
+	return files, rtn, nil
+}
+
+func (b *Binder) PublishNote(id string, data []byte) (*json.Note, error) {
+
+	files, rtn, err := b.PublishNoteStage(id, data)
+	if err != nil {
+		return nil, err
 	}
 
 	err = b.fileSystem.Commit(fs.M("Publish Note", rtn.Name), files...)

@@ -1,9 +1,13 @@
 import {
-  Button, Dialog, DialogActions, DialogContentText, DialogTitle,
+  Dialog, DialogActions, DialogContentText, DialogTitle,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import "../../language";
 import { useTranslation } from 'react-i18next';
+
+import { ActionButton } from './ActionButton';
 
 /**
  * 確認ダイアログ（削除確認などに使用）
@@ -22,8 +26,8 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
         {message}
       </DialogContentText>
       <DialogActions>
-        <Button onClick={onCancel}>{t("common.cancel")}</Button>
-        <Button color="error" onClick={onConfirm}>{t("common.delete")}</Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={onCancel} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={onConfirm} />
       </DialogActions>
     </Dialog>
   );

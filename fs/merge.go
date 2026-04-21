@@ -31,6 +31,7 @@ type MergeLog struct {
 	RemoteName   string
 	RemoteBranch string
 	LocalBranch  string
+	SourceBranch string // ローカルブランチマージ時のマージ元（RemoteName=="" のとき使用）
 	AutoFiles    []ResolvedFile
 	MergedCSVs   map[string]*MergedCSV
 	UserFiles    []FileResolution
@@ -117,6 +118,58 @@ func (f *FileSystem) DetectConflictsByHash(oursHashStr, theirsHashStr string) (*
 
 	oursHash := plumbing.NewHash(oursHashStr)
 	theirsHash := plumbing.NewHash(theirsHashStr)
+
+	oursCommit, err := f.repo.CommitObject(oursHash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject(ours) error: %w", err)
+	}
+	theirsCommit, err := f.repo.CommitObject(theirsHash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject(theirs) error: %w", err)
+	}
+
+	bases, err := oursCommit.MergeBase(theirsCommit)
+	if err != nil {
+		return nil, xerrors.Errorf("MergeBase() error: %w", err)
+	}
+	if len(bases) == 0 {
+		return nil, fmt.Errorf("no common ancestor found")
+	}
+	baseCommit := bases[0]
+
+	baseTree, err := baseCommit.Tree()
+	if err != nil {
+		return nil, xerrors.Errorf("baseCommit.Tree() error: %w", err)
+	}
+	oursTree, err := oursCommit.Tree()
+	if err != nil {
+		return nil, xerrors.Errorf("oursCommit.Tree() error: %w", err)
+	}
+	theirsTree, err := theirsCommit.Tree()
+	if err != nil {
+		return nil, xerrors.Errorf("theirsCommit.Tree() error: %w", err)
+	}
+
+	return f.analyzeChanges(baseCommit.Hash, oursHash, theirsHash, baseTree, oursTree, theirsTree)
+}
+
+// DetectConflictsFromLocalBranch はローカルブランチから3-way比較でコンフリクトを検出する。
+func (f *FileSystem) DetectConflictsFromLocalBranch(branchName string) (*MergeAnalysis, error) {
+
+	// HEAD のコミットを取得
+	head, err := f.repo.Head()
+	if err != nil {
+		return nil, xerrors.Errorf("repository Head() error: %w", err)
+	}
+	oursHash := head.Hash()
+
+	// ローカルブランチの ref を取得
+	branchRef, err := f.repo.Reference(
+		plumbing.NewBranchReferenceName(branchName), true)
+	if err != nil {
+		return nil, xerrors.Errorf("Reference(%s) error: %w", branchName, err)
+	}
+	theirsHash := branchRef.Hash()
 
 	oursCommit, err := f.repo.CommitObject(oursHash)
 	if err != nil {

@@ -3,10 +3,12 @@ import { useNavigate } from "react-router";
 
 import { SelectDirectory } from "../../bindings/main/window";
 import { CreateBinder, GetGit } from "../../bindings/binder/api/app";
-import { Button, FormControl, FormLabel, Grid, InputAdornment, TextField } from "@mui/material";
+import { FormControl, FormLabel, Grid, InputAdornment, TextField, Tooltip, IconButton } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
 import FolderIcon from '@mui/icons-material/Folder';
 
 import Event,{EventContext} from "../Event";
+import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -105,9 +107,7 @@ function BinderRegister(props) {
       </FormControl>
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
-        <Button variant="contained" onClick={handleSave}>
-          {t("common.create")}
-        </Button>
+        <ActionButton variant="save" label={t("common.create")} icon={<AddIcon />} onClick={handleSave} />
       </FormControl>
     </Grid>
   </>);

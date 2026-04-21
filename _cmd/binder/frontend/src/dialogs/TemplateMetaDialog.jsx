@@ -7,6 +7,7 @@ import "../language";
 import { useTranslation } from 'react-i18next';
 
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 
@@ -17,6 +18,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
  */
 function TemplateMetaDialog({ open, id, type, onClose }) {
   const evt = useContext(EventContext);
+  const { showError, showWarning } = useDialogMessage();
   const nav = useNavigate();
   const {t} = useTranslation();
 
@@ -40,11 +42,11 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
       setName(data.name);
       setDetail(data.detail);
       setResolvedType(data.type);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   }, [open, id, type]);
 
   const handleSave = () => {
-    if (!name) { evt.showWarningMessage(t("template.nameRequired")); return; }
+    if (!name) { showWarning(t("template.nameRequired")); return; }
 
     EditTemplate({ id: id ?? "", name, detail, type: resolvedType }).then((resp) => {
       evt.refreshTree();
@@ -53,7 +55,7 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
       if (isCreate) {
         nav("/editor/template/" + resp.id);
       }
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   const handleDeleteConfirm = () => {
@@ -62,7 +64,7 @@ function TemplateMetaDialog({ open, id, type, onClose }) {
       evt.refreshTree();
       evt.showSuccessMessage(t("template.removeSuccess"));
       onClose();
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
   };
 
   return (<>

@@ -1,8 +1,10 @@
 import { useEffect, useState,useContext } from "react";
 
-import { Button, Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Slide, Snackbar } from '@mui/material';
+import { Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Slide, Snackbar, Tooltip } from '@mui/material';
 
+import CloseIcon from "@mui/icons-material/Close";
 import Event,{EventContext} from "./Event";
+import { ActionButton } from "./dialogs/components/ActionButton";
 import "./language";
 import { useTranslation } from 'react-i18next';
 
@@ -137,7 +139,7 @@ export function SystemMessage(props) {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={closeDialog}>{t("common.close")}</Button>
+                    <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={closeDialog} />
                 </DialogActions>
             </Dialog>
         </>

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"fmt"
+
+	"binder/log"
 	"binder/settings"
 	"binder/setup"
 
@@ -18,10 +21,24 @@ func (a *App) Setup() (*settings.Setting, error) {
 	return set, nil
 }
 
-func (a *App) CheckCompat(dir string) (*setup.CompatResult, error) {
+func (a *App) CheckCompat(dir string) (result *setup.CompatResult, err error) {
+	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
+	defer func() {
+		if r := recover(); r != nil {
+			log.PrintStackTrace(fmt.Errorf("panic in CheckCompat: %v", r))
+			err = fmt.Errorf("unexpected error checking compatibility: %v", r)
+		}
+	}()
 	return setup.CheckCompat(dir, a.version)
 }
 
-func (a *App) Convert(dir string) error {
+func (a *App) Convert(dir string) (err error) {
+	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
+	defer func() {
+		if r := recover(); r != nil {
+			log.PrintStackTrace(fmt.Errorf("panic in Convert: %v", r))
+			err = fmt.Errorf("unexpected error during migration: %v", r)
+		}
+	}()
 	return setup.Convert(dir, a.version)
 }

@@ -1,23 +1,36 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContentText, DialogTitle,
-  IconButton, List, ListItem, ListItemText, TextField, Typography, Chip, Divider,
+  IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography, Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
-import ModalWrapper from './components/ModalWrapper';
-import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds } from '../../bindings/binder/api/app';
+import { ListBranches, CurrentBranch, SwitchBranch, CreateBranch, RenameBranch, GetModifiedIds,
+  ListBranchesByPath, CurrentBranchByPath, SwitchBranchByPath } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
-function BranchModal({ open, onClose }) {
+/**
+ * ブランチ操作パネル（ダイアログラッパーなし）
+ * BranchModal と OverallHistoryApp の右ペインで共用する
+ * @param {{ onClose?: () => void, binderPath?: string }} props
+ *   binderPath が指定された場合はバインダー未オープン状態でByPath系APIを使用する
+ */
+export function BranchPanel({ onClose = () => {}, binderPath = '' }) {
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const { t } = useTranslation();
+
+  // binderPath が指定された場合はByPath系APIを使用する
+  const byPath = !!binderPath;
 
   const [branches, setBranches] = useState([]);
   const [currentBranch, setCurrentBranch] = useState('');
@@ -30,38 +43,50 @@ function BranchModal({ open, onClose }) {
   const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
     reload();
     setNewBranchName('');
     setRenamingBranch(null);
-    GetModifiedIds().then((ids) => {
-      setHasUncommitted(ids && ids.length > 0);
-    }).catch((err) => evt.showErrorMessage(err));
-  }, [open]);
+    // byPath モードでは未コミット変更チェックをスキップ（バインダー未オープン）
+    if (!byPath) {
+      GetModifiedIds().then((ids) => {
+        setHasUncommitted(ids && ids.length > 0);
+      }).catch((err) => showError(err));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const reload = () => {
-    ListBranches().then(setBranches).catch((err) => evt.showErrorMessage(err));
-    CurrentBranch().then(setCurrentBranch).catch((err) => evt.showErrorMessage(err));
+    if (byPath) {
+      ListBranchesByPath(binderPath).then(setBranches).catch((err) => showError(err));
+      CurrentBranchByPath(binderPath).then(setCurrentBranch).catch((err) => showError(err));
+    } else {
+      ListBranches().then(setBranches).catch((err) => showError(err));
+      CurrentBranch().then(setCurrentBranch).catch((err) => showError(err));
+    }
   };
 
   const doSwitch = (name) => {
     setConfirmSwitchName(null);
     setLoading(true);
-    SwitchBranch(name).then((result) => {
+    const switchFn = byPath ? SwitchBranchByPath(binderPath, name) : SwitchBranch(name);
+    switchFn.then((result) => {
       if (result.address) evt.changeAddress(result.address);
       if (result.status === 'success') {
-        evt.refreshTree();
+        if (!byPath) {
+          evt.refreshTree();
+        }
         evt.showSuccessMessage(t('branch.switchSuccess', { name }));
+        reload();
         onClose();
       } else if (result.status === 'reload_error') {
-        evt.showErrorMessage(t('branch.reloadError'));
+        showError(t('branch.reloadError'));
         onClose();
       } else if (result.status === 'error') {
-        evt.showErrorMessage(result.message);
+        showError(result.message);
         reload();
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoading(false);
     });
@@ -76,16 +101,17 @@ function BranchModal({ open, onClose }) {
       if (result.status === 'success') {
         evt.refreshTree();
         evt.showSuccessMessage(t('branch.createSuccess', { name: newBranchName.trim() }));
+        reload();
         onClose();
       } else if (result.status === 'reload_error') {
-        evt.showErrorMessage(t('branch.reloadError'));
+        showError(t('branch.reloadError'));
         onClose();
       } else if (result.status === 'error') {
-        evt.showErrorMessage(result.message);
+        showError(result.message);
         reload();
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoading(false);
     });
@@ -102,7 +128,7 @@ function BranchModal({ open, onClose }) {
       setRenamingBranch(null);
       reload();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setLoading(false);
     });
@@ -114,96 +140,87 @@ function BranchModal({ open, onClose }) {
   };
 
   return (
-    <ModalWrapper
-      open={open}
-      onClose={onClose}
-      title={t("branch.title")}
-      width="480px"
-      height="auto"
-      maxHeight="80vh"
-    >
-      <Box sx={{ p: 2, overflowY: 'auto' }}>
+    <Box sx={{ p: 2, overflowY: 'auto' }}>
 
-        {hasUncommitted && (
-          <Alert severity="warning" sx={{ mb: 2, fontSize: '13px' }}>
-            {t('branch.uncommittedError')}
-          </Alert>
-        )}
+      {hasUncommitted && (
+        <Alert severity="warning" sx={{ mb: 2, fontSize: '13px' }}>
+          {t('branch.uncommittedError')}
+        </Alert>
+      )}
 
-        {/** ブランチ一覧 */}
-        <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
-          {t("branch.list")}
-        </Typography>
+      {/** ブランチ一覧 */}
+      <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
+        {t("branch.list")}
+      </Typography>
 
-        <List dense sx={{ mb: 2 }}>
-          {branches.map((name) => (
-            <ListItem
-              key={name}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                backgroundColor: name === currentBranch ? 'var(--bg-elevated)' : 'transparent',
-              }}
-              secondaryAction={
-                renamingBranch === name ? (
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton size="small" onClick={() => handleRename(name)} disabled={loading}>
-                      <CheckIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => setRenamingBranch(null)}>
-                      <CloseIcon sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    {name === currentBranch && (
-                      <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
-                        title={t("branch.rename")}>
-                        <EditIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    )}
-                    {name !== currentBranch && (
-                      <Button size="small" variant="outlined" onClick={() => setConfirmSwitchName(name)}
-                        disabled={loading || hasUncommitted} sx={{ minWidth: 'auto', fontSize: '12px', py: 0 }}>
-                        {t("branch.switch")}
-                      </Button>
-                    )}
-                  </Box>
-                )
-              }
-            >
-              {renamingBranch === name ? (
-                <TextField
-                  size="small"
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRename(name);
-                    if (e.key === 'Escape') setRenamingBranch(null);
-                  }}
-                  autoFocus
-                  sx={{ mr: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
-                />
+      <List dense sx={{ mb: 2 }}>
+        {branches.map((name) => (
+          <ListItem
+            key={name}
+            sx={{
+              borderRadius: 1,
+              mb: 0.5,
+              backgroundColor: name === currentBranch ? 'var(--bg-elevated)' : 'transparent',
+            }}
+            secondaryAction={
+              renamingBranch === name ? (
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <IconButton size="small" onClick={() => handleRename(name)} disabled={loading}>
+                    <CheckIcon sx={{ fontSize: '16px' }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => setRenamingBranch(null)}>
+                    <CloseIcon sx={{ fontSize: '16px' }} />
+                  </IconButton>
+                </Box>
               ) : (
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {name === currentBranch && <CheckIcon sx={{ fontSize: '14px', color: 'var(--accent-primary)' }} />}
-                      <span style={{ fontWeight: name === currentBranch ? 'bold' : 'normal' }}>{name}</span>
-                    </Box>
-                  }
-                />
-              )}
-            </ListItem>
-          ))}
-        </List>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {name === currentBranch && !byPath && (
+                    <IconButton size="small" onClick={() => startRename(name)} disabled={loading || hasUncommitted}
+                      title={t("branch.rename")}>
+                      <EditIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  )}
+                  {name !== currentBranch && (
+                    <ActionButton variant="confirm" label={t("branch.switch")} icon={<SwapHorizIcon />}
+                      onClick={() => setConfirmSwitchName(name)} disabled={loading || hasUncommitted} size="small" />
+                  )}
+                </Box>
+              )
+            }
+          >
+            {renamingBranch === name ? (
+              <TextField
+                size="small"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename(name);
+                  if (e.key === 'Escape') setRenamingBranch(null);
+                }}
+                autoFocus
+                sx={{ mr: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
+              />
+            ) : (
+              <ListItemText
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {name === currentBranch && <CheckIcon sx={{ fontSize: '14px', color: 'var(--accent-primary)' }} />}
+                    <span style={{ fontWeight: name === currentBranch ? 'bold' : 'normal' }}>{name}</span>
+                  </Box>
+                }
+              />
+            )}
+          </ListItem>
+        ))}
+      </List>
 
-        <Divider sx={{ my: 2 }} />
+      {!byPath && <Divider sx={{ my: 2 }} />}
 
-        {/** 新規作成 */}
-        <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
-          {t("branch.create")}
-        </Typography>
+      {/** 新規作成（byPath モードでは非表示: バインダー未オープン状態でのブランチ作成は未サポート） */}
+      {!byPath && <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-muted)' }}>
+        {t("branch.create")}
+      </Typography>}
+      {!byPath && (
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <TextField
             size="small"
@@ -214,19 +231,11 @@ function BranchModal({ open, onClose }) {
             disabled={loading}
             sx={{ flex: 1, '& .MuiInputBase-input': { py: 0.5, fontSize: '14px' } }}
           />
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setConfirmCreateOpen(true)}
-            disabled={loading || hasUncommitted || !newBranchName.trim()}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            {t("branch.create")}
-          </Button>
+          <ActionButton variant="save" label={t("branch.create")} icon={<AddIcon />}
+            onClick={() => setConfirmCreateOpen(true)} disabled={loading || hasUncommitted || !newBranchName.trim()}
+            size="small" />
         </Box>
-
-      </Box>
+      )}
 
       {/** ブランチ切替確認ダイアログ */}
       <Dialog
@@ -239,8 +248,8 @@ function BranchModal({ open, onClose }) {
           {t('branch.confirmSwitch')}
         </DialogContentText>
         <DialogActions>
-          <Button onClick={() => setConfirmSwitchName(null)}>{t('common.cancel')}</Button>
-          <Button variant="contained" onClick={() => doSwitch(confirmSwitchName)}>{t('branch.switch')}</Button>
+          <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmSwitchName(null)} />
+          <ActionButton variant="confirm" label={t('branch.switch')} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={() => doSwitch(confirmSwitchName)} />
         </DialogActions>
       </Dialog>
 
@@ -255,13 +264,12 @@ function BranchModal({ open, onClose }) {
           {t('branch.confirmCreate', { name: newBranchName.trim(), from: currentBranch })}
         </DialogContentText>
         <DialogActions>
-          <Button onClick={() => setConfirmCreateOpen(false)}>{t('common.cancel')}</Button>
-          <Button variant="contained" onClick={doCreate}>{t('branch.create')}</Button>
+          <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setConfirmCreateOpen(false)} />
+          <ActionButton variant="save" label={t('branch.create')} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={doCreate} />
         </DialogActions>
       </Dialog>
 
-    </ModalWrapper>
+    </Box>
   );
 }
 
-export default BranchModal;

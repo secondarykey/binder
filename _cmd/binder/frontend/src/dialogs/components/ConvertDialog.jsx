@@ -1,12 +1,16 @@
 import { useState } from "react";
 import {
-  Button, Checkbox, Dialog, DialogActions, DialogContentText, DialogTitle,
+  Checkbox, Dialog, DialogActions, DialogContentText, DialogTitle,
   FormControlLabel, Typography,
 } from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 import "../../language";
 import { useTranslation } from 'react-i18next';
+
+import { ActionButton } from './ActionButton';
 
 /**
  * データ移行確認ダイアログ
@@ -30,8 +34,8 @@ function ConvertDialog({ open, appVersion, binderVersion, onCancel, onConfirm })
         </Typography>
       )}
       <DialogActions>
-        <Button onClick={onCancel}>{t("common.cancel")}</Button>
-        <Button color="primary" variant="contained" onClick={onConfirm}>{t("convert.confirm")}</Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={onCancel} />
+        <ActionButton variant="save" label={t("convert.confirm")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={onConfirm} />
       </DialogActions>
     </Dialog>
   );
@@ -78,8 +82,8 @@ export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose, onF
       />
       <DialogActions>
         {forceOpen
-          ? <Button color="warning" variant="contained" onClick={handleForceOpen}>{t("common.open")}</Button>
-          : <Button onClick={handleClose}>{t("common.ok")}</Button>
+          ? <ActionButton variant="confirm" label={t("common.open")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleForceOpen} />
+          : <ActionButton variant="cancel" label={t("common.ok")} icon={<CloseIcon />} onClick={handleClose} />
         }
       </DialogActions>
     </Dialog>

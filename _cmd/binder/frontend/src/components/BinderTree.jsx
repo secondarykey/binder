@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Button, Tooltip, IconButton, Divider } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Tooltip, IconButton, Divider } from '@mui/material';
 
+import CloseIcon from '@mui/icons-material/Close';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -30,7 +31,7 @@ import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset,
          EditNote, EditDiagram, EditAsset, AddTextAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
          IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
-import { OpenHistoryWindow, OpenOverallHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
+import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -38,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import { copyClipboard } from '../app/App';
 
 import Event, { EventContext } from '../Event';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
 import DiagramMetaDialog from '../dialogs/DiagramMetaDialog';
@@ -518,8 +520,8 @@ function BinderTree(props) {
   const handleChange = (changeInfo) => {
     const parentId = changeInfo.parentId ?? "";
     MoveNode(parentId, changeInfo.childIds).then(() => {
-      // 移動した全子ノードをローカルダーティとしてマーク
-      changeInfo.childIds.forEach(id => evt.markModified(id));
+      // 移動した要素のみをローカルダーティとしてマーク（兄弟要素は対象外）
+      evt.markModified(changeInfo.draggedId);
       viewTree();
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -657,7 +659,12 @@ function BinderTree(props) {
     const parentId = parentNode.id;
     closeAllMenus();
     try {
-      const diagram = { id: "", parentId, name: "New Diagram", alias: "", detail: "", private: !!parentNode.private };
+      const tmpls = await GetHTMLTemplates();
+      const diagram = {
+        id: "", parentId, name: "New Diagram", alias: "", detail: "",
+        private: !!parentNode.private,
+        styleTemplate: tmpls.diagrams?.[0]?.id ?? "",
+      };
       const resp = await EditDiagram(diagram);
       setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
       evt.refreshTree();
@@ -857,22 +864,18 @@ function BinderTree(props) {
         <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
       </MenuItem>
       <Divider />
-      {/** ブランチ変更 */}
+      {/** ブランチ変更 + 全体履歴 */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
         <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
       </MenuItem>
-      {/** 全体の履歴 */}
-      <MenuItem onClick={() => { closeMoreMenu(); OpenOverallHistoryWindow(""); }}>
-        <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.overallHistory")}
+      {/** マージ */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openMergeModal(); }}>
+        <CloudDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.mergeRemote")}
       </MenuItem>
       <Divider />
       {/** リモートにPush */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
         <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
-      </MenuItem>
-      {/** リモートからマージ */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openMergeModal(); }}>
-        <CloudDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.mergeRemote")}
       </MenuItem>
     </Menu>
 
@@ -925,10 +928,10 @@ function BinderTree(props) {
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleRegisterNote}>{t("tree.note")}</MenuItem>
-      <MenuItem onClick={handleRegisterDiagram}>{t("tree.diagram")}</MenuItem>
-      <MenuItem onClick={handleRegisterAssets}>{t("tree.assets_file")}</MenuItem>
-      <MenuItem onClick={handleRegisterTextAsset}>{t("tree.assets_text")}</MenuItem>
+      <MenuItem onClick={handleRegisterNote}><TextSnippetIcon fontSize="small" sx={{ mr: 1 }} />{t("tree.note")}</MenuItem>
+      <MenuItem onClick={handleRegisterDiagram}><MermaidIcon /><span style={{ marginLeft: 8 }}>{t("tree.diagram")}</span></MenuItem>
+      <MenuItem onClick={handleRegisterAssets}><AttachFileIcon fontSize="small" sx={{ mr: 1 }} />{t("tree.assets_file")}</MenuItem>
+      <MenuItem onClick={handleRegisterTextAsset}><AttachFileIcon fontSize="small" sx={{ mr: 1 }} />{t("tree.assets_text")}</MenuItem>
     </Menu>
 
     {/** Copy サブメニュー: ID / パス */}
@@ -991,8 +994,8 @@ function BinderTree(props) {
         {t("tree.deleteConfirm", { name: deleteConfirm.node?.name })}
       </DialogTitle>
       <DialogActions>
-        <Button onClick={handleDeleteCancel}>{t("common.cancel")}</Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained">{t("common.delete")}</Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteCancel} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} />
       </DialogActions>
     </Dialog>
 

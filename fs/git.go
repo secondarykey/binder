@@ -3,6 +3,7 @@ package fs
 import (
 	"binder/log"
 	"binder/settings"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -20,6 +23,14 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"golang.org/x/xerrors"
+)
+
+const (
+	GitIgnoreFile = ".gitignore"
+	IgnoreFiles   = UserFileName + `
+.DS_Store
+.worktree
+`
 )
 
 var NoUpdated = fmt.Errorf("updates to the file")
@@ -250,9 +261,144 @@ func (f *FileSystem) MergeFFOnly(remoteName, branchName string) (string, error) 
 	return "success", nil
 }
 
+// MergeFFOnlyLocal はローカルブランチを fast-forward マージする。
+// "success" / "uptodate" / "diverged" のいずれかを返す。
+func (f *FileSystem) MergeFFOnlyLocal(branchName string) (string, error) {
+
+	// HEAD のコミットハッシュを取得
+	head, err := f.repo.Head()
+	if err != nil {
+		return "", xerrors.Errorf("repository Head() error: %w", err)
+	}
+	headHash := head.Hash()
+
+	// ローカルブランチの ref を取得
+	branchRef, err := f.repo.Reference(
+		plumbing.NewBranchReferenceName(branchName), true)
+	if err != nil {
+		return "", xerrors.Errorf("Reference(%s) error: %w", branchName, err)
+	}
+	sourceHash := branchRef.Hash()
+
+	// 同一ハッシュなら更新不要
+	if headHash == sourceHash {
+		return "uptodate", nil
+	}
+
+	// HEAD がソースの祖先かチェック（fast-forward 可能か）
+	headCommit, err := f.repo.CommitObject(headHash)
+	if err != nil {
+		return "", xerrors.Errorf("CommitObject(HEAD) error: %w", err)
+	}
+	sourceCommit, err := f.repo.CommitObject(sourceHash)
+	if err != nil {
+		return "", xerrors.Errorf("CommitObject(source) error: %w", err)
+	}
+
+	isAncestor, err := headCommit.IsAncestor(sourceCommit)
+	if err != nil {
+		return "", xerrors.Errorf("IsAncestor() error: %w", err)
+	}
+	if !isAncestor {
+		return "diverged", nil
+	}
+
+	// fast-forward: HEAD をソースブランチのコミットに進める
+	wt, err := f.repo.Worktree()
+	if err != nil {
+		return "", xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	err = wt.Checkout(&git.CheckoutOptions{
+		Hash: sourceHash,
+	})
+	if err != nil {
+		return "", xerrors.Errorf("Checkout() error: %w", err)
+	}
+
+	// ブランチ参照を更新
+	branchHeadRef := plumbing.NewHashReference(head.Name(), sourceHash)
+	err = f.repo.Storer.SetReference(branchHeadRef)
+	if err != nil {
+		return "", xerrors.Errorf("SetReference() error: %w", err)
+	}
+
+	return "success", nil
+}
+
 // Repo はリポジトリを返す（低レベル操作用）。
 func (f *FileSystem) Repo() *git.Repository {
 	return f.repo
+}
+
+// ReadMetaFromHash はコミットハッシュのツリーから binder.json を読む。
+// binder.json が存在しない場合は Version="0.0.0" のメタを返す（古いバインダー）。
+func (f *FileSystem) ReadMetaFromHash(hash plumbing.Hash) (*BinderMeta, error) {
+	commit, err := f.repo.CommitObject(hash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject() error: %w", err)
+	}
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, xerrors.Errorf("commit.Tree() error: %w", err)
+	}
+	file, err := tree.File(BinderMetaFile)
+	if err != nil {
+		// binder.json が存在しない = 旧バインダー（v0.0.0 として扱う）
+		return &BinderMeta{Version: "0.0.0"}, nil
+	}
+	content, err := file.Contents()
+	if err != nil {
+		return nil, xerrors.Errorf("file.Contents() error: %w", err)
+	}
+	var meta BinderMeta
+	if err = json.Unmarshal([]byte(content), &meta); err != nil {
+		return nil, xerrors.Errorf("json.Unmarshal() error: %w", err)
+	}
+	if meta.Version == "" {
+		meta.Version = "0.0.0"
+	}
+	return &meta, nil
+}
+
+// LocalBranchHash はローカルブランチの HEAD ハッシュを返す。
+func (f *FileSystem) LocalBranchHash(branchName string) (plumbing.Hash, error) {
+	ref, err := f.repo.Reference(plumbing.NewBranchReferenceName(branchName), true)
+	if err != nil {
+		return plumbing.ZeroHash, xerrors.Errorf("Reference(%s) error: %w", branchName, err)
+	}
+	return ref.Hash(), nil
+}
+
+// RemoteBranchHash はリモートブランチ参照のハッシュを返す。
+func (f *FileSystem) RemoteBranchHash(remoteName, branchName string) (plumbing.Hash, error) {
+	refName := plumbing.ReferenceName(fmt.Sprintf("refs/remotes/%s/%s", remoteName, branchName))
+	ref, err := f.repo.Reference(refName, true)
+	if err != nil {
+		return plumbing.ZeroHash, xerrors.Errorf("Reference(%s/%s) error: %w", remoteName, branchName, err)
+	}
+	return ref.Hash(), nil
+}
+
+// CheckoutDetached は指定ハッシュでデタッチドHEADにチェックアウトする。
+func (f *FileSystem) CheckoutDetached(hash plumbing.Hash) error {
+	wt, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+	if err = wt.Checkout(&git.CheckoutOptions{Hash: hash, Force: true}); err != nil {
+		return xerrors.Errorf("Checkout(detached) error: %w", err)
+	}
+	return nil
+}
+
+// HeadHash は現在の HEAD コミットハッシュを返す。
+func (f *FileSystem) HeadHash() (plumbing.Hash, error) {
+	head, err := f.repo.Head()
+	if err != nil {
+		return plumbing.ZeroHash, xerrors.Errorf("Head() error: %w", err)
+	}
+	return head.Hash(), nil
 }
 
 func (f *FileSystem) Push(r, name string, info *UserInfo) error {
@@ -279,6 +425,142 @@ func (f *FileSystem) Push(r, name string, info *UserInfo) error {
 		return xerrors.Errorf("remote Push() error: %w", err)
 	}
 
+	return nil
+}
+
+// PushDocs は docs/ ディレクトリのみを指定ブランチに force push する。
+// in-memory リポジトリで orphan commit を生成し、リモートの指定ブランチへ強制 push する。
+func (f *FileSystem) PushDocs(r, branch string, info *UserInfo) error {
+	auth, err := authMethod(info)
+	if err != nil {
+		return xerrors.Errorf("authMethod() error: %w", err)
+	}
+
+	// リモートURL を取得
+	remote, err := f.repo.Remote(r)
+	if err != nil {
+		return xerrors.Errorf("Remote(%s) error: %w", r, err)
+	}
+	remoteURL := remote.Config().URLs[0]
+
+	// in-memory ストレージ + memfs で一時リポジトリ作成
+	store := memory.NewStorage()
+	mfs := memfs.New()
+	tmpRepo, err := git.Init(store, mfs)
+	if err != nil {
+		return xerrors.Errorf("git.Init() error: %w", err)
+	}
+
+	wt, err := tmpRepo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	// docs/ 以下のファイルを memfs にコピーし、追加したパス一覧を取得
+	var files []string
+	if err = f.copyDocsToMemFS(publishDir, "", mfs, &files); err != nil {
+		return xerrors.Errorf("copyDocsToMemFS() error: %w", err)
+	}
+	if len(files) == 0 {
+		return fmt.Errorf("no published files found in %s directory", publishDir)
+	}
+
+	// コピーした全ファイルをインデックスに追加
+	for _, file := range files {
+		if _, err = wt.Add(file); err != nil {
+			return xerrors.Errorf("Add(%s) error: %w", file, err)
+		}
+	}
+
+	// orphan commit（親なし）を作成
+	sig := f.userSigOrDefault()
+	if _, err = wt.Commit("publish docs", &git.CommitOptions{
+		Author: sig,
+	}); err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+
+	// in-memory リポジトリにリモートを登録して force push
+	head, err := tmpRepo.Head()
+	if err != nil {
+		return xerrors.Errorf("Head() error: %w", err)
+	}
+
+	tmpRemote, err := tmpRepo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{remoteURL},
+	})
+	if err != nil {
+		return xerrors.Errorf("CreateRemote() error: %w", err)
+	}
+
+	refSpec := config.RefSpec(fmt.Sprintf("+%s:refs/heads/%s", head.Name(), branch))
+	if err = tmpRemote.Push(&git.PushOptions{
+		Progress: os.Stdout,
+		RefSpecs: []config.RefSpec{refSpec},
+		Auth:     auth,
+		Force:    true,
+	}); err != nil {
+		return xerrors.Errorf("remote Push() error: %w", err)
+	}
+
+	return nil
+}
+
+// copyDocsToMemFS は srcDir 以下のファイルを再帰的に memfs にコピーする。
+// relPath は memfs 内の相対ディレクトリ（ルートは ""）。
+// files にはコピーしたファイルのパス（memfs 内、/ 区切り）を追記する。
+func (f *FileSystem) copyDocsToMemFS(srcDir, relPath string, mfs billy.Filesystem, files *[]string) error {
+	infos, err := f.fs.ReadDir(srcDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%s directory not found", srcDir)
+		}
+		return xerrors.Errorf("ReadDir(%s) error: %w", srcDir, err)
+	}
+
+	for _, info := range infos {
+		name := info.Name()
+		// go-git は / 区切りを期待するため strings.Join で構築する
+		var dstPath string
+		if relPath == "" {
+			dstPath = name
+		} else {
+			dstPath = relPath + "/" + name
+		}
+		srcPath := srcDir + "/" + name
+
+		if info.IsDir() {
+			if err = mfs.MkdirAll(dstPath, 0755); err != nil {
+				return xerrors.Errorf("MkdirAll(%s) error: %w", dstPath, err)
+			}
+			if err = f.copyDocsToMemFS(srcPath, dstPath, mfs, files); err != nil {
+				return err
+			}
+		} else {
+			src, err := f.fs.Open(srcPath)
+			if err != nil {
+				return xerrors.Errorf("Open(%s) error: %w", srcPath, err)
+			}
+			data, readErr := io.ReadAll(src)
+			src.Close()
+			if readErr != nil {
+				return xerrors.Errorf("ReadAll(%s) error: %w", srcPath, readErr)
+			}
+
+			dst, err := mfs.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			if err != nil {
+				return xerrors.Errorf("OpenFile(%s) error: %w", dstPath, err)
+			}
+			_, writeErr := dst.Write(data)
+			dst.Close()
+			if writeErr != nil {
+				return xerrors.Errorf("Write(%s) error: %w", dstPath, writeErr)
+			}
+
+			*files = append(*files, dstPath)
+		}
+	}
 	return nil
 }
 
@@ -373,6 +655,20 @@ func (f *FileSystem) ListBranches() ([]string, error) {
 	}
 	sort.Strings(branches)
 	return branches, nil
+}
+
+// ResetHard は git reset --hard HEAD を実行し、ワークツリーをHEADの状態に戻す。
+// 移行処理失敗時のロールバックなど、uncommitted な変更を破棄する用途で使用する。
+func (f *FileSystem) ResetHard() error {
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
+	if err != nil {
+		return xerrors.Errorf("Reset(hard) error: %w", err)
+	}
+	return nil
 }
 
 // CheckoutBranch は既存ブランチにチェックアウトする。

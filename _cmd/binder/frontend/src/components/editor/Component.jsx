@@ -18,6 +18,7 @@ import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
+import { ActionButton } from "../../dialogs/components/ActionButton";
 import "../../language";
 import { useTranslation } from 'react-i18next';
 
@@ -25,6 +26,7 @@ import HTMLFrame from "./HTMLFrame.jsx";
 import '../../assets/Editor.css'
 import { Mode } from "../../app/App.jsx";
 
+import CloseIcon from '@mui/icons-material/Close';
 import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -1796,7 +1798,7 @@ function Editor(props) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setParseErrorDlg(false)}>{t("common.close")}</Button>
+          <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseErrorDlg(false)} />
         </DialogActions>
       </Dialog>
 

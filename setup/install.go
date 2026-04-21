@@ -149,17 +149,16 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		}
 	}
 
-	// .gitignore を作成（ユーザデータファイルを除外）
+	// .gitignore を作成
 	gitignore, err := f.Create(fs.GitIgnoreFile)
 	if err != nil {
 		return xerrors.Errorf("Create(.gitignore) error: %w", err)
 	}
-	if _, err = gitignore.Write([]byte(fs.UserFileName + "\n")); err != nil {
-		gitignore.Close()
+	defer gitignore.Close()
+	//除外ファイルを書き込む
+	if _, err = gitignore.Write([]byte(fs.IgnoreFiles + "\n")); err != nil {
 		return xerrors.Errorf("Write(.gitignore) error: %w", err)
 	}
-	gitignore.Close()
-
 	// Gitへの追加を行う
 	err = f.AddDBFiles()
 	if err != nil {

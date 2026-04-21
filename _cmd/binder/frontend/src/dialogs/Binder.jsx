@@ -1,12 +1,13 @@
 import { useEffect, useState, useContext } from "react";
 
 import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField,
+  Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SaveIcon from '@mui/icons-material/Save';
 import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
@@ -16,6 +17,8 @@ import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +34,7 @@ const MENU_ITEMS_KEYS = [
 function Binder({ isModal, ...props }) {
 
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
   const [activeSection, setActiveSection] = useState("basic");
@@ -76,7 +80,7 @@ function Binder({ isModal, ...props }) {
     RemoteList().then((res) => {
       setRemoteList(res || []);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -89,7 +93,7 @@ function Binder({ isModal, ...props }) {
       setMermaidUrl(conf.mermaidUrl || "");
       setOptimizeImage(conf.optimizeImage !== false);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     GetUserInfo().then((info) => {
       setGitName(info.name || "");
@@ -106,12 +110,12 @@ function Binder({ isModal, ...props }) {
         setAuthSSHKey("");
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     CurrentBranch().then((name) => {
       setBranchName(name || "");
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
     getRemoteList();
   }, []);
@@ -122,7 +126,7 @@ function Binder({ isModal, ...props }) {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -147,7 +151,7 @@ function Binder({ isModal, ...props }) {
       const after = formatSize(result.afterSize);
       evt.showSuccessMessage(t("binder.gcComplete", { before, after }));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     }).finally(() => {
       setGcLoading(false);
     });
@@ -195,7 +199,7 @@ function Binder({ isModal, ...props }) {
 
       evt.showSuccessMessage(t("binder.updateSuccess"));
     } catch (err) {
-      evt.showErrorMessage(err);
+      showError(err);
     } finally {
       setScriptSaving(false);
     }
@@ -210,7 +214,7 @@ function Binder({ isModal, ...props }) {
     }).then(() => {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -241,7 +245,7 @@ function Binder({ isModal, ...props }) {
       getRemoteList();
       handleRemoteDialogClose();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -258,7 +262,7 @@ function Binder({ isModal, ...props }) {
       getRemoteList();
       handleDeleteDialogClose();
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -319,24 +323,15 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSave} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
               <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
               <Box sx={{ mt: 1 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon fontSize="small" />}
-                  onClick={() => setGcConfirmOpen(true)}
-                  disabled={gcLoading}
-                  sx={{ textTransform: 'none', fontSize: '0.8rem' }}
-                >
-                  {t("binder.gcButton")}
-                </Button>
+                <ActionButton variant="cancel" label={t("binder.gcButton")}
+                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
+                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
               </Box>
             </Box>
 
@@ -384,9 +379,7 @@ function Binder({ isModal, ...props }) {
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
               {scriptSaving && <CircularProgress size={24} />}
-              <IconButton onClick={handleSaveScript} disabled={scriptSaving} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveScript} disabled={scriptSaving} />
             </Box>
 
           </div>
@@ -423,9 +416,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={handleSaveUserInfo} aria-label="save" sx={{ '& svg': { fill: 'var(--accent-blue)' } }}>
-                <SaveIcon fontSize="large" />
-              </IconButton>
+              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
             </Box>
 
             {/** リモート一覧 */}
@@ -498,8 +489,8 @@ function Binder({ isModal, ...props }) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleRemoteDialogClose}>{t("common.cancel")}</Button>
-          <Button type="submit">{t("common.set")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleRemoteDialogClose} />
+          <ActionButton variant="save" label={t("common.set")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} type="submit" />
         </DialogActions>
       </Dialog>
 
@@ -516,8 +507,8 @@ function Binder({ isModal, ...props }) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteDialogClose}>{t("common.cancel")}</Button>
-          <Button onClick={handleDeleteRemote} color="error">{t("common.delete")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteDialogClose} />
+          <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteRemote} />
         </DialogActions>
       </Dialog>
 
@@ -534,8 +525,8 @@ function Binder({ isModal, ...props }) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setGcConfirmOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={handleRunGC} color="primary">{t("binder.gcRun")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setGcConfirmOpen(false)} />
+          <ActionButton variant="confirm" label={t("binder.gcRun")} icon={<CleaningServicesIcon />} onClick={handleRunGC} />
         </DialogActions>
       </Dialog>
 

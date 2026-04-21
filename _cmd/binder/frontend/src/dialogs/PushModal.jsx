@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary,
-  Box, Button, FormControl, FormLabel, TextField, Select, MenuItem,
+  Box, FormControl, FormLabel, TextField, Select, MenuItem,
   FormControlLabel, Checkbox, Typography,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -9,9 +9,11 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import ModalWrapper from './components/ModalWrapper';
 import AuthFields from '../components/AuthFields';
-import { GetUserInfo, RemoteList, Push, CurrentBranch } from '../../bindings/binder/api/app';
+import { GetUserInfo, RemoteList, Push, PushDocs, CurrentBranch, GetPublishSettings } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +23,7 @@ import { useTranslation } from 'react-i18next';
  */
 function PushModal({ open, onClose }) {
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const { t } = useTranslation();
 
   const [remotes, setRemotes] = useState([]);
@@ -36,6 +39,10 @@ function PushModal({ open, onClose }) {
   const [pushing, setPushing] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(true);
 
+  // 公開設定
+  const [publishOnly, setPublishOnly] = useState(false);
+  const [publishBranch, setPublishBranch] = useState('gh-pages');
+
   // UserInfoのname/email（Push時にそのまま渡す）
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
@@ -48,12 +55,20 @@ function PushModal({ open, onClose }) {
       const list = res || [];
       setRemotes(list);
       if (list.length > 0) setRemoteName(list[0].name);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
     // 現在のブランチ名を取得
     CurrentBranch().then((name) => {
       setBranchName(name || '');
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
+
+    // 公開設定を読み込み
+    GetPublishSettings().then((s) => {
+      if (s) {
+        setPublishOnly(s.publishOnly || false);
+        setPublishBranch(s.publishBranch || 'gh-pages');
+      }
+    }).catch((err) => showError(err));
 
     // 保存済みUserInfo（認証情報含む）を読み込み
     GetUserInfo().then((info) => {
@@ -79,7 +94,7 @@ function PushModal({ open, onClose }) {
         (at === 'ssh_key' && info.bytes) ||
         (at === 'ssh_agent');
       setAuthExpanded(!hasValues);
-    }).catch((err) => evt.showErrorMessage(err));
+    }).catch((err) => showError(err));
 
   }, [open]);
 
@@ -99,14 +114,25 @@ function PushModal({ open, onClose }) {
       bytes: Array.from(new TextEncoder().encode(sshKey)),
     };
 
-    Push(remoteName, info, save).then(() => {
-      evt.showSuccessMessage(t('push.pushSuccess'));
-      onClose();
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    }).finally(() => {
-      setPushing(false);
-    });
+    if (publishOnly) {
+      PushDocs(remoteName, publishBranch, info, save).then(() => {
+        evt.showSuccessMessage(t('push.pushDocsSuccess'));
+        onClose();
+      }).catch((err) => {
+        showError(err);
+      }).finally(() => {
+        setPushing(false);
+      });
+    } else {
+      Push(remoteName, info, save).then(() => {
+        evt.showSuccessMessage(t('push.pushSuccess'));
+        onClose();
+      }).catch((err) => {
+        showError(err);
+      }).finally(() => {
+        setPushing(false);
+      });
+    }
   };
 
   return (
@@ -132,15 +158,9 @@ function PushModal({ open, onClose }) {
 
         {/* Pushボタン（中央表示） */}
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<CloudUploadIcon />}
-            onClick={handlePush}
-            disabled={pushing || !remoteName || !authType}
-            sx={{ textTransform: 'none' }}
-          >
-            {t('push.pushButton')}
-          </Button>
+          <ActionButton variant="confirm" label={t('push.pushButton')}
+            icon={<CloudUploadIcon />} onClick={handlePush}
+            disabled={pushing || !remoteName || !authType} />
         </Box>
 
         {/* ブランチ名（読み取り専用） */}
@@ -148,6 +168,31 @@ function PushModal({ open, onClose }) {
           <FormLabel>{t('binder.currentBranch')}</FormLabel>
           <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
         </FormControl>
+
+        {/* 公開設定 */}
+        <Box>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={publishOnly}
+                onChange={(e) => setPublishOnly(e.target.checked)}
+                size="small"
+              />
+            }
+            label={t('push.publishOnly')}
+            sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+          />
+          {publishOnly && (
+            <FormControl size="small" fullWidth sx={{ mt: 1 }}>
+              <FormLabel>{t('push.publishBranch')}</FormLabel>
+              <TextField
+                size="small"
+                value={publishBranch}
+                onChange={(e) => setPublishBranch(e.target.value)}
+              />
+            </FormControl>
+          )}
+        </Box>
 
         {/* 認証情報（折りたたみ） */}
         <Accordion

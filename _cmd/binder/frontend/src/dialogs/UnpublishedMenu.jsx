@@ -2,21 +2,24 @@ import { useEffect, useRef, useState, forwardRef, useContext, useImperativeHandl
 import { useNavigate } from 'react-router';
 
 import {
-  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
-  Checkbox, Menu, MenuItem,
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  IconButton, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
+  Checkbox, Menu, MenuItem, Tooltip,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate,
   OpenNote, OpenDiagram,
-  ParseNote, Generate,
+  ParseNote, GenerateAll,
 } from '../../bindings/binder/api/app';
 
 import Marked from '../components/editor/engines/Marked';
 import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext } from '../Event';
+import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -28,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext);
+  const { showError, showWarning } = useDialogMessage();
   const {t} = useTranslation();
   const nav = useNavigate();
 
@@ -73,7 +77,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         const comment = t("template.batchPublishComment", { name: template.name });
         evt.raise(Event.PublishComment, comment);
       }).catch((err) => {
-        evt.showErrorMessage(err);
+        showError(err);
       });
       return;
     }
@@ -106,14 +110,14 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       evt.raise(Event.PublishComment, comment);
 
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
   useEffect(() => {
 
     // GenerateForm からの Generate 実行イベント
-    evt.register("UnpublishedMenu", Event.PublishGenerate, async function () {
+    evt.register("UnpublishedMenu", Event.PublishGenerate, async function (comment) {
 
       const selected = [
         ...(noteRef.current?.checked() ?? []),
@@ -122,13 +126,15 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       ];
 
       if (selected.length === 0) {
-        evt.showWarningMessage(t("publishModal.noFilesSelected"));
+        showWarning(t("publishModal.noFilesSelected"));
         return;
       }
 
       const total = selected.length;
       evt.raise(Event.PublishProgress, { running: true, current: 0, total });
 
+      // 各アイテムをレンダリングして items 配列に積む（レンダリング失敗分は errors に記録）
+      const items = [];
       const errors = [];
       for (let i = 0; i < selected.length; i++) {
         const leaf = selected[i];
@@ -138,17 +144,26 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
             const text = await OpenNote(leaf.id);
             const parsed = await ParseNote(leaf.id, false, text);
             const html = await Marked.parse(parsed);
-            await Generate("note", leaf.id, html);
+            items.push({ mode: "note", id: leaf.id, data: html });
           } else if (leaf.type === "diagram") {
             const text = await OpenDiagram(leaf.id);
             const obj = await Mermaid.parse(text);
-            await Generate("diagram", leaf.id, obj.svg);
+            items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
           } else {
             // asset
-            await Generate("assets", leaf.id, "");
+            items.push({ mode: "assets", id: leaf.id, data: "" });
           }
         } catch (err) {
           errors.push(leaf.name);
+        }
+      }
+
+      // レンダリングに成功したアイテムを1回のコミットにまとめて公開
+      if (items.length > 0) {
+        try {
+          await GenerateAll(items, comment);
+        } catch (err) {
+          evt.showErrorMessage(err);
         }
       }
 
@@ -193,7 +208,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setErrorDlg({ open: false, names: [] })}>{t("common.close")}</Button>
+        <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setErrorDlg({ open: false, names: [] })} />
       </DialogActions>
     </Dialog>
   </>);

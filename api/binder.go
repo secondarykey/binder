@@ -11,9 +11,17 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (a *App) LoadBinder(dir string) (string, error) {
+func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
+
+	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
+	defer func() {
+		if r := recover(); r != nil {
+			log.PrintStackTrace(fmt.Errorf("panic in LoadBinder: %v", r))
+			err = fmt.Errorf("unexpected error opening binder: %v", r)
+		}
+	}()
 
 	if dir == "" {
 		return "", xerrors.Errorf("empty directory error")
@@ -122,6 +130,47 @@ func (a *App) Generate(mode string, id string, data string) error {
 
 	if err != nil {
 		return xerrors.Errorf("Publish() error: %+v", err)
+	}
+	return nil
+}
+
+// GenerateAll は複数の公開アイテムをまとめて処理し、全ファイルを1つのコミットにまとめる。
+func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
+
+	defer log.PrintTrace(log.Func("GenerateAll()", len(items)))
+
+	var allFiles []string
+	for _, item := range items {
+		switch item.Mode {
+		case "note":
+			html, err := a.CreateNoteHTML(item.Id, item.Data)
+			if err != nil {
+				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
+			}
+			files, _, err := a.current.PublishNoteStage(item.Id, []byte(html))
+			if err != nil {
+				return xerrors.Errorf("PublishNoteStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		case "diagram":
+			files, _, err := a.current.PublishDiagramStage(item.Id, []byte(item.Data))
+			if err != nil {
+				return xerrors.Errorf("PublishDiagramStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		case "assets":
+			files, _, err := a.current.PublishAssetStage(item.Id)
+			if err != nil {
+				return xerrors.Errorf("PublishAssetStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		default:
+			log.Warn("Unknown Mode:" + item.Mode)
+		}
+	}
+
+	if err := a.current.CommitFiles(message, allFiles...); err != nil {
+		return xerrors.Errorf("CommitFiles() error: %+v", err)
 	}
 	return nil
 }

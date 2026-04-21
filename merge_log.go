@@ -24,8 +24,13 @@ func (b *Binder) CreateMergeLogNote(mergeLog *fs.MergeLog) error {
 	}
 
 	// ノート名を生成
-	name := fmt.Sprintf("Merge Log: %s/%s → %s",
-		mergeLog.RemoteName, mergeLog.RemoteBranch, mergeLog.LocalBranch)
+	var name string
+	if mergeLog.SourceBranch != "" {
+		name = fmt.Sprintf("Merge Log: %s → %s", mergeLog.SourceBranch, mergeLog.LocalBranch)
+	} else {
+		name = fmt.Sprintf("Merge Log: %s/%s → %s",
+			mergeLog.RemoteName, mergeLog.RemoteBranch, mergeLog.LocalBranch)
+	}
 
 	// Markdown コンテンツを生成
 	content := buildMergeLogMarkdown(mergeLog)
@@ -91,11 +96,17 @@ func (b *Binder) CreateMergeLogNote(mergeLog *fs.MergeLog) error {
 func buildMergeLogMarkdown(ml *fs.MergeLog) string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("# Merge Log: %s/%s → %s\n\n",
-		ml.RemoteName, ml.RemoteBranch, ml.LocalBranch))
 	sb.WriteString(fmt.Sprintf("- **日時**: %s\n", time.Now().Format("2006-01-02 15:04:05")))
-	sb.WriteString(fmt.Sprintf("- **リモート**: %s\n", ml.RemoteName))
-	sb.WriteString(fmt.Sprintf("- **ブランチ**: %s → %s\n\n", ml.RemoteBranch, ml.LocalBranch))
+	if ml.SourceBranch != "" {
+		sb.WriteString(fmt.Sprintf("# Merge Log: %s → %s\n\n", ml.SourceBranch, ml.LocalBranch))
+		sb.WriteString(fmt.Sprintf("- **マージ元**: %s\n", ml.SourceBranch))
+		sb.WriteString(fmt.Sprintf("- **マージ先**: %s\n\n", ml.LocalBranch))
+	} else {
+		sb.WriteString(fmt.Sprintf("# Merge Log: %s/%s → %s\n\n",
+			ml.RemoteName, ml.RemoteBranch, ml.LocalBranch))
+		sb.WriteString(fmt.Sprintf("- **リモート**: %s\n", ml.RemoteName))
+		sb.WriteString(fmt.Sprintf("- **ブランチ**: %s → %s\n\n", ml.RemoteBranch, ml.LocalBranch))
+	}
 
 	// 自動解決ファイル
 	autoNonCSV := make([]fs.ResolvedFile, 0)

@@ -1,9 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from "@mui/material";
+import { Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import { GetSnippets, SaveSnippets } from "../../bindings/binder/api/app";
-import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
@@ -12,6 +13,8 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { EventContext } from "../Event";
+import { useDialogMessage } from './components/DialogError';
+import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -83,6 +86,7 @@ function SortableSnippetItem({ snippet, selected, onSelect, onDelete }) {
 function SnippetSetting() {
 
   const evt = useContext(EventContext);
+  const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
@@ -98,7 +102,7 @@ function SnippetSetting() {
     GetSnippets().then((s) => {
       setSnippets(s);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   }, []);
 
@@ -131,7 +135,7 @@ function SnippetSetting() {
       setSnippets(updated);
       evt.showSuccessMessage(t("common.updated"));
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -148,7 +152,7 @@ function SnippetSetting() {
       setEditName(newSnippet.name);
       setBody("");
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -174,7 +178,7 @@ function SnippetSetting() {
         setBody("");
       }
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -194,7 +198,7 @@ function SnippetSetting() {
     SaveSnippets(updated).then(() => {
       setSnippets(updated);
     }).catch((err) => {
-      evt.showErrorMessage(err);
+      showError(err);
     });
   };
 
@@ -234,9 +238,7 @@ function SnippetSetting() {
               </MenuItem>
             ))}
           </Select>
-          <IconButton size="small" onClick={handleAdd} sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--selected-text)' }, flexShrink: 0 }}>
-            <AddIcon fontSize="small" />
-          </IconButton>
+          <ActionButton variant="save" label={t("common.add")} icon={<AddIcon />} onClick={handleAdd} size="small" />
         </Box>
 
         {/** ドラッグ＆ドロップ対応スニペット名リスト */}
@@ -288,9 +290,7 @@ function SnippetSetting() {
           inputProps={{ style: { fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-primary)', resize: 'none' } }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <IconButton onClick={handleSave} aria-label="save" disabled={selectedId === null}>
-            <SaveIcon fontSize="medium" color={selectedId !== null ? "primary" : "disabled"} />
-          </IconButton>
+          <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} disabled={selectedId === null} />
         </Box>
       </Box>
 
@@ -309,12 +309,8 @@ function SnippetSetting() {
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ px: 2, pb: 1.5 }}>
-        <Button onClick={handleDeleteCancel} size="small" sx={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-          {t("common.cancel")}
-        </Button>
-        <Button onClick={handleDeleteConfirm} size="small" color="error" variant="contained" sx={{ fontSize: '12px' }}>
-          {t("common.delete")}
-        </Button>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteCancel} size="small" />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} size="small" />
       </DialogActions>
     </Dialog>
     </>

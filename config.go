@@ -65,6 +65,55 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 	return &conf, nil
 }
 
+// GetPublishSettings は binder.json から公開設定を返す。
+func (b *Binder) GetPublishSettings() (bool, string, error) {
+	if b == nil {
+		return false, "", EmptyError
+	}
+
+	meta, err := b.fileSystem.LoadMetaData()
+	if err != nil {
+		return false, "", xerrors.Errorf("LoadMetaData() error: %w", err)
+	}
+	if meta == nil {
+		return false, "", nil
+	}
+	return meta.PublishOnly, meta.PublishBranch, nil
+}
+
+// SavePublishSettings は公開設定を binder.json に保存しコミットする。
+// 設定が変更されていない場合はコミットをスキップする。
+func (b *Binder) SavePublishSettings(publishOnly bool, publishBranch string) error {
+	if b == nil {
+		return EmptyError
+	}
+
+	meta, err := b.fileSystem.LoadMetaData()
+	if err != nil {
+		return xerrors.Errorf("LoadMetaData() error: %w", err)
+	}
+	if meta == nil {
+		meta = &fs.BinderMeta{}
+	}
+
+	// 変更がなければコミット不要
+	if meta.PublishOnly == publishOnly && meta.PublishBranch == publishBranch {
+		return nil
+	}
+
+	meta.PublishOnly = publishOnly
+	meta.PublishBranch = publishBranch
+
+	if err = b.fileSystem.SaveMetaData(meta); err != nil {
+		return xerrors.Errorf("SaveMetaData() error: %w", err)
+	}
+
+	if err = b.fileSystem.Commit(fs.M("Update Publish Settings", "Main"), fs.BinderMetaFile); err != nil {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
+
 func (b *Binder) GetUserInfo() (*json.UserInfo, error) {
 	if b == nil {
 		return nil, EmptyError

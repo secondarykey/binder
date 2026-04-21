@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	. "binder/internal"
+	"binder/log"
 
 	"binder/db"
 	"binder/fs"
@@ -202,13 +203,25 @@ type MigrateResult struct {
 	UserDataRequired bool
 }
 
+// NeedsMigration は指定バージョンから現在のスキーマへの移行処理が必要かを返す。
+// ov が全ての migration エントリより新しい（または同じ）場合は false を返す。
+func NeedsMigration(ov *Version) bool {
+	for _, m := range migrations {
+		if ov.Lt(m.ver) {
+			return true
+		}
+	}
+	return false
+}
+
 // Run はバインダーレベルの全移行処理を実行する。
 // binder.json を読み込んで現在のスキーマバージョンを取得し、必要な移行を順番に適用する。
 // 移行後は binder.json を更新して保存し、git コミットまで完結させる。
 // 各移行は CSV スキーマ変換とファイルシステム移行を含む自己完結した処理単位。
-func Run(dir string, ver *Version) (*MigrateResult, error) {
+// 移行処理が失敗した場合は git reset --hard HEAD でワークツリーをロールバックする。
+func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 
-	result := &MigrateResult{}
+	result = &MigrateResult{}
 
 	if ver == nil {
 		return result, nil
@@ -228,6 +241,18 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("Load() error: %w", err)
 	}
+
+	// 移行処理が失敗した場合、ワークツリーをHEADの状態にロールバックする。
+	// 中途半端に変更されたCSVや作成されたファイルを残さないことで、
+	// ブランチ切替など後続の操作を安全に行えるようにする。
+	defer func() {
+		if err != nil {
+			log.Warn("convert.Run: migration failed, resetting worktree to HEAD")
+			if resetErr := bfs.ResetHard(); resetErr != nil {
+				log.WarnE("convert.Run: ResetHard() failed", resetErr)
+			}
+		}
+	}()
 
 	dbDir := bfs.DatabaseDir()
 
@@ -255,6 +280,22 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 
 	// binder.jsonへの移行後に旧スキーマファイルを削除
 	removeOldSchemaFiles(dir)
+
+	// 旧バインダーに欠損テーブルがある場合（git の旧ブランチ等）は現在のスキーマで作成する。
+	// AddDBFiles() を呼ぶ前にすべてのテーブルファイルが存在する状態にする。
+	if err = db.EnsureTableFiles(dbDir); err != nil {
+		return nil, xerrors.Errorf("EnsureTableFiles() error: %w", err)
+	}
+
+	// 旧バインダーに欠損ディレクトリがある場合（git の旧ブランチ等）は作成する。
+	// binder.Load() の CheckDirectory で存在を要求されるディレクトリ群を保証する。
+	for _, d := range []string{fs.NoteDir, fs.DiagramDir, fs.TemplateDir, fs.AssetDir} {
+		target := filepath.Join(dir, d)
+		if err = os.MkdirAll(target, 0755); err != nil {
+			return nil, xerrors.Errorf("MkdirAll(%s) error: %w", d, err)
+		}
+	}
+
 
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
 	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
@@ -328,3 +369,4 @@ func Run(dir string, ver *Version) (*MigrateResult, error) {
 
 	return result, nil
 }
+

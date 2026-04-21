@@ -89,6 +89,31 @@ func Create(dir string, version *Version) error {
 	return nil
 }
 
+// EnsureTableFiles は存在しないテーブルCSVファイルのみを作成する。
+// 既存ファイルは上書きしない。マイグレーション時に旧バインダーに欠損テーブルがある場合に使用する。
+func EnsureTableFiles(dir string) error {
+	type entry struct {
+		name   string
+		create func(string) error
+	}
+	creators := []entry{
+		{NoteTableName, createNoteTable},
+		{DiagramTableName, createDiagramTable},
+		{AssetTableName, createAssetTable},
+		{TemplateTableName, createTemplateTable},
+		{StructureTableName, createStructureTable},
+	}
+	for _, e := range creators {
+		fn := filepath.Join(dir, tables[e.name])
+		if _, err := os.Stat(fn); os.IsNotExist(err) {
+			if err := e.create(dir); err != nil {
+				return xerrors.Errorf("create %s error: %w", e.name, err)
+			}
+		}
+	}
+	return nil
+}
+
 func createTableFiles(dir string) error {
 
 	var err error

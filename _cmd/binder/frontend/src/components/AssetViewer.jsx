@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import ImageIcon from '@mui/icons-material/Image';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent } from '../../bindings/binder/api/app';
@@ -15,6 +17,7 @@ import EditorArea from './editor/EditorArea';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -499,8 +502,8 @@ function AssetViewer() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={handleMigrateConfirm} color="primary">{t("common.ok")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setConfirmOpen(false)} />
+          <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleMigrateConfirm} />
         </DialogActions>
       </Dialog>
 
@@ -523,8 +526,8 @@ function AssetViewer() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMetaImageDlg(false)}>{t("common.cancel")}</Button>
-          <Button onClick={handleSetMetaImageConfirm} color="primary">{t("common.ok")}</Button>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setMetaImageDlg(false)} />
+          <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSetMetaImageConfirm} />
         </DialogActions>
       </Dialog>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ModifiedMenu from './ModifiedMenu';
@@ -75,14 +75,11 @@ function CommitModal({ open, onClose }) {
           ) : (
             <div id="patchView">
               <div id="patchBack">
-                <Button
-                  size="small"
-                  startIcon={<ArrowBackIcon fontSize="small" />}
-                  onClick={handleBack}
-                  sx={{ color: 'var(--text-muted)', textTransform: 'none' }}
-                >
-                  {t("commitModal.backToComment")}
-                </Button>
+                <Tooltip title={t("commitModal.backToComment")}>
+                  <IconButton size="small" onClick={handleBack} sx={{ color: 'var(--text-muted)' }}>
+                    <ArrowBackIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </div>
               <div id="patchArea">
                 <Patch type={modalState.currentType} currentId={modalState.currentId} />
