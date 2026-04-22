@@ -48,12 +48,14 @@ const getBBox = (s, imgAspect = 1) => {
     return { x: s.cx - s.rx, y: s.cy - s.ry, width: s.rx * 2, height: s.ry * 2 };
   }
   if (s.type === 'text') {
+    // プロポーショナルフォントは文字ごとに幅が異なり、文字数 × 仮想幅だと
+    // 実際のテキスト幅と乖離する。ここは文字数に依存させず、高さ (fontSize)
+    // と同じ大きさの視覚的な正方形をアンカーとして返す。
+    // width は viewBox 空間で fs / aspect にすることで、非等比 stretch 後も
+    // 画面上で fs × fs の正方形に見える。
     const fs = s.fontSize || 0.04;
-    const len = (s.text || '').length || 1;
-    // 日本語等幅を考慮してやや広めに見積もる
     const aspect = imgAspect > 0 ? imgAspect : 1;
-    const w = Math.max(len * fs * 0.6, fs * 0.8) / aspect;
-    return { x: s.x, y: s.y, width: w, height: fs };
+    return { x: s.x, y: s.y, width: fs / aspect, height: fs };
   }
   return null;
 };
