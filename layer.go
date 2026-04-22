@@ -375,13 +375,20 @@ func (b *Binder) UnpublishLayer(id string) error {
 	return nil
 }
 
-// BuildLayerSVG は shapes JSON 文字列から viewBox="0 0 1 1" の SVG を生成する。
+// BuildLayerSVG は shapes JSON 文字列から viewBox="0 0 aspect 1" の SVG を生成する。
 // エディタプレビューと公開SVG書き出しの両方で使用する。
-// imgAspect は画像の width/height（未知なら 0）。テキストは viewBox の非等比
-// 引き伸ばしで字形が横長/縦長に歪むため、x 方向に 1/imgAspect をかけて補正する。
+// imgAspect は画像の width/height（未知なら 0、その場合は 1 として扱う）。
+// viewBox を画像アスペクト比に合わせることで viewBox→表示が等比スケールとなり、
+// ストロークの太さが方向で変わらず、テキストの字形も自然な縦横比で表示される。
+// shape データは正規化 (0-1) で保存されているため、出力時に x 方向のみ aspect 倍する。
 func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
+	aspect := imgAspect
+	if aspect <= 0 {
+		aspect = 1
+	}
+
 	if strings.TrimSpace(shapesJSON) == "" {
-		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="none"></svg>`, nil
+		return fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %g 1" preserveAspectRatio="none"></svg>`, aspect), nil
 	}
 
 	var c LayerContent
@@ -389,14 +396,8 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 		return "", xerrors.Errorf("json.Unmarshal() error: %w", err)
 	}
 
-	// imgAspect が有効なときだけ x 方向補正をかける
-	var scaleX float64 = 1
-	if imgAspect > 0 {
-		scaleX = 1 / imgAspect
-	}
-
 	var b strings.Builder
-	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="none">`)
+	fmt.Fprintf(&b, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %g 1" preserveAspectRatio="none">`, aspect)
 	for _, s := range c.Shapes {
 		fill := s.Fill
 		if fill == "" {
@@ -414,15 +415,15 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 		case "line":
 			fmt.Fprintf(&b,
 				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round"/>`,
-				s.X1, s.Y1, s.X2, s.Y2, color, sw)
+				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2, color, sw)
 		case "rect":
 			fmt.Fprintf(&b,
 				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
-				s.X, s.Y, s.Width, s.Height, color, sw, fill)
+				s.X*aspect, s.Y, s.Width*aspect, s.Height, color, sw, fill)
 		case "ellipse":
 			fmt.Fprintf(&b,
 				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
-				s.Cx, s.Cy, s.Rx, s.Ry, color, sw, fill)
+				s.Cx*aspect, s.Cy, s.Rx*aspect, s.Ry, color, sw, fill)
 		case "text":
 			fSize := s.FontSize
 			if fSize <= 0 {
@@ -432,11 +433,10 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 			if strings.TrimSpace(s.FontFamily) != "" {
 				ff = fmt.Sprintf(` font-family="%s"`, html.EscapeString(s.FontFamily))
 			}
-			// x 方向を counter-scale して字形の縦横比を元に戻す。
-			// translate 後に scale するので text 本体は (0,0) に置く。
+			// 等比スケールなので counter-scale 不要、x のみ aspect 倍して配置。
 			fmt.Fprintf(&b,
-				`<g transform="translate(%g,%g) scale(%g,1)"><text x="0" y="0" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text></g>`,
-				s.X, s.Y, scaleX, fSize, ff, color, html.EscapeString(s.Text))
+				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
+				s.X*aspect, s.Y, fSize, ff, color, html.EscapeString(s.Text))
 		}
 	}
 	b.WriteString(`</svg>`)
