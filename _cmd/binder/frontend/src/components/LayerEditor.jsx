@@ -436,20 +436,23 @@ function LayerEditor() {
                     pointerEvents="none"
                   />
                 )}
-                {/* リサイズハンドル */}
+                {/* リサイズハンドル（見た目は小さい正方形、当たり判定は大きめ透明四角で確保） */}
                 {selected && tool === 'select' && !drawing && getHandles(selected).map((h) => (
-                  <rect
-                    key={h.id}
-                    x={h.x - 0.01}
-                    y={h.y - 0.01}
-                    width={0.02}
-                    height={0.02}
-                    fill="#ffffff"
-                    stroke="#00aaff"
-                    strokeWidth={0.002}
-                    style={{ cursor: h.cursor }}
-                    onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}
-                  />
+                  <g key={h.id} style={{ cursor: h.cursor }}
+                     onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
+                    <rect
+                      x={h.x - 0.01} y={h.y - 0.01}
+                      width={0.02} height={0.02}
+                      fill="transparent"
+                    />
+                    <rect
+                      x={h.x - 0.0025} y={h.y - 0.0025}
+                      width={0.005} height={0.005}
+                      fill="#ffffff"
+                      stroke="#00aaff"
+                      strokeWidth={0.001}
+                    />
+                  </g>
                 ))}
               </svg>
             </Box>
