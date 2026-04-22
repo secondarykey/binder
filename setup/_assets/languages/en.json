@@ -131,7 +131,9 @@
         "toolText" : "Text",
         "defaultText" : "Text",
         "text" : "Text",
-        "fontSize" : "Font Size"
+        "fontSize" : "Font Size",
+        "fontFamily" : "Font",
+        "fontFamilyDefault" : "(default)"
     },
     "setting" : {
         "title" : "Setting",

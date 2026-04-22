@@ -42,9 +42,10 @@ type LayerShape struct {
 	Rx float64 `json:"rx,omitempty"`
 	Ry float64 `json:"ry,omitempty"`
 
-	// text: x,y (rect と共用), text, fontSize
-	Text     string  `json:"text,omitempty"`
-	FontSize float64 `json:"fontSize,omitempty"`
+	// text: x,y (rect と共用), text, fontSize, fontFamily
+	Text       string  `json:"text,omitempty"`
+	FontSize   float64 `json:"fontSize,omitempty"`
+	FontFamily string  `json:"fontFamily,omitempty"`
 }
 
 type LayerContent struct {
@@ -411,9 +412,13 @@ func BuildLayerSVG(shapesJSON string) (string, error) {
 			if fSize <= 0 {
 				fSize = 0.04
 			}
+			ff := ""
+			if strings.TrimSpace(s.FontFamily) != "" {
+				ff = fmt.Sprintf(` font-family="%s"`, html.EscapeString(s.FontFamily))
+			}
 			fmt.Fprintf(&b,
-				`<text x="%g" y="%g" font-size="%g" fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
-				s.X, s.Y, fSize, color, html.EscapeString(s.Text))
+				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
+				s.X, s.Y, fSize, ff, color, html.EscapeString(s.Text))
 		}
 	}
 	b.WriteString(`</svg>`)

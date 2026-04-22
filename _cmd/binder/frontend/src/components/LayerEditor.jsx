@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams } from 'react-router';
-import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, ListItemIcon, ListItemText, FormControl, InputLabel, Select } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
@@ -11,7 +11,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, GetFontNames } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -142,6 +142,9 @@ function LayerEditor() {
   const [panelPos, setPanelPos] = useState({ top: 12, right: 12 });
   const [panelDrag, setPanelDrag] = useState(null); // { startX, startY, origTop, origRight, containerWidth }
 
+  // フォント一覧（テキスト shape の font-family 設定用）
+  const [fontNames, setFontNames] = useState([]);
+
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const loadedRef = useRef(false);
@@ -168,6 +171,13 @@ function LayerEditor() {
       setTimeout(() => { loadedRef.current = true; }, 0);
     }).catch((err) => evt.showErrorMessage(err));
   }, [id]);
+
+  // フォント一覧の取得（テキスト shape の font-family 候補）
+  useEffect(() => {
+    GetFontNames()
+      .then((names) => setFontNames(Array.isArray(names) ? names : []))
+      .catch((err) => evt.showErrorMessage(err));
+  }, []);
 
   // shapes 変更時の自動保存（debounce）
   useEffect(() => {
@@ -442,23 +452,21 @@ function LayerEditor() {
     }
     if (s.type === 'text') {
       const fs = s.fontSize || 0.04;
-      return (
-        <text
-          key={s.id}
-          x={s.x}
-          y={s.y}
-          fontSize={fs}
-          fill={stroke}
-          stroke="none"
-          dominantBaseline="hanging"
-          style={{ cursor: tool === 'select' ? 'move' : 'crosshair', whiteSpace: 'pre', userSelect: 'none' }}
-          onPointerDown={(e) => handleShapePointerDown(e, s.id)}
-          onClick={(e) => handleShapeClick(e, s.id)}
-          onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
-        >
-          {s.text || ''}
-        </text>
-      );
+      const textProps = {
+        key: s.id,
+        x: s.x,
+        y: s.y,
+        fontSize: fs,
+        fill: stroke,
+        stroke: 'none',
+        dominantBaseline: 'hanging',
+        style: { cursor: tool === 'select' ? 'move' : 'crosshair', whiteSpace: 'pre', userSelect: 'none' },
+        onPointerDown: (e) => handleShapePointerDown(e, s.id),
+        onClick: (e) => handleShapeClick(e, s.id),
+        onContextMenu: (e) => handleShapeContextMenu(e, s.id),
+      };
+      if (s.fontFamily) textProps.fontFamily = s.fontFamily;
+      return <text {...textProps}>{s.text || ''}</text>;
     }
     return null;
   };
@@ -667,6 +675,22 @@ function LayerEditor() {
                     value={selected.fontSize ?? 0.04}
                     onChange={(e) => updateSelected({ fontSize: parseFloat(e.target.value) || 0.04 })}
                   />
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="layer-fontfamily-label">{t("layer.fontFamily")}</InputLabel>
+                    <Select
+                      labelId="layer-fontfamily-label"
+                      label={t("layer.fontFamily")}
+                      value={selected.fontFamily || ''}
+                      onChange={(e) => updateSelected({ fontFamily: e.target.value })}
+                      MenuProps={{ PaperProps: { style: { maxHeight: 10 * 36 } } }}
+                      renderValue={(v) => v || t("layer.fontFamilyDefault")}
+                    >
+                      <MenuItem value=""><em>{t("layer.fontFamilyDefault")}</em></MenuItem>
+                      {fontNames.map((f) => (
+                        <MenuItem key={f} value={f} sx={{ fontFamily: f }}>{f}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </>
               ) : (
                 <>

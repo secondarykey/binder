@@ -131,7 +131,9 @@
         "toolText" : "テキスト",
         "defaultText" : "テキスト",
         "text" : "テキスト",
-        "fontSize" : "フォントサイズ"
+        "fontSize" : "フォントサイズ",
+        "fontFamily" : "フォント",
+        "fontFamilyDefault" : "(デフォルト)"
     },
     "setting" : {
         "title" : "設定",
