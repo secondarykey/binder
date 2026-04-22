@@ -120,6 +120,32 @@ const getFixedPoint = (s, handle) => {
   return null;
 };
 
+// shape の視覚中心を正規化座標 (0-1) で返す。rotation の回転中心に使う。
+// text は viewBox 上の正方形 (fs × fs) の中心なので、正規化 x では
+// アンカー + fs/(2*aspect) となる。
+const getShapeCenter = (s, imgAspect = 1) => {
+  if (!s) return { x: 0.5, y: 0.5 };
+  if (s.type === 'line') return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
+  if (s.type === 'rect') return { x: s.x + s.width / 2, y: s.y + s.height / 2 };
+  if (s.type === 'ellipse') return { x: s.cx, y: s.cy };
+  if (s.type === 'text') {
+    const fs = s.fontSize || 0.04;
+    const aspect = imgAspect > 0 ? imgAspect : 1;
+    return { x: s.x + fs / (2 * aspect), y: s.y + fs / 2 };
+  }
+  return { x: 0.5, y: 0.5 };
+};
+
+// (px, py) を (cx, cy) 中心に angleDeg 度回転する（時計回り、SVG と同じ向き）。
+const rotatePoint = (px, py, cx, cy, angleDeg) => {
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = px - cx;
+  const dy = py - cy;
+  return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+};
+
 /**
  * Layer の描画エディタ。
  * 画像アセットビューアと同レイアウト（上: メニューバー、中: キャンバス、下: ステータスバー）。
@@ -274,8 +300,21 @@ function LayerEditor() {
   const handlePointerMove = (e) => {
     // リサイズ中
     if (resizing) {
-      const { x, y } = toClientPos(e);
+      let { x, y } = toClientPos(e);
       const { orig, handle, fixed } = resizing;
+      // shape が回転している場合、ポインタを逆回転して local frame で計算する。
+      // 回転は viewBox 座標系 (x 側が aspect 倍) で行われているため、
+      // 一旦 viewBox に写してから逆回転し、正規化座標へ戻す。
+      if (orig.rotation) {
+        const c = getShapeCenter(orig, aspect);
+        const p = rotatePoint(
+          x * aspect, y,
+          c.x * aspect, c.y,
+          -orig.rotation
+        );
+        x = p.x / aspect;
+        y = p.y;
+      }
       let resized = orig;
       if (orig.type === 'line') {
         if (handle === 'start') resized = { ...orig, x1: x, y1: y };
@@ -467,7 +506,6 @@ function LayerEditor() {
     const sw = s.strokeWidth || 0.005;
     const fill = s.fill || 'none';
     const common = {
-      key: s.id,
       stroke,
       strokeWidth: sw,
       fill,
@@ -476,20 +514,17 @@ function LayerEditor() {
       onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
     };
+    let el = null;
     if (s.type === 'line') {
-      return <line {...common} x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />;
-    }
-    if (s.type === 'rect') {
-      return <rect {...common} x={vbX(s.x)} y={s.y} width={vbX(s.width)} height={s.height} />;
-    }
-    if (s.type === 'ellipse') {
-      return <ellipse {...common} cx={vbX(s.cx)} cy={s.cy} rx={vbX(s.rx)} ry={s.ry} />;
-    }
-    if (s.type === 'text') {
+      el = <line {...common} x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />;
+    } else if (s.type === 'rect') {
+      el = <rect {...common} x={vbX(s.x)} y={s.y} width={vbX(s.width)} height={s.height} />;
+    } else if (s.type === 'ellipse') {
+      el = <ellipse {...common} cx={vbX(s.cx)} cy={s.cy} rx={vbX(s.rx)} ry={s.ry} />;
+    } else if (s.type === 'text') {
       // viewBox が "0 0 aspect 1" で等比スケールになったため counter-scale は不要。
       const fs = s.fontSize || 0.04;
       const textProps = {
-        key: s.id,
         x: vbX(s.x),
         y: s.y,
         fontSize: fs,
@@ -502,9 +537,19 @@ function LayerEditor() {
         onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       };
       if (s.fontFamily) textProps.fontFamily = s.fontFamily;
-      return <text {...textProps}>{s.text || ''}</text>;
+      el = <text {...textProps}>{s.text || ''}</text>;
     }
-    return null;
+    if (!el) return null;
+    // rotation > 0 の場合は <g transform="rotate(angle cx cy)"> でラップする。
+    // 回転中心は viewBox 座標 (x のみ aspect 倍) で指定する。
+    const rot = s.rotation || 0;
+    if (rot) {
+      const c = getShapeCenter(s, aspect);
+      return (
+        <g key={s.id} transform={`rotate(${rot} ${vbX(c.x)} ${c.y})`}>{el}</g>
+      );
+    }
+    return <g key={s.id}>{el}</g>;
   };
 
   const selected = shapes.find((s) => s.id === selectedId) || null;
@@ -613,40 +658,50 @@ function LayerEditor() {
               >
                 {shapes.map((s) => renderShape(s))}
                 {drawing && renderShape(drawing.shape, true)}
-                {selBBox && (
-                  <rect
-                    x={vbX(selBBox.x) - selPad}
-                    y={selBBox.y - selPad}
-                    width={vbX(selBBox.width) + selPad * 2}
-                    height={selBBox.height + selPad * 2}
-                    fill="none"
-                    stroke="#00aaff"
-                    strokeWidth={1.5}
-                    strokeDasharray="6,3"
-                    vectorEffect="non-scaling-stroke"
-                    pointerEvents="none"
-                    style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
-                  />
-                )}
-                {/* リサイズハンドル */}
-                {selected && tool === 'select' && !drawing && getHandles(selected, imgAspect).map((h) => (
-                  <g key={h.id} style={{ cursor: h.cursor }}
-                     onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
-                    <rect
-                      x={vbX(h.x) - hitSize / 2} y={h.y - hitSize / 2}
-                      width={hitSize} height={hitSize}
-                      fill="transparent"
-                    />
-                    <rect
-                      x={vbX(h.x) - handleSize / 2} y={h.y - handleSize / 2}
-                      width={handleSize} height={handleSize}
-                      fill="#ffffff"
-                      stroke="#00aaff"
-                      strokeWidth={1}
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </g>
-                ))}
+                {/* 選択枠 + リサイズハンドルは選択 shape の rotation と同じ回転を適用する */}
+                {(() => {
+                  if (!selected) return null;
+                  const rot = selected.rotation || 0;
+                  const c = getShapeCenter(selected, aspect);
+                  const transform = rot ? `rotate(${rot} ${vbX(c.x)} ${c.y})` : undefined;
+                  return (
+                    <g transform={transform}>
+                      {selBBox && (
+                        <rect
+                          x={vbX(selBBox.x) - selPad}
+                          y={selBBox.y - selPad}
+                          width={vbX(selBBox.width) + selPad * 2}
+                          height={selBBox.height + selPad * 2}
+                          fill="none"
+                          stroke="#00aaff"
+                          strokeWidth={1.5}
+                          strokeDasharray="6,3"
+                          vectorEffect="non-scaling-stroke"
+                          pointerEvents="none"
+                          style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
+                        />
+                      )}
+                      {tool === 'select' && !drawing && getHandles(selected, imgAspect).map((h) => (
+                        <g key={h.id} style={{ cursor: h.cursor }}
+                           onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
+                          <rect
+                            x={vbX(h.x) - hitSize / 2} y={h.y - hitSize / 2}
+                            width={hitSize} height={hitSize}
+                            fill="transparent"
+                          />
+                          <rect
+                            x={vbX(h.x) - handleSize / 2} y={h.y - handleSize / 2}
+                            width={handleSize} height={handleSize}
+                            fill="#ffffff"
+                            stroke="#00aaff"
+                            strokeWidth={1}
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        </g>
+                      ))}
+                    </g>
+                  );
+                })()}
               </svg>
             </div>
           </div>
@@ -718,6 +773,12 @@ function LayerEditor() {
                 label={t("layer.color")} size="small" type="color"
                 value={selected.color || '#ff0000'}
                 onChange={(e) => updateSelected({ color: e.target.value })}
+              />
+              <TextField
+                label={t("layer.rotation")} size="small" type="number"
+                inputProps={{ step: 1, min: 0, max: 360 }}
+                value={selected.rotation ?? 0}
+                onChange={(e) => updateSelected({ rotation: parseFloat(e.target.value) || 0 })}
               />
               {selected.type === 'text' ? (
                 <>
