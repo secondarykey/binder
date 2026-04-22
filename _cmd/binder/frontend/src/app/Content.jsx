@@ -4,6 +4,7 @@ import BinderRegister from "../components/BinderRegister";
 
 import Editor from "../components/editor/Component";
 import AssetViewer from "../components/AssetViewer";
+import LayerEditor from "../components/LayerEditor";
 import BinderHistory from "../components/BinderHistory";
 import BinderRemote from "../components/BinderRemote";
 
@@ -38,6 +39,7 @@ function Content(props) {
 
           <Route path="/assets/view/:id" element={<AssetViewer />} />
 
+          <Route path="/editor/layer/:id" element={<LayerEditor />} />
           <Route path="/editor/:mode/:id" element={<Editor />} />
 
         </Routes>

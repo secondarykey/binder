@@ -66,6 +66,10 @@ func (data ModifiedFiles) Assets() ModifiedFiles {
 	return data.filter("asset")
 }
 
+func (data ModifiedFiles) Layers() ModifiedFiles {
+	return data.filter("layer")
+}
+
 func (data ModifiedFiles) Templates() ModifiedFiles {
 	return data.filter("template")
 }
@@ -881,6 +885,10 @@ func getModelType(f string) (*Modified, error) {
 		}
 		mod.Typ = "asset"
 		mod.Id = fn
+	} else if strings.Index(f, LayerDir) == 0 {
+		mod.Typ = "layer"
+		//".json"
+		mod.Id = fn[:len(fn)-5]
 	} else if strings.Index(f, TemplateDir) == 0 {
 		mod.Typ = "template"
 		//".tmpl"

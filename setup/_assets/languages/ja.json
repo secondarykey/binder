@@ -57,6 +57,7 @@
         "diagram" : "ダイアグラム",
         "assets_file" : "アセット（ファイル選択）",
         "assets_text" : "アセット（テキストファイル）",
+        "addLayer" : "レイヤー追加",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "clipboardEmpty" : "クリップボード画像のデータが空です",
         "download" : "ダウンロード",
@@ -105,6 +106,24 @@
         "removeSuccess" : "アセットを削除しました",
         "deleteTitle" : "アセットの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？"
+    },
+    "layer" : {
+        "editTitle" : "レイヤー編集",
+        "openEditor" : "レイヤーエディタを開く",
+        "nameRequired" : "名前は必須です",
+        "aliasRequired" : "エイリアスは必須です",
+        "updateSuccess" : "レイヤーを更新しました",
+        "removeSuccess" : "レイヤーを削除しました",
+        "saveSuccess" : "レイヤーを保存しました",
+        "deleteTitle" : "レイヤーの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "shapes" : "図形一覧",
+        "properties" : "プロパティ",
+        "color" : "色",
+        "strokeWidth" : "線幅",
+        "fill" : "塗りつぶし",
+        "fillHint" : "none / 色指定（例: #ffff0080）",
+        "noSelection" : "図形を選択してください"
     },
     "setting" : {
         "title" : "設定",

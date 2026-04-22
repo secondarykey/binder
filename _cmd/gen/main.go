@@ -77,6 +77,7 @@ func main() {
 		{model.Note{}, "notes", "db/model/note.go", "db/note_dao.go"},
 		{model.Diagram{}, "diagrams", "db/model/diagram.go", "db/diagram_dao.go"},
 		{model.Asset{}, "assets", "db/model/asset.go", "db/asset_dao.go"},
+		{model.Layer{}, "layers", "db/model/layer.go", "db/layer_dao.go"},
 		{model.Template{}, "templates", "db/model/template.go", "db/template_dao.go"},
 		{model.Structure{}, "structures", "db/model/structure.go", "db/structure_dao.go"},
 	}

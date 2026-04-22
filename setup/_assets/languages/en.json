@@ -57,6 +57,7 @@
         "diagram" : "Diagram",
         "assets_file" : "Asset (File Select)",
         "assets_text" : "Asset (Text File)",
+        "addLayer" : "Add Layer",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "clipboardEmpty" : "Clipboard image data is empty.",
         "download" : "Download",
@@ -105,6 +106,24 @@
         "removeSuccess" : "Assets removed.",
         "deleteTitle" : "Delete Assets",
         "deleteConfirm" : "Delete \"{{name}}\"?"
+    },
+    "layer" : {
+        "editTitle" : "Edit Layer",
+        "openEditor" : "Open Layer Editor",
+        "nameRequired" : "Name is required.",
+        "aliasRequired" : "Alias is required.",
+        "updateSuccess" : "Layer updated.",
+        "removeSuccess" : "Layer removed.",
+        "saveSuccess" : "Layer saved.",
+        "deleteTitle" : "Delete Layer",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "shapes" : "Shapes",
+        "properties" : "Properties",
+        "color" : "Color",
+        "strokeWidth" : "Stroke Width",
+        "fill" : "Fill",
+        "fillHint" : "none / color (e.g. #ffff0080)",
+        "noSelection" : "Select a shape"
     },
     "setting" : {
         "title" : "Setting",

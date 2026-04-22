@@ -122,6 +122,8 @@ func (a *App) Generate(mode string, id string, data string) error {
 		_, err = a.current.PublishDiagram(id, []byte(data))
 	case "assets":
 		_, err = a.current.PublishAsset(id)
+	case "layer":
+		_, err = a.current.PublishLayer(id)
 
 	default:
 		//templateはないはず
@@ -164,6 +166,12 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 				return xerrors.Errorf("PublishAssetStage() error: %+v", err)
 			}
 			allFiles = append(allFiles, files...)
+		case "layer":
+			files, _, err := a.current.PublishLayerStage(item.Id)
+			if err != nil {
+				return xerrors.Errorf("PublishLayerStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
 		default:
 			log.Warn("Unknown Mode:" + item.Mode)
 		}
@@ -187,6 +195,8 @@ func (a *App) Unpublish(mode string, id string) error {
 		err = a.current.UnpublishDiagram(id)
 	case "assets":
 		err = a.current.UnpublishAsset(id)
+	case "layer":
+		err = a.current.UnpublishLayer(id)
 	default:
 		log.Warn("Unknown Mode:" + mode)
 	}

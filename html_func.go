@@ -20,6 +20,7 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
 		"drawDiagram":   w.drawSVG,
+		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
 		"assetsImage":   w.assetsImage,
 		"childrenNotes": w.childrenNotes,
@@ -210,6 +211,43 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 <div class="%s" id="%s">
 %s
 </div>`, "binderSVG", id, code))
+}
+
+// drawLayer はレイヤーIDから画像 + SVG オーバーレイの合成HTMLを返す。
+// 親 Asset の画像を下敷きにし、その上に Layer のシェイプを重ねる。
+// エディタプレビュー（local=true）ではインラインSVGとプライベートアセットURLを使い、
+// 公開時は公開済みSVGをimgで重ねる。
+func (w *wrapper) drawLayer(id string) template.HTML {
+	imageSrc := ""
+	if w.Local {
+		// 親Assetのプライベートアセット配信URL
+		m, err := w.owner.GetLayerWithParent(id)
+		if err != nil {
+			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+		}
+		addr := w.owner.ServerAddress()
+		if addr == "" {
+			return template.HTML("drawLayer: server not available")
+		}
+		if m.Parent != nil {
+			imageSrc = fmt.Sprintf("http://%s/binder-assets/%s", addr, m.Parent.Id)
+		}
+	} else {
+		// 公開時は親 Asset の公開パスを参照
+		m, err := w.owner.GetLayerWithParent(id)
+		if err != nil {
+			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+		}
+		if m.Parent != nil {
+			imageSrc = w.convertURL(fs.PublicAssetFile(m.Parent))
+		}
+	}
+
+	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc)
+	if err != nil {
+		return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+	}
+	return html
 }
 
 func (w *wrapper) getSVGFile(id string) (string, error) {

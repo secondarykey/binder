@@ -18,6 +18,8 @@ func (sys *FileSystem) ToFullPath(mode, id string) string {
 		fn = diagramFile(id)
 	case "asset", "assets":
 		fn = assetFile(id)
+	case "layer":
+		fn = layerFile(id)
 	case "template":
 		log.Warn("Not Implemented")
 	default:
@@ -185,6 +187,28 @@ func AssetFile(a *json.Asset) string {
 
 func assetFile(id string) string {
 	return filepath.Join(AssetDir, id)
+}
+
+const LayerDir = "layers"
+const publicLayersDir = "layers"
+
+func LayerFile(id string) string {
+	return layerFile(id)
+}
+
+func layerFile(id string) string {
+	return filepath.Join(LayerDir, fmt.Sprintf("%s.json", id))
+}
+
+func PublicLayerFile(l *json.Layer) string {
+	if l == nil || l.Alias == "" {
+		return ""
+	}
+	return publicLayerFile(l.Alias)
+}
+
+func publicLayerFile(alias string) string {
+	return filepath.Join(publishDir, publicLayersDir, fmt.Sprintf("%s.svg", alias))
 }
 
 const TemplateDir = "templates"

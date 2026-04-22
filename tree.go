@@ -178,6 +178,22 @@ func (b *Binder) GetModifiedTree() (*json.Tree, error) {
 		}
 	}
 
+	dirLayer := json.NewLeaf("DIR_Layer", "layer")
+	tree.Data = append(tree.Data, dirLayer)
+	wk = files.Layers()
+	if wk.Exists() {
+		ids := wk.Ids()
+		structures, err := b.db.FindInStructureId(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("db.FindInStructureId() error: %w", err)
+		}
+		for _, s := range structures {
+			if s.Typ == "layer" {
+				dirLayer.AddChild(convertStructure2Leaf(s))
+			}
+		}
+	}
+
 	dirTemplate := json.NewLeaf("DIR_Template", "template")
 	tree.Data = append(tree.Data, dirTemplate)
 	wk = files.Templates()
@@ -239,6 +255,17 @@ func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 	for _, a := range assets {
 		l := &json.Leaf{Id: a.Id, ParentId: a.ParentId, Name: a.Name, Type: "asset", PublishStatus: int(a.PublishStatus)}
 		dirAsset.AddChild(l)
+	}
+
+	dirLayer := json.NewLeaf("DIR_Layer", "layer")
+	tree.Data = append(tree.Data, dirLayer)
+	layers, err := b.GetUnpublishedLayers()
+	if err != nil {
+		return nil, xerrors.Errorf("UnpublishLayers() error: %w", err)
+	}
+	for _, ly := range layers {
+		l := &json.Leaf{Id: ly.Id, ParentId: ly.ParentId, Name: ly.Name, Type: "layer", PublishStatus: int(ly.PublishStatus)}
+		dirLayer.AddChild(l)
 	}
 
 	return &tree, nil
