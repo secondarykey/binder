@@ -109,7 +109,6 @@
     },
     "layer" : {
         "editTitle" : "レイヤー編集",
-        "openEditor" : "レイヤーエディタを開く",
         "nameRequired" : "名前は必須です",
         "aliasRequired" : "エイリアスは必須です",
         "updateSuccess" : "レイヤーを更新しました",

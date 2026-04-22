@@ -109,7 +109,6 @@
     },
     "layer" : {
         "editTitle" : "Edit Layer",
-        "openEditor" : "Open Layer Editor",
         "nameRequired" : "Name is required.",
         "aliasRequired" : "Alias is required.",
         "updateSuccess" : "Layer updated.",
