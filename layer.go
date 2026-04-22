@@ -7,6 +7,7 @@ import (
 	jsonenc "encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"strings"
@@ -40,6 +41,10 @@ type LayerShape struct {
 	Cy float64 `json:"cy,omitempty"`
 	Rx float64 `json:"rx,omitempty"`
 	Ry float64 `json:"ry,omitempty"`
+
+	// text: x,y (rect と共用), text, fontSize
+	Text     string  `json:"text,omitempty"`
+	FontSize float64 `json:"fontSize,omitempty"`
 }
 
 type LayerContent struct {
@@ -401,6 +406,14 @@ func BuildLayerSVG(shapesJSON string) (string, error) {
 			fmt.Fprintf(&b,
 				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
 				s.Cx, s.Cy, s.Rx, s.Ry, color, sw, fill)
+		case "text":
+			fSize := s.FontSize
+			if fSize <= 0 {
+				fSize = 0.04
+			}
+			fmt.Fprintf(&b,
+				`<text x="%g" y="%g" font-size="%g" fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
+				s.X, s.Y, fSize, color, html.EscapeString(s.Text))
 		}
 	}
 	b.WriteString(`</svg>`)

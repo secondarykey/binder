@@ -128,7 +128,11 @@
         "toolSelect" : "選択",
         "toolLine" : "線",
         "toolRect" : "矩形",
-        "toolEllipse" : "楕円"
+        "toolEllipse" : "楕円",
+        "toolText" : "テキスト",
+        "defaultText" : "テキスト",
+        "text" : "テキスト",
+        "fontSize" : "フォントサイズ"
     },
     "setting" : {
         "title" : "設定",

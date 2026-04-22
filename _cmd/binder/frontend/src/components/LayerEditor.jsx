@@ -9,6 +9,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import TextFieldsIcon from '@mui/icons-material/TextFields';
 
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
@@ -44,6 +45,13 @@ const getBBox = (s) => {
   if (s.type === 'ellipse') {
     return { x: s.cx - s.rx, y: s.cy - s.ry, width: s.rx * 2, height: s.ry * 2 };
   }
+  if (s.type === 'text') {
+    const fs = s.fontSize || 0.04;
+    const len = (s.text || '').length || 1;
+    // 日本語等幅を考慮してやや広めに見積もる
+    const w = Math.max(len * fs * 0.6, fs * 0.8);
+    return { x: s.x, y: s.y, width: w, height: fs };
+  }
   return null;
 };
 
@@ -74,6 +82,13 @@ const getHandles = (s) => {
       { id: 'se', x: s.cx + s.rx, y: s.cy + s.ry, cursor: 'nwse-resize' },
     ];
   }
+  if (s.type === 'text') {
+    // テキストは右下ハンドルのみでフォントサイズを調整
+    const bbox = getBBox(s);
+    return [
+      { id: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'nwse-resize' },
+    ];
+  }
   return [];
 };
 
@@ -94,6 +109,9 @@ const getFixedPoint = (s, handle) => {
     if (handle === 'ne') return { x: s.cx - s.rx, y: s.cy + s.ry };
     if (handle === 'sw') return { x: s.cx + s.rx, y: s.cy - s.ry };
     if (handle === 'se') return { x: s.cx - s.rx, y: s.cy - s.ry };
+  } else if (s.type === 'text') {
+    // text は se ハンドルのみ。固定点は左上 (x, y)
+    if (handle === 'se') return { x: s.x, y: s.y };
   }
   return null;
 };
@@ -189,6 +207,19 @@ function LayerEditor() {
       shape = { ...base, type: 'rect', x, y, width: 0, height: 0 };
     } else if (tool === 'ellipse') {
       shape = { ...base, type: 'ellipse', cx: x, cy: y, rx: 0, ry: 0 };
+    } else if (tool === 'text') {
+      // テキストはクリックで即座に配置（ドラッグ不要）
+      const textShape = {
+        ...base,
+        type: 'text',
+        x, y,
+        text: t("layer.defaultText"),
+        fontSize: 0.04,
+      };
+      setShapes((prev) => [...prev, textShape]);
+      setSelectedId(textShape.id);
+      setTool('select');
+      return;
     } else {
       return;
     }
@@ -220,6 +251,10 @@ function LayerEditor() {
           rx: Math.abs(fixed.x - x) / 2,
           ry: Math.abs(fixed.y - y) / 2,
         };
+      } else if (orig.type === 'text') {
+        // フォントサイズ = ドラッグ点と固定点(左上)との y 差分
+        const newFontSize = Math.max(0.005, Math.abs(y - fixed.y));
+        resized = { ...orig, fontSize: newFontSize };
       }
       setShapes((prev) => prev.map((s) => (s.id === resizing.shapeId ? resized : s)));
       return;
@@ -237,6 +272,8 @@ function LayerEditor() {
         moved = { ...orig, x: orig.x + dx, y: orig.y + dy };
       } else if (orig.type === 'ellipse') {
         moved = { ...orig, cx: orig.cx + dx, cy: orig.cy + dy };
+      } else if (orig.type === 'text') {
+        moved = { ...orig, x: orig.x + dx, y: orig.y + dy };
       }
       setShapes((prev) => prev.map((s) => (s.id === dragging.shapeId ? moved : s)));
       return;
@@ -403,6 +440,26 @@ function LayerEditor() {
     if (s.type === 'ellipse') {
       return <ellipse {...common} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />;
     }
+    if (s.type === 'text') {
+      const fs = s.fontSize || 0.04;
+      return (
+        <text
+          key={s.id}
+          x={s.x}
+          y={s.y}
+          fontSize={fs}
+          fill={stroke}
+          stroke="none"
+          dominantBaseline="hanging"
+          style={{ cursor: tool === 'select' ? 'move' : 'crosshair', whiteSpace: 'pre', userSelect: 'none' }}
+          onPointerDown={(e) => handleShapePointerDown(e, s.id)}
+          onClick={(e) => handleShapeClick(e, s.id)}
+          onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
+        >
+          {s.text || ''}
+        </text>
+      );
+    }
     return null;
   };
 
@@ -448,6 +505,9 @@ function LayerEditor() {
             </Tooltip>
             <Tooltip title={t("layer.toolEllipse")} placement="bottom">
               <ToggleButton value="ellipse" sx={toggleBtnSx}><CircleOutlinedIcon sx={{ fontSize: '16px' }} /></ToggleButton>
+            </Tooltip>
+            <Tooltip title={t("layer.toolText")} placement="bottom">
+              <ToggleButton value="text" sx={toggleBtnSx}><TextFieldsIcon sx={{ fontSize: '16px' }} /></ToggleButton>
             </Tooltip>
           </ToggleButtonGroup>
         </div>
@@ -578,9 +638,10 @@ function LayerEditor() {
                   color: 'var(--text-primary)',
                   backgroundColor: s.id === selectedId ? 'var(--bg-selected, rgba(255,255,255,0.1))' : 'transparent',
                   borderRadius: '2px',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}
               >
-                {s.type} — {s.color}
+                {s.type} — {s.type === 'text' ? (s.text || '') : s.color}
               </Box>
             ))}
           </Box>
@@ -593,19 +654,37 @@ function LayerEditor() {
                 value={selected.color || '#ff0000'}
                 onChange={(e) => updateSelected({ color: e.target.value })}
               />
-              <TextField
-                label={t("layer.strokeWidth")} size="small" type="number"
-                inputProps={{ step: 0.001, min: 0.001, max: 0.1 }}
-                value={selected.strokeWidth ?? 0.005}
-                onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 0.005 })}
-              />
-              {selected.type !== 'line' && (
-                <TextField
-                  label={t("layer.fill")} size="small"
-                  value={selected.fill || 'none'}
-                  onChange={(e) => updateSelected({ fill: e.target.value })}
-                  helperText={t("layer.fillHint")}
-                />
+              {selected.type === 'text' ? (
+                <>
+                  <TextField
+                    label={t("layer.text")} size="small" multiline maxRows={4}
+                    value={selected.text || ''}
+                    onChange={(e) => updateSelected({ text: e.target.value })}
+                  />
+                  <TextField
+                    label={t("layer.fontSize")} size="small" type="number"
+                    inputProps={{ step: 0.005, min: 0.005, max: 0.5 }}
+                    value={selected.fontSize ?? 0.04}
+                    onChange={(e) => updateSelected({ fontSize: parseFloat(e.target.value) || 0.04 })}
+                  />
+                </>
+              ) : (
+                <>
+                  <TextField
+                    label={t("layer.strokeWidth")} size="small" type="number"
+                    inputProps={{ step: 0.001, min: 0.001, max: 0.1 }}
+                    value={selected.strokeWidth ?? 0.005}
+                    onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 0.005 })}
+                  />
+                  {selected.type !== 'line' && (
+                    <TextField
+                      label={t("layer.fill")} size="small"
+                      value={selected.fill || 'none'}
+                      onChange={(e) => updateSelected({ fill: e.target.value })}
+                      helperText={t("layer.fillHint")}
+                    />
+                  )}
+                </>
               )}
             </Box>
           ) : (
