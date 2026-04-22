@@ -44,6 +44,57 @@ const getBBox = (s) => {
   return null;
 };
 
+// 選択中 shape に表示するリサイズハンドル位置を計算
+const getHandles = (s) => {
+  if (!s) return [];
+  if (s.type === 'line') {
+    return [
+      { id: 'start', x: s.x1, y: s.y1, cursor: 'move' },
+      { id: 'end', x: s.x2, y: s.y2, cursor: 'move' },
+    ];
+  }
+  if (s.type === 'rect') {
+    const x2 = s.x + s.width;
+    const y2 = s.y + s.height;
+    return [
+      { id: 'nw', x: s.x, y: s.y, cursor: 'nwse-resize' },
+      { id: 'ne', x: x2, y: s.y, cursor: 'nesw-resize' },
+      { id: 'sw', x: s.x, y: y2, cursor: 'nesw-resize' },
+      { id: 'se', x: x2, y: y2, cursor: 'nwse-resize' },
+    ];
+  }
+  if (s.type === 'ellipse') {
+    return [
+      { id: 'nw', x: s.cx - s.rx, y: s.cy - s.ry, cursor: 'nwse-resize' },
+      { id: 'ne', x: s.cx + s.rx, y: s.cy - s.ry, cursor: 'nesw-resize' },
+      { id: 'sw', x: s.cx - s.rx, y: s.cy + s.ry, cursor: 'nesw-resize' },
+      { id: 'se', x: s.cx + s.rx, y: s.cy + s.ry, cursor: 'nwse-resize' },
+    ];
+  }
+  return [];
+};
+
+// ハンドル操作時の固定点（ドラッグする点と対になる位置）を返す
+const getFixedPoint = (s, handle) => {
+  if (s.type === 'line') {
+    if (handle === 'start') return { x: s.x2, y: s.y2 };
+    if (handle === 'end') return { x: s.x1, y: s.y1 };
+  } else if (s.type === 'rect') {
+    const x2 = s.x + s.width;
+    const y2 = s.y + s.height;
+    if (handle === 'nw') return { x: x2, y: y2 };
+    if (handle === 'ne') return { x: s.x, y: y2 };
+    if (handle === 'sw') return { x: x2, y: s.y };
+    if (handle === 'se') return { x: s.x, y: s.y };
+  } else if (s.type === 'ellipse') {
+    if (handle === 'nw') return { x: s.cx + s.rx, y: s.cy + s.ry };
+    if (handle === 'ne') return { x: s.cx - s.rx, y: s.cy + s.ry };
+    if (handle === 'sw') return { x: s.cx + s.rx, y: s.cy - s.ry };
+    if (handle === 'se') return { x: s.cx - s.rx, y: s.cy - s.ry };
+  }
+  return null;
+};
+
 /**
  * Layer の描画エディタ。
  * 親 Asset 画像を背景に、正規化座標 (0.0-1.0) で line / rect / ellipse を描画する。
@@ -62,6 +113,7 @@ function LayerEditor() {
   const [selectedId, setSelectedId] = useState(null);
   const [drawing, setDrawing] = useState(null);
   const [dragging, setDragging] = useState(null); // { shapeId, startX, startY, orig }
+  const [resizing, setResizing] = useState(null); // { shapeId, handle, orig, fixed }
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
 
   const svgRef = useRef(null);
@@ -136,6 +188,34 @@ function LayerEditor() {
   };
 
   const handlePointerMove = (e) => {
+    // リサイズ中はハンドル位置に応じて shape を更新
+    if (resizing) {
+      const { x, y } = toClientPos(e);
+      const { orig, handle, fixed } = resizing;
+      let resized = orig;
+      if (orig.type === 'line') {
+        if (handle === 'start') resized = { ...orig, x1: x, y1: y };
+        else if (handle === 'end') resized = { ...orig, x2: x, y2: y };
+      } else if (orig.type === 'rect') {
+        resized = {
+          ...orig,
+          x: Math.min(fixed.x, x),
+          y: Math.min(fixed.y, y),
+          width: Math.abs(fixed.x - x),
+          height: Math.abs(fixed.y - y),
+        };
+      } else if (orig.type === 'ellipse') {
+        resized = {
+          ...orig,
+          cx: (fixed.x + x) / 2,
+          cy: (fixed.y + y) / 2,
+          rx: Math.abs(fixed.x - x) / 2,
+          ry: Math.abs(fixed.y - y) / 2,
+        };
+      }
+      setShapes((prev) => prev.map((s) => (s.id === resizing.shapeId ? resized : s)));
+      return;
+    }
     // 選択ツールでドラッグ中は shape を移動
     if (dragging) {
       const { x, y } = toClientPos(e);
@@ -176,6 +256,10 @@ function LayerEditor() {
   };
 
   const handlePointerUp = () => {
+    if (resizing) {
+      setResizing(null);
+      return;
+    }
     if (dragging) {
       setDragging(null);
       return;
@@ -198,6 +282,18 @@ function LayerEditor() {
     setSelectedId(shapeId);
     setDragging({ shapeId, startX: x, startY: y, orig });
     // キャンバス外へポインタが出ても move/up を受け取れるようキャプチャ
+    if (e.currentTarget && e.currentTarget.setPointerCapture) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+    }
+  };
+
+  const handleHandlePointerDown = (e, handle, shapeId) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const orig = shapes.find((s) => s.id === shapeId);
+    if (!orig) return;
+    const fixed = getFixedPoint(orig, handle);
+    setResizing({ shapeId, handle, orig, fixed });
     if (e.currentTarget && e.currentTarget.setPointerCapture) {
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
     }
@@ -340,6 +436,21 @@ function LayerEditor() {
                     pointerEvents="none"
                   />
                 )}
+                {/* リサイズハンドル */}
+                {selected && tool === 'select' && !drawing && getHandles(selected).map((h) => (
+                  <rect
+                    key={h.id}
+                    x={h.x - 0.01}
+                    y={h.y - 0.01}
+                    width={0.02}
+                    height={0.02}
+                    fill="#ffffff"
+                    stroke="#00aaff"
+                    strokeWidth={0.002}
+                    style={{ cursor: h.cursor }}
+                    onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}
+                  />
+                ))}
               </svg>
             </Box>
           )}
