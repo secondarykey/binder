@@ -48,11 +48,10 @@ const getBBox = (s, imgAspect = 1) => {
     return { x: s.cx - s.rx, y: s.cy - s.ry, width: s.rx * 2, height: s.ry * 2 };
   }
   if (s.type === 'text') {
-    // プロポーショナルフォントは文字ごとに幅が異なり、文字数 × 仮想幅だと
-    // 実際のテキスト幅と乖離する。ここは文字数に依存させず、高さ (fontSize)
-    // と同じ大きさの視覚的な正方形をアンカーとして返す。
-    // width は viewBox 空間で fs / aspect にすることで、非等比 stretch 後も
-    // 画面上で fs × fs の正方形に見える。
+    // プロポーショナルフォントは文字ごとに幅が異なるため、文字数ベースの
+    // 可変サイズは採用せず「高さと同じサイズの正方形アンカー」を返す。
+    // 正規化 (0-1) x 空間では fs/aspect、レンダ時に vbX で aspect 倍されて
+    // viewBox-x では fs となり、等比スケールの viewBox で fs × fs 正方形になる。
     const fs = s.fontSize || 0.04;
     const aspect = imgAspect > 0 ? imgAspect : 1;
     return { x: s.x, y: s.y, width: fs / aspect, height: fs };
@@ -478,20 +477,21 @@ function LayerEditor() {
       style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
     };
     if (s.type === 'line') {
-      return <line {...common} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} strokeLinecap="round" />;
+      return <line {...common} x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />;
     }
     if (s.type === 'rect') {
-      return <rect {...common} x={s.x} y={s.y} width={s.width} height={s.height} />;
+      return <rect {...common} x={vbX(s.x)} y={s.y} width={vbX(s.width)} height={s.height} />;
     }
     if (s.type === 'ellipse') {
-      return <ellipse {...common} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />;
+      return <ellipse {...common} cx={vbX(s.cx)} cy={s.cy} rx={vbX(s.rx)} ry={s.ry} />;
     }
     if (s.type === 'text') {
+      // viewBox が "0 0 aspect 1" で等比スケールになったため counter-scale は不要。
       const fs = s.fontSize || 0.04;
-      const scaleX = imgAspect > 0 ? 1 / imgAspect : 1;
       const textProps = {
-        x: 0,
-        y: 0,
+        key: s.id,
+        x: vbX(s.x),
+        y: s.y,
         fontSize: fs,
         fill: stroke,
         stroke: 'none',
@@ -502,11 +502,7 @@ function LayerEditor() {
         onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       };
       if (s.fontFamily) textProps.fontFamily = s.fontFamily;
-      return (
-        <g key={s.id} transform={`translate(${s.x},${s.y}) scale(${scaleX},1)`}>
-          <text {...textProps}>{s.text || ''}</text>
-        </g>
-      );
+      return <text {...textProps}>{s.text || ''}</text>;
     }
     return null;
   };
@@ -514,22 +510,19 @@ function LayerEditor() {
   const selected = shapes.find((s) => s.id === selectedId) || null;
   const selBBox = getBBox(selected, imgAspect);
   const selPad = 0.008;
-  // viewBox="0 0 1 1" + preserveAspectRatio="none" は画像のアスペクト比で
-  // 非等比に引き伸ばされるため、x 方向の定数（padding）は 1/aspect 倍して
-  // 視覚的な均等パディングを保つ。
-  const aspectX = imgAspect > 0 ? imgAspect : 1;
-  const selPadX = selPad / aspectX;
+  // viewBox を "0 0 aspect 1" にして viewBox→表示を等比スケールにする。
+  // shape データは正規化座標 (0-1) のまま保持し、レンダ時に x のみ aspect 倍して
+  // viewBox 空間へ写像する (vbX)。これで stroke の太さが全方向一様になり、
+  // 円（楕円）のストロークが辺ごとに太さが変わる問題が解消する。
+  const aspect = imgAspect > 0 ? imgAspect : 1;
+  const vbX = (v) => v * aspect;
   // リサイズハンドルは「画像の表示サイズに依らず常に一定ピクセル」で表示する。
-  // 小さい画像だと viewBox 比例サイズでは掴めなくなるため、SVG の実表示
-  // ピクセルサイズから viewBox 単位に逆換算する。
+  // 等比スケールなので 1 viewBox 単位 = svgH ピクセル（x/y 共通）。
   const HANDLE_INNER_PX = 10; // 表示上の正方形のひと辺
   const HANDLE_HIT_PX = 20;   // クリック当たり判定のひと辺
-  const svgW = svgSize.w > 0 ? svgSize.w : 1;
   const svgH = svgSize.h > 0 ? svgSize.h : 1;
-  const handleInnerW = HANDLE_INNER_PX / svgW;
-  const handleInnerH = HANDLE_INNER_PX / svgH;
-  const handleHitW = HANDLE_HIT_PX / svgW;
-  const handleHitH = HANDLE_HIT_PX / svgH;
+  const handleSize = HANDLE_INNER_PX / svgH;
+  const hitSize = HANDLE_HIT_PX / svgH;
 
   // ToggleButton 共通スタイル（#previewMenu にフィットするよう小さく）
   const toggleBtnSx = {
@@ -602,7 +595,7 @@ function LayerEditor() {
               />
               <svg
                 ref={svgRef}
-                viewBox="0 0 1 1"
+                viewBox={`0 0 ${aspect} 1`}
                 preserveAspectRatio="none"
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -622,9 +615,9 @@ function LayerEditor() {
                 {drawing && renderShape(drawing.shape, true)}
                 {selBBox && (
                   <rect
-                    x={selBBox.x - selPadX}
+                    x={vbX(selBBox.x) - selPad}
                     y={selBBox.y - selPad}
-                    width={selBBox.width + selPadX * 2}
+                    width={vbX(selBBox.width) + selPad * 2}
                     height={selBBox.height + selPad * 2}
                     fill="none"
                     stroke="#00aaff"
@@ -640,13 +633,13 @@ function LayerEditor() {
                   <g key={h.id} style={{ cursor: h.cursor }}
                      onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
                     <rect
-                      x={h.x - handleHitW / 2} y={h.y - handleHitH / 2}
-                      width={handleHitW} height={handleHitH}
+                      x={vbX(h.x) - hitSize / 2} y={h.y - hitSize / 2}
+                      width={hitSize} height={hitSize}
                       fill="transparent"
                     />
                     <rect
-                      x={h.x - handleInnerW / 2} y={h.y - handleInnerH / 2}
-                      width={handleInnerW} height={handleInnerH}
+                      x={vbX(h.x) - handleSize / 2} y={h.y - handleSize / 2}
+                      width={handleSize} height={handleSize}
                       fill="#ffffff"
                       stroke="#00aaff"
                       strokeWidth={1}
