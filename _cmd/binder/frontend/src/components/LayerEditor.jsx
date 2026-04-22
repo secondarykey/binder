@@ -184,6 +184,8 @@ function LayerEditor() {
     setShapes((prev) => [...prev, drawing.shape]);
     setSelectedId(drawing.shape.id);
     setDrawing(null);
+    // 連続で新規作成してしまわないよう選択ツールへ戻す
+    setTool('select');
   };
 
   const handleShapePointerDown = (e, shapeId) => {
