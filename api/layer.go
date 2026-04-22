@@ -1,7 +1,6 @@
 package api
 
 import (
-	"binder"
 	"binder/api/json"
 	"binder/log"
 	"strings"
@@ -89,17 +88,10 @@ func (a *App) GetLayerSVG(id string) (string, error) {
 
 	defer log.PrintTrace(log.Func("GetLayerSVG()"))
 
-	var w strings.Builder
-	err := a.current.ReadLayer(&w, id)
+	svg, err := a.current.BuildLayerSVGForId(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("ReadLayer() error\n%+v", err)
-	}
-
-	svg, err := binder.BuildLayerSVG(w.String())
-	if err != nil {
-		log.PrintStackTrace(err)
-		return "", fmt.Errorf("BuildLayerSVG() error\n%+v", err)
+		return "", fmt.Errorf("BuildLayerSVGForId() error\n%+v", err)
 	}
 	return svg, nil
 }

@@ -4,11 +4,13 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"bytes"
 	jsonenc "encoding/json"
 	"errors"
 	"fmt"
 	"html"
 	"html/template"
+	"image"
 	"io"
 	"strings"
 
@@ -305,7 +307,13 @@ func (b *Binder) PublishLayerStage(id string) ([]string, *json.Layer, error) {
 		return nil, nil, xerrors.Errorf("ReadLayer() error: %w", err)
 	}
 
-	svg, err := BuildLayerSVG(buf.String())
+	// 親アセット画像のアスペクト比を取得してテキストの counter-scale 補正に使う
+	var aspect float64
+	if data, _, err := b.ReadAssetBytes(m.ParentId); err == nil {
+		aspect = getImageAspect(data)
+	}
+
+	svg, err := BuildLayerSVG(buf.String(), aspect)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("BuildLayerSVG() error: %w", err)
 	}
@@ -369,7 +377,9 @@ func (b *Binder) UnpublishLayer(id string) error {
 
 // BuildLayerSVG は shapes JSON 文字列から viewBox="0 0 1 1" の SVG を生成する。
 // エディタプレビューと公開SVG書き出しの両方で使用する。
-func BuildLayerSVG(shapesJSON string) (string, error) {
+// imgAspect は画像の width/height（未知なら 0）。テキストは viewBox の非等比
+// 引き伸ばしで字形が横長/縦長に歪むため、x 方向に 1/imgAspect をかけて補正する。
+func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 	if strings.TrimSpace(shapesJSON) == "" {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="none"></svg>`, nil
 	}
@@ -377,6 +387,12 @@ func BuildLayerSVG(shapesJSON string) (string, error) {
 	var c LayerContent
 	if err := jsonenc.Unmarshal([]byte(shapesJSON), &c); err != nil {
 		return "", xerrors.Errorf("json.Unmarshal() error: %w", err)
+	}
+
+	// imgAspect が有効なときだけ x 方向補正をかける
+	var scaleX float64 = 1
+	if imgAspect > 0 {
+		scaleX = 1 / imgAspect
 	}
 
 	var b strings.Builder
@@ -416,13 +432,56 @@ func BuildLayerSVG(shapesJSON string) (string, error) {
 			if strings.TrimSpace(s.FontFamily) != "" {
 				ff = fmt.Sprintf(` font-family="%s"`, html.EscapeString(s.FontFamily))
 			}
+			// x 方向を counter-scale して字形の縦横比を元に戻す。
+			// translate 後に scale するので text 本体は (0,0) に置く。
 			fmt.Fprintf(&b,
-				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
-				s.X, s.Y, fSize, ff, color, html.EscapeString(s.Text))
+				`<g transform="translate(%g,%g) scale(%g,1)"><text x="0" y="0" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text></g>`,
+				s.X, s.Y, scaleX, fSize, ff, color, html.EscapeString(s.Text))
 		}
 	}
 	b.WriteString(`</svg>`)
 	return b.String(), nil
+}
+
+// getImageAspect は画像バイト列から width/height を返す。
+// 失敗時や 0 除算になる場合は 0 を返す（呼び出し側で補正なしを意味する）。
+func getImageAspect(data []byte) float64 {
+	if len(data) == 0 {
+		return 0
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return 0
+	}
+	if cfg.Height <= 0 {
+		return 0
+	}
+	return float64(cfg.Width) / float64(cfg.Height)
+}
+
+// BuildLayerSVGForId は id からレイヤーの shapes JSON と親アセットのアスペクト比を読み、
+// counter-scale 補正つきの SVG 文字列を生成する。ライブプレビュー用。
+func (b *Binder) BuildLayerSVGForId(id string) (string, error) {
+	if b == nil {
+		return "", EmptyError
+	}
+	m, err := b.GetLayer(id)
+	if err != nil {
+		return "", xerrors.Errorf("GetLayer() error: %w", err)
+	}
+	var buf strings.Builder
+	if err := b.fileSystem.ReadLayer(&buf, id); err != nil {
+		return "", xerrors.Errorf("ReadLayer() error: %w", err)
+	}
+	var aspect float64
+	if data, _, err := b.ReadAssetBytes(m.ParentId); err == nil {
+		aspect = getImageAspect(data)
+	}
+	svg, err := BuildLayerSVG(buf.String(), aspect)
+	if err != nil {
+		return "", xerrors.Errorf("BuildLayerSVG() error: %w", err)
+	}
+	return svg, nil
 }
 
 // BuildLayerHTML は layer id から画像 + SVG オーバーレイの合成HTMLを返す。
@@ -440,7 +499,12 @@ func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string) (templat
 		if err := b.fileSystem.ReadLayer(&buf, id); err != nil {
 			return "", xerrors.Errorf("ReadLayer() error: %w", err)
 		}
-		svg, err := BuildLayerSVG(buf.String())
+		// 親アセット画像のアスペクト比を取得してテキストの counter-scale 補正に使う
+		var aspect float64
+		if data, _, err := b.ReadAssetBytes(m.ParentId); err == nil {
+			aspect = getImageAspect(data)
+		}
+		svg, err := BuildLayerSVG(buf.String(), aspect)
 		if err != nil {
 			return "", xerrors.Errorf("BuildLayerSVG() error: %w", err)
 		}

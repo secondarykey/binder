@@ -29,7 +29,9 @@ const defaultShapeProps = {
 };
 
 // 選択中 shape のバウンディングボックスを計算
-const getBBox = (s) => {
+// imgAspect: 親画像の width/height。text はレンダ時に x 方向を 1/aspect 倍するため
+// viewBox 上の実幅も 1/aspect 倍となる。
+const getBBox = (s, imgAspect = 1) => {
   if (!s) return null;
   if (s.type === 'line') {
     return {
@@ -49,14 +51,15 @@ const getBBox = (s) => {
     const fs = s.fontSize || 0.04;
     const len = (s.text || '').length || 1;
     // 日本語等幅を考慮してやや広めに見積もる
-    const w = Math.max(len * fs * 0.6, fs * 0.8);
+    const aspect = imgAspect > 0 ? imgAspect : 1;
+    const w = Math.max(len * fs * 0.6, fs * 0.8) / aspect;
     return { x: s.x, y: s.y, width: w, height: fs };
   }
   return null;
 };
 
 // 選択中 shape に表示するリサイズハンドル位置を計算
-const getHandles = (s) => {
+const getHandles = (s, imgAspect = 1) => {
   if (!s) return [];
   if (s.type === 'line') {
     return [
@@ -84,7 +87,7 @@ const getHandles = (s) => {
   }
   if (s.type === 'text') {
     // テキストは右下ハンドルのみでフォントサイズを調整
-    const bbox = getBBox(s);
+    const bbox = getBBox(s, imgAspect);
     return [
       { id: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'nwse-resize' },
     ];
@@ -144,6 +147,10 @@ function LayerEditor() {
 
   // フォント一覧（テキスト shape の font-family 設定用）
   const [fontNames, setFontNames] = useState([]);
+
+  // 親画像のアスペクト比 (width/height)。viewBox="0 0 1 1" + preserveAspectRatio="none"
+  // の引き伸ばしでテキスト字形が歪むため、text レンダリング時に x 方向を 1/aspect 倍する。
+  const [imgAspect, setImgAspect] = useState(1);
 
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
@@ -452,10 +459,10 @@ function LayerEditor() {
     }
     if (s.type === 'text') {
       const fs = s.fontSize || 0.04;
+      const scaleX = imgAspect > 0 ? 1 / imgAspect : 1;
       const textProps = {
-        key: s.id,
-        x: s.x,
-        y: s.y,
+        x: 0,
+        y: 0,
         fontSize: fs,
         fill: stroke,
         stroke: 'none',
@@ -466,13 +473,17 @@ function LayerEditor() {
         onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       };
       if (s.fontFamily) textProps.fontFamily = s.fontFamily;
-      return <text {...textProps}>{s.text || ''}</text>;
+      return (
+        <g key={s.id} transform={`translate(${s.x},${s.y}) scale(${scaleX},1)`}>
+          <text {...textProps}>{s.text || ''}</text>
+        </g>
+      );
     }
     return null;
   };
 
   const selected = shapes.find((s) => s.id === selectedId) || null;
-  const selBBox = getBBox(selected);
+  const selBBox = getBBox(selected, imgAspect);
   const selPad = 0.008;
 
   // ToggleButton 共通スタイル（#previewMenu にフィットするよう小さく）
@@ -536,6 +547,11 @@ function LayerEditor() {
               <img
                 src={imageUrl}
                 alt=""
+                onLoad={(e) => {
+                  const w = e.target.naturalWidth;
+                  const h = e.target.naturalHeight;
+                  if (w > 0 && h > 0) setImgAspect(w / h);
+                }}
                 style={{ display: 'block', maxWidth: '100%', height: 'auto', userSelect: 'none', pointerEvents: 'none' }}
               />
               <svg
@@ -573,7 +589,7 @@ function LayerEditor() {
                   />
                 )}
                 {/* リサイズハンドル */}
-                {selected && tool === 'select' && !drawing && getHandles(selected).map((h) => (
+                {selected && tool === 'select' && !drawing && getHandles(selected, imgAspect).map((h) => (
                   <g key={h.id} style={{ cursor: h.cursor }}
                      onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
                     <rect
