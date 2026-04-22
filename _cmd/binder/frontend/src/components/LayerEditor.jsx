@@ -485,6 +485,17 @@ function LayerEditor() {
   const selected = shapes.find((s) => s.id === selectedId) || null;
   const selBBox = getBBox(selected, imgAspect);
   const selPad = 0.008;
+  // viewBox="0 0 1 1" + preserveAspectRatio="none" は画像のアスペクト比で
+  // 非等比に引き伸ばされるため、x 方向の定数（padding / ハンドルの幅）は
+  // 1/aspect 倍して視覚的な正方形・均等パディングを保つ。
+  const aspectX = imgAspect > 0 ? imgAspect : 1;
+  const selPadX = selPad / aspectX;
+  // ハンドル（表示 5px 相当の小さい正方形）
+  const handleInnerW = 0.005 / aspectX;
+  const handleInnerH = 0.005;
+  // ハンドルのクリック当たり判定
+  const handleHitW = 0.02 / aspectX;
+  const handleHitH = 0.02;
 
   // ToggleButton 共通スタイル（#previewMenu にフィットするよう小さく）
   const toggleBtnSx = {
@@ -502,10 +513,11 @@ function LayerEditor() {
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* 選択枠の行進する蟻アニメーション用 keyframe */}
+      {/* 選択枠の行進する蟻アニメーション用 keyframe
+          vectorEffect="non-scaling-stroke" により dashoffset もピクセル単位 */}
       <style>{`
         @keyframes layerMarchingAnts {
-          to { stroke-dashoffset: -0.018; }
+          to { stroke-dashoffset: -9; }
         }
       `}</style>
 
@@ -576,14 +588,15 @@ function LayerEditor() {
                 {drawing && renderShape(drawing.shape, true)}
                 {selBBox && (
                   <rect
-                    x={selBBox.x - selPad}
+                    x={selBBox.x - selPadX}
                     y={selBBox.y - selPad}
-                    width={selBBox.width + selPad * 2}
+                    width={selBBox.width + selPadX * 2}
                     height={selBBox.height + selPad * 2}
                     fill="none"
                     stroke="#00aaff"
-                    strokeWidth={0.0015}
-                    strokeDasharray="0.012,0.006"
+                    strokeWidth={1.5}
+                    strokeDasharray="6,3"
+                    vectorEffect="non-scaling-stroke"
                     pointerEvents="none"
                     style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
                   />
@@ -593,16 +606,17 @@ function LayerEditor() {
                   <g key={h.id} style={{ cursor: h.cursor }}
                      onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
                     <rect
-                      x={h.x - 0.01} y={h.y - 0.01}
-                      width={0.02} height={0.02}
+                      x={h.x - handleHitW / 2} y={h.y - handleHitH / 2}
+                      width={handleHitW} height={handleHitH}
                       fill="transparent"
                     />
                     <rect
-                      x={h.x - 0.0025} y={h.y - 0.0025}
-                      width={0.005} height={0.005}
+                      x={h.x - handleInnerW / 2} y={h.y - handleInnerH / 2}
+                      width={handleInnerW} height={handleInnerH}
                       fill="#ffffff"
                       stroke="#00aaff"
-                      strokeWidth={0.001}
+                      strokeWidth={1}
+                      vectorEffect="non-scaling-stroke"
                     />
                   </g>
                 ))}
