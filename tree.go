@@ -21,13 +21,27 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("db.FindStructures() error: %w", err)
 	}
 
+	// アセットの binary フラグをまとめて取得（画像判定に使用）
+	assets, err := b.db.FindAssets()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
+	}
+	binaryMap := make(map[string]bool, len(assets))
+	for _, a := range assets {
+		binaryMap[a.Id] = a.Binary
+	}
+
 	log.Info(fmt.Sprintf("Tree Length: %d", len(structures)))
 
 	treeMap := make(map[string][]*json.Leaf)
 	for _, s := range structures {
 		log.Trace(fmt.Sprintf("GetTree() : %v", s.Id))
+		leaf := convertStructure2Leaf(s)
+		if s.Typ == "asset" {
+			leaf.Binary = binaryMap[s.Id]
+		}
 		list := treeMap[s.ParentId]
-		treeMap[s.ParentId] = append(list, convertStructure2Leaf(s))
+		treeMap[s.ParentId] = append(list, leaf)
 	}
 
 	root := treeMap[""]

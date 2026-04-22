@@ -142,6 +142,7 @@ const processTreeData = (leafs, modifiedIds, showModified, unpublishedMap, showP
       modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,                  // Git未コミット変更フラグ（トグルOFF時は強制false）
       publishStatus: showPublishStatus && unpublishedMap ? (unpublishedMap.get(leaf.id) ?? 0) : 0, // 未公開ステータス（0:最新 1:未公開新規 2:更新あり）
       private: showPublishStatus ? !!leaf.private : false,
+      binary: !!leaf.binary,                                                                       // type=="asset" のとき画像など（layer の親候補）
       children: hasChildren ? children : undefined,
     };
   });
@@ -1003,7 +1004,7 @@ function BinderTree(props) {
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
-    {/** アセットメニュー: Edit / Rename / Copy ▶ / Add Layer / History / Delete */}
+    {/** アセットメニュー: Edit / Rename / Copy ▶ / Add Layer(画像のみ) / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "asset"}
       onClose={closeAllMenus}
@@ -1016,8 +1017,12 @@ function BinderTree(props) {
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
-      <Divider />
-      <MenuItem onClick={handleRegisterLayer}><LayersIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.addLayer")}</MenuItem>
+      {contextMenu.node?.binary && (
+        <>
+          <Divider />
+          <MenuItem onClick={handleRegisterLayer}><LayersIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.addLayer")}</MenuItem>
+        </>
+      )}
       <Divider />
       <MenuItem onClick={handleHistoryAsset}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
