@@ -8,6 +8,7 @@ import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bin
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
+import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow } from "../../../bindings/main/window";
 import { Events } from '@wailsio/runtime';
@@ -55,6 +56,7 @@ import TableDialog from "../../dialogs/TableDialog.jsx";
 import BinderTree from "../../components/BinderTree.jsx";
 import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
+import LayerEditor from "../../components/LayerEditor.jsx";
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -446,6 +448,21 @@ function Editor(props) {
       setEditor(false);
       setViewer(false);
       GetAsset(id).then((resp) => {
+        if (resp.updatedStatus > 0) {
+          setUpdated(true);
+        } else {
+          setUpdated(false);
+        }
+        setIsPrivate(!!resp.private);
+        setName(resp.name);
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      })
+    } else if (mode === "layer") {
+      // LayerEditor コンポーネントが表示・操作を担うため editor/viewer は不要
+      setEditor(false);
+      setViewer(false);
+      GetLayer(id).then((resp) => {
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
@@ -1346,6 +1363,13 @@ function Editor(props) {
           {mode === 'assets' && (
             <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
               <AssetViewer />
+            </div>
+          )}
+
+          {/** レイヤーモード: LayerEditor がすべての表示・操作を担う */}
+          {mode === 'layer' && (
+            <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+              <LayerEditor />
             </div>
           )}
 

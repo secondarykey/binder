@@ -1,17 +1,19 @@
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import { Box, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { useParams } from 'react-router';
+import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
+import PublishIcon from '@mui/icons-material/Publish';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 import "../language";
 import { useTranslation } from 'react-i18next';
+import '../assets/Editor.css';
 
 const uuid = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -97,12 +99,12 @@ const getFixedPoint = (s, handle) => {
 
 /**
  * Layer の描画エディタ。
- * 親 Asset 画像を背景に、正規化座標 (0.0-1.0) で line / rect / ellipse を描画する。
+ * 画像アセットビューアと同レイアウト（上: メニューバー、中: キャンバス、下: ステータスバー）。
+ * 図形一覧・プロパティはキャンバス右上のフローティングパネルに表示する。
  * 変更は debounce で自動保存される。
  */
 function LayerEditor() {
   const { id } = useParams();
-  const nav = useNavigate();
   const evt = useContext(EventContext);
   const { t } = useTranslation();
 
@@ -115,9 +117,10 @@ function LayerEditor() {
   const [dragging, setDragging] = useState(null); // { shapeId, startX, startY, orig }
   const [resizing, setResizing] = useState(null); // { shapeId, handle, orig, fixed }
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
+  const [generating, setGenerating] = useState(false);
 
   const svgRef = useRef(null);
-  const loadedRef = useRef(false); // 初回ロード完了まで自動保存をスキップ
+  const loadedRef = useRef(false);
   const saveTimerRef = useRef(null);
 
   useEffect(() => {
@@ -138,7 +141,6 @@ function LayerEditor() {
       } catch {
         setShapes([]);
       }
-      // 初回ロード直後の setShapes による useEffect 発火で保存されないようフラグ解除は次 tick
       setTimeout(() => { loadedRef.current = true; }, 0);
     }).catch((err) => evt.showErrorMessage(err));
   }, [id]);
@@ -188,7 +190,7 @@ function LayerEditor() {
   };
 
   const handlePointerMove = (e) => {
-    // リサイズ中はハンドル位置に応じて shape を更新
+    // リサイズ中
     if (resizing) {
       const { x, y } = toClientPos(e);
       const { orig, handle, fixed } = resizing;
@@ -216,7 +218,7 @@ function LayerEditor() {
       setShapes((prev) => prev.map((s) => (s.id === resizing.shapeId ? resized : s)));
       return;
     }
-    // 選択ツールでドラッグ中は shape を移動
+    // ドラッグ移動中
     if (dragging) {
       const { x, y } = toClientPos(e);
       const dx = x - dragging.startX;
@@ -274,14 +276,13 @@ function LayerEditor() {
 
   const handleShapePointerDown = (e, shapeId) => {
     if (tool !== 'select') return;
-    if (e.button !== 0) return; // 左クリックのみドラッグ開始
+    if (e.button !== 0) return;
     e.stopPropagation();
     const orig = shapes.find((s) => s.id === shapeId);
     if (!orig) return;
     const { x, y } = toClientPos(e);
     setSelectedId(shapeId);
     setDragging({ shapeId, startX: x, startY: y, orig });
-    // キャンバス外へポインタが出ても move/up を受け取れるようキャプチャ
     if (e.currentTarget && e.currentTarget.setPointerCapture) {
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
     }
@@ -308,7 +309,6 @@ function LayerEditor() {
   const handleShapeContextMenu = (e, shapeId) => {
     e.preventDefault();
     e.stopPropagation();
-    // どのツールでも右クリック削除できるようにする
     setSelectedId(shapeId);
     setCtxMenu({ mouseX: e.clientX, mouseY: e.clientY, shapeId });
   };
@@ -330,9 +330,16 @@ function LayerEditor() {
     setShapes((prev) => prev.map((s) => (s.id === selectedId ? { ...s, ...patch } : s)));
   };
 
-  const deleteSelected = () => {
-    if (!selectedId) return;
-    deleteShape(selectedId);
+  const handlePublish = async () => {
+    setGenerating(true);
+    try {
+      await Generate("layer", id, "");
+      evt.showSuccessMessage(t("layer.publishSuccess"));
+    } catch (err) {
+      evt.showErrorMessage(err);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const renderShape = (s, isPreview = false) => {
@@ -363,46 +370,63 @@ function LayerEditor() {
 
   const selected = shapes.find((s) => s.id === selectedId) || null;
   const selBBox = getBBox(selected);
-  // 正規化座標上のパディング（線分などのゼロ幅 bbox でも枠が見えるように最低限確保）
   const selPad = 0.008;
 
+  // ToggleButton 共通スタイル（#previewMenu にフィットするよう小さく）
+  const toggleBtnSx = {
+    padding: '4px',
+    border: 'none',
+    borderRadius: '4px',
+    color: 'var(--text-muted)',
+    '&.Mui-selected': {
+      backgroundColor: 'rgba(255,255,255,0.08)',
+      color: 'var(--text-primary)',
+      '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
+    },
+    '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+  };
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-      {/* 選択枠の行進する蟻アニメーション用 keyframe（dasharray の 1 周期 = 0.018 を 1 秒で進める） */}
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {/* 選択枠の行進する蟻アニメーション用 keyframe */}
       <style>{`
         @keyframes layerMarchingAnts {
           to { stroke-dashoffset: -0.018; }
         }
       `}</style>
-      {/* ツールバー */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderBottom: '1px solid var(--border-color, #444)' }}>
-        <Tooltip title={t("common.back")}>
-          <IconButton size="small" onClick={() => layer?.parentId && nav(`/editor/assets/${layer.parentId}`)}>
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Typography variant="body2" sx={{ mr: 2 }}>{layer?.name}</Typography>
-        <ToggleButtonGroup size="small" value={tool} exclusive onChange={(_, v) => v && setTool(v)}>
-          <ToggleButton value="select"><NearMeIcon fontSize="small" /></ToggleButton>
-          <ToggleButton value="line"><RemoveIcon fontSize="small" /></ToggleButton>
-          <ToggleButton value="rect"><RectangleOutlinedIcon fontSize="small" /></ToggleButton>
-          <ToggleButton value="ellipse"><CircleOutlinedIcon fontSize="small" /></ToggleButton>
-        </ToggleButtonGroup>
-        <Box sx={{ flex: 1 }} />
-        <Tooltip title={t("common.delete")}>
-          <span>
-            <IconButton size="small" onClick={deleteSelected} disabled={!selectedId}>
-              <DeleteIcon fontSize="small" sx={{ color: selectedId ? 'var(--accent-red)' : undefined }} />
-            </IconButton>
-          </span>
-        </Tooltip>
-      </Box>
 
-      {/* キャンバス + サイドバー */}
-      <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'auto', p: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-          {imageUrl && (
-            <Box sx={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+      {/* メニューバー（画像アセットビューアと同形） */}
+      <div id="previewMenu">
+        <div className="previewMenuLeft">
+          <ToggleButtonGroup size="small" value={tool} exclusive onChange={(_, v) => v && setTool(v)}>
+            <Tooltip title={t("layer.toolSelect")} placement="bottom">
+              <ToggleButton value="select" sx={toggleBtnSx}><NearMeIcon sx={{ fontSize: '16px' }} /></ToggleButton>
+            </Tooltip>
+            <Tooltip title={t("layer.toolLine")} placement="bottom">
+              <ToggleButton value="line" sx={toggleBtnSx}><RemoveIcon sx={{ fontSize: '16px' }} /></ToggleButton>
+            </Tooltip>
+            <Tooltip title={t("layer.toolRect")} placement="bottom">
+              <ToggleButton value="rect" sx={toggleBtnSx}><RectangleOutlinedIcon sx={{ fontSize: '16px' }} /></ToggleButton>
+            </Tooltip>
+            <Tooltip title={t("layer.toolEllipse")} placement="bottom">
+              <ToggleButton value="ellipse" sx={toggleBtnSx}><CircleOutlinedIcon sx={{ fontSize: '16px' }} /></ToggleButton>
+            </Tooltip>
+          </ToggleButtonGroup>
+        </div>
+        <div className="previewMenuRight" />
+      </div>
+
+      {/* コンテンツ: キャンバス + フローティングパネル */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+        {imageUrl && (
+          <div
+            style={{
+              position: 'absolute', inset: 0,
+              overflow: 'auto', padding: '16px',
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+            }}
+          >
+            <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
               <img
                 src={imageUrl}
                 alt=""
@@ -423,7 +447,6 @@ function LayerEditor() {
                 onPointerLeave={handlePointerUp}
                 onClick={(e) => { if (tool === 'select' && e.target === svgRef.current) setSelectedId(null); }}
                 onContextMenu={(e) => {
-                  // キャンバス空白領域の右クリックではメニューを開かない（ブラウザ既定メニュー抑止のみ）
                   if (e.target === svgRef.current) e.preventDefault();
                 }}
               >
@@ -443,7 +466,7 @@ function LayerEditor() {
                     style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
                   />
                 )}
-                {/* リサイズハンドル（見た目は小さい正方形、当たり判定は大きめ透明四角で確保） */}
+                {/* リサイズハンドル */}
                 {selected && tool === 'select' && !drawing && getHandles(selected).map((h) => (
                   <g key={h.id} style={{ cursor: h.cursor }}
                      onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
@@ -462,14 +485,27 @@ function LayerEditor() {
                   </g>
                 ))}
               </svg>
-            </Box>
-          )}
-        </Box>
+            </div>
+          </div>
+        )}
 
-        {/* プロパティパネル */}
-        <Box sx={{ width: 260, borderLeft: '1px solid var(--border-color, #444)', p: 1.5, overflow: 'auto' }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>{t("layer.shapes")} ({shapes.length})</Typography>
-          <Box sx={{ maxHeight: 180, overflow: 'auto', mb: 2 }}>
+        {/* フローティングパネル: 図形一覧・プロパティ */}
+        <Paper
+          elevation={6}
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            width: 260,
+            p: 1.5,
+            backgroundColor: 'var(--bg-elevated, rgba(30,30,30,0.92))',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            {t("layer.shapes")} ({shapes.length})
+          </Typography>
+          <Box sx={{ maxHeight: 160, overflow: 'auto', mb: 1 }}>
             {shapes.map((s) => (
               <Box
                 key={s.id}
@@ -478,6 +514,7 @@ function LayerEditor() {
                 sx={{
                   p: 0.5, cursor: 'pointer', fontSize: 12,
                   backgroundColor: s.id === selectedId ? 'var(--bg-selected, rgba(255,255,255,0.1))' : 'transparent',
+                  borderRadius: '2px',
                 }}
               >
                 {s.type} — {s.color}
@@ -513,8 +550,25 @@ function LayerEditor() {
               {t("layer.noSelection")}
             </Typography>
           )}
-        </Box>
-      </Box>
+        </Paper>
+      </div>
+
+      {/* ステータスバー（画像アセットビューアと同形） */}
+      <div id="parseStatusBar">
+        <div className="parseStatusLeft">
+          <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} />
+          <span className="parseStatusText">{layer?.name ?? ''}</span>
+        </div>
+        <div className="parseStatusRight">
+          <Tooltip title={t("preview.publish")} placement="top">
+            <span>
+              <IconButton size="small" onClick={handlePublish} disabled={generating || !id} className="editorBtn">
+                <PublishIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </div>
+      </div>
 
       {/* 右クリックメニュー */}
       <Menu
@@ -528,7 +582,7 @@ function LayerEditor() {
           <ListItemText>{t("common.delete")}</ListItemText>
         </MenuItem>
       </Menu>
-    </Box>
+    </div>
   );
 }
 

@@ -123,7 +123,12 @@
         "strokeWidth" : "Stroke Width",
         "fill" : "Fill",
         "fillHint" : "none / color (e.g. #ffff0080)",
-        "noSelection" : "Select a shape"
+        "noSelection" : "Select a shape",
+        "publishSuccess" : "Layer published.",
+        "toolSelect" : "Select",
+        "toolLine" : "Line",
+        "toolRect" : "Rectangle",
+        "toolEllipse" : "Ellipse"
     },
     "setting" : {
         "title" : "Setting",
