@@ -8,6 +8,7 @@ import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
@@ -119,7 +120,12 @@ function LayerEditor() {
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
   const [generating, setGenerating] = useState(false);
 
+  // フローティングパネルの位置（canvas コンテナの右上を原点とする top/right 指定）
+  const [panelPos, setPanelPos] = useState({ top: 12, right: 12 });
+  const [panelDrag, setPanelDrag] = useState(null); // { startX, startY, origTop, origRight, containerWidth }
+
   const svgRef = useRef(null);
+  const canvasRef = useRef(null);
   const loadedRef = useRef(false);
   const saveTimerRef = useRef(null);
 
@@ -330,6 +336,38 @@ function LayerEditor() {
     setShapes((prev) => prev.map((s) => (s.id === selectedId ? { ...s, ...patch } : s)));
   };
 
+  // フローティングパネルのドラッグ開始
+  const handlePanelDragStart = (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const container = canvasRef.current;
+    const containerWidth = container ? container.clientWidth : window.innerWidth;
+    setPanelDrag({
+      startX: e.clientX,
+      startY: e.clientY,
+      origTop: panelPos.top,
+      origRight: panelPos.right,
+      containerWidth,
+    });
+    if (e.currentTarget && e.currentTarget.setPointerCapture) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+    }
+  };
+
+  const handlePanelDragMove = (e) => {
+    if (!panelDrag) return;
+    const dx = e.clientX - panelDrag.startX;
+    const dy = e.clientY - panelDrag.startY;
+    const nextTop = Math.max(0, panelDrag.origTop + dy);
+    const nextRight = Math.max(0, panelDrag.origRight - dx);
+    setPanelPos({ top: nextTop, right: nextRight });
+  };
+
+  const handlePanelDragEnd = () => {
+    setPanelDrag(null);
+  };
+
   const handlePublish = async () => {
     setGenerating(true);
     try {
@@ -417,7 +455,7 @@ function LayerEditor() {
       </div>
 
       {/* コンテンツ: キャンバス + フローティングパネル */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+      <div ref={canvasRef} style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
         {imageUrl && (
           <div
             style={{
@@ -489,22 +527,45 @@ function LayerEditor() {
           </div>
         )}
 
-        {/* フローティングパネル: 図形一覧・プロパティ */}
+        {/* フローティングパネル: 図形一覧・プロパティ（ドラッグで移動可能） */}
         <Paper
           elevation={6}
           sx={{
             position: 'absolute',
-            top: 12,
-            right: 12,
+            top: panelPos.top,
+            right: panelPos.right,
             width: 260,
             p: 1.5,
+            pt: 0.5,
             backgroundColor: 'var(--bg-elevated, rgba(30,30,30,0.92))',
             backdropFilter: 'blur(6px)',
+            userSelect: panelDrag ? 'none' : 'auto',
           }}
         >
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            {t("layer.shapes")} ({shapes.length})
-          </Typography>
+          {/* ドラッグハンドル（ヘッダー行） */}
+          <Box
+            onPointerDown={handlePanelDragStart}
+            onPointerMove={handlePanelDragMove}
+            onPointerUp={handlePanelDragEnd}
+            onPointerCancel={handlePanelDragEnd}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              cursor: panelDrag ? 'grabbing' : 'grab',
+              mx: -1.5,
+              px: 1.5,
+              py: 0.5,
+              mb: 0.5,
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              touchAction: 'none',
+            }}
+          >
+            <DragIndicatorIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+            <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>
+              {t("layer.shapes")} ({shapes.length})
+            </Typography>
+          </Box>
           <Box sx={{ maxHeight: 160, overflow: 'auto', mb: 1 }}>
             {shapes.map((s) => (
               <Box
