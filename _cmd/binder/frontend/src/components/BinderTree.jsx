@@ -539,8 +539,6 @@ function BinderTree(props) {
   const handleEditLayer   = () => { closeAllMenus(); setEditDialog({ open: true, type: 'layer',   id: contextMenu.node.id }); };
   const closeEditDialog   = () => setEditDialog({ open: false, type: null, id: null });
 
-  const handleOpenLayerEditor = () => { const id = contextMenu.node.id; closeAllMenus(); nav("/editor/layer/" + id); };
-
   const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryAsset   = () => { closeAllMenus(); OpenHistoryWindow('asset',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
@@ -1026,7 +1024,7 @@ function BinderTree(props) {
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
-    {/** レイヤーメニュー: Edit / Open / Rename / Copy ▶ / History / Delete */}
+    {/** レイヤーメニュー: Edit / Rename / Copy ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "layer"}
       onClose={closeAllMenus}
@@ -1034,7 +1032,6 @@ function BinderTree(props) {
       anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
       slotProps={{ paper: { sx: { minWidth: 150 } } }}
     >
-      <MenuItem onClick={handleOpenLayerEditor}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("layer.openEditor")}</MenuItem>
       <MenuItem onClick={handleEditLayer}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
       <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
