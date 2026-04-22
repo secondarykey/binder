@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Box, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider } from '@mui/material';
-import SaveIcon from '@mui/icons-material/Save';
+import { Box, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NearMeIcon from '@mui/icons-material/NearMe';
@@ -25,9 +24,30 @@ const defaultShapeProps = {
   fill: 'none',
 };
 
+// 選択中 shape のバウンディングボックスを計算
+const getBBox = (s) => {
+  if (!s) return null;
+  if (s.type === 'line') {
+    return {
+      x: Math.min(s.x1, s.x2),
+      y: Math.min(s.y1, s.y2),
+      width: Math.abs(s.x2 - s.x1),
+      height: Math.abs(s.y2 - s.y1),
+    };
+  }
+  if (s.type === 'rect') {
+    return { x: s.x, y: s.y, width: s.width, height: s.height };
+  }
+  if (s.type === 'ellipse') {
+    return { x: s.cx - s.rx, y: s.cy - s.ry, width: s.rx * 2, height: s.ry * 2 };
+  }
+  return null;
+};
+
 /**
  * Layer の描画エディタ。
  * 親 Asset 画像を背景に、正規化座標 (0.0-1.0) で line / rect / ellipse を描画する。
+ * 変更は debounce で自動保存される。
  */
 function LayerEditor() {
   const { id } = useParams();
@@ -41,12 +61,15 @@ function LayerEditor() {
   const [tool, setTool] = useState('select');
   const [selectedId, setSelectedId] = useState(null);
   const [drawing, setDrawing] = useState(null);
-  const [dirty, setDirty] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
 
   const svgRef = useRef(null);
+  const loadedRef = useRef(false); // 初回ロード完了まで自動保存をスキップ
+  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     if (!id) return;
+    loadedRef.current = false;
     Promise.all([
       GetLayerWithParent(id),
       GetLayerContent(id),
@@ -62,9 +85,27 @@ function LayerEditor() {
       } catch {
         setShapes([]);
       }
-      setDirty(false);
+      // 初回ロード直後の setShapes による useEffect 発火で保存されないようフラグ解除は次 tick
+      setTimeout(() => { loadedRef.current = true; }, 0);
     }).catch((err) => evt.showErrorMessage(err));
   }, [id]);
+
+  // shapes 変更時の自動保存（debounce）
+  useEffect(() => {
+    if (!id) return;
+    if (!loadedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      SaveLayerContent(id, JSON.stringify({ shapes }))
+        .then(() => {
+          if (evt?.markModified) evt.markModified(id);
+        })
+        .catch((err) => evt.showErrorMessage(err));
+    }, 400);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [shapes, id]);
 
   const toClientPos = (e) => {
     const rect = svgRef.current.getBoundingClientRect();
@@ -121,7 +162,6 @@ function LayerEditor() {
     setShapes((prev) => [...prev, drawing.shape]);
     setSelectedId(drawing.shape.id);
     setDrawing(null);
-    setDirty(true);
   };
 
   const handleShapeClick = (e, shapeId) => {
@@ -130,43 +170,48 @@ function LayerEditor() {
     setSelectedId(shapeId);
   };
 
+  const handleShapeContextMenu = (e, shapeId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // どのツールでも右クリック削除できるようにする
+    setSelectedId(shapeId);
+    setCtxMenu({ mouseX: e.clientX, mouseY: e.clientY, shapeId });
+  };
+
+  const closeCtxMenu = () => setCtxMenu(null);
+
+  const deleteShape = (shapeId) => {
+    setShapes((prev) => prev.filter((s) => s.id !== shapeId));
+    setSelectedId((curr) => (curr === shapeId ? null : curr));
+  };
+
+  const handleCtxDelete = () => {
+    if (ctxMenu) deleteShape(ctxMenu.shapeId);
+    closeCtxMenu();
+  };
+
   const updateSelected = (patch) => {
     if (!selectedId) return;
     setShapes((prev) => prev.map((s) => (s.id === selectedId ? { ...s, ...patch } : s)));
-    setDirty(true);
   };
 
   const deleteSelected = () => {
     if (!selectedId) return;
-    setShapes((prev) => prev.filter((s) => s.id !== selectedId));
-    setSelectedId(null);
-    setDirty(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      await SaveLayerContent(id, JSON.stringify({ shapes }));
-      evt.markModified(id);
-      evt.showSuccessMessage(t("layer.saveSuccess"));
-      setDirty(false);
-    } catch (err) {
-      evt.showErrorMessage(err);
-    }
+    deleteShape(selectedId);
   };
 
   const renderShape = (s, isPreview = false) => {
     const stroke = s.color || '#ff0000';
     const sw = s.strokeWidth || 0.005;
     const fill = s.fill || 'none';
-    const selected = !isPreview && s.id === selectedId;
     const common = {
       key: s.id,
       stroke,
       strokeWidth: sw,
       fill,
       onClick: (e) => handleShapeClick(e, s.id),
+      onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       style: { cursor: tool === 'select' ? 'pointer' : 'crosshair' },
-      opacity: selected ? 0.85 : 1,
     };
     if (s.type === 'line') {
       return <line {...common} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} strokeLinecap="round" />;
@@ -181,6 +226,9 @@ function LayerEditor() {
   };
 
   const selected = shapes.find((s) => s.id === selectedId) || null;
+  const selBBox = getBBox(selected);
+  // 正規化座標上のパディング（線分などのゼロ幅 bbox でも枠が見えるように最低限確保）
+  const selPad = 0.008;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
@@ -203,13 +251,6 @@ function LayerEditor() {
           <span>
             <IconButton size="small" onClick={deleteSelected} disabled={!selectedId}>
               <DeleteIcon fontSize="small" sx={{ color: selectedId ? 'var(--accent-red)' : undefined }} />
-            </IconButton>
-          </span>
-        </Tooltip>
-        <Tooltip title={t("common.save")}>
-          <span>
-            <IconButton size="small" onClick={handleSave} disabled={!dirty}>
-              <SaveIcon fontSize="small" sx={{ color: dirty ? 'var(--accent-green)' : undefined }} />
             </IconButton>
           </span>
         </Tooltip>
@@ -239,9 +280,26 @@ function LayerEditor() {
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
                 onClick={(e) => { if (tool === 'select' && e.target === svgRef.current) setSelectedId(null); }}
+                onContextMenu={(e) => {
+                  // キャンバス空白領域の右クリックではメニューを開かない（ブラウザ既定メニュー抑止のみ）
+                  if (e.target === svgRef.current) e.preventDefault();
+                }}
               >
                 {shapes.map((s) => renderShape(s))}
                 {drawing && renderShape(drawing.shape, true)}
+                {selBBox && (
+                  <rect
+                    x={selBBox.x - selPad}
+                    y={selBBox.y - selPad}
+                    width={selBBox.width + selPad * 2}
+                    height={selBBox.height + selPad * 2}
+                    fill="none"
+                    stroke="#00aaff"
+                    strokeWidth={0.003}
+                    strokeDasharray="0.012,0.006"
+                    pointerEvents="none"
+                  />
+                )}
               </svg>
             </Box>
           )}
@@ -255,6 +313,7 @@ function LayerEditor() {
               <Box
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
+                onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
                 sx={{
                   p: 0.5, cursor: 'pointer', fontSize: 12,
                   backgroundColor: s.id === selectedId ? 'var(--bg-selected, rgba(255,255,255,0.1))' : 'transparent',
@@ -295,6 +354,19 @@ function LayerEditor() {
           )}
         </Box>
       </Box>
+
+      {/* 右クリックメニュー */}
+      <Menu
+        open={ctxMenu !== null}
+        onClose={closeCtxMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={ctxMenu ? { top: ctxMenu.mouseY, left: ctxMenu.mouseX } : undefined}
+      >
+        <MenuItem onClick={handleCtxDelete}>
+          <ListItemIcon><DeleteIcon fontSize="small" sx={{ color: 'var(--accent-red)' }} /></ListItemIcon>
+          <ListItemText>{t("common.delete")}</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
