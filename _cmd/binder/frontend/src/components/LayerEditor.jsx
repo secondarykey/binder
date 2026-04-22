@@ -61,6 +61,7 @@ function LayerEditor() {
   const [tool, setTool] = useState('select');
   const [selectedId, setSelectedId] = useState(null);
   const [drawing, setDrawing] = useState(null);
+  const [dragging, setDragging] = useState(null); // { shapeId, startX, startY, orig }
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
 
   const svgRef = useRef(null);
@@ -135,6 +136,23 @@ function LayerEditor() {
   };
 
   const handlePointerMove = (e) => {
+    // 選択ツールでドラッグ中は shape を移動
+    if (dragging) {
+      const { x, y } = toClientPos(e);
+      const dx = x - dragging.startX;
+      const dy = y - dragging.startY;
+      const { orig } = dragging;
+      let moved = orig;
+      if (orig.type === 'line') {
+        moved = { ...orig, x1: orig.x1 + dx, y1: orig.y1 + dy, x2: orig.x2 + dx, y2: orig.y2 + dy };
+      } else if (orig.type === 'rect') {
+        moved = { ...orig, x: orig.x + dx, y: orig.y + dy };
+      } else if (orig.type === 'ellipse') {
+        moved = { ...orig, cx: orig.cx + dx, cy: orig.cy + dy };
+      }
+      setShapes((prev) => prev.map((s) => (s.id === dragging.shapeId ? moved : s)));
+      return;
+    }
     if (!drawing) return;
     const { x, y } = toClientPos(e);
     const { shape, startX, startY } = drawing;
@@ -158,10 +176,29 @@ function LayerEditor() {
   };
 
   const handlePointerUp = () => {
+    if (dragging) {
+      setDragging(null);
+      return;
+    }
     if (!drawing) return;
     setShapes((prev) => [...prev, drawing.shape]);
     setSelectedId(drawing.shape.id);
     setDrawing(null);
+  };
+
+  const handleShapePointerDown = (e, shapeId) => {
+    if (tool !== 'select') return;
+    if (e.button !== 0) return; // 左クリックのみドラッグ開始
+    e.stopPropagation();
+    const orig = shapes.find((s) => s.id === shapeId);
+    if (!orig) return;
+    const { x, y } = toClientPos(e);
+    setSelectedId(shapeId);
+    setDragging({ shapeId, startX: x, startY: y, orig });
+    // キャンバス外へポインタが出ても move/up を受け取れるようキャプチャ
+    if (e.currentTarget && e.currentTarget.setPointerCapture) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+    }
   };
 
   const handleShapeClick = (e, shapeId) => {
@@ -209,9 +246,10 @@ function LayerEditor() {
       stroke,
       strokeWidth: sw,
       fill,
+      onPointerDown: (e) => handleShapePointerDown(e, s.id),
       onClick: (e) => handleShapeClick(e, s.id),
       onContextMenu: (e) => handleShapeContextMenu(e, s.id),
-      style: { cursor: tool === 'select' ? 'pointer' : 'crosshair' },
+      style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
     };
     if (s.type === 'line') {
       return <line {...common} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} strokeLinecap="round" />;
