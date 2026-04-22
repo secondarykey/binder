@@ -368,6 +368,12 @@ function LayerEditor() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      {/* 選択枠の行進する蟻アニメーション用 keyframe（dasharray の 1 周期 = 0.018 を 1 秒で進める） */}
+      <style>{`
+        @keyframes layerMarchingAnts {
+          to { stroke-dashoffset: -0.018; }
+        }
+      `}</style>
       {/* ツールバー */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderBottom: '1px solid var(--border-color, #444)' }}>
         <Tooltip title={t("common.back")}>
@@ -431,9 +437,10 @@ function LayerEditor() {
                     height={selBBox.height + selPad * 2}
                     fill="none"
                     stroke="#00aaff"
-                    strokeWidth={0.003}
+                    strokeWidth={0.0015}
                     strokeDasharray="0.012,0.006"
                     pointerEvents="none"
+                    style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
                   />
                 )}
                 {/* リサイズハンドル（見た目は小さい正方形、当たり判定は大きめ透明四角で確保） */}
