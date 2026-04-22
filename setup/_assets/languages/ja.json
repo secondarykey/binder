@@ -123,7 +123,12 @@
         "strokeWidth" : "線幅",
         "fill" : "塗りつぶし",
         "fillHint" : "none / 色指定（例: #ffff0080）",
-        "noSelection" : "図形を選択してください"
+        "noSelection" : "図形を選択してください",
+        "publishSuccess" : "レイヤーを公開しました",
+        "toolSelect" : "選択",
+        "toolLine" : "線",
+        "toolRect" : "矩形",
+        "toolEllipse" : "楕円"
     },
     "setting" : {
         "title" : "設定",
