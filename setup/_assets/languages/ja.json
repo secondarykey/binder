@@ -133,7 +133,8 @@
         "text" : "テキスト",
         "fontSize" : "フォントサイズ",
         "fontFamily" : "フォント",
-        "fontFamilyDefault" : "(デフォルト)"
+        "fontFamilyDefault" : "(デフォルト)",
+        "rotation" : "回転"
     },
     "setting" : {
         "title" : "設定",

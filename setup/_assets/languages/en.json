@@ -133,7 +133,8 @@
         "text" : "Text",
         "fontSize" : "Font Size",
         "fontFamily" : "Font",
-        "fontFamilyDefault" : "(default)"
+        "fontFamilyDefault" : "(default)",
+        "rotation" : "Rotation"
     },
     "setting" : {
         "title" : "Setting",

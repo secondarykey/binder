@@ -26,6 +26,10 @@ type LayerShape struct {
 	StrokeWidth float64 `json:"strokeWidth"`
 	Fill        string  `json:"fill,omitempty"`
 
+	// 回転角度 (degrees, 時計回り)。省略時は 0（無回転）。
+	// 各 shape の視覚中心を軸に回転させる。
+	Rotation float64 `json:"rotation,omitempty"`
+
 	// line: x1,y1,x2,y2
 	X1 float64 `json:"x1,omitempty"`
 	Y1 float64 `json:"y1,omitempty"`
@@ -411,6 +415,11 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 		if sw <= 0 {
 			sw = 0.005
 		}
+		// 回転指定があれば <g transform="rotate(angle cx cy)"> でラップする
+		if s.Rotation != 0 {
+			cx, cy := shapeCenterViewBox(s, aspect)
+			fmt.Fprintf(&b, `<g transform="rotate(%g %g %g)">`, s.Rotation, cx, cy)
+		}
 		switch s.Type {
 		case "line":
 			fmt.Fprintf(&b,
@@ -438,9 +447,33 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
 				s.X*aspect, s.Y, fSize, ff, color, html.EscapeString(s.Text))
 		}
+		if s.Rotation != 0 {
+			b.WriteString(`</g>`)
+		}
 	}
 	b.WriteString(`</svg>`)
 	return b.String(), nil
+}
+
+// shapeCenterViewBox は shape の視覚中心を viewBox 座標 (x は aspect 倍済み) で返す。
+// rotation の回転中心に使う。
+func shapeCenterViewBox(s LayerShape, aspect float64) (float64, float64) {
+	switch s.Type {
+	case "line":
+		return (s.X1 + s.X2) * aspect / 2, (s.Y1 + s.Y2) / 2
+	case "rect":
+		return (s.X + s.Width/2) * aspect, s.Y + s.Height/2
+	case "ellipse":
+		return s.Cx * aspect, s.Cy
+	case "text":
+		// アンカー (x,y) + 視覚アンカー正方形 (fs × fs) の中心
+		fs := s.FontSize
+		if fs <= 0 {
+			fs = 0.04
+		}
+		return s.X*aspect + fs/2, s.Y + fs/2
+	}
+	return 0, 0
 }
 
 // getImageAspect は画像バイト列から width/height を返す。
