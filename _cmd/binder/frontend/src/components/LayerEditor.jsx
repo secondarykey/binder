@@ -154,6 +154,10 @@ function LayerEditor() {
   // の引き伸ばしでテキスト字形が歪むため、text レンダリング時に x 方向を 1/aspect 倍する。
   const [imgAspect, setImgAspect] = useState(1);
 
+  // SVG の実表示ピクセルサイズ。小さな画像でもリサイズハンドルが一定ピクセル
+  // サイズで表示できるよう、viewBox 単位への変換に使う。
+  const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
+
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const loadedRef = useRef(false);
@@ -187,6 +191,29 @@ function LayerEditor() {
       .then((names) => setFontNames(Array.isArray(names) ? names : []))
       .catch((err) => evt.showErrorMessage(err));
   }, []);
+
+  // SVG の実表示サイズ監視。小さい画像でもリサイズハンドルを固定ピクセル
+  // サイズで表示するため、表示幅・高さを viewBox 単位への換算に使う。
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    // 初期値を同期的に取得
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setSvgSize({ w: rect.width, h: rect.height });
+    }
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) {
+        const r = e.contentRect;
+        if (r.width > 0 && r.height > 0) {
+          setSvgSize({ w: r.width, h: r.height });
+        }
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [imageUrl]);
 
   // shapes 変更時の自動保存（debounce）
   useEffect(() => {
@@ -488,16 +515,21 @@ function LayerEditor() {
   const selBBox = getBBox(selected, imgAspect);
   const selPad = 0.008;
   // viewBox="0 0 1 1" + preserveAspectRatio="none" は画像のアスペクト比で
-  // 非等比に引き伸ばされるため、x 方向の定数（padding / ハンドルの幅）は
-  // 1/aspect 倍して視覚的な正方形・均等パディングを保つ。
+  // 非等比に引き伸ばされるため、x 方向の定数（padding）は 1/aspect 倍して
+  // 視覚的な均等パディングを保つ。
   const aspectX = imgAspect > 0 ? imgAspect : 1;
   const selPadX = selPad / aspectX;
-  // ハンドル（表示 5px 相当の小さい正方形）
-  const handleInnerW = 0.005 / aspectX;
-  const handleInnerH = 0.005;
-  // ハンドルのクリック当たり判定
-  const handleHitW = 0.02 / aspectX;
-  const handleHitH = 0.02;
+  // リサイズハンドルは「画像の表示サイズに依らず常に一定ピクセル」で表示する。
+  // 小さい画像だと viewBox 比例サイズでは掴めなくなるため、SVG の実表示
+  // ピクセルサイズから viewBox 単位に逆換算する。
+  const HANDLE_INNER_PX = 10; // 表示上の正方形のひと辺
+  const HANDLE_HIT_PX = 20;   // クリック当たり判定のひと辺
+  const svgW = svgSize.w > 0 ? svgSize.w : 1;
+  const svgH = svgSize.h > 0 ? svgSize.h : 1;
+  const handleInnerW = HANDLE_INNER_PX / svgW;
+  const handleInnerH = HANDLE_INNER_PX / svgH;
+  const handleHitW = HANDLE_HIT_PX / svgW;
+  const handleHitH = HANDLE_HIT_PX / svgH;
 
   // ToggleButton 共通スタイル（#previewMenu にフィットするよう小さく）
   const toggleBtnSx = {
