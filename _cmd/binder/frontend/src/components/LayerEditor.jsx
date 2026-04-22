@@ -538,6 +538,7 @@ function LayerEditor() {
             p: 1.5,
             pt: 0.5,
             backgroundColor: 'var(--bg-elevated, rgba(30,30,30,0.92))',
+            color: 'var(--text-primary)',
             backdropFilter: 'blur(6px)',
             userSelect: panelDrag ? 'none' : 'auto',
           }}
@@ -566,14 +567,15 @@ function LayerEditor() {
               {t("layer.shapes")} ({shapes.length})
             </Typography>
           </Box>
-          <Box sx={{ maxHeight: 160, overflow: 'auto', mb: 1 }}>
+          <Box sx={{ maxHeight: 104, overflow: 'auto', mb: 1 }}>
             {shapes.map((s) => (
               <Box
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
                 onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
                 sx={{
-                  p: 0.5, cursor: 'pointer', fontSize: 12,
+                  p: 0.5, cursor: 'pointer', fontSize: 12, lineHeight: 1.4,
+                  color: 'var(--text-primary)',
                   backgroundColor: s.id === selectedId ? 'var(--bg-selected, rgba(255,255,255,0.1))' : 'transparent',
                   borderRadius: '2px',
                 }}
@@ -585,7 +587,7 @@ function LayerEditor() {
           <Divider sx={{ mb: 1 }} />
           {selected ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography variant="caption">{t("layer.properties")}</Typography>
+              <Typography variant="caption" sx={{ color: 'var(--text-primary)' }}>{t("layer.properties")}</Typography>
               <TextField
                 label={t("layer.color")} size="small" type="color"
                 value={selected.color || '#ff0000'}
