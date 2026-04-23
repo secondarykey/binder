@@ -19,7 +19,7 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
     <Dialog
       open={open}
       onClose={onCancel}
-      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", minWidth: 400, minHeight: 200, display: "flex", flexDirection: "column" } }}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", minWidth: 400, minHeight: 150, display: "flex", flexDirection: "column" } }}
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)", flex: 1 }}>
