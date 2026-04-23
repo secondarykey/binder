@@ -165,6 +165,7 @@ function LayerEditor() {
   const [drawing, setDrawing] = useState(null);
   const [dragging, setDragging] = useState(null); // { shapeId, startX, startY, orig }
   const [resizing, setResizing] = useState(null); // { shapeId, handle, orig, fixed }
+  const [rotating, setRotating] = useState(null); // { shapeId, orig, center, startAngle }
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
   const [generating, setGenerating] = useState(false);
 
@@ -298,6 +299,19 @@ function LayerEditor() {
   };
 
   const handlePointerMove = (e) => {
+    // 回転中
+    if (rotating) {
+      const { x, y } = toClientPos(e);
+      const { orig, center, startAngle } = rotating;
+      // 回転の角度計算は viewBox 座標 (x 側を aspect 倍) で行う。
+      const curAngle = Math.atan2(y - center.y, (x - center.x) * aspect);
+      const deltaDeg = ((curAngle - startAngle) * 180) / Math.PI;
+      let newRot = (orig.rotation || 0) + deltaDeg;
+      // 0-360 に正規化
+      newRot = ((newRot % 360) + 360) % 360;
+      setShapes((prev) => prev.map((s) => (s.id === rotating.shapeId ? { ...s, rotation: newRot } : s)));
+      return;
+    }
     // リサイズ中
     if (resizing) {
       let { x, y } = toClientPos(e);
@@ -385,6 +399,10 @@ function LayerEditor() {
   };
 
   const handlePointerUp = () => {
+    if (rotating) {
+      setRotating(null);
+      return;
+    }
     if (resizing) {
       setResizing(null);
       return;
@@ -422,6 +440,22 @@ function LayerEditor() {
     if (!orig) return;
     const fixed = getFixedPoint(orig, handle);
     setResizing({ shapeId, handle, orig, fixed });
+    if (e.currentTarget && e.currentTarget.setPointerCapture) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+    }
+  };
+
+  // 回転ハンドルをドラッグ開始。startAngle はポインタが図形中心から見た
+  // viewBox 座標上の角度。以降 move で現在角度との差分を rotation に加算する。
+  const handleRotateHandlePointerDown = (e, shapeId) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const orig = shapes.find((s) => s.id === shapeId);
+    if (!orig) return;
+    const { x, y } = toClientPos(e);
+    const c = getShapeCenter(orig, aspect);
+    const startAngle = Math.atan2(y - c.y, (x - c.x) * aspect);
+    setRotating({ shapeId, orig, center: c, startAngle });
     if (e.currentTarget && e.currentTarget.setPointerCapture) {
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
     }
@@ -699,6 +733,27 @@ function LayerEditor() {
                           />
                         </g>
                       ))}
+                      {/* 回転ハンドル: bbox 右下からさらに外側 (固定ピクセル) に配置。
+                          グループは rotate() でラップされているため shape と一緒に回る。 */}
+                      {tool === 'select' && !drawing && selBBox && (() => {
+                        const ROTATE_OFFSET_PX = 22;
+                        const off = ROTATE_OFFSET_PX / svgH;
+                        const hx = vbX(selBBox.x + selBBox.width) + off;
+                        const hy = selBBox.y + selBBox.height + off;
+                        const r = handleSize / 2;
+                        const hitR = hitSize / 2;
+                        return (
+                          <g style={{ cursor: 'crosshair' }}
+                             onPointerDown={(e) => handleRotateHandlePointerDown(e, selected.id)}>
+                            <circle cx={hx} cy={hy} r={hitR} fill="transparent" />
+                            <circle cx={hx} cy={hy} r={r}
+                                    fill="#ffffff"
+                                    stroke="#ff8800"
+                                    strokeWidth={1.5}
+                                    vectorEffect="non-scaling-stroke" />
+                          </g>
+                        );
+                      })()}
                     </g>
                   );
                 })()}
