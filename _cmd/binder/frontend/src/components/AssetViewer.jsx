@@ -12,7 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CommitIcon from '@mui/icons-material/Commit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds } from '../../bindings/binder/api/app';
 import EditorArea from './editor/EditorArea';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
@@ -244,10 +244,14 @@ function AssetViewer() {
         evt.changeTitle(meta.name);
         setComment('Updated: ' + meta.name);
       }
-      setUpdated((meta?.updatedStatus ?? 0) > 0);
     }).catch(() => {
       // メタデータ取得失敗は無視（コンテンツ取得のエラーを優先表示）
     });
+
+    // ツリーと同じソース（git status）で未コミット状態を判定
+    GetModifiedIds().then((ids) => {
+      setUpdated((ids ?? []).includes(id));
+    }).catch(() => {});
 
     // コンテンツ取得
     GetAssetContent(id).then((resp) => {
@@ -280,6 +284,7 @@ function AssetViewer() {
       evt.showErrorMessage(String(e));
     });
   };
+
 
   /** Generate ボタン押下: アセットを公開する */
   const handleGenerate = async () => {
