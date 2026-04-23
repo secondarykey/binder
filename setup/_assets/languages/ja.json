@@ -119,7 +119,7 @@
         "shapes" : "図形一覧",
         "properties" : "プロパティ",
         "color" : "色",
-        "strokeWidth" : "線幅",
+        "strokeWidth" : "線幅(px)",
         "fill" : "塗りつぶし",
         "fillHint" : "none / 色指定（例: #ffff0080）",
         "noSelection" : "図形を選択してください",

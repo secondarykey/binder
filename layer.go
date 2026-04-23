@@ -411,10 +411,11 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 		if color == "" {
 			color = "#ff0000"
 		}
-		sw := s.StrokeWidth
-		if sw <= 0 {
-			sw = 0.005
-		}
+		// stroke-width はピクセル単位（vector-effect="non-scaling-stroke" により
+		// 画像の表示サイズに関わらず常に同じ太さで描画される）。
+		// 既存ファイルが正規化値（< 1.0）で保存されている場合は、0.005 を 2px
+		// 相当（旧デフォルト ≒ 新デフォルト）と見なしスケールする。
+		sw := normalizeStrokeWidth(s.StrokeWidth)
 		// 回転指定があれば <g transform="rotate(angle cx cy)"> でラップする
 		if s.Rotation != 0 {
 			cx, cy := shapeCenterViewBox(s, aspect)
@@ -423,15 +424,15 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 		switch s.Type {
 		case "line":
 			fmt.Fprintf(&b,
-				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round"/>`,
+				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
 				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2, color, sw)
 		case "rect":
 			fmt.Fprintf(&b,
-				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
+				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
 				s.X*aspect, s.Y, s.Width*aspect, s.Height, color, sw, fill)
 		case "ellipse":
 			fmt.Fprintf(&b,
-				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
+				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
 				s.Cx*aspect, s.Cy, s.Rx*aspect, s.Ry, color, sw, fill)
 		case "text":
 			fSize := s.FontSize
@@ -453,6 +454,22 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 	}
 	b.WriteString(`</svg>`)
 	return b.String(), nil
+}
+
+// normalizeStrokeWidth は stored strokeWidth をピクセル単位に正規化する。
+// 仕様: vector-effect="non-scaling-stroke" 付きで描画するため、stroke-width は
+// 表示ピクセル値として解釈される（デフォルト 2px）。
+// 過去の正規化座標 (0.005 等) で保存された値は legacy とみなして 400 倍する
+// ことで旧 0.005 ≒ 2px にマップし、見た目の継続性を維持する。
+func normalizeStrokeWidth(sw float64) float64 {
+	if sw <= 0 {
+		return 2
+	}
+	if sw < 1 {
+		// legacy normalized value (e.g. 0.005) → pixel (e.g. 2)
+		return sw * 400
+	}
+	return sw
 }
 
 // shapeCenterViewBox は shape の視覚中心を viewBox 座標 (x は aspect 倍済み) で返す。
