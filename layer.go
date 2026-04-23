@@ -443,10 +443,24 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 			if strings.TrimSpace(s.FontFamily) != "" {
 				ff = fmt.Sprintf(` font-family="%s"`, html.EscapeString(s.FontFamily))
 			}
+			// 改行を <tspan dy="1.2em"> で行へ変換し縦に積む。
 			// 等比スケールなので counter-scale 不要、x のみ aspect 倍して配置。
+			lines := strings.Split(s.Text, "\n")
 			fmt.Fprintf(&b,
-				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">%s</text>`,
-				s.X*aspect, s.Y, fSize, ff, color, html.EscapeString(s.Text))
+				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">`,
+				s.X*aspect, s.Y, fSize, ff, color)
+			for i, ln := range lines {
+				// SVG は先頭/末尾スペースを保持しないことがあるため空行は半角空白で埋める。
+				if ln == "" {
+					ln = " "
+				}
+				if i == 0 {
+					fmt.Fprintf(&b, `<tspan x="%g">%s</tspan>`, s.X*aspect, html.EscapeString(ln))
+				} else {
+					fmt.Fprintf(&b, `<tspan x="%g" dy="%gem">%s</tspan>`, s.X*aspect, textLineHeight, html.EscapeString(ln))
+				}
+			}
+			b.WriteString(`</text>`)
 		}
 		if s.Rotation != 0 {
 			b.WriteString(`</g>`)
@@ -454,6 +468,34 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 	}
 	b.WriteString(`</svg>`)
 	return b.String(), nil
+}
+
+// textLineHeight は複数行テキストの行間 (em 単位)。フロント側 TEXT_LINE_HEIGHT と
+// 一致させる必要がある。<tspan dy="1.2em"> の値。
+const textLineHeight = 1.2
+
+// textLineCount はテキストの行数を返す。空文字でも 1 行とする。
+func textLineCount(text string) int {
+	if text == "" {
+		return 1
+	}
+	n := strings.Count(text, "\n") + 1
+	if n <= 0 {
+		return 1
+	}
+	return n
+}
+
+// textTotalHeight はテキスト全体の高さ (正規化 y) を返す。
+// dominant-baseline="hanging" で y は最上行の top、各行は textLineHeight em 下へ移動。
+// 全体高 = fontSize * (1 + (n-1) * textLineHeight)。
+func textTotalHeight(s LayerShape) float64 {
+	fs := s.FontSize
+	if fs <= 0 {
+		fs = 0.04
+	}
+	n := textLineCount(s.Text)
+	return fs * (1 + float64(n-1)*textLineHeight)
 }
 
 // normalizeStrokeWidth は stored strokeWidth をピクセル単位に正規化する。
@@ -483,12 +525,12 @@ func shapeCenterViewBox(s LayerShape, aspect float64) (float64, float64) {
 	case "ellipse":
 		return s.Cx * aspect, s.Cy
 	case "text":
-		// アンカー (x,y) + 視覚アンカー正方形 (fs × fs) の中心
+		// アンカー (x,y) + 視覚アンカー (幅 fs × 高さは行数分)。
 		fs := s.FontSize
 		if fs <= 0 {
 			fs = 0.04
 		}
-		return s.X*aspect + fs/2, s.Y + fs/2
+		return s.X*aspect + fs/2, s.Y + textTotalHeight(s)/2
 	}
 	return 0, 0
 }
