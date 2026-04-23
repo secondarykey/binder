@@ -24,8 +24,19 @@ const uuid = () => {
 
 const defaultShapeProps = {
   color: '#ff0000',
-  strokeWidth: 0.005,
+  // strokeWidth はピクセル単位 (vector-effect="non-scaling-stroke" のため
+  // 画像の表示サイズに依らず常に同じ太さで描画される)。
+  strokeWidth: 2,
   fill: 'none',
+};
+
+// 過去の正規化座標ベースの strokeWidth (< 1) を legacy とみなし、
+// 400 倍してピクセル単位 (0.005 → 2) にマップする。
+// Go 側 normalizeStrokeWidth と同一ロジック。
+const normalizeStrokeWidth = (sw) => {
+  if (!sw || sw <= 0) return 2;
+  if (sw < 1) return sw * 400;
+  return sw;
 };
 
 // 選択中 shape のバウンディングボックスを計算
@@ -537,12 +548,15 @@ function LayerEditor() {
 
   const renderShape = (s, isPreview = false) => {
     const stroke = s.color || '#ff0000';
-    const sw = s.strokeWidth || 0.005;
+    // vector-effect="non-scaling-stroke" 付きで描画するため、stroke-width は
+    // ピクセル単位として解釈される。legacy の正規化値 (< 1) はピクセルに変換。
+    const sw = normalizeStrokeWidth(s.strokeWidth);
     const fill = s.fill || 'none';
     const common = {
       stroke,
       strokeWidth: sw,
       fill,
+      vectorEffect: 'non-scaling-stroke',
       onPointerDown: (e) => handleShapePointerDown(e, s.id),
       onClick: (e) => handleShapeClick(e, s.id),
       onContextMenu: (e) => handleShapeContextMenu(e, s.id),
@@ -869,9 +883,9 @@ function LayerEditor() {
                 <>
                   <TextField
                     label={t("layer.strokeWidth")} size="small" type="number"
-                    inputProps={{ step: 0.001, min: 0.001, max: 0.1 }}
-                    value={selected.strokeWidth ?? 0.005}
-                    onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 0.005 })}
+                    inputProps={{ step: 0.5, min: 0.5, max: 50 }}
+                    value={normalizeStrokeWidth(selected.strokeWidth ?? 2)}
+                    onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 2 })}
                   />
                   {selected.type !== 'line' && (
                     <TextField
