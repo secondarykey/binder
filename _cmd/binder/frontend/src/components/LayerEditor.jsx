@@ -379,8 +379,9 @@ function LayerEditor() {
       const curAngle = Math.atan2(y - center.y, (x - center.x) * aspect);
       const deltaDeg = ((curAngle - startAngle) * 180) / Math.PI;
       let newRot = (orig.rotation || 0) + deltaDeg;
-      // 0-360 に正規化
+      // 0-360 に正規化し、1度単位へ丸める（小数を持たない）。
       newRot = ((newRot % 360) + 360) % 360;
+      newRot = Math.round(newRot) % 360;
       setShapes((prev) => prev.map((s) => (s.id === rotating.shapeId ? { ...s, rotation: newRot } : s)));
       return;
     }
@@ -962,8 +963,11 @@ function LayerEditor() {
               <TextField
                 label={t("layer.rotation")} size="small" type="number"
                 inputProps={{ step: 1, min: 0, max: 360 }}
-                value={selected.rotation ?? 0}
-                onChange={(e) => updateSelected({ rotation: parseFloat(e.target.value) || 0 })}
+                value={Math.round(selected.rotation ?? 0)}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  updateSelected({ rotation: Number.isFinite(v) ? ((v % 360) + 360) % 360 : 0 });
+                }}
               />
               {selected.type === 'text' ? (
                 <>
