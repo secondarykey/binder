@@ -52,6 +52,9 @@ type LayerShape struct {
 	Text       string  `json:"text,omitempty"`
 	FontSize   float64 `json:"fontSize,omitempty"`
 	FontFamily string  `json:"fontFamily,omitempty"`
+	// 改行間の追加スペース (px)。0 のとき通常 (1.2em) の行間。
+	// 正値を設定すると各行間にその px ぶん余白が追加される。
+	LineSpacing float64 `json:"lineSpacing,omitempty"`
 }
 
 type LayerContent struct {
@@ -447,9 +450,12 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 			if strings.TrimSpace(s.FontFamily) != "" {
 				ff = fmt.Sprintf(` font-family="%s"`, html.EscapeString(s.FontFamily))
 			}
-			// 改行を <tspan dy="1.2em"> で行へ変換し縦に積む。
+			// 改行を <tspan dy="..."> で行へ変換し縦に積む。
+			// 行間は lineDyViewBox (= fs_vb * 1.2 + lineSpacing_vb) の絶対値で指定する。
+			// em 単位だと lineSpacing の px を反映できないため viewBox 単位を使う。
 			// 等比スケールなので counter-scale 不要、x のみ aspect 倍して配置。
 			lines := strings.Split(s.Text, "\n")
+			dy := lineDyViewBox(s, imgHeightPx)
 			fmt.Fprintf(&b,
 				`<text x="%g" y="%g" font-size="%g"%s fill="%s" dominant-baseline="hanging" style="white-space:pre;">`,
 				s.X*aspect, s.Y, fSize, ff, color)
@@ -461,7 +467,7 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 				if i == 0 {
 					fmt.Fprintf(&b, `<tspan x="%g">%s</tspan>`, s.X*aspect, html.EscapeString(ln))
 				} else {
-					fmt.Fprintf(&b, `<tspan x="%g" dy="%gem">%s</tspan>`, s.X*aspect, textLineHeight, html.EscapeString(ln))
+					fmt.Fprintf(&b, `<tspan x="%g" dy="%g">%s</tspan>`, s.X*aspect, dy, html.EscapeString(ln))
 				}
 			}
 			b.WriteString(`</text>`)
@@ -520,13 +526,40 @@ func textLineCount(text string) int {
 	return n
 }
 
+// lineSpacingViewBox は LineSpacing (px) を viewBox y 単位へ変換する。
+// 負値やゼロは 0 として扱う。
+func lineSpacingViewBox(lineSpacingPx float64, imgHeightPx int) float64 {
+	if lineSpacingPx <= 0 {
+		return 0
+	}
+	h := imgHeightPx
+	if h <= 0 {
+		h = defaultReferenceHeightPx
+	}
+	return lineSpacingPx / float64(h)
+}
+
+// lineDyViewBox は複数行テキストの連続する行間の dy 値 (viewBox y 単位) を返す。
+// = 通常の行間 (1.2em = 1.2 * fs_vb) + lineSpacing_vb。
+func lineDyViewBox(s LayerShape, imgHeightPx int) float64 {
+	fs := normalizeFontSizeViewBox(s.FontSize, imgHeightPx)
+	ls := lineSpacingViewBox(s.LineSpacing, imgHeightPx)
+	return fs*textLineHeight + ls
+}
+
 // textTotalHeight はテキスト全体の高さ (viewBox y 単位) を返す。
-// dominant-baseline="hanging" で y は最上行の top、各行は textLineHeight em 下へ移動。
-// 全体高 = fontSize_vb * (1 + (n-1) * textLineHeight)。
+// dominant-baseline="hanging" で y は最上行の top、最上行の占める高さは fs_vb。
+// 各行間は lineDyViewBox ぶん下へ移動し、最終行の bottom は
+// y + fs_vb + (n-1) * dy と直接対応しないが、bbox としては
+// 最上行 top から最終行 top + fs_vb までを高さとする。
+// 全体高 = fs_vb + (n-1) * dy_vb。
 func textTotalHeight(s LayerShape, imgHeightPx int) float64 {
 	fs := normalizeFontSizeViewBox(s.FontSize, imgHeightPx)
 	n := textLineCount(s.Text)
-	return fs * (1 + float64(n-1)*textLineHeight)
+	if n <= 1 {
+		return fs
+	}
+	return fs + float64(n-1)*lineDyViewBox(s, imgHeightPx)
 }
 
 // normalizeStrokeWidth は stored strokeWidth をピクセル単位に正規化する。

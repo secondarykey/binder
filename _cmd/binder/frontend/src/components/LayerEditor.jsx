@@ -66,14 +66,30 @@ const textLineCount = (text) => {
 // テキスト行間係数 (em 単位)。SVG <tspan dy="1.2em"> と一致させる。
 const TEXT_LINE_HEIGHT = 1.2;
 
-// テキスト全体の高さ (正規化 y)。
-// dominant-baseline="hanging" で y は最上行の top、各行は 1.2em 下へ。
-// 全体高 = fontSize * (1 + (n-1) * 1.2)。
-// svgHeightPx を受けて fontSize を viewBox 単位で評価する。
+// lineSpacing (px) を viewBox y 単位へ変換する。Go 側 lineSpacingViewBox と同一。
+const lineSpacingVB = (lineSpacingPx, svgHeightPx) => {
+  if (!lineSpacingPx || lineSpacingPx <= 0) return 0;
+  const h = svgHeightPx > 0 ? svgHeightPx : DEFAULT_REFERENCE_HEIGHT_PX;
+  return lineSpacingPx / h;
+};
+
+// 複数行テキストの連続する行間の dy 値 (viewBox y 単位) を返す。
+// = 通常行間 (1.2em = 1.2 * fs_vb) + lineSpacing_vb。
+// Go 側 lineDyViewBox と同一ロジック。
+const lineDyVB = (s, svgHeightPx) => {
+  const fs = effectiveFontSizeVB(s.fontSize, svgHeightPx);
+  const ls = lineSpacingVB(s.lineSpacing, svgHeightPx);
+  return fs * TEXT_LINE_HEIGHT + ls;
+};
+
+// テキスト全体の高さ (viewBox y 単位)。
+// dominant-baseline="hanging" で y は最上行の top、各行は lineDy (viewBox 単位) 下へ。
+// 全体高 = fs_vb + (n-1) * lineDy_vb。
 const textTotalHeight = (s, svgHeightPx = 0) => {
   const fs = effectiveFontSizeVB(s.fontSize, svgHeightPx);
   const n = textLineCount(s.text);
-  return fs * (1 + (n - 1) * TEXT_LINE_HEIGHT);
+  if (n <= 1) return fs;
+  return fs + (n - 1) * lineDyVB(s, svgHeightPx);
 };
 
 // 選択中 shape のバウンディングボックスを計算
@@ -672,12 +688,15 @@ function LayerEditor() {
         onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       };
       if (s.fontFamily) textProps.fontFamily = s.fontFamily;
-      // 改行ごとに <tspan dy="1.2em"> で下へ送る。全 tspan に x を指定して行頭を揃える。
+      // 改行ごとに <tspan dy="..."> で下へ送る。dy は viewBox 単位の絶対値
+      // (fs_vb * 1.2 + lineSpacing_vb)。em 単位だと lineSpacing の px を反映できないため。
+      // 全 tspan に x を指定して行頭を揃える。
       const lines = (s.text || '').split('\n');
+      const dyVB = lineDyVB(s, svgH);
       el = (
         <text {...textProps}>
           {lines.map((ln, i) => (
-            <tspan key={i} x={vbX(s.x)} dy={i === 0 ? 0 : `${TEXT_LINE_HEIGHT}em`}>
+            <tspan key={i} x={vbX(s.x)} dy={i === 0 ? 0 : dyVB}>
               {ln === '' ? ' ' : ln}
             </tspan>
           ))}
@@ -959,6 +978,12 @@ function LayerEditor() {
                     inputProps={{ step: 1, min: 4, max: 256 }}
                     value={selected.fontSize ?? DEFAULT_FONT_SIZE_PX}
                     onChange={(e) => updateSelected({ fontSize: parseFloat(e.target.value) || DEFAULT_FONT_SIZE_PX })}
+                  />
+                  <TextField
+                    label={t("layer.lineSpacing")} size="small" type="number"
+                    inputProps={{ step: 1, min: 0, max: 256 }}
+                    value={selected.lineSpacing ?? 0}
+                    onChange={(e) => updateSelected({ lineSpacing: parseFloat(e.target.value) || 0 })}
                   />
                   <FormControl size="small" fullWidth>
                     <InputLabel id="layer-fontfamily-label">{t("layer.fontFamily")}</InputLabel>

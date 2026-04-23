@@ -132,6 +132,7 @@
         "defaultText" : "テキスト",
         "text" : "テキスト",
         "fontSize" : "フォントサイズ(px)",
+        "lineSpacing" : "行間(px)",
         "fontFamily" : "フォント",
         "fontFamilyDefault" : "(デフォルト)",
         "rotation" : "回転"
