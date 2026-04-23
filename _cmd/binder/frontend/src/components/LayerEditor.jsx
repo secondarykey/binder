@@ -238,6 +238,11 @@ function LayerEditor() {
   const canvasRef = useRef(null);
   const loadedRef = useRef(false);
   const saveTimerRef = useRef(null);
+  // ダブルクリックで text shape の編集 TextField にフォーカスを移すため ref を保持する。
+  const textInputRef = useRef(null);
+  // ダブルクリックでフォーカス予約中か。選択→描画→props panel 再レンダの後に
+  // フォーカスを当てるため、useEffect で遅延実行する。
+  const focusTextOnNextRenderRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -521,6 +526,43 @@ function LayerEditor() {
     setSelectedId(shapeId);
   };
 
+  // text shape のダブルクリック: 選択状態にして、テキスト編集 TextField に
+  // フォーカスを当てる。
+  // - 既に選択中のときは TextField が既にマウントされているため即フォーカス。
+  // - 未選択のときはまず選択状態に変え、再レンダで TextField がマウントされた
+  //   あとに useEffect でフォーカスするためフラグを立てる。
+  const focusTextInput = () => {
+    const el = textInputRef.current;
+    if (!el) return;
+    el.focus();
+    try {
+      const len = el.value ? el.value.length : 0;
+      el.setSelectionRange(len, len);
+    } catch (_) { /* noop */ }
+  };
+  const handleTextShapeDoubleClick = (e, shapeId) => {
+    if (tool !== 'select') return;
+    e.stopPropagation();
+    e.preventDefault();
+    if (selectedId === shapeId && textInputRef.current) {
+      focusTextInput();
+      return;
+    }
+    setSelectedId(shapeId);
+    focusTextOnNextRenderRef.current = true;
+  };
+
+  // focusTextOnNextRenderRef が立っていて、TextField がマウントされていれば
+  // フォーカスする。TextField は内部で <textarea> (multiline) を持つため
+  // input.focus() で OK。毎レンダ後に走るが、フラグが立っていないときは即 return。
+  useEffect(() => {
+    if (!focusTextOnNextRenderRef.current) return;
+    if (textInputRef.current) {
+      focusTextInput();
+      focusTextOnNextRenderRef.current = false;
+    }
+  });
+
   const handleShapeContextMenu = (e, shapeId) => {
     e.preventDefault();
     e.stopPropagation();
@@ -626,6 +668,7 @@ function LayerEditor() {
         style: { cursor: tool === 'select' ? 'move' : 'crosshair', whiteSpace: 'pre', userSelect: 'none' },
         onPointerDown: (e) => handleShapePointerDown(e, s.id),
         onClick: (e) => handleShapeClick(e, s.id),
+        onDoubleClick: (e) => handleTextShapeDoubleClick(e, s.id),
         onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       };
       if (s.fontFamily) textProps.fontFamily = s.fontFamily;
@@ -907,6 +950,7 @@ function LayerEditor() {
                 <>
                   <TextField
                     label={t("layer.text")} size="small" multiline maxRows={4}
+                    inputRef={textInputRef}
                     value={selected.text || ''}
                     onChange={(e) => updateSelected({ text: e.target.value })}
                   />
