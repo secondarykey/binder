@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, Menu, MenuItem, TextField, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -8,11 +8,11 @@ import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import ImageIcon from '@mui/icons-material/Image';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CheckIcon from '@mui/icons-material/Check';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
+import CommitIcon from '@mui/icons-material/Commit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent } from '../../bindings/binder/api/app';
 import EditorArea from './editor/EditorArea';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
@@ -187,6 +187,8 @@ function AssetViewer() {
   const [assetName, setAssetName] = useState('');
   const [assetMeta, setAssetMeta] = useState(null);
   const [error, setError] = useState(null);
+  const [comment, setComment] = useState('');
+  const [updated, setUpdated] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -240,7 +242,9 @@ function AssetViewer() {
       if (meta?.name) {
         setAssetName(meta.name);
         evt.changeTitle(meta.name);
+        setComment('Updated: ' + meta.name);
       }
+      setUpdated((meta?.updatedStatus ?? 0) > 0);
     }).catch(() => {
       // メタデータ取得失敗は無視（コンテンツ取得のエラーを優先表示）
     });
@@ -265,6 +269,17 @@ function AssetViewer() {
       setError(t('assetViewer.loadError'));
     });
   }, [id]);
+
+  /** Commit ボタン押下: アセットを個別コミットする */
+  const handleCommit = () => {
+    Commit("assets", id, comment).then(() => {
+      setUpdated(false);
+      evt.commitDone();
+      evt.showSuccessMessage("Commit.");
+    }).catch((e) => {
+      evt.showErrorMessage(String(e));
+    });
+  };
 
   /** Generate ボタン押下: アセットを公開する */
   const handleGenerate = async () => {
@@ -488,9 +503,22 @@ function AssetViewer() {
 
       {/* ステータスバー */}
       <div id="parseStatusBar">
-        <div className="parseStatusLeft">
-          <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} />
-          <span className="parseStatusText">Success</span>
+        <div className="parseStatusLeft" style={{ flex: 1, minWidth: 0 }}>
+          <TextField
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            size="small"
+            variant="outlined"
+            style={{ width: '100%' }}
+            inputProps={{ style: { fontSize: '12px', paddingTop: '4px', paddingBottom: '4px' } }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end" className="linkBtn">
+                  <CommitIcon fontSize="small" style={{ color: updated ? 'var(--accent-orange)' : 'var(--text-primary)', cursor: 'pointer' }} onClick={handleCommit} />
+                </InputAdornment>
+              ),
+            }}
+          />
         </div>
         <div className="parseStatusRight">
           <Tooltip title={t("preview.publish")} placement="top">
