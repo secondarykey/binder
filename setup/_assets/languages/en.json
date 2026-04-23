@@ -132,6 +132,7 @@
         "defaultText" : "Text",
         "text" : "Text",
         "fontSize" : "Font Size (px)",
+        "lineSpacing" : "Line Spacing (px)",
         "fontFamily" : "Font",
         "fontFamilyDefault" : "(default)",
         "rotation" : "Rotation"
