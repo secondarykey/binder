@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams } from 'react-router';
-import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, ListItemIcon, ListItemText, FormControl, InputLabel, Select } from '@mui/material';
+import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
@@ -977,16 +977,16 @@ function LayerEditor() {
         </div>
       </div>
 
-      {/* 右クリックメニュー */}
+      {/* 右クリックメニュー (BinderTree と同じスタイル) */}
       <Menu
         open={ctxMenu !== null}
         onClose={closeCtxMenu}
         anchorReference="anchorPosition"
         anchorPosition={ctxMenu ? { top: ctxMenu.mouseY, left: ctxMenu.mouseX } : undefined}
+        slotProps={{ paper: { sx: { minWidth: 150 } } }}
       >
-        <MenuItem onClick={handleCtxDelete}>
-          <ListItemIcon><DeleteIcon fontSize="small" sx={{ color: 'var(--accent-red)' }} /></ListItemIcon>
-          <ListItemText>{t("common.delete")}</ListItemText>
+        <MenuItem onClick={handleCtxDelete} sx={{ color: 'var(--accent-red)' }}>
+          <DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}
         </MenuItem>
       </Menu>
     </div>
