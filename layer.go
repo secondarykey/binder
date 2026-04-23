@@ -558,8 +558,12 @@ func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraCla
 	if strings.TrimSpace(extraClass) != "" {
 		classAttr = classAttr + " " + extraClass
 	}
+	// インラインスタイルは overlay を成立させる最小限だけにし、サイズ調整は
+	// .binderLayer もしくはユーザー指定の追加クラスで行えるようにする。
+	// display:inline-block は overlay SVG の基準となる position:relative 箱を
+	// 自然サイズで確保するために残す。
 	html := fmt.Sprintf(
-		`<div class="%s" id="%s" style="position:relative;display:inline-block;max-width:100%%;">%s</div>`,
+		`<div class="%s" id="%s" style="position:relative;display:inline-block;">%s</div>`,
 		classAttr, id, inner)
 	return template.HTML(html), nil
 }
