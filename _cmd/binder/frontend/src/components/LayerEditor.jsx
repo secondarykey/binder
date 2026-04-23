@@ -212,6 +212,26 @@ const rotatePoint = (px, py, cx, cy, angleDeg) => {
   return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
 };
 
+// Shift キーが押された状態で線を引く際に、(pivotX, pivotY) から (x, y) への
+// 方向を 45度 刻み (水平・垂直・斜め 45度) にスナップした端点を返す。
+// 入力・出力はいずれも正規化座標 (0-1)。viewBox が "0 0 aspect 1" で等比
+// スケールされて表示されるため、aspect を掛けた viewBox 座標で角度判定し、
+// 投影距離も viewBox 空間で計算する。これで aspect != 1 でも表示上の
+// 45度 が保たれる。
+const snapAngle = (pivotX, pivotY, x, y, aspect) => {
+  const a = aspect > 0 ? aspect : 1;
+  const dxvb = (x - pivotX) * a;
+  const dyvb = y - pivotY;
+  if (dxvb === 0 && dyvb === 0) return { x, y };
+  const angle = Math.atan2(dyvb, dxvb);
+  const step = Math.PI / 4;
+  const snapped = Math.round(angle / step) * step;
+  const len = Math.hypot(dxvb, dyvb);
+  const nx = Math.cos(snapped) * len;
+  const ny = Math.sin(snapped) * len;
+  return { x: pivotX + nx / a, y: pivotY + ny };
+};
+
 /**
  * Layer の描画エディタ。
  * 画像アセットビューアと同レイアウト（上: メニューバー、中: キャンバス、下: ステータスバー）。
@@ -404,8 +424,14 @@ function LayerEditor() {
       }
       let resized = orig;
       if (orig.type === 'line') {
-        if (handle === 'start') resized = { ...orig, x1: x, y1: y };
-        else if (handle === 'end') resized = { ...orig, x2: x, y2: y };
+        // Shift 押下で水平・垂直・45度 斜めへスナップ（fixed を支点とする）。
+        let ex = x, ey = y;
+        if (e.shiftKey && fixed) {
+          const p = snapAngle(fixed.x, fixed.y, x, y, aspect);
+          ex = p.x; ey = p.y;
+        }
+        if (handle === 'start') resized = { ...orig, x1: ex, y1: ey };
+        else if (handle === 'end') resized = { ...orig, x2: ex, y2: ey };
       } else if (orig.type === 'rect') {
         resized = {
           ...orig,
@@ -457,7 +483,13 @@ function LayerEditor() {
     const { shape, startX, startY } = drawing;
     let next;
     if (shape.type === 'line') {
-      next = { ...shape, x2: x, y2: y };
+      // Shift 押下で水平・垂直・45度 斜めへスナップ（開始点 startX/startY を支点）。
+      let ex = x, ey = y;
+      if (e.shiftKey) {
+        const p = snapAngle(startX, startY, x, y, aspect);
+        ex = p.x; ey = p.y;
+      }
+      next = { ...shape, x2: ex, y2: ey };
     } else if (shape.type === 'rect') {
       next = {
         ...shape,
