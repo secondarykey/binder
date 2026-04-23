@@ -217,7 +217,17 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 // 親 Asset の画像を下敷きにし、その上に Layer のシェイプを重ねる。
 // エディタプレビュー（local=true）ではインラインSVGとプライベートアセットURLを使い、
 // 公開時は公開済みSVGをimgで重ねる。
-func (w *wrapper) drawLayer(id string) template.HTML {
+// 第1引数: レイヤーID（必須）。第2引数: 追加の class 名（省略可）。
+func (w *wrapper) drawLayer(v ...any) template.HTML {
+
+	// レイヤーID
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		return template.HTML(`drawLayer id error`)
+	}
+	// クラス名指定（省略可）
+	clazz := Arg[string](v, 1).Default("")
+
 	imageSrc := ""
 	if w.Local {
 		// 親Assetのプライベートアセット配信URL
@@ -243,7 +253,7 @@ func (w *wrapper) drawLayer(id string) template.HTML {
 		}
 	}
 
-	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc)
+	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, clazz)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
 	}

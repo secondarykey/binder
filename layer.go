@@ -520,7 +520,8 @@ func (b *Binder) BuildLayerSVGForId(id string) (string, error) {
 // BuildLayerHTML は layer id から画像 + SVG オーバーレイの合成HTMLを返す。
 // local=true: エディタプレビュー（インラインSVG + private assetのHTTP URL）
 // local=false: 公開（公開済みSVGを <img> で参照）
-func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string) (template.HTML, error) {
+// extraClass は外側 div に追加するクラス名（空文字なら追加しない）。
+func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraClass string) (template.HTML, error) {
 	m, err := b.GetLayerWithParent(id)
 	if err != nil {
 		return "", xerrors.Errorf("GetLayerWithParent() error: %w", err)
@@ -552,9 +553,14 @@ func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string) (templat
 			imageSrc, fs.PublicLayerFile(m))
 	}
 
+	// 外側 div のクラス名: デフォルト "binderLayer" に追加クラスを連結。
+	classAttr := "binderLayer"
+	if strings.TrimSpace(extraClass) != "" {
+		classAttr = classAttr + " " + extraClass
+	}
 	html := fmt.Sprintf(
-		`<div class="binderLayer" id="%s" style="position:relative;display:inline-block;max-width:100%%;">%s</div>`,
-		id, inner)
+		`<div class="%s" id="%s" style="position:relative;display:inline-block;max-width:100%%;">%s</div>`,
+		classAttr, id, inner)
 	return template.HTML(html), nil
 }
 
