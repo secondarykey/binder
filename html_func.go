@@ -95,6 +95,8 @@ func (w *wrapper) assets(id string) string {
 }
 
 // assetsImage はアセットIDから <img> タグを生成するテンプレート関数
+// 生成される <img> タグには常に "binderAssets" クラスが付与される。
+// 第2引数でクラス名を指定した場合は "binderAssets" に追加する形で連結される。
 func (w *wrapper) assetsImage(v ...any) template.HTML {
 
 	//アセットId
@@ -102,12 +104,16 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 	if !ok {
 		return template.HTML(fmt.Sprintf(`assets id error`))
 	}
-	//クラス名指定
+	//クラス名指定（空可）。常に "binderAssets" を先頭に付与する。
 	clazz := Arg[string](v, 1).Default("")
+	classAttr := "binderAssets"
+	if strings.TrimSpace(clazz) != "" {
+		classAttr = classAttr + " " + clazz
+	}
 
 	src := w.assets(id)
 
-	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, clazz))
+	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, classAttr))
 }
 
 func (w *wrapper) childrenNotes(v ...any) []*tempNote {
