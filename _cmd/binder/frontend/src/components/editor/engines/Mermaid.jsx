@@ -108,12 +108,18 @@ class MermaidScript {
     return `%%%%{init:${_styleCache[id]}}%%%%\n`;
   }
 
+  /**
+   * mermaidでパースしてSVGを生成する。スタイルテンプレートIDが指定された場合は、キャッシュから内容を取得して%%{init:...}%%でテキストの先頭に付加する。
+   * @param {*} txt 
+   * @param {*} styleTemplateId 
+   * @returns 
+   */
   static async parse(txt, styleTemplateId) {
 
     const prefix = this.getStylePrefix(styleTemplateId);
     const fullTxt = prefix ? prefix + txt : txt;
 
-    console.log(fullTxt)
+    console.debug(fullTxt)
 
     var rtn = new Promise((res, rej) => {
 
