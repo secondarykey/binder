@@ -39,6 +39,25 @@ const normalizeStrokeWidth = (sw) => {
   return sw;
 };
 
+// テキストの改行行数を返す (空文字でも 1 行とする)。
+const textLineCount = (text) => {
+  if (!text) return 1;
+  const n = text.split('\n').length;
+  return n > 0 ? n : 1;
+};
+
+// テキスト行間係数 (em 単位)。SVG <tspan dy="1.2em"> と一致させる。
+const TEXT_LINE_HEIGHT = 1.2;
+
+// テキスト全体の高さ (正規化 y)。
+// dominant-baseline="hanging" で y は最上行の top、各行は 1.2em 下へ。
+// 全体高 = fontSize * (1 + (n-1) * 1.2)。
+const textTotalHeight = (s) => {
+  const fs = s.fontSize || 0.04;
+  const n = textLineCount(s.text);
+  return fs * (1 + (n - 1) * TEXT_LINE_HEIGHT);
+};
+
 // 選択中 shape のバウンディングボックスを計算
 // imgAspect: 親画像の width/height。text はレンダ時に x 方向を 1/aspect 倍するため
 // viewBox 上の実幅も 1/aspect 倍となる。
@@ -63,9 +82,10 @@ const getBBox = (s, imgAspect = 1) => {
     // 可変サイズは採用せず「高さと同じサイズの正方形アンカー」を返す。
     // 正規化 (0-1) x 空間では fs/aspect、レンダ時に vbX で aspect 倍されて
     // viewBox-x では fs となり、等比スケールの viewBox で fs × fs 正方形になる。
+    // 複数行のときは height を行数分に伸ばす（幅は最初の行アンカー相当のまま）。
     const fs = s.fontSize || 0.04;
     const aspect = imgAspect > 0 ? imgAspect : 1;
-    return { x: s.x, y: s.y, width: fs / aspect, height: fs };
+    return { x: s.x, y: s.y, width: fs / aspect, height: textTotalHeight(s) };
   }
   return null;
 };
@@ -142,7 +162,8 @@ const getShapeCenter = (s, imgAspect = 1) => {
   if (s.type === 'text') {
     const fs = s.fontSize || 0.04;
     const aspect = imgAspect > 0 ? imgAspect : 1;
-    return { x: s.x + fs / (2 * aspect), y: s.y + fs / 2 };
+    // 複数行の場合、中心 y は行数ぶんのテキスト全体高の中央。
+    return { x: s.x + fs / (2 * aspect), y: s.y + textTotalHeight(s) / 2 };
   }
   return { x: 0.5, y: 0.5 };
 };
@@ -585,7 +606,17 @@ function LayerEditor() {
         onContextMenu: (e) => handleShapeContextMenu(e, s.id),
       };
       if (s.fontFamily) textProps.fontFamily = s.fontFamily;
-      el = <text {...textProps}>{s.text || ''}</text>;
+      // 改行ごとに <tspan dy="1.2em"> で下へ送る。全 tspan に x を指定して行頭を揃える。
+      const lines = (s.text || '').split('\n');
+      el = (
+        <text {...textProps}>
+          {lines.map((ln, i) => (
+            <tspan key={i} x={vbX(s.x)} dy={i === 0 ? 0 : `${TEXT_LINE_HEIGHT}em`}>
+              {ln === '' ? ' ' : ln}
+            </tspan>
+          ))}
+        </text>
+      );
     }
     if (!el) return null;
     // rotation > 0 の場合は <g transform="rotate(angle cx cy)"> でラップする。
