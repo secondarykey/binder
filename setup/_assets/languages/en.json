@@ -131,7 +131,7 @@
         "toolText" : "Text",
         "defaultText" : "Text",
         "text" : "Text",
-        "fontSize" : "Font Size",
+        "fontSize" : "Font Size (px)",
         "fontFamily" : "Font",
         "fontFamilyDefault" : "(default)",
         "rotation" : "Rotation"

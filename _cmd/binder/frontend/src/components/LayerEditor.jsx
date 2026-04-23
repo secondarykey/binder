@@ -30,6 +30,11 @@ const defaultShapeProps = {
   fill: 'none',
 };
 
+// 新規テキストのデフォルトフォントサイズ (px)。
+const DEFAULT_FONT_SIZE_PX = 16;
+// フォントサイズ fallback 用の想定画像高さ (px)。実計測できない場面で使用。
+const DEFAULT_REFERENCE_HEIGHT_PX = 400;
+
 // 過去の正規化座標ベースの strokeWidth (< 1) を legacy とみなし、
 // 400 倍してピクセル単位 (0.005 → 2) にマップする。
 // Go 側 normalizeStrokeWidth と同一ロジック。
@@ -37,6 +42,18 @@ const normalizeStrokeWidth = (sw) => {
   if (!sw || sw <= 0) return 2;
   if (sw < 1) return sw * 400;
   return sw;
+};
+
+// フォントサイズを「viewBox (0-1) 座標系」の値に正規化する。
+// 新形式: px 単位で保存 (>= 1)。表示時に svg の表示高さ (px) で割って
+// viewBox y 座標の割合に変換。画像を自然サイズで表示しているとき
+// 指定 px で描画される。legacy (< 1) は従来の正規化値としてそのまま使う。
+// Go 側 normalizeFontSizeViewBox と同一ロジック。
+const effectiveFontSizeVB = (fontSize, svgHeightPx) => {
+  const raw = fontSize && fontSize > 0 ? fontSize : DEFAULT_FONT_SIZE_PX;
+  if (raw < 1) return raw; // legacy normalized
+  const h = svgHeightPx > 0 ? svgHeightPx : DEFAULT_REFERENCE_HEIGHT_PX;
+  return raw / h;
 };
 
 // テキストの改行行数を返す (空文字でも 1 行とする)。
@@ -52,8 +69,9 @@ const TEXT_LINE_HEIGHT = 1.2;
 // テキスト全体の高さ (正規化 y)。
 // dominant-baseline="hanging" で y は最上行の top、各行は 1.2em 下へ。
 // 全体高 = fontSize * (1 + (n-1) * 1.2)。
-const textTotalHeight = (s) => {
-  const fs = s.fontSize || 0.04;
+// svgHeightPx を受けて fontSize を viewBox 単位で評価する。
+const textTotalHeight = (s, svgHeightPx = 0) => {
+  const fs = effectiveFontSizeVB(s.fontSize, svgHeightPx);
   const n = textLineCount(s.text);
   return fs * (1 + (n - 1) * TEXT_LINE_HEIGHT);
 };
@@ -61,7 +79,7 @@ const textTotalHeight = (s) => {
 // 選択中 shape のバウンディングボックスを計算
 // imgAspect: 親画像の width/height。text はレンダ時に x 方向を 1/aspect 倍するため
 // viewBox 上の実幅も 1/aspect 倍となる。
-const getBBox = (s, imgAspect = 1) => {
+const getBBox = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return null;
   if (s.type === 'line') {
     return {
@@ -83,15 +101,15 @@ const getBBox = (s, imgAspect = 1) => {
     // 正規化 (0-1) x 空間では fs/aspect、レンダ時に vbX で aspect 倍されて
     // viewBox-x では fs となり、等比スケールの viewBox で fs × fs 正方形になる。
     // 複数行のときは height を行数分に伸ばす（幅は最初の行アンカー相当のまま）。
-    const fs = s.fontSize || 0.04;
+    const fs = effectiveFontSizeVB(s.fontSize, svgHeightPx);
     const aspect = imgAspect > 0 ? imgAspect : 1;
-    return { x: s.x, y: s.y, width: fs / aspect, height: textTotalHeight(s) };
+    return { x: s.x, y: s.y, width: fs / aspect, height: textTotalHeight(s, svgHeightPx) };
   }
   return null;
 };
 
 // 選択中 shape に表示するリサイズハンドル位置を計算
-const getHandles = (s, imgAspect = 1) => {
+const getHandles = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return [];
   if (s.type === 'line') {
     return [
@@ -119,7 +137,7 @@ const getHandles = (s, imgAspect = 1) => {
   }
   if (s.type === 'text') {
     // テキストは右下ハンドルのみでフォントサイズを調整
-    const bbox = getBBox(s, imgAspect);
+    const bbox = getBBox(s, imgAspect, svgHeightPx);
     return [
       { id: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'nwse-resize' },
     ];
@@ -154,16 +172,16 @@ const getFixedPoint = (s, handle) => {
 // shape の視覚中心を正規化座標 (0-1) で返す。rotation の回転中心に使う。
 // text は viewBox 上の正方形 (fs × fs) の中心なので、正規化 x では
 // アンカー + fs/(2*aspect) となる。
-const getShapeCenter = (s, imgAspect = 1) => {
+const getShapeCenter = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return { x: 0.5, y: 0.5 };
   if (s.type === 'line') return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
   if (s.type === 'rect') return { x: s.x + s.width / 2, y: s.y + s.height / 2 };
   if (s.type === 'ellipse') return { x: s.cx, y: s.cy };
   if (s.type === 'text') {
-    const fs = s.fontSize || 0.04;
+    const fs = effectiveFontSizeVB(s.fontSize, svgHeightPx);
     const aspect = imgAspect > 0 ? imgAspect : 1;
     // 複数行の場合、中心 y は行数ぶんのテキスト全体高の中央。
-    return { x: s.x + fs / (2 * aspect), y: s.y + textTotalHeight(s) / 2 };
+    return { x: s.x + fs / (2 * aspect), y: s.y + textTotalHeight(s, svgHeightPx) / 2 };
   }
   return { x: 0.5, y: 0.5 };
 };
@@ -318,7 +336,8 @@ function LayerEditor() {
         type: 'text',
         x, y,
         text: t("layer.defaultText"),
-        fontSize: 0.04,
+        // px 単位で保存。描画時に svg 表示高 (px) で割って viewBox 単位へ変換。
+        fontSize: DEFAULT_FONT_SIZE_PX,
       };
       setShapes((prev) => [...prev, textShape]);
       setSelectedId(textShape.id);
@@ -352,7 +371,7 @@ function LayerEditor() {
       // 回転は viewBox 座標系 (x 側が aspect 倍) で行われているため、
       // 一旦 viewBox に写してから逆回転し、正規化座標へ戻す。
       if (orig.rotation) {
-        const c = getShapeCenter(orig, aspect);
+        const c = getShapeCenter(orig, aspect, svgH);
         const p = rotatePoint(
           x * aspect, y,
           c.x * aspect, c.y,
@@ -382,9 +401,12 @@ function LayerEditor() {
           ry: Math.abs(fixed.y - y) / 2,
         };
       } else if (orig.type === 'text') {
-        // フォントサイズ = ドラッグ点と固定点(左上)との y 差分
-        const newFontSize = Math.max(0.005, Math.abs(y - fixed.y));
-        resized = { ...orig, fontSize: newFontSize };
+        // フォントサイズは px 単位で保存する。
+        // ドラッグ距離 (正規化 y) × svg 表示高 (px) = 実ピクセル。
+        // svgH は svgSize.h > 0 のとき画像の表示高さ。
+        const dyNorm = Math.max(0, Math.abs(y - fixed.y));
+        const newFontSizePx = Math.max(4, Math.round(dyNorm * svgH));
+        resized = { ...orig, fontSize: newFontSizePx };
       }
       setShapes((prev) => prev.map((s) => (s.id === resizing.shapeId ? resized : s)));
       return;
@@ -485,7 +507,7 @@ function LayerEditor() {
     const orig = shapes.find((s) => s.id === shapeId);
     if (!orig) return;
     const { x, y } = toClientPos(e);
-    const c = getShapeCenter(orig, aspect);
+    const c = getShapeCenter(orig, aspect, svgH);
     const startAngle = Math.atan2(y - c.y, (x - c.x) * aspect);
     setRotating({ shapeId, orig, center: c, startAngle });
     if (e.currentTarget && e.currentTarget.setPointerCapture) {
@@ -592,7 +614,8 @@ function LayerEditor() {
       el = <ellipse {...common} cx={vbX(s.cx)} cy={s.cy} rx={vbX(s.rx)} ry={s.ry} />;
     } else if (s.type === 'text') {
       // viewBox が "0 0 aspect 1" で等比スケールになったため counter-scale は不要。
-      const fs = s.fontSize || 0.04;
+      // fontSize は px 単位で保存されるため、表示高 (svgH) で割って viewBox 単位へ。
+      const fs = effectiveFontSizeVB(s.fontSize, svgH);
       const textProps = {
         x: vbX(s.x),
         y: s.y,
@@ -623,7 +646,7 @@ function LayerEditor() {
     // 回転中心は viewBox 座標 (x のみ aspect 倍) で指定する。
     const rot = s.rotation || 0;
     if (rot) {
-      const c = getShapeCenter(s, aspect);
+      const c = getShapeCenter(s, aspect, svgH);
       return (
         <g key={s.id} transform={`rotate(${rot} ${vbX(c.x)} ${c.y})`}>{el}</g>
       );
@@ -632,7 +655,7 @@ function LayerEditor() {
   };
 
   const selected = shapes.find((s) => s.id === selectedId) || null;
-  const selBBox = getBBox(selected, imgAspect);
+  const selBBox = getBBox(selected, imgAspect, svgSize.h);
   const selPad = 0.008;
   // viewBox を "0 0 aspect 1" にして viewBox→表示を等比スケールにする。
   // shape データは正規化座標 (0-1) のまま保持し、レンダ時に x のみ aspect 倍して
@@ -741,7 +764,7 @@ function LayerEditor() {
                 {(() => {
                   if (!selected) return null;
                   const rot = selected.rotation || 0;
-                  const c = getShapeCenter(selected, aspect);
+                  const c = getShapeCenter(selected, aspect, svgH);
                   const transform = rot ? `rotate(${rot} ${vbX(c.x)} ${c.y})` : undefined;
                   return (
                     <g transform={transform}>
@@ -760,7 +783,7 @@ function LayerEditor() {
                           style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
                         />
                       )}
-                      {tool === 'select' && !drawing && getHandles(selected, imgAspect).map((h) => (
+                      {tool === 'select' && !drawing && getHandles(selected, imgAspect, svgH).map((h) => (
                         <g key={h.id} style={{ cursor: h.cursor }}
                            onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
                           <rect
@@ -889,9 +912,9 @@ function LayerEditor() {
                   />
                   <TextField
                     label={t("layer.fontSize")} size="small" type="number"
-                    inputProps={{ step: 0.005, min: 0.005, max: 0.5 }}
-                    value={selected.fontSize ?? 0.04}
-                    onChange={(e) => updateSelected({ fontSize: parseFloat(e.target.value) || 0.04 })}
+                    inputProps={{ step: 1, min: 4, max: 256 }}
+                    value={selected.fontSize ?? DEFAULT_FONT_SIZE_PX}
+                    onChange={(e) => updateSelected({ fontSize: parseFloat(e.target.value) || DEFAULT_FONT_SIZE_PX })}
                   />
                   <FormControl size="small" fullWidth>
                     <InputLabel id="layer-fontfamily-label">{t("layer.fontFamily")}</InputLabel>

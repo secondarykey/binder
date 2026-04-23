@@ -131,7 +131,7 @@
         "toolText" : "テキスト",
         "defaultText" : "テキスト",
         "text" : "テキスト",
-        "fontSize" : "フォントサイズ",
+        "fontSize" : "フォントサイズ(px)",
         "fontFamily" : "フォント",
         "fontFamilyDefault" : "(デフォルト)",
         "rotation" : "回転"
