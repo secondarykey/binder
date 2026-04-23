@@ -311,13 +311,16 @@ func (b *Binder) PublishLayerStage(id string) ([]string, *json.Layer, error) {
 		return nil, nil, xerrors.Errorf("ReadLayer() error: %w", err)
 	}
 
-	// 親アセット画像のアスペクト比を取得してテキストの counter-scale 補正に使う
+	// 親アセット画像のアスペクト比と自然高さを取得する。
+	// アスペクト比は viewBox 計算、自然高さは fontSize の px→viewBox 変換に使う。
 	var aspect float64
+	var imgH int
 	if data, _, err := b.ReadAssetBytes(m.ParentId); err == nil {
 		aspect = getImageAspect(data)
+		_, imgH = getImageSize(data)
 	}
 
-	svg, err := BuildLayerSVG(buf.String(), aspect)
+	svg, err := BuildLayerSVG(buf.String(), aspect, imgH)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("BuildLayerSVG() error: %w", err)
 	}
@@ -382,10 +385,12 @@ func (b *Binder) UnpublishLayer(id string) error {
 // BuildLayerSVG は shapes JSON 文字列から viewBox="0 0 aspect 1" の SVG を生成する。
 // エディタプレビューと公開SVG書き出しの両方で使用する。
 // imgAspect は画像の width/height（未知なら 0、その場合は 1 として扱う）。
+// imgHeightPx は画像の自然ピクセル高さ（fontSize の px → viewBox 変換に使う。
+//   0 なら fallback 値を使用）。
 // viewBox を画像アスペクト比に合わせることで viewBox→表示が等比スケールとなり、
 // ストロークの太さが方向で変わらず、テキストの字形も自然な縦横比で表示される。
 // shape データは正規化 (0-1) で保存されているため、出力時に x 方向のみ aspect 倍する。
-func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
+func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (string, error) {
 	aspect := imgAspect
 	if aspect <= 0 {
 		aspect = 1
@@ -418,7 +423,7 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 		sw := normalizeStrokeWidth(s.StrokeWidth)
 		// 回転指定があれば <g transform="rotate(angle cx cy)"> でラップする
 		if s.Rotation != 0 {
-			cx, cy := shapeCenterViewBox(s, aspect)
+			cx, cy := shapeCenterViewBox(s, aspect, imgHeightPx)
 			fmt.Fprintf(&b, `<g transform="rotate(%g %g %g)">`, s.Rotation, cx, cy)
 		}
 		switch s.Type {
@@ -435,10 +440,9 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
 				s.Cx*aspect, s.Cy, s.Rx*aspect, s.Ry, color, sw, fill)
 		case "text":
-			fSize := s.FontSize
-			if fSize <= 0 {
-				fSize = 0.04
-			}
+			// fontSize は px 単位で保存。viewBox 単位 (0-1) へ変換して描画する。
+			// 画像を自然サイズで表示したときに指定 px で描画される。
+			fSize := normalizeFontSizeViewBox(s.FontSize, imgHeightPx)
 			ff := ""
 			if strings.TrimSpace(s.FontFamily) != "" {
 				ff = fmt.Sprintf(` font-family="%s"`, html.EscapeString(s.FontFamily))
@@ -474,6 +478,36 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64) (string, error) {
 // 一致させる必要がある。<tspan dy="1.2em"> の値。
 const textLineHeight = 1.2
 
+// defaultFontSizePx は新規テキストのデフォルトフォントサイズ (px)。
+// フロント側 DEFAULT_FONT_SIZE_PX と同じ値にする。
+const defaultFontSizePx = 16
+
+// defaultReferenceHeightPx は imgHeightPx が未知 (0) の場合に使う fallback。
+// フロント側 DEFAULT_REFERENCE_HEIGHT_PX と同じ値にする。
+const defaultReferenceHeightPx = 400
+
+// normalizeFontSizeViewBox は保存された fontSize 値を viewBox (0-1) 座標系の
+// font-size へ変換する。
+//   - 新形式: px 単位 (>= 1) → imgHeightPx で割って viewBox 単位へ。
+//     画像を自然サイズで表示したときに指定 px で描画される。
+//   - legacy: 正規化値 (< 1) → そのまま viewBox 単位とみなす。
+//   - 空/負: デフォルト 16px を使用。
+// フロント側 effectiveFontSizeVB と同一ロジック。
+func normalizeFontSizeViewBox(fs float64, imgHeightPx int) float64 {
+	if fs <= 0 {
+		fs = defaultFontSizePx
+	}
+	if fs < 1 {
+		// legacy normalized value
+		return fs
+	}
+	h := imgHeightPx
+	if h <= 0 {
+		h = defaultReferenceHeightPx
+	}
+	return fs / float64(h)
+}
+
 // textLineCount はテキストの行数を返す。空文字でも 1 行とする。
 func textLineCount(text string) int {
 	if text == "" {
@@ -486,14 +520,11 @@ func textLineCount(text string) int {
 	return n
 }
 
-// textTotalHeight はテキスト全体の高さ (正規化 y) を返す。
+// textTotalHeight はテキスト全体の高さ (viewBox y 単位) を返す。
 // dominant-baseline="hanging" で y は最上行の top、各行は textLineHeight em 下へ移動。
-// 全体高 = fontSize * (1 + (n-1) * textLineHeight)。
-func textTotalHeight(s LayerShape) float64 {
-	fs := s.FontSize
-	if fs <= 0 {
-		fs = 0.04
-	}
+// 全体高 = fontSize_vb * (1 + (n-1) * textLineHeight)。
+func textTotalHeight(s LayerShape, imgHeightPx int) float64 {
+	fs := normalizeFontSizeViewBox(s.FontSize, imgHeightPx)
 	n := textLineCount(s.Text)
 	return fs * (1 + float64(n-1)*textLineHeight)
 }
@@ -515,8 +546,8 @@ func normalizeStrokeWidth(sw float64) float64 {
 }
 
 // shapeCenterViewBox は shape の視覚中心を viewBox 座標 (x は aspect 倍済み) で返す。
-// rotation の回転中心に使う。
-func shapeCenterViewBox(s LayerShape, aspect float64) (float64, float64) {
+// rotation の回転中心に使う。text では fontSize の px→viewBox 変換に imgHeightPx を使う。
+func shapeCenterViewBox(s LayerShape, aspect float64, imgHeightPx int) (float64, float64) {
 	switch s.Type {
 	case "line":
 		return (s.X1 + s.X2) * aspect / 2, (s.Y1 + s.Y2) / 2
@@ -526,11 +557,8 @@ func shapeCenterViewBox(s LayerShape, aspect float64) (float64, float64) {
 		return s.Cx * aspect, s.Cy
 	case "text":
 		// アンカー (x,y) + 視覚アンカー (幅 fs × 高さは行数分)。
-		fs := s.FontSize
-		if fs <= 0 {
-			fs = 0.04
-		}
-		return s.X*aspect + fs/2, s.Y + textTotalHeight(s)/2
+		fs := normalizeFontSizeViewBox(s.FontSize, imgHeightPx)
+		return s.X*aspect + fs/2, s.Y + textTotalHeight(s, imgHeightPx)/2
 	}
 	return 0, 0
 }
@@ -551,6 +579,19 @@ func getImageAspect(data []byte) float64 {
 	return float64(cfg.Width) / float64(cfg.Height)
 }
 
+// getImageSize は画像バイト列から自然ピクセルサイズ (width, height) を返す。
+// 失敗時は (0, 0)。fontSize の px → viewBox 変換用に使う。
+func getImageSize(data []byte) (int, int) {
+	if len(data) == 0 {
+		return 0, 0
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return 0, 0
+	}
+	return cfg.Width, cfg.Height
+}
+
 // BuildLayerSVGForId は id からレイヤーの shapes JSON と親アセットのアスペクト比を読み、
 // counter-scale 補正つきの SVG 文字列を生成する。ライブプレビュー用。
 func (b *Binder) BuildLayerSVGForId(id string) (string, error) {
@@ -566,10 +607,12 @@ func (b *Binder) BuildLayerSVGForId(id string) (string, error) {
 		return "", xerrors.Errorf("ReadLayer() error: %w", err)
 	}
 	var aspect float64
+	var imgH int
 	if data, _, err := b.ReadAssetBytes(m.ParentId); err == nil {
 		aspect = getImageAspect(data)
+		_, imgH = getImageSize(data)
 	}
-	svg, err := BuildLayerSVG(buf.String(), aspect)
+	svg, err := BuildLayerSVG(buf.String(), aspect, imgH)
 	if err != nil {
 		return "", xerrors.Errorf("BuildLayerSVG() error: %w", err)
 	}
@@ -592,12 +635,15 @@ func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraCla
 		if err := b.fileSystem.ReadLayer(&buf, id); err != nil {
 			return "", xerrors.Errorf("ReadLayer() error: %w", err)
 		}
-		// 親アセット画像のアスペクト比を取得してテキストの counter-scale 補正に使う
+		// 親アセット画像のアスペクト比と自然高さを取得する。
+		// fontSize の px→viewBox 変換に自然高さを使う。
 		var aspect float64
+		var imgH int
 		if data, _, err := b.ReadAssetBytes(m.ParentId); err == nil {
 			aspect = getImageAspect(data)
+			_, imgH = getImageSize(data)
 		}
-		svg, err := BuildLayerSVG(buf.String(), aspect)
+		svg, err := BuildLayerSVG(buf.String(), aspect, imgH)
 		if err != nil {
 			return "", xerrors.Errorf("BuildLayerSVG() error: %w", err)
 		}
