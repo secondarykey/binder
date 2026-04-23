@@ -427,7 +427,11 @@ function AssetViewer() {
           style={editorStyle}
           onChange={(e) => {
             setEditText(e.target.value);
-            saveAssetText(id, e.target.value);
+            setUpdated(true);
+            saveAssetText(id, e.target.value).then(() => {
+              evt.markModified(id);
+              evt.markPublishDirty(id);
+            }).catch(() => {});
           }}
         />
       );
