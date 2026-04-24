@@ -19,6 +19,8 @@ func (b *Binder) ToFile(mode string, id string) string {
 		f = fs.DiagramFile(id)
 	case "asset", "assets":
 		f = b.AssetFile(id)
+	case "layer":
+		f = fs.LayerFile(id)
 	case "template":
 		f = fs.TemplateFile(id)
 	default:
