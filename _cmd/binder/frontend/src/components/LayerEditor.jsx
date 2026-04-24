@@ -1,19 +1,19 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams } from 'react-router';
-import { Box, InputAdornment, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
+import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
-import CommitIcon from '@mui/icons-material/Commit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames } from '../../bindings/binder/api/app';
+import CommitBar from './CommitBar';
 import { EventContext } from '../Event';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -1122,25 +1122,12 @@ function LayerEditor() {
       </div>
 
       {/* ステータスバー */}
-      <div id="parseStatusBar">
-        <div className="parseStatusLeft" style={{ flex: 1, minWidth: 0 }}>
-          <TextField
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            size="small"
-            variant="outlined"
-            style={{ width: '100%' }}
-            inputProps={{ style: { fontSize: '12px', paddingTop: '4px', paddingBottom: '4px' } }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end" className="linkBtn">
-                  <CommitIcon fontSize="small" style={{ color: updated ? 'var(--accent-orange)' : 'var(--text-primary)', cursor: 'pointer' }} onClick={handleCommit} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </div>
-      </div>
+      <CommitBar
+        comment={comment}
+        onCommentChange={setComment}
+        updated={updated}
+        onCommit={handleCommit}
+      />
 
       {/* 右クリックメニュー (BinderTree と同じスタイル) */}
       <Menu

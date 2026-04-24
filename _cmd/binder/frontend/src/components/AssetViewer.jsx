@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, Menu, MenuItem, TextField, Tooltip } from '@mui/material';
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, TextField, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -9,10 +9,10 @@ import ImageIcon from '@mui/icons-material/Image';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import CommitIcon from '@mui/icons-material/Commit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds } from '../../bindings/binder/api/app';
+import CommitBar from './CommitBar';
 import EditorArea from './editor/EditorArea';
 import { Events } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
@@ -518,25 +518,12 @@ function AssetViewer() {
       </div>
 
       {/* ステータスバー */}
-      <div id="parseStatusBar">
-        <div className="parseStatusLeft" style={{ flex: 1, minWidth: 0 }}>
-          <TextField
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            size="small"
-            variant="outlined"
-            style={{ width: '100%' }}
-            inputProps={{ style: { fontSize: '12px', paddingTop: '4px', paddingBottom: '4px' } }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end" className="linkBtn">
-                  <CommitIcon fontSize="small" style={{ color: updated ? 'var(--accent-orange)' : 'var(--text-primary)', cursor: 'pointer' }} onClick={handleCommit} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </div>
-      </div>
+      <CommitBar
+        comment={comment}
+        onCommentChange={setComment}
+        updated={updated}
+        onCommit={handleCommit}
+      />
 
       {/* ノート移行確認ダイアログ */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
@@ -28,7 +28,6 @@ import '../../assets/Editor.css'
 import { Mode } from "../../app/App.jsx";
 
 import CloseIcon from '@mui/icons-material/Close';
-import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
@@ -57,6 +56,7 @@ import BinderTree from "../../components/BinderTree.jsx";
 import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 import LayerEditor from "../../components/LayerEditor.jsx";
+import CommitBar from "../../components/CommitBar.jsx";
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -1318,22 +1318,6 @@ function Editor(props) {
     }).catch((err) => console.log(err));
   };
 
-  var commentStyle = {};
-  commentStyle.fontSize = "12px";
-  commentStyle.paddingTop = "12px";
-  commentStyle.width = (width - 70) + "px";
-
-  var color = "var(--text-primary)";
-  if (updated) {
-    color = "var(--accent-orange)";
-  }
-
-  //コミット用のアイコン(コメント欄の横)
-  const commitIcon = (
-    <InputAdornment position="end" className="linkBtn">
-      <CommitIcon fontSize="small" style={{ color: color }} onClick={handleCommit}> </CommitIcon>
-    </InputAdornment>
-  )
 
   // エディタルートではツリーパネルを常に表示する
   const showTree = true;
@@ -1652,19 +1636,13 @@ function Editor(props) {
                 onDrop={handleDrop}
               />
 
-              {/** 左側の操作用位置 */}
-              <Toolbar className="buttonBar">
-                <Container className="buttonBarLeft">
-                  {/** コミットコメント */}
-                  <TextField value={comment} onChange={(e) => setComment(e.target.value)}
-                    size="small"
-                    variant="outlined"
-                    style={{ marginLeft: "0px", paddingLeft: "0px" }}
-                    inputProps={{ style: commentStyle }}
-                    InputProps={{ endAdornment: commitIcon }}
-                  ></TextField>
-                </Container>
-              </Toolbar>
+              {/** コミットバー */}
+              <CommitBar
+                comment={comment}
+                onCommentChange={setComment}
+                updated={updated}
+                onCommit={handleCommit}
+              />
             </div>
           }
 

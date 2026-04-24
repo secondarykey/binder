@@ -504,6 +504,14 @@ iframe.htmlViewer {
   padding: 0 1px;
 }
 
+/* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */
+#editorWrapper #parseStatusBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
 /* =====================================================================
  * ボタンバー（エディタ左側の下部）
  * ===================================================================== */
