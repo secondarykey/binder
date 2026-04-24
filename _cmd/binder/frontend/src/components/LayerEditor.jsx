@@ -294,6 +294,7 @@ function LayerEditor() {
       Address(),
     ]).then(([lw, content, addr]) => {
       setLayer(lw);
+      if (lw?.name) setComment('Updated: ' + lw.name);
       if (lw?.parentId) {
         setImageUrl(`${addr}/binder-assets/${lw.parentId}`);
       }
