@@ -26,6 +26,8 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"childrenNotes": w.childrenNotes,
 		"latestNotes":   w.latestNotes,
 		"safe":          safeTemplate,
+		"lit":           litTemplate,
+		"litURL":        litURLTemplate,
 		"replace":       strings.ReplaceAll,
 		"localeDate":    localeDateScript,
 		"formatDate":    formatDate,
@@ -395,6 +397,18 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 
 func safeTemplate(src string) string {
 	return src
+}
+
+// litTemplate はテキスト・HTML属性コンテキストでテンプレート構文をそのまま出力する。
+// URL属性（href等）では litURLTemplate を使うこと。
+func litTemplate(src string) template.HTML {
+	return template.HTML(src)
+}
+
+// litURLTemplate はURLコンテキスト（href等）でテンプレート構文をそのまま出力する。
+// html/template のURL正規化（{ → %7B）をバイパスする。
+func litURLTemplate(src string) template.URL {
+	return template.URL(src)
 }
 
 func formatDate(d string, f string) string {
