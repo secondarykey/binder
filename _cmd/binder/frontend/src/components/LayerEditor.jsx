@@ -7,11 +7,12 @@ import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, GetFontNames } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, GetFontNames } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -254,6 +255,7 @@ function LayerEditor() {
   const [rotating, setRotating] = useState(null); // { shapeId, orig, center, startAngle }
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
   const [generating, setGenerating] = useState(false);
+  const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
 
   // フローティングパネルの位置（canvas コンテナの右上を原点とする top/right 指定）
   const [panelPos, setPanelPos] = useState({ top: 12, right: 12 });
@@ -673,11 +675,22 @@ function LayerEditor() {
     try {
       await Generate("layer", id, "");
       evt.showSuccessMessage(t("layer.publishSuccess"));
+      evt.reloadUnpublished();
     } catch (err) {
       evt.showErrorMessage(err);
     } finally {
       setGenerating(false);
     }
+  };
+
+  const openMoreMenu = (el) => setMoreMenu({ open: true, el });
+  const closeMoreMenu = () => setMoreMenu({ open: false, el: null });
+
+  const handleUnpublish = () => {
+    Unpublish("layer", id).then(() => {
+      evt.reloadUnpublished();
+      evt.showSuccessMessage(t("preview.unpublish"));
+    }).catch((err) => evt.showErrorMessage(err));
   };
 
   const renderShape = (s, isPreview = false) => {
@@ -811,8 +824,38 @@ function LayerEditor() {
             </Tooltip>
           </ToggleButtonGroup>
         </div>
-        <div className="previewMenuRight" />
+        <div className="previewMenuRight">
+          <Tooltip title={t("preview.publish")} placement="bottom">
+            <span>
+              <IconButton size="small" onClick={handlePublish} disabled={generating || !id} className="editorBtn">
+                <PublishIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <IconButton
+            size="small"
+            onClick={(e) => openMoreMenu(e.currentTarget)}
+            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+            className="editorBtn"
+          >
+            <MoreVertIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+        </div>
       </div>
+
+      {/* MoreVert ドロップダウンメニュー */}
+      <Menu
+        open={moreMenu.open}
+        anchorEl={moreMenu.el ?? undefined}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        onClose={closeMoreMenu}
+        slotProps={{ paper: { sx: { minWidth: 160 } } }}
+      >
+        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+        </MenuItem>
+      </Menu>
 
       {/* コンテンツ: キャンバス + フローティングパネル */}
       <div ref={canvasRef} style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
@@ -1063,23 +1106,6 @@ function LayerEditor() {
             </Typography>
           )}
         </Paper>
-      </div>
-
-      {/* ステータスバー（画像アセットビューアと同形） */}
-      <div id="parseStatusBar">
-        <div className="parseStatusLeft">
-          <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} />
-          <span className="parseStatusText">{layer?.name ?? ''}</span>
-        </div>
-        <div className="parseStatusRight">
-          <Tooltip title={t("preview.publish")} placement="top">
-            <span>
-              <IconButton size="small" onClick={handlePublish} disabled={generating || !id} className="editorBtn">
-                <PublishIcon sx={{ fontSize: '16px' }} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </div>
       </div>
 
       {/* 右クリックメニュー (BinderTree と同じスタイル) */}
