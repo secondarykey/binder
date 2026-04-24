@@ -123,9 +123,10 @@ class MermaidScript {
 
     var rtn = new Promise((res, rej) => {
 
+      const renderId = 'mermaid-render-' + Date.now();
       var func = function () {
         mermaid.parse(fullTxt).then(() => {
-          mermaid.render('svg', fullTxt).then((data) => {
+          mermaid.render(renderId, fullTxt).then((data) => {
             res(data);
           }).catch((err) => {
             rej(err);
