@@ -18,7 +18,7 @@ function CommitBar({ comment, onCommentChange, updated, onCommit }) {
           size="small"
           variant="outlined"
           style={{ width: '100%' }}
-          inputProps={{ style: { fontSize: '12px', paddingTop: '4px', paddingBottom: '4px' } }}
+          inputProps={{ style: { fontSize: '12px' } }}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end" className="linkBtn">
