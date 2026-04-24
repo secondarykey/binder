@@ -60,11 +60,13 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
   const [assets, setAssets] = useState([]);
+  const [layers, setLayers] = useState([]);
   const [errorDlg, setErrorDlg] = useState({ open: false, names: [] });
 
   const noteRef = useRef(null);
   const diagramRef = useRef(null);
   const assetRef = useRef(null);
+  const layerRef = useRef(null);
 
   const loadTree = () => {
     if (template) {
@@ -104,6 +106,9 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         } else if (leaf.id === "DIR_Asset") {
           setAssets(leafs);
           writeComment("Asset", leafs);
+        } else if (leaf.id === "DIR_Layer") {
+          setLayers(leafs);
+          writeComment("Layer", leafs);
         }
       });
 
@@ -123,6 +128,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         ...(noteRef.current?.checked() ?? []),
         ...(diagramRef.current?.checked() ?? []),
         ...(assetRef.current?.checked() ?? []),
+        ...(layerRef.current?.checked() ?? []),
       ];
 
       if (selected.length === 0) {
@@ -149,6 +155,8 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
             const text = await OpenDiagram(leaf.id);
             const obj = await Mermaid.parse(text);
             items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
+          } else if (leaf.type === "layer") {
+            items.push({ mode: "layer", id: leaf.id, data: "" });
           } else {
             // asset
             items.push({ mode: "assets", id: leaf.id, data: "" });
@@ -191,6 +199,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       <UnpublishedList name="Note"    data={notes}    onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={noteRef} />
       <UnpublishedList name="Diagram" data={diagrams} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={diagramRef} />
       <UnpublishedList name="Asset"   data={assets}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={assetRef} />
+      <UnpublishedList name="Layer"   data={layers}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={layerRef} />
     </List>
 
     <Menu open={contextMenu.open}
