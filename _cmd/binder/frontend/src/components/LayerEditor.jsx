@@ -1,18 +1,19 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams } from 'react-router';
-import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
+import { Box, InputAdornment, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
+import CommitIcon from '@mui/icons-material/Commit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, GetFontNames } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames } from '../../bindings/binder/api/app';
 import { EventContext } from '../Event';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -256,6 +257,8 @@ function LayerEditor() {
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
   const [generating, setGenerating] = useState(false);
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
+  const [comment, setComment] = useState('');
+  const [updated, setUpdated] = useState(false);
 
   // フローティングパネルの位置（canvas コンテナの右上を原点とする top/right 指定）
   const [panelPos, setPanelPos] = useState({ top: 12, right: 12 });
@@ -343,6 +346,7 @@ function LayerEditor() {
       SaveLayerContent(id, JSON.stringify({ shapes }))
         .then(() => {
           if (evt?.markModified) evt.markModified(id);
+          setUpdated(true);
         })
         .catch((err) => evt.showErrorMessage(err));
     }, 400);
@@ -668,6 +672,14 @@ function LayerEditor() {
 
   const handlePanelDragEnd = () => {
     setPanelDrag(null);
+  };
+
+  const handleCommit = () => {
+    Commit("layer", id, comment).then(() => {
+      setUpdated(false);
+      evt.commitDone();
+      evt.showSuccessMessage("Commit.");
+    }).catch((err) => evt.showErrorMessage(String(err)));
   };
 
   const handlePublish = async () => {
@@ -1106,6 +1118,27 @@ function LayerEditor() {
             </Typography>
           )}
         </Paper>
+      </div>
+
+      {/* ステータスバー */}
+      <div id="parseStatusBar">
+        <div className="parseStatusLeft" style={{ flex: 1, minWidth: 0 }}>
+          <TextField
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            size="small"
+            variant="outlined"
+            style={{ width: '100%' }}
+            inputProps={{ style: { fontSize: '12px', paddingTop: '4px', paddingBottom: '4px' } }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end" className="linkBtn">
+                  <CommitIcon fontSize="small" style={{ color: updated ? 'var(--accent-orange)' : 'var(--text-primary)', cursor: 'pointer' }} onClick={handleCommit} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </div>
       </div>
 
       {/* 右クリックメニュー (BinderTree と同じスタイル) */}
