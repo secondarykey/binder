@@ -167,10 +167,12 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       }
 
       // レンダリングに成功したアイテムを1回のコミットにまとめて公開
+      let generateOk = true;
       if (items.length > 0) {
         try {
           await GenerateAll(items, comment);
         } catch (err) {
+          generateOk = false;
           evt.showErrorMessage(err);
         }
       }
@@ -179,6 +181,8 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
 
       if (errors.length > 0) {
         setErrorDlg({ open: true, names: errors });
+        setTimeout(() => { loadTree(); }, 800);
+      } else if (!generateOk) {
         setTimeout(() => { loadTree(); }, 800);
       } else if (onClose) {
         evt.showSuccessMessage(t("publishModal.generateSuccess"));
