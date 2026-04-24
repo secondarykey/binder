@@ -12,7 +12,7 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames, GetModifiedIds } from '../../bindings/binder/api/app';
 import CommitBar from './CommitBar';
 import { EventContext } from '../Event';
 import "../language";
@@ -306,6 +306,10 @@ function LayerEditor() {
       }
       setTimeout(() => { loadedRef.current = true; }, 0);
     }).catch((err) => evt.showErrorMessage(err));
+
+    GetModifiedIds().then((ids) => {
+      setUpdated((ids ?? []).includes(id));
+    }).catch(() => {});
   }, [id]);
 
   // フォント一覧の取得（テキスト shape の font-family 候補）
