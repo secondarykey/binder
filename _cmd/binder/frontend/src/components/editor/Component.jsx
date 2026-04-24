@@ -1739,6 +1739,15 @@ function Editor(props) {
                     </Tooltip>
                   }
                   {mode !== Mode.template &&
+                    <Tooltip title={t("preview.publish")} placement="bottom">
+                      <span>
+                        <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { pointerEvents: 'none' } : {}}>
+                          <PublishIcon sx={{ fontSize: '16px', ...(isPrivate && { color: '#9e9e9e' }) }} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  }
+                  {mode !== Mode.template &&
                     <IconButton
                       size="small"
                       onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
@@ -1789,17 +1798,6 @@ function Editor(props) {
                     : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
                   }
                 </div>
-                {mode !== Mode.template &&
-                  <div className="parseStatusRight">
-                    <Tooltip title={t("preview.publish")} placement="top">
-                      <span>
-                        <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { pointerEvents: 'none' } : {}}>
-                          <PublishIcon sx={{ fontSize: '16px', ...(isPrivate && { color: '#9e9e9e' }) }} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </div>
-                }
               </div>
 
             </div>

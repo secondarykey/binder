@@ -471,6 +471,13 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
+          <Tooltip title={t("preview.publish")} placement="bottom">
+            <span>
+              <IconButton size="small" aria-label="publish" onClick={handleGenerate} disabled={generating || !id} className="editorBtn">
+                <PublishIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
           <IconButton
             size="small"
             onClick={(e) => openMoreMenu(e.currentTarget)}
@@ -528,15 +535,6 @@ function AssetViewer() {
               ),
             }}
           />
-        </div>
-        <div className="parseStatusRight">
-          <Tooltip title={t("preview.publish")} placement="top">
-            <span>
-              <IconButton size="small" aria-label="publish" onClick={handleGenerate} disabled={generating || !id} className="editorBtn">
-                <PublishIcon sx={{ fontSize: '16px' }} />
-              </IconButton>
-            </span>
-          </Tooltip>
         </div>
       </div>
 
