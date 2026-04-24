@@ -888,25 +888,25 @@ function Editor(props) {
 
   //出力処理
   const handlePublish = async () => {
-    var elm = "";
-    if (mode === Mode.note) {
-      elm = (await createMarked(id, text, false)).html;
-    } else if (mode === Mode.diagram) {
-      var obj = await Mermaid.parse(text, styleTemplateId);
-      elm = obj.svg
-    } else if (mode === Mode.template) {
-      elm = text;
-    } else if (mode === Mode.asset) {
-      elm = text;
-    }
+    try {
+      var elm = "";
+      if (mode === Mode.note) {
+        elm = (await createMarked(id, text, false)).html;
+      } else if (mode === Mode.diagram) {
+        var obj = await Mermaid.parse(text, styleTemplateId);
+        elm = obj.svg;
+      } else if (mode === Mode.template) {
+        elm = text;
+      } else if (mode === Mode.asset) {
+        elm = text;
+      }
 
-    //出力処理を行う
-    Generate(mode, id, elm).then(() => {
+      await Generate(mode, id, elm);
       evt.reloadUnpublished();
-      evt.showSuccessMessage("Generate.")
-    }).catch((err) => {
+      evt.showSuccessMessage("Generate.");
+    } catch (err) {
       evt.showErrorMessage(err);
-    })
+    }
   }
 
   //非公開処理
