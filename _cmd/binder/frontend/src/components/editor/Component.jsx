@@ -341,6 +341,9 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
+      // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
+      // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
+      setText("");
 
       // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
       // setText が先に走ると styleTemplateId が空のまま初回描画されるため
@@ -734,6 +737,7 @@ function Editor(props) {
     Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
+      if (!elm) return;
       elm.innerHTML = data.svg;
       setParseStatus({ status: "success", err: null });
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt, styleTemplateId });
