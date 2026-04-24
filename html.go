@@ -103,7 +103,9 @@ func (b *Binder) createHTMLTemplate(w *wrapper) (*template.Template, error) {
 	return tmpl, nil
 }
 
-// ノートの要素を一度テンプレート処理を行う
+// ノートの要素を一度テンプレート処理を行う。
+// ノート内容はMarkdownであり最終HTMLではないため、html/templateのコンテキスト認識エスケープを避けるtext/templateを使用する。
+// （ParseDiagramと同じ方針）
 func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, error) {
 
 	if b == nil {
@@ -115,7 +117,7 @@ func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, err
 		return "", xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
-	tmpl, err := template.New("").Funcs(defineFuncMap(wrap)).Parse(elm)
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
 	if err != nil {
 		return "", xerrors.Errorf("Element Parse() error: %w", err)
 	}
@@ -126,8 +128,7 @@ func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, err
 	}
 
 	var builder strings.Builder
-	err = b.writeHTML(&builder, tmpl, dto)
-	if err != nil {
+	if err := tmpl.Execute(&builder, dto); err != nil {
 		return "", xerrors.Errorf("elm Execute() error: %w", err)
 	}
 	return builder.String(), nil

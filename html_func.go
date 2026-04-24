@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"strings"
 	"time"
+	texttemplate "text/template"
 
 	"binder/db/model"
 	"binder/fs"
@@ -326,7 +327,7 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	}
 
 	content := buf.String()
-	tmpl, err := template.New("").Funcs(defineFuncMap(childWrap)).Parse(content)
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
 		log.ErrorE("embed Parse()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
@@ -339,8 +340,8 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	}
 
 	var out strings.Builder
-	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
-		log.ErrorE("embed writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
+	if err := tmpl.Execute(&out, dto); err != nil {
+		log.ErrorE("embed Execute()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
 	}
 
@@ -374,7 +375,7 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	}
 
 	content := string(data)
-	tmpl, err := template.New("").Funcs(defineFuncMap(childWrap)).Parse(content)
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
 		log.ErrorE("embed asset Parse()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
@@ -387,8 +388,8 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	}
 
 	var out strings.Builder
-	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
-		log.ErrorE("embed asset writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
+	if err := tmpl.Execute(&out, dto); err != nil {
+		log.ErrorE("embed asset Execute()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
 	}
 
