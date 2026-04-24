@@ -288,11 +288,14 @@ function LayerEditor() {
   useEffect(() => {
     if (!id) return;
     loadedRef.current = false;
+    let cancelled = false;
+
     Promise.all([
       GetLayerWithParent(id),
       GetLayerContent(id),
       Address(),
     ]).then(([lw, content, addr]) => {
+      if (cancelled) return;
       setLayer(lw);
       if (lw?.name) setComment('Updated: ' + lw.name);
       if (lw?.parentId) {
@@ -304,12 +307,14 @@ function LayerEditor() {
       } catch {
         setShapes([]);
       }
-      setTimeout(() => { loadedRef.current = true; }, 0);
-    }).catch((err) => evt.showErrorMessage(err));
+      setTimeout(() => { if (!cancelled) loadedRef.current = true; }, 0);
+    }).catch((err) => { if (!cancelled) evt.showErrorMessage(err); });
 
     GetModifiedIds().then((ids) => {
-      setUpdated((ids ?? []).includes(id));
+      if (!cancelled) setUpdated((ids ?? []).includes(id));
     }).catch(() => {});
+
+    return () => { cancelled = true; };
   }, [id]);
 
   // フォント一覧の取得（テキスト shape の font-family 候補）
