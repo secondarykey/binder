@@ -11,7 +11,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate,
   OpenNote, OpenDiagram,
-  ParseNote, GenerateAll,
+  ParseNote, ParseDiagram, GenerateAll,
 } from '../../bindings/binder/api/app';
 
 import Marked from '../components/editor/engines/Marked';
@@ -153,7 +153,8 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
             items.push({ mode: "note", id: leaf.id, data: html });
           } else if (leaf.type === "diagram") {
             const text = await OpenDiagram(leaf.id);
-            const obj = await Mermaid.parse(text);
+            const parsedTxt = await ParseDiagram(leaf.id, false, text);
+            const obj = await Mermaid.parse(parsedTxt);
             items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
           } else if (leaf.type === "layer") {
             items.push({ mode: "layer", id: leaf.id, data: "" });

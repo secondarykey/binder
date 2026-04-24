@@ -893,7 +893,8 @@ function Editor(props) {
       if (mode === Mode.note) {
         elm = (await createMarked(id, text, false)).html;
       } else if (mode === Mode.diagram) {
-        var obj = await Mermaid.parse(text, styleTemplateId);
+        const parsedTxt = await ParseDiagram(id, false, text);
+        var obj = await Mermaid.parse(parsedTxt, styleTemplateId);
         elm = obj.svg;
       } else if (mode === Mode.template) {
         elm = text;
