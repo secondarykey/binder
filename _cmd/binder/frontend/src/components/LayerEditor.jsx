@@ -271,6 +271,11 @@ function LayerEditor() {
   // の引き伸ばしでテキスト字形が歪むため、text レンダリング時に x 方向を 1/aspect 倍する。
   const [imgAspect, setImgAspect] = useState(1);
 
+  // 親画像の自然サイズ（ピクセル）高さ。フォントサイズ計算の基準に使う。
+  // Go 側の normalizeFontSizeViewBox は自然サイズを基準にするため、エディタ側も
+  // 表示サイズではなく自然サイズを使うことで WYSIWYG が保たれる。
+  const [imgNaturalHeight, setImgNaturalHeight] = useState(0);
+
   // SVG の実表示ピクセルサイズ。小さな画像でもリサイズハンドルが一定ピクセル
   // サイズで表示できるよう、viewBox 単位への変換に使う。
   const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
@@ -429,7 +434,7 @@ function LayerEditor() {
       // 回転は viewBox 座標系 (x 側が aspect 倍) で行われているため、
       // 一旦 viewBox に写してから逆回転し、正規化座標へ戻す。
       if (orig.rotation) {
-        const c = getShapeCenter(orig, aspect, svgH);
+        const c = getShapeCenter(orig, aspect, naturalH);
         const p = rotatePoint(
           x * aspect, y,
           c.x * aspect, c.y,
@@ -466,10 +471,10 @@ function LayerEditor() {
         };
       } else if (orig.type === 'text') {
         // フォントサイズは px 単位で保存する。
-        // ドラッグ距離 (正規化 y) × svg 表示高 (px) = 実ピクセル。
-        // svgH は svgSize.h > 0 のとき画像の表示高さ。
+        // ドラッグ距離 (正規化 y) × 自然高さ (px) = 実ピクセル。
+        // naturalH を使うことで Go 側出力と WYSIWYG を保つ。
         const dyNorm = Math.max(0, Math.abs(y - fixed.y));
-        const newFontSizePx = Math.max(4, Math.round(dyNorm * svgH));
+        const newFontSizePx = Math.max(4, Math.round(dyNorm * naturalH));
         resized = { ...orig, fontSize: newFontSizePx };
       }
       setShapes((prev) => prev.map((s) => (s.id === resizing.shapeId ? resized : s)));
@@ -577,7 +582,7 @@ function LayerEditor() {
     const orig = shapes.find((s) => s.id === shapeId);
     if (!orig) return;
     const { x, y } = toClientPos(e);
-    const c = getShapeCenter(orig, aspect, svgH);
+    const c = getShapeCenter(orig, aspect, naturalH);
     const startAngle = Math.atan2(y - c.y, (x - c.x) * aspect);
     setRotating({ shapeId, orig, center: c, startAngle });
     if (e.currentTarget && e.currentTarget.setPointerCapture) {
@@ -740,8 +745,9 @@ function LayerEditor() {
       el = <ellipse {...common} cx={vbX(s.cx)} cy={s.cy} rx={vbX(s.rx)} ry={s.ry} />;
     } else if (s.type === 'text') {
       // viewBox が "0 0 aspect 1" で等比スケールになったため counter-scale は不要。
-      // fontSize は px 単位で保存されるため、表示高 (svgH) で割って viewBox 単位へ。
-      const fs = effectiveFontSizeVB(s.fontSize, svgH);
+      // fontSize は px 単位で保存されるため、自然高さ (naturalH) で割って viewBox 単位へ。
+      // naturalH を使うことで Go 側 normalizeFontSizeViewBox と一致し WYSIWYG を保つ。
+      const fs = effectiveFontSizeVB(s.fontSize, naturalH);
       const textProps = {
         x: vbX(s.x),
         y: s.y,
@@ -760,7 +766,7 @@ function LayerEditor() {
       // (fs_vb * 1.2 + lineSpacing_vb)。em 単位だと lineSpacing の px を反映できないため。
       // 全 tspan に x を指定して行頭を揃える。
       const lines = (s.text || '').split('\n');
-      const dyVB = lineDyVB(s, svgH);
+      const dyVB = lineDyVB(s, naturalH);
       el = (
         <text {...textProps}>
           {lines.map((ln, i) => (
@@ -776,7 +782,7 @@ function LayerEditor() {
     // 回転中心は viewBox 座標 (x のみ aspect 倍) で指定する。
     const rot = s.rotation || 0;
     if (rot) {
-      const c = getShapeCenter(s, aspect, svgH);
+      const c = getShapeCenter(s, aspect, naturalH);
       return (
         <g key={s.id} transform={`rotate(${rot} ${vbX(c.x)} ${c.y})`}>{el}</g>
       );
@@ -785,7 +791,6 @@ function LayerEditor() {
   };
 
   const selected = shapes.find((s) => s.id === selectedId) || null;
-  const selBBox = getBBox(selected, imgAspect, svgSize.h);
   const selPad = 0.008;
   // viewBox を "0 0 aspect 1" にして viewBox→表示を等比スケールにする。
   // shape データは正規化座標 (0-1) のまま保持し、レンダ時に x のみ aspect 倍して
@@ -798,8 +803,13 @@ function LayerEditor() {
   const HANDLE_INNER_PX = 10; // 表示上の正方形のひと辺
   const HANDLE_HIT_PX = 20;   // クリック当たり判定のひと辺
   const svgH = svgSize.h > 0 ? svgSize.h : 1;
+  // フォントサイズ計算は自然サイズを基準にする（Go 側の normalizeFontSizeViewBox と一致）。
+  // 自然サイズが取得できていない間は表示サイズで代替する（初回レンダ時の fallback）。
+  const naturalH = imgNaturalHeight > 0 ? imgNaturalHeight : svgH;
   const handleSize = HANDLE_INNER_PX / svgH;
   const hitSize = HANDLE_HIT_PX / svgH;
+  // selBBox は naturalH 確定後に計算する（text の bbox はフォントサイズに依存）。
+  const selBBox = getBBox(selected, imgAspect, naturalH);
 
   // ToggleButton 共通スタイル（#previewMenu にフィットするよう小さく）
   const toggleBtnSx = {
@@ -896,7 +906,10 @@ function LayerEditor() {
                 onLoad={(e) => {
                   const w = e.target.naturalWidth;
                   const h = e.target.naturalHeight;
-                  if (w > 0 && h > 0) setImgAspect(w / h);
+                  if (w > 0 && h > 0) {
+                    setImgAspect(w / h);
+                    setImgNaturalHeight(h);
+                  }
                 }}
                 style={{ display: 'block', maxWidth: '100%', height: 'auto', userSelect: 'none', pointerEvents: 'none' }}
               />
@@ -924,7 +937,7 @@ function LayerEditor() {
                 {(() => {
                   if (!selected) return null;
                   const rot = selected.rotation || 0;
-                  const c = getShapeCenter(selected, aspect, svgH);
+                  const c = getShapeCenter(selected, aspect, naturalH);
                   const transform = rot ? `rotate(${rot} ${vbX(c.x)} ${c.y})` : undefined;
                   return (
                     <g transform={transform}>
@@ -943,7 +956,7 @@ function LayerEditor() {
                           style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
                         />
                       )}
-                      {tool === 'select' && !drawing && getHandles(selected, imgAspect, svgH).map((h) => (
+                      {tool === 'select' && !drawing && getHandles(selected, imgAspect, naturalH).map((h) => (
                         <g key={h.id} style={{ cursor: h.cursor }}
                            onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
                           <rect
