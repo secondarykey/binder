@@ -16,7 +16,7 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
 	}
 
-	html, err := a.current.CreateNoteHTML(n, true, elm)
+	html, err := a.current.CreateNoteHTML(n, false, elm)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
