@@ -113,7 +113,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 	switch mode {
 	case "note":
 
-		html, err := a.CreateNoteHTML(id, data)
+		html, err := a.CreateNoteHTML(id, false, data)
 		if err == nil {
 			_, err = a.current.PublishNote(id, []byte(html))
 		}
@@ -145,7 +145,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 	for _, item := range items {
 		switch item.Mode {
 		case "note":
-			html, err := a.CreateNoteHTML(item.Id, item.Data)
+			html, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
 				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
 			}

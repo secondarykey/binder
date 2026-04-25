@@ -713,7 +713,7 @@ function Editor(props) {
     if (mode === "note") {
 
       var result = await createMarked(id, txt, true, true);
-      CreateNoteHTML(id, result.html).then((resp) => {
+      CreateNoteHTML(id, true, result.html).then((resp) => {
         setHTML(resp);
         if (!result.parseError) setParseStatus({ status: "success", err: null });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });

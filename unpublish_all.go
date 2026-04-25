@@ -150,7 +150,7 @@ func (b *Binder) UnpublishAll() error {
 
 	allFiles = append(allFiles, fs.StructureTableFile())
 
-	if err := b.fileSystem.Commit(fs.M("Unpublish All"), allFiles...); err != nil && !errors.Is(err, fs.UpdatedFilesError) {
+	if err := b.fileSystem.Commit(fs.M("Unpublish All", "All"), allFiles...); err != nil && !errors.Is(err, fs.UpdatedFilesError) {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
 	return nil
