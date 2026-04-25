@@ -1767,12 +1767,12 @@ function Editor(props) {
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handlePublish(); }} disabled={parseStatus.status === "error" || isPrivate}>
                   <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
                 </MenuItem>
-                <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
-                  <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-                </MenuItem>
-                <Divider />
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handleOpenInBrowser(); }} disabled={!alias || mode === Mode.template}>
                   <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
+                  <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
                 </MenuItem>
               </Menu>
 

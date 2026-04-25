@@ -953,12 +953,12 @@ function LayerEditor() {
         <MenuItem onClick={() => { closeMoreMenu(); handlePublish(); }} disabled={generating || !id}>
           <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
         </MenuItem>
-        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
-          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-        </MenuItem>
-        <Divider />
         <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!layer?.alias}>
           <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
         </MenuItem>
       </Menu>
 
