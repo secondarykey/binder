@@ -753,14 +753,20 @@ function Editor(props) {
         svg.style.transform = `translate(${px},${py}) scale(${scale})`;
       }
 
-      //ドラッグ
+      // ホイールクリック（中ボタン）でドラッグ移動。AssetViewer/LayerEditor と統一。
+      svg.addEventListener("pointerdown", function (event) {
+        if (event.button !== 1) return;
+        event.preventDefault(); // ブラウザのオートスクロールモードを抑制
+        elm.style.cursor = 'grabbing';
+      });
       svg.addEventListener("pointermove", function (event) {
-        if (!event.buttons) {
-          return;
-        }
+        if (!(event.buttons & 4)) return; // 中ボタン押下中のみ
         left = (left + event.movementX);
         top = (top + event.movementY);
         transform();
+      });
+      svg.addEventListener("pointerup", function (event) {
+        if (event.button === 1) elm.style.cursor = '';
       });
 
       //Wheelによる拡大
