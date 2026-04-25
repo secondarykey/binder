@@ -73,7 +73,11 @@
         "copy.gitbashPath" : "GitBashパス",
         "unpublishAll" : "全データを未公開にする",
         "unpublishAllConfirmTitle" : "全データを未公開にしますか？",
-        "unpublishAllConfirmMessage" : "公開済みのノート・ダイアグラム・アセット・レイヤーをすべて未公開状態にします。この操作は元に戻せません。"
+        "unpublishAllConfirmMessage" : "公開済みのノート・ダイアグラム・アセット・レイヤーをすべて未公開状態にします。この操作は元に戻せません。",
+        "regenerateAll" : "すべてを最新のデータに更新する",
+        "regenerateAllConfirmTitle" : "すべてのデータを更新しますか？",
+        "regenerateAllConfirmMessage" : "すべてのデータを最新に更新します。コメントはそのまま利用しますので再確認して実行してください。",
+        "regenerateAllEmpty" : "現在公開中のデータがありません。"
     },
     "note" : {
         "editTitle" : "ノート編集",

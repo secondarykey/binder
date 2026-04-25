@@ -73,7 +73,11 @@
         "copy.gitbashPath" : "GitBash Path",
         "unpublishAll" : "Unpublish All Data",
         "unpublishAllConfirmTitle" : "Unpublish all data?",
-        "unpublishAllConfirmMessage" : "All published notes, diagrams, assets, and layers will be set to unpublished. This action cannot be undone."
+        "unpublishAllConfirmMessage" : "All published notes, diagrams, assets, and layers will be set to unpublished. This action cannot be undone.",
+        "regenerateAll" : "Update All to Latest",
+        "regenerateAllConfirmTitle" : "Update all data?",
+        "regenerateAllConfirmMessage" : "All data will be updated to the latest. Comments will be used as-is, so please review and execute.",
+        "regenerateAllEmpty" : "No published data found."
     },
     "note" : {
         "editTitle" : "Edit Note",

@@ -65,3 +65,14 @@ func (a *App) GetUnpublishedTree() (*json.Tree, error) {
 	}
 	return tree, nil
 }
+
+func (a *App) GetPublishedTree() (*json.Tree, error) {
+	defer log.PrintTrace(log.Func("GetPublishedTree()"))
+
+	tree, err := a.current.GetPublishedTree()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("GetPublishedTree() error\n%+v", err)
+	}
+	return tree, nil
+}
