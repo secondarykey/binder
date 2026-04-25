@@ -570,8 +570,8 @@ func (b *Binder) privatizeDescendants(parentId string, allFiles *[]string) error
 			return xerrors.Errorf("db.PrivatizeStructure(%s) error: %w", s.Id, err)
 		}
 
-		// ノート・ダイアグラムは子を持つため再帰
-		if s.Typ == "note" || s.Typ == "diagram" {
+		// ノート・ダイアグラム・アセットは子を持つため再帰（レイヤーはアセットの子）
+		if s.Typ == "note" || s.Typ == "diagram" || s.Typ == "asset" {
 			if err := b.privatizeDescendants(s.Id, allFiles); err != nil {
 				return err
 			}
