@@ -512,16 +512,6 @@ function AssetViewer() {
         onClose={closeMoreMenu}
         slotProps={{ paper: { sx: { minWidth: 160 } } }}
       >
-        <MenuItem onClick={() => { closeMoreMenu(); handleGenerate(); }} disabled={generating || !id}>
-          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
-        </MenuItem>
-        <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!assetMeta?.alias}>
-          <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
-          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-        </MenuItem>
         {assetContent && isImageMime(assetContent.mime) && (
           <MenuItem onClick={() => { closeMoreMenu(); handleSetMetaImage(); }} disabled={!id}>
             <ImageIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.setMetaImage")}
@@ -532,6 +522,17 @@ function AssetViewer() {
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
           </MenuItem>
         )}
+        {assetContent && (isImageMime(assetContent.mime) || isTextMime(assetContent.mime)) && <Divider />}
+        <MenuItem onClick={() => { closeMoreMenu(); handleGenerate(); }} disabled={generating || !id}>
+          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+        </MenuItem>
+        <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!assetMeta?.alias}>
+          <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+        </MenuItem>
       </Menu>
       {/* コンテンツ */}
       <div className="assetTextEditor" style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
