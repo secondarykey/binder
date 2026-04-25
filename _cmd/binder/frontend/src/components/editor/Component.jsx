@@ -7,11 +7,11 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow } from "../../../bindings/main/window";
-import { Events } from '@wailsio/runtime';
+import { Events, Browser } from '@wailsio/runtime';
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -33,6 +33,7 @@ import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import LaunchIcon from '@mui/icons-material/Launch';
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import PreviewIcon from '@mui/icons-material/Preview';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -284,6 +285,8 @@ function Editor(props) {
   const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [alias, setAlias] = useState('');
+  const [serverAddress, setServerAddress] = useState('');
   // ダイアグラムスタイルテンプレートID
   const [styleTemplateId, setStyleTemplateId] = useState("");
 
@@ -326,6 +329,10 @@ function Editor(props) {
     setActiveMatchLine(linesBefore + 1);
   }, [text]);
 
+  useEffect(() => {
+    Address().then((addr) => setServerAddress(addr)).catch(() => {});
+  }, []);
+
   //開いた時の初期処理
   useEffect(() => {
 
@@ -354,6 +361,7 @@ function Editor(props) {
           setUpdated(false);
         }
         setIsPrivate(!!resp.private);
+        setAlias(resp.alias ?? '');
         setName(resp.name);
         setStyleTemplateId(resp.styleTemplate || "");
         if (resp.styleTemplate) {
@@ -387,6 +395,7 @@ function Editor(props) {
           setUpdated(false);
         }
         setIsPrivate(!!resp.private);
+        setAlias(resp.alias ?? '');
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -895,6 +904,15 @@ function Editor(props) {
       evt.showErrorMessage(err);
     });
   }
+
+  const handleOpenInBrowser = () => {
+    if (!alias || !serverAddress) return;
+    if (mode === Mode.note) {
+      Browser.OpenURL(`${serverAddress}/pages/${alias}.html`);
+    } else if (mode === Mode.diagram) {
+      Browser.OpenURL(`${serverAddress}/images/${alias}.svg`);
+    }
+  };
 
   //出力処理
   const handlePublish = async () => {
@@ -1751,6 +1769,10 @@ function Editor(props) {
                 </MenuItem>
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
                   <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handleOpenInBrowser(); }} disabled={!alias || mode === Mode.template}>
+                  <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
                 </MenuItem>
               </Menu>
 

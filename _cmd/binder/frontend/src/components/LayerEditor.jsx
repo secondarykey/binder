@@ -9,10 +9,12 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames, GetModifiedIds } from '../../bindings/binder/api/app';
+import { Browser } from '@wailsio/runtime';
 import CommitBar from './CommitBar';
 import { EventContext } from '../Event';
 import "../language";
@@ -247,6 +249,7 @@ function LayerEditor() {
 
   const [layer, setLayer] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
+  const [serverAddress, setServerAddress] = useState('');
   const [shapes, setShapes] = useState([]);
   const [tool, setTool] = useState('select');
   const [selectedId, setSelectedId] = useState(null);
@@ -311,6 +314,7 @@ function LayerEditor() {
     ]).then(([lw, content, addr]) => {
       if (cancelled) return;
       setLayer(lw);
+      setServerAddress(addr);
       if (lw?.name) setComment('Updated: ' + lw.name);
       if (lw?.parentId) {
         setImageUrl(`${addr}/binder-assets/${lw.parentId}`);
@@ -781,6 +785,12 @@ function LayerEditor() {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
+  const handleOpenInBrowser = () => {
+    const a = layer?.alias;
+    if (!a || !serverAddress) return;
+    Browser.OpenURL(`${serverAddress}/layers/${a}.svg`);
+  };
+
   const renderShape = (s, isPreview = false) => {
     const stroke = s.color || '#ff0000';
     // vector-effect="non-scaling-stroke" 付きで描画するため、stroke-width は
@@ -945,6 +955,10 @@ function LayerEditor() {
         </MenuItem>
         <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
           <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!layer?.alias}>
+          <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
         </MenuItem>
       </Menu>
 

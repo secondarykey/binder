@@ -10,11 +10,12 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address } from '../../bindings/binder/api/app';
 import CommitBar from './CommitBar';
 import EditorArea from './editor/EditorArea';
-import { Events } from '@wailsio/runtime';
+import { Events, Browser } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
@@ -203,6 +204,7 @@ function AssetViewer() {
   const [updating, setUpdating] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [migrateDeleteAsset, setMigrateDeleteAsset] = useState(true);
+  const [serverAddress, setServerAddress] = useState('');
   // MoreVert メニュー
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
   const openMoreMenu = (el) => setMoreMenu({ open: true, el });
@@ -214,6 +216,10 @@ function AssetViewer() {
   const [editText, setEditText] = useState('');
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
+
+  useEffect(() => {
+    Address().then((addr) => setServerAddress(addr)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     GetFont().then((s) => {
@@ -306,6 +312,12 @@ function AssetViewer() {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleOpenInBrowser = () => {
+    const a = assetMeta?.alias;
+    if (!a || !serverAddress) return;
+    Browser.OpenURL(`${serverAddress}/assets/${a}`);
   };
 
   /** Migrate ボタン押下: 確認ダイアログを開く */
@@ -516,6 +528,10 @@ function AssetViewer() {
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
           </MenuItem>
         )}
+        <Divider />
+        <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!assetMeta?.alias}>
+          <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+        </MenuItem>
       </Menu>
       {/* コンテンツ */}
       <div className="assetTextEditor" style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
