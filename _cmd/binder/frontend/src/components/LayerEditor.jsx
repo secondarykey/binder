@@ -276,6 +276,11 @@ function LayerEditor() {
   // 表示サイズではなく自然サイズを使うことで WYSIWYG が保たれる。
   const [imgNaturalHeight, setImgNaturalHeight] = useState(0);
 
+  // 画像の自然サイズを ref で保持（ResizeObserver コールバックから参照するため）。
+  const imgNaturalRef = useRef({ w: 0, h: 0 });
+  // キャンバス内での画像の表示位置・サイズ（px）。ImageViewer と同じ fit + center 計算。
+  const [imgRect, setImgRect] = useState(null); // { left, top, width, height }
+
   // SVG の実表示ピクセルサイズ。小さな画像でもリサイズハンドルが一定ピクセル
   // サイズで表示できるよう、viewBox 単位への変換に使う。
   const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
@@ -293,6 +298,8 @@ function LayerEditor() {
   useEffect(() => {
     if (!id) return;
     loadedRef.current = false;
+    imgNaturalRef.current = { w: 0, h: 0 };
+    setImgRect(null);
     let cancelled = false;
 
     Promise.all([
@@ -352,6 +359,17 @@ function LayerEditor() {
     return () => ro.disconnect();
   }, [imageUrl]);
 
+  // canvasRef のサイズ変更時に imgRect を再計算する。
+  // ウィンドウリサイズ・スプリッタードラッグで画像の中央配置を維持する。
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => computeImgRect());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []); // マウント時に1回設定すれば十分（computeImgRect は ref のみ参照）
+
   // shapes 変更時の自動保存（debounce）
   useEffect(() => {
     if (!id) return;
@@ -369,6 +387,26 @@ function LayerEditor() {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [shapes, id]);
+
+  // ImageViewer と同じ fit + center 計算。padding 分を除いたコンテナサイズに対して
+  // 自然サイズ比率で収まる最大スケール（1.0 以下）を求め、中央に配置する。
+  const computeImgRect = () => {
+    const container = canvasRef.current;
+    const { w: iw, h: ih } = imgNaturalRef.current;
+    if (!container || !iw || !ih) return;
+    const PADDING = 16;
+    const cw = Math.max(1, container.clientWidth - PADDING * 2);
+    const ch = Math.max(1, container.clientHeight - PADDING * 2);
+    const scale = Math.min(1, cw / iw, ch / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    setImgRect({
+      left: PADDING + (cw - dw) / 2,
+      top:  PADDING + (ch - dh) / 2,
+      width: dw,
+      height: dh,
+    });
+  };
 
   const toClientPos = (e) => {
     const rect = svgRef.current.getBoundingClientRect();
@@ -892,14 +930,18 @@ function LayerEditor() {
       {/* コンテンツ: キャンバス + フローティングパネル */}
       <div ref={canvasRef} style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
         {imageUrl && (
+          /* imgRect 確定前でも onLoad を受け取るため img は常にレンダリングする。
+             imgRect が null の間はラッパーを非表示にして SVG イベントを無効化。 */
           <div
             style={{
-              position: 'absolute', inset: 0,
-              overflow: 'auto', padding: '16px',
-              display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+              position: 'absolute',
+              left:   imgRect ? imgRect.left   : 0,
+              top:    imgRect ? imgRect.top    : 0,
+              width:  imgRect ? imgRect.width  : 0,
+              height: imgRect ? imgRect.height : 0,
+              visibility: imgRect ? 'visible' : 'hidden',
             }}
           >
-            <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
               <img
                 src={imageUrl}
                 alt=""
@@ -909,9 +951,11 @@ function LayerEditor() {
                   if (w > 0 && h > 0) {
                     setImgAspect(w / h);
                     setImgNaturalHeight(h);
+                    imgNaturalRef.current = { w, h };
+                    computeImgRect();
                   }
                 }}
-                style={{ display: 'block', maxWidth: '100%', height: 'auto', userSelect: 'none', pointerEvents: 'none' }}
+                style={{ display: 'block', width: '100%', height: '100%', userSelect: 'none', pointerEvents: 'none' }}
               />
               <svg
                 ref={svgRef}
@@ -999,7 +1043,6 @@ function LayerEditor() {
                   );
                 })()}
               </svg>
-            </div>
           </div>
         )}
 
