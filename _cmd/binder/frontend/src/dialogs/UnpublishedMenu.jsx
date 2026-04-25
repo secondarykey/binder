@@ -223,6 +223,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
     {!template && <>
       <Divider />
       <ListItemButton
+        style={{ maxHeight: '42px' }}
         onClick={() => setUnpublishAllConfirm(true)}
         sx={{ py: 0.5, color: 'var(--accent-red)', flexShrink: 0, '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
       >
