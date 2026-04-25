@@ -908,7 +908,7 @@ function Editor(props) {
   const handleOpenInBrowser = () => {
     if (!alias || !serverAddress) return;
     if (mode === Mode.note) {
-      Browser.OpenURL(`${serverAddress}/pages/${alias}.html`);
+      Browser.OpenURL(id === "index" ? `${serverAddress}/` : `${serverAddress}/pages/${alias}.html`);
     } else if (mode === Mode.diagram) {
       Browser.OpenURL(`${serverAddress}/images/${alias}.svg`);
     }
