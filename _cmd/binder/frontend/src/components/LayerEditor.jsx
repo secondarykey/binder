@@ -298,8 +298,6 @@ function LayerEditor() {
   useEffect(() => {
     if (!id) return;
     loadedRef.current = false;
-    imgNaturalRef.current = { w: 0, h: 0 };
-    setImgRect(null);
     let cancelled = false;
 
     Promise.all([
@@ -357,6 +355,14 @@ function LayerEditor() {
     });
     ro.observe(el);
     return () => ro.disconnect();
+  }, [imageUrl]);
+
+  // imageUrl が変わったとき（親アセットが異なるレイヤーへ切り替え）のみ
+  // imgRect をリセットして再計算を待つ。同一 imageUrl ならリセット不要
+  // （onLoad が再発火しないため imgRect を維持する）。
+  useEffect(() => {
+    imgNaturalRef.current = { w: 0, h: 0 };
+    setImgRect(null);
   }, [imageUrl]);
 
   // canvasRef のサイズ変更時に imgRect を再計算する。
