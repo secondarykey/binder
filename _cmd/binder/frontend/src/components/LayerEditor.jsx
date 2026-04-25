@@ -413,10 +413,10 @@ function LayerEditor() {
   // shape をクリックした場合はここに届かず shape 操作が優先される。
   const handleCanvasPanStart = (e) => {
     if (e.button !== 0) return;
-    // 描画ツール使用中はパン無効（SVG 側で drawing が起動する）。
-    // select ツール + shape クリック時は handleShapePointerDown が
-    // stopPropagation するためここには届かず、パンは空白クリック時のみ起動する。
-    if (tool !== 'select') return;
+    // e.target がキャンバス div 自身のときのみパンを開始する。
+    // 画像・SVG 上のクリックは e.target がその要素になるため除外される。
+    // これにより shape 操作との干渉が完全になくなる。
+    if (e.target !== canvasRef.current) return;
     panRef.current = { startX: e.clientX, startY: e.clientY,
                        origLeft: tfRef.current.left, origTop: tfRef.current.top };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
@@ -950,7 +950,7 @@ function LayerEditor() {
       {/* コンテンツ: キャンバス + フローティングパネル */}
       <div
         ref={canvasRef}
-        style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}
+        style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden', cursor: 'grab' }}
         onPointerDown={handleCanvasPanStart}
         onPointerMove={handleCanvasPanMove}
         onPointerUp={handleCanvasPanEnd}
@@ -993,7 +993,7 @@ function LayerEditor() {
                 preserveAspectRatio="none"
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
-                  cursor: tool === 'select' ? 'grab' : 'crosshair',
+                  cursor: tool === 'select' ? 'default' : 'crosshair',
                   touchAction: 'none',
                 }}
                 onPointerDown={handlePointerDown}
