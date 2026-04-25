@@ -228,8 +228,8 @@ func (b *Binder) GetModifiedTree() (*json.Tree, error) {
 	return &tree, nil
 }
 
-// GetPublishedTree は現在公開中（republish_date が非ゼロ）のエンティティ一覧を返す。
-// private なものは除外する。
+// GetPublishedTree は private でない全エンティティ一覧を返す。
+// 公開済み・未公開を問わず対象とする。
 func (b *Binder) GetPublishedTree() (*json.Tree, error) {
 
 	if b == nil {
@@ -255,7 +255,7 @@ func (b *Binder) GetPublishedTree() (*json.Tree, error) {
 		}
 		for _, n := range notes {
 			s, ok := structs[n.Id]
-			if !ok || s.Private || s.Republish.IsZero() {
+			if !ok || s.Private {
 				continue
 			}
 			dirNote.AddChild(&json.Leaf{Id: s.Id, Name: s.Name, Type: "note"})
@@ -279,7 +279,7 @@ func (b *Binder) GetPublishedTree() (*json.Tree, error) {
 		}
 		for _, d := range diagrams {
 			s, ok := structs[d.Id]
-			if !ok || s.Private || s.Republish.IsZero() {
+			if !ok || s.Private {
 				continue
 			}
 			dirDiagram.AddChild(&json.Leaf{Id: s.Id, Name: s.Name, Type: "diagram"})
@@ -293,7 +293,7 @@ func (b *Binder) GetPublishedTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("db.FindAssetWithParent() error: %w", err)
 	}
 	for _, a := range assets {
-		if a.Private || a.Republish.IsZero() {
+		if a.Private {
 			continue
 		}
 		dirAsset.AddChild(&json.Leaf{Id: a.Id, Name: a.Name, Type: "asset"})
@@ -316,7 +316,7 @@ func (b *Binder) GetPublishedTree() (*json.Tree, error) {
 		}
 		for _, l := range layers {
 			s, ok := structs[l.Id]
-			if !ok || s.Private || s.Republish.IsZero() {
+			if !ok || s.Private {
 				continue
 			}
 			dirLayer.AddChild(&json.Leaf{Id: s.Id, Name: s.Name, Type: "layer"})
