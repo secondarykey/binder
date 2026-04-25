@@ -924,8 +924,7 @@ function LayerEditor() {
           <IconButton
             size="small"
             onClick={(e) => openMoreMenu(e.currentTarget)}
-            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-            className="editorBtn"
+            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
           >
             <MoreVertIcon sx={{ fontSize: '18px' }} />
           </IconButton>

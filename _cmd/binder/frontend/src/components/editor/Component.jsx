@@ -1723,11 +1723,13 @@ function Editor(props) {
                     </Tooltip>
                   }
                   {mode !== Mode.template &&
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                  }
+                  {mode !== Mode.template &&
                     <IconButton
                       size="small"
                       onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
-                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-                      className="editorBtn"
+                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
                     >
                       <MoreVertIcon sx={{ fontSize: '18px' }} />
                     </IconButton>
