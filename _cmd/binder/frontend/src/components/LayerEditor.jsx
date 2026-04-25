@@ -276,14 +276,18 @@ function LayerEditor() {
   // 表示サイズではなく自然サイズを使うことで WYSIWYG が保たれる。
   const [imgNaturalHeight, setImgNaturalHeight] = useState(0);
 
-  // 画像の自然サイズを ref で保持（ResizeObserver コールバックから参照するため）。
+  // 画像の自然サイズを ref で保持（イベントハンドラから参照するため）。
   const imgNaturalRef = useRef({ w: 0, h: 0 });
-  // キャンバス内での画像の表示位置・サイズ（px）。ImageViewer と同じ fit + center 計算。
-  const [imgRect, setImgRect] = useState(null); // { left, top, width, height }
 
-  // SVG の実表示ピクセルサイズ。小さな画像でもリサイズハンドルが一定ピクセル
-  // サイズで表示できるよう、viewBox 単位への変換に使う。
-  const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
+  // ImageViewer と同じ transform ベースの表示。
+  // tfRef: translate/scale を ref で保持し、直接 DOM style に適用（余分な再レンダを避ける）。
+  // wrapperRef: img + svg を囲むラッパー（transform 適用先）。
+  // panRef: ドラッグ中の初期情報（null = パン未開始）。
+  const tfRef      = useRef({ left: 0, top: 0, scale: 1 });
+  const wrapperRef = useRef(null);
+  const panRef     = useRef(null); // { startX, startY, origLeft, origTop }
+  // ズーム倍率の React state（レンダリングが必要なハンドルサイズ計算に使う）。
+  const [zoomScale, setZoomScale] = useState(1);
 
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
@@ -334,47 +338,33 @@ function LayerEditor() {
       .catch((err) => evt.showErrorMessage(err));
   }, []);
 
-  // SVG の実表示サイズ監視。小さい画像でもリサイズハンドルを固定ピクセル
-  // サイズで表示するため、表示幅・高さを viewBox 単位への換算に使う。
-  useEffect(() => {
-    const el = svgRef.current;
-    if (!el) return;
-    // 初期値を同期的に取得
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      setSvgSize({ w: rect.width, h: rect.height });
-    }
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver((entries) => {
-      for (const e of entries) {
-        const r = e.contentRect;
-        if (r.width > 0 && r.height > 0) {
-          setSvgSize({ w: r.width, h: r.height });
-        }
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [imageUrl]);
-
-  // imageUrl が変わったとき（親アセットが異なるレイヤーへ切り替え）のみ
-  // imgRect をリセットして再計算を待つ。同一 imageUrl ならリセット不要
-  // （onLoad が再発火しないため imgRect を維持する）。
+  // imageUrl が変わったとき（親アセットが異なるレイヤーへ切り替え）のみリセット。
+  // 同一 imageUrl ならリセット不要（onLoad が再発火しないため transform を維持する）。
   useEffect(() => {
     imgNaturalRef.current = { w: 0, h: 0 };
-    setImgRect(null);
+    tfRef.current = { left: 0, top: 0, scale: 1 };
+    if (wrapperRef.current) wrapperRef.current.style.transform = '';
+    setZoomScale(1);
   }, [imageUrl]);
 
-  // canvasRef のサイズ変更時に imgRect を再計算する。
-  // ウィンドウリサイズ・スプリッタードラッグで画像の中央配置を維持する。
+  // ホイールズーム。ブラウザのデフォルトスクロールを抑制するため passive: false。
   useEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => computeImgRect());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []); // マウント時に1回設定すれば十分（computeImgRect は ref のみ参照）
+    const onWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const next = Math.max(0.1, Math.round((tfRef.current.scale + delta) * 10) / 10);
+      tfRef.current.scale = next;
+      if (wrapperRef.current) {
+        const { left, top } = tfRef.current;
+        wrapperRef.current.style.transform = `translate(${left}px, ${top}px) scale(${next})`;
+      }
+      setZoomScale(next);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   // shapes 変更時の自動保存（debounce）
   useEffect(() => {
@@ -394,9 +384,16 @@ function LayerEditor() {
     };
   }, [shapes, id]);
 
-  // ImageViewer と同じ fit + center 計算。padding 分を除いたコンテナサイズに対して
-  // 自然サイズ比率で収まる最大スケール（1.0 以下）を求め、中央に配置する。
-  const computeImgRect = () => {
+  // transform を wrapperRef の DOM style に直接適用する（再レンダ不要）。
+  const applyTransform = () => {
+    if (!wrapperRef.current) return;
+    const { left, top, scale } = tfRef.current;
+    wrapperRef.current.style.transform = `translate(${left}px, ${top}px) scale(${scale})`;
+  };
+
+  // ImageViewer と同じ fit + center 計算でトランスフォームを初期化する。
+  // 画像ロード時・同一 URL で別レイヤーに切り替えた時に呼ぶ。
+  const fitToCanvas = () => {
     const container = canvasRef.current;
     const { w: iw, h: ih } = imgNaturalRef.current;
     if (!container || !iw || !ih) return;
@@ -404,15 +401,33 @@ function LayerEditor() {
     const cw = Math.max(1, container.clientWidth - PADDING * 2);
     const ch = Math.max(1, container.clientHeight - PADDING * 2);
     const scale = Math.min(1, cw / iw, ch / ih);
-    const dw = iw * scale;
-    const dh = ih * scale;
-    setImgRect({
-      left: PADDING + (cw - dw) / 2,
-      top:  PADDING + (ch - dh) / 2,
-      width: dw,
-      height: dh,
-    });
+    const left = PADDING + (cw - iw * scale) / 2;
+    const top  = PADDING + (ch - ih * scale) / 2;
+    tfRef.current = { left, top, scale };
+    applyTransform();
+    setZoomScale(scale);
   };
+
+  // キャンバス背景 or 空の SVG 領域でのドラッグをパンとして扱う。
+  // shape の handleShapePointerDown が stopPropagation するため、
+  // shape をクリックした場合はここに届かず shape 操作が優先される。
+  const handleCanvasPanStart = (e) => {
+    if (e.button !== 0) return;
+    // 描画ツール使用中はパン無効（SVG 側で drawing が起動する）。
+    // select ツール + shape クリック時は handleShapePointerDown が
+    // stopPropagation するためここには届かず、パンは空白クリック時のみ起動する。
+    if (tool !== 'select') return;
+    panRef.current = { startX: e.clientX, startY: e.clientY,
+                       origLeft: tfRef.current.left, origTop: tfRef.current.top };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+  };
+  const handleCanvasPanMove = (e) => {
+    if (!panRef.current) return;
+    tfRef.current.left = panRef.current.origLeft + (e.clientX - panRef.current.startX);
+    tfRef.current.top  = panRef.current.origTop  + (e.clientY - panRef.current.startY);
+    applyTransform();
+  };
+  const handleCanvasPanEnd = () => { panRef.current = null; };
 
   const toClientPos = (e) => {
     const rect = svgRef.current.getBoundingClientRect();
@@ -842,14 +857,13 @@ function LayerEditor() {
   // 円（楕円）のストロークが辺ごとに太さが変わる問題が解消する。
   const aspect = imgAspect > 0 ? imgAspect : 1;
   const vbX = (v) => v * aspect;
-  // リサイズハンドルは「画像の表示サイズに依らず常に一定ピクセル」で表示する。
-  // 等比スケールなので 1 viewBox 単位 = svgH ピクセル（x/y 共通）。
-  const HANDLE_INNER_PX = 10; // 表示上の正方形のひと辺
-  const HANDLE_HIT_PX = 20;   // クリック当たり判定のひと辺
-  const svgH = svgSize.h > 0 ? svgSize.h : 1;
-  // フォントサイズ計算は自然サイズを基準にする（Go 側の normalizeFontSizeViewBox と一致）。
-  // 自然サイズが取得できていない間は表示サイズで代替する（初回レンダ時の fallback）。
-  const naturalH = imgNaturalHeight > 0 ? imgNaturalHeight : svgH;
+  // naturalH: フォント WYSIWYG 計算用（Go 側 normalizeFontSizeViewBox と一致）。
+  // svgH: ハンドルのピクセルサイズ計算用 = 自然高さ × ズーム倍率（= 画面上の表示高さ）。
+  const naturalH = imgNaturalHeight > 0 ? imgNaturalHeight : 1;
+  const svgH = naturalH * zoomScale;
+  // リサイズハンドルは「表示上で常に一定ピクセル」。1 viewBox 単位 = svgH 画面ピクセル。
+  const HANDLE_INNER_PX = 10;
+  const HANDLE_HIT_PX = 20;
   const handleSize = HANDLE_INNER_PX / svgH;
   const hitSize = HANDLE_HIT_PX / svgH;
   // selBBox は naturalH 確定後に計算する（text の bbox はフォントサイズに依存）。
@@ -934,18 +948,28 @@ function LayerEditor() {
       </Menu>
 
       {/* コンテンツ: キャンバス + フローティングパネル */}
-      <div ref={canvasRef} style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+      <div
+        ref={canvasRef}
+        style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}
+        onPointerDown={handleCanvasPanStart}
+        onPointerMove={handleCanvasPanMove}
+        onPointerUp={handleCanvasPanEnd}
+        onPointerCancel={handleCanvasPanEnd}
+      >
         {imageUrl && (
-          /* imgRect 確定前でも onLoad を受け取るため img は常にレンダリングする。
-             imgRect が null の間はラッパーを非表示にして SVG イベントを無効化。 */
+          /* wrapperRef に transformOrigin:'0 0' + translate/scale を直接適用。
+             img と svg が同じ wrapper 内にあるため一緒に動く。
+             自然サイズを layout サイズとし、transform で表示を制御する。 */
           <div
+            ref={wrapperRef}
             style={{
               position: 'absolute',
-              left:   imgRect ? imgRect.left   : 0,
-              top:    imgRect ? imgRect.top    : 0,
-              width:  imgRect ? imgRect.width  : 0,
-              height: imgRect ? imgRect.height : 0,
-              visibility: imgRect ? 'visible' : 'hidden',
+              top: 0, left: 0,
+              // imgNaturalHeight は state なので変化時に再レンダされる。
+              // imgAspect も state。両方揃ったとき正しいサイズになる。
+              width:  imgNaturalHeight > 0 ? Math.round(imgNaturalHeight * imgAspect) : 0,
+              height: imgNaturalHeight > 0 ? imgNaturalHeight : 0,
+              transformOrigin: '0 0',
             }}
           >
               <img
@@ -958,7 +982,7 @@ function LayerEditor() {
                     setImgAspect(w / h);
                     setImgNaturalHeight(h);
                     imgNaturalRef.current = { w, h };
-                    computeImgRect();
+                    fitToCanvas();
                   }
                 }}
                 style={{ display: 'block', width: '100%', height: '100%', userSelect: 'none', pointerEvents: 'none' }}
@@ -969,7 +993,7 @@ function LayerEditor() {
                 preserveAspectRatio="none"
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
-                  cursor: tool === 'select' ? 'default' : 'crosshair',
+                  cursor: tool === 'select' ? 'grab' : 'crosshair',
                   touchAction: 'none',
                 }}
                 onPointerDown={handlePointerDown}
@@ -1051,6 +1075,16 @@ function LayerEditor() {
               </svg>
           </div>
         )}
+
+        {/* ズーム倍率バッジ（ImageViewer と同じスタイル） */}
+        <div style={{
+          position: 'absolute', bottom: 8, left: 8,
+          background: 'rgba(0,0,0,0.45)', color: '#fff',
+          padding: '2px 8px', borderRadius: '4px', fontSize: '12px',
+          pointerEvents: 'none', userSelect: 'none',
+        }}>
+          {Math.round(zoomScale * 100)}%
+        </div>
 
         {/* フローティングパネル: 図形一覧・プロパティ（ドラッグで移動可能） */}
         <Paper
