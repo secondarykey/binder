@@ -412,11 +412,8 @@ function LayerEditor() {
   // shape の handleShapePointerDown が stopPropagation するため、
   // shape をクリックした場合はここに届かず shape 操作が優先される。
   const handleCanvasPanStart = (e) => {
-    const isMiddle = e.button === 1;
-    const isLeftBackground = e.button === 0 && e.target === canvasRef.current;
-    if (!isMiddle && !isLeftBackground) return;
-    // 中ボタンのブラウザデフォルト（スクロールモード）を抑制する。
-    if (isMiddle) e.preventDefault();
+    if (e.button !== 1) return; // ホイールクリック（中ボタン）のみパン
+    e.preventDefault(); // ブラウザのオートスクロールモードを抑制
     panRef.current = { startX: e.clientX, startY: e.clientY,
                        origLeft: tfRef.current.left, origTop: tfRef.current.top };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
@@ -955,7 +952,7 @@ function LayerEditor() {
       {/* コンテンツ: キャンバス + フローティングパネル */}
       <div
         ref={canvasRef}
-        style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden', cursor: 'grab' }}
+        style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}
         onPointerDown={handleCanvasPanStart}
         onPointerMove={handleCanvasPanMove}
         onPointerUp={handleCanvasPanEnd}

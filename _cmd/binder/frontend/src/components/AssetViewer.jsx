@@ -110,9 +110,12 @@ function ImageViewer({ src, alt }) {
     setDisplayScale(Math.round(scale * 100));
   };
 
-  // ドラッグ移動（SVGビューアと同じ pointermove + movementX/Y）
+  // ホイールドラッグ（中ボタン）による移動。LayerEditor と統一。
+  const handlePointerDown = (e) => {
+    if (e.button === 1) e.preventDefault(); // ブラウザのオートスクロールモードを抑制
+  };
   const handlePointerMove = (e) => {
-    if (!e.buttons) return;
+    if (!(e.buttons & 4)) return; // 中ボタン押下中のみ移動（ビット2）
     tfRef.current.left += e.movementX;
     tfRef.current.top  += e.movementY;
     applyTransform();
@@ -126,9 +129,9 @@ function ImageViewer({ src, alt }) {
         height: '100%',
         overflow: 'hidden',
         position: 'relative',
-        cursor: 'grab',
         userSelect: 'none',
       }}
+      onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
     >
       <img
