@@ -110,6 +110,18 @@ func (a *App) OpenNote(noteId string) (string, error) {
 	return w.String(), nil
 }
 
+// PrivatizeChildren は指定ノートの全子孫を非公開化する。
+func (a *App) PrivatizeChildren(noteId string) error {
+
+	defer log.PrintTrace(log.Func("PrivatizeChildren()"))
+
+	if err := a.current.PrivatizeChildren(noteId); err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("PrivatizeChildren() error\n%+v", err)
+	}
+	return nil
+}
+
 func (a *App) SaveNote(noteId string, data string) error {
 
 	defer log.PrintTrace(log.Func("SaveNote()"))

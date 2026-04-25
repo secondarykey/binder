@@ -494,3 +494,88 @@ func (b *Binder) UnpublishNote(id string) error {
 	}
 	return nil
 }
+
+// PrivatizeChildren は指定ノートの全子孫データ（ノート・ダイアグラム・アセット・レイヤー）を
+// private=true に設定し、publish/republish をゼロにリセットする。
+// 公開済みファイルが存在する場合は削除する。変更は1コミットにまとめる。
+func (b *Binder) PrivatizeChildren(noteId string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	var allFiles []string
+	if err := b.privatizeDescendants(noteId, &allFiles); err != nil {
+		return xerrors.Errorf("privatizeDescendants() error: %w", err)
+	}
+
+	if len(allFiles) == 0 {
+		return nil
+	}
+
+	allFiles = append(allFiles, fs.StructureTableFile())
+	if err := b.fileSystem.Commit(fs.M("Privatize Children", noteId), allFiles...); err != nil && !errors.Is(err, fs.UpdatedFilesError) {
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) privatizeDescendants(parentId string, allFiles *[]string) error {
+
+	children, err := b.db.FindStructuresByParent(parentId)
+	if err != nil {
+		return xerrors.Errorf("db.FindStructuresByParent(%s) error: %w", parentId, err)
+	}
+
+	for _, s := range children {
+		// 公開済みファイルがあれば削除（republish がゼロでない = 公開中）
+		if !s.Republish.IsZero() {
+			switch s.Typ {
+			case "note":
+				n := &json.Note{Id: s.Id, Alias: s.Alias}
+				fn, err := b.fileSystem.UnpublishNote(n)
+				if err != nil {
+					return xerrors.Errorf("fs.UnpublishNote(%s) error: %w", s.Id, err)
+				}
+				*allFiles = append(*allFiles, fn)
+				if mf, ok := b.fileSystem.UnpublishNoteMeta(n); ok {
+					*allFiles = append(*allFiles, mf)
+				}
+			case "diagram":
+				d := &json.Diagram{Alias: s.Alias}
+				fn, err := b.fileSystem.UnpublishDiagram(d)
+				if err != nil {
+					return xerrors.Errorf("fs.UnpublishDiagram(%s) error: %w", s.Id, err)
+				}
+				*allFiles = append(*allFiles, fn)
+			case "asset":
+				a := &json.Asset{Alias: s.Alias}
+				fn, err := b.fileSystem.UnpublishAsset(a)
+				if err != nil {
+					return xerrors.Errorf("fs.UnpublishAsset(%s) error: %w", s.Id, err)
+				}
+				*allFiles = append(*allFiles, fn)
+			case "layer":
+				l := &json.Layer{Alias: s.Alias}
+				fn, err := b.fileSystem.UnpublishLayer(l)
+				if err != nil {
+					return xerrors.Errorf("fs.UnpublishLayer(%s) error: %w", s.Id, err)
+				}
+				*allFiles = append(*allFiles, fn)
+			}
+		}
+
+		// private=true、publish/republish をゼロ化
+		if err := b.db.PrivatizeStructure(s.Id, b.op); err != nil {
+			return xerrors.Errorf("db.PrivatizeStructure(%s) error: %w", s.Id, err)
+		}
+
+		// ノート・ダイアグラムは子を持つため再帰
+		if s.Typ == "note" || s.Typ == "diagram" {
+			if err := b.privatizeDescendants(s.Id, allFiles); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
