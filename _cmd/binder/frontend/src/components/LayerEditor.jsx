@@ -412,11 +412,11 @@ function LayerEditor() {
   // shape の handleShapePointerDown が stopPropagation するため、
   // shape をクリックした場合はここに届かず shape 操作が優先される。
   const handleCanvasPanStart = (e) => {
-    if (e.button !== 0) return;
-    // e.target がキャンバス div 自身のときのみパンを開始する。
-    // 画像・SVG 上のクリックは e.target がその要素になるため除外される。
-    // これにより shape 操作との干渉が完全になくなる。
-    if (e.target !== canvasRef.current) return;
+    const isMiddle = e.button === 1;
+    const isLeftBackground = e.button === 0 && e.target === canvasRef.current;
+    if (!isMiddle && !isLeftBackground) return;
+    // 中ボタンのブラウザデフォルト（スクロールモード）を抑制する。
+    if (isMiddle) e.preventDefault();
     panRef.current = { startX: e.clientX, startY: e.clientY,
                        origLeft: tfRef.current.left, origTop: tfRef.current.top };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
@@ -440,6 +440,7 @@ function LayerEditor() {
   };
 
   const handlePointerDown = (e) => {
+    if (e.button !== 0) return; // 中ボタン等は描画対象外（中ボタンはパンに使用）
     if (tool === 'select') return;
     const { x, y } = toClientPos(e);
     const base = { id: uuid(), ...defaultShapeProps };
