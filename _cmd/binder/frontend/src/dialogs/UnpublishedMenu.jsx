@@ -212,25 +212,27 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   }, [dateProp]);
 
   return (<>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
     <List dense disablePadding className='treeText'
-      sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
+      sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
       <UnpublishedList name="Note"    data={notes}    onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={noteRef} />
       <UnpublishedList name="Diagram" data={diagrams} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={diagramRef} />
       <UnpublishedList name="Asset"   data={assets}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={assetRef} />
       <UnpublishedList name="Layer"   data={layers}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={layerRef} />
-      {!template && <>
-        <Divider sx={{ mt: 1 }} />
-        <ListItemButton
-          onClick={() => setUnpublishAllConfirm(true)}
-          sx={{ py: 0.5, color: 'var(--accent-red)', '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
-        >
-          <ListItemIcon sx={{ minWidth: 28 }}>
-            <UnpublishedIcon sx={{ fontSize: '14px', color: 'var(--accent-red)' }} />
-          </ListItemIcon>
-          <ListItemText primary={t("tree.unpublishAll")} primaryTypographyProps={{ fontSize: '0.8rem' }} />
-        </ListItemButton>
-      </>}
     </List>
+    {!template && <>
+      <Divider />
+      <ListItemButton
+        onClick={() => setUnpublishAllConfirm(true)}
+        sx={{ py: 0.5, color: 'var(--accent-red)', flexShrink: 0, '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
+      >
+        <ListItemIcon sx={{ minWidth: 28 }}>
+          <UnpublishedIcon sx={{ fontSize: '14px', color: 'var(--accent-red)' }} />
+        </ListItemIcon>
+        <ListItemText primary={t("tree.unpublishAll")} primaryTypographyProps={{ fontSize: '0.8rem' }} />
+      </ListItemButton>
+    </>}
+    </div>
 
     <Menu open={contextMenu.open}
       onClose={() => setContextMenu({ open: false, x: 0, y: 0, leaf: null })}
