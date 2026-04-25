@@ -40,6 +40,7 @@
         "mime" : "MIMEタイプ",
         "select" : "選択",
         "private" : "非公開",
+        "execute" : "実行",
         "aliasDuplicate" : "このエイリアスは既に使用されています",
         "none" : "なし",
         "back" : "戻る"
@@ -95,7 +96,10 @@
         "deleteTitle" : "ノートの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "deleteImageTitle" : "画像の削除",
-        "deleteImageConfirm" : "メタ画像を削除しますか？"
+        "deleteImageConfirm" : "メタ画像を削除しますか？",
+        "privateConfirmTitle" : "非公開設定を行っています",
+        "privateConfirmMessage" : "このノートを非公開に設定します。",
+        "privateConfirmChildren" : "下層データもすべて非公開に設定する"
     },
     "diagram" : {
         "editTitle" : "ダイアグラム編集",

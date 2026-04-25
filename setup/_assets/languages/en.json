@@ -40,6 +40,7 @@
         "mime" : "MIME Type",
         "select" : "Select",
         "private" : "Private",
+        "execute" : "Execute",
         "aliasDuplicate" : "This alias is already in use",
         "none" : "None",
         "back" : "Back"
@@ -95,7 +96,10 @@
         "deleteTitle" : "Delete Note",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "deleteImageTitle" : "Delete Image",
-        "deleteImageConfirm" : "Delete the meta image?"
+        "deleteImageConfirm" : "Delete the meta image?",
+        "privateConfirmTitle" : "Setting to Private",
+        "privateConfirmMessage" : "This note will be set to private.",
+        "privateConfirmChildren" : "Also set all subordinate data to private"
     },
     "diagram" : {
         "editTitle" : "Edit Diagram",
