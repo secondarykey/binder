@@ -112,13 +112,18 @@ function ImageViewer({ src, alt }) {
 
   // ホイールドラッグ（中ボタン）による移動。LayerEditor と統一。
   const handlePointerDown = (e) => {
-    if (e.button === 1) e.preventDefault(); // ブラウザのオートスクロールモードを抑制
+    if (e.button !== 1) return;
+    e.preventDefault(); // ブラウザのオートスクロールモードを抑制
+    if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
   };
   const handlePointerMove = (e) => {
     if (!(e.buttons & 4)) return; // 中ボタン押下中のみ移動（ビット2）
     tfRef.current.left += e.movementX;
     tfRef.current.top  += e.movementY;
     applyTransform();
+  };
+  const handlePointerUp = (e) => {
+    if (e.button === 1 && containerRef.current) containerRef.current.style.cursor = '';
   };
 
   return (
@@ -133,6 +138,7 @@ function ImageViewer({ src, alt }) {
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
       <img
         ref={imgRef}

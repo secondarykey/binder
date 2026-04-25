@@ -416,6 +416,7 @@ function LayerEditor() {
     e.preventDefault(); // ブラウザのオートスクロールモードを抑制
     panRef.current = { startX: e.clientX, startY: e.clientY,
                        origLeft: tfRef.current.left, origTop: tfRef.current.top };
+    if (canvasRef.current) canvasRef.current.style.cursor = 'grabbing';
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
   };
   const handleCanvasPanMove = (e) => {
@@ -424,7 +425,10 @@ function LayerEditor() {
     tfRef.current.top  = panRef.current.origTop  + (e.clientY - panRef.current.startY);
     applyTransform();
   };
-  const handleCanvasPanEnd = () => { panRef.current = null; };
+  const handleCanvasPanEnd = () => {
+    panRef.current = null;
+    if (canvasRef.current) canvasRef.current.style.cursor = '';
+  };
 
   const toClientPos = (e) => {
     const rect = svgRef.current.getBoundingClientRect();
