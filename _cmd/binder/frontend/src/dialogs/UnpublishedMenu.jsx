@@ -8,9 +8,10 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
+import SyncIcon from '@mui/icons-material/Sync';
 
 import {
-  GetUnpublishedTree, GetPublishedNotesByTemplate,
+  GetUnpublishedTree, GetPublishedNotesByTemplate, GetPublishedTree,
   OpenNote, OpenDiagram,
   ParseNote, ParseDiagram, GenerateAll, UnpublishAll,
 } from '../../bindings/binder/api/app';
@@ -64,6 +65,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   const [layers, setLayers] = useState([]);
   const [errorDlg, setErrorDlg] = useState({ open: false, names: [] });
   const [unpublishAllConfirm, setUnpublishAllConfirm] = useState(false);
+  const [regenerateAllConfirm, setRegenerateAllConfirm] = useState(false);
 
   const doUnpublishAll = () => {
     setUnpublishAllConfirm(false);
@@ -74,6 +76,78 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
     }).catch((err) => {
       showError(err);
     });
+  };
+
+  const doRegenerateAll = async () => {
+    setRegenerateAllConfirm(false);
+    let tree;
+    try {
+      tree = await GetPublishedTree();
+    } catch (err) {
+      showError(err);
+      return;
+    }
+
+    const data = tree?.data ?? [];
+    const all = [];
+    data.forEach((leaf) => {
+      (leaf.children ?? []).forEach((l) => all.push(l));
+    });
+
+    if (all.length === 0) {
+      showWarning(t("tree.regenerateAllEmpty"));
+      return;
+    }
+
+    evt.raise(Event.PublishProgress, { running: true, current: 0, total: all.length });
+
+    const items = [];
+    const errors = [];
+    for (let i = 0; i < all.length; i++) {
+      const leaf = all[i];
+      evt.raise(Event.PublishProgress, { running: true, current: i, total: all.length });
+      try {
+        if (leaf.type === "note") {
+          const text = await OpenNote(leaf.id);
+          const parsed = await ParseNote(leaf.id, false, text);
+          const html = await Marked.parse(parsed);
+          items.push({ mode: "note", id: leaf.id, data: html });
+        } else if (leaf.type === "diagram") {
+          const text = await OpenDiagram(leaf.id);
+          const parsedTxt = await ParseDiagram(leaf.id, false, text);
+          const obj = await Mermaid.parse(parsedTxt);
+          items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
+        } else if (leaf.type === "layer") {
+          items.push({ mode: "layer", id: leaf.id, data: "" });
+        } else {
+          items.push({ mode: "assets", id: leaf.id, data: "" });
+        }
+      } catch (err) {
+        errors.push(leaf.name);
+      }
+    }
+
+    let generateOk = true;
+    if (items.length > 0) {
+      try {
+        await GenerateAll(items, "Regenerate All");
+      } catch (err) {
+        generateOk = false;
+        evt.showErrorMessage(err);
+      }
+    }
+
+    evt.raise(Event.PublishProgress, { running: false, current: all.length, total: all.length });
+
+    if (errors.length > 0) {
+      setErrorDlg({ open: true, names: errors });
+      setTimeout(() => { loadTree(); }, 800);
+    } else if (generateOk) {
+      evt.showSuccessMessage(t("tree.regenerateAll"));
+      setTimeout(() => { loadTree(); }, 800);
+    } else {
+      setTimeout(() => { loadTree(); }, 800);
+    }
   };
 
   const noteRef = useRef(null);
@@ -224,6 +298,16 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       <Divider />
       <ListItemButton
         style={{ maxHeight: '42px' }}
+        onClick={() => setRegenerateAllConfirm(true)}
+        sx={{ py: 0.5, flexShrink: 0, '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
+      >
+        <ListItemIcon sx={{ minWidth: 28 }}>
+          <SyncIcon sx={{ fontSize: '14px' }} />
+        </ListItemIcon>
+        <ListItemText primary={t("tree.regenerateAll")} primaryTypographyProps={{ fontSize: '0.8rem' }} />
+      </ListItemButton>
+      <ListItemButton
+        style={{ maxHeight: '42px' }}
         onClick={() => setUnpublishAllConfirm(true)}
         sx={{ py: 0.5, color: 'var(--accent-red)', flexShrink: 0, '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
       >
@@ -251,6 +335,18 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       </DialogContent>
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setErrorDlg({ open: false, names: [] })} />
+      </DialogActions>
+    </Dialog>
+
+    {/** 全データ最新化確認ダイアログ */}
+    <Dialog open={regenerateAllConfirm} onClose={() => setRegenerateAllConfirm(false)}>
+      <DialogTitle>{t("tree.regenerateAllConfirmTitle")}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>{t("tree.regenerateAllConfirmMessage")}</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setRegenerateAllConfirm(false)} />
+        <ActionButton variant="confirm" label={t("tree.regenerateAll")} icon={<SyncIcon />} onClick={doRegenerateAll} />
       </DialogActions>
     </Dialog>
 

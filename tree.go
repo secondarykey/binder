@@ -228,6 +228,104 @@ func (b *Binder) GetModifiedTree() (*json.Tree, error) {
 	return &tree, nil
 }
 
+// GetPublishedTree は private でない全エンティティ一覧を返す。
+// 公開済み・未公開を問わず対象とする。
+func (b *Binder) GetPublishedTree() (*json.Tree, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	var tree json.Tree
+
+	dirNote := json.NewLeaf("DIR_Note", "note")
+	tree.Data = append(tree.Data, dirNote)
+	notes, err := b.db.FindNotes()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindNotes() error: %w", err)
+	}
+	if len(notes) > 0 {
+		ids := make([]interface{}, len(notes))
+		for i, n := range notes {
+			ids[i] = n.Id
+		}
+		structs, err := b.getStructureMap(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("getStructureMap(notes) error: %w", err)
+		}
+		for _, n := range notes {
+			s, ok := structs[n.Id]
+			if !ok || s.Private {
+				continue
+			}
+			dirNote.AddChild(&json.Leaf{Id: s.Id, Name: s.Name, Type: "note"})
+		}
+	}
+
+	dirDiagram := json.NewLeaf("DIR_Diagram", "diagram")
+	tree.Data = append(tree.Data, dirDiagram)
+	diagrams, err := b.db.FindDiagrams()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindDiagrams() error: %w", err)
+	}
+	if len(diagrams) > 0 {
+		ids := make([]interface{}, len(diagrams))
+		for i, d := range diagrams {
+			ids[i] = d.Id
+		}
+		structs, err := b.getStructureMap(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("getStructureMap(diagrams) error: %w", err)
+		}
+		for _, d := range diagrams {
+			s, ok := structs[d.Id]
+			if !ok || s.Private {
+				continue
+			}
+			dirDiagram.AddChild(&json.Leaf{Id: s.Id, Name: s.Name, Type: "diagram"})
+		}
+	}
+
+	dirAsset := json.NewLeaf("DIR_Asset", "asset")
+	tree.Data = append(tree.Data, dirAsset)
+	assets, err := b.db.FindAssetWithParent()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindAssetWithParent() error: %w", err)
+	}
+	for _, a := range assets {
+		if a.Private {
+			continue
+		}
+		dirAsset.AddChild(&json.Leaf{Id: a.Id, Name: a.Name, Type: "asset"})
+	}
+
+	dirLayer := json.NewLeaf("DIR_Layer", "layer")
+	tree.Data = append(tree.Data, dirLayer)
+	layers, err := b.db.FindLayers()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindLayers() error: %w", err)
+	}
+	if len(layers) > 0 {
+		ids := make([]interface{}, len(layers))
+		for i, l := range layers {
+			ids[i] = l.Id
+		}
+		structs, err := b.getStructureMap(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("getStructureMap(layers) error: %w", err)
+		}
+		for _, l := range layers {
+			s, ok := structs[l.Id]
+			if !ok || s.Private {
+				continue
+			}
+			dirLayer.AddChild(&json.Leaf{Id: s.Id, Name: s.Name, Type: "layer"})
+		}
+	}
+
+	return &tree, nil
+}
+
 func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 
 	if b == nil {
