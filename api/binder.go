@@ -113,7 +113,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 	switch mode {
 	case "note":
 
-		html, err := a.CreateNoteHTML(id, data)
+		html, err := a.CreateNoteHTML(id, false, data)
 		if err == nil {
 			_, err = a.current.PublishNote(id, []byte(html))
 		}
@@ -122,6 +122,8 @@ func (a *App) Generate(mode string, id string, data string) error {
 		_, err = a.current.PublishDiagram(id, []byte(data))
 	case "assets":
 		_, err = a.current.PublishAsset(id)
+	case "layer":
+		_, err = a.current.PublishLayer(id)
 
 	default:
 		//templateはないはず
@@ -143,7 +145,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 	for _, item := range items {
 		switch item.Mode {
 		case "note":
-			html, err := a.CreateNoteHTML(item.Id, item.Data)
+			html, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
 				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
 			}
@@ -162,6 +164,12 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 			files, _, err := a.current.PublishAssetStage(item.Id)
 			if err != nil {
 				return xerrors.Errorf("PublishAssetStage() error: %+v", err)
+			}
+			allFiles = append(allFiles, files...)
+		case "layer":
+			files, _, err := a.current.PublishLayerStage(item.Id)
+			if err != nil {
+				return xerrors.Errorf("PublishLayerStage() error: %+v", err)
 			}
 			allFiles = append(allFiles, files...)
 		default:
@@ -187,12 +195,24 @@ func (a *App) Unpublish(mode string, id string) error {
 		err = a.current.UnpublishDiagram(id)
 	case "assets":
 		err = a.current.UnpublishAsset(id)
+	case "layer":
+		err = a.current.UnpublishLayer(id)
 	default:
 		log.Warn("Unknown Mode:" + mode)
 	}
 
 	if err != nil {
 		return xerrors.Errorf("Unpublish() error: %+v", err)
+	}
+	return nil
+}
+
+func (a *App) UnpublishAll() error {
+
+	defer log.PrintTrace(log.Func("UnpublishAll()"))
+
+	if err := a.current.UnpublishAll(); err != nil {
+		return xerrors.Errorf("UnpublishAll() error: %+v", err)
 	}
 	return nil
 }

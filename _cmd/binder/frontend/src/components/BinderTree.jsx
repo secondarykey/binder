@@ -7,6 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import LayersIcon from '@mui/icons-material/Layers';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
@@ -27,8 +28,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 import { Events, Browser } from '@wailsio/runtime';
 
-import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset,
-         EditNote, EditDiagram, EditAsset, AddTextAsset, GetNote, GetDiagram, GetAsset, GetHTMLTemplates, Address, GetFullPath,
+import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset, RemoveLayer,
+         EditNote, EditDiagram, EditAsset, EditLayer, AddTextAsset, GetNote, GetDiagram, GetAsset, GetLayer, GetHTMLTemplates, Address, GetFullPath,
          IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
@@ -44,6 +45,7 @@ import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
 import DiagramMetaDialog from '../dialogs/DiagramMetaDialog';
 import AssetMetaDialog from '../dialogs/AssetMetaDialog';
+import LayerMetaDialog from '../dialogs/LayerMetaDialog';
 
 /**
  * Mermaid アイコン
@@ -74,6 +76,7 @@ const binderIcons = {
   note:       <TextSnippetIcon fontSize="small" />,
   diagram:    <MermaidIcon />,
   asset:      <AttachFileIcon fontSize="small" />,
+  layer:      <LayersIcon fontSize="small" />,
   folder:     <FolderIcon fontSize="small" />,
   folderOpen: <FolderIcon fontSize="small" />,
 };
@@ -139,6 +142,7 @@ const processTreeData = (leafs, modifiedIds, showModified, unpublishedMap, showP
       modified: showModified && modifiedIds ? modifiedIds.has(leaf.id) : false,                  // Git未コミット変更フラグ（トグルOFF時は強制false）
       publishStatus: showPublishStatus && unpublishedMap ? (unpublishedMap.get(leaf.id) ?? 0) : 0, // 未公開ステータス（0:最新 1:未公開新規 2:更新あり）
       private: showPublishStatus ? !!leaf.private : false,
+      binary: !!leaf.binary,                                                                       // type=="asset" のとき画像など（layer の親候補）
       children: hasChildren ? children : undefined,
     };
   });
@@ -533,11 +537,13 @@ function BinderTree(props) {
   const handleEditNote    = () => { closeAllMenus(); setEditDialog({ open: true, type: 'note',    id: contextMenu.node.id }); };
   const handleEditDiagram = () => { closeAllMenus(); setEditDialog({ open: true, type: 'diagram', id: contextMenu.node.id }); };
   const handleEditAsset   = () => { closeAllMenus(); setEditDialog({ open: true, type: 'asset',   id: contextMenu.node.id }); };
+  const handleEditLayer   = () => { closeAllMenus(); setEditDialog({ open: true, type: 'layer',   id: contextMenu.node.id }); };
   const closeEditDialog   = () => setEditDialog({ open: false, type: null, id: null });
 
   const handleHistoryNote    = () => { closeAllMenus(); OpenHistoryWindow('note',    contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryDiagram = () => { closeAllMenus(); OpenHistoryWindow('diagram', contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryAsset   = () => { closeAllMenus(); OpenHistoryWindow('asset',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
+  const handleHistoryLayer   = () => { closeAllMenus(); OpenHistoryWindow('layer',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
 
   /** リネーム開始: node を受け取る共通処理 */
   const startRename = (node, delay = 0) => {
@@ -604,6 +610,10 @@ function BinderTree(props) {
         const current = await GetAsset(id);
         if (!current) { doNav(); return; }
         await EditAsset({ ...current, name: newName }, '');
+      } else if (nodeType === 'layer') {
+        const current = await GetLayer(id);
+        if (!current) { doNav(); return; }
+        await EditLayer({ ...current, name: newName });
       }
       evt.markModified(id);
       evt.refreshTree();
@@ -699,6 +709,30 @@ function BinderTree(props) {
     }
   };
 
+  /** レイヤーをデフォルト値で作成 → インラインリネーム → LayerEditor へ */
+  const handleRegisterLayer = async () => {
+    const parentNode = contextMenu.node;
+    const parentId = parentNode.id;
+    closeAllMenus();
+    try {
+      const layer = {
+        id: "", parentId, name: "New Layer", alias: "", detail: "",
+        private: !!parentNode.private,
+      };
+      const resp = await EditLayer(layer);
+      setExpand(prev => prev.includes(parentId) ? prev : [...prev, parentId]);
+      evt.refreshTree();
+      navAfterRenameRef.current = "/editor/layer/" + resp.id;
+      setTimeout(() => {
+        setSelectedId(resp.id);
+        setRenamingValue("New Layer");
+        setRenaming(resp.id);
+      }, 150);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
   /** テキストファイルアセットを空コンテンツで作成してエディタへ */
   const handleRegisterTextAsset = async () => {
     const parentNode = contextMenu.node;
@@ -732,6 +766,7 @@ function BinderTree(props) {
     const remove =
       type === 'note'    ? RemoveNote(node.id) :
       type === 'diagram' ? RemoveDiagram(node.id) :
+      type === 'layer'   ? RemoveLayer(node.id) :
                            RemoveAsset(node.id);
 
     remove.then(() => {
@@ -969,7 +1004,7 @@ function BinderTree(props) {
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
 
-    {/** アセットメニュー: Edit / Rename / Copy ▶ / History / Delete */}
+    {/** アセットメニュー: Edit / Rename / Copy ▶ / Add Layer(画像のみ) / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "asset"}
       onClose={closeAllMenus}
@@ -982,8 +1017,33 @@ function BinderTree(props) {
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
+      {contextMenu.node?.binary && (
+        <>
+          <Divider />
+          <MenuItem onClick={handleRegisterLayer}><LayersIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.addLayer")}</MenuItem>
+        </>
+      )}
       <Divider />
       <MenuItem onClick={handleHistoryAsset}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
+      <Divider />
+      <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
+    </Menu>
+
+    {/** レイヤーメニュー: Edit / Rename / Copy ▶ / History / Delete */}
+    <Menu
+      open={contextMenu.open && contextNodeType === "layer"}
+      onClose={closeAllMenus}
+      anchorReference="anchorPosition"
+      anchorPosition={{ top: contextMenu.y, left: contextMenu.x }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
+    >
+      <MenuItem onClick={handleEditLayer}><EditIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.edit")}</MenuItem>
+      <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
+      <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
+      </MenuItem>
+      <Divider />
+      <MenuItem onClick={handleHistoryLayer}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
     </Menu>
@@ -999,6 +1059,7 @@ function BinderTree(props) {
       </DialogActions>
     </Dialog>
 
+
     {/** メタ編集ダイアログ */}
     <NoteMetaDialog
       open={editDialog.open && editDialog.type === 'note'}
@@ -1012,6 +1073,11 @@ function BinderTree(props) {
     />
     <AssetMetaDialog
       open={editDialog.open && editDialog.type === 'asset'}
+      id={editDialog.id}
+      onClose={closeEditDialog}
+    />
+    <LayerMetaDialog
+      open={editDialog.open && editDialog.type === 'layer'}
       id={editDialog.id}
       onClose={closeEditDialog}
     />

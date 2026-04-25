@@ -95,6 +95,7 @@ export function SystemMessage(props) {
         }
         var obj = createSlideMessage(obj);
         obj.show = true;
+        obj.key = Date.now();
         setMessage(obj);
     }
 
@@ -114,7 +115,8 @@ export function SystemMessage(props) {
     return (
         <>
             {/** ポップアップ表示 */}
-            <Snackbar open={msgObj.show && !msgDlg}
+            <Snackbar key={msgObj.key}
+                open={msgObj.show && !msgDlg}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 TransitionComponent={SlideTransition}
                 onDoubleClick={showMessageDialog}

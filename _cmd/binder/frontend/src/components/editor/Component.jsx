@@ -1,16 +1,17 @@
 import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { useParams, useLocation } from "react-router";
 
-import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, InputAdornment, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
 import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address } from "../../../bindings/binder/api/app";
+import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow } from "../../../bindings/main/window";
-import { Events } from '@wailsio/runtime';
+import { Events, Browser } from '@wailsio/runtime';
 
 import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
@@ -27,12 +28,12 @@ import '../../assets/Editor.css'
 import { Mode } from "../../app/App.jsx";
 
 import CloseIcon from '@mui/icons-material/Close';
-import CommitIcon from '@mui/icons-material/Commit';
 import DownloadIcon from '@mui/icons-material/Download';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import LaunchIcon from '@mui/icons-material/Launch';
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import PreviewIcon from '@mui/icons-material/Preview';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -55,6 +56,8 @@ import TableDialog from "../../dialogs/TableDialog.jsx";
 import BinderTree from "../../components/BinderTree.jsx";
 import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
+import LayerEditor from "../../components/LayerEditor.jsx";
+import CommitBar from "../../components/CommitBar.jsx";
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -282,6 +285,8 @@ function Editor(props) {
   const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [alias, setAlias] = useState('');
+  const [serverAddress, setServerAddress] = useState('');
   // ダイアグラムスタイルテンプレートID
   const [styleTemplateId, setStyleTemplateId] = useState("");
 
@@ -324,6 +329,10 @@ function Editor(props) {
     setActiveMatchLine(linesBefore + 1);
   }, [text]);
 
+  useEffect(() => {
+    Address().then((addr) => setServerAddress(addr)).catch(() => {});
+  }, []);
+
   //開いた時の初期処理
   useEffect(() => {
 
@@ -339,6 +348,9 @@ function Editor(props) {
 
       setEditor(true);
       setViewer(true);
+      // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
+      // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
+      setText("");
 
       // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
       // setText が先に走ると styleTemplateId が空のまま初回描画されるため
@@ -349,6 +361,7 @@ function Editor(props) {
           setUpdated(false);
         }
         setIsPrivate(!!resp.private);
+        setAlias(resp.alias ?? '');
         setName(resp.name);
         setStyleTemplateId(resp.styleTemplate || "");
         if (resp.styleTemplate) {
@@ -382,6 +395,7 @@ function Editor(props) {
           setUpdated(false);
         }
         setIsPrivate(!!resp.private);
+        setAlias(resp.alias ?? '');
         setName(resp.name);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -446,6 +460,21 @@ function Editor(props) {
       setEditor(false);
       setViewer(false);
       GetAsset(id).then((resp) => {
+        if (resp.updatedStatus > 0) {
+          setUpdated(true);
+        } else {
+          setUpdated(false);
+        }
+        setIsPrivate(!!resp.private);
+        setName(resp.name);
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      })
+    } else if (mode === "layer") {
+      // LayerEditor コンポーネントが表示・操作を担うため editor/viewer は不要
+      setEditor(false);
+      setViewer(false);
+      GetLayer(id).then((resp) => {
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
@@ -684,7 +713,7 @@ function Editor(props) {
     if (mode === "note") {
 
       var result = await createMarked(id, txt, true, true);
-      CreateNoteHTML(id, result.html).then((resp) => {
+      CreateNoteHTML(id, true, result.html).then((resp) => {
         setHTML(resp);
         if (!result.parseError) setParseStatus({ status: "success", err: null });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
@@ -717,6 +746,7 @@ function Editor(props) {
     Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
+      if (!elm) return;
       elm.innerHTML = data.svg;
       setParseStatus({ status: "success", err: null });
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt, styleTemplateId });
@@ -732,14 +762,20 @@ function Editor(props) {
         svg.style.transform = `translate(${px},${py}) scale(${scale})`;
       }
 
-      //ドラッグ
+      // ホイールクリック（中ボタン）でドラッグ移動。AssetViewer/LayerEditor と統一。
+      svg.addEventListener("pointerdown", function (event) {
+        if (event.button !== 1) return;
+        event.preventDefault(); // ブラウザのオートスクロールモードを抑制
+        elm.style.cursor = 'grabbing';
+      });
       svg.addEventListener("pointermove", function (event) {
-        if (!event.buttons) {
-          return;
-        }
+        if (!(event.buttons & 4)) return; // 中ボタン押下中のみ
         left = (left + event.movementX);
         top = (top + event.movementY);
         transform();
+      });
+      svg.addEventListener("pointerup", function (event) {
+        if (event.button === 1) elm.style.cursor = '';
       });
 
       //Wheelによる拡大
@@ -869,38 +905,51 @@ function Editor(props) {
     });
   }
 
+  const handleOpenInBrowser = () => {
+    if (!alias || !serverAddress) return;
+    if (mode === Mode.note) {
+      Browser.OpenURL(id === "index" ? `${serverAddress}/` : `${serverAddress}/pages/${alias}.html`);
+    } else if (mode === Mode.diagram) {
+      Browser.OpenURL(`${serverAddress}/images/${alias}.svg`);
+    }
+  };
+
   //出力処理
   const handlePublish = async () => {
-    var elm = "";
-    if (mode === Mode.note) {
-      elm = (await createMarked(id, text, false)).html;
-    } else if (mode === Mode.diagram) {
-      var obj = await Mermaid.parse(text, styleTemplateId);
-      elm = obj.svg
-    } else if (mode === Mode.template) {
-      elm = text;
-    } else if (mode === Mode.asset) {
-      elm = text;
-    }
+    try {
+      var elm = "";
+      if (mode === Mode.note) {
+        elm = (await createMarked(id, text, false)).html;
+      } else if (mode === Mode.diagram) {
+        const parsedTxt = await ParseDiagram(id, false, text);
+        var obj = await Mermaid.parse(parsedTxt, styleTemplateId);
+        elm = obj.svg;
+      } else if (mode === Mode.template) {
+        elm = text;
+      } else if (mode === Mode.asset) {
+        elm = text;
+      }
 
-    //出力処理を行う
-    Generate(mode, id, elm).then(() => {
+      await Generate(mode, id, elm);
       evt.reloadUnpublished();
-      evt.showSuccessMessage("Generate.")
-    }).catch((err) => {
+      evt.showSuccessMessage("Generate.");
+    } catch (err) {
       evt.showErrorMessage(err);
-    })
+    }
   }
 
   //非公開処理
-  const handleUnpublish = () => {
+  const [unpublishConfirm, setUnpublishConfirm] = useState(false);
+  const handleUnpublish = () => setUnpublishConfirm(true);
+  const doUnpublish = () => {
+    setUnpublishConfirm(false);
     Unpublish(mode, id).then(() => {
       evt.reloadUnpublished();
       evt.showSuccessMessage("Unpublish.")
     }).catch((err) => {
       evt.showErrorMessage(err);
-    })
-  }
+    });
+  };
 
   //個別コミットを行う
   const handleCommit = () => {
@@ -1296,22 +1345,6 @@ function Editor(props) {
     }).catch((err) => console.log(err));
   };
 
-  var commentStyle = {};
-  commentStyle.fontSize = "12px";
-  commentStyle.paddingTop = "12px";
-  commentStyle.width = (width - 70) + "px";
-
-  var color = "var(--text-primary)";
-  if (updated) {
-    color = "var(--accent-orange)";
-  }
-
-  //コミット用のアイコン(コメント欄の横)
-  const commitIcon = (
-    <InputAdornment position="end" className="linkBtn">
-      <CommitIcon fontSize="small" style={{ color: color }} onClick={handleCommit}> </CommitIcon>
-    </InputAdornment>
-  )
 
   // エディタルートではツリーパネルを常に表示する
   const showTree = true;
@@ -1346,6 +1379,13 @@ function Editor(props) {
           {mode === 'assets' && (
             <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
               <AssetViewer />
+            </div>
+          )}
+
+          {/** レイヤーモード: LayerEditor がすべての表示・操作を担う */}
+          {mode === 'layer' && (
+            <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+              <LayerEditor />
             </div>
           )}
 
@@ -1623,19 +1663,13 @@ function Editor(props) {
                 onDrop={handleDrop}
               />
 
-              {/** 左側の操作用位置 */}
-              <Toolbar className="buttonBar">
-                <Container className="buttonBarLeft">
-                  {/** コミットコメント */}
-                  <TextField value={comment} onChange={(e) => setComment(e.target.value)}
-                    size="small"
-                    variant="outlined"
-                    style={{ marginLeft: "0px", paddingLeft: "0px" }}
-                    inputProps={{ style: commentStyle }}
-                    InputProps={{ endAdornment: commitIcon }}
-                  ></TextField>
-                </Container>
-              </Toolbar>
+              {/** コミットバー */}
+              <CommitBar
+                comment={comment}
+                onCommentChange={setComment}
+                updated={updated}
+                onCommit={handleCommit}
+              />
             </div>
           }
 
@@ -1710,11 +1744,13 @@ function Editor(props) {
                     </Tooltip>
                   }
                   {mode !== Mode.template &&
+                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
+                  }
+                  {mode !== Mode.template &&
                     <IconButton
                       size="small"
                       onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
-                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-                      className="editorBtn"
+                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
                     >
                       <MoreVertIcon sx={{ fontSize: '18px' }} />
                     </IconButton>
@@ -1731,6 +1767,13 @@ function Editor(props) {
                 onClose={closePreviewMoreMenu}
                 slotProps={{ paper: { sx: { minWidth: 160 } } }}
               >
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handlePublish(); }} disabled={parseStatus.status === "error" || isPrivate}>
+                  <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+                </MenuItem>
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handleOpenInBrowser(); }} disabled={!alias || mode === Mode.template}>
+                  <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+                </MenuItem>
+                <Divider />
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
                   <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
                 </MenuItem>
@@ -1760,17 +1803,6 @@ function Editor(props) {
                     : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
                   }
                 </div>
-                {mode !== Mode.template &&
-                  <div className="parseStatusRight">
-                    <Tooltip title={t("preview.publish")} placement="top">
-                      <span>
-                        <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { pointerEvents: 'none' } : {}}>
-                          <PublishIcon sx={{ fontSize: '16px', ...(isPrivate && { color: '#9e9e9e' }) }} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </div>
-                }
               </div>
 
             </div>
@@ -1799,6 +1831,15 @@ function Editor(props) {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseErrorDlg(false)} />
+        </DialogActions>
+      </Dialog>
+
+      {/** 未公開確認ダイアログ */}
+      <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
+        <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
+          <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
         </DialogActions>
       </Dialog>
 

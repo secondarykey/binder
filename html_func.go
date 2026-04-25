@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"strings"
 	"time"
+	texttemplate "text/template"
 
 	"binder/db/model"
 	"binder/fs"
@@ -20,11 +21,14 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
 		"drawDiagram":   w.drawSVG,
+		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
 		"assetsImage":   w.assetsImage,
 		"childrenNotes": w.childrenNotes,
 		"latestNotes":   w.latestNotes,
 		"safe":          safeTemplate,
+		"lit":           litTemplate,
+		"litURL":        litURLTemplate,
 		"replace":       strings.ReplaceAll,
 		"localeDate":    localeDateScript,
 		"formatDate":    formatDate,
@@ -94,6 +98,8 @@ func (w *wrapper) assets(id string) string {
 }
 
 // assetsImage はアセットIDから <img> タグを生成するテンプレート関数
+// 生成される <img> タグには常に "binderAssets" クラスが付与される。
+// 第2引数でクラス名を指定した場合は "binderAssets" に追加する形で連結される。
 func (w *wrapper) assetsImage(v ...any) template.HTML {
 
 	//アセットId
@@ -101,12 +107,16 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 	if !ok {
 		return template.HTML(fmt.Sprintf(`assets id error`))
 	}
-	//クラス名指定
+	//クラス名指定（空可）。常に "binderAssets" を先頭に付与する。
 	clazz := Arg[string](v, 1).Default("")
+	classAttr := "binderAssets"
+	if strings.TrimSpace(clazz) != "" {
+		classAttr = classAttr + " " + clazz
+	}
 
 	src := w.assets(id)
 
-	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, clazz))
+	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, classAttr))
 }
 
 func (w *wrapper) childrenNotes(v ...any) []*tempNote {
@@ -212,6 +222,53 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 </div>`, "binderSVG", id, code))
 }
 
+// drawLayer はレイヤーIDから画像 + SVG オーバーレイの合成HTMLを返す。
+// 親 Asset の画像を下敷きにし、その上に Layer のシェイプを重ねる。
+// エディタプレビュー（local=true）ではインラインSVGとプライベートアセットURLを使い、
+// 公開時は公開済みSVGをimgで重ねる。
+// 第1引数: レイヤーID（必須）。第2引数: 追加の class 名（省略可）。
+func (w *wrapper) drawLayer(v ...any) template.HTML {
+
+	// レイヤーID
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		return template.HTML(`drawLayer id error`)
+	}
+	// クラス名指定（省略可）
+	clazz := Arg[string](v, 1).Default("")
+
+	imageSrc := ""
+	if w.Local {
+		// 親Assetのプライベートアセット配信URL
+		m, err := w.owner.GetLayerWithParent(id)
+		if err != nil {
+			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+		}
+		addr := w.owner.ServerAddress()
+		if addr == "" {
+			return template.HTML("drawLayer: server not available")
+		}
+		if m.Parent != nil {
+			imageSrc = fmt.Sprintf("http://%s/binder-assets/%s", addr, m.Parent.Id)
+		}
+	} else {
+		// 公開時は親 Asset の公開パスを参照
+		m, err := w.owner.GetLayerWithParent(id)
+		if err != nil {
+			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+		}
+		if m.Parent != nil {
+			imageSrc = w.convertURL(fs.PublicAssetFile(m.Parent))
+		}
+	}
+
+	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, clazz)
+	if err != nil {
+		return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+	}
+	return html
+}
+
 func (w *wrapper) getSVGFile(id string) (string, error) {
 	d, err := w.owner.GetDiagram(id)
 	if err != nil {
@@ -270,7 +327,7 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	}
 
 	content := buf.String()
-	tmpl, err := template.New("").Funcs(defineFuncMap(childWrap)).Parse(content)
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
 		log.ErrorE("embed Parse()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
@@ -283,8 +340,8 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	}
 
 	var out strings.Builder
-	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
-		log.ErrorE("embed writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
+	if err := tmpl.Execute(&out, dto); err != nil {
+		log.ErrorE("embed Execute()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
 	}
 
@@ -318,7 +375,7 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	}
 
 	content := string(data)
-	tmpl, err := template.New("").Funcs(defineFuncMap(childWrap)).Parse(content)
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
 		log.ErrorE("embed asset Parse()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
@@ -331,8 +388,8 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	}
 
 	var out strings.Builder
-	if err := w.owner.writeHTML(&out, tmpl, dto); err != nil {
-		log.ErrorE("embed asset writeHTML()", xerrors.Errorf("id=%s: %w", id, err))
+	if err := tmpl.Execute(&out, dto); err != nil {
+		log.ErrorE("embed asset Execute()", xerrors.Errorf("id=%s: %w", id, err))
 		return ""
 	}
 
@@ -341,6 +398,18 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 
 func safeTemplate(src string) string {
 	return src
+}
+
+// litTemplate はテキスト・HTML属性コンテキストでテンプレート構文をそのまま出力する。
+// URL属性（href等）では litURLTemplate を使うこと。
+func litTemplate(src string) template.HTML {
+	return template.HTML(src)
+}
+
+// litURLTemplate はURLコンテキスト（href等）でテンプレート構文をそのまま出力する。
+// html/template のURL正規化（{ → %7B）をバイパスする。
+func litURLTemplate(src string) template.URL {
+	return template.URL(src)
 }
 
 func formatDate(d string, f string) string {

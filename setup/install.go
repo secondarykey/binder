@@ -125,6 +125,12 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 		return xerrors.Errorf("os.Mkdir(assets) error: %w", err)
 	}
 
+	layerdir := filepath.Join(dir, fs.LayerDir)
+	err = os.MkdirAll(layerdir, 0755)
+	if err != nil {
+		return xerrors.Errorf("os.Mkdir(layers) error: %w", err)
+	}
+
 	// データベースを作成
 	dbdir := filepath.Join(dir, fs.DBDir)
 	err = os.MkdirAll(dbdir, 0755)

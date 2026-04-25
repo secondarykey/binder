@@ -34,10 +34,12 @@
 }
 
 #commitLeft {
+    display: flex;
+    flex-direction: column;
     width: 280px;
     min-width: 280px;
     background-color: var(--bg-panel);
-    overflow-y: auto;
+    overflow: hidden;
     border-right: 1px solid var(--border-primary);
 }
 

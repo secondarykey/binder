@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
+func (a *App) CreateNoteHTML(id string, local bool, elm string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateNoteHTML()"))
 
@@ -16,7 +16,7 @@ func (a *App) CreateNoteHTML(id string, elm string) (string, error) {
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)
 	}
 
-	html, err := a.current.CreateNoteHTML(n, true, elm)
+	html, err := a.current.CreateNoteHTML(n, local, elm)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("CreateNoteHTML() error\n%+v", err)

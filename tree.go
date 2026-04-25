@@ -21,13 +21,27 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("db.FindStructures() error: %w", err)
 	}
 
+	// アセットの binary フラグをまとめて取得（画像判定に使用）
+	assets, err := b.db.FindAssets()
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
+	}
+	binaryMap := make(map[string]bool, len(assets))
+	for _, a := range assets {
+		binaryMap[a.Id] = a.Binary
+	}
+
 	log.Info(fmt.Sprintf("Tree Length: %d", len(structures)))
 
 	treeMap := make(map[string][]*json.Leaf)
 	for _, s := range structures {
 		log.Trace(fmt.Sprintf("GetTree() : %v", s.Id))
+		leaf := convertStructure2Leaf(s)
+		if s.Typ == "asset" {
+			leaf.Binary = binaryMap[s.Id]
+		}
 		list := treeMap[s.ParentId]
-		treeMap[s.ParentId] = append(list, convertStructure2Leaf(s))
+		treeMap[s.ParentId] = append(list, leaf)
 	}
 
 	root := treeMap[""]
@@ -178,6 +192,22 @@ func (b *Binder) GetModifiedTree() (*json.Tree, error) {
 		}
 	}
 
+	dirLayer := json.NewLeaf("DIR_Layer", "layer")
+	tree.Data = append(tree.Data, dirLayer)
+	wk = files.Layers()
+	if wk.Exists() {
+		ids := wk.Ids()
+		structures, err := b.db.FindInStructureId(ids...)
+		if err != nil {
+			return nil, xerrors.Errorf("db.FindInStructureId() error: %w", err)
+		}
+		for _, s := range structures {
+			if s.Typ == "layer" {
+				dirLayer.AddChild(convertStructure2Leaf(s))
+			}
+		}
+	}
+
 	dirTemplate := json.NewLeaf("DIR_Template", "template")
 	tree.Data = append(tree.Data, dirTemplate)
 	wk = files.Templates()
@@ -239,6 +269,17 @@ func (b *Binder) GetUnpublishedTree() (*json.Tree, error) {
 	for _, a := range assets {
 		l := &json.Leaf{Id: a.Id, ParentId: a.ParentId, Name: a.Name, Type: "asset", PublishStatus: int(a.PublishStatus)}
 		dirAsset.AddChild(l)
+	}
+
+	dirLayer := json.NewLeaf("DIR_Layer", "layer")
+	tree.Data = append(tree.Data, dirLayer)
+	layers, err := b.GetUnpublishedLayers()
+	if err != nil {
+		return nil, xerrors.Errorf("UnpublishLayers() error: %w", err)
+	}
+	for _, ly := range layers {
+		l := &json.Leaf{Id: ly.Id, ParentId: ly.ParentId, Name: ly.Name, Type: "layer", PublishStatus: int(ly.PublishStatus)}
+		dirLayer.AddChild(l)
 	}
 
 	return &tree, nil

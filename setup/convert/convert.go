@@ -23,12 +23,13 @@ import (
 	convert048 "binder/setup/convert/db/048"
 	convert092 "binder/setup/convert/db/092"
 	convert097 "binder/setup/convert/db/097"
+	convert0102 "binder/setup/convert/db/0102"
 	fsconvert "binder/setup/convert/fs"
 
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097 *Version
+var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097, v0102 *Version
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
@@ -101,6 +102,10 @@ func init() {
 	v097, err = NewVersion("0.9.7")
 	if err != nil {
 		panic("v097 version parse error: " + err.Error())
+	}
+	v0102, err = NewVersion("0.10.2")
+	if err != nil {
+		panic("v0102 version parse error: " + err.Error())
 	}
 	migrations = []migration{
 		// 0.1.0: assets.csv に binary 列を追加
@@ -188,6 +193,10 @@ func init() {
 				state.diagramStyleMigrated = true
 			}
 			return nil
+		}},
+		// 0.10.2: layers.csv を新規テーブルとして追加（db.EnsureTableFiles で作成）
+		{v0102, func(_, dbDir string, _ *migrateState) error {
+			return applyDB(dbDir, convert0102.Convert0102)
 		}},
 	}
 }
@@ -289,7 +298,7 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 
 	// 旧バインダーに欠損ディレクトリがある場合（git の旧ブランチ等）は作成する。
 	// binder.Load() の CheckDirectory で存在を要求されるディレクトリ群を保証する。
-	for _, d := range []string{fs.NoteDir, fs.DiagramDir, fs.TemplateDir, fs.AssetDir} {
+	for _, d := range []string{fs.NoteDir, fs.DiagramDir, fs.TemplateDir, fs.AssetDir, fs.LayerDir} {
 		target := filepath.Join(dir, d)
 		if err = os.MkdirAll(target, 0755); err != nil {
 			return nil, xerrors.Errorf("MkdirAll(%s) error: %w", d, err)

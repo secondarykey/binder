@@ -20,6 +20,10 @@ func AssetTableFile() string {
 	return tableFiles(db.AssetTableName)[0]
 }
 
+func LayerTableFile() string {
+	return tableFiles(db.LayerTableName)[0]
+}
+
 func TemplateTableFile() string {
 	return tableFiles(db.TemplateTableName)[0]
 }
@@ -67,7 +71,7 @@ func (f *FileSystem) SchemaCommit(fn string) error {
 
 func allTableFiles() []string {
 	return tableFiles(db.NoteTableName,
-		db.DiagramTableName, db.AssetTableName, db.TemplateTableName, db.StructureTableName)
+		db.DiagramTableName, db.AssetTableName, db.LayerTableName, db.TemplateTableName, db.StructureTableName)
 }
 
 func (f *FileSystem) AddDBFiles() error {

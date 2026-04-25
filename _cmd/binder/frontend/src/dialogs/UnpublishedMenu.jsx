@@ -4,14 +4,15 @@ import { useNavigate } from 'react-router';
 import {
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   IconButton, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
-  Checkbox, Menu, MenuItem, Tooltip,
+  Checkbox, Menu, MenuItem, Tooltip, Divider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate,
   OpenNote, OpenDiagram,
-  ParseNote, GenerateAll,
+  ParseNote, ParseDiagram, GenerateAll, UnpublishAll,
 } from '../../bindings/binder/api/app';
 
 import Marked from '../components/editor/engines/Marked';
@@ -60,11 +61,25 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
   const [assets, setAssets] = useState([]);
+  const [layers, setLayers] = useState([]);
   const [errorDlg, setErrorDlg] = useState({ open: false, names: [] });
+  const [unpublishAllConfirm, setUnpublishAllConfirm] = useState(false);
+
+  const doUnpublishAll = () => {
+    setUnpublishAllConfirm(false);
+    UnpublishAll().then(() => {
+      evt.reloadUnpublished();
+      loadTree();
+      evt.showSuccessMessage(t("tree.unpublishAll"));
+    }).catch((err) => {
+      showError(err);
+    });
+  };
 
   const noteRef = useRef(null);
   const diagramRef = useRef(null);
   const assetRef = useRef(null);
+  const layerRef = useRef(null);
 
   const loadTree = () => {
     if (template) {
@@ -104,6 +119,9 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         } else if (leaf.id === "DIR_Asset") {
           setAssets(leafs);
           writeComment("Asset", leafs);
+        } else if (leaf.id === "DIR_Layer") {
+          setLayers(leafs);
+          writeComment("Layer", leafs);
         }
       });
 
@@ -123,6 +141,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
         ...(noteRef.current?.checked() ?? []),
         ...(diagramRef.current?.checked() ?? []),
         ...(assetRef.current?.checked() ?? []),
+        ...(layerRef.current?.checked() ?? []),
       ];
 
       if (selected.length === 0) {
@@ -147,8 +166,11 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
             items.push({ mode: "note", id: leaf.id, data: html });
           } else if (leaf.type === "diagram") {
             const text = await OpenDiagram(leaf.id);
-            const obj = await Mermaid.parse(text);
+            const parsedTxt = await ParseDiagram(leaf.id, false, text);
+            const obj = await Mermaid.parse(parsedTxt);
             items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
+          } else if (leaf.type === "layer") {
+            items.push({ mode: "layer", id: leaf.id, data: "" });
           } else {
             // asset
             items.push({ mode: "assets", id: leaf.id, data: "" });
@@ -159,10 +181,12 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       }
 
       // レンダリングに成功したアイテムを1回のコミットにまとめて公開
+      let generateOk = true;
       if (items.length > 0) {
         try {
           await GenerateAll(items, comment);
         } catch (err) {
+          generateOk = false;
           evt.showErrorMessage(err);
         }
       }
@@ -171,6 +195,8 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
 
       if (errors.length > 0) {
         setErrorDlg({ open: true, names: errors });
+        setTimeout(() => { loadTree(); }, 800);
+      } else if (!generateOk) {
         setTimeout(() => { loadTree(); }, 800);
       } else if (onClose) {
         evt.showSuccessMessage(t("publishModal.generateSuccess"));
@@ -186,12 +212,28 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   }, [dateProp]);
 
   return (<>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
     <List dense disablePadding className='treeText'
-      sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
+      sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
       <UnpublishedList name="Note"    data={notes}    onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={noteRef} />
       <UnpublishedList name="Diagram" data={diagrams} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={diagramRef} />
       <UnpublishedList name="Asset"   data={assets}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={assetRef} />
+      <UnpublishedList name="Layer"   data={layers}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={layerRef} />
     </List>
+    {!template && <>
+      <Divider />
+      <ListItemButton
+        style={{ maxHeight: '42px' }}
+        onClick={() => setUnpublishAllConfirm(true)}
+        sx={{ py: 0.5, color: 'var(--accent-red)', flexShrink: 0, '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
+      >
+        <ListItemIcon sx={{ minWidth: 28 }}>
+          <UnpublishedIcon sx={{ fontSize: '14px', color: 'var(--accent-red)' }} />
+        </ListItemIcon>
+        <ListItemText primary={t("tree.unpublishAll")} primaryTypographyProps={{ fontSize: '0.8rem' }} />
+      </ListItemButton>
+    </>}
+    </div>
 
     <Menu open={contextMenu.open}
       onClose={() => setContextMenu({ open: false, x: 0, y: 0, leaf: null })}
@@ -209,6 +251,18 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       </DialogContent>
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setErrorDlg({ open: false, names: [] })} />
+      </DialogActions>
+    </Dialog>
+
+    {/** 全データ未公開確認ダイアログ */}
+    <Dialog open={unpublishAllConfirm} onClose={() => setUnpublishAllConfirm(false)}>
+      <DialogTitle>{t("tree.unpublishAllConfirmTitle")}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>{t("tree.unpublishAllConfirmMessage")}</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishAllConfirm(false)} />
+        <ActionButton variant="delete" label={t("tree.unpublishAll")} icon={<UnpublishedIcon />} onClick={doUnpublishAll} />
       </DialogActions>
     </Dialog>
   </>);

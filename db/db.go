@@ -23,6 +23,7 @@ func init() {
 	tables[NoteTableName] = NoteTableName + ".csv"
 	tables[DiagramTableName] = DiagramTableName + ".csv"
 	tables[AssetTableName] = AssetTableName + ".csv"
+	tables[LayerTableName] = LayerTableName + ".csv"
 	tables[TemplateTableName] = TemplateTableName + ".csv"
 	tables[StructureTableName] = StructureTableName + ".csv"
 }
@@ -100,6 +101,7 @@ func EnsureTableFiles(dir string) error {
 		{NoteTableName, createNoteTable},
 		{DiagramTableName, createDiagramTable},
 		{AssetTableName, createAssetTable},
+		{LayerTableName, createLayerTable},
 		{TemplateTableName, createTemplateTable},
 		{StructureTableName, createStructureTable},
 	}
@@ -131,6 +133,11 @@ func createTableFiles(dir string) error {
 	err = createAssetTable(dir)
 	if err != nil {
 		return xerrors.Errorf("createAssetTable() error: %w", err)
+	}
+
+	err = createLayerTable(dir)
+	if err != nil {
+		return xerrors.Errorf("createLayerTable() error: %w", err)
 	}
 
 	err = createTemplateTable(dir)

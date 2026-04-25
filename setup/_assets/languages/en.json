@@ -57,6 +57,7 @@
         "diagram" : "Diagram",
         "assets_file" : "Asset (File Select)",
         "assets_text" : "Asset (Text File)",
+        "addLayer" : "Add Layer",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "clipboardEmpty" : "Clipboard image data is empty.",
         "download" : "Download",
@@ -69,7 +70,10 @@
         "copy"           : "Copy",
         "copy.id"        : "ID",
         "copy.path"      : "Path",
-        "copy.gitbashPath" : "GitBash Path"
+        "copy.gitbashPath" : "GitBash Path",
+        "unpublishAll" : "Unpublish All Data",
+        "unpublishAllConfirmTitle" : "Unpublish all data?",
+        "unpublishAllConfirmMessage" : "All published notes, diagrams, assets, and layers will be set to unpublished. This action cannot be undone."
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -105,6 +109,36 @@
         "removeSuccess" : "Assets removed.",
         "deleteTitle" : "Delete Assets",
         "deleteConfirm" : "Delete \"{{name}}\"?"
+    },
+    "layer" : {
+        "editTitle" : "Edit Layer",
+        "nameRequired" : "Name is required.",
+        "aliasRequired" : "Alias is required.",
+        "updateSuccess" : "Layer updated.",
+        "removeSuccess" : "Layer removed.",
+        "saveSuccess" : "Layer saved.",
+        "deleteTitle" : "Delete Layer",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "shapes" : "Shapes",
+        "properties" : "Properties",
+        "color" : "Color",
+        "strokeWidth" : "Stroke Width (px)",
+        "fill" : "Fill",
+        "fillHint" : "none / color (e.g. #ffff0080)",
+        "noSelection" : "Select a shape",
+        "publishSuccess" : "Layer published.",
+        "toolSelect" : "Select",
+        "toolLine" : "Line",
+        "toolRect" : "Rectangle",
+        "toolEllipse" : "Ellipse",
+        "toolText" : "Text",
+        "defaultText" : "Text",
+        "text" : "Text",
+        "fontSize" : "Font Size (px)",
+        "lineSpacing" : "Line Spacing (px)",
+        "fontFamily" : "Font",
+        "fontFamilyDefault" : "(default)",
+        "rotation" : "Rotation"
     },
     "setting" : {
         "title" : "Setting",
@@ -357,7 +391,7 @@
         "binaryNotSupported" : "Cannot display binary file: {{name}}",
         "migrateTitle" : "Migrate to Note",
         "migrateConfirm" : "Migrate \"{{name}}\" to a note.",
-        "migrate" : "Migrate",
+        "migrate" : "Convert to Note",
         "migrateDeleteAsset" : "Delete asset",
         "updateFile" : "Update File",
         "setMetaImage" : "Set as Meta Image",
@@ -370,6 +404,7 @@
     "preview" : {
         "publish" : "Publish",
         "unpublish" : "Unpublish",
+        "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
         "windowTitle" : "Preview",
         "parseError" : "Parse Error"

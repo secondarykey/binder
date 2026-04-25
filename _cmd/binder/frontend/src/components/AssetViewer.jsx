@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, TextField, Tooltip } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -8,13 +8,14 @@ import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import ImageIcon from '@mui/icons-material/Image';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CheckIcon from '@mui/icons-material/Check';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address } from '../../bindings/binder/api/app';
+import CommitBar from './CommitBar';
 import EditorArea from './editor/EditorArea';
-import { Events } from '@wailsio/runtime';
+import { Events, Browser } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
@@ -65,6 +66,7 @@ function ImageViewer({ src, alt }) {
   const imgRef      = useRef(null);
   // React state を使わず ref で transform 値を保持（ポインタ移動ごとの再レンダーを避ける）
   const tfRef = useRef({ left: 0, top: 0, scale: 1 });
+  const [displayScale, setDisplayScale] = useState(null);
 
   const applyTransform = () => {
     if (!imgRef.current) return;
@@ -82,12 +84,13 @@ function ImageViewer({ src, alt }) {
       const s = e.deltaY > 0 ? -0.1 : 0.1;
       tfRef.current.scale = Math.max(0.1, tfRef.current.scale + s);
       applyTransform();
+      setDisplayScale(Math.round(tfRef.current.scale * 100));
     };
     container.addEventListener('wheel', onWheel, { passive: false });
     return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
-  // 画像読み込み後: コンテナにフィットするスケールで中央配置
+  // 画像読み込み後: 100%表示を基本とし、画像がコンテナより大きい場合はフィット
   const handleLoad = () => {
     const container = containerRef.current;
     const img       = imgRef.current;
@@ -98,20 +101,30 @@ function ImageViewer({ src, alt }) {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
 
-    const scale = Math.min(cw / iw, ch / ih);
+    const fitScale = Math.min(cw / iw, ch / ih);
+    const scale = Math.min(1.0, fitScale);
     const left  = (cw - iw * scale) / 2;
     const top   = (ch - ih * scale) / 2;
 
     tfRef.current = { left, top, scale };
     applyTransform();
+    setDisplayScale(Math.round(scale * 100));
   };
 
-  // ドラッグ移動（SVGビューアと同じ pointermove + movementX/Y）
+  // ホイールドラッグ（中ボタン）による移動。LayerEditor と統一。
+  const handlePointerDown = (e) => {
+    if (e.button !== 1) return;
+    e.preventDefault(); // ブラウザのオートスクロールモードを抑制
+    if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
+  };
   const handlePointerMove = (e) => {
-    if (!e.buttons) return;
+    if (!(e.buttons & 4)) return; // 中ボタン押下中のみ移動（ビット2）
     tfRef.current.left += e.movementX;
     tfRef.current.top  += e.movementY;
     applyTransform();
+  };
+  const handlePointerUp = (e) => {
+    if (e.button === 1 && containerRef.current) containerRef.current.style.cursor = '';
   };
 
   return (
@@ -122,10 +135,11 @@ function ImageViewer({ src, alt }) {
         height: '100%',
         overflow: 'hidden',
         position: 'relative',
-        cursor: 'grab',
         userSelect: 'none',
       }}
+      onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
       <img
         ref={imgRef}
@@ -142,6 +156,22 @@ function ImageViewer({ src, alt }) {
           userSelect: 'none',
         }}
       />
+      {displayScale !== null && (
+        <div style={{
+          position: 'absolute',
+          bottom: '8px',
+          right: '8px',
+          background: 'rgba(0,0,0,0.45)',
+          color: '#fff',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}>
+          {displayScale}%
+        </div>
+      )}
     </div>
   );
 }
@@ -167,11 +197,14 @@ function AssetViewer() {
   const [assetName, setAssetName] = useState('');
   const [assetMeta, setAssetMeta] = useState(null);
   const [error, setError] = useState(null);
+  const [comment, setComment] = useState('');
+  const [updated, setUpdated] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [migrateDeleteAsset, setMigrateDeleteAsset] = useState(true);
+  const [serverAddress, setServerAddress] = useState('');
   // MoreVert メニュー
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
   const openMoreMenu = (el) => setMoreMenu({ open: true, el });
@@ -183,6 +216,10 @@ function AssetViewer() {
   const [editText, setEditText] = useState('');
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
+
+  useEffect(() => {
+    Address().then((addr) => setServerAddress(addr)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     GetFont().then((s) => {
@@ -220,10 +257,16 @@ function AssetViewer() {
       if (meta?.name) {
         setAssetName(meta.name);
         evt.changeTitle(meta.name);
+        setComment('Updated: ' + meta.name);
       }
     }).catch(() => {
       // メタデータ取得失敗は無視（コンテンツ取得のエラーを優先表示）
     });
+
+    // ツリーと同じソース（git status）で未コミット状態を判定
+    GetModifiedIds().then((ids) => {
+      setUpdated((ids ?? []).includes(id));
+    }).catch(() => {});
 
     // コンテンツ取得
     GetAssetContent(id).then((resp) => {
@@ -246,6 +289,18 @@ function AssetViewer() {
     });
   }, [id]);
 
+  /** Commit ボタン押下: アセットを個別コミットする */
+  const handleCommit = () => {
+    Commit("assets", id, comment).then(() => {
+      setUpdated(false);
+      evt.commitDone();
+      evt.showSuccessMessage("Commit.");
+    }).catch((e) => {
+      evt.showErrorMessage(String(e));
+    });
+  };
+
+
   /** Generate ボタン押下: アセットを公開する */
   const handleGenerate = async () => {
     setGenerating(true);
@@ -257,6 +312,12 @@ function AssetViewer() {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleOpenInBrowser = () => {
+    const a = assetMeta?.alias;
+    if (!a || !serverAddress) return;
+    Browser.OpenURL(`${serverAddress}/assets/${a}`);
   };
 
   /** Migrate ボタン押下: 確認ダイアログを開く */
@@ -308,7 +369,10 @@ function AssetViewer() {
   };
 
   /** Unpublish ボタン押下: docs からアセットを削除する */
-  const handleUnpublish = () => {
+  const [unpublishConfirm, setUnpublishConfirm] = useState(false);
+  const handleUnpublish = () => setUnpublishConfirm(true);
+  const doUnpublish = () => {
+    setUnpublishConfirm(false);
     Unpublish("assets", id).then(() => {
       evt.showSuccessMessage(t("assetViewer.unpublishSuccess"));
     }).catch((e) => {
@@ -392,7 +456,11 @@ function AssetViewer() {
           style={editorStyle}
           onChange={(e) => {
             setEditText(e.target.value);
-            saveAssetText(id, e.target.value);
+            setUpdated(true);
+            saveAssetText(id, e.target.value).then(() => {
+              evt.markModified(id);
+              evt.markPublishDirty(id);
+            }).catch(() => {});
           }}
         />
       );
@@ -427,11 +495,11 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
+          <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
           <IconButton
             size="small"
             onClick={(e) => openMoreMenu(e.currentTarget)}
-            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-            className="editorBtn"
+            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
           >
             <MoreVertIcon sx={{ fontSize: '18px' }} />
           </IconButton>
@@ -447,9 +515,6 @@ function AssetViewer() {
         onClose={closeMoreMenu}
         slotProps={{ paper: { sx: { minWidth: 160 } } }}
       >
-        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
-          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-        </MenuItem>
         {assetContent && isImageMime(assetContent.mime) && (
           <MenuItem onClick={() => { closeMoreMenu(); handleSetMetaImage(); }} disabled={!id}>
             <ImageIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.setMetaImage")}
@@ -460,6 +525,17 @@ function AssetViewer() {
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
           </MenuItem>
         )}
+        {assetContent && (isImageMime(assetContent.mime) || isTextMime(assetContent.mime)) && <Divider />}
+        <MenuItem onClick={() => { closeMoreMenu(); handleGenerate(); }} disabled={generating || !id}>
+          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+        </MenuItem>
+        <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!assetMeta?.alias}>
+          <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+        </MenuItem>
       </Menu>
       {/* コンテンツ */}
       <div className="assetTextEditor" style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
@@ -467,21 +543,12 @@ function AssetViewer() {
       </div>
 
       {/* ステータスバー */}
-      <div id="parseStatusBar">
-        <div className="parseStatusLeft">
-          <CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} />
-          <span className="parseStatusText">Success</span>
-        </div>
-        <div className="parseStatusRight">
-          <Tooltip title={t("preview.publish")} placement="top">
-            <span>
-              <IconButton size="small" aria-label="publish" onClick={handleGenerate} disabled={generating || !id} className="editorBtn">
-                <PublishIcon sx={{ fontSize: '16px' }} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </div>
-      </div>
+      <CommitBar
+        comment={comment}
+        onCommentChange={setComment}
+        updated={updated}
+        onCommit={handleCommit}
+      />
 
       {/* ノート移行確認ダイアログ */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
@@ -528,6 +595,15 @@ function AssetViewer() {
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setMetaImageDlg(false)} />
           <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSetMetaImageConfirm} />
+        </DialogActions>
+      </Dialog>
+
+      {/** 未公開確認ダイアログ */}
+      <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
+        <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
+          <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
         </DialogActions>
       </Dialog>
     </div>

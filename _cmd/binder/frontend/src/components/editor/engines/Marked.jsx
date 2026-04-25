@@ -135,7 +135,14 @@ class MarkedScript {
         });
     }
 
+    /**
+     * markedでパースしてHTMLを生成する
+     * @param {*} txt 
+     * @returns 
+     */
     static async parse(txt) {
+
+        console.debug(txt);
 
         var rtn = new Promise( (res,rej) => {
           //変換処理を関数化
