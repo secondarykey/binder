@@ -1059,6 +1059,7 @@ function BinderTree(props) {
       </DialogActions>
     </Dialog>
 
+
     {/** メタ編集ダイアログ */}
     <NoteMetaDialog
       open={editDialog.open && editDialog.type === 'note'}

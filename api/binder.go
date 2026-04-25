@@ -207,6 +207,16 @@ func (a *App) Unpublish(mode string, id string) error {
 	return nil
 }
 
+func (a *App) UnpublishAll() error {
+
+	defer log.PrintTrace(log.Func("UnpublishAll()"))
+
+	if err := a.current.UnpublishAll(); err != nil {
+		return xerrors.Errorf("UnpublishAll() error: %+v", err)
+	}
+	return nil
+}
+
 func (a *App) GetFullPath(mode, id string) string {
 	defer log.PrintTrace(log.Func("GetFullPath()", mode, id))
 	return a.current.GetFullPath(mode, id)

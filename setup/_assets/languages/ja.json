@@ -70,7 +70,10 @@
         "copy"           : "コピー",
         "copy.id"        : "ID",
         "copy.path"      : "パス",
-        "copy.gitbashPath" : "GitBashパス"
+        "copy.gitbashPath" : "GitBashパス",
+        "unpublishAll" : "全データを未公開にする",
+        "unpublishAllConfirmTitle" : "全データを未公開にしますか？",
+        "unpublishAllConfirmMessage" : "公開済みのノート・ダイアグラム・アセット・レイヤーをすべて未公開状態にします。この操作は元に戻せません。"
     },
     "note" : {
         "editTitle" : "ノート編集",
@@ -401,6 +404,7 @@
     "preview" : {
         "publish" : "公開",
         "unpublish" : "未公開状態にする",
+        "unpublishConfirm" : "未公開状態にしますか？",
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー"

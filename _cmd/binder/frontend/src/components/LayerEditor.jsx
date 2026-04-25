@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams } from 'react-router';
-import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
+import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, TextField, Typography, Divider, Menu, MenuItem, FormControl, InputLabel, Select, Dialog, DialogTitle, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
@@ -8,6 +8,7 @@ import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import PublishIcon from '@mui/icons-material/Publish';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CloseIcon from '@mui/icons-material/Close';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -16,6 +17,7 @@ import TextFieldsIcon from '@mui/icons-material/TextFields';
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames, GetModifiedIds } from '../../bindings/binder/api/app';
 import { Browser } from '@wailsio/runtime';
 import CommitBar from './CommitBar';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import { EventContext } from '../Event';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -778,7 +780,10 @@ function LayerEditor() {
   const openMoreMenu = (el) => setMoreMenu({ open: true, el });
   const closeMoreMenu = () => setMoreMenu({ open: false, el: null });
 
-  const handleUnpublish = () => {
+  const [unpublishConfirm, setUnpublishConfirm] = useState(false);
+  const handleUnpublish = () => setUnpublishConfirm(true);
+  const doUnpublish = () => {
+    setUnpublishConfirm(false);
     Unpublish("layer", id).then(() => {
       evt.reloadUnpublished();
       evt.showSuccessMessage(t("preview.unpublish"));
@@ -1261,6 +1266,15 @@ function LayerEditor() {
           <DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}
         </MenuItem>
       </Menu>
+
+      {/** 未公開確認ダイアログ */}
+      <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
+        <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
+          <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

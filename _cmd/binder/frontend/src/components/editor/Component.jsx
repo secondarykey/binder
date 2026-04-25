@@ -939,14 +939,17 @@ function Editor(props) {
   }
 
   //非公開処理
-  const handleUnpublish = () => {
+  const [unpublishConfirm, setUnpublishConfirm] = useState(false);
+  const handleUnpublish = () => setUnpublishConfirm(true);
+  const doUnpublish = () => {
+    setUnpublishConfirm(false);
     Unpublish(mode, id).then(() => {
       evt.reloadUnpublished();
       evt.showSuccessMessage("Unpublish.")
     }).catch((err) => {
       evt.showErrorMessage(err);
-    })
-  }
+    });
+  };
 
   //個別コミットを行う
   const handleCommit = () => {
@@ -1828,6 +1831,15 @@ function Editor(props) {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseErrorDlg(false)} />
+        </DialogActions>
+      </Dialog>
+
+      {/** 未公開確認ダイアログ */}
+      <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
+        <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
+          <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
         </DialogActions>
       </Dialog>
 

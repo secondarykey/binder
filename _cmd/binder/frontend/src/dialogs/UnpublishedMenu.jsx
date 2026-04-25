@@ -4,14 +4,15 @@ import { useNavigate } from 'react-router';
 import {
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   IconButton, List, ListSubheader, ListItemButton, ListItemIcon, ListItemText,
-  Checkbox, Menu, MenuItem, Tooltip,
+  Checkbox, Menu, MenuItem, Tooltip, Divider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate,
   OpenNote, OpenDiagram,
-  ParseNote, ParseDiagram, GenerateAll,
+  ParseNote, ParseDiagram, GenerateAll, UnpublishAll,
 } from '../../bindings/binder/api/app';
 
 import Marked from '../components/editor/engines/Marked';
@@ -62,6 +63,18 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   const [assets, setAssets] = useState([]);
   const [layers, setLayers] = useState([]);
   const [errorDlg, setErrorDlg] = useState({ open: false, names: [] });
+  const [unpublishAllConfirm, setUnpublishAllConfirm] = useState(false);
+
+  const doUnpublishAll = () => {
+    setUnpublishAllConfirm(false);
+    UnpublishAll().then(() => {
+      evt.reloadUnpublished();
+      loadTree();
+      evt.showSuccessMessage(t("tree.unpublishAll"));
+    }).catch((err) => {
+      showError(err);
+    });
+  };
 
   const noteRef = useRef(null);
   const diagramRef = useRef(null);
@@ -205,6 +218,18 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       <UnpublishedList name="Diagram" data={diagrams} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={diagramRef} />
       <UnpublishedList name="Asset"   data={assets}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={assetRef} />
       <UnpublishedList name="Layer"   data={layers}   onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} ref={layerRef} />
+      {!template && <>
+        <Divider sx={{ mt: 1 }} />
+        <ListItemButton
+          onClick={() => setUnpublishAllConfirm(true)}
+          sx={{ py: 0.5, color: 'var(--accent-red)', '&:hover': { backgroundColor: 'var(--selected-bg)' } }}
+        >
+          <ListItemIcon sx={{ minWidth: 28 }}>
+            <UnpublishedIcon sx={{ fontSize: '14px', color: 'var(--accent-red)' }} />
+          </ListItemIcon>
+          <ListItemText primary={t("tree.unpublishAll")} primaryTypographyProps={{ fontSize: '0.8rem' }} />
+        </ListItemButton>
+      </>}
     </List>
 
     <Menu open={contextMenu.open}
@@ -223,6 +248,18 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       </DialogContent>
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setErrorDlg({ open: false, names: [] })} />
+      </DialogActions>
+    </Dialog>
+
+    {/** 全データ未公開確認ダイアログ */}
+    <Dialog open={unpublishAllConfirm} onClose={() => setUnpublishAllConfirm(false)}>
+      <DialogTitle>{t("tree.unpublishAllConfirmTitle")}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>{t("tree.unpublishAllConfirmMessage")}</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishAllConfirm(false)} />
+        <ActionButton variant="delete" label={t("tree.unpublishAll")} icon={<UnpublishedIcon />} onClick={doUnpublishAll} />
       </DialogActions>
     </Dialog>
   </>);

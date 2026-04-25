@@ -70,7 +70,10 @@
         "copy"           : "Copy",
         "copy.id"        : "ID",
         "copy.path"      : "Path",
-        "copy.gitbashPath" : "GitBash Path"
+        "copy.gitbashPath" : "GitBash Path",
+        "unpublishAll" : "Unpublish All Data",
+        "unpublishAllConfirmTitle" : "Unpublish all data?",
+        "unpublishAllConfirmMessage" : "All published notes, diagrams, assets, and layers will be set to unpublished. This action cannot be undone."
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -401,6 +404,7 @@
     "preview" : {
         "publish" : "Publish",
         "unpublish" : "Unpublish",
+        "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
         "windowTitle" : "Preview",
         "parseError" : "Parse Error"

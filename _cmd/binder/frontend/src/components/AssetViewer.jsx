@@ -369,7 +369,10 @@ function AssetViewer() {
   };
 
   /** Unpublish ボタン押下: docs からアセットを削除する */
-  const handleUnpublish = () => {
+  const [unpublishConfirm, setUnpublishConfirm] = useState(false);
+  const handleUnpublish = () => setUnpublishConfirm(true);
+  const doUnpublish = () => {
+    setUnpublishConfirm(false);
     Unpublish("assets", id).then(() => {
       evt.showSuccessMessage(t("assetViewer.unpublishSuccess"));
     }).catch((e) => {
@@ -592,6 +595,15 @@ function AssetViewer() {
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setMetaImageDlg(false)} />
           <ActionButton variant="save" label={t("common.ok")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSetMetaImageConfirm} />
+        </DialogActions>
+      </Dialog>
+
+      {/** 未公開確認ダイアログ */}
+      <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
+        <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
+          <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
         </DialogActions>
       </Dialog>
     </div>
