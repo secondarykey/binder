@@ -921,13 +921,6 @@ function LayerEditor() {
           </ToggleButtonGroup>
         </div>
         <div className="previewMenuRight">
-          <Tooltip title={t("preview.publish")} placement="bottom">
-            <span>
-              <IconButton size="small" onClick={handlePublish} disabled={generating || !id} className="editorBtn">
-                <PublishIcon sx={{ fontSize: '16px' }} />
-              </IconButton>
-            </span>
-          </Tooltip>
           <IconButton
             size="small"
             onClick={(e) => openMoreMenu(e.currentTarget)}
@@ -948,6 +941,9 @@ function LayerEditor() {
         onClose={closeMoreMenu}
         slotProps={{ paper: { sx: { minWidth: 160 } } }}
       >
+        <MenuItem onClick={() => { closeMoreMenu(); handlePublish(); }} disabled={generating || !id}>
+          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+        </MenuItem>
         <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
           <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
         </MenuItem>

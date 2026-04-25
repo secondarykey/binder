@@ -1723,15 +1723,6 @@ function Editor(props) {
                     </Tooltip>
                   }
                   {mode !== Mode.template &&
-                    <Tooltip title={t("preview.publish")} placement="bottom">
-                      <span>
-                        <IconButton size="small" aria-label="publish" onClick={isPrivate ? undefined : handlePublish} disabled={parseStatus.status === "error"} className="editorBtn" sx={isPrivate ? { pointerEvents: 'none' } : {}}>
-                          <PublishIcon sx={{ fontSize: '16px', ...(isPrivate && { color: '#9e9e9e' }) }} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  }
-                  {mode !== Mode.template &&
                     <IconButton
                       size="small"
                       onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
@@ -1753,6 +1744,9 @@ function Editor(props) {
                 onClose={closePreviewMoreMenu}
                 slotProps={{ paper: { sx: { minWidth: 160 } } }}
               >
+                <MenuItem onClick={() => { closePreviewMoreMenu(); handlePublish(); }} disabled={parseStatus.status === "error" || isPrivate}>
+                  <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+                </MenuItem>
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
                   <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
                 </MenuItem>
