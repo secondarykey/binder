@@ -388,7 +388,7 @@
         "binaryNotSupported" : "Cannot display binary file: {{name}}",
         "migrateTitle" : "Migrate to Note",
         "migrateConfirm" : "Migrate \"{{name}}\" to a note.",
-        "migrate" : "Migrate",
+        "migrate" : "Convert to Note",
         "migrateDeleteAsset" : "Delete asset",
         "updateFile" : "Update File",
         "setMetaImage" : "Set as Meta Image",

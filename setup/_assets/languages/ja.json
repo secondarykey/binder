@@ -388,7 +388,7 @@
         "binaryNotSupported" : "バイナリファイルのため表示できません: {{name}}",
         "migrateTitle" : "ノートに移行",
         "migrateConfirm" : "「{{name}}」をノートに移行します。",
-        "migrate" : "移行",
+        "migrate" : "ノートに変換",
         "migrateDeleteAsset" : "アセットを削除する",
         "updateFile" : "ファイル更新",
         "setMetaImage" : "メタ画像に設定",
