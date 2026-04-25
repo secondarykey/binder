@@ -785,10 +785,14 @@ function LayerEditor() {
     // ピクセル単位として解釈される。legacy の正規化値 (< 1) はピクセルに変換。
     const sw = normalizeStrokeWidth(s.strokeWidth);
     const fill = s.fill || 'none';
+    // fill="none" は SVG ヒットテストの対象外（ストローク線上のみクリック可）。
+    // fill="transparent" は視覚的に同じ（完全透明）だが領域全体がクリック可になる。
+    // rect/ellipse の内部をクリックして選択できるようにするため none→transparent に変換。
+    const svgFill = fill === 'none' ? 'transparent' : fill;
     const common = {
       stroke,
       strokeWidth: sw,
-      fill,
+      fill: svgFill,
       vectorEffect: 'non-scaling-stroke',
       onPointerDown: (e) => handleShapePointerDown(e, s.id),
       onClick: (e) => handleShapeClick(e, s.id),
