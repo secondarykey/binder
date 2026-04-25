@@ -480,9 +480,9 @@ function LayerEditor() {
       const curAngle = Math.atan2(y - center.y, (x - center.x) * aspect);
       const deltaDeg = ((curAngle - startAngle) * 180) / Math.PI;
       let newRot = (orig.rotation || 0) + deltaDeg;
-      // 0-360 に正規化し、1度単位へ丸める（小数を持たない）。
+      // 0-360 に正規化。Shift 押下で 45度 スナップ、通常は 1度 単位。
       newRot = ((newRot % 360) + 360) % 360;
-      newRot = Math.round(newRot) % 360;
+      newRot = e.shiftKey ? Math.round(newRot / 45) * 45 % 360 : Math.round(newRot) % 360;
       setShapes((prev) => prev.map((s) => (s.id === rotating.shapeId ? { ...s, rotation: newRot } : s)));
       return;
     }
