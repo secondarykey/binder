@@ -189,7 +189,7 @@ function SearchApp() {
         )}
         <span style={{ flex: 1 }} />
         <IconButton size="small" color="inherit" aria-label="pin" onClick={handleTogglePin}
-          sx={{ color: alwaysOnTop ? 'var(--accent-primary)' : 'inherit' }}>
+          sx={{ color: alwaysOnTop ? 'var(--accent-primary)' : 'inherit', backgroundColor: alwaysOnTop ? 'var(--bg-button)' : 'transparent' }}>
           {alwaysOnTop ? <PushPinIcon sx={{ fontSize: '18px' }} /> : <PushPinOutlinedIcon sx={{ fontSize: '18px' }} />}
         </IconButton>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>

@@ -42,7 +42,7 @@ body {
 }
 
 #pinBtn.top > svg {
-    color : var(--text-faint);
+    color: var(--accent-primary);
 }
 
 #sidebarBtn.open {
