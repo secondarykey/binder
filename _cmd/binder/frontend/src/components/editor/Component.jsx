@@ -350,7 +350,6 @@ function Editor(props) {
     if (mode === Mode.diagram) {
 
       setEditor(true);
-      setViewer(true);
       // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
       setText("");
@@ -384,7 +383,6 @@ function Editor(props) {
     } else if (mode === Mode.note) {
 
       setEditor(true);
-      setViewer(true);
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -407,7 +405,6 @@ function Editor(props) {
     } else if (mode === Mode.template) {
 
       setEditor(true);
-      setViewer(true);
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
       setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
