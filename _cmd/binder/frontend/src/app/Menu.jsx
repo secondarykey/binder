@@ -63,6 +63,8 @@ function Menu(props) {
 
   // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
   const isEditorRoute = /^\/editor\//.test(location.pathname);
+  const isBinderActive = /^\/editor\//.test(location.pathname);
+  const isTemplateActive = /^\/template\//.test(location.pathname);
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
@@ -165,7 +167,8 @@ function Menu(props) {
       <>
         {/** BinderTree */}
         <Tooltip title={t("menu.binder")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}
+            sx={{ backgroundColor: isBinderActive ? 'var(--bg-button)' : 'transparent', '& svg': { color: isBinderActive ? 'var(--accent-primary)' : 'inherit' } }}>
             <LibraryBooksIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
@@ -180,7 +183,8 @@ function Menu(props) {
 
         {/** Template */}
         <Tooltip title={t("menu.template")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}
+            sx={{ backgroundColor: isTemplateActive ? 'var(--bg-button)' : 'transparent', '& svg': { color: isTemplateActive ? 'var(--accent-primary)' : 'inherit' } }}>
             <ContentPasteIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
