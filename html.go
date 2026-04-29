@@ -206,6 +206,28 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	return builder.String(), nil
 }
 
+// テキストアセットの要素を一度テンプレート処理を行う。
+// text/template を使用して {{assets}} 等のテンプレート関数を展開する。
+func (b *Binder) ParseAsset(local bool, elm string) (string, error) {
+
+	if b == nil {
+		return "", EmptyError
+	}
+
+	wrap := &wrapper{owner: b, Local: local}
+
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
+	if err != nil {
+		return "", xerrors.Errorf("Asset Parse() error: %w", err)
+	}
+
+	var builder strings.Builder
+	if err := tmpl.Execute(&builder, nil); err != nil {
+		return "", xerrors.Errorf("Asset Execute() error: %w", err)
+	}
+	return builder.String(), nil
+}
+
 // ダイアグラムの要素を一度テンプレート処理を行う。
 // Mermaid 記法には `-->` や `&` が含まれるため、HTML エスケープを避けるため text/template を使用する。
 func (b *Binder) ParseDiagram(diag *json.Diagram, local bool, elm string) (string, error) {
