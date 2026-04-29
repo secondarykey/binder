@@ -64,6 +64,8 @@
         "download" : "ダウンロード",
         "downloadAll" : "全体",
         "downloadDocs" : "docs",
+        "downloadText" : "テキストをダウンロード",
+        "downloadExpanded" : "展開済みテキストをダウンロード",
         "expandAll" : "すべて展開",
         "expandTargets" : "対象を展開",
         "collapseAll" : "すべて閉じる",
