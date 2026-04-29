@@ -243,7 +243,10 @@ function Editor(props) {
   // エディタメニュー MoreVert
   const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, el: null });
   const openEditorMoreMenu = (el) => setEditorMoreMenu({ open: true, el });
-  const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, el: null });
+  const closeEditorMoreMenu = () => { setEditorMoreMenu({ open: false, el: null }); setTextDownloadMenuAnchor(null); };
+
+  // テキストダウンロードサブメニューのアンカー要素
+  const [textDownloadMenuAnchor, setTextDownloadMenuAnchor] = useState(null);
 
   // プレビューメニュー MoreVert
   const [previewMoreMenu, setPreviewMoreMenu] = useState({ open: false, el: null });
@@ -982,6 +985,41 @@ function Editor(props) {
     }
   }
 
+  /** Blob を生成してテキストファイルをダウンロードする */
+  const triggerTextDownload = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** テキストをそのままダウンロード（テキストステートから直接） */
+  const handleDownloadRaw = () => {
+    closeEditorMoreMenu();
+    if (mode === Mode.note) {
+      triggerTextDownload(text, name + '.md');
+    } else if (mode === Mode.diagram) {
+      triggerTextDownload(text, name + '.mmd');
+    }
+  };
+
+  /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
+  const handleDownloadExpanded = () => {
+    closeEditorMoreMenu();
+    if (mode === Mode.note) {
+      ParseNote(id, false, text)
+        .then(expanded => triggerTextDownload(expanded, name + '.md'))
+        .catch(err => evt.showErrorMessage(err));
+    } else if (mode === Mode.diagram) {
+      ParseDiagram(id, false, text)
+        .then(expanded => triggerTextDownload(expanded, name + '.mmd'))
+        .catch(err => evt.showErrorMessage(err));
+    }
+  };
+
   /**
    * ファイルドロップ許可
    */
@@ -1634,6 +1672,25 @@ function Editor(props) {
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
                   <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
                 </MenuItem>
+                {(mode === Mode.note || mode === Mode.diagram) && <Divider />}
+                {(mode === Mode.note || mode === Mode.diagram) && (
+                  <MenuItem onClick={(e) => { e.stopPropagation(); setTextDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
+                  </MenuItem>
+                )}
+              </Menu>
+
+              {/** テキストダウンロードサブメニュー */}
+              <Menu
+                open={Boolean(textDownloadMenuAnchor)}
+                onClose={closeEditorMoreMenu}
+                anchorEl={textDownloadMenuAnchor}
+                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{ paper: { sx: { minWidth: 180 } } }}
+              >
+                <MenuItem onClick={handleDownloadRaw}>{t("tree.downloadText")}</MenuItem>
+                <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
               </Menu>
 
               {/** テキスト検索フローティングパネル（Ctrl+F） */}

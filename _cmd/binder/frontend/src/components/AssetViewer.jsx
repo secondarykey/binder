@@ -402,6 +402,23 @@ function AssetViewer() {
     }
   };
 
+  /** Blob を生成してテキストファイルをダウンロードする */
+  const triggerTextDownload = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** テキストアセットの内容をダウンロードする */
+  const handleDownloadText = () => {
+    closeMoreMenu();
+    triggerTextDownload(editText, assetName);
+  };
+
   /** ダウンロードボタン押下: アセットファイルをダウンロードする */
   const handleDownload = () => {
     if (!assetContent) return;
@@ -523,6 +540,11 @@ function AssetViewer() {
         {assetContent && isTextMime(assetContent.mime) && (
           <MenuItem onClick={() => { closeMoreMenu(); handleMigrate(); }} disabled={migrating || !id}>
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
+          </MenuItem>
+        )}
+        {assetContent && isTextMime(assetContent.mime) && (
+          <MenuItem onClick={handleDownloadText}>
+            <DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.downloadText")}
           </MenuItem>
         )}
         {assetContent && (isImageMime(assetContent.mime) || isTextMime(assetContent.mime)) && <Divider />}

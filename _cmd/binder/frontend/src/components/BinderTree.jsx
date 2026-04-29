@@ -30,8 +30,7 @@ import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset, RemoveLayer,
          EditNote, EditDiagram, EditAsset, EditLayer, AddTextAsset, GetNote, GetDiagram, GetAsset, GetLayer, GetHTMLTemplates, Address, GetFullPath,
-         IsGitBashPath, GetGitBashFullPath,
-         OpenNote, ParseNote, OpenDiagram, ParseDiagram, GetAssetContent } from '../../bindings/binder/api/app';
+         IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
@@ -201,9 +200,6 @@ function BinderTree(props) {
 
   // Copy サブメニューのアンカー要素
   const [copyMenuAnchor, setCopyMenuAnchor] = useState(null);
-
-  // テキストダウンロードサブメニューのアンカー要素
-  const [textDownloadMenuAnchor, setTextDownloadMenuAnchor] = useState(null);
 
   // エディタ引数に {bfile} が含まれる場合に true（右クリック都度判定）
   const [showGitBashPath, setShowGitBashPath] = useState(false);
@@ -486,7 +482,6 @@ function BinderTree(props) {
   const closeAllMenus = () => {
     setAddMenuAnchor(null);
     setCopyMenuAnchor(null);
-    setTextDownloadMenuAnchor(null);
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
@@ -498,67 +493,6 @@ function BinderTree(props) {
   /** Copy サブメニューを開く */
   const handleCopyMenuOpen = (e) => {
     setCopyMenuAnchor(e.currentTarget);
-  };
-
-  /** テキストダウンロードサブメニューを開く */
-  const handleTextDownloadMenuOpen = (e) => {
-    setTextDownloadMenuAnchor(e.currentTarget);
-  };
-
-  /** Blob を生成してテキストファイルをダウンロードする */
-  const triggerTextDownload = (content, filename) => {
-    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  /** base64 文字列を UTF-8 文字列にデコードする */
-  const base64ToText = (b64) => {
-    const binaryStr = atob(b64);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-    return new TextDecoder('utf-8').decode(bytes);
-  };
-
-  /** テキストをそのままダウンロード */
-  const handleDownloadRaw = () => {
-    const node = contextMenu.node;
-    setTextDownloadMenuAnchor(null);
-    closeAllMenus();
-    const { id, name, nodeType } = node;
-    if (nodeType === 'note') {
-      OpenNote(id).then(c => triggerTextDownload(c, name + '.md')).catch(err => evt.showErrorMessage(err));
-    } else if (nodeType === 'diagram') {
-      OpenDiagram(id).then(c => triggerTextDownload(c, name + '.mmd')).catch(err => evt.showErrorMessage(err));
-    } else if (nodeType === 'asset') {
-      GetAssetContent(id).then(resp => triggerTextDownload(base64ToText(resp.content), name)).catch(err => evt.showErrorMessage(err));
-    }
-  };
-
-  /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
-  const handleDownloadExpanded = () => {
-    const node = contextMenu.node;
-    setTextDownloadMenuAnchor(null);
-    closeAllMenus();
-    const { id, name, nodeType } = node;
-    if (nodeType === 'note') {
-      OpenNote(id)
-        .then(raw => ParseNote(id, false, raw))
-        .then(expanded => triggerTextDownload(expanded, name + '.md'))
-        .catch(err => evt.showErrorMessage(err));
-    } else if (nodeType === 'diagram') {
-      OpenDiagram(id)
-        .then(raw => ParseDiagram(id, false, raw))
-        .then(expanded => triggerTextDownload(expanded, name + '.mmd'))
-        .catch(err => evt.showErrorMessage(err));
-    } else if (nodeType === 'asset') {
-      // アセットはテンプレート展開なし、rawと同じ
-      GetAssetContent(id).then(resp => triggerTextDownload(base64ToText(resp.content), name)).catch(err => evt.showErrorMessage(err));
-    }
   };
 
   /** Copy > ID */
@@ -1010,9 +944,6 @@ function BinderTree(props) {
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
-      <MenuItem onClick={handleTextDownloadMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
-      </MenuItem>
       <Divider />
       <MenuItem onClick={handleAddMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><AddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.add")}</span><span>▶</span>
@@ -1054,19 +985,6 @@ function BinderTree(props) {
       )}
     </Menu>
 
-    {/** テキストダウンロードサブメニュー: テキスト / 展開済みテキスト */}
-    <Menu
-      open={Boolean(textDownloadMenuAnchor)}
-      onClose={closeAllMenus}
-      anchorEl={textDownloadMenuAnchor}
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      slotProps={{ paper: { sx: { minWidth: 160 } } }}
-    >
-      <MenuItem onClick={handleDownloadRaw}>{t("tree.downloadText")}</MenuItem>
-      <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
-    </Menu>
-
     {/** ダイアグラムメニュー: Edit / Rename / Copy ▶ / History / Delete */}
     <Menu
       open={contextMenu.open && contextNodeType === "diagram"}
@@ -1079,9 +997,6 @@ function BinderTree(props) {
       <MenuItem onClick={handleRenameStart}><DriveFileRenameOutlineIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.rename")}</MenuItem>
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
-      </MenuItem>
-      <MenuItem onClick={handleTextDownloadMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
       </MenuItem>
       <Divider />
       <MenuItem onClick={handleHistoryDiagram}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
@@ -1102,11 +1017,6 @@ function BinderTree(props) {
       <MenuItem onClick={handleCopyMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><ContentCopyIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.copy")}</span><span>▶</span>
       </MenuItem>
-      {!contextMenu.node?.binary && (
-        <MenuItem onClick={handleTextDownloadMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
-        </MenuItem>
-      )}
       {contextMenu.node?.binary && (
         <>
           <Divider />
