@@ -809,12 +809,16 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 	names := make([]string, 0, len(files))
 	gp := convertPaths(files...)
 
-	for idx, f := range gp {
-		_, ok := status[f]
+	for idx, path := range gp {
+		s, ok := status[path]
 		if ok {
-			//存在する為、変更あり
-			//if s.Worktree == git.Modified {
-			//}
+			// StagingはUNMODIFIEDでWorkTreeのみModifiedの場合はblobハッシュで確認
+			if s.Staging == git.Unmodified && s.Worktree == git.Modified {
+				changed, err := f.isActuallyModified(path)
+				if err != nil || !changed {
+					continue
+				}
+			}
 			names = append(names, files[idx])
 		}
 	}
@@ -840,13 +844,19 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 
 	var rtn []*Modified
 	//notes,diagrams,templates 以外ないはず
-	for f, s := range status {
+	for path, s := range status {
 
-		//TODO なんかログを考える
-		//log.Debug("Status", "File", f, "Staging", s.Staging, "Worktree", s.Worktree, "Extra", s.Extra)
+		// StagingはUNMODIFIEDでWorkTreeのみModifiedの場合、
+		// go-gitがWindows上でmtime不一致により内容が同じファイルを誤検知することがある。
+		// blobハッシュで実際の変更有無を確認してフィルタリングする。
+		if s.Staging == git.Unmodified && s.Worktree == git.Modified {
+			changed, err := f.isActuallyModified(path)
+			if err != nil || !changed {
+				continue
+			}
+		}
 
-		//fmt.Printf("%60s | %c %c %s\n", f, s.Staging, s.Worktree, s.Extra)
-		mod, err := getModelType(f)
+		mod, err := getModelType(path)
 		if err != nil {
 			// db/・binder.json など管理外のファイルは無視（Debugレベル）
 			log.DebugE("getModelType() error", err)
@@ -857,6 +867,47 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 	}
 
 	return rtn, nil
+}
+
+// isActuallyModified はHEADコミットのblobハッシュと作業ツリーのファイル内容を比較し、
+// 実際に内容が変わっているかを返す。
+// go-gitがmtime不一致で誤検知した場合に false を返す。
+func (f *FileSystem) isActuallyModified(path string) (bool, error) {
+	headRef, err := f.repo.Head()
+	if err != nil {
+		// HEADなし（初回コミット前）は変更ありとみなす
+		return true, nil
+	}
+
+	commit, err := f.repo.CommitObject(headRef.Hash())
+	if err != nil {
+		return true, nil
+	}
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return true, nil
+	}
+
+	headFile, err := tree.File(path)
+	if err != nil {
+		// HEADツリーに存在しない = 新規ファイル = 変更あり
+		return true, nil
+	}
+
+	fp, err := f.fs.Open(path)
+	if err != nil {
+		return true, nil
+	}
+	defer fp.Close()
+
+	workContent, err := io.ReadAll(fp)
+	if err != nil {
+		return true, nil
+	}
+
+	workHash := plumbing.ComputeHash(plumbing.BlobObject, workContent)
+	return workHash != headFile.Hash, nil
 }
 
 func getModelType(f string) (*Modified, error) {
