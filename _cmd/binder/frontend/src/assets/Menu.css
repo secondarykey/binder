@@ -73,6 +73,7 @@ button.leftButton:hover {
 
 #settingButton {
   margin-top:auto !important;
+  margin-bottom: 8px !important;
 }
 
 div.leftButton.active {
