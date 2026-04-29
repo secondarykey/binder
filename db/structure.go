@@ -21,6 +21,18 @@ func (inst *Instance) FindInStructureId(ids ...interface{}) ([]*model.Structure,
 	return inst.findStructure("id in ("+csvQ(ids)+")", "parent_id,seq", -1, -1, ids...)
 }
 
+// FindStructureByAlias は alias と type でエントリを検索する。見つからない場合は nil を返す。
+func (inst *Instance) FindStructureByAlias(alias, typ string) (*model.Structure, error) {
+	structures, err := inst.findStructure("alias = ? AND type = ?", "", 1, 0, alias, typ)
+	if err != nil {
+		return nil, xerrors.Errorf("findStructure() error: %w", err)
+	}
+	if len(structures) == 0 {
+		return nil, nil
+	}
+	return structures[0], nil
+}
+
 // ExistsStructureAlias は同一 type 内に alias が既に存在するか確認する。
 // excludeId が非空の場合はそのIDを除外する（更新時用）。
 func (inst *Instance) ExistsStructureAlias(alias, typ, excludeId string) (bool, error) {
