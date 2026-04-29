@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -96,8 +97,12 @@ function PreviewApp() {
           {t('preview.windowTitle')}{name ? ` — ${name}` : ''}
         </Typography>
         <Tooltip title={t('preview.alwaysOnTop')} placement="bottom">
-          <IconButton size="small" color="inherit" aria-label="always on top" onClick={handleToggleAlwaysOnTop}>
-            <PushPinIcon fontSize="small" sx={{ transform: alwaysOnTop ? 'none' : 'rotate(45deg)' }} />
+          <IconButton size="small" color="inherit" aria-label="always on top" onClick={handleToggleAlwaysOnTop}
+            sx={{ color: alwaysOnTop ? 'var(--accent-primary)' : 'inherit', backgroundColor: alwaysOnTop ? 'var(--bg-button)' : 'transparent' }}>
+            {alwaysOnTop
+              ? <PushPinIcon fontSize="small" />
+              : <PushPinOutlinedIcon fontSize="small" sx={{ transform: 'rotate(45deg)' }} />
+            }
           </IconButton>
         </Tooltip>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>

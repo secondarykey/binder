@@ -14,6 +14,7 @@ import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import MaximizeIcon from '@mui/icons-material/Maximize';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
@@ -384,7 +385,10 @@ function App() {
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 2, mr: 0.5 }}>
           {/** ピン留め */}
           <IconButton id="pinBtn" className={pinClass} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
-            <PushPinIcon fontSize="small" sx={{ transform: pin ? 'none' : 'rotate(45deg)' }} />
+            {pin
+              ? <PushPinIcon fontSize="small" />
+              : <PushPinOutlinedIcon fontSize="small" sx={{ transform: 'rotate(45deg)' }} />
+            }
           </IconButton>
           {/** 最小化 */}
           <IconButton size="small" color="inherit" aria-label="minimum" onClick={handleMin}>
