@@ -60,6 +60,10 @@ button.leftButton {
   margin-right:0px !important;
   width: 34px !important;
   height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
 }
 
 button.leftButton:hover {
