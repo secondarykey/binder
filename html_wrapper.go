@@ -10,10 +10,21 @@ import (
 )
 
 type wrapper struct {
-	owner *Binder
-	note  *json.Note
-	Local bool
-	depth int // embed の再帰深度（循環参照防止）
+	owner   *Binder
+	note    *json.Note
+	Local   bool
+	visited map[string]bool // embed で現在展開中のIDセット（循環参照防止）
+}
+
+// visitedWith は現在の visited に id を加えた新しいマップを返す。
+// embed の子 wrapper に渡すことで呼び出しスタック上のIDを追跡する。
+func (w *wrapper) visitedWith(id string) map[string]bool {
+	next := make(map[string]bool, len(w.visited)+1)
+	for k := range w.visited {
+		next[k] = true
+	}
+	next[id] = true
+	return next
 }
 
 func newWrapper(o *Binder, local bool, note *json.Note) (*wrapper, error) {

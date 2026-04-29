@@ -14,9 +14,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// embedMaxDepth は embed の最大再帰深度。循環参照防止のため上限を設ける。
-const embedMaxDepth = 2
-
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
@@ -281,10 +278,11 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 
 // embed は指定 ID のノートまたはテキストアセットの内容をインライン展開する。
 // 返値は template.HTML（エスケープなし）のため、marked.js にそのまま渡される。
-// 循環参照を防ぐため depth >= embedMaxDepth の場合は空文字を返す。
+// 呼び出しパス上に同じ ID が既に存在する場合は循環参照とみなして空文字を返す。
 // structure で type を確認し、note と（テキスト）asset のみをサポートする。
 func (w *wrapper) embed(id string) template.HTML {
-	if w.depth >= embedMaxDepth {
+	if w.visited[id] {
+		log.Warn("embed: cycle detected, skipping id=" + id)
 		return ""
 	}
 
@@ -320,10 +318,10 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	}
 
 	childWrap := &wrapper{
-		owner: w.owner,
-		note:  note,
-		Local: w.Local,
-		depth: w.depth + 1,
+		owner:   w.owner,
+		note:    note,
+		Local:   w.Local,
+		visited: w.visitedWith(id),
 	}
 
 	content := buf.String()
@@ -368,10 +366,10 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	}
 
 	childWrap := &wrapper{
-		owner: w.owner,
-		note:  w.note,
-		Local: w.Local,
-		depth: w.depth + 1,
+		owner:   w.owner,
+		note:    w.note,
+		Local:   w.Local,
+		visited: w.visitedWith(id),
 	}
 
 	content := string(data)
