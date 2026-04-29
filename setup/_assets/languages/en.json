@@ -412,6 +412,7 @@
         "setMetaImageError" : "Failed to set meta image: {{error}}"
     },
     "preview" : {
+        "openPreviewWindow" : "Open in New Window",
         "publish" : "Publish",
         "unpublish" : "Unpublish",
         "unpublishConfirm" : "Unpublish this item?",

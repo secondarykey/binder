@@ -1824,6 +1824,10 @@ function Editor(props) {
                 onClose={closePreviewMoreMenu}
                 slotProps={{ paper: { sx: { minWidth: 160 } } }}
               >
+                <MenuItem onClick={() => { closePreviewMoreMenu(); OpenPreviewWindow(mode, id, name); }} disabled={mode === Mode.template}>
+                  <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.openPreviewWindow")}
+                </MenuItem>
+                <Divider />
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handlePublish(); }} disabled={parseStatus.status === "error" || isPrivate}>
                   <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
                 </MenuItem>

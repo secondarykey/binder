@@ -412,6 +412,7 @@
         "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}"
     },
     "preview" : {
+        "openPreviewWindow" : "別ウィンドウで開く",
         "publish" : "公開",
         "unpublish" : "未公開状態にする",
         "unpublishConfirm" : "未公開状態にしますか？",
