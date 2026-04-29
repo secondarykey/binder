@@ -11,6 +11,7 @@ import BinderTree from '../components/BinderTree';
 
 import { SettingsApplications, LibraryBooks as LibraryBooksIcon, Search as SearchIcon } from '@mui/icons-material';
 import { OpenSearchWindow } from '../../bindings/main/window';
+import { Events } from '@wailsio/runtime';
 import TemplateTree from './TemplateTree';
 
 import Event, { EventContext } from '../Event';
@@ -65,6 +66,7 @@ function Menu(props) {
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   // イベントハンドラ内で最新の開閉状態を参照するための ref
   const menuOpenRef = useRef(true);
 
@@ -108,6 +110,10 @@ function Menu(props) {
         handleMenuOpen();
       }
     });
+
+    const offOpen = Events.On("binder:search:open", () => setSearchOpen(true));
+    const offClose = Events.On("binder:search:close", () => setSearchOpen(false));
+    return () => { offOpen(); offClose(); };
 
   }, []);
 
@@ -166,7 +172,8 @@ function Menu(props) {
 
         {/** Search  */}
         <Tooltip title={t("menu.search")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}
+            sx={{ backgroundColor: searchOpen ? 'var(--bg-button)' : 'transparent', '& svg': { color: searchOpen ? 'var(--accent-primary)' : 'inherit' } }}>
             <SearchIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>

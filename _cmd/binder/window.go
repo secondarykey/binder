@@ -478,9 +478,11 @@ func (r *Window) OpenSearchWindow() error {
 
 	r.searchWindow = w
 	w.SetAlwaysOnTop(true)
+	r.runtime.Event.Emit("binder:search:open")
 
 	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		r.searchWindow = nil
+		r.runtime.Event.Emit("binder:search:close")
 	})
 
 	return nil
