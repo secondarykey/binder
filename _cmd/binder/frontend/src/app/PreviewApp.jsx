@@ -96,12 +96,7 @@ function PreviewApp() {
           {t('preview.windowTitle')}{name ? ` — ${name}` : ''}
         </Typography>
         <Tooltip title={t('preview.alwaysOnTop')} placement="bottom">
-          <IconButton
-            size="small"
-            aria-label="always on top"
-            onClick={handleToggleAlwaysOnTop}
-            sx={{ mr: 0.5, color: alwaysOnTop ? 'var(--accent-blue)' : 'var(--text-muted)' }}
-          >
+          <IconButton size="small" color="inherit" aria-label="always on top" onClick={handleToggleAlwaysOnTop}>
             <PushPinIcon fontSize="small" sx={{ transform: alwaysOnTop ? 'none' : 'rotate(45deg)' }} />
           </IconButton>
         </Tooltip>
