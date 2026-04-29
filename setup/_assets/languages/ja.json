@@ -418,7 +418,8 @@
         "unpublishConfirm" : "未公開状態にしますか？",
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
-        "parseError" : "解析エラー"
+        "parseError" : "解析エラー",
+        "alwaysOnTop" : "最前面に固定"
     },
     "convert" : {
         "title" : "データ移行",

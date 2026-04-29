@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 
-import { Toolbar, Typography, IconButton } from '@mui/material';
+import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import PushPinIcon from '@mui/icons-material/PushPin';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -28,6 +29,7 @@ function PreviewApp() {
   const [id, setId]     = useState(params.get('id') ?? '');
   const [name, setName] = useState(params.get('name') ?? '');
   const [html, setHTML] = useState('');
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
 
   useEffect(() => {
     // プレビュー内容の更新イベント
@@ -79,6 +81,12 @@ function PreviewApp() {
     Window.Close();
   };
 
+  const handleToggleAlwaysOnTop = () => {
+    const next = !alwaysOnTop;
+    setAlwaysOnTop(next);
+    Window.SetAlwaysOnTop(next);
+  };
+
   return (
     <div id="PreviewApp">
 
@@ -87,6 +95,16 @@ function PreviewApp() {
         <Typography variant="body2" sx={{ flex: 1 }} noWrap>
           {t('preview.windowTitle')}{name ? ` — ${name}` : ''}
         </Typography>
+        <Tooltip title={t('preview.alwaysOnTop')} placement="bottom">
+          <IconButton
+            size="small"
+            aria-label="always on top"
+            onClick={handleToggleAlwaysOnTop}
+            sx={{ mr: 0.5, color: alwaysOnTop ? 'var(--accent-blue)' : 'var(--text-muted)' }}
+          >
+            <PushPinIcon fontSize="small" sx={{ transform: alwaysOnTop ? 'none' : 'rotate(45deg)' }} />
+          </IconButton>
+        </Tooltip>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>

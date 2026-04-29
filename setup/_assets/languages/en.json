@@ -418,7 +418,8 @@
         "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
         "windowTitle" : "Preview",
-        "parseError" : "Parse Error"
+        "parseError" : "Parse Error",
+        "alwaysOnTop" : "Always on Top"
     },
     "convert" : {
         "title" : "Data Migration",
