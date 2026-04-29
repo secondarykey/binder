@@ -277,19 +277,17 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 }
 
 // embed は指定 ID のノートまたはテキストアセットの内容をインライン展開する。
-// 返値は template.HTML（エスケープなし）のため、marked.js にそのまま渡される。
-// 呼び出しパス上に同じ ID が既に存在する場合は循環参照とみなして空文字を返す。
+// 返値は (template.HTML, error) であり、エラー時は Execute() が停止してフロントエンドに伝播する。
+// 呼び出しパス上に同じ ID が既に存在する場合は循環参照エラーを返す。
 // structure で type を確認し、note と（テキスト）asset のみをサポートする。
-func (w *wrapper) embed(id string) template.HTML {
+func (w *wrapper) embed(id string) (template.HTML, error) {
 	if w.visited[id] {
-		log.Warn("embed: cycle detected, skipping id=" + id)
-		return ""
+		return "", xerrors.Errorf("embed: cycle detected for id=%s", id)
 	}
 
 	s, err := w.owner.db.GetStructure(id)
 	if err != nil {
-		log.ErrorE("embed GetStructure()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed GetStructure() id=%s: %w", id, err)
 	}
 
 	switch s.Typ {
@@ -298,23 +296,20 @@ func (w *wrapper) embed(id string) template.HTML {
 	case "asset":
 		return w.embedTextAsset(id)
 	default:
-		log.Warn("embed: unsupported type=" + s.Typ + " id=" + id)
-		return ""
+		return "", xerrors.Errorf("embed: unsupported type=%s id=%s", s.Typ, id)
 	}
 }
 
 // embedNote はノートの Markdown 本文をテンプレート処理してインライン展開する。
-func (w *wrapper) embedNote(id string) template.HTML {
+func (w *wrapper) embedNote(id string) (template.HTML, error) {
 	note, err := w.owner.GetNote(id)
 	if err != nil {
-		log.ErrorE("embed GetNote()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed GetNote() id=%s: %w", id, err)
 	}
 
 	var buf strings.Builder
 	if err := w.owner.ReadNote(&buf, id); err != nil {
-		log.ErrorE("embed ReadNote()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed ReadNote() id=%s: %w", id, err)
 	}
 
 	childWrap := &wrapper{
@@ -327,42 +322,36 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	content := buf.String()
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
-		log.ErrorE("embed Parse()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed Parse() id=%s: %w", id, err)
 	}
 
 	dto, err := w.owner.createDto(childWrap, content)
 	if err != nil {
-		log.ErrorE("embed createDto()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed createDto() id=%s: %w", id, err)
 	}
 
 	var out strings.Builder
 	if err := tmpl.Execute(&out, dto); err != nil {
-		log.ErrorE("embed Execute()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed Execute() id=%s: %w", id, err)
 	}
 
-	return template.HTML(out.String())
+	return template.HTML(out.String()), nil
 }
 
 // embedTextAsset はテキストアセットの内容をテンプレート処理してインライン展開する。
 // バイナリアセットは対象外。親ノートのコンテキストを継承してテンプレート関数を使用できる。
-func (w *wrapper) embedTextAsset(id string) template.HTML {
+func (w *wrapper) embedTextAsset(id string) (template.HTML, error) {
 	a, err := w.owner.db.GetAsset(id)
 	if err != nil {
-		log.ErrorE("embed GetAsset()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed GetAsset() id=%s: %w", id, err)
 	}
 	if a.Binary {
-		log.Warn("embed: asset is binary, skipping id=" + id)
-		return ""
+		return "", xerrors.Errorf("embed: asset is binary id=%s", id)
 	}
 
 	data, _, err := w.owner.ReadAssetBytes(id)
 	if err != nil {
-		log.ErrorE("embed ReadAssetBytes()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed ReadAssetBytes() id=%s: %w", id, err)
 	}
 
 	childWrap := &wrapper{
@@ -375,23 +364,20 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	content := string(data)
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
-		log.ErrorE("embed asset Parse()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed asset Parse() id=%s: %w", id, err)
 	}
 
 	dto, err := w.owner.createDto(childWrap, content)
 	if err != nil {
-		log.ErrorE("embed asset createDto()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed asset createDto() id=%s: %w", id, err)
 	}
 
 	var out strings.Builder
 	if err := tmpl.Execute(&out, dto); err != nil {
-		log.ErrorE("embed asset Execute()", xerrors.Errorf("id=%s: %w", id, err))
-		return ""
+		return "", xerrors.Errorf("embed asset Execute() id=%s: %w", id, err)
 	}
 
-	return template.HTML(out.String())
+	return template.HTML(out.String()), nil
 }
 
 func safeTemplate(src string) string {
