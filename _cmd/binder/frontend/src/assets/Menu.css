@@ -5,6 +5,7 @@
     max-width: 42px;
     flex-flow: column;
     justify-content: flex-start;
+    align-items: center;
     gap: 4px;
 
     border-right: 1px solid var(--border-primary);
