@@ -568,7 +568,10 @@ function Editor(props) {
   useEffect(() => {
     if (mode !== Mode.template || templateType === "diagram" || !previewNoteId || !previewOtherTemplateId || !templateType) return;
     runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-      .then((result) => setHTML(result))
+      .then((result) => {
+        setHTML(result);
+        Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+      })
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
 
@@ -664,7 +667,11 @@ function Editor(props) {
         // テンプレートをファイルに即時保存してからプレビューを生成
         await SaveTemplate(id, text);
         runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-          .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
+          .then((result) => {
+            setHTML(result);
+            setParseStatus({ status: "success", err: null });
+            Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+          })
           .catch((err) => setParseStatus({ status: "error", err }));
       }
     } else {
@@ -815,6 +822,7 @@ function Editor(props) {
         var elm = document.querySelector('#mermaidViewer');
         if (elm) elm.innerHTML = data.svg;
         setParseStatus({ status: "success", err: null });
+        Events.Emit('binder:preview:update', { typ: 'diagram', id, name, html: fullTxt });
       }).catch((err) => {
         setParseStatus({ status: "error", err });
       });

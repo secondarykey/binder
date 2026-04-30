@@ -112,7 +112,7 @@ function PreviewApp() {
 
       {/** プレビューエリア */}
       <div id="previewArea">
-        {typ === 'note' &&
+        {(typ === 'note' || typ === 'template') &&
           <HTMLFrame html={html} cursorLine={null} />
         }
         {typ === 'diagram' &&
@@ -125,7 +125,7 @@ function PreviewApp() {
             overflow: 'auto',
           }}></div>
         }
-        {typ !== 'note' && typ !== 'diagram' &&
+        {typ !== 'note' && typ !== 'template' && typ !== 'diagram' &&
           <Typography variant="body2" sx={{ color: 'var(--text-muted)', m: 'auto' }}>
             {t('preview.notSupported')}
           </Typography>
