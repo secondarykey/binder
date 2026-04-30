@@ -749,7 +749,7 @@ function Editor(props) {
       if (!elm) return;
       elm.innerHTML = data.svg;
       setParseStatus({ status: "success", err: null });
-      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt, styleTemplateId });
+      Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
 
       var svg = document.querySelector('#mermaidViewer svg');
       var left = 0;
