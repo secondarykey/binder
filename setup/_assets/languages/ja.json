@@ -419,7 +419,8 @@
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー",
-        "alwaysOnTop" : "最前面に固定"
+        "alwaysOnTop" : "最前面に固定",
+        "notSupported" : "アセットは表示していません"
     },
     "convert" : {
         "title" : "データ移行",

@@ -419,7 +419,8 @@
         "download" : "Download",
         "windowTitle" : "Preview",
         "parseError" : "Parse Error",
-        "alwaysOnTop" : "Always on Top"
+        "alwaysOnTop" : "Always on Top",
+        "notSupported" : "Assets are not displayed"
     },
     "convert" : {
         "title" : "Data Migration",
