@@ -407,7 +407,8 @@
         "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
         "windowTitle" : "Preview",
-        "parseError" : "Parse Error"
+        "parseError" : "Parse Error",
+        "notSupported" : "Assets are not displayed"
     },
     "convert" : {
         "title" : "Data Migration",

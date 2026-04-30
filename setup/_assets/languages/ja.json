@@ -407,7 +407,8 @@
         "unpublishConfirm" : "未公開状態にしますか？",
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
-        "parseError" : "解析エラー"
+        "parseError" : "解析エラー",
+        "notSupported" : "アセットは表示していません"
     },
     "convert" : {
         "title" : "データ移行",

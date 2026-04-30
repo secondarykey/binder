@@ -107,6 +107,11 @@ function PreviewApp() {
             overflow: 'auto',
           }}></div>
         }
+        {typ !== 'note' && typ !== 'diagram' &&
+          <Typography variant="body2" sx={{ color: 'var(--text-muted)', m: 'auto' }}>
+            {t('preview.notSupported')}
+          </Typography>
+        }
       </div>
 
       <SystemMessage />
