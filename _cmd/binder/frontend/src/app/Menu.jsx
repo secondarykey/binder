@@ -63,8 +63,8 @@ function Menu(props) {
 
   // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
   const isEditorRoute = /^\/editor\//.test(location.pathname);
-  const isBinderActive = /^\/editor\//.test(location.pathname);
-  const isTemplateActive = /^\/template\//.test(location.pathname);
+  const isTemplateActive = /^\/template\//.test(location.pathname) || /^\/editor\/template\//.test(location.pathname);
+  const isBinderActive = /^\/editor\//.test(location.pathname) && !isTemplateActive;
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
