@@ -266,6 +266,8 @@ function Editor(props) {
   const idRef = useRef(id);
   const nameRef = useRef(name);
   const htmlRef = useRef("");
+  // ダイアグラムテンプレートの初回描画済みIDを記録（非同期レース対策）
+  const diagramInitializedRef = useRef(null);
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { idRef.current = id; }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
@@ -407,8 +409,10 @@ function Editor(props) {
       setEditor(true);
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
+      setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
       setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
       setPreviewOtherTemplateId(""); // 同上
+      diagramInitializedRef.current = null; // 同一IDへの再訪問に備えてリセット
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
@@ -575,9 +579,19 @@ function Editor(props) {
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
 
-  // プレビューダイアグラム選択変更時に再描画（diagram テンプレート）
+  // ダイアグラムテンプレート: 初回表示（text/templateType/previewDiagramId の非同期到達レース解消）
+  // text が最後に届くケースも含めて全条件が揃った瞬間に一度だけ描画する
   useEffect(() => {
     if (mode !== Mode.template || templateType !== "diagram" || !previewDiagramId || !text) return;
+    if (diagramInitializedRef.current === id) return;
+    diagramInitializedRef.current = id;
+    viewDiagramTemplatePreview(text, previewDiagramId);
+  }, [previewDiagramId, templateType, text]);
+
+  // ダイアグラムテンプレート: 選択ダイアグラム変更時の再描画（初回ロード完了後のみ）
+  useEffect(() => {
+    if (mode !== Mode.template || templateType !== "diagram" || !previewDiagramId || !text) return;
+    if (diagramInitializedRef.current !== id) return;
     viewDiagramTemplatePreview(text, previewDiagramId);
   }, [previewDiagramId]);
 
