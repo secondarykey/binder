@@ -1627,10 +1627,6 @@ function Editor(props) {
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleFontDialog(); }}>
                   <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
                 </MenuItem>
-                <Divider />
-                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name); }}>
-                  <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openPreviewWindow")}
-                </MenuItem>
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
                   <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
                 </MenuItem>
