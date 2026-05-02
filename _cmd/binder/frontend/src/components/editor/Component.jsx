@@ -352,6 +352,10 @@ function Editor(props) {
     if (mode === Mode.diagram) {
 
       setEditor(true);
+      // assets/layer モードから戻った場合に viewer 状態を復元する
+      if (editorSettingRef.current) {
+        setViewer(editorSettingRef.current.showPreview);
+      }
       // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
       setText("");
@@ -385,6 +389,10 @@ function Editor(props) {
     } else if (mode === Mode.note) {
 
       setEditor(true);
+      // assets/layer モードから戻った場合に viewer 状態を復元する
+      if (editorSettingRef.current) {
+        setViewer(editorSettingRef.current.showPreview);
+      }
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -407,6 +415,10 @@ function Editor(props) {
     } else if (mode === Mode.template) {
 
       setEditor(true);
+      // assets/layer モードから戻った場合に viewer 状態を復元する
+      if (editorSettingRef.current) {
+        setViewer(editorSettingRef.current.showPreview);
+      }
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
       setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
