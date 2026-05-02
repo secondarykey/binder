@@ -12,7 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address, ParseAsset } from '../../bindings/binder/api/app';
 import CommitBar from './CommitBar';
 import EditorArea from './editor/EditorArea';
 import { Events, Browser } from '@wailsio/runtime';
@@ -402,6 +402,34 @@ function AssetViewer() {
     }
   };
 
+  // テキストダウンロードサブメニューのアンカー要素
+  const [textDownloadMenuAnchor, setTextDownloadMenuAnchor] = useState(null);
+
+  /** Blob を生成してテキストファイルをダウンロードする */
+  const triggerTextDownload = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** テキストをそのままダウンロード */
+  const handleDownloadRaw = () => {
+    setTextDownloadMenuAnchor(null);
+    triggerTextDownload(editText, assetName);
+  };
+
+  /** テンプレート関数を展開したテキストをダウンロード */
+  const handleDownloadExpanded = () => {
+    setTextDownloadMenuAnchor(null);
+    ParseAsset(id, false, editText)
+      .then(expanded => triggerTextDownload(expanded, assetName))
+      .catch(err => evt.showErrorMessage(err));
+  };
+
   /** ダウンロードボタン押下: アセットファイルをダウンロードする */
   const handleDownload = () => {
     if (!assetContent) return;
@@ -525,6 +553,11 @@ function AssetViewer() {
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
           </MenuItem>
         )}
+        {assetContent && isTextMime(assetContent.mime) && (
+          <MenuItem onClick={(e) => { e.stopPropagation(); setTextDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
+          </MenuItem>
+        )}
         {assetContent && (isImageMime(assetContent.mime) || isTextMime(assetContent.mime)) && <Divider />}
         <MenuItem onClick={() => { closeMoreMenu(); handleGenerate(); }} disabled={generating || !id}>
           <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
@@ -537,6 +570,19 @@ function AssetViewer() {
           <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
         </MenuItem>
       </Menu>
+      {/* テキストダウンロードサブメニュー */}
+      <Menu
+        open={Boolean(textDownloadMenuAnchor)}
+        onClose={() => setTextDownloadMenuAnchor(null)}
+        anchorEl={textDownloadMenuAnchor}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { minWidth: 180 } } }}
+      >
+        <MenuItem onClick={handleDownloadRaw}>{t("tree.downloadText")}</MenuItem>
+        <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
+      </Menu>
+
       {/* コンテンツ */}
       <div className="assetTextEditor" style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
         {content}

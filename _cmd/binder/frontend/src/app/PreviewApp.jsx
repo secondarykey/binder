@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 
-import { Toolbar, Typography, IconButton } from '@mui/material';
+import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 
 import { Events, Window } from '@wailsio/runtime';
 
@@ -28,6 +30,7 @@ function PreviewApp() {
   const [id, setId]     = useState(params.get('id') ?? '');
   const [name, setName] = useState(params.get('name') ?? '');
   const [html, setHTML] = useState('');
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
 
   useEffect(() => {
     // プレビュー内容の更新イベント
@@ -79,6 +82,12 @@ function PreviewApp() {
     Window.Close();
   };
 
+  const handleToggleAlwaysOnTop = () => {
+    const next = !alwaysOnTop;
+    setAlwaysOnTop(next);
+    Window.SetAlwaysOnTop(next);
+  };
+
   return (
     <div id="PreviewApp">
 
@@ -87,6 +96,15 @@ function PreviewApp() {
         <Typography variant="body2" sx={{ flex: 1 }} noWrap>
           {t('preview.windowTitle')}{name ? ` — ${name}` : ''}
         </Typography>
+        <Tooltip title={t('preview.alwaysOnTop')} placement="bottom">
+          <IconButton size="small" color="inherit" aria-label="always on top" onClick={handleToggleAlwaysOnTop}
+            sx={{ color: alwaysOnTop ? 'var(--accent-primary)' : 'inherit', backgroundColor: alwaysOnTop ? 'var(--bg-button)' : 'transparent' }}>
+            {alwaysOnTop
+              ? <PushPinIcon fontSize="small" />
+              : <PushPinOutlinedIcon fontSize="small" sx={{ transform: 'rotate(45deg)' }} />
+            }
+          </IconButton>
+        </Tooltip>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -94,7 +112,7 @@ function PreviewApp() {
 
       {/** プレビューエリア */}
       <div id="previewArea">
-        {typ === 'note' &&
+        {(typ === 'note' || typ === 'template') &&
           <HTMLFrame html={html} cursorLine={null} />
         }
         {typ === 'diagram' &&
@@ -106,6 +124,11 @@ function PreviewApp() {
             alignItems: 'center',
             overflow: 'auto',
           }}></div>
+        }
+        {typ !== 'note' && typ !== 'template' && typ !== 'diagram' &&
+          <Typography variant="body2" sx={{ color: 'var(--text-muted)', m: 'auto' }}>
+            {t('preview.notSupported')}
+          </Typography>
         }
       </div>
 

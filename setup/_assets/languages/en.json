@@ -40,6 +40,7 @@
         "mime" : "MIME Type",
         "select" : "Select",
         "private" : "Private",
+        "execute" : "Execute",
         "aliasDuplicate" : "This alias is already in use",
         "none" : "None",
         "back" : "Back"
@@ -63,6 +64,8 @@
         "download" : "Download",
         "downloadAll" : "All",
         "downloadDocs" : "Docs",
+        "downloadText" : "Download Text",
+        "downloadExpanded" : "Download Expanded Text",
         "expandAll" : "Expand All",
         "expandTargets" : "Expand Targets",
         "collapseAll" : "Collapse All",
@@ -73,7 +76,11 @@
         "copy.gitbashPath" : "GitBash Path",
         "unpublishAll" : "Unpublish All Data",
         "unpublishAllConfirmTitle" : "Unpublish all data?",
-        "unpublishAllConfirmMessage" : "All published notes, diagrams, assets, and layers will be set to unpublished. This action cannot be undone."
+        "unpublishAllConfirmMessage" : "All published notes, diagrams, assets, and layers will be set to unpublished. This action cannot be undone.",
+        "regenerateAll" : "Update All to Latest",
+        "regenerateAllConfirmTitle" : "Update all data?",
+        "regenerateAllConfirmMessage" : "All data will be updated to the latest. Comments will be used as-is, so please review and execute.",
+        "regenerateAllEmpty" : "No published data found."
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -91,7 +98,10 @@
         "deleteTitle" : "Delete Note",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "deleteImageTitle" : "Delete Image",
-        "deleteImageConfirm" : "Delete the meta image?"
+        "deleteImageConfirm" : "Delete the meta image?",
+        "privateConfirmTitle" : "Setting to Private",
+        "privateConfirmMessage" : "This note will be set to private.",
+        "privateConfirmChildren" : "Also set all subordinate data to private"
     },
     "diagram" : {
         "editTitle" : "Edit Diagram",
@@ -402,12 +412,15 @@
         "setMetaImageError" : "Failed to set meta image: {{error}}"
     },
     "preview" : {
+        "openPreviewWindow" : "Open in New Window",
         "publish" : "Publish",
         "unpublish" : "Unpublish",
         "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
         "windowTitle" : "Preview",
-        "parseError" : "Parse Error"
+        "parseError" : "Parse Error",
+        "alwaysOnTop" : "Always on Top",
+        "notSupported" : "Assets are not displayed"
     },
     "convert" : {
         "title" : "Data Migration",

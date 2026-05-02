@@ -40,6 +40,7 @@
         "mime" : "MIMEタイプ",
         "select" : "選択",
         "private" : "非公開",
+        "execute" : "実行",
         "aliasDuplicate" : "このエイリアスは既に使用されています",
         "none" : "なし",
         "back" : "戻る"
@@ -63,6 +64,8 @@
         "download" : "ダウンロード",
         "downloadAll" : "全体",
         "downloadDocs" : "docs",
+        "downloadText" : "テキストをダウンロード",
+        "downloadExpanded" : "展開済みテキストをダウンロード",
         "expandAll" : "すべて展開",
         "expandTargets" : "対象を展開",
         "collapseAll" : "すべて閉じる",
@@ -73,7 +76,11 @@
         "copy.gitbashPath" : "GitBashパス",
         "unpublishAll" : "全データを未公開にする",
         "unpublishAllConfirmTitle" : "全データを未公開にしますか？",
-        "unpublishAllConfirmMessage" : "公開済みのノート・ダイアグラム・アセット・レイヤーをすべて未公開状態にします。この操作は元に戻せません。"
+        "unpublishAllConfirmMessage" : "公開済みのノート・ダイアグラム・アセット・レイヤーをすべて未公開状態にします。この操作は元に戻せません。",
+        "regenerateAll" : "すべてを最新のデータに更新する",
+        "regenerateAllConfirmTitle" : "すべてのデータを更新しますか？",
+        "regenerateAllConfirmMessage" : "すべてのデータを最新に更新します。コメントはそのまま利用しますので再確認して実行してください。",
+        "regenerateAllEmpty" : "現在公開中のデータがありません。"
     },
     "note" : {
         "editTitle" : "ノート編集",
@@ -91,7 +98,10 @@
         "deleteTitle" : "ノートの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "deleteImageTitle" : "画像の削除",
-        "deleteImageConfirm" : "メタ画像を削除しますか？"
+        "deleteImageConfirm" : "メタ画像を削除しますか？",
+        "privateConfirmTitle" : "非公開設定を行っています",
+        "privateConfirmMessage" : "このノートを非公開に設定します。",
+        "privateConfirmChildren" : "下層データもすべて非公開に設定する"
     },
     "diagram" : {
         "editTitle" : "ダイアグラム編集",
@@ -402,12 +412,15 @@
         "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}"
     },
     "preview" : {
+        "openPreviewWindow" : "別ウィンドウで開く",
         "publish" : "公開",
         "unpublish" : "未公開状態にする",
         "unpublishConfirm" : "未公開状態にしますか？",
         "download" : "ダウンロード",
         "windowTitle" : "プレビュー",
-        "parseError" : "解析エラー"
+        "parseError" : "解析エラー",
+        "alwaysOnTop" : "最前面に固定",
+        "notSupported" : "アセットは表示していません"
     },
     "convert" : {
         "title" : "データ移行",

@@ -42,6 +42,18 @@ func (a *App) ParseNote(id string, local bool, elm string) (string, error) {
 	return html, nil
 }
 
+func (a *App) ParseAsset(id string, local bool, elm string) (string, error) {
+
+	defer log.PrintTrace(log.Func("ParseAsset()"))
+
+	result, err := a.current.ParseAsset(local, elm)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("ParseAsset() error\n%+v", err)
+	}
+	return result, nil
+}
+
 func (a *App) ParseDiagram(id string, local bool, elm string) (string, error) {
 
 	defer log.PrintTrace(log.Func("ParseDiagram()"))

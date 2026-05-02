@@ -21,6 +21,18 @@ func (inst *Instance) FindInStructureId(ids ...interface{}) ([]*model.Structure,
 	return inst.findStructure("id in ("+csvQ(ids)+")", "parent_id,seq", -1, -1, ids...)
 }
 
+// FindStructureByAlias は alias と type でエントリを検索する。見つからない場合は nil を返す。
+func (inst *Instance) FindStructureByAlias(alias, typ string) (*model.Structure, error) {
+	structures, err := inst.findStructure("alias = ? AND type = ?", "", 1, 0, alias, typ)
+	if err != nil {
+		return nil, xerrors.Errorf("findStructure() error: %w", err)
+	}
+	if len(structures) == 0 {
+		return nil, nil
+	}
+	return structures[0], nil
+}
+
 // ExistsStructureAlias は同一 type 内に alias が既に存在するか確認する。
 // excludeId が非空の場合はそのIDを除外する（更新時用）。
 func (inst *Instance) ExistsStructureAlias(alias, typ, excludeId string) (bool, error) {
@@ -79,6 +91,21 @@ func (inst *Instance) PublishStructure(id string, op Op) (*model.Structure, erro
 	s.Updated = now
 	s.UpdatedUser = op.GetOperationId()
 	return s, nil
+}
+
+// PrivatizeStructure は private=true に設定し、publish_date/republish_date をゼロにリセットする。
+func (inst *Instance) PrivatizeStructure(id string, op Op) error {
+	now := time.Now()
+	num, err := inst.updateStructure(
+		"private = ?,publish_date = ?,republish_date = ?,updated_date = ?,updated_user = ?",
+		"id = ?", true, time.Time{}, time.Time{}, now, op.GetOperationId(), id)
+	if err != nil {
+		return xerrors.Errorf("updateStructure() error: %w", err)
+	}
+	if num != 1 {
+		return fmt.Errorf("updateStructure() non single error: %v == %d", id, num)
+	}
+	return nil
 }
 
 // UnpublishStructure は republish_date をゼロにリセットして非公開扱いにする。

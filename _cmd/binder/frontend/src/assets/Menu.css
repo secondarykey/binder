@@ -5,6 +5,7 @@
     max-width: 42px;
     flex-flow: column;
     justify-content: flex-start;
+    align-items: center;
     gap: 4px;
 
     border-right: 1px solid var(--border-primary);
@@ -58,6 +59,12 @@
 button.leftButton {
   margin-left:0px !important;
   margin-right:0px !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
 }
 
 button.leftButton:hover {
@@ -66,6 +73,7 @@ button.leftButton:hover {
 
 #settingButton {
   margin-top:auto !important;
+  margin-bottom: 8px !important;
 }
 
 div.leftButton.active {

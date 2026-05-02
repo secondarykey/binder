@@ -11,6 +11,7 @@ import BinderTree from '../components/BinderTree';
 
 import { SettingsApplications, LibraryBooks as LibraryBooksIcon, Search as SearchIcon } from '@mui/icons-material';
 import { OpenSearchWindow } from '../../bindings/main/window';
+import { Events } from '@wailsio/runtime';
 import TemplateTree from './TemplateTree';
 
 import Event, { EventContext } from '../Event';
@@ -62,9 +63,12 @@ function Menu(props) {
 
   // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
   const isEditorRoute = /^\/editor\//.test(location.pathname);
+  const isTemplateActive = /^\/template\//.test(location.pathname) || /^\/editor\/template\//.test(location.pathname);
+  const isBinderActive = /^\/editor\//.test(location.pathname) && !isTemplateActive;
 
   //メニュー非表示用のクラス
   const [menuClasses, setMenuClasses] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   // イベントハンドラ内で最新の開閉状態を参照するための ref
   const menuOpenRef = useRef(true);
 
@@ -108,6 +112,10 @@ function Menu(props) {
         handleMenuOpen();
       }
     });
+
+    const offOpen = Events.On("binder:search:open", () => setSearchOpen(true));
+    const offClose = Events.On("binder:search:close", () => setSearchOpen(false));
+    return () => { offOpen(); offClose(); };
 
   }, []);
 
@@ -159,21 +167,24 @@ function Menu(props) {
       <>
         {/** BinderTree */}
         <Tooltip title={t("menu.binder")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}
+            sx={{ backgroundColor: isBinderActive ? 'var(--bg-button)' : 'transparent', '& svg': { color: isBinderActive ? 'var(--accent-primary)' : 'inherit' } }}>
             <LibraryBooksIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
         {/** Search  */}
         <Tooltip title={t("menu.search")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="search" onClick={() => OpenSearchWindow()}
+            sx={{ backgroundColor: searchOpen ? 'var(--bg-button)' : 'transparent', '& svg': { color: searchOpen ? 'var(--accent-primary)' : 'inherit' } }}>
             <SearchIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
         {/** Template */}
         <Tooltip title={t("menu.template")} placement="right">
-          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}>
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}
+            sx={{ backgroundColor: isTemplateActive ? 'var(--bg-button)' : 'transparent', '& svg': { color: isTemplateActive ? 'var(--accent-primary)' : 'inherit' } }}>
             <ContentPasteIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>

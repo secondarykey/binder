@@ -1,16 +1,17 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, Button,
-  Container, FormControl, FormLabel, IconButton, InputAdornment,
+  Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox,
+  Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  FormControl, FormControlLabel, FormLabel, IconButton, InputAdornment,
   Select, TextField, MenuItem, Typography,
 } from "@mui/material";
-import { DeleteOutline, ExpandMore } from "@mui/icons-material";
+import { Check as CheckIcon, Close as CloseIcon, DeleteOutline, ExpandMore } from "@mui/icons-material";
 import PublishDateField from "./components/PublishDateField";
 
 import {
   GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage, UploadNoteImage,
-  EditNote, RemoveNote,
+  EditNote, RemoveNote, PrivatizeChildren,
 } from "../../bindings/binder/api/app";
 import { SelectFile } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png';
@@ -18,6 +19,7 @@ import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
+import { ActionButton } from "./components/ActionButton";
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -43,6 +45,8 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [hasImage, setHasImage] = useState(false);
   const [confirmDeleteImage, setConfirmDeleteImage] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [privateConfirm, setPrivateConfirm] = useState(false);
+  const [includeChildren, setIncludeChildren] = useState(false);
   const [detail, setDetail] = useState("");
   const [layout, setLayout] = useState("");
   const [content, setContent] = useState("");
@@ -84,20 +88,18 @@ function NoteMetaDialog({ open, id, onClose }) {
     }).catch(() => { setViewImage(noImage); setHasImage(false); });
   }, [open, id]);
 
-  const handleSave = () => {
-    if (!name) { showWarning(t("note.nameRequired")); return; }
-    if (!layout || !content) { showWarning(t("note.chooseTemplate")); return; }
-    if (!alias && id !== "index") { showWarning(t("note.aliasRequired")); return; }
+  const buildNote = () => ({
+    id, parentId, name, alias, detail, private: isPrivate,
+    layoutTemplate: layout, contentTemplate: content,
+    publish: publish || ZERO_TIME,
+    republish: republish || ZERO_TIME,
+  });
 
-    const note = {
-      id, parentId, name, alias, detail, private: isPrivate,
-      layoutTemplate: layout, contentTemplate: content,
-      publish: publish || ZERO_TIME,
-      republish: republish || ZERO_TIME,
-    };
+  const doEditNote = (note, afterEdit) => {
     EditNote(note, "").then(() => {
       evt.markModified(id);
       evt.refreshTree();
+      if (afterEdit) return afterEdit();
       evt.showSuccessMessage(t("note.updateSuccess"));
       onClose();
     }).catch((err) => {
@@ -107,6 +109,34 @@ function NoteMetaDialog({ open, id, onClose }) {
         showError(err);
       }
     });
+  };
+
+  const handleSave = () => {
+    if (!name) { showWarning(t("note.nameRequired")); return; }
+    if (!layout || !content) { showWarning(t("note.chooseTemplate")); return; }
+    if (!alias && id !== "index") { showWarning(t("note.aliasRequired")); return; }
+
+    if (isPrivate) {
+      setIncludeChildren(false);
+      setPrivateConfirm(true);
+      return;
+    }
+    doEditNote(buildNote());
+  };
+
+  const handlePrivateConfirm = () => {
+    setPrivateConfirm(false);
+    const note = buildNote();
+    if (includeChildren) {
+      doEditNote(note, () =>
+        PrivatizeChildren(id).then(() => {
+          evt.showSuccessMessage(t("note.updateSuccess"));
+          onClose();
+        }).catch((err) => showError(err))
+      );
+    } else {
+      doEditNote(note);
+    }
   };
 
   const handleDeleteConfirm = () => {
@@ -239,6 +269,33 @@ function NoteMetaDialog({ open, id, onClose }) {
         </AccordionDetails>
       </Accordion>
     </MetaDialog>
+
+    <Dialog
+      open={privateConfirm}
+      onClose={() => setPrivateConfirm(false)}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)", minWidth: 400 } }}
+    >
+      <DialogTitle>{t("note.privateConfirmTitle")}</DialogTitle>
+      <DialogContent>
+        <DialogContentText sx={{ color: "var(--text-secondary)", mb: 1 }}>
+          {t("note.privateConfirmMessage")}
+        </DialogContentText>
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={includeChildren}
+              onChange={(e) => setIncludeChildren(e.target.checked)}
+            />
+          }
+          label={<Typography variant="body2">{t("note.privateConfirmChildren")}</Typography>}
+        />
+      </DialogContent>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setPrivateConfirm(false)} />
+        <ActionButton variant="confirm" label={t("common.execute")} icon={<CheckIcon />} onClick={handlePrivateConfirm} />
+      </DialogActions>
+    </Dialog>
 
     <ConfirmDialog
       open={confirmDelete}

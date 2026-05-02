@@ -55,11 +55,13 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
   const [notes, setNotes] = useState([]);
   const [diagrams, setDiagrams] = useState([]);
   const [assets, setAssets] = useState([]);
+  const [layers, setLayers] = useState([]);
   const [templates, setTemplates] = useState([]);
 
   const noteRef = useRef(null);
   const diagramRef = useRef(null);
   const assetRef = useRef(null);
+  const layerRef = useRef(null);
   const templateRef = useRef(null);
 
   useEffect(() => {
@@ -71,6 +73,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       files.push(...noteRef.current.checked());
       files.push(...diagramRef.current.checked());
       files.push(...assetRef.current.checked());
+      files.push(...layerRef.current.checked());
       files.push(...templateRef.current.checked());
 
       evt.raise(Event.ModifiedProgress, { running: true });
@@ -123,12 +126,17 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
           }
           writeComment("Diagram", leafs)
         } else if (leaf.id === "DIR_Asset") {
-          if (leafs.length != templates.length) {
+          if (leafs.length != assets.length) {
             setAssets(leafs)
           }
           writeComment("Asset", leafs)
+        } else if (leaf.id === "DIR_Layer") {
+          if (leafs.length != layers.length) {
+            setLayers(leafs)
+          }
+          writeComment("Layer", leafs)
         } else if (leaf.id === "DIR_Template") {
-          if (leafs.length != assets.length) {
+          if (leafs.length != templates.length) {
             setTemplates(leafs)
           }
           writeComment("Template", leafs)
@@ -155,6 +163,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       <ModifiedList name="Note"     data={notes}     onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={noteRef} />
       <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={diagramRef} />
       <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
+      <ModifiedList name="Layer"    data={layers}    onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={layerRef} />
       <ModifiedList name="Template" data={templates} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
     </List>
 

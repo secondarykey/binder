@@ -243,7 +243,10 @@ function Editor(props) {
   // エディタメニュー MoreVert
   const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, el: null });
   const openEditorMoreMenu = (el) => setEditorMoreMenu({ open: true, el });
-  const closeEditorMoreMenu = () => setEditorMoreMenu({ open: false, el: null });
+  const closeEditorMoreMenu = () => { setEditorMoreMenu({ open: false, el: null }); setTextDownloadMenuAnchor(null); };
+
+  // テキストダウンロードサブメニューのアンカー要素
+  const [textDownloadMenuAnchor, setTextDownloadMenuAnchor] = useState(null);
 
   // プレビューメニュー MoreVert
   const [previewMoreMenu, setPreviewMoreMenu] = useState({ open: false, el: null });
@@ -263,6 +266,8 @@ function Editor(props) {
   const idRef = useRef(id);
   const nameRef = useRef(name);
   const htmlRef = useRef("");
+  // ダイアグラムテンプレートの初回描画済みIDを記録（非同期レース対策）
+  const diagramInitializedRef = useRef(null);
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { idRef.current = id; }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
@@ -347,7 +352,10 @@ function Editor(props) {
     if (mode === Mode.diagram) {
 
       setEditor(true);
-      setViewer(true);
+      // assets/layer モードから戻った場合に viewer 状態を復元する
+      if (editorSettingRef.current) {
+        setViewer(editorSettingRef.current.showPreview);
+      }
       // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
       setText("");
@@ -381,7 +389,10 @@ function Editor(props) {
     } else if (mode === Mode.note) {
 
       setEditor(true);
-      setViewer(true);
+      // assets/layer モードから戻った場合に viewer 状態を復元する
+      if (editorSettingRef.current) {
+        setViewer(editorSettingRef.current.showPreview);
+      }
       OpenNote(id).then((resp) => {
         setText(resp);
       }).catch((err) => {
@@ -404,11 +415,16 @@ function Editor(props) {
     } else if (mode === Mode.template) {
 
       setEditor(true);
-      setViewer(true);
+      // assets/layer モードから戻った場合に viewer 状態を復元する
+      if (editorSettingRef.current) {
+        setViewer(editorSettingRef.current.showPreview);
+      }
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
+      setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
       setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
       setPreviewOtherTemplateId(""); // 同上
+      diagramInitializedRef.current = null; // 同一IDへの再訪問に備えてリセット
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
@@ -568,13 +584,26 @@ function Editor(props) {
   useEffect(() => {
     if (mode !== Mode.template || templateType === "diagram" || !previewNoteId || !previewOtherTemplateId || !templateType) return;
     runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-      .then((result) => setHTML(result))
+      .then((result) => {
+        setHTML(result);
+        Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+      })
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
 
-  // プレビューダイアグラム選択変更時に再描画（diagram テンプレート）
+  // ダイアグラムテンプレート: 初回表示（text/templateType/previewDiagramId の非同期到達レース解消）
+  // text が最後に届くケースも含めて全条件が揃った瞬間に一度だけ描画する
   useEffect(() => {
     if (mode !== Mode.template || templateType !== "diagram" || !previewDiagramId || !text) return;
+    if (diagramInitializedRef.current === id) return;
+    diagramInitializedRef.current = id;
+    viewDiagramTemplatePreview(text, previewDiagramId);
+  }, [previewDiagramId, templateType, text]);
+
+  // ダイアグラムテンプレート: 選択ダイアグラム変更時の再描画（初回ロード完了後のみ）
+  useEffect(() => {
+    if (mode !== Mode.template || templateType !== "diagram" || !previewDiagramId || !text) return;
+    if (diagramInitializedRef.current !== id) return;
     viewDiagramTemplatePreview(text, previewDiagramId);
   }, [previewDiagramId]);
 
@@ -664,7 +693,11 @@ function Editor(props) {
         // テンプレートをファイルに即時保存してからプレビューを生成
         await SaveTemplate(id, text);
         runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-          .then((result) => { setHTML(result); setParseStatus({ status: "success", err: null }); })
+          .then((result) => {
+            setHTML(result);
+            setParseStatus({ status: "success", err: null });
+            Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+          })
           .catch((err) => setParseStatus({ status: "error", err }));
       }
     } else {
@@ -749,7 +782,7 @@ function Editor(props) {
       if (!elm) return;
       elm.innerHTML = data.svg;
       setParseStatus({ status: "success", err: null });
-      Events.Emit('binder:preview:update', { typ: mode, id, name, html: txt, styleTemplateId });
+      Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
 
       var svg = document.querySelector('#mermaidViewer svg');
       var left = 0;
@@ -815,6 +848,7 @@ function Editor(props) {
         var elm = document.querySelector('#mermaidViewer');
         if (elm) elm.innerHTML = data.svg;
         setParseStatus({ status: "success", err: null });
+        Events.Emit('binder:preview:update', { typ: 'diagram', id, name, html: fullTxt });
       }).catch((err) => {
         setParseStatus({ status: "error", err });
       });
@@ -981,6 +1015,41 @@ function Editor(props) {
       tempLink.click();
     }
   }
+
+  /** Blob を生成してテキストファイルをダウンロードする */
+  const triggerTextDownload = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** テキストをそのままダウンロード（テキストステートから直接） */
+  const handleDownloadRaw = () => {
+    closeEditorMoreMenu();
+    if (mode === Mode.note) {
+      triggerTextDownload(text, name + '.md');
+    } else if (mode === Mode.diagram) {
+      triggerTextDownload(text, name + '.mmd');
+    }
+  };
+
+  /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
+  const handleDownloadExpanded = () => {
+    closeEditorMoreMenu();
+    if (mode === Mode.note) {
+      ParseNote(id, false, text)
+        .then(expanded => triggerTextDownload(expanded, name + '.md'))
+        .catch(err => evt.showErrorMessage(err));
+    } else if (mode === Mode.diagram) {
+      ParseDiagram(id, false, text)
+        .then(expanded => triggerTextDownload(expanded, name + '.mmd'))
+        .catch(err => evt.showErrorMessage(err));
+    }
+  };
 
   /**
    * ファイルドロップ許可
@@ -1627,13 +1696,28 @@ function Editor(props) {
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleFontDialog(); }}>
                   <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
                 </MenuItem>
-                <Divider />
-                <MenuItem onClick={() => { closeEditorMoreMenu(); OpenPreviewWindow(mode, id, name); }}>
-                  <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openPreviewWindow")}
-                </MenuItem>
                 <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
                   <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
                 </MenuItem>
+                {(mode === Mode.note || mode === Mode.diagram) && <Divider />}
+                {(mode === Mode.note || mode === Mode.diagram) && (
+                  <MenuItem onClick={(e) => { e.stopPropagation(); setTextDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
+                  </MenuItem>
+                )}
+              </Menu>
+
+              {/** テキストダウンロードサブメニュー */}
+              <Menu
+                open={Boolean(textDownloadMenuAnchor)}
+                onClose={closeEditorMoreMenu}
+                anchorEl={textDownloadMenuAnchor}
+                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{ paper: { sx: { minWidth: 180 } } }}
+              >
+                <MenuItem onClick={handleDownloadRaw}>{t("tree.downloadText")}</MenuItem>
+                <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
               </Menu>
 
               {/** テキスト検索フローティングパネル（Ctrl+F） */}
@@ -1767,6 +1851,10 @@ function Editor(props) {
                 onClose={closePreviewMoreMenu}
                 slotProps={{ paper: { sx: { minWidth: 160 } } }}
               >
+                <MenuItem onClick={() => { closePreviewMoreMenu(); OpenPreviewWindow(mode, id, name); }} disabled={mode === Mode.template}>
+                  <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.openPreviewWindow")}
+                </MenuItem>
+                <Divider />
                 <MenuItem onClick={() => { closePreviewMoreMenu(); handlePublish(); }} disabled={parseStatus.status === "error" || isPrivate}>
                   <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
                 </MenuItem>
