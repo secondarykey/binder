@@ -22,6 +22,7 @@ function BinderRegister(props) {
   const evt = useContext(EventContext);
   const nav = useNavigate();
   const [dir, setDir] = useState("");
+  const [name, setName] = useState("");
   const [branch, setBranch] = useState("main");
   const [workBranch, setWorkBranch] = useState("");
   const [gitName, setGitName] = useState("");
@@ -45,7 +46,7 @@ function BinderRegister(props) {
     }
 
     //インストールを別にする
-    CreateBinder(dir,"simple").then((href) => {
+    CreateBinder(dir, name).then((href) => {
 
       evt.changeAddress(href);
       //TODO Binder変更通知
@@ -60,6 +61,8 @@ function BinderRegister(props) {
     SelectDirectory(true).then((f) => {
       if (f != "") {
         setDir(f);
+        const parts = f.replace(/\\/g, "/").split("/");
+        setName(parts[parts.length - 1]);
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -80,6 +83,12 @@ function BinderRegister(props) {
             )
           }}>
         </TextField>
+      </FormControl>
+
+      {/** バインダー名 */}
+      <FormControl>
+        <FormLabel>{t("binderRegister.binderName")}</FormLabel>
+        <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} />
       </FormControl>
 
       {/** デフォルトブランチ */}
@@ -106,7 +115,7 @@ function BinderRegister(props) {
         <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
       </FormControl>
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+      <FormControl style={{ display: "flex", flexFlow: "row", justifyContent: "flex-end", margin: "10px" }}>
         <ActionButton variant="save" label={t("common.create")} icon={<AddIcon />} onClick={handleSave} />
       </FormControl>
     </Grid>

@@ -333,6 +333,7 @@
     },
     "binderRegister" : {
         "binderDirectory" : "Binderディレクトリ",
+        "binderName" : "バインダー名",
         "requiredDirectory" : "ディレクトリを選択してください"
     },
     "template" : {
