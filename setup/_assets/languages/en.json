@@ -333,6 +333,7 @@
     },
     "binderRegister" : {
         "binderDirectory" : "Binder Directory",
+        "binderName" : "Binder Name",
         "requiredDirectory" : "Please select a directory."
     },
     "template" : {
