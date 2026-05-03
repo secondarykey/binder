@@ -842,15 +842,16 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 		return nil, xerrors.Errorf("Status() error: %w", err)
 	}
 
-	var rtn []*Modified
-	//notes,diagrams,templates 以外ないはず
-	for path, s := range status {
+	// HEADツリーを一度だけ取得してキャッシュ。
+	// go-gitはWindows上でmtime不一致やコミット後のインデックス更新漏れにより
+	// 実際は変更されていないファイルを誤検知することがある。
+	// blobハッシュで全エントリの実際の変更有無を確認する。
+	headTree := f.getHeadTree()
 
-		// StagingはUNMODIFIEDでWorkTreeのみModifiedの場合、
-		// go-gitがWindows上でmtime不一致により内容が同じファイルを誤検知することがある。
-		// blobハッシュで実際の変更有無を確認してフィルタリングする。
-		if s.Staging == git.Unmodified && s.Worktree == git.Modified {
-			changed, err := f.isActuallyModified(path)
+	var rtn []*Modified
+	for path, s := range status {
+		if headTree != nil {
+			changed, err := f.isActuallyModifiedWithTree(headTree, path)
 			if err != nil || !changed {
 				continue
 			}
@@ -869,26 +870,25 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 	return rtn, nil
 }
 
-// isActuallyModified はHEADコミットのblobハッシュと作業ツリーのファイル内容を比較し、
-// 実際に内容が変わっているかを返す。
-// go-gitがmtime不一致で誤検知した場合に false を返す。
-func (f *FileSystem) isActuallyModified(path string) (bool, error) {
+// getHeadTree はHEADコミットのtreeを返す。HEADが存在しない場合（初回コミット前）は nil を返す。
+func (f *FileSystem) getHeadTree() *object.Tree {
 	headRef, err := f.repo.Head()
 	if err != nil {
-		// HEADなし（初回コミット前）は変更ありとみなす
-		return true, nil
+		return nil
 	}
-
 	commit, err := f.repo.CommitObject(headRef.Hash())
 	if err != nil {
-		return true, nil
+		return nil
 	}
-
 	tree, err := commit.Tree()
 	if err != nil {
-		return true, nil
+		return nil
 	}
+	return tree
+}
 
+// isActuallyModifiedWithTree はHEADツリーを受け取り、パスのファイルが実際に変更されているかを返す。
+func (f *FileSystem) isActuallyModifiedWithTree(tree *object.Tree, path string) (bool, error) {
 	headFile, err := tree.File(path)
 	if err != nil {
 		// HEADツリーに存在しない = 新規ファイル = 変更あり
@@ -897,6 +897,7 @@ func (f *FileSystem) isActuallyModified(path string) (bool, error) {
 
 	fp, err := f.fs.Open(path)
 	if err != nil {
+		// ファイルが削除されている = 変更あり
 		return true, nil
 	}
 	defer fp.Close()
@@ -908,6 +909,17 @@ func (f *FileSystem) isActuallyModified(path string) (bool, error) {
 
 	workHash := plumbing.ComputeHash(plumbing.BlobObject, workContent)
 	return workHash != headFile.Hash, nil
+}
+
+// isActuallyModified はHEADコミットのblobハッシュと作業ツリーのファイル内容を比較し、
+// 実際に内容が変わっているかを返す。
+func (f *FileSystem) isActuallyModified(path string) (bool, error) {
+	tree := f.getHeadTree()
+	if tree == nil {
+		// HEADなし（初回コミット前）は変更ありとみなす
+		return true, nil
+	}
+	return f.isActuallyModifiedWithTree(tree, path)
 }
 
 func getModelType(f string) (*Modified, error) {

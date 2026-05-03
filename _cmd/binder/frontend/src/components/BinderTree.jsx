@@ -287,6 +287,7 @@ function BinderTree(props) {
       currentAddressRef.current = addr;
       setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
       setLocalPublishDirtyIds(new Set()); // バインダー切替時にローカル未公開ダーティをクリア
+      setModifiedIds(null);               // 旧バインダーの未コミットIDをクリア（GetModifiedIds 完了まで非表示）
       viewTree(isNewBinder);
     });
     // 未コミットIDのみ再取得（ツリー全体は再描画しない）
@@ -422,7 +423,7 @@ function BinderTree(props) {
   // git 検出済み + ローカルダーティをマージした修正IDセット
   const effectiveModifiedIds = useMemo(() => {
     if (!localDirtyIds.size) return modifiedIds;
-    const merged = new Set(modifiedIds);
+    const merged = new Set(modifiedIds ?? []);
     localDirtyIds.forEach(id => merged.add(id));
     return merged;
   }, [modifiedIds, localDirtyIds]);
