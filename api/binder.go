@@ -61,6 +61,11 @@ func (a *App) CloseBinder() error {
 
 	defer log.PrintTrace(log.Func("CloseBinder()"))
 
+	// バインダー選択画面に戻る際にバインダー関連ウィンドウを閉じる
+	if a.WindowCloser != nil {
+		a.WindowCloser.CloseBinderWindows()
+	}
+
 	if a.current != nil {
 		err := a.current.Close()
 		a.current = nil
