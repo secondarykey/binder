@@ -331,14 +331,13 @@ function Editor(props) {
   const handleSearchNavigate = useCallback((absoluteStart) => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
+    const totalLines = text.split('\n').length;
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
-    setActiveMatchLine(linesBefore + 1);
-    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
+    // scrollHeight / 行数 で実際の行高を算出（getComputedStyle は "normal" を返す場合がある）
+    const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
     const targetScrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
-    // ブラウザのカーソル位置への自動スクロール後に適用されるよう遅延させる
-    requestAnimationFrame(() => {
-      textarea.scrollTop = targetScrollTop;
-    });
+    textarea.scrollTop = targetScrollTop;
+    setActiveMatchLine(linesBefore + 1);
   }, [text]);
 
   useEffect(() => {
