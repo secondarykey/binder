@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, Menu, MenuItem, TextField, Tooltip } from '@mui/material';
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControlLabel, IconButton, ListSubheader, Menu, MenuItem, Select, Tooltip, Typography } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -12,7 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address, ParseAsset } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address, ParseAsset, DetectAssetMime } from '../../bindings/binder/api/app';
 import CommitBar from './CommitBar';
 import EditorArea from './editor/EditorArea';
 import { Events, Browser } from '@wailsio/runtime';
@@ -21,6 +21,29 @@ import { EventContext } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
+
+/**
+ * ユーザー向けMIME選択肢: ラベル(グループ/表示名)とvalue
+ */
+const MIME_OPTIONS = [
+  { group: "image", label: "PNG",  value: "image/png" },
+  { group: "image", label: "JPEG", value: "image/jpeg" },
+  { group: "image", label: "GIF",  value: "image/gif" },
+  { group: "image", label: "WebP", value: "image/webp" },
+  { group: "image", label: "SVG",  value: "image/svg+xml" },
+  { group: "image", label: "BMP",  value: "image/bmp" },
+  { group: "image", label: "ICO",  value: "image/x-icon" },
+  { group: "image", label: "AVIF", value: "image/avif" },
+  { group: "image", label: "TIFF", value: "image/tiff" },
+  { group: "text",  label: "CSS",          value: "text/css" },
+  { group: "text",  label: "JavaScript",   value: "text/javascript" },
+  { group: "text",  label: "HTML",         value: "text/html" },
+  { group: "text",  label: "JSON",         value: "application/json" },
+  { group: "text",  label: "XML",          value: "text/xml" },
+  { group: "text",  label: "Markdown",     value: "text/markdown" },
+  { group: "text",  label: "Plain Text",   value: "text/plain" },
+  { group: "other", label: "PDF",          value: "application/pdf" },
+];
 
 /**
  * MIMEタイプが画像かどうかを判定する
@@ -216,6 +239,10 @@ function AssetViewer() {
   const [editText, setEditText] = useState('');
   // ソースエディタと同じフォント設定
   const [editorStyle, setEditorStyle] = useState({});
+  // MIMEタイプ修正ダイアログ
+  const [mimeFixDlg, setMimeFixDlg] = useState(false);
+  const [selectedMime, setSelectedMime] = useState('');
+  const [detectedMime, setDetectedMime] = useState(null);
 
   useEffect(() => {
     Address().then((addr) => setServerAddress(addr)).catch(() => {});
@@ -380,6 +407,38 @@ function AssetViewer() {
     });
   };
 
+  /** MIMEタイプ修正ダイアログを開く: コンテンツ推定をバックグラウンドで実行 */
+  const handleOpenMimeFixDlg = () => {
+    const current = assetContent?.mime || '';
+    setSelectedMime(current);
+    setDetectedMime(null);
+    setMimeFixDlg(true);
+    if (id) {
+      DetectAssetMime(id).then((detected) => {
+        setDetectedMime(detected);
+        // ユーザーがまだ何も変更していなければ推定結果を提案として反映
+        setSelectedMime(prev => prev === current ? detected : prev);
+      }).catch(() => {});
+    }
+  };
+
+  /** MIMEタイプ修正を確定して保存・再読み込み */
+  const handleMimeFix = () => {
+    if (!selectedMime || !assetMeta) return;
+    EditAsset({ ...assetMeta, mime: selectedMime }, "")
+      .then(() => GetAssetContent(id))
+      .then((resp) => {
+        setAssetContent(resp);
+        if (resp && isTextMime(resp.mime)) {
+          try { setEditText(decodeURIComponent(escape(atob(resp.content)))); }
+          catch { setEditText(atob(resp.content)); }
+        }
+        setMimeFixDlg(false);
+        evt.showSuccessMessage(t("assetViewer.mimeFixSuccess"));
+      })
+      .catch((e) => evt.showErrorMessage(String(e)));
+  };
+
   /** メタ画像設定ダイアログを開く */
   const handleSetMetaImage = () => {
     setMetaImageDeleteAsset(true);
@@ -493,10 +552,19 @@ function AssetViewer() {
         />
       );
     } else {
-      // その他バイナリ
+      // その他バイナリ: MIMEタイプが表示不可形式
       content = (
-        <div style={{ padding: '16px', color: 'var(--text-muted)' }}>
-          {t("assetViewer.binaryNotSupported", { name })}
+        <div style={{ padding: '24px' }}>
+          <Typography variant="body2" sx={{ color: 'var(--text-muted)', mb: 1 }}>
+            {t("assetViewer.binaryNotSupported", { name })}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'var(--text-tertiary)', display: 'block', mb: 2 }}>
+            {t("assetViewer.currentMime", { mime: mime || 'unknown' })}
+          </Typography>
+          <Button size="small" variant="outlined" onClick={handleOpenMimeFixDlg}
+            sx={{ fontSize: '12px', textTransform: 'none', borderColor: 'var(--border-strong)', color: 'var(--text-secondary)' }}>
+            {t("assetViewer.fixMimeType")}
+          </Button>
         </div>
       );
     }
@@ -650,6 +718,44 @@ function AssetViewer() {
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
           <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
+        </DialogActions>
+      </Dialog>
+
+      {/** MIMEタイプ修正ダイアログ */}
+      <Dialog open={mimeFixDlg} onClose={() => setMimeFixDlg(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t("assetViewer.fixMimeTypeTitle")}</DialogTitle>
+        <DialogContent>
+          {detectedMime && (
+            <DialogContentText sx={{ fontSize: '13px', color: 'var(--text-secondary)', mb: 2 }}>
+              {t("assetViewer.detectedMime", { mime: detectedMime })}
+            </DialogContentText>
+          )}
+          <Select
+            value={selectedMime}
+            onChange={(e) => setSelectedMime(e.target.value)}
+            fullWidth
+            size="small"
+            displayEmpty
+            sx={{ mt: 1, color: 'var(--text-primary)', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' } }}
+          >
+            <MenuItem value="" disabled sx={{ fontSize: '13px' }}>{t("assetViewer.selectMimeType")}</MenuItem>
+            <ListSubheader sx={{ fontSize: '11px', lineHeight: '24px', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-elevated)' }}>{t("assetViewer.mimeGroupImage")}</ListSubheader>
+            {MIME_OPTIONS.filter(o => o.group === 'image').map(o => (
+              <MenuItem key={o.value} value={o.value} sx={{ fontSize: '13px' }}>{o.label} <span style={{ marginLeft: 8, fontSize: '11px', color: 'var(--text-tertiary)' }}>{o.value}</span></MenuItem>
+            ))}
+            <ListSubheader sx={{ fontSize: '11px', lineHeight: '24px', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-elevated)' }}>{t("assetViewer.mimeGroupText")}</ListSubheader>
+            {MIME_OPTIONS.filter(o => o.group === 'text').map(o => (
+              <MenuItem key={o.value} value={o.value} sx={{ fontSize: '13px' }}>{o.label} <span style={{ marginLeft: 8, fontSize: '11px', color: 'var(--text-tertiary)' }}>{o.value}</span></MenuItem>
+            ))}
+            <ListSubheader sx={{ fontSize: '11px', lineHeight: '24px', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-elevated)' }}>{t("assetViewer.mimeGroupOther")}</ListSubheader>
+            {MIME_OPTIONS.filter(o => o.group === 'other').map(o => (
+              <MenuItem key={o.value} value={o.value} sx={{ fontSize: '13px' }}>{o.label} <span style={{ marginLeft: 8, fontSize: '11px', color: 'var(--text-tertiary)' }}>{o.value}</span></MenuItem>
+            ))}
+          </Select>
+        </DialogContent>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setMimeFixDlg(false)} />
+          <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon />} onClick={handleMimeFix} disabled={!selectedMime} />
         </DialogActions>
       </Dialog>
     </div>

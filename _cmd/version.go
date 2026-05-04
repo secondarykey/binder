@@ -15,17 +15,9 @@ const (
 	configYml    = "./_cmd/binder/build/config.yml"
 	configRg     = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
 	configFmt    = `  version: "%v"`
-	packJsn      = "./_cmd/binder/frontend/package.json"
-	packRg       = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	packFmt      = `  "version": "%v",`
-	winInfoJsn   = "./_cmd/binder/build/windows/info.json"
-	winInfoRg1   = `"file_version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	winInfoRg2   = `"ProductVersion":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	winInfoFmt1  = `        "file_version": "%v"`
-	winInfoFmt2  = `            "ProductVersion": "%v",`
-	darwinPlist  = "./_cmd/binder/build/darwin/Info.plist"
-	plistRg      = `<string>([0-9]+\.[0-9]+\.[0-9]+)</string>`
-	plistFmt     = `            <string>%v</string>`
+	packJsn  = "./_cmd/binder/frontend/package.json"
+	packRg   = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	packFmt  = `  "version": "%v",`
 )
 
 const inqury = `
@@ -219,8 +211,6 @@ func write(v *ver) error {
 	ops := []*op{
 		{configYml, "", v, []*rgSet{{configRg, configFmt, nil}}},
 		{packJsn, "", v, []*rgSet{{packRg, packFmt, nil}}},
-		{winInfoJsn, "", v, []*rgSet{{winInfoRg1, winInfoFmt1, nil}, {winInfoRg2, winInfoFmt2, nil}}},
-		{darwinPlist, "", v, []*rgSet{{plistRg, plistFmt, nil}}},
 	}
 
 	for _, o := range ops {

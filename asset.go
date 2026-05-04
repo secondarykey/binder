@@ -14,6 +14,7 @@ import (
 	_ "image/png"
 	"io"
 	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -184,6 +185,11 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 	//新規指定だった場合
 	if a.Id == "" {
 
+		// MimeがなければAliasの拡張子から自動導出（ユーザーがMIMEを意識しなくて済むように）
+		if a.Mime == "" {
+			a.Mime = detectMime(a.Alias, a.Binary)
+		}
+
 		a.Id = b.generateId()
 
 		m := model.ConvertAsset(a)
@@ -209,6 +215,10 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 			if err == nil && existing != nil {
 				a.Mime = existing.Mime
 			}
+		}
+		// 既存値もなければAliasの拡張子から自動導出
+		if a.Mime == "" {
+			a.Mime = detectMime(a.Alias, a.Binary)
 		}
 
 		// alias変更時に公開済みファイルをリネーム
@@ -677,4 +687,18 @@ func (b *Binder) ReadAssetBytes(id string) ([]byte, *json.Asset, error) {
 	}
 
 	return data, a, nil
+}
+
+// DetectAssetMimeFromContent はアセットファイルの先頭バイトを読み取り、
+// コンテンツからMIMEタイプを推定して返す。
+// 拡張子なしで登録されたファイルのMIME修正時に利用する。
+func (b *Binder) DetectAssetMimeFromContent(id string) (string, error) {
+	if b == nil {
+		return "", EmptyError
+	}
+	data, _, err := b.ReadAssetBytes(id)
+	if err != nil {
+		return "", xerrors.Errorf("ReadAssetBytes() error: %w", err)
+	}
+	return http.DetectContentType(data), nil
 }

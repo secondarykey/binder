@@ -90,4 +90,33 @@ export function NeedUpdateDialog({ open, appVersion, binderVersion, onClose, onF
   );
 }
 
+/**
+ * アプリが古すぎてバインダーを開けない場合のダイアログ
+ * @param {{ open: boolean, appVersion: string, minAppVersion: string, onClose: () => void }} props
+ */
+export function TooOldDialog({ open, appVersion, minAppVersion, onClose }) {
+  const {t} = useTranslation();
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <ErrorOutlineIcon color="error" />
+        {t("convert.tooOldTitle")}
+      </DialogTitle>
+      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        {t("convert.tooOldMessage")}
+      </DialogContentText>
+      <Typography variant="body2" style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        {t("convert.tooOldVersionInfo", { appVersion, minAppVersion })}
+      </Typography>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t("common.ok")} icon={<CloseIcon />} onClick={onClose} />
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 export default ConvertDialog;

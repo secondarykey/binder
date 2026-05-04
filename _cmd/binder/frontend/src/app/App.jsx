@@ -25,7 +25,7 @@ import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/w
 
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
-import ConvertDialog, { NeedUpdateDialog } from '../dialogs/components/ConvertDialog';
+import ConvertDialog, { NeedUpdateDialog, TooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
 import MermaidScript from '../components/editor/engines/Mermaid';
 
@@ -91,19 +91,22 @@ function App() {
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
+  const [tooOldOpen, setTooOldOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
-  const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "" });
+  const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "", minAppVersion: "" });
   const [devMode, setDevMode] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
   const CompatOK = 0;
   const CompatNeedConvert = 1;
   const CompatNeedUpdate = 2;
+  const CompatVersionOnly = 3;
+  const CompatTooOld = 4;
 
   // バインダーを開く共通処理（CheckCompat付き）
   const openBinder = (dir) => {
     CheckCompat(dir).then((result) => {
-      setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion });
+      setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
       switch (result.status) {
         case CompatNeedConvert:
           setPendingDir(dir);
@@ -112,6 +115,17 @@ function App() {
         case CompatNeedUpdate:
           setPendingDir(dir);
           setNeedUpdateOpen(true);
+          break;
+        case CompatVersionOnly:
+          // スキーマ移行不要なバージョンアップ: ダイアログなしで静かに更新して開く
+          Convert(dir).then(() => {
+            loadBinder(dir);
+          }).catch((err) => {
+            evt.showErrorMessage(err);
+          });
+          break;
+        case CompatTooOld:
+          setTooOldOpen(true);
           break;
         default:
           loadBinder(dir);
@@ -456,6 +470,14 @@ function App() {
           setPendingDir("");
           loadBinder(dir);
         }}
+      />
+
+      {/** アプリが古すぎて開けないダイアログ */}
+      <TooOldDialog
+        open={tooOldOpen}
+        appVersion={compatVersions.appVersion}
+        minAppVersion={compatVersions.minAppVersion}
+        onClose={() => setTooOldOpen(false)}
       />
 
       {/** 別コンポーネントメッセージ */}

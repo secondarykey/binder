@@ -32,6 +32,9 @@ jobs:
         with:
           go-version: '1.25'
 
+      - name: Install Wails3
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
       - name: Determine and Bump Version
         id: versioning
         run: |
@@ -49,6 +52,11 @@ jobs:
           go run _cmd/version.go $FINAL_VERSION
 
           echo "NEW_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
+
+      - name: Update Build Assets
+        run: |
+          cd _cmd/binder
+          wails3 update build-assets -name "Binder" -binaryname "Binder" -config build/config.yml -dir build
 
       - name: Commit and Tag
         run: |

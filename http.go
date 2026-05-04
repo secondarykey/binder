@@ -291,8 +291,16 @@ func (h *handler) servePrivateAsset(w http.ResponseWriter, r *http.Request, id s
 		return
 	}
 
-	// ファイル名からContent-Typeを自動判定して配信
-	http.ServeContent(w, r, meta.Name, time.Time{}, bytes.NewReader(data))
+	// Mimeフィールドが設定されていればそれを優先する。
+	// 未設定の場合はAliasの拡張子から判定する（Nameは表示名で拡張子を持つとは限らないため）。
+	if meta.Mime != "" {
+		w.Header().Set("Content-Type", meta.Mime)
+	}
+	name := meta.Alias
+	if name == "" {
+		name = meta.Name
+	}
+	http.ServeContent(w, r, name, time.Time{}, bytes.NewReader(data))
 }
 
 // serveNoteMetaImage はノートのメタ画像（assets/meta/{noteId}）を配信する（エディタ表示用）

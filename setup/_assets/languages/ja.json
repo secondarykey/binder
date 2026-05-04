@@ -333,6 +333,7 @@
     },
     "binderRegister" : {
         "binderDirectory" : "Binderディレクトリ",
+        "binderName" : "バインダー名",
         "requiredDirectory" : "ディレクトリを選択してください"
     },
     "template" : {
@@ -398,7 +399,16 @@
         "updateFileError" : "ファイルの更新に失敗しました: {{error}}",
         "unpublishSuccess" : "Unpublishが完了しました。",
         "unpublishError" : "Unpublishに失敗しました: {{error}}",
-        "binaryNotSupported" : "バイナリファイルのため表示できません: {{name}}",
+        "binaryNotSupported" : "このファイルは表示できません: {{name}}",
+        "currentMime" : "現在の認識形式: {{mime}}",
+        "fixMimeType" : "ファイル形式を修正する",
+        "fixMimeTypeTitle" : "ファイル形式の修正",
+        "detectedMime" : "ファイルの内容から「{{mime}}」と推定されました",
+        "selectMimeType" : "ファイル形式を選択してください",
+        "mimeGroupImage" : "画像",
+        "mimeGroupText" : "テキスト",
+        "mimeGroupOther" : "その他",
+        "mimeFixSuccess" : "ファイル形式を更新しました。",
         "migrateTitle" : "ノートに移行",
         "migrateConfirm" : "「{{name}}」をノートに移行します。",
         "migrate" : "ノートに変換",
@@ -432,7 +442,10 @@
         "needUpdateTitle" : "アプリの更新が必要",
         "needUpdateMessage" : "このBinderはアプリより新しいバージョンで作成されています。開くにはアプリを更新してください。",
         "needUpdateVersionInfo" : "Binderバージョン: {{binderVersion}} / アプリバージョン: {{appVersion}}",
-        "forceOpen" : "強制的に開く（データが正しく表示されない可能性があります）"
+        "forceOpen" : "強制的に開く（データが正しく表示されない可能性があります）",
+        "tooOldTitle" : "アプリのバージョンが古すぎます",
+        "tooOldMessage" : "このBinderを開くには、より新しいアプリが必要です。アプリを更新してください。",
+        "tooOldVersionInfo" : "アプリバージョン: {{appVersion}} / 必要な最低バージョン: {{minAppVersion}}"
     },
     "syslog" : {
         "title" : "システムログ",

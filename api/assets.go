@@ -104,6 +104,18 @@ func (a *App) GetAssetContent(id string) (*json.AssetContent, error) {
 	}, nil
 }
 
+// DetectAssetMime はアセットファイルの先頭バイトからMIMEタイプを推定して返す。
+// 拡張子なしで登録されたファイルのMIME修正UIで利用する。
+func (a *App) DetectAssetMime(id string) (string, error) {
+	defer log.PrintTrace(log.Func("DetectAssetMime()", id))
+	detected, err := a.current.DetectAssetMimeFromContent(id)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("DetectAssetMime() error\n%+v", err)
+	}
+	return detected, nil
+}
+
 // SaveAssetContent はテキストアセットの内容を保存する。
 func (a *App) SaveAssetContent(assetId string, data string) error {
 

@@ -240,7 +240,7 @@ function BinderRemote(props) {
         </AccordionDetails>
       </Accordion>
 
-      <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px" }}>
+      <FormControl style={{ display: "flex", flexFlow: "row", justifyContent: "flex-end", margin: "10px" }}>
         <ActionButton variant="save" label={t('common.create')} icon={<AddIcon />} onClick={handleSave} />
       </FormControl>
     </Grid>
