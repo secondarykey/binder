@@ -84,6 +84,7 @@ function SearchApp() {
       setSelectedTypes(null);
       if (q.trim()) {
         if (!searchedRef.current) {
+          Window.SetMaxSize(0, 0);
           Window.SetMinSize(500, 300);
           animateResizeRef.current(46, 500, 200);
         }
@@ -104,11 +105,15 @@ function SearchApp() {
   useEffect(() => {
     inputRef.current?.focus();
     if (initialQuery.trim()) {
+      Window.SetMaxSize(0, 0);
       Window.SetMinSize(500, 300);
       animateResizeRef.current(46, 500, 200);
       setSearched(true);
       setSearching(true);
       SearchBinder(initialQuery.trim()).catch(() => setSearching(false));
+    } else {
+      // 未検索状態では高さを固定
+      Window.SetMaxSize(9999, 46);
     }
   }, []);
 
@@ -118,6 +123,7 @@ function SearchApp() {
     setSelectedTypes(null);
     setSearching(true);
     if (!searched) {
+      Window.SetMaxSize(0, 0);
       Window.SetMinSize(500, 300);
       animateResizeRef.current(46, 500, 200);
     }
@@ -134,6 +140,7 @@ function SearchApp() {
     setSearched(false);
     animateResizeRef.current(500, 46, 150, () => {
       Window.SetMinSize(500, 46);
+      Window.SetMaxSize(9999, 46);
     });
     inputRef.current?.focus();
   };
