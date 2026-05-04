@@ -34,12 +34,34 @@ function MermaidSVG(props) {
 function SearchApp() {
 
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  const initialQuery = new URLSearchParams(window.location.search).get('q') ?? '';
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [alwaysOnTop, setAlwaysOnTop] = useState(true);
   const inputRef = useRef(null);
+  const searchedRef = useRef(false);
+
+  useEffect(() => { searchedRef.current = searched; }, [searched]);
+
+  // ウィンドウサイズをアニメーションで変更する（イベントハンドラから参照するためrefで保持）
+  const animateResizeRef = useRef(null);
+  animateResizeRef.current = (fromH, toH, duration, onDone) => {
+    const start = performance.now();
+    const step = (now) => {
+      const elapsed = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - elapsed, 3);
+      const h = Math.round(fromH + (toH - fromH) * ease);
+      Window.SetSize(700, h);
+      if (elapsed < 1) {
+        requestAnimationFrame(step);
+      } else if (onDone) {
+        onDone();
+      }
+    };
+    requestAnimationFrame(step);
+  };
 
   // Wails イベントリスナー
   useEffect(() => {
@@ -52,34 +74,39 @@ function SearchApp() {
       setSearching(false);
     });
 
+    const cleanupQuery = Events.On('binder:search:query', (event) => {
+      const q = event.data?.[0] ?? '';
+      setQuery(q);
+      setResults([]);
+      if (q.trim()) {
+        if (!searchedRef.current) {
+          Window.SetMinSize(500, 300);
+          animateResizeRef.current(46, 500, 200);
+        }
+        setSearched(true);
+        setSearching(true);
+        SearchBinder(q.trim()).catch(() => setSearching(false));
+      }
+    });
+
     return () => {
       cleanupResult();
       cleanupDone();
+      cleanupQuery();
     };
   }, []);
 
-  // マウント時にフォーカス
+  // マウント時にフォーカス＆URLパラメータからの初期検索
   useEffect(() => {
     inputRef.current?.focus();
+    if (initialQuery.trim()) {
+      Window.SetMinSize(500, 300);
+      animateResizeRef.current(46, 500, 200);
+      setSearched(true);
+      setSearching(true);
+      SearchBinder(initialQuery.trim()).catch(() => setSearching(false));
+    }
   }, []);
-
-  // ウィンドウサイズをアニメーションで変更する
-  const animateResize = (fromH, toH, duration, onDone) => {
-    const start = performance.now();
-    const step = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      // easeOutCubic
-      const ease = 1 - Math.pow(1 - t, 3);
-      const h = Math.round(fromH + (toH - fromH) * ease);
-      Window.SetSize(700, h);
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else if (onDone) {
-        onDone();
-      }
-    };
-    requestAnimationFrame(step);
-  };
 
   const handleSearch = () => {
     if (!query.trim()) return;
@@ -87,7 +114,7 @@ function SearchApp() {
     setSearching(true);
     if (!searched) {
       Window.SetMinSize(500, 300);
-      animateResize(46, 500, 200);
+      animateResizeRef.current(46, 500, 200);
     }
     setSearched(true);
     SearchBinder(query.trim()).catch(() => {
@@ -99,7 +126,7 @@ function SearchApp() {
     setQuery('');
     setResults([]);
     setSearched(false);
-    animateResize(500, 46, 150, () => {
+    animateResizeRef.current(500, 46, 150, () => {
       Window.SetMinSize(500, 46);
     });
     inputRef.current?.focus();
