@@ -332,9 +332,13 @@ function Editor(props) {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
-    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
-    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
     setActiveMatchLine(linesBefore + 1);
+    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
+    const targetScrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
+    // ブラウザのカーソル位置への自動スクロール後に適用されるよう遅延させる
+    requestAnimationFrame(() => {
+      textarea.scrollTop = targetScrollTop;
+    });
   }, [text]);
 
   useEffect(() => {
