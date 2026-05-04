@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Toolbar, Typography, IconButton, TextField, InputAdornment, LinearProgress } from '@mui/material';
+import { Toolbar, Typography, IconButton, TextField, InputAdornment, LinearProgress, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
@@ -42,6 +42,7 @@ function SearchApp() {
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [alwaysOnTop, setAlwaysOnTop] = useState(true);
+  const [selectedTypes, setSelectedTypes] = useState(null); // null = 全選択（未設定）
   const inputRef = useRef(null);
   const searchedRef = useRef(false);
 
@@ -80,6 +81,7 @@ function SearchApp() {
       const q = event.data?.[0] ?? '';
       setQuery(q);
       setResults([]);
+      setSelectedTypes(null);
       if (q.trim()) {
         if (!searchedRef.current) {
           Window.SetMinSize(500, 300);
@@ -113,6 +115,7 @@ function SearchApp() {
   const handleSearch = () => {
     if (!query.trim()) return;
     setResults([]);
+    setSelectedTypes(null);
     setSearching(true);
     if (!searched) {
       Window.SetMinSize(500, 300);
@@ -127,6 +130,7 @@ function SearchApp() {
   const handleClear = () => {
     setQuery('');
     setResults([]);
+    setSelectedTypes(null);
     setSearched(false);
     animateResizeRef.current(500, 46, 150, () => {
       Window.SetMinSize(500, 46);
@@ -167,6 +171,24 @@ function SearchApp() {
       <>{text.substring(0, idx)}<mark>{text.substring(idx, idx + searchQuery.length)}</mark>{text.substring(idx + searchQuery.length)}</>
     );
   };
+
+  // 種別ごとの件数
+  const typeCounts = results.reduce((acc, r) => {
+    acc[r.type] = (acc[r.type] ?? 0) + 1;
+    return acc;
+  }, {});
+  const availableTypes = Object.keys(typeCounts);
+  const effectiveSelected = selectedTypes ?? availableTypes;
+  const showTypeFilter = !searching && searched && availableTypes.length > 1;
+
+  const handleTypeToggle = (_, newVal) => {
+    if (newVal.length === 0) return; // 全解除は許可しない
+    setSelectedTypes(newVal);
+  };
+
+  const displayedResults = showTypeFilter && selectedTypes !== null
+    ? results.filter(r => selectedTypes.includes(r.type))
+    : results;
 
   // 合計一致数
   const totalMatches = results.reduce((sum, r) => sum + r.matches.length, 0);
@@ -232,11 +254,27 @@ function SearchApp() {
       {searched && searching && <LinearProgress sx={{ height: 2 }} />}
 
       {searched && <div id="searchContent">
-        {results.length === 0 && searched && !searching && (
+        {showTypeFilter && (
+          <div id="searchTypeFilter">
+            <ToggleButtonGroup size="small" value={effectiveSelected} onChange={handleTypeToggle}>
+              {availableTypes.map(typ => (
+                <ToggleButton key={typ} value={typ} sx={{
+                  fontSize: '11px', py: '2px', px: '8px', textTransform: 'none',
+                  color: 'var(--text-muted)', borderColor: 'var(--border-color)',
+                  '&.Mui-selected': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-button)' },
+                }}>
+                  {typ} ({typeCounts[typ]})
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </div>
+        )}
+
+        {displayedResults.length === 0 && searched && !searching && (
           <div id="searchEmpty">{t('search.noResults')}</div>
         )}
 
-        {results.map((result, idx) => (
+        {displayedResults.map((result, idx) => (
           <div key={idx} className="searchResultFile" onDoubleClick={() => handleNavigate(result)}>
             <div className="searchResultFileHeader">
               {result.type === 'note'
