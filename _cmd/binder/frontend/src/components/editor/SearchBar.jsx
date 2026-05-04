@@ -101,10 +101,11 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
     };
   }, [handleDragMove, handleDragEnd]);
 
-  // テキスト（ファイル内容）が更新されたら現在のクエリで再検索
+  // テキスト（ファイル内容）が更新されたら現在のクエリで再検索し、入力欄にフォーカスを戻す
   useEffect(() => {
     if (query && searched) {
       doSearchWith(query);
+      inputRef.current?.focus();
     }
   }, [text]);
 
