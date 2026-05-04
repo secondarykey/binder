@@ -328,16 +328,18 @@ function Editor(props) {
   }, []);
 
   // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
-  const handleSearchNavigate = useCallback((absoluteStart) => {
+  const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
-    const totalLines = text.split('\n').length;
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
-    // scrollHeight / 行数 で実際の行高を算出（getComputedStyle は "normal" を返す場合がある）
-    const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
-    const targetScrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
-    textarea.scrollTop = targetScrollTop;
     setActiveMatchLine(linesBefore + 1);
+    // カーソルをマッチ位置に移動する。
+    // ブラウザは「カーソル位置へスクロール」するため、カーソルをマッチ位置に
+    // 置くことでスクロール先を正しい位置に誘導する。
+    textarea.setSelectionRange(absoluteStart, absoluteEnd ?? absoluteStart);
+    const totalLines = text.split('\n').length;
+    const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
+    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
   }, [text]);
 
   useEffect(() => {
