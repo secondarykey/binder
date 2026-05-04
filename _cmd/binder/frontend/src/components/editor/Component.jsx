@@ -1376,20 +1376,24 @@ function Editor(props) {
     });
 
     // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
-    // 別ウィンドウから戻ると WebView2 が IME を textarea から切り離し、
-    // 入力候補が画面左上に表示される問題を blur/focus で修正する
+    // DOM の window.focus は WebView2 では WM_ACTIVATE に確実に対応しないため、
+    // Go 側で WindowFocus イベントを捕捉して emit した Wails イベントを使う。
+    // setTimeout で WebView2 の WM_ACTIVATE 処理完了を待ってから blur/focus する。
     const handleWindowFocus = () => {
       const m = modeRef.current;
       if (m !== Mode.note && m !== Mode.diagram && m !== Mode.template) return;
-      const textarea = document.querySelector('#editor');
-      if (!textarea || composingRef.current) return;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      textarea.blur();
-      textarea.focus();
-      textarea.setSelectionRange(start, end);
+      if (composingRef.current) return;
+      setTimeout(() => {
+        const textarea = document.querySelector('#editor');
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        textarea.blur();
+        textarea.focus();
+        textarea.setSelectionRange(start, end);
+      }, 50);
     };
-    window.addEventListener('focus', handleWindowFocus);
+    const cleanupWindowFocus = Events.On('binder:window:focus', handleWindowFocus);
 
     //設定を取得
     GetFont().then((s) => {
@@ -1409,7 +1413,7 @@ function Editor(props) {
       console.log(err);
     });
 
-    return () => window.removeEventListener('focus', handleWindowFocus);
+    return () => cleanupWindowFocus();
   }, []);
 
   // エディタ設定をsetting.jsonに保存するヘルパー（既存のprogram等を保持）

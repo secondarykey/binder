@@ -121,6 +121,13 @@ func main() {
 	// 検索イベントエミッターを設定
 	app.SearchEmitter = &wailsSearchEmitter{app: wailsApp}
 
+	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）
+	// DOM の window.focus イベントは WebView2 では OS レベルの WM_ACTIVATE に対して
+	// 確実に発火しないため、Go 側から直接 Wails イベントを emit する。
+	window.OnWindowEvent(events.Common.WindowFocus, func(event *application.WindowEvent) {
+		wailsApp.Event.Emit("binder:window:focus")
+	})
+
 	// 外部ファイルドロップ: OS からのファイルドロップを Wails ネイティブイベントで処理する。
 	// EnableFileDrop: true が前提。Wails runtime (window.ts) が drop を補足し、
 	// Go 側の WindowFilesDropped イベントとして通知する。
