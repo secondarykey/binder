@@ -177,9 +177,10 @@ function SearchApp() {
     acc[r.type] = (acc[r.type] ?? 0) + 1;
     return acc;
   }, {});
-  const availableTypes = Object.keys(typeCounts);
-  const effectiveSelected = selectedTypes ?? availableTypes;
-  const showTypeFilter = !searching && searched && availableTypes.length > 1;
+  const ALL_TYPES = ['note', 'diagram', 'asset', 'template'];
+  const typesWithResults = ALL_TYPES.filter(t => (typeCounts[t] ?? 0) > 0);
+  const effectiveSelected = selectedTypes ?? typesWithResults;
+  const showTypeFilter = !searching && searched;
 
   const handleTypeToggle = (_, newVal) => {
     if (newVal.length === 0) return; // 全解除は許可しない
@@ -257,15 +258,19 @@ function SearchApp() {
         {showTypeFilter && (
           <div id="searchTypeFilter">
             <ToggleButtonGroup size="small" value={effectiveSelected} onChange={handleTypeToggle}>
-              {availableTypes.map(typ => (
-                <ToggleButton key={typ} value={typ} sx={{
-                  fontSize: '11px', py: '2px', px: '8px', textTransform: 'none',
-                  color: 'var(--text-muted)', borderColor: 'var(--border-color)',
-                  '&.Mui-selected': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-button)' },
-                }}>
-                  {typ} ({typeCounts[typ]})
-                </ToggleButton>
-              ))}
+              {ALL_TYPES.map(typ => {
+                const count = typeCounts[typ] ?? 0;
+                return (
+                  <ToggleButton key={typ} value={typ} disabled={count === 0} sx={{
+                    fontSize: '11px', py: '2px', px: '8px', textTransform: 'none',
+                    color: 'var(--text-muted)', borderColor: 'var(--border-color)',
+                    '&.Mui-selected': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-button)' },
+                    '&.Mui-disabled': { color: 'var(--text-faint)', borderColor: 'var(--border-subtle)', opacity: 0.5 },
+                  }}>
+                    {typ} ({count})
+                  </ToggleButton>
+                );
+              })}
             </ToggleButtonGroup>
           </div>
         )}
