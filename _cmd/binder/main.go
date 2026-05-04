@@ -122,9 +122,9 @@ func main() {
 	app.SearchEmitter = &wailsSearchEmitter{app: wailsApp}
 
 	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）
-	// DOM の window.focus イベントは WebView2 では OS レベルの WM_ACTIVATE に対して
-	// 確実に発火しないため、Go 側から直接 Wails イベントを emit する。
-	window.OnWindowEvent(events.Common.WindowFocus, func(event *application.WindowEvent) {
+	// events.Common.WindowFocus は Windows 実装では emit されない（WM_SETFOCUS は
+	// events.Windows.WindowSetFocus を emit する）ため、正しいイベントを使う。
+	window.OnWindowEvent(events.Windows.WindowSetFocus, func(event *application.WindowEvent) {
 		wailsApp.Event.Emit("binder:window:focus")
 	})
 
