@@ -36,6 +36,12 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 	if err != nil {
 		return "", xerrors.Errorf("Binder Serve() error: %w", err)
 	}
+
+	// バインダー切り替え時にバインダー関連ウィンドウを閉じる
+	if a.WindowCloser != nil {
+		a.WindowCloser.CloseBinderWindows()
+	}
+
 	a.SetCurrent(b)
 
 	address, err := a.Address()

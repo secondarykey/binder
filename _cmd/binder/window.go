@@ -521,6 +521,27 @@ func (r *Window) OpenSearchWindowWithQuery(query string) error {
 	return nil
 }
 
+// CloseBinderWindows はバインダー切り替え時に関連ウィンドウを閉じる。
+// システムログウィンドウはバインダー非依存のため閉じない。
+func (r *Window) CloseBinderWindows() {
+	if r.searchWindow != nil {
+		r.searchWindow.Close()
+		r.searchWindow = nil
+	}
+	if r.previewWindow != nil {
+		r.previewWindow.Close()
+		r.previewWindow = nil
+	}
+	if r.overallHistoryWindow != nil {
+		r.overallHistoryWindow.Close()
+		r.overallHistoryWindow = nil
+	}
+	for key, w := range r.historyWindows {
+		w.Close()
+		delete(r.historyWindows, key)
+	}
+}
+
 // SetLogLevel はログレベルを動的に変更する。
 func (r *Window) SetLogLevel(level int) {
 	log.SetLevel(slog.Level(level))

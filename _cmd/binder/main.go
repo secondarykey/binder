@@ -120,6 +120,8 @@ func main() {
 
 	// 検索イベントエミッターを設定
 	app.SearchEmitter = &wailsSearchEmitter{app: wailsApp}
+	// バインダー切り替え時にウィンドウを閉じる
+	app.WindowCloser = win
 
 	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）
 	// events.Common.WindowFocus は Windows 実装では emit されない（WM_SETFOCUS は
