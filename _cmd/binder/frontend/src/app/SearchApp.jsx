@@ -178,21 +178,28 @@ function SearchApp() {
     return acc;
   }, {});
   const ALL_TYPES = ['note', 'diagram', 'asset', 'template'];
-  const typesWithResults = ALL_TYPES.filter(t => (typeCounts[t] ?? 0) > 0);
-  const effectiveSelected = selectedTypes ?? typesWithResults;
+  // selectedTypes === null = フィルターなし（全件表示）
+  // selectedTypes = [...] = その種別のみ表示
   const showTypeFilter = !searching && searched;
 
   const handleTypeClick = (typ) => {
-    const next = effectiveSelected.includes(typ)
-      ? effectiveSelected.filter(t => t !== typ)
-      : [...effectiveSelected, typ];
-    if (next.length === 0) return; // 全解除は許可しない
-    setSelectedTypes(next);
+    if ((typeCounts[typ] ?? 0) === 0) return;
+    setSelectedTypes(prev => {
+      if (prev === null) {
+        // フィルターなし → この種別だけ選択
+        return [typ];
+      }
+      const next = prev.includes(typ)
+        ? prev.filter(t => t !== typ)
+        : [...prev, typ];
+      // 全解除 → フィルターなしに戻す
+      return next.length === 0 ? null : next;
+    });
   };
 
-  const displayedResults = showTypeFilter && selectedTypes !== null
-    ? results.filter(r => selectedTypes.includes(r.type))
-    : results;
+  const displayedResults = selectedTypes === null
+    ? results
+    : results.filter(r => selectedTypes.includes(r.type));
 
   // 合計一致数
   const totalMatches = results.reduce((sum, r) => sum + r.matches.length, 0);
@@ -262,19 +269,19 @@ function SearchApp() {
           <div id="searchTypeFilter">
             {ALL_TYPES.map(typ => {
               const count = typeCounts[typ] ?? 0;
-              const selected = count > 0 && effectiveSelected.includes(typ);
+              const active = selectedTypes !== null && selectedTypes.includes(typ);
               return (
                 <Chip key={typ} label={`${typ} (${count})`} size="small"
-                  onClick={count > 0 ? () => handleTypeClick(typ) : undefined}
+                  onClick={() => handleTypeClick(typ)}
                   sx={{
                     fontSize: '11px', height: '22px',
                     cursor: count > 0 ? 'pointer' : 'default',
-                    color: count === 0 ? 'var(--text-faint)' : selected ? 'var(--text-primary)' : 'var(--text-muted)',
-                    backgroundColor: selected ? 'var(--bg-button)' : 'transparent',
+                    color: active ? 'var(--text-primary)' : 'var(--text-faint)',
+                    backgroundColor: active ? 'var(--bg-button)' : 'transparent',
                     border: '1px solid',
-                    borderColor: count === 0 ? 'var(--border-subtle)' : selected ? 'var(--accent-primary)' : 'var(--border-color)',
-                    opacity: count === 0 ? 0.45 : 1,
-                    '&:hover': count > 0 ? { backgroundColor: selected ? 'var(--bg-button)' : 'var(--hover-overlay)' } : {},
+                    borderColor: active ? 'var(--accent-primary)' : 'var(--border-subtle)',
+                    opacity: count === 0 ? 0.4 : 1,
+                    '&:hover': count > 0 ? { backgroundColor: active ? 'var(--bg-button)' : 'var(--hover-overlay)', borderColor: active ? 'var(--accent-primary)' : 'var(--border-color)' } : {},
                   }}
                 />
               );
