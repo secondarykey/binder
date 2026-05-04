@@ -212,6 +212,10 @@ type MigrateResult struct {
 	UserDataRequired bool
 }
 
+// MinRequiredAppVersion はバインダーを開くために必要な最低アプリバージョン。
+// スキーマ変更・JSON設定移行・アプリの互換性に影響する変更があった際に手動で更新する。
+const MinRequiredAppVersion = "0.10.2"
+
 // NeedsMigration は指定バージョンから現在のスキーマへの移行処理が必要かを返す。
 // ov が全ての migration エントリより新しい（または同じ）場合は false を返す。
 func NeedsMigration(ov *Version) bool {
@@ -279,6 +283,7 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 	// 0.4.5マイグレーション: config.csvのname/detailをbinder.jsonに移行する。
 	meta.Schema = ""
 	meta.Version = ver.String()
+	meta.MinAppVersion = MinRequiredAppVersion
 	if state.configMigrated && meta.Name == "" {
 		meta.Name = state.configName
 		meta.Detail = state.configDetail

@@ -21,8 +21,12 @@ const (
 	CompatOK CompatStatus = iota
 	// CompatNeedConvert はバインダーがアプリより古く、データ移行が必要。
 	CompatNeedConvert
-	// CompatNeedUpdate はバインダーがアプリより新しく、アプリの更新が必要。
+	// CompatNeedUpdate はバインダーがアプリより新しく、アプリの更新が必要（minAppVersion未設定の旧バインダー）。
 	CompatNeedUpdate
+	// CompatVersionOnly はバインダーがアプリより古いが、スキーマ移行不要でバージョン更新のみ必要。
+	CompatVersionOnly
+	// CompatTooOld はアプリが minAppVersion を満たしておらず、バインダーを開けない。
+	CompatTooOld
 )
 
 // CompatResult はバインダーとアプリのバージョン比較結果を返す。
@@ -30,6 +34,7 @@ type CompatResult struct {
 	Status        CompatStatus `json:"status"`
 	AppVersion    string       `json:"appVersion"`
 	BinderVersion string       `json:"binderVersion"`
+	MinAppVersion string       `json:"minAppVersion,omitempty"`
 }
 
 // CheckCompat はバインダーとアプリのバージョン互換性を判定する。
@@ -49,12 +54,30 @@ func CheckCompat(dir string, ver *Version) (*CompatResult, error) {
 	result := &CompatResult{
 		AppVersion:    ver.String(),
 		BinderVersion: ov.String(),
+		MinAppVersion: meta.MinAppVersion,
 	}
 
 	switch {
 	case ov.Lt(ver):
-		result.Status = CompatNeedConvert
+		if convert.NeedsMigration(ov) {
+			result.Status = CompatNeedConvert
+		} else {
+			result.Status = CompatVersionOnly
+		}
 	case ov.Gt(ver):
+		if meta.MinAppVersion != "" {
+			minVer, err := NewVersion(meta.MinAppVersion)
+			if err == nil {
+				if ver.Lt(minVer) {
+					result.Status = CompatTooOld
+				} else {
+					// minAppVersion を満たしているのでスキーマ互換。変換なしで開ける。
+					result.Status = CompatOK
+				}
+				break
+			}
+		}
+		// minAppVersion 未設定（旧バインダー）: 従来通り警告ダイアログ
 		result.Status = CompatNeedUpdate
 	default:
 		result.Status = CompatOK

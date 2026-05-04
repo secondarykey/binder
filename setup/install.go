@@ -6,6 +6,7 @@ import (
 	. "binder/internal"
 	"binder/log"
 	"binder/settings"
+	"binder/setup/convert"
 	"embed"
 	"os"
 	"path/filepath"
@@ -149,6 +150,7 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 			Version: ver.String(),
 			Name:    "Binder",
 		}
+		meta.MinAppVersion = convert.MinRequiredAppVersion
 		err = f.SaveMetaData(meta)
 		if err != nil {
 			return xerrors.Errorf("SaveMetaData() error: %w", err)

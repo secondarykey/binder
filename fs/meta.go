@@ -17,6 +17,7 @@ const BinderMetaFile = "binder.json"
 // 0.4.5以降はconfig.csvを廃止し、name/detailをbinder.jsonで管理する。
 type BinderMeta struct {
 	Version       string `json:"version"`
+	MinAppVersion string `json:"minAppVersion,omitempty"` // このBinderを開くために必要な最低アプリバージョン
 	Name          string `json:"name,omitempty"`
 	Detail        string `json:"detail,omitempty"`
 	MarkedURL     string `json:"markedUrl,omitempty"`
