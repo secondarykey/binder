@@ -7,6 +7,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import DescriptionIcon from '@mui/icons-material/Description';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import CodeIcon from '@mui/icons-material/Code';
 
 import { Events, Window } from '@wailsio/runtime';
 import { SearchBinder } from '../../bindings/binder/api/app';
@@ -239,7 +241,11 @@ function SearchApp() {
             <div className="searchResultFileHeader">
               {result.type === 'note'
                 ? <DescriptionIcon sx={{ fontSize: '14px', color: 'var(--text-muted)', flexShrink: 0 }} />
-                : <MermaidSVG width="14px" height="14px" fill="var(--text-muted)" contents="var(--bg-app)" />
+                : result.type === 'diagram'
+                ? <MermaidSVG width="14px" height="14px" fill="var(--text-muted)" contents="var(--bg-app)" />
+                : result.type === 'asset'
+                ? <AttachFileIcon sx={{ fontSize: '14px', color: 'var(--text-muted)', flexShrink: 0 }} />
+                : <CodeIcon sx={{ fontSize: '14px', color: 'var(--text-muted)', flexShrink: 0 }} />
               }
               <span>{result.name}</span>
               <span className="searchResultType">{result.type}</span>
