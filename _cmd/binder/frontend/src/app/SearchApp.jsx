@@ -178,22 +178,24 @@ function SearchApp() {
     return acc;
   }, {});
   const ALL_TYPES = ['note', 'diagram', 'asset', 'template'];
-  // selectedTypes === null = フィルターなし（全件表示）
-  // selectedTypes = [...] = その種別のみ表示
+  // selectedTypes === null = フィルターなし（全件・全ハイライト）
+  // selectedTypes = [...] = その種別のみ表示・ハイライト
   const showTypeFilter = !searching && searched;
 
   const handleTypeClick = (typ) => {
     if ((typeCounts[typ] ?? 0) === 0) return;
     setSelectedTypes(prev => {
       if (prev === null) {
-        // フィルターなし → この種別だけ選択
+        // 全ハイライト状態 → クリックした種別だけに絞り込む
         return [typ];
       }
-      const next = prev.includes(typ)
-        ? prev.filter(t => t !== typ)
-        : [...prev, typ];
-      // 全解除 → フィルターなしに戻す
-      return next.length === 0 ? null : next;
+      if (prev.includes(typ)) {
+        // ハイライト済みを再クリック → 除外。残りがなければ全体に戻す
+        const next = prev.filter(t => t !== typ);
+        return next.length === 0 ? null : next;
+      }
+      // 薄い種別をクリック → 追加
+      return [...prev, typ];
     });
   };
 
@@ -269,7 +271,7 @@ function SearchApp() {
           <div id="searchTypeFilter">
             {ALL_TYPES.map(typ => {
               const count = typeCounts[typ] ?? 0;
-              const active = selectedTypes !== null && selectedTypes.includes(typ);
+              const active = selectedTypes === null || selectedTypes.includes(typ);
               return (
                 <Chip key={typ} label={`${typ} (${count})`} size="small"
                   onClick={() => handleTypeClick(typ)}
