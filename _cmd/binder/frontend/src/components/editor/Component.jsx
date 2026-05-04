@@ -261,6 +261,9 @@ function Editor(props) {
   const [idListAnchor, setIdListAnchor] = useState(null);
   const [idList, setIdList] = useState([]);
 
+  // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
+  const hiddenFocusRef = useRef(null);
+
   // useEffect([]) 内など古いクロージャから最新の mode/id/name/html を参照するための ref
   const modeRef = useRef(mode);
   const idRef = useRef(id);
@@ -1376,22 +1379,21 @@ function Editor(props) {
     });
 
     // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
-    // DOM の window.focus は WebView2 では WM_ACTIVATE に確実に対応しないため、
-    // Go 側で WindowFocus イベントを捕捉して emit した Wails イベントを使う。
-    // setTimeout で WebView2 の WM_ACTIVATE 処理完了を待ってから blur/focus する。
+    // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
+    // 一度 hidden input に移してから textarea に戻す（Tab で別入力を経由するのと同等）。
     const handleWindowFocus = () => {
       const m = modeRef.current;
       if (m !== Mode.note && m !== Mode.diagram && m !== Mode.template) return;
       if (composingRef.current) return;
-      setTimeout(() => {
-        const textarea = document.querySelector('#editor');
-        if (!textarea) return;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        textarea.blur();
+      const textarea = document.querySelector('#editor');
+      if (!textarea || !hiddenFocusRef.current) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      hiddenFocusRef.current.focus();
+      requestAnimationFrame(() => {
         textarea.focus();
         textarea.setSelectionRange(start, end);
-      }, 50);
+      });
     };
     const cleanupWindowFocus = Events.On('binder:window:focus', handleWindowFocus);
 
@@ -1478,6 +1480,16 @@ function Editor(props) {
               <LayerEditor />
             </div>
           )}
+
+          {/** IME リセット用 hidden input（Tab フォーカス経由と同等の TSF コンテキストリセットに使う） */}
+          <input
+            ref={hiddenFocusRef}
+            type="text"
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+            readOnly
+          />
 
           {/** エディタ */}
           {editor &&
