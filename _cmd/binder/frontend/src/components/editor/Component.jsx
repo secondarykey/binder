@@ -1375,6 +1375,22 @@ function Editor(props) {
       setTreeVisible(flag);
     });
 
+    // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
+    // 別ウィンドウから戻ると WebView2 が IME を textarea から切り離し、
+    // 入力候補が画面左上に表示される問題を blur/focus で修正する
+    const handleWindowFocus = () => {
+      const m = modeRef.current;
+      if (m !== Mode.note && m !== Mode.diagram && m !== Mode.template) return;
+      const textarea = document.querySelector('#editor');
+      if (!textarea || composingRef.current) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      textarea.blur();
+      textarea.focus();
+      textarea.setSelectionRange(start, end);
+    };
+    window.addEventListener('focus', handleWindowFocus);
+
     //設定を取得
     GetFont().then((s) => {
       settingFont(s);
@@ -1393,6 +1409,7 @@ function Editor(props) {
       console.log(err);
     });
 
+    return () => window.removeEventListener('focus', handleWindowFocus);
   }, []);
 
   // エディタ設定をsetting.jsonに保存するヘルパー（既存のprogram等を保持）
