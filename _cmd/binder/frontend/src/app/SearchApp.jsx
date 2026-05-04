@@ -271,18 +271,19 @@ function SearchApp() {
           <div id="searchTypeFilter">
             {ALL_TYPES.map(typ => {
               const count = typeCounts[typ] ?? 0;
-              const active = selectedTypes === null || selectedTypes.includes(typ);
+              const active = count > 0 && (selectedTypes === null || selectedTypes.includes(typ));
+              const zero = count === 0;
               return (
                 <Chip key={typ} label={`${typ} (${count})`} size="small"
                   onClick={() => handleTypeClick(typ)}
                   sx={{
                     fontSize: '11px', height: '22px',
                     cursor: count > 0 ? 'pointer' : 'default',
-                    color: active ? 'var(--text-primary)' : 'var(--text-faint)',
+                    color: zero ? 'var(--text-faint)' : active ? 'var(--text-primary)' : 'var(--text-muted)',
                     backgroundColor: active ? 'var(--bg-button)' : 'transparent',
                     border: '1px solid',
-                    borderColor: active ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                    opacity: count === 0 ? 0.4 : 1,
+                    borderColor: zero ? 'var(--border-subtle)' : active ? 'var(--accent-primary)' : 'var(--border-color)',
+                    opacity: zero ? 0.3 : 1,
                     '&:hover': count > 0 ? { backgroundColor: active ? 'var(--bg-button)' : 'var(--hover-overlay)', borderColor: active ? 'var(--accent-primary)' : 'var(--border-color)' } : {},
                   }}
                 />
