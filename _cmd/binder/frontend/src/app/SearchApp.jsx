@@ -283,7 +283,7 @@ function SearchApp() {
                     backgroundColor: active ? 'var(--bg-button)' : 'transparent',
                     border: '1px solid',
                     borderColor: zero ? 'var(--border-subtle)' : active ? 'var(--accent-primary)' : 'var(--border-color)',
-                    opacity: zero ? 0.3 : 1,
+                    opacity: zero ? 0.3 : active ? 1 : 0.6,
                     '&:hover': count > 0 ? { backgroundColor: active ? 'var(--bg-button)' : 'var(--hover-overlay)', borderColor: active ? 'var(--accent-primary)' : 'var(--border-color)' } : {},
                   }}
                 />
