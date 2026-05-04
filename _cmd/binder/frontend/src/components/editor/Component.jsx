@@ -336,7 +336,7 @@ function Editor(props) {
     // カーソルをマッチ位置に移動する。
     // ブラウザは「カーソル位置へスクロール」するため、カーソルをマッチ位置に
     // 置くことでスクロール先を正しい位置に誘導する。
-    textarea.setSelectionRange(absoluteStart, absoluteEnd ?? absoluteStart);
+    textarea.setSelectionRange(absoluteStart, absoluteStart);
     const totalLines = text.split('\n').length;
     const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
