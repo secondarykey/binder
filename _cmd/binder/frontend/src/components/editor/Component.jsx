@@ -1210,6 +1210,7 @@ function Editor(props) {
     var char = "";
     //文字列の前方の状態を確認
     const last = before.lastIndexOf('\n')
+    const currentLine = last !== -1 ? before.substring(last + 1) : before;
     if (last !== -1) {
       const line = before.substring(last + 1);
       for (let idx = 0; idx < line.length; ++idx) {
@@ -1233,6 +1234,24 @@ function Editor(props) {
         }
         indent += " ";
       }
+    }
+
+    // 空のリスト項目（プレフィックスのみの行）でEnterを押した場合はプレフィックスをキャンセル
+    if (char && currentLine === indent + char) {
+      const newBefore = before.substring(0, before.length - char.length);
+      const newCursor = newBefore.length;
+      textarea.value = newBefore + after;
+      textarea.selectionStart = newCursor;
+      textarea.selectionEnd = newCursor;
+      isEditingRef.current = true;
+      const newVal = textarea.value;
+      setText(newVal);
+      writeFn(mode, id, newVal);
+      requestAnimationFrame(() => {
+        textarea.selectionStart = newCursor;
+        textarea.selectionEnd = newCursor;
+      });
+      return;
     }
 
     var at = "\n" + indent + char;
