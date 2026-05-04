@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Toolbar, Typography, IconButton, TextField, InputAdornment, LinearProgress, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Toolbar, Typography, IconButton, TextField, InputAdornment, LinearProgress, Chip } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
@@ -182,9 +182,12 @@ function SearchApp() {
   const effectiveSelected = selectedTypes ?? typesWithResults;
   const showTypeFilter = !searching && searched;
 
-  const handleTypeToggle = (_, newVal) => {
-    if (newVal.length === 0) return; // 全解除は許可しない
-    setSelectedTypes(newVal);
+  const handleTypeClick = (typ) => {
+    const next = effectiveSelected.includes(typ)
+      ? effectiveSelected.filter(t => t !== typ)
+      : [...effectiveSelected, typ];
+    if (next.length === 0) return; // 全解除は許可しない
+    setSelectedTypes(next);
   };
 
   const displayedResults = showTypeFilter && selectedTypes !== null
@@ -257,21 +260,25 @@ function SearchApp() {
       {searched && <div id="searchContent">
         {showTypeFilter && (
           <div id="searchTypeFilter">
-            <ToggleButtonGroup size="small" value={effectiveSelected} onChange={handleTypeToggle}>
-              {ALL_TYPES.map(typ => {
-                const count = typeCounts[typ] ?? 0;
-                return (
-                  <ToggleButton key={typ} value={typ} disabled={count === 0} sx={{
-                    fontSize: '11px', py: '2px', px: '8px', textTransform: 'none',
-                    color: 'var(--text-muted)', borderColor: 'var(--border-color)',
-                    '&.Mui-selected': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-button)' },
-                    '&.Mui-disabled': { color: 'var(--text-faint)', borderColor: 'var(--border-subtle)', opacity: 0.5 },
-                  }}>
-                    {typ} ({count})
-                  </ToggleButton>
-                );
-              })}
-            </ToggleButtonGroup>
+            {ALL_TYPES.map(typ => {
+              const count = typeCounts[typ] ?? 0;
+              const selected = count > 0 && effectiveSelected.includes(typ);
+              return (
+                <Chip key={typ} label={`${typ} (${count})`} size="small"
+                  onClick={count > 0 ? () => handleTypeClick(typ) : undefined}
+                  sx={{
+                    fontSize: '11px', height: '22px',
+                    cursor: count > 0 ? 'pointer' : 'default',
+                    color: count === 0 ? 'var(--text-faint)' : selected ? 'var(--text-primary)' : 'var(--text-muted)',
+                    backgroundColor: selected ? 'var(--bg-button)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: count === 0 ? 'var(--border-subtle)' : selected ? 'var(--accent-primary)' : 'var(--border-color)',
+                    opacity: count === 0 ? 0.45 : 1,
+                    '&:hover': count > 0 ? { backgroundColor: selected ? 'var(--bg-button)' : 'var(--hover-overlay)' } : {},
+                  }}
+                />
+              );
+            })}
           </div>
         )}
 
