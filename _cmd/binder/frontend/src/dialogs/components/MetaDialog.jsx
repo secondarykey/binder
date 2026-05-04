@@ -91,7 +91,7 @@ function MetaDialog({
                   <ContentCopy fontSize="small" />
                 </IconButton>
                 {onSearch && (
-                  <IconButton size="small" onClick={onSearch} title="Search references">
+                  <IconButton size="small" onClick={() => { onClose(); onSearch(); }} title="Search references">
                     <Search fontSize="small" />
                   </IconButton>
                 )}
