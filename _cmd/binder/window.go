@@ -488,6 +488,60 @@ func (r *Window) OpenSearchWindow() error {
 	return nil
 }
 
+// OpenSearchWindowWithQuery はクエリを初期値としてバインダー全体検索ウィンドウを開く。
+// 既に開いていればクエリをイベントで送信して前面に出す。
+func (r *Window) OpenSearchWindowWithQuery(query string) error {
+	if r.searchWindow != nil {
+		r.runtime.Event.Emit("binder:search:query", query)
+		r.searchWindow.Focus()
+		return nil
+	}
+
+	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Binder - Search",
+		Width:            700,
+		Height:           46,
+		MinWidth:         500,
+		MinHeight:        46,
+		Frameless:        true,
+		AlwaysOnTop:      true,
+		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
+		URL:              "/?search=1&q=" + url.QueryEscape(query),
+	})
+
+	r.searchWindow = w
+	w.SetAlwaysOnTop(true)
+	r.runtime.Event.Emit("binder:search:open")
+
+	w.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		r.searchWindow = nil
+		r.runtime.Event.Emit("binder:search:close")
+	})
+
+	return nil
+}
+
+// CloseBinderWindows はバインダー切り替え時に関連ウィンドウを閉じる。
+// システムログウィンドウはバインダー非依存のため閉じない。
+func (r *Window) CloseBinderWindows() {
+	if r.searchWindow != nil {
+		r.searchWindow.Close()
+		r.searchWindow = nil
+	}
+	if r.previewWindow != nil {
+		r.previewWindow.Close()
+		r.previewWindow = nil
+	}
+	if r.overallHistoryWindow != nil {
+		r.overallHistoryWindow.Close()
+		r.overallHistoryWindow = nil
+	}
+	for key, w := range r.historyWindows {
+		w.Close()
+		delete(r.historyWindows, key)
+	}
+}
+
 // SetLogLevel はログレベルを動的に変更する。
 func (r *Window) SetLogLevel(level int) {
 	log.SetLevel(slog.Level(level))

@@ -15,6 +15,11 @@ type SearchEmitter interface {
 	EmitDone()
 }
 
+// BinderWindowCloser はバインダー切り替え時に関連ウィンドウを閉じるインターフェース
+type BinderWindowCloser interface {
+	CloseBinderWindows()
+}
+
 // App struct
 type App struct {
 	current        *binder.Binder
@@ -22,6 +27,7 @@ type App struct {
 	devMode        bool
 	searchCancel   context.CancelFunc
 	SearchEmitter  SearchEmitter
+	WindowCloser   BinderWindowCloser
 }
 
 func New(version string) *App {

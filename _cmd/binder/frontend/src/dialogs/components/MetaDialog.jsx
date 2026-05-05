@@ -3,7 +3,7 @@ import {
   Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Typography,
 } from "@mui/material";
-import { Check, Close, ContentCopy, Delete } from "@mui/icons-material";
+import { Check, Close, ContentCopy, Delete, Search } from "@mui/icons-material";
 import { useTranslation } from 'react-i18next';
 import "../../language";
 
@@ -34,6 +34,7 @@ import { ActionButton } from "./ActionButton";
 function MetaDialog({
   open, onClose, title, id,
   showId = true,
+  onSearch,
   isPrivate, onPrivateChange,
   onSave,
   onDelete, showDelete = true, deleteDisabled = false,
@@ -89,6 +90,11 @@ function MetaDialog({
                 <IconButton size="small" onClick={handleCopyId} title="Copy ID">
                   <ContentCopy fontSize="small" />
                 </IconButton>
+                {onSearch && (
+                  <IconButton size="small" onClick={() => { onClose(); onSearch(); }} title="Search references">
+                    <Search fontSize="small" />
+                  </IconButton>
+                )}
                 {onPrivateChange !== undefined && (
                   <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
                     <Checkbox

@@ -7,6 +7,7 @@ import {
 import { ExpandMore } from "@mui/icons-material";
 
 import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
+import { OpenSearchWindowWithQuery } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
@@ -86,6 +87,7 @@ function AssetMetaDialog({ open, id, onClose }) {
     <MetaDialog
       open={open} onClose={onClose} title={t("asset.editTitle")}
       id={id} onSave={handleSave} onDelete={() => setConfirmDelete(true)}
+      onSearch={() => OpenSearchWindowWithQuery(id)}
       isPrivate={isPrivate} onPrivateChange={setIsPrivate}
     >
       <FormControl>

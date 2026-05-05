@@ -38,6 +38,16 @@
     margin-right: 2px;
 }
 
+#searchTypeFilter {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-panel);
+    --wails-draggable: no-drag;
+}
+
 .searchResultFile {
     display: flex;
     border-bottom: 1px solid var(--border-primary);

@@ -261,6 +261,9 @@ function Editor(props) {
   const [idListAnchor, setIdListAnchor] = useState(null);
   const [idList, setIdList] = useState([]);
 
+  // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
+  const hiddenFocusRef = useRef(null);
+
   // useEffect([]) 内など古いクロージャから最新の mode/id/name/html を参照するための ref
   const modeRef = useRef(mode);
   const idRef = useRef(id);
@@ -325,13 +328,18 @@ function Editor(props) {
   }, []);
 
   // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
-  const handleSearchNavigate = useCallback((absoluteStart) => {
+  const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
     const linesBefore = text.substring(0, absoluteStart).split('\n').length - 1;
-    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
-    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
     setActiveMatchLine(linesBefore + 1);
+    // カーソルをマッチ位置に移動する。
+    // ブラウザは「カーソル位置へスクロール」するため、カーソルをマッチ位置に
+    // 置くことでスクロール先を正しい位置に誘導する。
+    textarea.setSelectionRange(absoluteStart, absoluteStart);
+    const totalLines = text.split('\n').length;
+    const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
+    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
   }, [text]);
 
   useEffect(() => {
@@ -1207,6 +1215,7 @@ function Editor(props) {
     var char = "";
     //文字列の前方の状態を確認
     const last = before.lastIndexOf('\n')
+    const currentLine = last !== -1 ? before.substring(last + 1) : before;
     if (last !== -1) {
       const line = before.substring(last + 1);
       for (let idx = 0; idx < line.length; ++idx) {
@@ -1230,6 +1239,24 @@ function Editor(props) {
         }
         indent += " ";
       }
+    }
+
+    // 空のリスト項目（プレフィックスのみの行）でEnterを押した場合はプレフィックスをキャンセル
+    if (char && currentLine === indent + char) {
+      const newBefore = before.substring(0, before.length - char.length);
+      const newCursor = newBefore.length;
+      textarea.value = newBefore + after;
+      textarea.selectionStart = newCursor;
+      textarea.selectionEnd = newCursor;
+      isEditingRef.current = true;
+      const newVal = textarea.value;
+      setText(newVal);
+      writeFn(mode, id, newVal);
+      requestAnimationFrame(() => {
+        textarea.selectionStart = newCursor;
+        textarea.selectionEnd = newCursor;
+      });
+      return;
     }
 
     var at = "\n" + indent + char;
@@ -1375,6 +1402,25 @@ function Editor(props) {
       setTreeVisible(flag);
     });
 
+    // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
+    // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
+    // 一度 hidden input に移してから textarea に戻す（Tab で別入力を経由するのと同等）。
+    const handleWindowFocus = () => {
+      const m = modeRef.current;
+      if (m !== Mode.note && m !== Mode.diagram && m !== Mode.template) return;
+      if (composingRef.current) return;
+      const textarea = document.querySelector('#editor');
+      if (!textarea || !hiddenFocusRef.current) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      hiddenFocusRef.current.focus();
+      requestAnimationFrame(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start, end);
+      });
+    };
+    const cleanupWindowFocus = Events.On('binder:window:focus', handleWindowFocus);
+
     //設定を取得
     GetFont().then((s) => {
       settingFont(s);
@@ -1393,6 +1439,7 @@ function Editor(props) {
       console.log(err);
     });
 
+    return () => cleanupWindowFocus();
   }, []);
 
   // エディタ設定をsetting.jsonに保存するヘルパー（既存のprogram等を保持）
@@ -1457,6 +1504,16 @@ function Editor(props) {
               <LayerEditor />
             </div>
           )}
+
+          {/** IME リセット用 hidden input（Tab フォーカス経由と同等の TSF コンテキストリセットに使う） */}
+          <input
+            ref={hiddenFocusRef}
+            type="text"
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+            readOnly
+          />
 
           {/** エディタ */}
           {editor &&

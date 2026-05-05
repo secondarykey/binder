@@ -120,6 +120,15 @@ func main() {
 
 	// 検索イベントエミッターを設定
 	app.SearchEmitter = &wailsSearchEmitter{app: wailsApp}
+	// バインダー切り替え時にウィンドウを閉じる
+	app.WindowCloser = win
+
+	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）
+	// events.Common.WindowFocus は Windows 実装では emit されない（WM_SETFOCUS は
+	// events.Windows.WindowSetFocus を emit する）ため、正しいイベントを使う。
+	window.OnWindowEvent(events.Windows.WindowSetFocus, func(event *application.WindowEvent) {
+		wailsApp.Event.Emit("binder:window:focus")
+	})
 
 	// 外部ファイルドロップ: OS からのファイルドロップを Wails ネイティブイベントで処理する。
 	// EnableFileDrop: true が前提。Wails runtime (window.ts) が drop を補足し、

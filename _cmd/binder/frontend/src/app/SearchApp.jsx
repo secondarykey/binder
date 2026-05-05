@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Toolbar, Typography, IconButton, TextField, InputAdornment, LinearProgress } from '@mui/material';
+import { Toolbar, Typography, IconButton, TextField, InputAdornment, LinearProgress, Chip } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import DescriptionIcon from '@mui/icons-material/Description';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import CodeIcon from '@mui/icons-material/Code';
 
 import { Events, Window } from '@wailsio/runtime';
 import { SearchBinder } from '../../bindings/binder/api/app';
@@ -34,12 +36,35 @@ function MermaidSVG(props) {
 function SearchApp() {
 
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  const initialQuery = new URLSearchParams(window.location.search).get('q') ?? '';
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [alwaysOnTop, setAlwaysOnTop] = useState(true);
+  const [selectedTypes, setSelectedTypes] = useState(null); // null = 全選択（未設定）
   const inputRef = useRef(null);
+  const searchedRef = useRef(false);
+
+  useEffect(() => { searchedRef.current = searched; }, [searched]);
+
+  // ウィンドウサイズをアニメーションで変更する（イベントハンドラから参照するためrefで保持）
+  const animateResizeRef = useRef(null);
+  animateResizeRef.current = (fromH, toH, duration, onDone) => {
+    const start = performance.now();
+    const step = (now) => {
+      const elapsed = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - elapsed, 3);
+      const h = Math.round(fromH + (toH - fromH) * ease);
+      Window.SetSize(700, h);
+      if (elapsed < 1) {
+        requestAnimationFrame(step);
+      } else if (onDone) {
+        onDone();
+      }
+    };
+    requestAnimationFrame(step);
+  };
 
   // Wails イベントリスナー
   useEffect(() => {
@@ -52,42 +77,55 @@ function SearchApp() {
       setSearching(false);
     });
 
+    const cleanupQuery = Events.On('binder:search:query', (event) => {
+      const q = event.data?.[0] ?? '';
+      setQuery(q);
+      setResults([]);
+      setSelectedTypes(null);
+      if (q.trim()) {
+        if (!searchedRef.current) {
+          Window.SetMaxSize(0, 0);
+          Window.SetMinSize(500, 300);
+          animateResizeRef.current(46, 500, 200);
+        }
+        setSearched(true);
+        setSearching(true);
+        SearchBinder(q.trim()).catch(() => setSearching(false));
+      }
+    });
+
     return () => {
       cleanupResult();
       cleanupDone();
+      cleanupQuery();
     };
   }, []);
 
-  // マウント時にフォーカス
+  // マウント時にフォーカス＆URLパラメータからの初期検索
   useEffect(() => {
     inputRef.current?.focus();
+    if (initialQuery.trim()) {
+      Window.SetMaxSize(0, 0);
+      Window.SetMinSize(500, 300);
+      animateResizeRef.current(46, 500, 200);
+      setSearched(true);
+      setSearching(true);
+      SearchBinder(initialQuery.trim()).catch(() => setSearching(false));
+    } else {
+      // 未検索状態では高さを固定
+      Window.SetMaxSize(9999, 46);
+    }
   }, []);
-
-  // ウィンドウサイズをアニメーションで変更する
-  const animateResize = (fromH, toH, duration, onDone) => {
-    const start = performance.now();
-    const step = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      // easeOutCubic
-      const ease = 1 - Math.pow(1 - t, 3);
-      const h = Math.round(fromH + (toH - fromH) * ease);
-      Window.SetSize(700, h);
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else if (onDone) {
-        onDone();
-      }
-    };
-    requestAnimationFrame(step);
-  };
 
   const handleSearch = () => {
     if (!query.trim()) return;
     setResults([]);
+    setSelectedTypes(null);
     setSearching(true);
     if (!searched) {
+      Window.SetMaxSize(0, 0);
       Window.SetMinSize(500, 300);
-      animateResize(46, 500, 200);
+      animateResizeRef.current(46, 500, 200);
     }
     setSearched(true);
     SearchBinder(query.trim()).catch(() => {
@@ -98,9 +136,11 @@ function SearchApp() {
   const handleClear = () => {
     setQuery('');
     setResults([]);
+    setSelectedTypes(null);
     setSearched(false);
-    animateResize(500, 46, 150, () => {
+    animateResizeRef.current(500, 46, 150, () => {
       Window.SetMinSize(500, 46);
+      Window.SetMaxSize(9999, 46);
     });
     inputRef.current?.focus();
   };
@@ -138,6 +178,37 @@ function SearchApp() {
       <>{text.substring(0, idx)}<mark>{text.substring(idx, idx + searchQuery.length)}</mark>{text.substring(idx + searchQuery.length)}</>
     );
   };
+
+  // 種別ごとの件数
+  const typeCounts = results.reduce((acc, r) => {
+    acc[r.type] = (acc[r.type] ?? 0) + 1;
+    return acc;
+  }, {});
+  const ALL_TYPES = ['note', 'diagram', 'asset', 'template'];
+  // selectedTypes === null = フィルターなし（全件・全ハイライト）
+  // selectedTypes = [...] = その種別のみ表示・ハイライト
+  const showTypeFilter = !searching && searched;
+
+  const handleTypeClick = (typ) => {
+    if ((typeCounts[typ] ?? 0) === 0) return;
+    setSelectedTypes(prev => {
+      if (prev === null) {
+        // 全ハイライト状態 → クリックした種別だけに絞り込む
+        return [typ];
+      }
+      if (prev.includes(typ)) {
+        // ハイライト済みを再クリック → 除外。残りがなければ全体に戻す
+        const next = prev.filter(t => t !== typ);
+        return next.length === 0 ? null : next;
+      }
+      // 薄い種別をクリック → 追加
+      return [...prev, typ];
+    });
+  };
+
+  const displayedResults = selectedTypes === null
+    ? results
+    : results.filter(r => selectedTypes.includes(r.type));
 
   // 合計一致数
   const totalMatches = results.reduce((sum, r) => sum + r.matches.length, 0);
@@ -203,16 +274,45 @@ function SearchApp() {
       {searched && searching && <LinearProgress sx={{ height: 2 }} />}
 
       {searched && <div id="searchContent">
-        {results.length === 0 && searched && !searching && (
+        {showTypeFilter && (
+          <div id="searchTypeFilter">
+            {ALL_TYPES.map(typ => {
+              const count = typeCounts[typ] ?? 0;
+              const active = count > 0 && (selectedTypes === null || selectedTypes.includes(typ));
+              const zero = count === 0;
+              return (
+                <Chip key={typ} label={`${typ} (${count})`} size="small"
+                  onClick={() => handleTypeClick(typ)}
+                  sx={{
+                    fontSize: '11px', height: '22px',
+                    cursor: count > 0 ? 'pointer' : 'default',
+                    color: zero ? 'var(--text-faint)' : active ? 'var(--text-primary)' : 'var(--text-muted)',
+                    backgroundColor: active ? 'var(--bg-button)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: zero ? 'var(--border-subtle)' : active ? 'var(--accent-primary)' : 'var(--border-color)',
+                    opacity: zero ? 0.3 : active ? 1 : 0.6,
+                    '&:hover': count > 0 ? { backgroundColor: active ? 'var(--bg-button)' : 'var(--hover-overlay)', borderColor: active ? 'var(--accent-primary)' : 'var(--border-color)' } : {},
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {displayedResults.length === 0 && searched && !searching && (
           <div id="searchEmpty">{t('search.noResults')}</div>
         )}
 
-        {results.map((result, idx) => (
+        {displayedResults.map((result, idx) => (
           <div key={idx} className="searchResultFile" onDoubleClick={() => handleNavigate(result)}>
             <div className="searchResultFileHeader">
               {result.type === 'note'
                 ? <DescriptionIcon sx={{ fontSize: '14px', color: 'var(--text-muted)', flexShrink: 0 }} />
-                : <MermaidSVG width="14px" height="14px" fill="var(--text-muted)" contents="var(--bg-app)" />
+                : result.type === 'diagram'
+                ? <MermaidSVG width="14px" height="14px" fill="var(--text-muted)" contents="var(--bg-app)" />
+                : result.type === 'asset'
+                ? <AttachFileIcon sx={{ fontSize: '14px', color: 'var(--text-muted)', flexShrink: 0 }} />
+                : <CodeIcon sx={{ fontSize: '14px', color: 'var(--text-muted)', flexShrink: 0 }} />
               }
               <span>{result.name}</span>
               <span className="searchResultType">{result.type}</span>

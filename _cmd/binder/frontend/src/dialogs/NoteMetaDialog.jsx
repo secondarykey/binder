@@ -13,7 +13,7 @@ import {
   GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage, UploadNoteImage,
   EditNote, RemoveNote, PrivatizeChildren,
 } from "../../bindings/binder/api/app";
-import { SelectFile } from "../../bindings/main/window";
+import { SelectFile, OpenSearchWindowWithQuery } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png';
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
@@ -184,6 +184,7 @@ function NoteMetaDialog({ open, id, onClose }) {
     <MetaDialog
       open={open} onClose={onClose} title={t("note.editTitle")}
       id={id} onSave={handleSave}
+      onSearch={() => OpenSearchWindowWithQuery(id)}
       isPrivate={isPrivate} onPrivateChange={setIsPrivate}
       onDelete={() => setConfirmDelete(true)} deleteDisabled={isIndex}
     >
