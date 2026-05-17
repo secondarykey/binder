@@ -390,19 +390,32 @@ func SavePosition(pos *Position) error {
 func (s *Setting) save() error {
 
 	fn := getFilePath()
-	fp, err := os.Create(fn)
-	if err != nil {
-		return xerrors.Errorf("os.Create() error: %w", err)
-	}
-	defer fp.Close()
 
 	data, err := json.Marshal(s)
 	if err != nil {
 		return xerrors.Errorf("json.Marshal() error: %w", err)
 	}
-	_, err = fp.Write(data)
+
+	dir := filepath.Dir(fn)
+	tmp, err := os.CreateTemp(dir, "setting-*.json.tmp")
 	if err != nil {
-		return xerrors.Errorf("fp.Write() error: %w", err)
+		return xerrors.Errorf("os.CreateTemp() error: %w", err)
+	}
+	tmpName := tmp.Name()
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return xerrors.Errorf("tmp.Write() error: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return xerrors.Errorf("tmp.Close() error: %w", err)
+	}
+
+	if err := os.Rename(tmpName, fn); err != nil {
+		os.Remove(tmpName)
+		return xerrors.Errorf("os.Rename() error: %w", err)
 	}
 
 	pSet = s
