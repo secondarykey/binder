@@ -631,18 +631,16 @@ function Editor(props) {
   const handleInsertSnippet = (body) => {
     const textarea = document.querySelector("#editor");
     if (!textarea) return;
+    textarea.focus();
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const newVal = textarea.value.substring(0, start) + body + textarea.value.substring(end);
-    const newPos = start + body.length;
-    textarea.value = newVal;
-    setText(newVal);
-    writeFn(mode, id, newVal);
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, body);
     setSnippetAnchor(null);
-    requestAnimationFrame(() => {
-      textarea.selectionStart = newPos;
-      textarea.selectionEnd = newPos;
-    });
+    setTimeout(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    }, 500);
   };
 
   // エディタへのテキスト挿入イベントを購読
@@ -652,21 +650,15 @@ function Editor(props) {
       const textarea = document.querySelector("#editor");
       if (!textarea) return;
 
-      const val = textarea.value;
+      textarea.focus();
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
+      textarea.setSelectionRange(start, end);
+      document.execCommand('insertText', false, text);
 
-      const before = val.substring(0, start);
-      const after = val.substring(end);
-
-      textarea.value = before + text + after;
-      textarea.selectionStart = start + text.length;
-      textarea.selectionEnd = start + text.length;
-
-      const newVal = textarea.value;
       setTimeout(() => {
-        setText(newVal);
-        writeFn(modeRef.current, idRef.current, newVal);
+        setText(textarea.value);
+        writeFn(modeRef.current, idRef.current, textarea.value);
       }, 500);
     });
   }, []);
@@ -1141,33 +1133,31 @@ function Editor(props) {
    * </pre>
    */
   const handleInsert = (s, e) => {
+    if (composingRef.current) return;
     var textarea = document.querySelector("#editor");
-    const val = textarea.value;
+    if (!textarea) return;
 
+    textarea.focus();
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    var rtn = val;
+    const text = textarea.value.substring(start, end);
 
-    const before = val.substring(0, start)
-    const text = val.substring(start, end)
-    const after = val.substring(end)
-
-    //終了の指示がある場合、
+    var insertText;
     if (e !== undefined) {
-      rtn = before + s + text + e + after;
+      insertText = s + text + e;
     } else {
       var buf = "\n";
-
       const lines = text.split("\n");
       lines.forEach(line => {
         buf += s + line + "\n";
       });
-
       buf += "\n";
-      rtn = before + buf + after;
+      insertText = buf;
     }
 
-    textarea.value = rtn;
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, insertText);
+
     setTimeout(function () {
       const val = textarea.value;
       setText(val);
@@ -1624,35 +1614,35 @@ function Editor(props) {
 
                     {/** 強調 */}
                     <Tooltip title={t("editor.bold")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                         <FormatBoldIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** イタリック */}
                     <Tooltip title={t("editor.italic")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
                         <FormatItalicIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** 打ち消し線 */}
                     <Tooltip title={t("editor.strikethrough")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
                         <FormatStrikethroughIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** コードブロック */}
                     <Tooltip title={t("editor.codeBlock")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
                         <CodeIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** 引用 */}
                     <Tooltip title={t("editor.quote")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("> ")} className="editorBtn">
                         <FormatQuoteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
