@@ -101,9 +101,10 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       var comment = "Updated:";
 
       var writeComment = function (prefix, children) {
-        if (children.length === 0) return;
+        var targets = filterIds ? children.filter((l) => filterIds.has(l.id)) : children;
+        if (targets.length === 0) return;
         comment += "\n  " + prefix + ":";
-        children.forEach((l) => {
+        targets.forEach((l) => {
           comment += "\n    " + l.name;
         });
       }
