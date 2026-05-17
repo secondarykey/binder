@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
  * 変更ファイル一覧（左）とコミットフォーム/差分表示（右）をモーダルで表示
  * Router を使わず内部 state でナビゲーションを管理
  */
-function CommitModal({ open, onClose }) {
+function CommitModal({ open, onClose, filterIds }) {
   const {t} = useTranslation();
 
   const [modalState, setModalState] = useState({
@@ -65,6 +65,7 @@ function CommitModal({ open, onClose }) {
             currentId={modalState.currentId}
             onNavigate={handleNavigate}
             onClose={onClose}
+            filterIds={filterIds}
           />
         </div>
         <div id="commitRight">

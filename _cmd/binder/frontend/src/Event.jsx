@@ -226,8 +226,8 @@ class Event {
         this.raise(Event.SelectTree, id);
     }
 
-    openCommitModal() {
-        this.raise(Event.OpenCommitModal);
+    openCommitModal(data) {
+        this.raise(Event.OpenCommitModal, data);
     }
 
     openSettingModal() {

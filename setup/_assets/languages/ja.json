@@ -80,7 +80,8 @@
         "regenerateAll" : "すべてを最新のデータに更新する",
         "regenerateAllConfirmTitle" : "すべてのデータを更新しますか？",
         "regenerateAllConfirmMessage" : "すべてのデータを最新に更新します。コメントはそのまま利用しますので再確認して実行してください。",
-        "regenerateAllEmpty" : "現在公開中のデータがありません。"
+        "regenerateAllEmpty" : "現在公開中のデータがありません。",
+        "commitSubtree" : "配下をコミット"
     },
     "note" : {
         "editTitle" : "ノート編集",

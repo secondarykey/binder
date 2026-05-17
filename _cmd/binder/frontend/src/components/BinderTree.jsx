@@ -108,6 +108,20 @@ const findAncestorIds = (nodes, targetId, path = []) => {
 };
 
 /**
+ * 指定ノード配下の全IDを再帰的に収集する（サブツリーコミット用）
+ */
+const collectDescendantIds = (node, ids = new Set()) => {
+  if (!node) return ids;
+  ids.add(node.id);
+  if (node.children) {
+    for (const child of node.children) {
+      collectDescendantIds(child, ids);
+    }
+  }
+  return ids;
+};
+
+/**
  * ツリー（生データ）から子を持つ全ノードのIDを収集する（展開可能なノード）
  */
 const collectExpandableIds = (nodes, ids = []) => {
@@ -546,6 +560,14 @@ function BinderTree(props) {
   const handleHistoryAsset   = () => { closeAllMenus(); OpenHistoryWindow('asset',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
   const handleHistoryLayer   = () => { closeAllMenus(); OpenHistoryWindow('layer',   contextMenu.node.id, contextMenu.node.name ?? '').catch(err => evt.showErrorMessage(err)); };
 
+  const handleCommitSubtree = () => {
+    const node = contextMenu.node;
+    closeAllMenus();
+    const rawNode = findNodeInTree(treeRef.current, node.id);
+    const descendantIds = collectDescendantIds(rawNode);
+    evt.openCommitModal(descendantIds);
+  };
+
   /** リネーム開始: node を受け取る共通処理 */
   const startRename = (node, delay = 0) => {
     const { id, name } = node;
@@ -950,6 +972,7 @@ function BinderTree(props) {
         <span><AddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.add")}</span><span>▶</span>
       </MenuItem>
       <Divider />
+      <MenuItem onClick={handleCommitSubtree}><AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.commitSubtree")}</MenuItem>
       <MenuItem onClick={handleHistoryNote}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>

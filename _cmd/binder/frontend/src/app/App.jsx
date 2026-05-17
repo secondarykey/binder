@@ -82,6 +82,7 @@ function App() {
   const [pin, setPin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
+  const [commitModalFilter, setCommitModalFilter] = useState(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishModalTemplate, setPublishModalTemplate] = useState(null);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
@@ -194,7 +195,8 @@ function App() {
     });
 
     //コミットモーダルを開く
-    evt.register("App", Event.OpenCommitModal, function () {
+    evt.register("App", Event.OpenCommitModal, function (data) {
+      setCommitModalFilter(data ?? null);
       setCommitModalOpen(true);
     });
 
@@ -429,7 +431,7 @@ function App() {
       </div>
 
       {/** コミットモーダル */}
-      <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
+      <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => { setCommitModalOpen(false); setCommitModalFilter(null); }} />
 
       {/** 公開一覧モーダル */}
       <PublishModal open={publishModalOpen} template={publishModalTemplate} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); }} />
