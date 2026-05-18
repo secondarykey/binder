@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
  * @param {*} props
  * @returns
  */
-function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, onClose, ...props }) {
+function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, onClose, filterIds, ...props }) {
 
   const evt = useContext(EventContext)
   const { showError } = useDialogMessage();
@@ -101,9 +101,10 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       var comment = "Updated:";
 
       var writeComment = function (prefix, children) {
-        if (children.length === 0) return;
+        var targets = filterIds ? children.filter((l) => filterIds.has(l.id)) : children;
+        if (targets.length === 0) return;
         comment += "\n  " + prefix + ":";
-        children.forEach((l) => {
+        targets.forEach((l) => {
           comment += "\n    " + l.name;
         });
       }
@@ -160,11 +161,11 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
   return (<>
     <List dense disablePadding className='treeText'
       sx={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <ModifiedList name="Note"     data={notes}     onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={noteRef} />
-      <ModifiedList name="Diagram"  data={diagrams}  onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={diagramRef} />
-      <ModifiedList name="Asset"    data={assets}    onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
-      <ModifiedList name="Layer"    data={layers}    onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={layerRef} />
-      <ModifiedList name="Template" data={templates} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
+      <ModifiedList name="Note"     data={notes}     filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={noteRef} />
+      <ModifiedList name="Diagram"  data={diagrams}  filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={diagramRef} />
+      <ModifiedList name="Asset"    data={assets}    filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
+      <ModifiedList name="Layer"    data={layers}    filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={layerRef} />
+      <ModifiedList name="Template" data={templates} filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
     </List>
 
     <Menu open={contextMenu.open}
@@ -189,8 +190,11 @@ const ModifiedList = forwardRef((props, ref) => {
   const disabled = data.length === 0;
 
   useEffect(() => {
-    const wk = props.data.map((leaf) => ({ ...leaf, checked: true }));
-    setAll(props.data.length > 0);
+    const wk = props.data.map((leaf) => ({
+      ...leaf,
+      checked: props.filterIds ? props.filterIds.has(leaf.id) : true,
+    }));
+    setAll(props.filterIds ? wk.every(l => l.checked) : props.data.length > 0);
     setData(wk);
   }, [props.data]);
 

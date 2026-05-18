@@ -12,6 +12,7 @@ import (
 	"html/template"
 	"image"
 	"io"
+	"math"
 	"strings"
 
 	"golang.org/x/xerrors"
@@ -30,11 +31,24 @@ type LayerShape struct {
 	// 各 shape の視覚中心を軸に回転させる。
 	Rotation float64 `json:"rotation,omitempty"`
 
+	// 矢印属性 (line, polyline, curve 共通)。
+	// ArrowHead: "" or "none"=なし, "start"=始点, "end"=終点, "both"=両端。
+	// ArrowSize: 矢印ヘッドの大きさ係数。0 のときデフォルト (3.5)。
+	ArrowHead string  `json:"arrowHead,omitempty"`
+	ArrowSize float64 `json:"arrowSize,omitempty"`
+
 	// line: x1,y1,x2,y2
 	X1 float64 `json:"x1,omitempty"`
 	Y1 float64 `json:"y1,omitempty"`
 	X2 float64 `json:"x2,omitempty"`
 	Y2 float64 `json:"y2,omitempty"`
+
+	// curve: 二次ベジェ制御点 (normalized 0-1)
+	Cpx float64 `json:"cpx,omitempty"`
+	Cpy float64 `json:"cpy,omitempty"`
+
+	// polyline: 頂点群 (normalized 0-1)
+	Points []LayerPoint `json:"points,omitempty"`
 
 	// rect: x,y,width,height
 	X      float64 `json:"x,omitempty"`
@@ -55,6 +69,11 @@ type LayerShape struct {
 	// 改行間の追加スペース (px)。0 のとき通常 (1.2em) の行間。
 	// 正値を設定すると各行間にその px ぶん余白が追加される。
 	LineSpacing float64 `json:"lineSpacing,omitempty"`
+}
+
+type LayerPoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
 }
 
 type LayerContent struct {
@@ -434,6 +453,39 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 			fmt.Fprintf(&b,
 				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
 				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2, color, sw)
+			writeShapeArrowheads(&b, s,
+				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2,
+				s.X2*aspect, s.Y2, s.X1*aspect, s.Y1,
+				color, sw, imgHeightPx)
+		case "polyline":
+			if len(s.Points) >= 2 {
+				b.WriteString(`<polyline points="`)
+				for i, p := range s.Points {
+					if i > 0 {
+						b.WriteByte(' ')
+					}
+					fmt.Fprintf(&b, "%g,%g", p.X*aspect, p.Y)
+				}
+				fmt.Fprintf(&b,
+					`" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
+					color, sw)
+				first := s.Points[0]
+				second := s.Points[1]
+				last := s.Points[len(s.Points)-1]
+				prev := s.Points[len(s.Points)-2]
+				writeShapeArrowheads(&b, s,
+					first.X*aspect, first.Y, last.X*aspect, last.Y,
+					second.X*aspect, second.Y, prev.X*aspect, prev.Y,
+					color, sw, imgHeightPx)
+			}
+		case "curve":
+			fmt.Fprintf(&b,
+				`<path d="M %g %g Q %g %g %g %g" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+				s.X1*aspect, s.Y1, s.Cpx*aspect, s.Cpy, s.X2*aspect, s.Y2, color, sw)
+			writeShapeArrowheads(&b, s,
+				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2,
+				s.Cpx*aspect, s.Cpy, s.Cpx*aspect, s.Cpy,
+				color, sw, imgHeightPx)
 		case "rect":
 			fmt.Fprintf(&b,
 				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
@@ -578,12 +630,83 @@ func normalizeStrokeWidth(sw float64) float64 {
 	return sw
 }
 
+// defaultArrowWingFactor は矢印ヘッドの翼のデフォルト大きさ係数。
+const defaultArrowWingFactor = 5
+
+// arrowWingAngle は矢印ヘッドの翼の開き角 (radian)。±30度。
+const arrowWingAngle = 0.5236 // math.Pi / 6
+
+// effectiveArrowFactor は ArrowSize から翼の長さ係数を返す。0 以下ならデフォルト。
+func effectiveArrowFactor(arrowSize float64) float64 {
+	if arrowSize > 0 {
+		return arrowSize
+	}
+	return defaultArrowWingFactor
+}
+
+// writeArrowhead は矢印ヘッドを2本の <line> で書き出す。
+// tipX,tipY: 矢先 (viewBox座標、x は aspect 倍済み)
+// fromX,fromY: 矢先に向かう方向を決める参照点 (viewBox座標)
+func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color string, sw float64, arrowSize float64, imgHeightPx int) {
+	dx := tipX - fromX
+	dy := tipY - fromY
+	dist := math.Sqrt(dx*dx + dy*dy)
+	if dist < 1e-9 {
+		return
+	}
+	h := imgHeightPx
+	if h <= 0 {
+		h = defaultReferenceHeightPx
+	}
+	factor := effectiveArrowFactor(arrowSize)
+	wingLen := (sw * factor) / float64(h)
+
+	angle := math.Atan2(dy, dx)
+	for _, sign := range []float64{1, -1} {
+		a := angle + math.Pi + sign*arrowWingAngle
+		wx := tipX + wingLen*math.Cos(a)
+		wy := tipY + wingLen*math.Sin(a)
+		fmt.Fprintf(b,
+			`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+			tipX, tipY, wx, wy, color, sw)
+	}
+}
+
+// writeShapeArrowheads は shape の ArrowHead 属性に基づいて矢印ヘッドを描画する。
+// startX,startY: 始点 (viewBox), endX,endY: 終点 (viewBox)
+// fromStartX,fromStartY: 始点矢印の方向参照点, fromEndX,fromEndY: 終点矢印の方向参照点
+func writeShapeArrowheads(b *strings.Builder, s LayerShape, startX, startY, endX, endY, fromStartX, fromStartY, fromEndX, fromEndY float64, color string, sw float64, imgHeightPx int) {
+	ah := s.ArrowHead
+	if ah == "" || ah == "none" {
+		return
+	}
+	if ah == "end" || ah == "both" {
+		writeArrowhead(b, endX, endY, fromEndX, fromEndY, color, sw, s.ArrowSize, imgHeightPx)
+	}
+	if ah == "start" || ah == "both" {
+		writeArrowhead(b, startX, startY, fromStartX, fromStartY, color, sw, s.ArrowSize, imgHeightPx)
+	}
+}
+
 // shapeCenterViewBox は shape の視覚中心を viewBox 座標 (x は aspect 倍済み) で返す。
 // rotation の回転中心に使う。text では fontSize の px→viewBox 変換に imgHeightPx を使う。
 func shapeCenterViewBox(s LayerShape, aspect float64, imgHeightPx int) (float64, float64) {
 	switch s.Type {
 	case "line":
 		return (s.X1 + s.X2) * aspect / 2, (s.Y1 + s.Y2) / 2
+	case "polyline":
+		if len(s.Points) > 0 {
+			var sx, sy float64
+			for _, p := range s.Points {
+				sx += p.X
+				sy += p.Y
+			}
+			n := float64(len(s.Points))
+			return sx / n * aspect, sy / n
+		}
+		return 0, 0
+	case "curve":
+		return (s.X1 + s.Cpx + s.X2) / 3 * aspect, (s.Y1 + s.Cpy + s.Y2) / 3
 	case "rect":
 		return (s.X + s.Width/2) * aspect, s.Y + s.Height/2
 	case "ellipse":
@@ -656,7 +779,7 @@ func (b *Binder) BuildLayerSVGForId(id string) (string, error) {
 // local=true: エディタプレビュー（インラインSVG + private assetのHTTP URL）
 // local=false: 公開（公開済みSVGを <img> で参照）
 // extraClass は外側 div に追加するクラス名（空文字なら追加しない）。
-func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraClass string) (template.HTML, error) {
+func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, svgSrc string, extraClass string) (template.HTML, error) {
 	m, err := b.GetLayerWithParent(id)
 	if err != nil {
 		return "", xerrors.Errorf("GetLayerWithParent() error: %w", err)
@@ -688,7 +811,7 @@ func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraCla
 		// 公開版: 公開アセットと公開SVGを重ねる
 		inner = fmt.Sprintf(
 			`<img src="%s" style="display:block;width:100%%;height:auto;"/><img src="%s" style="position:absolute;inset:0;width:100%%;height:100%%;pointer-events:none;"/>`,
-			imageSrc, fs.PublicLayerFile(m))
+			imageSrc, svgSrc)
 	}
 
 	// 外側 div のクラス名: デフォルト "binderLayer" に追加クラスを連結。

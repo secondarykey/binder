@@ -25,9 +25,9 @@ func (inst *Instance) FindNotes() ([]*model.Note, error) {
 func (inst *Instance) FindUpdatedNotes(id string, limit int, offset int) ([]*model.Note, error) {
 
 	//TODO ツリーが更新されてないならダメ
-	where := fmt.Sprintf("type = 'note'")
+	where := fmt.Sprintf("type = 'note' and private = false")
 	if id != "" {
-		where += fmt.Sprintf("and parent_id = '%s'", id)
+		where += fmt.Sprintf(" and parent_id = '%s'", id)
 	}
 	order := "updated_date desc"
 	return inst.findStructureNotes(where, order, limit, offset)
@@ -39,11 +39,20 @@ func (inst *Instance) FindPublishNotes(id string, limit int, offset int) ([]*mod
 
 	// publish_date は structures テーブルで管理されるため、先に公開済み note の ID を取得する
 
-	where := fmt.Sprintf("type = 'note' and !(publish_date = '%s')", TimeZero)
+	where := fmt.Sprintf("type = 'note' and private = false and !(publish_date = '%s')", TimeZero)
 	if id != "" {
-		where += fmt.Sprintf("and parent_id = '%s'", id)
+		where += fmt.Sprintf(" and parent_id = '%s'", id)
 	}
 	order := "publish_date desc"
+	return inst.findStructureNotes(where, order, limit, offset)
+}
+
+func (inst *Instance) FindSeqNotes(id string, limit int, offset int) ([]*model.Note, error) {
+	where := "type = 'note' and private = false"
+	if id != "" {
+		where += fmt.Sprintf(" and parent_id = '%s'", id)
+	}
+	order := "seq"
 	return inst.findStructureNotes(where, order, limit, offset)
 }
 

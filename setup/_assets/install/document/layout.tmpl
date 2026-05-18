@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ .Home.Name }}</title>
+    <meta name="description" content="{{.Home.Detail}}">
+
+    <link rel="stylesheet" href="{{assets "019e38a8-26ab-737e-892a-2607ca76b639"}}">
+  </head>
+
+  <body>
+    <h1>{{ .Home.Name }}</h1>
+
+    <main>
+      {{ template "Content" . }}
+    </main>
+
+
+  <hr>
+<ul>
+      {{ range childrenNotes 10  }}
+        <li><a href="{{.Link}}">{{ .Name }}</a></li>
+      {{ end }}
+</ul>
+
+
+    <footer>&copy; 2026 Binder</footer>
+  </body>
+</html>

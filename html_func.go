@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
-	"time"
 	texttemplate "text/template"
+	"time"
 
+	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
 	"binder/log"
@@ -21,8 +22,10 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
 		"assetsImage":   w.assetsImage,
-		"childrenNotes": w.childrenNotes,
+		"childrenNotes": w.childNotes,
+		"childNotes":    w.childNotes,
 		"latestNotes":   w.latestNotes,
+		"breadcrumb":    w.breadcrumb,
 		"safe":          safeTemplate,
 		"lit":           litTemplate,
 		"litURL":        litURLTemplate,
@@ -90,6 +93,10 @@ func (w *wrapper) assets(id string) string {
 		return "assets/error"
 	}
 
+	if w.deps != nil {
+		w.deps.assets[id] = a
+	}
+
 	p := fs.PublicAssetFile(a)
 	return w.convertURL(p)
 }
@@ -116,7 +123,7 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, classAttr))
 }
 
-func (w *wrapper) childrenNotes(v ...any) []*tempNote {
+func (w *wrapper) childNotes(v ...any) []*tempNote {
 	//件数
 	n := Arg[int](v, 0).Default(-1)
 	//指定ノートId（ダイアグラムコンテキストでは w.note が nil のため空文字をデフォルトとする）
@@ -127,6 +134,11 @@ func (w *wrapper) childrenNotes(v ...any) []*tempNote {
 	id := Arg[string](v, 1).Default(defaultId)
 	if id == "" {
 		return nil
+	}
+	// 順序指定: "seq" でツリー順、省略時は従来動作（publish_date/updated_date）
+	order := Arg[string](v, 2).Default("")
+	if order == "seq" {
+		return w.getSeqNotes(id, n)
 	}
 	return w.children(id, n, -1)
 }
@@ -174,6 +186,59 @@ func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 	return rtn
 }
 
+func (w *wrapper) getSeqNotes(id string, limit int) []*tempNote {
+	notes, err := w.owner.db.FindSeqNotes(id, limit, -1)
+	if err != nil {
+		log.ErrorE("FindSeqNotes()", err)
+		return nil
+	}
+
+	ids := make([]interface{}, len(notes))
+	for i, n := range notes {
+		ids[i] = n.Id
+	}
+	structMap, _ := w.owner.getStructureMap(ids...)
+
+	rtn := make([]*tempNote, len(notes))
+	for idx, n := range notes {
+		jn := n.To()
+		if s, ok := structMap[n.Id]; ok {
+			jn.ApplyStructure(s.To())
+		}
+		rtn[idx] = w.convertNote(jn)
+	}
+	return rtn
+}
+
+// breadcrumb は現在ノートの祖先チェーンを root→current の順で返す。
+func (w *wrapper) breadcrumb() []*tempNote {
+	if w.note == nil {
+		return nil
+	}
+	var chain []*tempNote
+	id := w.note.Id
+	for id != "" && id != "index" {
+		s, err := w.owner.db.GetStructure(id)
+		if err != nil {
+			break
+		}
+		jn := &json.Note{Id: s.Id, Name: s.Name, Detail: s.Detail, Alias: s.Alias}
+		chain = append(chain, w.convertNote(jn))
+		id = s.ParentId
+	}
+	// index を先頭に追加
+	indexS, err := w.owner.db.GetStructure("index")
+	if err == nil {
+		jn := &json.Note{Id: indexS.Id, Name: indexS.Name, Detail: indexS.Detail, Alias: indexS.Alias}
+		chain = append(chain, w.convertNote(jn))
+	}
+	// reverse: root→current
+	for i, j := 0, len(chain)-1; i < j; i, j = i+1, j-1 {
+		chain[i], chain[j] = chain[j], chain[i]
+	}
+	return chain
+}
+
 func (w *wrapper) drawSVG(id string) template.HTML {
 
 	code := ""
@@ -202,6 +267,13 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 			}
 		}
 	} else {
+
+		if w.deps != nil {
+			diag, err := w.owner.GetDiagram(id)
+			if err == nil {
+				w.deps.diagrams[id] = diag
+			}
+		}
 
 		f, err := w.getSVGFile(id)
 		if err != nil {
@@ -235,6 +307,7 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 	clazz := Arg[string](v, 1).Default("")
 
 	imageSrc := ""
+	svgSrc := ""
 	if w.Local {
 		// 親Assetのプライベートアセット配信URL
 		m, err := w.owner.GetLayerWithParent(id)
@@ -254,12 +327,19 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		if err != nil {
 			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
 		}
+		if w.deps != nil {
+			w.deps.layers[id] = m
+			if m.Parent != nil {
+				w.deps.assets[m.ParentId] = m.Parent
+			}
+		}
 		if m.Parent != nil {
 			imageSrc = w.convertURL(fs.PublicAssetFile(m.Parent))
 		}
+		svgSrc = w.convertURL(fs.PublicLayerFile(m))
 	}
 
-	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, clazz)
+	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, svgSrc, clazz)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
 	}
@@ -313,10 +393,12 @@ func (w *wrapper) embedNote(id string) (template.HTML, error) {
 	}
 
 	childWrap := &wrapper{
-		owner:   w.owner,
-		note:    note,
-		Local:   w.Local,
-		visited: w.visitedWith(id),
+		owner:         w.owner,
+		note:          note,
+		Local:         w.Local,
+		visited:       w.visitedWith(id),
+		deps:          w.deps,
+		exportAsIndex: w.exportAsIndex,
 	}
 
 	content := buf.String()
@@ -355,10 +437,12 @@ func (w *wrapper) embedTextAsset(id string) (template.HTML, error) {
 	}
 
 	childWrap := &wrapper{
-		owner:   w.owner,
-		note:    w.note,
-		Local:   w.Local,
-		visited: w.visitedWith(id),
+		owner:         w.owner,
+		note:          w.note,
+		Local:         w.Local,
+		visited:       w.visitedWith(id),
+		deps:          w.deps,
+		exportAsIndex: w.exportAsIndex,
 	}
 
 	content := string(data)

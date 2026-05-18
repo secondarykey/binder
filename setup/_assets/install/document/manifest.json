@@ -1,0 +1,35 @@
+{
+  "templates": [
+    {"id": "layout",  "type": "layout",  "name": "Layout",  "file": "layout.tmpl"},
+    {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"},
+    {"id": "diagram_style", "type": "diagram", "name": "Base Theme", "file": "shared/diagram_style.tmpl"}
+  ],
+  "notes": [
+    {
+      "id": "index", "alias": "index", "name": "Index",
+      "parentId": "", "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "index.md"
+    },
+    {
+      "id": "019e389d-3c37-775d-a9bd-34623dd39f2a", "name": "Chapter 1", "parentId": "index",
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "chapter1.md"
+    },
+    {
+      "id": "019e389d-3c44-76dc-9e8c-1523d3e2332a", "name": "Chapter 2", "parentId": "index",
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "chapter2.md"
+    },
+    {
+      "name": "Chapter 2-1", "parentId": "019e389d-3c44-76dc-9e8c-1523d3e2332a",
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "chapter2-1.md"
+    }
+  ],
+  "diagrams": [
+    {"id": "019e389d-3c67-7f1b-8a2a-9d26dde896eb", "name": "Diagram", "parentId": "019e389d-3c37-775d-a9bd-34623dd39f2a", "styleTemplate": "diagram_style", "file": "diagram.md"}
+  ],
+  "assets": [
+    {"id": "019e38a8-26ab-737e-892a-2607ca76b639", "name": "StyleSheet", "alias": "019e38a8-26ab-737e-892a-2607ca76b639.txt", "parentId": "index", "binary": false, "mime": "text/css", "file": "style.css"}
+  ]
+}

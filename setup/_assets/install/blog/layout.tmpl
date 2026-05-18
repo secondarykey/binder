@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ .Home.Name }}</title>
+    <meta name="description" content="{{.Home.Detail}}">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+    <link rel="stylesheet" href="{{assets "019e3aa3-252b-7288-830a-6df9d858513d"}}">
+
+  </head>
+  <body>
+    <header>
+      <a href="{{.Home.Link}}">{{.Home.Name}}</a>
+      <hr>
+    </header>
+    <main>
+      <section id="left"></section>
+
+      <section id="content">
+       {{ template "Content" . }}
+      </section>
+
+      <section id="right">
+      </section>
+    </main>
+    <footer><hr> &copy;2026 Binder</footer>
+
+<script>
+hljs.highlightAll();
+</script>
+
+  </body>
+</html>

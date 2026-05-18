@@ -7,10 +7,10 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
-import { RunEditor, OpenPreviewWindow } from "../../../bindings/main/window";
+import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
 import Marked from "./engines/Marked.jsx";
@@ -47,6 +47,7 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import FolderZipIcon from '@mui/icons-material/FolderZip';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -631,18 +632,16 @@ function Editor(props) {
   const handleInsertSnippet = (body) => {
     const textarea = document.querySelector("#editor");
     if (!textarea) return;
+    textarea.focus();
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const newVal = textarea.value.substring(0, start) + body + textarea.value.substring(end);
-    const newPos = start + body.length;
-    textarea.value = newVal;
-    setText(newVal);
-    writeFn(mode, id, newVal);
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, body);
     setSnippetAnchor(null);
-    requestAnimationFrame(() => {
-      textarea.selectionStart = newPos;
-      textarea.selectionEnd = newPos;
-    });
+    setTimeout(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    }, 500);
   };
 
   // エディタへのテキスト挿入イベントを購読
@@ -652,21 +651,15 @@ function Editor(props) {
       const textarea = document.querySelector("#editor");
       if (!textarea) return;
 
-      const val = textarea.value;
+      textarea.focus();
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
+      textarea.setSelectionRange(start, end);
+      document.execCommand('insertText', false, text);
 
-      const before = val.substring(0, start);
-      const after = val.substring(end);
-
-      textarea.value = before + text + after;
-      textarea.selectionStart = start + text.length;
-      textarea.selectionEnd = start + text.length;
-
-      const newVal = textarea.value;
       setTimeout(() => {
-        setText(newVal);
-        writeFn(modeRef.current, idRef.current, newVal);
+        setText(textarea.value);
+        writeFn(modeRef.current, idRef.current, textarea.value);
       }, 500);
     });
   }, []);
@@ -1059,6 +1052,35 @@ function Editor(props) {
     }
   };
 
+  const handleDownloadZip = async () => {
+    try {
+      // 依存関係を収集（テンプレート関数展開のためMarkdownを渡す）
+      const deps = await CollectExportDeps(id, text);
+      const diagramSVGs = {};
+
+      if (deps && deps.missingDiagrams && deps.missingDiagrams.length > 0) {
+        for (const diag of deps.missingDiagrams) {
+          try {
+            const source = await OpenDiagram(diag.id);
+            const expanded = await ParseDiagram(diag.id, false, source);
+            const diagMeta = await GetDiagram(diag.id);
+            const result = await Mermaid.parse(expanded, diagMeta.styleTemplate);
+            if (result && result.svg) {
+              diagramSVGs[diag.id] = result.svg;
+            }
+          } catch (diagErr) {
+            console.warn("diagram SVG generation failed:", diag.id, diagErr);
+          }
+        }
+      }
+
+      const html = await Marked.parse(deps.expandedMarkdown);
+      await DownloadNote(id, text, html, diagramSVGs);
+    } catch (err) {
+      evt.showErrorMessage(err);
+    }
+  };
+
   /**
    * ファイルドロップ許可
    */
@@ -1141,33 +1163,31 @@ function Editor(props) {
    * </pre>
    */
   const handleInsert = (s, e) => {
+    if (composingRef.current) return;
     var textarea = document.querySelector("#editor");
-    const val = textarea.value;
+    if (!textarea) return;
 
+    textarea.focus();
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    var rtn = val;
+    const text = textarea.value.substring(start, end);
 
-    const before = val.substring(0, start)
-    const text = val.substring(start, end)
-    const after = val.substring(end)
-
-    //終了の指示がある場合、
+    var insertText;
     if (e !== undefined) {
-      rtn = before + s + text + e + after;
+      insertText = s + text + e;
     } else {
       var buf = "\n";
-
       const lines = text.split("\n");
       lines.forEach(line => {
         buf += s + line + "\n";
       });
-
       buf += "\n";
-      rtn = before + buf + after;
+      insertText = buf;
     }
 
-    textarea.value = rtn;
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, insertText);
+
     setTimeout(function () {
       const val = textarea.value;
       setText(val);
@@ -1411,6 +1431,8 @@ function Editor(props) {
       if (composingRef.current) return;
       const textarea = document.querySelector('#editor');
       if (!textarea || !hiddenFocusRef.current) return;
+      const active = document.activeElement;
+      if (active && active !== textarea && active !== document.body && active !== hiddenFocusRef.current) return;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       hiddenFocusRef.current.focus();
@@ -1624,35 +1646,35 @@ function Editor(props) {
 
                     {/** 強調 */}
                     <Tooltip title={t("editor.bold")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                         <FormatBoldIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** イタリック */}
                     <Tooltip title={t("editor.italic")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
                         <FormatItalicIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** 打ち消し線 */}
                     <Tooltip title={t("editor.strikethrough")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
                         <FormatStrikethroughIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** コードブロック */}
                     <Tooltip title={t("editor.codeBlock")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
                         <CodeIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** 引用 */}
                     <Tooltip title={t("editor.quote")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onClick={(e) => handleInsert("> ")} className="editorBtn">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("> ")} className="editorBtn">
                         <FormatQuoteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -1881,6 +1903,13 @@ function Editor(props) {
                     <Tooltip title={t("preview.download")} placement="bottom">
                       <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
                         <DownloadIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    </Tooltip>
+                  }
+                  {mode === Mode.note &&
+                    <Tooltip title={t("preview.downloadZip")} placement="bottom">
+                      <IconButton size="small" aria-label="download-zip" onClick={handleDownloadZip} className="editorBtn">
+                        <FolderZipIcon sx={{ fontSize: '16px' }} />
                       </IconButton>
                     </Tooltip>
                   }

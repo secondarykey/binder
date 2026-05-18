@@ -5,7 +5,7 @@
     },
     "menu" : {
         "binder" : "Binder Tree",
-        "commit" : "Uncommitted Notes",
+        "commit" : "Unrecorded Notes",
         "publish" : "Unpublished Notes",
         "template" : "Template Settings",
         "config" : "Binder Settings",
@@ -52,7 +52,7 @@
         "pushRemote" : "Push to Remote",
         "mergeRemote" : "Merge",
         "none" : "No Display",
-        "commit" : "Uncommitted",
+        "commit" : "Unrecorded",
         "publish" : "Unpublished",
         "note" : "Note",
         "diagram" : "Diagram",
@@ -80,7 +80,10 @@
         "regenerateAll" : "Update All to Latest",
         "regenerateAllConfirmTitle" : "Update all data?",
         "regenerateAllConfirmMessage" : "All data will be updated to the latest. Comments will be used as-is, so please review and execute.",
-        "regenerateAllEmpty" : "No published data found."
+        "regenerateAllEmpty" : "No published data found.",
+        "dirOps" : "Directory",
+        "commitSubtree" : "Record with descendants",
+        "publishSubtree" : "Publish with descendants"
     },
     "note" : {
         "editTitle" : "Edit Note",
@@ -139,6 +142,8 @@
         "publishSuccess" : "Layer published.",
         "toolSelect" : "Select",
         "toolLine" : "Line",
+        "toolPolyline" : "Polyline",
+        "toolCurve" : "Curve",
         "toolRect" : "Rectangle",
         "toolEllipse" : "Ellipse",
         "toolText" : "Text",
@@ -148,7 +153,13 @@
         "lineSpacing" : "Line Spacing (px)",
         "fontFamily" : "Font",
         "fontFamilyDefault" : "(default)",
-        "rotation" : "Rotation"
+        "rotation" : "Rotation",
+        "arrowHead" : "Arrow",
+        "arrowHead_none" : "None",
+        "arrowHead_start" : "Start",
+        "arrowHead_end" : "End",
+        "arrowHead_both" : "Both",
+        "arrowSize" : "Arrow Size"
     },
     "setting" : {
         "title" : "Setting",
@@ -252,7 +263,7 @@
         "mergeButton" : "Merge",
         "authType" : "Authentication",
         "saveCredentials" : "Save credentials",
-        "uncommittedWarning" : "There are uncommitted changes. Please commit all changes before merging.",
+        "uncommittedWarning" : "There are unrecorded changes. Please record all changes before merging.",
         "mergeSuccess" : "Merged successfully.",
         "upToDate" : "Already up to date.",
         "reloadError" : "Failed to reload Binder after merge. Please reopen the Binder.",
@@ -287,16 +298,16 @@
         "createSuccess" : "Created branch: {{name}}",
         "renameSuccess" : "Renamed branch: {{old}} → {{new}}",
         "reloadError" : "Failed to reload after branch switch. Please reopen the Binder.",
-        "uncommittedError" : "Please commit changes before switching branches.",
+        "uncommittedError" : "Please record changes before switching branches.",
         "confirmSwitch" : "Switch to this branch? The binder will be reloaded.",
         "confirmCreate" : "Create a new branch '{{name}}' from current branch '{{from}}'?"
     },
     "commitModal" : {
-        "title" : "Commit",
+        "title" : "Record",
         "backToComment" : "Back to Comment",
-        "commitComment" : "Commit Comment",
-        "commit" : "Commit",
-        "commitSuccess" : "Committed.",
+        "commitComment" : "Record Comment",
+        "commit" : "Record",
+        "commitSuccess" : "Recorded.",
         "modifiedFiles" : "Modified Files"
     },
     "publishModal" : {
@@ -334,7 +345,14 @@
     "binderRegister" : {
         "binderDirectory" : "Binder Directory",
         "binderName" : "Binder Name",
-        "requiredDirectory" : "Please select a directory."
+        "requiredDirectory" : "Please select a directory.",
+        "templateType" : "Template",
+        "template_simple" : "Simple",
+        "template_document" : "Document",
+        "template_blog" : "Blog",
+        "templateDesc_simple" : "Minimal layout with basic notes. Good for quick projects.",
+        "templateDesc_document" : "Layout with table of contents and chapter structure.",
+        "templateDesc_blog" : "Layout with date/author display for blog posts."
     },
     "template" : {
         "editTitle" : "Edit Template",
@@ -358,15 +376,15 @@
     "history" : {
         "title" : "History",
         "restoreTitle" : "Restore file?",
-        "restoreWarning" : "The current file has uncommitted changes. Restoring will discard those changes.",
+        "restoreWarning" : "The current file has unrecorded changes. Restoring will discard those changes.",
         "restore" : "Restore",
         "loadMore" : "Load more"
     },
     "overallHistory" : {
         "title" : "Overall History",
         "files" : "Changed Files",
-        "restoreTitle" : "Restore to this commit?",
-        "restoreWarning" : "All files will be restored to the selected commit state. A new commit will be created.",
+        "restoreTitle" : "Restore to this record?",
+        "restoreWarning" : "All files will be restored to the selected record state. A new record will be created.",
         "restore" : "Restore",
         "noFiles" : "No changed files",
         "notes" : "Notes",
@@ -381,9 +399,9 @@
         "other" : "Other",
         "cleanup" : "Cleanup History",
         "cleanupTitle" : "Cleanup History",
-        "cleanupDesc" : "Squash commit history older than the specified date into a single commit. File contents will not change.",
+        "cleanupDesc" : "Squash record history older than the specified date into a single record. File contents will not change.",
         "cleanupDateLabel" : "Squash history before this date",
-        "cleanupStats" : "Out of {{total}} commits, {{squash}} will be squashed and {{keep}} will be kept.",
+        "cleanupStats" : "Out of {{total}} records, {{squash}} will be squashed and {{keep}} will be kept.",
         "cleanupCurrentSize" : "Current objects size: {{size}}",
         "cleanupWarning" : "This action cannot be undone. If a remote repository is configured, force push will be required.",
         "cleanupConfirm" : "Run Cleanup",
@@ -427,6 +445,7 @@
         "unpublish" : "Unpublish",
         "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
+        "downloadZip" : "Download as ZIP",
         "windowTitle" : "Preview",
         "parseError" : "Parse Error",
         "alwaysOnTop" : "Always on Top",

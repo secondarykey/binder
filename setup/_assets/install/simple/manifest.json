@@ -2,13 +2,12 @@
   "templates": [
     {"id": "layout",  "type": "layout",  "name": "Layout",  "file": "layout.tmpl"},
     {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"},
-    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"},
-    {"id": "diagram_style", "type": "diagram", "name": "Base Theme", "file": "diagram_style.tmpl"}
+    {"id": "diagram_style", "type": "diagram", "name": "Base Theme", "file": "shared/diagram_style.tmpl"}
   ],
   "notes": [
     {
       "id": "index", "alias": "index", "name": "Index",
-      "parentId": "", "layoutTemplate": "layout", "contentTemplate": "index",
+      "parentId": "", "layoutTemplate": "layout", "contentTemplate": "content",
       "file": "index.md"
     },
     {
@@ -17,10 +16,8 @@
       "file": "content.md"
     }
   ],
-  "diagrams": [
-    {"name": "Diagram", "parentId": "index", "styleTemplate": "diagram_style", "file": "diagram.md"}
-  ],
+  "diagrams": [],
   "assets": [
-    {"name": "Asset", "alias": "DataAsset", "parentId": "index", "file": "assets.txt"}
+    {"id": "019e3875-316c-70f4-a71d-32ea4f964ce0", "name": "StyleSheet", "alias": "DataAsset", "parentId": "index", "binary": false, "mime": "text/css", "file": "style.css"}
   ]
 }

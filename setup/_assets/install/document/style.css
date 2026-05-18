@@ -1,0 +1,33 @@
+body {
+  color: #eeeeee;
+  background-color: #333333;
+}
+
+h1 {
+  margin-bottom: 0px;
+  padding-bottom: 0px;
+  border-bottom: 2px solid #555555;
+}
+
+main > h1 {
+  border-bottom: 1px solid #444444;
+}
+
+a {
+  color: #8888ff;
+}
+
+.binderSVG {
+  border: 1px solid #404040;
+  border-radius: 5px;
+}
+
+hr {
+ height: 1px;
+ background-color: #555555;
+ border: none;
+}
+
+footer {
+  border-top: 2px solid #555555;
+}

@@ -86,6 +86,7 @@ class Event {
      * 公開一覧モーダルを開く
      */
     static OpenPublishModal = "publish.modal.open"
+    static OpenPublishSubtreeModal = "publish.modal.subtree.open"
 
     /**
      * Pushモーダルを開く
@@ -226,8 +227,8 @@ class Event {
         this.raise(Event.SelectTree, id);
     }
 
-    openCommitModal() {
-        this.raise(Event.OpenCommitModal);
+    openCommitModal(data) {
+        this.raise(Event.OpenCommitModal, data);
     }
 
     openSettingModal() {
@@ -240,6 +241,10 @@ class Event {
 
     openPublishModal(data) {
         this.raise(Event.OpenPublishModal, data);
+    }
+
+    openPublishSubtreeModal(data) {
+        this.raise(Event.OpenPublishSubtreeModal, data);
     }
 
     openPushModal() {

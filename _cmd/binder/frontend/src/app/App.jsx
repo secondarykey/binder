@@ -82,8 +82,10 @@ function App() {
   const [pin, setPin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
+  const [commitModalFilter, setCommitModalFilter] = useState(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishModalTemplate, setPublishModalTemplate] = useState(null);
+  const [publishModalSubtree, setPublishModalSubtree] = useState(null);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
@@ -194,7 +196,8 @@ function App() {
     });
 
     //コミットモーダルを開く
-    evt.register("App", Event.OpenCommitModal, function () {
+    evt.register("App", Event.OpenCommitModal, function (data) {
+      setCommitModalFilter(data ?? null);
       setCommitModalOpen(true);
     });
 
@@ -211,6 +214,12 @@ function App() {
     //公開一覧モーダルを開く
     evt.register("App", Event.OpenPublishModal, function (data) {
       setPublishModalTemplate(data ?? null);
+      setPublishModalOpen(true);
+    });
+
+    //サブツリー公開モーダルを開く
+    evt.register("App", Event.OpenPublishSubtreeModal, function (data) {
+      setPublishModalSubtree(data ?? null);
       setPublishModalOpen(true);
     });
 
@@ -429,10 +438,10 @@ function App() {
       </div>
 
       {/** コミットモーダル */}
-      <CommitModal open={commitModalOpen} onClose={() => setCommitModalOpen(false)} />
+      <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => { setCommitModalOpen(false); setCommitModalFilter(null); }} />
 
       {/** 公開一覧モーダル */}
-      <PublishModal open={publishModalOpen} template={publishModalTemplate} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); }} />
+      <PublishModal open={publishModalOpen} template={publishModalTemplate} filterIds={publishModalSubtree} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); setPublishModalSubtree(null); }} />
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />

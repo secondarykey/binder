@@ -9,11 +9,35 @@ import (
 	"binder/fs"
 )
 
+// exportDeps はエクスポート時にテンプレート実行中に参照されたリソースを収集する。
+type exportDeps struct {
+	assets   map[string]*json.Asset
+	diagrams map[string]*json.Diagram
+	layers   map[string]*json.Layer
+}
+
+func (d *exportDeps) merge(other *exportDeps) {
+	if other == nil {
+		return
+	}
+	for k, v := range other.assets {
+		d.assets[k] = v
+	}
+	for k, v := range other.diagrams {
+		d.diagrams[k] = v
+	}
+	for k, v := range other.layers {
+		d.layers[k] = v
+	}
+}
+
 type wrapper struct {
-	owner   *Binder
-	note    *json.Note
-	Local   bool
-	visited map[string]bool // embed で現在展開中のIDセット（循環参照防止）
+	owner         *Binder
+	note          *json.Note
+	Local         bool
+	visited       map[string]bool // embed で現在展開中のIDセット（循環参照防止）
+	deps          *exportDeps     // nil = 通常モード、非nil = 依存関係収集モード
+	exportAsIndex bool            // true の場合 relativePrefix() は常に "./" を返す
 }
 
 // visitedWith は現在の visited に id を加えた新しいマップを返す。
@@ -42,6 +66,9 @@ func (w *wrapper) localAddr() string {
 // relativePrefix は公開HTMLでのリソース参照用の相対パスプレフィックスを返す。
 // index.html は docs/ 直下にあるため "./"、サブページは docs/pages/ 配下にあるため "../"。
 func (w *wrapper) relativePrefix() string {
+	if w.exportAsIndex {
+		return "./"
+	}
 	if w.note != nil && w.note.Id != "index" {
 		return "../"
 	}
@@ -63,14 +90,14 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 	p := fs.HTMLFile(n)
 	t.Link = w.convertURL(p)
 
-	// メタ画像URL: ローカルプレビュー時は絶対URLでファイルサーバー経由でアクセス
-	m := fs.PublicMetaFile(n)
+	// メタ画像URL: ローカルプレビュー時はプライベートメタ画像エンドポイント（noteId指定）を使用
 	if w.Local {
 		addr := w.owner.ServerAddress()
 		if addr != "" {
-			t.Image = fmt.Sprintf("http://%s/%s", addr, w.publishRelPath(m))
+			t.Image = fmt.Sprintf("http://%s/binder-meta/%s", addr, n.Id)
 		}
 	} else {
+		m := fs.PublicMetaFile(n)
 		t.Image = w.convertURL(m)
 	}
 

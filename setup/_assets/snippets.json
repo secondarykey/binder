@@ -22,7 +22,7 @@
     },
     {
       "id": "019ccb65-1067-7b40-8768-ad2034c9b20a",
-      "name": "Details",
+      "name": "Summary",
       "body": "\u003cdetails open\u003e\n\u003csummary\u003eSample\u003c/summary\u003e\nIf you want to close the default, remove \"open\"\n\u003c/details\u003e"
     }
   ],
@@ -93,6 +93,26 @@
       "id": "019ccb69-1f9e-7df6-bdc7-c509f47be6fd",
       "name": "Latest Notes",
       "body": "{{latestNotes \"\" 10}}"
+    },
+    {
+      "id": "cacbc7fc-c51a-4f6d-8284-84996422fb98",
+      "name": "Layer",
+      "body": "{{ drawLayer \"\" }}"
+    },
+    {
+      "id": "9fc7435b-615c-4622-9b69-3ed80a1e1404",
+      "name": "Embed Note \u0026 Assets",
+      "body": "{{ embed \"\" }}"
+    },
+    {
+      "id": "c4d98799-cb5f-411a-9d96-94ab519c6236",
+      "name": "Breadcrumb",
+      "body": "{{ breadcrumb }}"
+    },
+    {
+      "id": "b4ab5f63-6a00-4b72-ac6a-d16cdfa9d512",
+      "name": "Child Notes",
+      "body": "{{ childNotes 10 }}"
     }
   ]
 }

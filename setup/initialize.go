@@ -13,9 +13,9 @@ import (
 
 // initialize はマニフェストからサンプルデータ（テンプレート・ノート・ダイアグラム・アセット）を作成する。
 // db.Instance と fs.FileSystem を直接操作するため、Binder に依存しない。
-func initialize(f *fs.FileSystem, inst *db.Instance, name string) error {
+func initialize(f *fs.FileSystem, inst *db.Instance, name string, installType string) error {
 
-	m, err := loadInstallManifest()
+	m, err := loadInstallManifest(installType)
 	if err != nil {
 		return xerrors.Errorf("loadInstallManifest() error: %w", err)
 	}
@@ -76,7 +76,7 @@ func generateId() string {
 }
 
 // createStructure はStructureレコードを作成する。
-func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detail, alias string) error {
+func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detail, alias string, private bool) error {
 	maxSeq, err := inst.GetMaxSeq(parentId)
 	if err != nil {
 		return xerrors.Errorf("db.GetMaxSeq() error: %w", err)
@@ -90,6 +90,7 @@ func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detai
 	s.Name = name
 	s.Detail = detail
 	s.Alias = alias
+	s.Private = private
 
 	err = inst.InsertStructure(&s, op)
 	if err != nil {
@@ -145,71 +146,50 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 			ContentTemplate: n.ContentTemplate,
 		}
 
-		if n.Id != "" {
-			// 固定IDのノート（ルートノートなど）
-			_, err := f.CreateNoteFile(jn)
-			if err != nil {
-				return xerrors.Errorf("fs.CreateNoteFile(%s) error: %w", n.Id, err)
-			}
-
-			mn := model.ConvertNote(jn)
-			err = inst.InsertNote(mn, op)
-			if err != nil {
-				return xerrors.Errorf("db.InsertNote(%s) error: %w", n.Id, err)
-			}
-
-			// 固定IDなのでStructureも直接作成
-			var rootStruct model.Structure
-			rootStruct.Id = n.Id
-			rootStruct.ParentId = n.ParentId
-			rootStruct.Seq = 1
-			rootStruct.Typ = "note"
-			rootStruct.Name = n.Name
-			rootStruct.Alias = n.Alias
-			err = inst.InsertStructure(&rootStruct, op)
-			if err != nil {
-				return xerrors.Errorf("db.InsertStructure(%s) error: %w", n.Id, err)
-			}
-
-			data, err := m.readFile(n.File)
-			if err != nil {
-				return xerrors.Errorf("ReadFile(%s) error: %w", n.File, err)
-			}
-			if len(data) > 0 {
-				err = f.WriteNoteText(n.Id, data)
-				if err != nil {
-					return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", n.Id, err)
-				}
-			}
-		} else {
-			// 通常ノート — IDを生成して作成
+		if jn.Id == "" {
 			jn.Id = generateId()
+		}
+		if jn.Alias == "" {
 			jn.Alias = jn.Id
+		}
 
-			_, err := f.CreateNoteFile(jn)
-			if err != nil {
-				return xerrors.Errorf("fs.CreateNoteFile(%s) error: %w", jn.Id, err)
-			}
+		_, err := f.CreateNoteFile(jn)
+		if err != nil {
+			return xerrors.Errorf("fs.CreateNoteFile(%s) error: %w", jn.Id, err)
+		}
 
-			mn := model.ConvertNote(jn)
-			err = inst.InsertNote(mn, op)
-			if err != nil {
-				return xerrors.Errorf("db.InsertNote(%s) error: %w", jn.Id, err)
-			}
+		mn := model.ConvertNote(jn)
+		err = inst.InsertNote(mn, op)
+		if err != nil {
+			return xerrors.Errorf("db.InsertNote(%s) error: %w", jn.Id, err)
+		}
 
-			err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, "", jn.Alias)
-			if err != nil {
-				return xerrors.Errorf("createStructure(%s) error: %w", jn.Id, err)
-			}
+		err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, n.Detail, jn.Alias, n.Private)
+		if err != nil {
+			return xerrors.Errorf("createStructure(%s) error: %w", jn.Id, err)
+		}
 
-			data, err := m.readFile(n.File)
+		data, err := m.readFile(n.File)
+		if err != nil {
+			return xerrors.Errorf("ReadFile(%s) error: %w", n.File, err)
+		}
+		if len(data) > 0 {
+			err = f.WriteNoteText(jn.Id, data)
 			if err != nil {
-				return xerrors.Errorf("ReadFile(%s) error: %w", n.File, err)
+				return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", jn.Id, err)
 			}
-			if len(data) > 0 {
-				err = f.WriteNoteText(jn.Id, data)
+		}
+
+		// メタ画像
+		if n.MetaFile != "" {
+			metaData, err := m.readFile(n.MetaFile)
+			if err != nil {
+				return xerrors.Errorf("ReadFile(meta %s) error: %w", n.MetaFile, err)
+			}
+			if len(metaData) > 0 {
+				_, err = f.WriteMetaData(jn, metaData)
 				if err != nil {
-					return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", jn.Id, err)
+					return xerrors.Errorf("fs.WriteMetaData(%s) error: %w", jn.Id, err)
 				}
 			}
 		}
@@ -225,8 +205,11 @@ func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *install
 			StyleTemplate: d.StyleTemplate,
 		}
 
-		// IDを生成
-		jd.Id = generateId()
+		if d.Id != "" {
+			jd.Id = d.Id
+		} else {
+			jd.Id = generateId()
+		}
 		jd.Alias = jd.Id
 
 		fn, err := f.CreateDiagramFile(jd)
@@ -240,7 +223,7 @@ func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *install
 			return xerrors.Errorf("db.InsertDiagram(%s) error: %w", d.Name, err)
 		}
 
-		err = createStructure(inst, op, jd.Id, jd.ParentId, "diagram", jd.Name, "", jd.Alias)
+		err = createStructure(inst, op, jd.Id, jd.ParentId, "diagram", jd.Name, "", jd.Alias, d.Private)
 		if err != nil {
 			return xerrors.Errorf("createStructure(%s) error: %w", d.Name, err)
 		}
@@ -273,10 +256,15 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 			ParentId: a.ParentId,
 			Name:     a.Name,
 			Alias:    a.Alias,
+			Binary:   a.Binary,
+			Mime:     a.Mime,
 		}
 
-		// IDを生成
-		ja.Id = generateId()
+		if a.Id != "" {
+			ja.Id = a.Id
+		} else {
+			ja.Id = generateId()
+		}
 
 		ma := model.ConvertAsset(ja)
 		err := inst.InsertAsset(ma, op)
@@ -284,7 +272,7 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 			return xerrors.Errorf("db.InsertAsset(%s) error: %w", a.Name, err)
 		}
 
-		err = createStructure(inst, op, ja.Id, ja.ParentId, "asset", ja.Name, "", ja.Alias)
+		err = createStructure(inst, op, ja.Id, ja.ParentId, "asset", ja.Name, "", ja.Alias, a.Private)
 		if err != nil {
 			return xerrors.Errorf("createStructure(%s) error: %w", a.Name, err)
 		}

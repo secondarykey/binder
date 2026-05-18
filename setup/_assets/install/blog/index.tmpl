@@ -1,0 +1,17 @@
+{{ range childrenNotes 4 }}
+
+<a class="card-link" href="{{.Link}}">  
+
+<article class="card">
+
+    <img src="{{ .Image }}">
+    <span>
+        <p class="date">{{ formatDate .Publish  "2006-01-02 15:04" }}</p>
+        <p class="title">{{ .Name }}</p>
+        <p class="body">{{.Detail}}</p>
+   </span>
+</article>
+
+</a>
+
+{{ end }}

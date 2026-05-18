@@ -78,11 +78,11 @@ func (a *App) CloseBinder() error {
 	return nil
 }
 
-func (a *App) CreateBinder(dir string, name string) (string, error) {
+func (a *App) CreateBinder(dir string, name string, installType string) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateBinder()"))
 
-	err := setup.Install(dir, a.version, name)
+	err := setup.Install(dir, a.version, name, installType)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("setup.Install error\n%+v", err)
@@ -95,6 +95,10 @@ func (a *App) CreateBinder(dir string, name string) (string, error) {
 	}
 
 	return address, nil
+}
+
+func (a *App) GetInstallPresets() []setup.InstallPreset {
+	return setup.GetInstallPresets()
 }
 
 func (a *App) CreateRemoteBinder(url, dir, branch, workBranch string, info *json.UserInfo, save bool) (string, error) {

@@ -5,7 +5,7 @@
     },
     "menu" : {
         "binder" : "Binder表示",
-        "commit" : "未コミット一覧",
+        "commit" : "未記録一覧",
         "publish" : "未公開一覧",
         "template" : "テンプレート設定",
         "config" : "バインダー設定",
@@ -52,7 +52,7 @@
         "pushRemote" : "リモートにPush",
         "mergeRemote" : "マージ",
         "none" : "表示なし",
-        "commit" : "未コミット",
+        "commit" : "未記録",
         "publish" : "未公開",
         "note" : "ノート",
         "diagram" : "ダイアグラム",
@@ -80,7 +80,10 @@
         "regenerateAll" : "すべてを最新のデータに更新する",
         "regenerateAllConfirmTitle" : "すべてのデータを更新しますか？",
         "regenerateAllConfirmMessage" : "すべてのデータを最新に更新します。コメントはそのまま利用しますので再確認して実行してください。",
-        "regenerateAllEmpty" : "現在公開中のデータがありません。"
+        "regenerateAllEmpty" : "現在公開中のデータがありません。",
+        "dirOps" : "ディレクトリ操作",
+        "commitSubtree" : "下層を含め記録",
+        "publishSubtree" : "下層を含め公開"
     },
     "note" : {
         "editTitle" : "ノート編集",
@@ -139,6 +142,8 @@
         "publishSuccess" : "レイヤーを公開しました",
         "toolSelect" : "選択",
         "toolLine" : "線",
+        "toolPolyline" : "折れ線",
+        "toolCurve" : "曲線",
         "toolRect" : "矩形",
         "toolEllipse" : "楕円",
         "toolText" : "テキスト",
@@ -148,7 +153,13 @@
         "lineSpacing" : "行間(px)",
         "fontFamily" : "フォント",
         "fontFamilyDefault" : "(デフォルト)",
-        "rotation" : "回転"
+        "rotation" : "回転",
+        "arrowHead" : "矢印",
+        "arrowHead_none" : "なし",
+        "arrowHead_start" : "始点",
+        "arrowHead_end" : "終点",
+        "arrowHead_both" : "両端",
+        "arrowSize" : "矢印の大きさ"
     },
     "setting" : {
         "title" : "設定",
@@ -252,7 +263,7 @@
         "mergeButton" : "マージ実行",
         "authType" : "認証方式",
         "saveCredentials" : "認証情報を保存する",
-        "uncommittedWarning" : "未コミットの変更があります。全体のコミットを行ってから実行してください。",
+        "uncommittedWarning" : "未記録の変更があります。全体の記録を行ってから実行してください。",
         "mergeSuccess" : "マージしました",
         "upToDate" : "既に最新です",
         "reloadError" : "マージ後のBinder再読み込みに失敗しました。Binderを開き直してください。",
@@ -287,16 +298,16 @@
         "createSuccess" : "ブランチを作成しました: {{name}}",
         "renameSuccess" : "ブランチ名を変更しました: {{old}} → {{new}}",
         "reloadError" : "ブランチ切替後の再読み込みに失敗しました。Binderを開き直してください。",
-        "uncommittedError" : "ブランチを切り替える前に変更をコミットしてください。",
+        "uncommittedError" : "ブランチを切り替える前に変更を記録してください。",
         "confirmSwitch" : "このブランチに切り替えますか？バインダーが再読み込みされます。",
         "confirmCreate" : "現在のブランチ '{{from}}' から新規ブランチ '{{name}}' を作成しますか？"
     },
     "commitModal" : {
-        "title" : "コミット",
+        "title" : "記録",
         "backToComment" : "コメントに戻る",
-        "commitComment" : "コミットコメント",
-        "commit" : "コミット",
-        "commitSuccess" : "コミットしました",
+        "commitComment" : "記録コメント",
+        "commit" : "記録",
+        "commitSuccess" : "記録しました",
         "modifiedFiles" : "変更ファイル"
     },
     "publishModal" : {
@@ -334,7 +345,14 @@
     "binderRegister" : {
         "binderDirectory" : "Binderディレクトリ",
         "binderName" : "バインダー名",
-        "requiredDirectory" : "ディレクトリを選択してください"
+        "requiredDirectory" : "ディレクトリを選択してください",
+        "templateType" : "テンプレート",
+        "template_simple" : "シンプル",
+        "template_document" : "ドキュメント",
+        "template_blog" : "ブログ",
+        "templateDesc_simple" : "最小構成のレイアウト。メモや軽量プロジェクト向け。",
+        "templateDesc_document" : "目次付きレイアウトと章構成。技術文書やマニュアル向け。",
+        "templateDesc_blog" : "日付・著者表示付きレイアウト。ブログや記事投稿向け。"
     },
     "template" : {
         "editTitle" : "テンプレート編集",
@@ -358,7 +376,7 @@
     "history" : {
         "title" : "更新履歴",
         "restoreTitle" : "ファイルを復元しますか？",
-        "restoreWarning" : "現在のファイルにコミットされていない変更があります。復元すると、その変更は失われます。",
+        "restoreWarning" : "現在のファイルに記録されていない変更があります。復元すると、その変更は失われます。",
         "restore" : "復元する",
         "loadMore" : "さらに読み込む"
     },
@@ -366,7 +384,7 @@
         "title" : "全体履歴",
         "files" : "変更ファイル",
         "restoreTitle" : "この時点に復元しますか？",
-        "restoreWarning" : "全ファイルが選択したコミットの状態に復元されます。新しいコミットが作成されます。",
+        "restoreWarning" : "全ファイルが選択した記録の状態に復元されます。新しい記録が作成されます。",
         "restore" : "復元する",
         "noFiles" : "変更ファイルなし",
         "notes" : "ノート",
@@ -381,9 +399,9 @@
         "other" : "その他",
         "cleanup" : "履歴のクリーンアップ",
         "cleanupTitle" : "履歴のクリーンアップ",
-        "cleanupDesc" : "指定日より古いコミット履歴を1つのコミットに圧縮します。ファイルの内容は変更されません。",
+        "cleanupDesc" : "指定日より古い記録履歴を1つの記録に圧縮します。ファイルの内容は変更されません。",
         "cleanupDateLabel" : "この日付より前の履歴を圧縮",
-        "cleanupStats" : "全{{total}}件のコミットのうち、{{squash}}件を圧縮し、{{keep}}件を保持します。",
+        "cleanupStats" : "全{{total}}件の記録のうち、{{squash}}件を圧縮し、{{keep}}件を保持します。",
         "cleanupCurrentSize" : "現在のオブジェクトサイズ: {{size}}",
         "cleanupWarning" : "この操作は元に戻せません。リモートリポジトリがある場合、force pushが必要になります。",
         "cleanupConfirm" : "クリーンアップ実行",
@@ -427,6 +445,7 @@
         "unpublish" : "未公開状態にする",
         "unpublishConfirm" : "未公開状態にしますか？",
         "download" : "ダウンロード",
+        "downloadZip" : "ZIPでダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー",
         "alwaysOnTop" : "最前面に固定",

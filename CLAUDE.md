@@ -269,6 +269,12 @@ t("menu.setting")
 
 **配置の仕組みはテーマと同じ**: `setup/externals.go` の `installLanguages()` が管理。優先順位もテーマと同様（ユーザーディレクトリ > `_default/`）。
 
+## UI用語
+
+UIではGit用語を隠蔽し、ユーザーフレンドリーな表現を使用する:
+- **コミット → 記録**（英語: Record）。コード内部の変数名・イベント名・ファイル名は `commit` のまま維持し、言語ファイル（`setup/_assets/languages/`）の表示ラベルのみ「記録」を使用する
+- **未コミット → 未記録**（英語: Unrecorded）
+
 ## コーディング規約
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）

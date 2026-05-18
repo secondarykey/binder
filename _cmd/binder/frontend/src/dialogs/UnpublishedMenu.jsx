@@ -30,7 +30,7 @@ import { useTranslation } from 'react-i18next';
  * ModifiedMenu と同じ構造で Note/Diagram/Asset を表示し、
  * PublishGenerate イベントを受け取ったら選択済みファイルを順次 Generate する。
  */
-function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...props }) {
+function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext);
   const { showError, showWarning } = useDialogMessage();
@@ -176,6 +176,8 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       const data = tree.data ?? [];
       var comment = "Generate:";
 
+      const filterLeafs = (leafs) => filterIds ? leafs.filter((l) => filterIds.has(l.id)) : leafs;
+
       const writeComment = (prefix, children) => {
         if (children.length === 0) return;
         comment += "\n  " + prefix + ":";
@@ -183,7 +185,7 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
       };
 
       data.forEach((leaf) => {
-        const leafs = leaf.children ?? [];
+        const leafs = filterLeafs(leaf.children ?? []);
         if (leaf.id === "DIR_Note") {
           setNotes(leafs);
           writeComment("Note", leafs);
