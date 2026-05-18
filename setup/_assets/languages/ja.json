@@ -81,7 +81,8 @@
         "regenerateAllConfirmTitle" : "すべてのデータを更新しますか？",
         "regenerateAllConfirmMessage" : "すべてのデータを最新に更新します。コメントはそのまま利用しますので再確認して実行してください。",
         "regenerateAllEmpty" : "現在公開中のデータがありません。",
-        "commitSubtree" : "配下を記録"
+        "commitSubtree" : "配下を記録",
+        "publishSubtree" : "配下を公開"
     },
     "note" : {
         "editTitle" : "ノート編集",

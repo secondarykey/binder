@@ -30,7 +30,7 @@ import { useTranslation } from 'react-i18next';
  * ModifiedMenu と同じ構造で Note/Diagram/Asset を表示し、
  * PublishGenerate イベントを受け取ったら選択済みファイルを順次 Generate する。
  */
-function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...props }) {
+function UnpublishedMenu({ date: dateProp, template, subtreeData, onNavigate, onClose, ...props }) {
 
   const evt = useContext(EventContext);
   const { showError, showWarning } = useDialogMessage();
@@ -156,6 +156,25 @@ function UnpublishedMenu({ date: dateProp, template, onNavigate, onClose, ...pro
   const layerRef = useRef(null);
 
   const loadTree = () => {
+    if (subtreeData) {
+      setNotes(subtreeData.notes ?? []);
+      setDiagrams(subtreeData.diagrams ?? []);
+      setAssets(subtreeData.assets ?? []);
+      setLayers(subtreeData.layers ?? []);
+      var comment = "Generate:";
+      const writeComment = (prefix, children) => {
+        if (children.length === 0) return;
+        comment += "\n  " + prefix + ":";
+        children.forEach((l) => { comment += "\n    " + l.name; });
+      };
+      writeComment("Note", subtreeData.notes ?? []);
+      writeComment("Diagram", subtreeData.diagrams ?? []);
+      writeComment("Asset", subtreeData.assets ?? []);
+      writeComment("Layer", subtreeData.layers ?? []);
+      evt.raise(Event.PublishComment, comment);
+      return;
+    }
+
     if (template) {
       // テンプレート一括公開モード: 公開済みノートのみ取得
       GetPublishedNotesByTemplate(template.id).then((leaves) => {
