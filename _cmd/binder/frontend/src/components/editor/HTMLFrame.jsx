@@ -135,7 +135,11 @@ class HTMLFrame extends React.Component {
     if (!doc?.documentElement) return;
     const { colorSchemeAttr, colorSchemeValue } = this.props;
     if (colorSchemeAttr && colorSchemeValue) {
-      doc.documentElement.setAttribute(colorSchemeAttr, colorSchemeValue);
+      let value = colorSchemeValue;
+      if (value === 'default') {
+        value = window.document.documentElement.dataset.theme || 'dark';
+      }
+      doc.documentElement.setAttribute(colorSchemeAttr, value);
     }
   }
 
