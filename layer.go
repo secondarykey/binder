@@ -631,7 +631,7 @@ func normalizeStrokeWidth(sw float64) float64 {
 }
 
 // defaultArrowWingFactor は矢印ヘッドの翼のデフォルト大きさ係数。
-const defaultArrowWingFactor = 3.5
+const defaultArrowWingFactor = 5
 
 // arrowWingAngle は矢印ヘッドの翼の開き角 (radian)。±30度。
 const arrowWingAngle = 0.5236 // math.Pi / 6
