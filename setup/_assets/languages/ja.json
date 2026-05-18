@@ -226,7 +226,7 @@
         "gcComplete" : "GC完了: {{before}} → {{after}}",
         "optimizeImage" : "画像を軽量化する（WebPに変換）",
         "previewColorScheme" : "プレビュー カラースキーム",
-        "previewColorSchemeHint" : "プレビューiframeの<html>タグに指定した属性を設定します。テンプレートのダーク/ライトモードのテストに使用します。",
+        "previewColorSchemeHint" : "プレビューiframeの<html>タグに指定した属性を設定します。テンプレートのダーク/ライトモードのテストに使用します。値に「default」を含めると、Binderの表示テーマ設定（dark/light）が反映されます。",
         "previewColorSchemeAttr" : "属性名",
         "previewColorSchemeValues" : "値（カンマ区切り）"
     },
