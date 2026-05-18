@@ -82,8 +82,8 @@
         "regenerateAllConfirmMessage" : "すべてのデータを最新に更新します。コメントはそのまま利用しますので再確認して実行してください。",
         "regenerateAllEmpty" : "現在公開中のデータがありません。",
         "dirOps" : "ディレクトリ操作",
-        "commitSubtree" : "配下を記録",
-        "publishSubtree" : "配下を公開"
+        "commitSubtree" : "下層を含め記録",
+        "publishSubtree" : "下層を含め公開"
     },
     "note" : {
         "editTitle" : "ノート編集",
