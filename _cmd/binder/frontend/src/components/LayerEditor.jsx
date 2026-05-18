@@ -969,10 +969,6 @@ function LayerEditor() {
   };
 
   const renderShape = (s, isPreview = false) => {
-    // 後方互換: type "arrow" → "line" + arrowHead "end"
-    if (s.type === 'arrow') {
-      s = { ...s, type: 'line', arrowHead: s.arrowHead || 'end' };
-    }
     const stroke = s.color || '#ff0000';
     const sw = normalizeStrokeWidth(s.strokeWidth);
     const fill = s.fill || 'none';

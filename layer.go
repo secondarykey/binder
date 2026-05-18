@@ -448,13 +448,6 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 			cx, cy := shapeCenterViewBox(s, aspect, imgHeightPx)
 			fmt.Fprintf(&b, `<g transform="rotate(%g %g %g)">`, s.Rotation, cx, cy)
 		}
-		// 後方互換: type "arrow" は type "line" + arrowHead "end" として扱う
-		if s.Type == "arrow" {
-			s.Type = "line"
-			if s.ArrowHead == "" {
-				s.ArrowHead = "end"
-			}
-		}
 		switch s.Type {
 		case "line":
 			fmt.Fprintf(&b,
