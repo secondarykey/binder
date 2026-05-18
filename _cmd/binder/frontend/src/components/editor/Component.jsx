@@ -1401,6 +1401,8 @@ function Editor(props) {
       if (composingRef.current) return;
       const textarea = document.querySelector('#editor');
       if (!textarea || !hiddenFocusRef.current) return;
+      const active = document.activeElement;
+      if (active && active !== textarea && active !== document.body && active !== hiddenFocusRef.current) return;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       hiddenFocusRef.current.focus();
