@@ -37,11 +37,13 @@ type installNote struct {
 	Id              string `json:"id"`
 	Alias           string `json:"alias"`
 	Name            string `json:"name"`
+	Detail          string `json:"detail"`
 	ParentId        string `json:"parentId"`
 	Private         bool   `json:"private"`
 	LayoutTemplate  string `json:"layoutTemplate"`
 	ContentTemplate string `json:"contentTemplate"`
 	File            string `json:"file"`
+	MetaFile        string `json:"metaFile"`
 }
 
 type installDiagram struct {

@@ -164,7 +164,7 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 			return xerrors.Errorf("db.InsertNote(%s) error: %w", jn.Id, err)
 		}
 
-		err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, "", jn.Alias, n.Private)
+		err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, n.Detail, jn.Alias, n.Private)
 		if err != nil {
 			return xerrors.Errorf("createStructure(%s) error: %w", jn.Id, err)
 		}
@@ -177,6 +177,20 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 			err = f.WriteNoteText(jn.Id, data)
 			if err != nil {
 				return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", jn.Id, err)
+			}
+		}
+
+		// メタ画像
+		if n.MetaFile != "" {
+			metaData, err := m.readFile(n.MetaFile)
+			if err != nil {
+				return xerrors.Errorf("ReadFile(meta %s) error: %w", n.MetaFile, err)
+			}
+			if len(metaData) > 0 {
+				_, err = f.WriteMetaData(jn, metaData)
+				if err != nil {
+					return xerrors.Errorf("fs.WriteMetaData(%s) error: %w", jn.Id, err)
+				}
 			}
 		}
 	}

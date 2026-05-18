@@ -12,11 +12,21 @@
       "file": "index.md"
     },
     {
-      "name": "First Post", "parentId": "index",
+      "id": "019e397e-6b35-7060-9e7d-9944bce01534", "name": "First Post",
+      "detail": "詳細に短文を設定して公開することも可能です。",
+      "parentId": "index",
       "layoutTemplate": "layout", "contentTemplate": "content",
-      "file": "post1.md"
+      "file": "first_post.md",
+      "metaFile": "first_post_meta.webp"
+    },
+    {
+      "name": "作業用", "parentId": "index", "private": true,
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "workspace.md"
     }
   ],
   "diagrams": [],
-  "assets": []
+  "assets": [
+    {"id": "019e3aa3-252b-7288-830a-6df9d858513d", "name": "StyleSheet", "alias": "styles.css", "parentId": "index", "binary": false, "mime": "text/css", "file": "style.css"}
+  ]
 }
