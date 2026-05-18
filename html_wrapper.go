@@ -16,6 +16,21 @@ type exportDeps struct {
 	layers   map[string]*json.Layer
 }
 
+func (d *exportDeps) merge(other *exportDeps) {
+	if other == nil {
+		return
+	}
+	for k, v := range other.assets {
+		d.assets[k] = v
+	}
+	for k, v := range other.diagrams {
+		d.diagrams[k] = v
+	}
+	for k, v := range other.layers {
+		d.layers[k] = v
+	}
+}
+
 type wrapper struct {
 	owner         *Binder
 	note          *json.Note

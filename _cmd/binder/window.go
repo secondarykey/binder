@@ -377,7 +377,7 @@ func (win *Window) DownloadDocs() error {
 
 // DownloadNote はノートを自己完結したZIPとしてダウンロードする。
 // 保存先ダイアログを表示し、選択されたパスにZIPを書き出す。
-func (win *Window) DownloadNote(noteId string, text string, diagramSVGs map[string]string) error {
+func (win *Window) DownloadNote(noteId string, text string, markedHTML string, diagramSVGs map[string]string) error {
 	defer log.PrintTrace(log.Func("DownloadNote()"))
 
 	savePath, err := win.downloadSaveDialog("_note")
@@ -388,7 +388,7 @@ func (win *Window) DownloadNote(noteId string, text string, diagramSVGs map[stri
 		return nil
 	}
 
-	err = win.app.DownloadNote(noteId, text, diagramSVGs, savePath)
+	err = win.app.DownloadNote(noteId, text, markedHTML, diagramSVGs, savePath)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("DownloadNote() error\n%+v", err)

@@ -1075,7 +1075,7 @@ function Editor(props) {
       }
 
       const html = await Marked.parse(deps.expandedMarkdown);
-      await DownloadNote(id, html, diagramSVGs);
+      await DownloadNote(id, text, html, diagramSVGs);
     } catch (err) {
       evt.showErrorMessage(err);
     }

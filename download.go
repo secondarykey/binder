@@ -146,9 +146,10 @@ func (b *Binder) CollectExportDeps(noteId string, text string) (*json.ExportDeps
 }
 
 // DownloadNote はノートを自己完結したZIPとしてエクスポートする。
+// text はエディタ上の生Markdown（テンプレート関数展開前）。コンテンツ側の依存関係収集に使用する。
 // markedHTML はフロントエンドで Markdown→HTML 変換済み（テンプレート関数展開済み）のコンテンツ。
 // diagramSVGs はフロントエンドでMermaid.jsにより生成されたSVGデータ（key=diagramId）。
-func (b *Binder) DownloadNote(noteId string, markedHTML string, diagramSVGs map[string]string, savePath string) error {
+func (b *Binder) DownloadNote(noteId string, text string, markedHTML string, diagramSVGs map[string]string, savePath string) error {
 
 	if b == nil {
 		return EmptyError
@@ -159,12 +160,22 @@ func (b *Binder) DownloadNote(noteId string, markedHTML string, diagramSVGs map[
 		return xerrors.Errorf("GetNote() error: %w", err)
 	}
 
-	htmlStr, deps, err := b.CreateNoteHTMLForExport(note, markedHTML)
+	// コンテンツ側の依存関係を収集（assets, diagrams, layers）
+	_, contentDeps, err := b.ParseNoteForExport(note, text)
+	if err != nil {
+		return xerrors.Errorf("ParseNoteForExport() error: %w", err)
+	}
+
+	// レイアウトテンプレート側の依存関係を収集しつつ完成HTMLを生成
+	htmlStr, layoutDeps, err := b.CreateNoteHTMLForExport(note, markedHTML)
 	if err != nil {
 		return xerrors.Errorf("CreateNoteHTMLForExport() error: %w", err)
 	}
 
-	return b.writeExportZip(savePath, []byte(htmlStr), note, deps, diagramSVGs)
+	// 両方の依存関係をマージ
+	layoutDeps.merge(contentDeps)
+
+	return b.writeExportZip(savePath, []byte(htmlStr), note, layoutDeps, diagramSVGs)
 }
 
 func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d *exportDeps, diagramSVGs map[string]string) error {
