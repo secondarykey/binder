@@ -994,6 +994,9 @@ function LayerEditor() {
       };
       el = (
         <g {...gProps}>
+          <line stroke="transparent" strokeWidth={Math.max(sw, 8)} fill="none"
+            vectorEffect="non-scaling-stroke" pointerEvents="stroke"
+            x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} />
           <line stroke={stroke} strokeWidth={sw} fill="none" vectorEffect="non-scaling-stroke"
             x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />
           {renderShapeArrowheads(s,
