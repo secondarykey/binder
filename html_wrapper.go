@@ -75,14 +75,14 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 	p := fs.HTMLFile(n)
 	t.Link = w.convertURL(p)
 
-	// メタ画像URL: ローカルプレビュー時は絶対URLでファイルサーバー経由でアクセス
-	m := fs.PublicMetaFile(n)
+	// メタ画像URL: ローカルプレビュー時はプライベートメタ画像エンドポイント（noteId指定）を使用
 	if w.Local {
 		addr := w.owner.ServerAddress()
 		if addr != "" {
-			t.Image = fmt.Sprintf("http://%s/%s", addr, w.publishRelPath(m))
+			t.Image = fmt.Sprintf("http://%s/binder-meta/%s", addr, n.Id)
 		}
 	} else {
+		m := fs.PublicMetaFile(n)
 		t.Image = w.convertURL(m)
 	}
 
