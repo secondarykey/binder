@@ -13,7 +13,6 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import GestureIcon from '@mui/icons-material/Gesture';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -107,7 +106,7 @@ const textTotalHeight = (s, svgHeightPx = 0) => {
 // viewBox 上の実幅も 1/aspect 倍となる。
 const getBBox = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return null;
-  if (s.type === 'line' || s.type === 'arrow') {
+  if (s.type === 'line') {
     return {
       x: Math.min(s.x1, s.x2),
       y: Math.min(s.y1, s.y2),
@@ -156,7 +155,7 @@ const getBBox = (s, imgAspect = 1, svgHeightPx = 0) => {
 // 選択中 shape に表示するリサイズハンドル位置を計算
 const getHandles = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return [];
-  if (s.type === 'line' || s.type === 'arrow') {
+  if (s.type === 'line') {
     return [
       { id: 'start', x: s.x1, y: s.y1, cursor: 'move' },
       { id: 'end', x: s.x2, y: s.y2, cursor: 'move' },
@@ -204,7 +203,7 @@ const getHandles = (s, imgAspect = 1, svgHeightPx = 0) => {
 
 // ハンドル操作時の固定点（ドラッグする点と対になる位置）を返す
 const getFixedPoint = (s, handle) => {
-  if (s.type === 'line' || s.type === 'arrow') {
+  if (s.type === 'line') {
     if (handle === 'start') return { x: s.x2, y: s.y2 };
     if (handle === 'end') return { x: s.x1, y: s.y1 };
   } else if (s.type === 'polyline') {
@@ -237,7 +236,7 @@ const getFixedPoint = (s, handle) => {
 // アンカー + fs/(2*aspect) となる。
 const getShapeCenter = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return { x: 0.5, y: 0.5 };
-  if (s.type === 'line' || s.type === 'arrow') return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
+  if (s.type === 'line') return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
   if (s.type === 'polyline') {
     const pts = s.points || [];
     if (pts.length === 0) return { x: 0.5, y: 0.5 };
@@ -290,12 +289,13 @@ const snapAngle = (pivotX, pivotY, x, y, aspect) => {
 const ARROW_WING_FACTOR = 3.5;
 const ARROW_WING_ANGLE = Math.PI / 6; // 30 degrees
 
-const LINE_TOOL_TYPES = ['line', 'arrow', 'polyline', 'curve'];
+const LINE_TOOL_TYPES = ['line', 'polyline', 'curve'];
+const ARROW_HEAD_OPTIONS = ['none', 'end', 'start', 'both'];
+const DEFAULT_ARROW_SIZE = 3.5;
 
 const lineToolIcon = (type) => {
   const sx = { fontSize: '16px' };
   switch (type) {
-    case 'arrow': return <TrendingFlatIcon sx={sx} />;
     case 'polyline': return <TimelineIcon sx={sx} />;
     case 'curve': return <GestureIcon sx={sx} />;
     default: return <RemoveIcon sx={sx} />;
@@ -425,6 +425,7 @@ function LayerEditor() {
     const el = canvasRef.current;
     if (!el) return;
     const onWheel = (e) => {
+      if (e.target.closest && e.target.closest('.layerFloatingPanel')) return;
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       const next = Math.max(0.1, Math.round((tfRef.current.scale + delta) * 10) / 10);
@@ -521,8 +522,6 @@ function LayerEditor() {
     let shape;
     if (tool === 'line') {
       shape = { ...base, type: 'line', x1: x, y1: y, x2: x, y2: y };
-    } else if (tool === 'arrow') {
-      shape = { ...base, type: 'arrow', x1: x, y1: y, x2: x, y2: y };
     } else if (tool === 'polyline') {
       if (polylinePoints.length === 0) {
         setPolylinePoints([{ x, y }]);
@@ -938,24 +937,36 @@ function LayerEditor() {
     Browser.OpenURL(`${serverAddress}/layers/${a}.svg`);
   };
 
-  const renderArrowhead = (tipX, tipY, fromX, fromY, stroke, sw) => {
+  const renderArrowhead = (tipX, tipY, fromX, fromY, stroke, sw, arrowSize, keyPrefix = '') => {
     const dx = tipX - fromX, dy = tipY - fromY;
     const dist = Math.hypot(dx, dy);
     if (dist < 1e-9) return null;
     const h = naturalH > 0 ? naturalH : 1;
-    const wingLen = (sw * ARROW_WING_FACTOR) / h;
+    const factor = arrowSize > 0 ? arrowSize : DEFAULT_ARROW_SIZE;
+    const wingLen = (sw * factor) / h;
     const angle = Math.atan2(dy, dx);
     const wings = [1, -1].map((sign, i) => {
       const a = angle + Math.PI + sign * ARROW_WING_ANGLE;
       const wx = tipX + wingLen * Math.cos(a);
       const wy = tipY + wingLen * Math.sin(a);
       return (
-        <line key={`ah${i}`} x1={tipX} y1={tipY} x2={wx} y2={wy}
+        <line key={`${keyPrefix}ah${i}`} x1={tipX} y1={tipY} x2={wx} y2={wy}
           stroke={stroke} strokeWidth={sw} strokeLinecap="round"
           vectorEffect="non-scaling-stroke" pointerEvents="none" />
       );
     });
     return <>{wings}</>;
+  };
+
+  const renderShapeArrowheads = (s, startX, startY, endX, endY, fromStartX, fromStartY, fromEndX, fromEndY, stroke, sw) => {
+    const ah = s.arrowHead;
+    if (!ah || ah === 'none') return null;
+    return (
+      <>
+        {(ah === 'end' || ah === 'both') && renderArrowhead(endX, endY, fromEndX, fromEndY, stroke, sw, s.arrowSize, 'e')}
+        {(ah === 'start' || ah === 'both') && renderArrowhead(startX, startY, fromStartX, fromStartY, stroke, sw, s.arrowSize, 's')}
+      </>
+    );
   };
 
   const renderShape = (s, isPreview = false) => {
@@ -975,48 +986,63 @@ function LayerEditor() {
     };
     let el = null;
     if (s.type === 'line') {
-      el = <line {...common} x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />;
-    } else if (s.type === 'arrow') {
+      const gProps = {
+        onPointerDown: (e) => handleShapePointerDown(e, s.id),
+        onClick: (e) => handleShapeClick(e, s.id),
+        onContextMenu: (e) => handleShapeContextMenu(e, s.id),
+        style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
+      };
       el = (
-        <g onPointerDown={(e) => handleShapePointerDown(e, s.id)}
-           onClick={(e) => handleShapeClick(e, s.id)}
-           onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
-           style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+        <g {...gProps}>
           <line stroke={stroke} strokeWidth={sw} fill="none" vectorEffect="non-scaling-stroke"
             x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />
-          {renderArrowhead(vbX(s.x2), s.y2, vbX(s.x1), s.y1, stroke, sw)}
+          {renderShapeArrowheads(s,
+            vbX(s.x1), s.y1, vbX(s.x2), s.y2,
+            vbX(s.x2), s.y2, vbX(s.x1), s.y1,
+            stroke, sw)}
         </g>
       );
     } else if (s.type === 'polyline') {
       const pts = (s.points || []).map((p) => `${vbX(p.x)},${p.y}`).join(' ');
       const pArr = s.points || [];
+      const gProps = {
+        onPointerDown: (e) => handleShapePointerDown(e, s.id),
+        onClick: (e) => handleShapeClick(e, s.id),
+        onContextMenu: (e) => handleShapeContextMenu(e, s.id),
+        style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
+      };
       el = (
-        <g onPointerDown={(e) => handleShapePointerDown(e, s.id)}
-           onClick={(e) => handleShapeClick(e, s.id)}
-           onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
-           style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+        <g {...gProps}>
           <polyline points={pts} stroke={stroke} strokeWidth={sw} fill="none"
             strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           <polyline points={pts} stroke="transparent" strokeWidth={Math.max(sw, 8)} fill="none"
             vectorEffect="non-scaling-stroke" pointerEvents="stroke" />
-          {pArr.length >= 2 && renderArrowhead(
+          {pArr.length >= 2 && renderShapeArrowheads(s,
+            vbX(pArr[0].x), pArr[0].y,
             vbX(pArr[pArr.length - 1].x), pArr[pArr.length - 1].y,
+            vbX(pArr[1].x), pArr[1].y,
             vbX(pArr[pArr.length - 2].x), pArr[pArr.length - 2].y,
             stroke, sw)}
         </g>
       );
     } else if (s.type === 'curve') {
       const d = `M ${vbX(s.x1)} ${s.y1} Q ${vbX(s.cpx)} ${s.cpy} ${vbX(s.x2)} ${s.y2}`;
+      const gProps = {
+        onPointerDown: (e) => handleShapePointerDown(e, s.id),
+        onClick: (e) => handleShapeClick(e, s.id),
+        onContextMenu: (e) => handleShapeContextMenu(e, s.id),
+        style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
+      };
       el = (
-        <g onPointerDown={(e) => handleShapePointerDown(e, s.id)}
-           onClick={(e) => handleShapeClick(e, s.id)}
-           onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
-           style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+        <g {...gProps}>
           <path d={d} stroke={stroke} strokeWidth={sw} fill="none"
             strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           <path d={d} stroke="transparent" strokeWidth={Math.max(sw, 8)} fill="none"
             vectorEffect="non-scaling-stroke" pointerEvents="stroke" />
-          {renderArrowhead(vbX(s.x2), s.y2, vbX(s.cpx), s.cpy, stroke, sw)}
+          {renderShapeArrowheads(s,
+            vbX(s.x1), s.y1, vbX(s.x2), s.y2,
+            vbX(s.cpx), s.cpy, vbX(s.cpx), s.cpy,
+            stroke, sw)}
         </g>
       );
     } else if (s.type === 'rect') {
@@ -1363,6 +1389,7 @@ function LayerEditor() {
         {/* フローティングパネル: 図形一覧・プロパティ（ドラッグで移動可能） */}
         <Paper
           elevation={6}
+          className="layerFloatingPanel"
           sx={{
             position: 'absolute',
             top: panelPos.top,
@@ -1481,7 +1508,32 @@ function LayerEditor() {
                     value={normalizeStrokeWidth(selected.strokeWidth ?? 2)}
                     onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 2 })}
                   />
-                  {!['line', 'arrow', 'polyline', 'curve'].includes(selected.type) && (
+                  {['line', 'polyline', 'curve'].includes(selected.type) && (
+                    <>
+                      <FormControl size="small" fullWidth>
+                        <InputLabel id="layer-arrowhead-label">{t("layer.arrowHead")}</InputLabel>
+                        <Select
+                          labelId="layer-arrowhead-label"
+                          label={t("layer.arrowHead")}
+                          value={selected.arrowHead || 'none'}
+                          onChange={(e) => updateSelected({ arrowHead: e.target.value === 'none' ? '' : e.target.value })}
+                        >
+                          {ARROW_HEAD_OPTIONS.map((opt) => (
+                            <MenuItem key={opt} value={opt}>{t(`layer.arrowHead_${opt}`)}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      {selected.arrowHead && selected.arrowHead !== 'none' && (
+                        <TextField
+                          label={t("layer.arrowSize")} size="small" type="number"
+                          inputProps={{ step: 0.5, min: 1, max: 20 }}
+                          value={selected.arrowSize || DEFAULT_ARROW_SIZE}
+                          onChange={(e) => updateSelected({ arrowSize: parseFloat(e.target.value) || 0 })}
+                        />
+                      )}
+                    </>
+                  )}
+                  {!['line', 'polyline', 'curve'].includes(selected.type) && (
                     <TextField
                       label={t("layer.fill")} size="small"
                       value={selected.fill || 'none'}

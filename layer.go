@@ -31,7 +31,13 @@ type LayerShape struct {
 	// 各 shape の視覚中心を軸に回転させる。
 	Rotation float64 `json:"rotation,omitempty"`
 
-	// line, arrow: x1,y1,x2,y2
+	// 矢印属性 (line, polyline, curve 共通)。
+	// ArrowHead: "" or "none"=なし, "start"=始点, "end"=終点, "both"=両端。
+	// ArrowSize: 矢印ヘッドの大きさ係数。0 のときデフォルト (3.5)。
+	ArrowHead string  `json:"arrowHead,omitempty"`
+	ArrowSize float64 `json:"arrowSize,omitempty"`
+
+	// line: x1,y1,x2,y2
 	X1 float64 `json:"x1,omitempty"`
 	Y1 float64 `json:"y1,omitempty"`
 	X2 float64 `json:"x2,omitempty"`
@@ -447,11 +453,10 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 			fmt.Fprintf(&b,
 				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
 				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2, color, sw)
-		case "arrow":
-			fmt.Fprintf(&b,
-				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
-				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2, color, sw)
-			writeArrowhead(&b, s.X2*aspect, s.Y2, s.X1*aspect, s.Y1, color, sw, imgHeightPx)
+			writeShapeArrowheads(&b, s,
+				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2,
+				s.X2*aspect, s.Y2, s.X1*aspect, s.Y1,
+				color, sw, imgHeightPx)
 		case "polyline":
 			if len(s.Points) >= 2 {
 				b.WriteString(`<polyline points="`)
@@ -464,15 +469,23 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 				fmt.Fprintf(&b,
 					`" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
 					color, sw)
+				first := s.Points[0]
+				second := s.Points[1]
 				last := s.Points[len(s.Points)-1]
 				prev := s.Points[len(s.Points)-2]
-				writeArrowhead(&b, last.X*aspect, last.Y, prev.X*aspect, prev.Y, color, sw, imgHeightPx)
+				writeShapeArrowheads(&b, s,
+					first.X*aspect, first.Y, last.X*aspect, last.Y,
+					second.X*aspect, second.Y, prev.X*aspect, prev.Y,
+					color, sw, imgHeightPx)
 			}
 		case "curve":
 			fmt.Fprintf(&b,
 				`<path d="M %g %g Q %g %g %g %g" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
 				s.X1*aspect, s.Y1, s.Cpx*aspect, s.Cpy, s.X2*aspect, s.Y2, color, sw)
-			writeArrowhead(&b, s.X2*aspect, s.Y2, s.Cpx*aspect, s.Cpy, color, sw, imgHeightPx)
+			writeShapeArrowheads(&b, s,
+				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2,
+				s.Cpx*aspect, s.Cpy, s.Cpx*aspect, s.Cpy,
+				color, sw, imgHeightPx)
 		case "rect":
 			fmt.Fprintf(&b,
 				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
@@ -617,29 +630,36 @@ func normalizeStrokeWidth(sw float64) float64 {
 	return sw
 }
 
-// arrowWingFactor は矢印ヘッドの翼の長さ係数。sw (px) × この値 = 翼の長さ (px)。
-const arrowWingFactor = 3.5
+// defaultArrowWingFactor は矢印ヘッドの翼のデフォルト大きさ係数。
+const defaultArrowWingFactor = 3.5
 
 // arrowWingAngle は矢印ヘッドの翼の開き角 (radian)。±30度。
 const arrowWingAngle = 0.5236 // math.Pi / 6
 
+// effectiveArrowFactor は ArrowSize から翼の長さ係数を返す。0 以下ならデフォルト。
+func effectiveArrowFactor(arrowSize float64) float64 {
+	if arrowSize > 0 {
+		return arrowSize
+	}
+	return defaultArrowWingFactor
+}
+
 // writeArrowhead は矢印ヘッドを2本の <line> で書き出す。
 // tipX,tipY: 矢先 (viewBox座標、x は aspect 倍済み)
 // fromX,fromY: 矢先に向かう方向を決める参照点 (viewBox座標)
-// color: ストロークカラー, sw: ストローク幅 (px), imgHeightPx: 画像自然高さ
-func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color string, sw float64, imgHeightPx int) {
+func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color string, sw float64, arrowSize float64, imgHeightPx int) {
 	dx := tipX - fromX
 	dy := tipY - fromY
 	dist := math.Sqrt(dx*dx + dy*dy)
 	if dist < 1e-9 {
 		return
 	}
-	// 翼の長さ (viewBox 単位)
 	h := imgHeightPx
 	if h <= 0 {
 		h = defaultReferenceHeightPx
 	}
-	wingLen := (sw * arrowWingFactor) / float64(h)
+	factor := effectiveArrowFactor(arrowSize)
+	wingLen := (sw * factor) / float64(h)
 
 	angle := math.Atan2(dy, dx)
 	for _, sign := range []float64{1, -1} {
@@ -652,11 +672,27 @@ func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color 
 	}
 }
 
+// writeShapeArrowheads は shape の ArrowHead 属性に基づいて矢印ヘッドを描画する。
+// startX,startY: 始点 (viewBox), endX,endY: 終点 (viewBox)
+// fromStartX,fromStartY: 始点矢印の方向参照点, fromEndX,fromEndY: 終点矢印の方向参照点
+func writeShapeArrowheads(b *strings.Builder, s LayerShape, startX, startY, endX, endY, fromStartX, fromStartY, fromEndX, fromEndY float64, color string, sw float64, imgHeightPx int) {
+	ah := s.ArrowHead
+	if ah == "" || ah == "none" {
+		return
+	}
+	if ah == "end" || ah == "both" {
+		writeArrowhead(b, endX, endY, fromEndX, fromEndY, color, sw, s.ArrowSize, imgHeightPx)
+	}
+	if ah == "start" || ah == "both" {
+		writeArrowhead(b, startX, startY, fromStartX, fromStartY, color, sw, s.ArrowSize, imgHeightPx)
+	}
+}
+
 // shapeCenterViewBox は shape の視覚中心を viewBox 座標 (x は aspect 倍済み) で返す。
 // rotation の回転中心に使う。text では fontSize の px→viewBox 変換に imgHeightPx を使う。
 func shapeCenterViewBox(s LayerShape, aspect float64, imgHeightPx int) (float64, float64) {
 	switch s.Type {
-	case "line", "arrow":
+	case "line":
 		return (s.X1 + s.X2) * aspect / 2, (s.Y1 + s.Y2) / 2
 	case "polyline":
 		if len(s.Points) > 0 {
