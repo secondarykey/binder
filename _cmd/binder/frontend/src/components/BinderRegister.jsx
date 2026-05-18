@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 
 import { SelectDirectory } from "../../bindings/main/window";
-import { CreateBinder, GetGit } from "../../bindings/binder/api/app";
+import { CreateBinder, GetGit, GetInstallPresets } from "../../bindings/binder/api/app";
 import { FormControl, FormLabel, Grid, InputAdornment, MenuItem, Select, TextField, Tooltip, Typography, IconButton } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -28,6 +28,7 @@ function BinderRegister(props) {
   const [gitName, setGitName] = useState("");
   const [gitMail, setGitMail] = useState("");
   const [templateType, setTemplateType] = useState("simple");
+  const [presets, setPresets] = useState([]);
   const {t} = useTranslation();
 
   useEffect(() => {
@@ -36,6 +37,9 @@ function BinderRegister(props) {
       setWorkBranch(git.workBranch || "");
       setGitName(git.name || "");
       setGitMail(git.mail || "");
+    });
+    GetInstallPresets().then((list) => {
+      setPresets(list || []);
     });
   }, []);
 
@@ -96,12 +100,16 @@ function BinderRegister(props) {
       <FormControl>
         <FormLabel>{t("binderRegister.templateType")}</FormLabel>
         <Select size="small" value={templateType} onChange={(e) => setTemplateType(e.target.value)}>
-          <MenuItem value="simple">{t("binderRegister.templateSimple")}</MenuItem>
-          <MenuItem value="document">{t("binderRegister.templateDocument")}</MenuItem>
-          <MenuItem value="blog">{t("binderRegister.templateBlog")}</MenuItem>
+          {presets.map((p) => (
+            <MenuItem key={p.id} value={p.id}>
+              {p.builtIn ? t(`binderRegister.template_${p.id}`) : p.name}
+            </MenuItem>
+          ))}
         </Select>
         <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 0.5 }}>
-          {t(`binderRegister.templateDesc_${templateType}`)}
+          {presets.find(p => p.id === templateType)?.builtIn
+            ? t(`binderRegister.templateDesc_${templateType}`)
+            : (presets.find(p => p.id === templateType)?.description || "")}
         </Typography>
       </FormControl>
 

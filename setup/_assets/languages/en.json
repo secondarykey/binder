@@ -337,9 +337,9 @@
         "binderName" : "Binder Name",
         "requiredDirectory" : "Please select a directory.",
         "templateType" : "Template",
-        "templateSimple" : "Simple",
-        "templateDocument" : "Document",
-        "templateBlog" : "Blog",
+        "template_simple" : "Simple",
+        "template_document" : "Document",
+        "template_blog" : "Blog",
         "templateDesc_simple" : "Minimal layout with basic notes. Good for quick projects.",
         "templateDesc_document" : "Layout with table of contents and chapter structure.",
         "templateDesc_blog" : "Layout with date/author display for blog posts."
