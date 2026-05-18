@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip,
+  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip, Typography,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
@@ -337,7 +337,10 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
-              <FormLabel sx={{ mb: 1, display: 'block' }}>{t("binder.previewColorScheme")}</FormLabel>
+              <FormLabel sx={{ mb: 0, display: 'block' }}>{t("binder.previewColorScheme")}</FormLabel>
+              <Typography variant="caption" sx={{ color: 'var(--text-muted)', display: 'block', mb: 1 }}>
+                {t("binder.previewColorSchemeHint")}
+              </Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                 <FormControl sx={{ flex: 1 }}>
                   <FormLabel sx={{ fontSize: '12px' }}>{t("binder.previewColorSchemeAttr")}</FormLabel>

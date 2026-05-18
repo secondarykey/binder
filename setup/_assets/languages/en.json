@@ -226,6 +226,7 @@
         "gcComplete" : "GC complete: {{before}} → {{after}}",
         "optimizeImage" : "Optimize Images (convert to WebP)",
         "previewColorScheme" : "Preview Color Scheme",
+        "previewColorSchemeHint" : "Sets the specified attribute on the <html> tag in the preview iframe. Use this to test dark/light mode in your templates.",
         "previewColorSchemeAttr" : "Attribute",
         "previewColorSchemeValues" : "Values (comma separated)"
     },
