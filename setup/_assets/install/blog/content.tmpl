@@ -1,4 +1,12 @@
-<article>
-  <div class="post-meta">{{ .PublishDate }}</div>
-  {{ .Marked }}
+<article class="body">
+<h1 class="article-title">
+  <a href="{{.Note.Link}}">{{.Note.Name}}</a>
+</h1>
+<div class="article-header">
+  <span>{{ formatDate .Note.Publish  "2006-01-02 15:04" }} </span>
+  <span>secondarykey</span>
+</div>
+<p class="article-body">
+{{ .Marked }}
+</p>
 </article>

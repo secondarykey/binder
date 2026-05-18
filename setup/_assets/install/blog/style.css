@@ -1,0 +1,178 @@
+body {
+   color:white; 
+   background-color:#333333;
+}
+
+img {
+  object-fit:fill;
+  width:90%;
+  margin:auto;
+  padding:10px;
+  display:block;
+  border: 1px solid #555555;
+  border-radius: 5px;
+}
+
+img.fill {
+  object-fit:fill;
+  width:auto;
+  margin:auto;
+  padding:10px;
+  display:block;
+  border: 1px solid #555555;
+  border-radius: 5px;
+}
+
+header a {
+   color:white;
+}
+
+h1 a {
+   color:white;
+}
+
+a {
+   color:skyblue;
+}
+
+blockquote {
+  position: relative;
+  background-color:#555555;
+  margin:20px;
+  padding:5px;
+  padding-left:30px;
+  border-radius:10px;
+}
+
+blockquote::before {
+  content: "“";
+  position: absolute;
+  left: 10px;
+  top: 5px;
+  font-size: 3em;
+  line-height: 1;
+  color: #999;
+}
+
+blockquote::after {
+  content: "”";
+  font-size: 3em;
+  line-height: 0;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  color: #999;
+}
+
+div.binderSVG svg {
+  background-color:#333333;
+}
+
+div.binderSVG {
+  border: 1px solid #cccccc;
+  border-radius: 10px;
+  padding:5px;
+}
+
+header {
+  position:sticky;
+  font-size:20px;
+  margin-bottom:10px;
+}
+
+main {
+  position:relative;
+  top:0px;
+  display:flex;
+}
+
+hr {
+  border-color:#222222;
+}
+
+#left {
+  width:60px;
+}
+
+#content {
+  max-width:900px;
+  min-width:600px;
+}
+
+#right {
+  width:400px;
+}
+
+footer {
+  position:relative;
+  color:#999999;
+}
+
+.article-title {
+  margin-bottom:0px;
+  color:#eeeeee !important;
+}
+
+.article-header {
+  font-size:13px;
+  display:flex;
+  justify-content:space-between;
+  color:#999999;
+}
+
+.article-body {
+  margin-top:30px;
+}
+
+article.body{
+  border:2px solid #404040;
+  border-radius:10px;
+  padding: 0px 20px;
+  background-color:#444444;
+}
+
+article.card{
+  border:2px solid #404040;
+  border-radius:5px;
+  padding: 0px 20px;
+  background-color:#444444;
+  display:flex;
+  margin:0px;
+  padding:0px;
+}
+
+article.card > img {
+  width:240px;
+  height:auto;
+}
+
+article.card > span {
+   padding-left: 10px;
+}
+
+article.card > span > p.date{
+  font-size:10px;
+  color: #cccccc;
+  margin:5px 2px;
+}
+
+article.card > span > p.title {
+  font-size:20px;
+  margin:5px 0px;
+}
+
+article.card > span > p.body {
+  font-size:14px;
+  margin:5px 0px;
+  white-space:pre-wrap;
+}
+
+h2 {
+  font-size:20px;
+  text-decoration:underline;
+}
+
+a.card-link {
+  text-decoration: none; 
+  color: inherit
+}

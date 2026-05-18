@@ -1,7 +1,17 @@
-<h1>{{ .Home.Name }}</h1>
-{{ range latestNotes 10 }}
-<article>
-  <h2><a href="{{.Link}}">{{ .Name }}</a></h2>
-  <div class="post-meta">{{ .PublishDate }}</div>
+{{ range childrenNotes 4 }}
+
+<a class="card-link" href="{{.Link}}">  
+
+<article class="card">
+
+    <img src="{{ .Image }}">
+    <span>
+        <p class="date">{{ formatDate .Publish  "2006-01-02 15:04" }}</p>
+        <p class="title">{{ .Name }}</p>
+        <p class="body">{{.Detail}}</p>
+   </span>
 </article>
+
+</a>
+
 {{ end }}
