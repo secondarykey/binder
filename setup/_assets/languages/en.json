@@ -142,7 +142,6 @@
         "publishSuccess" : "Layer published.",
         "toolSelect" : "Select",
         "toolLine" : "Line",
-        "toolArrow" : "Arrow",
         "toolPolyline" : "Polyline",
         "toolCurve" : "Curve",
         "toolRect" : "Rectangle",
@@ -154,7 +153,13 @@
         "lineSpacing" : "Line Spacing (px)",
         "fontFamily" : "Font",
         "fontFamilyDefault" : "(default)",
-        "rotation" : "Rotation"
+        "rotation" : "Rotation",
+        "arrowHead" : "Arrow",
+        "arrowHead_none" : "None",
+        "arrowHead_start" : "Start",
+        "arrowHead_end" : "End",
+        "arrowHead_both" : "Both",
+        "arrowSize" : "Arrow Size"
     },
     "setting" : {
         "title" : "Setting",

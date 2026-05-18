@@ -142,7 +142,6 @@
         "publishSuccess" : "レイヤーを公開しました",
         "toolSelect" : "選択",
         "toolLine" : "線",
-        "toolArrow" : "矢印",
         "toolPolyline" : "折れ線",
         "toolCurve" : "曲線",
         "toolRect" : "矩形",
@@ -154,7 +153,13 @@
         "lineSpacing" : "行間(px)",
         "fontFamily" : "フォント",
         "fontFamilyDefault" : "(デフォルト)",
-        "rotation" : "回転"
+        "rotation" : "回転",
+        "arrowHead" : "矢印",
+        "arrowHead_none" : "なし",
+        "arrowHead_start" : "始点",
+        "arrowHead_end" : "終点",
+        "arrowHead_both" : "両端",
+        "arrowSize" : "矢印の大きさ"
     },
     "setting" : {
         "title" : "設定",
