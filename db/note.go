@@ -47,6 +47,15 @@ func (inst *Instance) FindPublishNotes(id string, limit int, offset int) ([]*mod
 	return inst.findStructureNotes(where, order, limit, offset)
 }
 
+func (inst *Instance) FindSeqNotes(id string, limit int, offset int) ([]*model.Note, error) {
+	where := "type = 'note'"
+	if id != "" {
+		where += fmt.Sprintf(" and parent_id = '%s'", id)
+	}
+	order := "seq"
+	return inst.findStructureNotes(where, order, limit, offset)
+}
+
 func (inst *Instance) findStructureNotes(where string, order string, limit int, offset int) ([]*model.Note, error) {
 	structs, err := inst.findStructure(where, order, limit, offset)
 	if err != nil {

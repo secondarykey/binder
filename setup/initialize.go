@@ -76,7 +76,7 @@ func generateId() string {
 }
 
 // createStructure はStructureレコードを作成する。
-func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detail, alias string) error {
+func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detail, alias string, private bool) error {
 	maxSeq, err := inst.GetMaxSeq(parentId)
 	if err != nil {
 		return xerrors.Errorf("db.GetMaxSeq() error: %w", err)
@@ -90,6 +90,7 @@ func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detai
 	s.Name = name
 	s.Detail = detail
 	s.Alias = alias
+	s.Private = private
 
 	err = inst.InsertStructure(&s, op)
 	if err != nil {
@@ -163,7 +164,7 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 			return xerrors.Errorf("db.InsertNote(%s) error: %w", jn.Id, err)
 		}
 
-		err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, "", jn.Alias)
+		err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, "", jn.Alias, n.Private)
 		if err != nil {
 			return xerrors.Errorf("createStructure(%s) error: %w", jn.Id, err)
 		}
@@ -208,7 +209,7 @@ func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *install
 			return xerrors.Errorf("db.InsertDiagram(%s) error: %w", d.Name, err)
 		}
 
-		err = createStructure(inst, op, jd.Id, jd.ParentId, "diagram", jd.Name, "", jd.Alias)
+		err = createStructure(inst, op, jd.Id, jd.ParentId, "diagram", jd.Name, "", jd.Alias, d.Private)
 		if err != nil {
 			return xerrors.Errorf("createStructure(%s) error: %w", d.Name, err)
 		}
@@ -257,7 +258,7 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 			return xerrors.Errorf("db.InsertAsset(%s) error: %w", a.Name, err)
 		}
 
-		err = createStructure(inst, op, ja.Id, ja.ParentId, "asset", ja.Name, "", ja.Alias)
+		err = createStructure(inst, op, ja.Id, ja.ParentId, "asset", ja.Name, "", ja.Alias, a.Private)
 		if err != nil {
 			return xerrors.Errorf("createStructure(%s) error: %w", a.Name, err)
 		}
