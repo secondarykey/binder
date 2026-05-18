@@ -425,6 +425,7 @@ function LayerEditor() {
     const el = canvasRef.current;
     if (!el) return;
     const onWheel = (e) => {
+      if (e.target.closest && e.target.closest('.layerFloatingPanel')) return;
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       const next = Math.max(0.1, Math.round((tfRef.current.scale + delta) * 10) / 10);
@@ -1388,6 +1389,7 @@ function LayerEditor() {
         {/* フローティングパネル: 図形一覧・プロパティ（ドラッグで移動可能） */}
         <Paper
           elevation={6}
+          className="layerFloatingPanel"
           sx={{
             position: 'absolute',
             top: panelPos.top,
