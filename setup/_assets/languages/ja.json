@@ -464,7 +464,8 @@
         "forceOpen" : "強制的に開く（データが正しく表示されない可能性があります）",
         "tooOldTitle" : "アプリのバージョンが古すぎます",
         "tooOldMessage" : "このBinderを開くには、より新しいアプリが必要です。アプリを更新してください。",
-        "tooOldVersionInfo" : "アプリバージョン: {{appVersion}} / 必要な最低バージョン: {{minAppVersion}}"
+        "tooOldVersionInfo" : "アプリバージョン: {{appVersion}} / 必要な最低バージョン: {{minAppVersion}}",
+        "notBinder" : "選択されたディレクトリはBinderではありません"
     },
     "syslog" : {
         "title" : "システムログ",

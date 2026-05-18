@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"errors"
 	"path/filepath"
 
 	"binder/db"
@@ -10,6 +11,7 @@ import (
 	"binder/settings"
 	"binder/setup/convert"
 
+	"github.com/go-git/go-git/v5"
 	"golang.org/x/xerrors"
 )
 
@@ -27,6 +29,8 @@ const (
 	CompatVersionOnly
 	// CompatTooOld はアプリが minAppVersion を満たしておらず、バインダーを開けない。
 	CompatTooOld
+	// CompatNotBinder はディレクトリがバインダーではない。
+	CompatNotBinder
 )
 
 // CompatResult はバインダーとアプリのバージョン比較結果を返す。
@@ -41,8 +45,22 @@ type CompatResult struct {
 // binder.json のバージョンとアプリバージョンを比較し、CompatResult を返す。
 func CheckCompat(dir string, ver *Version) (*CompatResult, error) {
 
+	// gitリポジトリでなければバインダーではない
+	if _, err := git.PlainOpen(dir); err != nil {
+		return &CompatResult{
+			Status:     CompatNotBinder,
+			AppVersion: ver.String(),
+		}, nil
+	}
+
 	meta, err := loadBinderMeta(dir)
 	if err != nil {
+		if errors.Is(err, convert.ErrNotBinder) {
+			return &CompatResult{
+				Status:     CompatNotBinder,
+				AppVersion: ver.String(),
+			}, nil
+		}
 		return nil, xerrors.Errorf("loadBinderMeta() error: %w", err)
 	}
 
@@ -125,7 +143,7 @@ func loadBinderMeta(dir string) (*fs.BinderMeta, error) {
 		dbDir := filepath.Join(dir, "db")
 		ver, err := db.SchemaVersion(dbDir)
 		if err != nil {
-			return &fs.BinderMeta{Version: "0.0.0"}, nil
+			return nil, convert.ErrNotBinder
 		}
 		return &fs.BinderMeta{Version: ver.String()}, nil
 	}

@@ -104,12 +104,16 @@ function App() {
   const CompatNeedUpdate = 2;
   const CompatVersionOnly = 3;
   const CompatTooOld = 4;
+  const CompatNotBinder = 5;
 
   // バインダーを開く共通処理（CheckCompat付き）
   const openBinder = (dir) => {
     CheckCompat(dir).then((result) => {
       setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
       switch (result.status) {
+        case CompatNotBinder:
+          evt.showErrorMessage(t("convert.notBinder"));
+          break;
         case CompatNeedConvert:
           setPendingDir(dir);
           setConvertOpen(true);

@@ -204,7 +204,6 @@ func install(f *fs.FileSystem, dir string, ver *Version, name string) error {
 // install=false の場合、ディレクトリが存在しないとエラー。
 func CheckDirectory(dir string, install bool) error {
 
-	//TODO ちょっと違うかも
 	dirs := []string{"db", "templates", "diagrams", "notes"}
 
 	for _, n := range dirs {
@@ -214,6 +213,15 @@ func CheckDirectory(dir string, install bool) error {
 			return xerrors.Errorf("already exists[%s]", target)
 		} else if !install && err != nil {
 			return xerrors.Errorf("nothing [%s]", target)
+		}
+	}
+
+	// バインダーを開く場合は binder.json の存在も確認する
+	// （Install または Convert で必ず作成される）
+	if !install {
+		metaPath := filepath.Join(dir, fs.BinderMetaFile)
+		if _, err := os.Stat(metaPath); err != nil {
+			return xerrors.Errorf("missing %s", fs.BinderMetaFile)
 		}
 	}
 

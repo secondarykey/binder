@@ -1,12 +1,16 @@
 package convert
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"binder/db"
 	"binder/fs"
 )
+
+// ErrNotBinder はディレクトリがバインダーではないことを示すセンチネルエラー
+var ErrNotBinder = fmt.Errorf("directory is not a binder")
 
 // loadMeta はbinder.jsonを読み込む。存在しない場合は旧バージョンのschema.versionから読み込む。
 // binder.json の読み書き自体は fs.LoadMeta / fs.SaveMeta が担う。
@@ -27,7 +31,7 @@ func loadMetaFromLegacy(dir string) (*fs.BinderMeta, error) {
 	dbDir := filepath.Join(dir, "db")
 	ver, err := db.SchemaVersion(dbDir)
 	if err != nil {
-		return &fs.BinderMeta{Version: "0.0.0"}, nil
+		return nil, ErrNotBinder
 	}
 	return &fs.BinderMeta{Version: ver.String()}, nil
 }
