@@ -51,7 +51,7 @@ func Install(dir string, ver *Version, name string, installType string) error {
 		return xerrors.Errorf("fs.NewWithBranch() error: %w", err)
 	}
 
-	err = install(f, dir, ver)
+	err = install(f, dir, ver, name)
 	if err != nil {
 		return xerrors.Errorf("install() error: %w", err)
 	}
@@ -97,7 +97,7 @@ func Install(dir string, ver *Version, name string, installType string) error {
 	return nil
 }
 
-func install(f *fs.FileSystem, dir string, ver *Version) error {
+func install(f *fs.FileSystem, dir string, ver *Version, name string) error {
 
 	// 空でもディレクトリは作っておく
 	docsdir := filepath.Join(dir, f.GetPublic())
@@ -150,9 +150,13 @@ func install(f *fs.FileSystem, dir string, ver *Version) error {
 
 	// binder.jsonをルートディレクトリに作成（0.4.5以降はname/detailも管理）
 	if ver != nil {
+		binderName := name
+		if binderName == "" {
+			binderName = "Binder"
+		}
 		meta := &fs.BinderMeta{
 			Version: ver.String(),
-			Name:    "Binder",
+			Name:    binderName,
 		}
 		meta.MinAppVersion = convert.MinRequiredAppVersion
 		err = f.SaveMetaData(meta)

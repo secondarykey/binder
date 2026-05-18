@@ -275,8 +275,11 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 			Alias:    a.Alias,
 		}
 
-		// IDを生成
-		ja.Id = generateId()
+		if a.Id != "" {
+			ja.Id = a.Id
+		} else {
+			ja.Id = generateId()
+		}
 
 		ma := model.ConvertAsset(ja)
 		err := inst.InsertAsset(ma, op)

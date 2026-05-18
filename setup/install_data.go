@@ -44,6 +44,7 @@ type installDiagram struct {
 }
 
 type installAsset struct {
+	Id       string `json:"id"`
 	Name     string `json:"name"`
 	Alias    string `json:"alias"`
 	ParentId string `json:"parentId"`
