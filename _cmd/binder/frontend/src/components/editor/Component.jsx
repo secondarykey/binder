@@ -1054,6 +1054,7 @@ function Editor(props) {
 
   const handleDownloadZip = async () => {
     try {
+      // 依存関係を収集（テンプレート関数展開のためMarkdownを渡す）
       const deps = await CollectExportDeps(id, text);
       const diagramSVGs = {};
 
@@ -1073,7 +1074,8 @@ function Editor(props) {
         }
       }
 
-      await DownloadNote(id, text, diagramSVGs);
+      const html = await Marked.parse(deps.expandedMarkdown);
+      await DownloadNote(id, html, diagramSVGs);
     } catch (err) {
       evt.showErrorMessage(err);
     }

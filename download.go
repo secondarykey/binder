@@ -113,7 +113,7 @@ func createZip(savePath, baseDir string, excludes map[string]bool) error {
 }
 
 // CollectExportDeps はノートのエクスポートに必要な依存関係を収集し、
-// フロントエンドでSVG生成が必要なダイアグラムのリストを返す。
+// エクスポート用テンプレート展開済みMarkdownとSVG生成が必要なダイアグラムのリストを返す。
 func (b *Binder) CollectExportDeps(noteId string, text string) (*json.ExportDeps, error) {
 
 	if b == nil {
@@ -125,17 +125,14 @@ func (b *Binder) CollectExportDeps(noteId string, text string) (*json.ExportDeps
 		return nil, xerrors.Errorf("GetNote() error: %w", err)
 	}
 
-	expanded, err := b.ParseNote(note, false, text)
+	expanded, deps, err := b.ParseNoteForExport(note, text)
 	if err != nil {
-		return nil, xerrors.Errorf("ParseNote() error: %w", err)
+		return nil, xerrors.Errorf("ParseNoteForExport() error: %w", err)
 	}
 
-	_, deps, err := b.CreateNoteHTMLForExport(note, expanded)
-	if err != nil {
-		return nil, xerrors.Errorf("CreateNoteHTMLForExport() error: %w", err)
+	result := &json.ExportDeps{
+		ExpandedMarkdown: expanded,
 	}
-
-	result := &json.ExportDeps{}
 	for id, diag := range deps.diagrams {
 		svgPath := fs.SVGFile(diag)
 		if _, err := b.fileSystem.Stat(svgPath); err != nil {
@@ -149,8 +146,9 @@ func (b *Binder) CollectExportDeps(noteId string, text string) (*json.ExportDeps
 }
 
 // DownloadNote はノートを自己完結したZIPとしてエクスポートする。
+// markedHTML はフロントエンドで Markdown→HTML 変換済み（テンプレート関数展開済み）のコンテンツ。
 // diagramSVGs はフロントエンドでMermaid.jsにより生成されたSVGデータ（key=diagramId）。
-func (b *Binder) DownloadNote(noteId string, text string, diagramSVGs map[string]string, savePath string) error {
+func (b *Binder) DownloadNote(noteId string, markedHTML string, diagramSVGs map[string]string, savePath string) error {
 
 	if b == nil {
 		return EmptyError
@@ -161,12 +159,7 @@ func (b *Binder) DownloadNote(noteId string, text string, diagramSVGs map[string
 		return xerrors.Errorf("GetNote() error: %w", err)
 	}
 
-	expanded, err := b.ParseNote(note, false, text)
-	if err != nil {
-		return xerrors.Errorf("ParseNote() error: %w", err)
-	}
-
-	htmlStr, deps, err := b.CreateNoteHTMLForExport(note, expanded)
+	htmlStr, deps, err := b.CreateNoteHTMLForExport(note, markedHTML)
 	if err != nil {
 		return xerrors.Errorf("CreateNoteHTMLForExport() error: %w", err)
 	}
