@@ -122,23 +122,6 @@ const collectDescendantIds = (node, ids = new Set()) => {
 };
 
 /**
- * 指定ノード配下の全リーフをタイプ別に収集する（サブツリー公開用）
- */
-const collectDescendantLeaves = (node) => {
-  const result = { notes: [], diagrams: [], assets: [], layers: [] };
-  const collect = (n) => {
-    if (!n) return;
-    if (n.type === "note") result.notes.push({ id: n.id, name: n.name, type: "note" });
-    else if (n.type === "diagram") result.diagrams.push({ id: n.id, name: n.name, type: "diagram" });
-    else if (n.type === "asset") result.assets.push({ id: n.id, name: n.name, type: "asset" });
-    else if (n.type === "layer") result.layers.push({ id: n.id, name: n.name, type: "layer" });
-    if (n.children) n.children.forEach(collect);
-  };
-  collect(node);
-  return result;
-};
-
-/**
  * ツリー（生データ）から子を持つ全ノードのIDを収集する（展開可能なノード）
  */
 const collectExpandableIds = (nodes, ids = []) => {
@@ -589,8 +572,8 @@ function BinderTree(props) {
     const node = contextMenu.node;
     closeAllMenus();
     const rawNode = findNodeInTree(treeRef.current, node.id);
-    const subtreeData = collectDescendantLeaves(rawNode);
-    evt.openPublishSubtreeModal(subtreeData);
+    const descendantIds = collectDescendantIds(rawNode);
+    evt.openPublishSubtreeModal(descendantIds);
   };
 
   /** リネーム開始: node を受け取る共通処理 */

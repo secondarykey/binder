@@ -441,7 +441,7 @@ function App() {
       <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => { setCommitModalOpen(false); setCommitModalFilter(null); }} />
 
       {/** 公開一覧モーダル */}
-      <PublishModal open={publishModalOpen} template={publishModalTemplate} subtreeData={publishModalSubtree} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); setPublishModalSubtree(null); }} />
+      <PublishModal open={publishModalOpen} template={publishModalTemplate} filterIds={publishModalSubtree} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); setPublishModalSubtree(null); }} />
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />
