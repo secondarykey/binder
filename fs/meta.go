@@ -12,20 +12,28 @@ import (
 // BinderMetaFile はbinder.jsonのファイル名
 const BinderMetaFile = "binder.json"
 
+// PreviewColorScheme はプレビューiframe内のカラースキーム切り替え設定。
+// ユーザーが指定した属性名と値のリストで、プレビュー上でテーマを切り替えられる。
+type PreviewColorScheme struct {
+	Attribute string   `json:"attribute"`
+	Values    []string `json:"values"`
+}
+
 // BinderMeta はbinderディレクトリのメタ情報（binder.json）
 // 0.3.2以降はappバージョンのみで管理し、schemaフィールドは廃止。
 // 0.4.5以降はconfig.csvを廃止し、name/detailをbinder.jsonで管理する。
 type BinderMeta struct {
-	Version       string `json:"version"`
-	MinAppVersion string `json:"minAppVersion,omitempty"` // このBinderを開くために必要な最低アプリバージョン
-	Name          string `json:"name,omitempty"`
-	Detail        string `json:"detail,omitempty"`
-	MarkedURL     string `json:"markedUrl,omitempty"`
-	MermaidURL    string `json:"mermaidUrl,omitempty"`
-	OptimizeImage *bool  `json:"optimizeImage,omitempty"` // nil = デフォルト(true)
-	PublishOnly   bool   `json:"publishOnly,omitempty"`   // docs/のみpushする場合 true
-	PublishBranch string `json:"publishBranch,omitempty"` // docs/のpush先ブランチ名
-	Schema        string `json:"schema,omitempty"`        // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
+	Version            string              `json:"version"`
+	MinAppVersion      string              `json:"minAppVersion,omitempty"` // このBinderを開くために必要な最低アプリバージョン
+	Name               string              `json:"name,omitempty"`
+	Detail             string              `json:"detail,omitempty"`
+	MarkedURL          string              `json:"markedUrl,omitempty"`
+	MermaidURL         string              `json:"mermaidUrl,omitempty"`
+	OptimizeImage      *bool               `json:"optimizeImage,omitempty"` // nil = デフォルト(true)
+	PublishOnly        bool                `json:"publishOnly,omitempty"`   // docs/のみpushする場合 true
+	PublishBranch      string              `json:"publishBranch,omitempty"` // docs/のpush先ブランチ名
+	PreviewColorScheme *PreviewColorScheme `json:"previewColorScheme,omitempty"`
+	Schema             string              `json:"schema,omitempty"` // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
 }
 
 // LoadMeta はbinder.jsonを読み込む。

@@ -1,11 +1,17 @@
 package json
 
+type PreviewColorScheme struct {
+	Attribute string   `json:"attribute"`
+	Values    []string `json:"values"`
+}
+
 type Config struct {
-	Name          string `json:"name"`
-	Detail        string `json:"detail"`
-	MarkedURL     string `json:"markedUrl"`
-	MermaidURL    string `json:"mermaidUrl"`
-	OptimizeImage bool   `json:"optimizeImage"`
+	Name               string              `json:"name"`
+	Detail             string              `json:"detail"`
+	MarkedURL          string              `json:"markedUrl"`
+	MermaidURL         string              `json:"mermaidUrl"`
+	OptimizeImage      bool                `json:"optimizeImage"`
+	PreviewColorScheme *PreviewColorScheme  `json:"previewColorScheme,omitempty"`
 }
 
 type UserInfo struct {

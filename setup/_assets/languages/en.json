@@ -224,7 +224,10 @@
         "gcConfirmMessage" : "Remove unused objects?",
         "gcRun" : "Run",
         "gcComplete" : "GC complete: {{before}} → {{after}}",
-        "optimizeImage" : "Optimize Images (convert to WebP)"
+        "optimizeImage" : "Optimize Images (convert to WebP)",
+        "previewColorScheme" : "Preview Color Scheme",
+        "previewColorSchemeAttr" : "Attribute",
+        "previewColorSchemeValues" : "Values (comma separated)"
     },
     "binderHistory" : {
         "history" : "History"
@@ -449,7 +452,8 @@
         "windowTitle" : "Preview",
         "parseError" : "Parse Error",
         "alwaysOnTop" : "Always on Top",
-        "notSupported" : "Assets are not displayed"
+        "notSupported" : "Assets are not displayed",
+        "colorScheme" : "Color Scheme"
     },
     "convert" : {
         "title" : "Data Migration",

@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
@@ -51,6 +51,7 @@ import FolderZipIcon from '@mui/icons-material/FolderZip';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import ContrastIcon from '@mui/icons-material/Contrast';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
 
@@ -299,6 +300,10 @@ function Editor(props) {
   // ダイアグラムスタイルテンプレートID
   const [styleTemplateId, setStyleTemplateId] = useState("");
 
+  // プレビューカラースキーム
+  const [colorSchemeConfig, setColorSchemeConfig] = useState(null);
+  const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
+
   //viewHTMLのprop
   const [html, setHTML] = useState("");
   useEffect(() => { htmlRef.current = html; }, [html]);
@@ -345,6 +350,11 @@ function Editor(props) {
 
   useEffect(() => {
     Address().then((addr) => setServerAddress(addr)).catch(() => {});
+    GetConfig().then((conf) => {
+      if (conf.previewColorScheme) {
+        setColorSchemeConfig(conf.previewColorScheme);
+      }
+    }).catch(() => {});
   }, []);
 
   //開いた時の初期処理
@@ -1899,6 +1909,15 @@ function Editor(props) {
                 })()}
                 {mode !== Mode.template && <div className="previewMenuLeft" />}
                 <div className="previewMenuRight">
+                  {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
+                    <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
+                      <IconButton size="small" aria-label="color-scheme" className="editorBtn"
+                        onClick={() => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length)}
+                      >
+                        <ContrastIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    </Tooltip>
+                  }
                   {mode !== Mode.template &&
                     <Tooltip title={t("preview.download")} placement="bottom">
                       <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
@@ -1956,7 +1975,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -1965,7 +1984,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
                 }
               </div>
 

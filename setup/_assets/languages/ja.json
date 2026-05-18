@@ -224,7 +224,10 @@
         "gcConfirmMessage" : "不要なオブジェクトを削除しますか？",
         "gcRun" : "実行",
         "gcComplete" : "GC完了: {{before}} → {{after}}",
-        "optimizeImage" : "画像を軽量化する（WebPに変換）"
+        "optimizeImage" : "画像を軽量化する（WebPに変換）",
+        "previewColorScheme" : "プレビュー カラースキーム",
+        "previewColorSchemeAttr" : "属性名",
+        "previewColorSchemeValues" : "値（カンマ区切り）"
     },
     "binderHistory" : {
         "history" : "履歴"
@@ -449,7 +452,8 @@
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー",
         "alwaysOnTop" : "最前面に固定",
-        "notSupported" : "アセットは表示していません"
+        "notSupported" : "アセットは表示していません",
+        "colorScheme" : "カラースキーム"
     },
     "convert" : {
         "title" : "データ移行",

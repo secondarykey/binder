@@ -27,6 +27,14 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 	meta.MarkedURL = conf.MarkedURL
 	meta.MermaidURL = conf.MermaidURL
 	meta.OptimizeImage = &conf.OptimizeImage
+	if conf.PreviewColorScheme != nil && conf.PreviewColorScheme.Attribute != "" && len(conf.PreviewColorScheme.Values) > 0 {
+		meta.PreviewColorScheme = &fs.PreviewColorScheme{
+			Attribute: conf.PreviewColorScheme.Attribute,
+			Values:    conf.PreviewColorScheme.Values,
+		}
+	} else {
+		meta.PreviewColorScheme = nil
+	}
 
 	if err = b.fileSystem.SaveMetaData(meta); err != nil {
 		return xerrors.Errorf("SaveMetaData() error: %w", err)
@@ -61,6 +69,12 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 	// nil（未設定）の場合はデフォルト true
 	if meta.OptimizeImage == nil || *meta.OptimizeImage {
 		conf.OptimizeImage = true
+	}
+	if meta.PreviewColorScheme != nil {
+		conf.PreviewColorScheme = &json.PreviewColorScheme{
+			Attribute: meta.PreviewColorScheme.Attribute,
+			Values:    meta.PreviewColorScheme.Values,
+		}
 	}
 	return &conf, nil
 }

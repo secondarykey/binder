@@ -8,8 +8,10 @@ import Mermaid from "./engines/Mermaid";
  * ちらつきを防止する。
  *
  * Props:
- *   html       - 表示する HTML 文字列
- *   cursorLine - エディタのカーソル行（1始まり）。プレビューのスクロール位置に使用
+ *   html            - 表示する HTML 文字列
+ *   cursorLine      - エディタのカーソル行（1始まり）。プレビューのスクロール位置に使用
+ *   colorSchemeAttr - カラースキーム属性名（例: "data-theme"）
+ *   colorSchemeValue - カラースキーム値（例: "dark"）
  */
 class HTMLFrame extends React.Component {
 
@@ -27,11 +29,22 @@ class HTMLFrame extends React.Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    return nextProps.html !== this.props.html || nextProps.cursorLine !== this.props.cursorLine;
+    return nextProps.html !== this.props.html
+      || nextProps.cursorLine !== this.props.cursorLine
+      || nextProps.colorSchemeAttr !== this.props.colorSchemeAttr
+      || nextProps.colorSchemeValue !== this.props.colorSchemeValue;
   }
 
-  componentDidUpdate() {
-    this.view();
+  componentDidUpdate(prevProps) {
+    if (prevProps.html !== this.props.html) {
+      this.view();
+    } else {
+      // HTML未変更でもカラースキームが変わった場合は両方のiframeに属性を反映
+      const activeIframe = this.getIframe(this.active);
+      if (activeIframe?.contentDocument) {
+        this.applyColorScheme(activeIframe.contentDocument);
+      }
+    }
   }
 
   getIframe(index) {
@@ -118,8 +131,18 @@ class HTMLFrame extends React.Component {
     target.scrollIntoView({ behavior: 'instant', block: 'center' });
   }
 
+  applyColorScheme(doc) {
+    if (!doc?.documentElement) return;
+    const { colorSchemeAttr, colorSchemeValue } = this.props;
+    if (colorSchemeAttr && colorSchemeValue) {
+      doc.documentElement.setAttribute(colorSchemeAttr, colorSchemeValue);
+    }
+  }
+
   postProcess(doc, onComplete) {
     if (!doc) { onComplete?.(); return; }
+
+    this.applyColorScheme(doc);
 
     // クリックを禁止
     doc.addEventListener('click', (e) => e.preventDefault());
