@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
-	"time"
 	texttemplate "text/template"
+	"time"
 
 	"binder/api/json"
 	"binder/db/model"
@@ -22,7 +22,8 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
 		"assetsImage":   w.assetsImage,
-		"childrenNotes": w.childrenNotes,
+		"childrenNotes": w.childNotes,
+		"childNotes":    w.childNotes,
 		"latestNotes":   w.latestNotes,
 		"breadcrumb":    w.breadcrumb,
 		"safe":          safeTemplate,
@@ -122,7 +123,7 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, classAttr))
 }
 
-func (w *wrapper) childrenNotes(v ...any) []*tempNote {
+func (w *wrapper) childNotes(v ...any) []*tempNote {
 	//件数
 	n := Arg[int](v, 0).Default(-1)
 	//指定ノートId（ダイアグラムコンテキストでは w.note が nil のため空文字をデフォルトとする）
