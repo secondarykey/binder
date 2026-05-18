@@ -7,6 +7,7 @@ import (
 	"time"
 	texttemplate "text/template"
 
+	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
 	"binder/log"
@@ -23,6 +24,7 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"assetsImage":   w.assetsImage,
 		"childrenNotes": w.childrenNotes,
 		"latestNotes":   w.latestNotes,
+		"breadcrumb":    w.breadcrumb,
 		"safe":          safeTemplate,
 		"lit":           litTemplate,
 		"litURL":        litURLTemplate,
@@ -128,6 +130,11 @@ func (w *wrapper) childrenNotes(v ...any) []*tempNote {
 	if id == "" {
 		return nil
 	}
+	// 順序指定: "seq" でツリー順、省略時は従来動作（publish_date/updated_date）
+	order := Arg[string](v, 2).Default("")
+	if order == "seq" {
+		return w.getSeqNotes(id, n)
+	}
 	return w.children(id, n, -1)
 }
 
@@ -172,6 +179,59 @@ func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 		rtn[idx] = w.convertNote(jn)
 	}
 	return rtn
+}
+
+func (w *wrapper) getSeqNotes(id string, limit int) []*tempNote {
+	notes, err := w.owner.db.FindSeqNotes(id, limit, -1)
+	if err != nil {
+		log.ErrorE("FindSeqNotes()", err)
+		return nil
+	}
+
+	ids := make([]interface{}, len(notes))
+	for i, n := range notes {
+		ids[i] = n.Id
+	}
+	structMap, _ := w.owner.getStructureMap(ids...)
+
+	rtn := make([]*tempNote, len(notes))
+	for idx, n := range notes {
+		jn := n.To()
+		if s, ok := structMap[n.Id]; ok {
+			jn.ApplyStructure(s.To())
+		}
+		rtn[idx] = w.convertNote(jn)
+	}
+	return rtn
+}
+
+// breadcrumb は現在ノートの祖先チェーンを root→current の順で返す。
+func (w *wrapper) breadcrumb() []*tempNote {
+	if w.note == nil {
+		return nil
+	}
+	var chain []*tempNote
+	id := w.note.Id
+	for id != "" && id != "index" {
+		s, err := w.owner.db.GetStructure(id)
+		if err != nil {
+			break
+		}
+		jn := &json.Note{Id: s.Id, Name: s.Name, Detail: s.Detail, Alias: s.Alias}
+		chain = append(chain, w.convertNote(jn))
+		id = s.ParentId
+	}
+	// index を先頭に追加
+	indexS, err := w.owner.db.GetStructure("index")
+	if err == nil {
+		jn := &json.Note{Id: indexS.Id, Name: indexS.Name, Detail: indexS.Detail, Alias: indexS.Alias}
+		chain = append(chain, w.convertNote(jn))
+	}
+	// reverse: root→current
+	for i, j := 0, len(chain)-1; i < j; i, j = i+1, j-1 {
+		chain[i], chain[j] = chain[j], chain[i]
+	}
+	return chain
 }
 
 func (w *wrapper) drawSVG(id string) template.HTML {

@@ -38,6 +38,7 @@ type installNote struct {
 	Alias           string `json:"alias"`
 	Name            string `json:"name"`
 	ParentId        string `json:"parentId"`
+	Private         bool   `json:"private"`
 	LayoutTemplate  string `json:"layoutTemplate"`
 	ContentTemplate string `json:"contentTemplate"`
 	File            string `json:"file"`
@@ -47,6 +48,7 @@ type installDiagram struct {
 	Id            string `json:"id"`
 	Name          string `json:"name"`
 	ParentId      string `json:"parentId"`
+	Private       bool   `json:"private"`
 	StyleTemplate string `json:"styleTemplate"`
 	File          string `json:"file"`
 }
@@ -56,6 +58,7 @@ type installAsset struct {
 	Name     string `json:"name"`
 	Alias    string `json:"alias"`
 	ParentId string `json:"parentId"`
+	Private  bool   `json:"private"`
 	Binary   bool   `json:"binary"`
 	Mime     string `json:"mime"`
 	File     string `json:"file"`
