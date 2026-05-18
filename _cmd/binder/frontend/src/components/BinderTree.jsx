@@ -122,23 +122,6 @@ const collectDescendantIds = (node, ids = new Set()) => {
 };
 
 /**
- * 指定ノード配下の全リーフをタイプ別に収集する（サブツリー公開用）
- */
-const collectDescendantLeaves = (node) => {
-  const result = { notes: [], diagrams: [], assets: [], layers: [] };
-  const collect = (n) => {
-    if (!n) return;
-    if (n.type === "note") result.notes.push({ id: n.id, name: n.name, type: "note" });
-    else if (n.type === "diagram") result.diagrams.push({ id: n.id, name: n.name, type: "diagram" });
-    else if (n.type === "asset") result.assets.push({ id: n.id, name: n.name, type: "asset" });
-    else if (n.type === "layer") result.layers.push({ id: n.id, name: n.name, type: "layer" });
-    if (n.children) n.children.forEach(collect);
-  };
-  collect(node);
-  return result;
-};
-
-/**
  * ツリー（生データ）から子を持つ全ノードのIDを収集する（展開可能なノード）
  */
 const collectExpandableIds = (nodes, ids = []) => {
@@ -231,6 +214,9 @@ function BinderTree(props) {
 
   // Copy サブメニューのアンカー要素
   const [copyMenuAnchor, setCopyMenuAnchor] = useState(null);
+
+  // ディレクトリ操作サブメニューのアンカー要素
+  const [dirMenuAnchor, setDirMenuAnchor] = useState(null);
 
   // エディタ引数に {bfile} が含まれる場合に true（右クリック都度判定）
   const [showGitBashPath, setShowGitBashPath] = useState(false);
@@ -514,6 +500,7 @@ function BinderTree(props) {
   const closeAllMenus = () => {
     setAddMenuAnchor(null);
     setCopyMenuAnchor(null);
+    setDirMenuAnchor(null);
     setContextMenu({ open: false, x: 0, y: 0, node: null });
   };
 
@@ -525,6 +512,11 @@ function BinderTree(props) {
   /** Copy サブメニューを開く */
   const handleCopyMenuOpen = (e) => {
     setCopyMenuAnchor(e.currentTarget);
+  };
+
+  /** ディレクトリ操作サブメニューを開く */
+  const handleDirMenuOpen = (e) => {
+    setDirMenuAnchor(e.currentTarget);
   };
 
   /** Copy > ID */
@@ -589,8 +581,8 @@ function BinderTree(props) {
     const node = contextMenu.node;
     closeAllMenus();
     const rawNode = findNodeInTree(treeRef.current, node.id);
-    const subtreeData = collectDescendantLeaves(rawNode);
-    evt.openPublishSubtreeModal(subtreeData);
+    const descendantIds = collectDescendantIds(rawNode);
+    evt.openPublishSubtreeModal(descendantIds);
   };
 
   /** リネーム開始: node を受け取る共通処理 */
@@ -997,8 +989,9 @@ function BinderTree(props) {
         <span><AddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.add")}</span><span>▶</span>
       </MenuItem>
       <Divider />
-      <MenuItem onClick={handleCommitSubtree}><AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.commitSubtree")}</MenuItem>
-      <MenuItem onClick={handlePublishSubtree}><CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.publishSubtree")}</MenuItem>
+      <MenuItem onClick={handleDirMenuOpen} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span><AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.dirOps")}</span><span>▶</span>
+      </MenuItem>
       <MenuItem onClick={handleHistoryNote}><HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.history")}</MenuItem>
       <Divider />
       <MenuItem onClick={handleDeleteRequest} sx={{ color: 'var(--accent-red)' }}><DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}</MenuItem>
@@ -1033,6 +1026,19 @@ function BinderTree(props) {
       {showGitBashPath && (
         <MenuItem onClick={handleCopyGitBashPath}>{t("tree.copy.gitbashPath")}</MenuItem>
       )}
+    </Menu>
+
+    {/** ディレクトリ操作サブメニュー: 記録 / 公開 */}
+    <Menu
+      open={Boolean(dirMenuAnchor)}
+      onClose={closeAllMenus}
+      anchorEl={dirMenuAnchor}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      slotProps={{ paper: { sx: { minWidth: 150 } } }}
+    >
+      <MenuItem onClick={handleCommitSubtree}>{t("tree.commitSubtree")}</MenuItem>
+      <MenuItem onClick={handlePublishSubtree}>{t("tree.publishSubtree")}</MenuItem>
     </Menu>
 
     {/** ダイアグラムメニュー: Edit / Rename / Copy ▶ / History / Delete */}

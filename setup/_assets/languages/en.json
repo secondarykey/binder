@@ -81,6 +81,7 @@
         "regenerateAllConfirmTitle" : "Update all data?",
         "regenerateAllConfirmMessage" : "All data will be updated to the latest. Comments will be used as-is, so please review and execute.",
         "regenerateAllEmpty" : "No published data found.",
+        "dirOps" : "Directory",
         "commitSubtree" : "Record subtree",
         "publishSubtree" : "Publish subtree"
     },
