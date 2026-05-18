@@ -80,24 +80,24 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 }
 
 // GetPublishSettings は binder.json から公開設定を返す。
-func (b *Binder) GetPublishSettings() (bool, string, error) {
+func (b *Binder) GetPublishSettings() (bool, string, string, error) {
 	if b == nil {
-		return false, "", EmptyError
+		return false, "", "", EmptyError
 	}
 
 	meta, err := b.fileSystem.LoadMetaData()
 	if err != nil {
-		return false, "", xerrors.Errorf("LoadMetaData() error: %w", err)
+		return false, "", "", xerrors.Errorf("LoadMetaData() error: %w", err)
 	}
 	if meta == nil {
-		return false, "", nil
+		return false, "", "", nil
 	}
-	return meta.PublishOnly, meta.PublishBranch, nil
+	return meta.PublishOnly, meta.PublishBranch, meta.PublishSubDir, nil
 }
 
 // SavePublishSettings は公開設定を binder.json に保存しコミットする。
 // 設定が変更されていない場合はコミットをスキップする。
-func (b *Binder) SavePublishSettings(publishOnly bool, publishBranch string) error {
+func (b *Binder) SavePublishSettings(publishOnly bool, publishBranch, publishSubDir string) error {
 	if b == nil {
 		return EmptyError
 	}
@@ -111,12 +111,13 @@ func (b *Binder) SavePublishSettings(publishOnly bool, publishBranch string) err
 	}
 
 	// 変更がなければコミット不要
-	if meta.PublishOnly == publishOnly && meta.PublishBranch == publishBranch {
+	if meta.PublishOnly == publishOnly && meta.PublishBranch == publishBranch && meta.PublishSubDir == publishSubDir {
 		return nil
 	}
 
 	meta.PublishOnly = publishOnly
 	meta.PublishBranch = publishBranch
+	meta.PublishSubDir = publishSubDir
 
 	if err = b.fileSystem.SaveMetaData(meta); err != nil {
 		return xerrors.Errorf("SaveMetaData() error: %w", err)

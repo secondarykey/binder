@@ -35,6 +35,7 @@ type Remote struct {
 type PublishSettings struct {
 	PublishOnly   bool   `json:"publishOnly"`
 	PublishBranch string `json:"publishBranch"`
+	PublishSubDir string `json:"publishSubDir"`
 }
 
 type BranchResult struct {

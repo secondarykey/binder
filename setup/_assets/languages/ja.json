@@ -250,6 +250,8 @@
         "saveCredentials" : "認証情報を保存する",
         "publishOnly" : "docs/ のみ push（ページ公開）",
         "publishBranch" : "公開先ブランチ名",
+        "publishSubDir" : "サブディレクトリ",
+        "publishSubDirHint" : "例: en（空 = ルート）",
         "pushSuccess" : "Pushしました",
         "pushDocsSuccess" : "docs/ をPushしました",
         "pushButton" : "Push"

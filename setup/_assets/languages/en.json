@@ -250,6 +250,8 @@
         "saveCredentials" : "Save credentials",
         "publishOnly" : "Push docs/ only (page publish)",
         "publishBranch" : "Publish branch name",
+        "publishSubDir" : "Subdirectory",
+        "publishSubDirHint" : "e.g. en (empty = root)",
         "pushSuccess" : "Pushed successfully.",
         "pushDocsSuccess" : "docs/ pushed successfully.",
         "pushButton" : "Push"

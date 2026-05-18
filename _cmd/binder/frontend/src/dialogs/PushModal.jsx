@@ -42,6 +42,7 @@ function PushModal({ open, onClose }) {
   // 公開設定
   const [publishOnly, setPublishOnly] = useState(false);
   const [publishBranch, setPublishBranch] = useState('gh-pages');
+  const [publishSubDir, setPublishSubDir] = useState('');
 
   // UserInfoのname/email（Push時にそのまま渡す）
   const [userName, setUserName] = useState('');
@@ -67,6 +68,7 @@ function PushModal({ open, onClose }) {
       if (s) {
         setPublishOnly(s.publishOnly || false);
         setPublishBranch(s.publishBranch || 'gh-pages');
+        setPublishSubDir(s.publishSubDir || '');
       }
     }).catch((err) => showError(err));
 
@@ -115,7 +117,7 @@ function PushModal({ open, onClose }) {
     };
 
     if (publishOnly) {
-      PushDocs(remoteName, publishBranch, info, save).then(() => {
+      PushDocs(remoteName, publishBranch, publishSubDir, info, save).then(() => {
         evt.showSuccessMessage(t('push.pushDocsSuccess'));
         onClose();
       }).catch((err) => {
@@ -183,14 +185,25 @@ function PushModal({ open, onClose }) {
             sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
           />
           {publishOnly && (
-            <FormControl size="small" fullWidth sx={{ mt: 1 }}>
-              <FormLabel>{t('push.publishBranch')}</FormLabel>
-              <TextField
-                size="small"
-                value={publishBranch}
-                onChange={(e) => setPublishBranch(e.target.value)}
-              />
-            </FormControl>
+            <>
+              <FormControl size="small" fullWidth sx={{ mt: 1 }}>
+                <FormLabel>{t('push.publishBranch')}</FormLabel>
+                <TextField
+                  size="small"
+                  value={publishBranch}
+                  onChange={(e) => setPublishBranch(e.target.value)}
+                />
+              </FormControl>
+              <FormControl size="small" fullWidth sx={{ mt: 1 }}>
+                <FormLabel>{t('push.publishSubDir')}</FormLabel>
+                <TextField
+                  size="small"
+                  value={publishSubDir}
+                  onChange={(e) => setPublishSubDir(e.target.value)}
+                  placeholder={t('push.publishSubDirHint')}
+                />
+              </FormControl>
+            </>
           )}
         </Box>
 

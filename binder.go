@@ -389,10 +389,11 @@ func (b *Binder) Push(remoteName string, info *json.UserInfo, save bool) error {
 	return nil
 }
 
-// PushDocs は docs/ ディレクトリのみを指定ブランチに force push する。
+// PushDocs は docs/ ディレクトリのみを指定ブランチに push する。
+// subDir が指定された場合、公開ブランチ上の該当サブディレクトリのみを差し替える。
 // save が true の場合、認証情報を user_data.enc に保存する。
-// 公開設定（publishBranch）は binder.json に保存しコミットする。
-func (b *Binder) PushDocs(remoteName, publishBranch string, info *json.UserInfo, save bool) error {
+// 公開設定（publishBranch, publishSubDir）は binder.json に保存しコミットする。
+func (b *Binder) PushDocs(remoteName, publishBranch, subDir string, info *json.UserInfo, save bool) error {
 	if b == nil {
 		return EmptyError
 	}
@@ -421,11 +422,11 @@ func (b *Binder) PushDocs(remoteName, publishBranch string, info *json.UserInfo,
 	}
 
 	// 公開設定を保存（変更があった場合のみコミット）
-	if err := b.SavePublishSettings(true, publishBranch); err != nil {
+	if err := b.SavePublishSettings(true, publishBranch, subDir); err != nil {
 		return xerrors.Errorf("SavePublishSettings() error: %w", err)
 	}
 
-	if err := b.fileSystem.PushDocs(remoteName, publishBranch, fsInfo); err != nil {
+	if err := b.fileSystem.PushDocs(remoteName, publishBranch, subDir, fsInfo); err != nil {
 		return xerrors.Errorf("PushDocs() error: %w", err)
 	}
 
