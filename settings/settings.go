@@ -297,6 +297,9 @@ func SaveHistory(h string) error {
 		if h != v {
 			list = append(list, v)
 		}
+		if len(list) >= 10 {
+			break
+		}
 	}
 	obj.Path.Histories = list
 	return obj.save()
