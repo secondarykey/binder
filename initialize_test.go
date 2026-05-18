@@ -53,12 +53,12 @@ func TestInitialize(t *testing.T) {
 		t.Errorf("db.FindNotes() notes length want 2 got %d", len(notes))
 	}
 
-	//ダイアグラム１件
+	//ダイアグラム０件（simpleテンプレートにはダイアグラムなし）
 	diagrams, err := inst.FindDiagrams()
 	if err != nil {
 		t.Errorf("db.FindDiagrams() error: %v", err)
-	} else if len(diagrams) != 1 {
-		t.Errorf("db.FindDiagrams() diagrams length want 1 got %d", len(diagrams))
+	} else if len(diagrams) != 0 {
+		t.Errorf("db.FindDiagrams() diagrams length want 0 got %d", len(diagrams))
 	}
 
 	//アセット１件
@@ -97,14 +97,15 @@ func TestInitialize(t *testing.T) {
 		}
 	}
 
-	diagramId := diagrams[0].Id
-	asset := assets[0]
-	fn := fs.DiagramFile(diagramId)
-	_, err = f.Stat(fn)
-	if err != nil {
-		t.Errorf("diagram [%s] file not found error: %v", diagramId, err)
+	for _, d := range diagrams {
+		fn := fs.DiagramFile(d.Id)
+		_, err = f.Stat(fn)
+		if err != nil {
+			t.Errorf("diagram [%s] file not found error: %v", d.Id, err)
+		}
 	}
 
+	asset := assets[0]
 	ja := asset.To()
 	// Structure経由でparentIdを取得
 	assetStruct, err := inst.GetStructure(asset.Id)
@@ -112,7 +113,7 @@ func TestInitialize(t *testing.T) {
 		t.Fatalf("GetStructure(asset) error: %v", err)
 	}
 	ja.ApplyStructure(assetStruct.To())
-	fn = fs.AssetFile(ja)
+	fn := fs.AssetFile(ja)
 
 	log.Error(fn)
 	_, err = f.Stat(fn)

@@ -1,6 +1,7 @@
 package binder_test
 
 import (
+	"binder/api/json"
 	"binder/test"
 	"testing"
 )
@@ -22,6 +23,17 @@ func TestSaveDiagram(t *testing.T) {
 
 func TestGetUnpublishedDiagrams(t *testing.T) {
 	b := test.CreateBinder(t, "publish_diagrams")
+
+	// ダイアグラムを作成
+	d := &json.Diagram{
+		ParentId:      "index",
+		Name:          "TestDiagram",
+		StyleTemplate: "diagram_style",
+	}
+	_, err := b.EditDiagram(d)
+	if err != nil {
+		t.Fatalf("EditDiagram() error: %v", err)
+	}
 
 	all, err := b.GetUnpublishedDiagrams()
 	if err != nil {

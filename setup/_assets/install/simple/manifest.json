@@ -16,10 +16,8 @@
       "file": "content.md"
     }
   ],
-  "diagrams": [
-    {"name": "Diagram", "parentId": "index", "styleTemplate": "diagram_style", "file": "diagram.md"}
-  ],
+  "diagrams": [],
   "assets": [
-    {"id": "019e3875-316c-70f4-a71d-32ea4f964ce0", "name": "style.css", "alias": "style", "parentId": "index", "file": "style.css"}
+    {"id": "019e3875-316c-70f4-a71d-32ea4f964ce0", "name": "StyleSheet", "alias": "DataAsset", "parentId": "index", "binary": false, "mime": "text/css", "file": "style.css"}
   ]
 }

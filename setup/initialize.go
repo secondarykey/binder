@@ -273,6 +273,8 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 			ParentId: a.ParentId,
 			Name:     a.Name,
 			Alias:    a.Alias,
+			Binary:   a.Binary,
+			Mime:     a.Mime,
 		}
 
 		if a.Id != "" {

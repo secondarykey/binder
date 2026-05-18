@@ -48,6 +48,8 @@ type installAsset struct {
 	Name     string `json:"name"`
 	Alias    string `json:"alias"`
 	ParentId string `json:"parentId"`
+	Binary   bool   `json:"binary"`
+	Mime     string `json:"mime"`
 	File     string `json:"file"`
 }
 
