@@ -42,6 +42,7 @@ type installNote struct {
 }
 
 type installDiagram struct {
+	Id            string `json:"id"`
 	Name          string `json:"name"`
 	ParentId      string `json:"parentId"`
 	StyleTemplate string `json:"styleTemplate"`
