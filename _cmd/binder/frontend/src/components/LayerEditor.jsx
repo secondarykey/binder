@@ -35,7 +35,7 @@ const defaultShapeProps = {
   color: '#ff0000',
   // strokeWidth はピクセル単位 (vector-effect="non-scaling-stroke" のため
   // 画像の表示サイズに依らず常に同じ太さで描画される)。
-  strokeWidth: 2,
+  strokeWidth: 5,
   fill: 'none',
 };
 
@@ -291,7 +291,7 @@ const ARROW_WING_ANGLE = Math.PI / 6; // 30 degrees
 
 const LINE_TOOL_TYPES = ['line', 'polyline', 'curve'];
 const ARROW_HEAD_OPTIONS = ['none', 'end', 'start', 'both'];
-const DEFAULT_ARROW_SIZE = 3.5;
+const DEFAULT_ARROW_SIZE = 5;
 
 const lineToolIcon = (type) => {
   const sx = { fontSize: '16px' };
@@ -1508,8 +1508,8 @@ function LayerEditor() {
                   <TextField
                     label={t("layer.strokeWidth")} size="small" type="number"
                     inputProps={{ step: 0.5, min: 0.5, max: 50 }}
-                    value={normalizeStrokeWidth(selected.strokeWidth ?? 2)}
-                    onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 2 })}
+                    value={normalizeStrokeWidth(selected.strokeWidth ?? 5)}
+                    onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 5 })}
                   />
                   {['line', 'polyline', 'curve'].includes(selected.type) && (
                     <>
