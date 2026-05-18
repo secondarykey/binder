@@ -13,6 +13,10 @@ import UnpublishedIcon from '@mui/icons-material/Unpublished';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import GestureIcon from '@mui/icons-material/Gesture';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames, GetModifiedIds } from '../../bindings/binder/api/app';
 import { Browser } from '@wailsio/runtime';
@@ -103,13 +107,32 @@ const textTotalHeight = (s, svgHeightPx = 0) => {
 // viewBox 上の実幅も 1/aspect 倍となる。
 const getBBox = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return null;
-  if (s.type === 'line') {
+  if (s.type === 'line' || s.type === 'arrow') {
     return {
       x: Math.min(s.x1, s.x2),
       y: Math.min(s.y1, s.y2),
       width: Math.abs(s.x2 - s.x1),
       height: Math.abs(s.y2 - s.y1),
     };
+  }
+  if (s.type === 'polyline') {
+    const pts = s.points || [];
+    if (pts.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+  if (s.type === 'curve') {
+    const xs = [s.x1, s.cpx, s.x2];
+    const ys = [s.y1, s.cpy, s.y2];
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
   if (s.type === 'rect') {
     return { x: s.x, y: s.y, width: s.width, height: s.height };
@@ -133,10 +156,22 @@ const getBBox = (s, imgAspect = 1, svgHeightPx = 0) => {
 // 選択中 shape に表示するリサイズハンドル位置を計算
 const getHandles = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return [];
-  if (s.type === 'line') {
+  if (s.type === 'line' || s.type === 'arrow') {
     return [
       { id: 'start', x: s.x1, y: s.y1, cursor: 'move' },
       { id: 'end', x: s.x2, y: s.y2, cursor: 'move' },
+    ];
+  }
+  if (s.type === 'polyline') {
+    return (s.points || []).map((p, i) => ({
+      id: `pt-${i}`, x: p.x, y: p.y, cursor: 'move',
+    }));
+  }
+  if (s.type === 'curve') {
+    return [
+      { id: 'start', x: s.x1, y: s.y1, cursor: 'move' },
+      { id: 'end', x: s.x2, y: s.y2, cursor: 'move' },
+      { id: 'cp', x: s.cpx, y: s.cpy, cursor: 'move', isControlPoint: true },
     ];
   }
   if (s.type === 'rect') {
@@ -169,9 +204,15 @@ const getHandles = (s, imgAspect = 1, svgHeightPx = 0) => {
 
 // ハンドル操作時の固定点（ドラッグする点と対になる位置）を返す
 const getFixedPoint = (s, handle) => {
-  if (s.type === 'line') {
+  if (s.type === 'line' || s.type === 'arrow') {
     if (handle === 'start') return { x: s.x2, y: s.y2 };
     if (handle === 'end') return { x: s.x1, y: s.y1 };
+  } else if (s.type === 'polyline') {
+    return null;
+  } else if (s.type === 'curve') {
+    if (handle === 'start') return { x: s.x2, y: s.y2 };
+    if (handle === 'end') return { x: s.x1, y: s.y1 };
+    if (handle === 'cp') return null;
   } else if (s.type === 'rect') {
     const x2 = s.x + s.width;
     const y2 = s.y + s.height;
@@ -196,7 +237,15 @@ const getFixedPoint = (s, handle) => {
 // アンカー + fs/(2*aspect) となる。
 const getShapeCenter = (s, imgAspect = 1, svgHeightPx = 0) => {
   if (!s) return { x: 0.5, y: 0.5 };
-  if (s.type === 'line') return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
+  if (s.type === 'line' || s.type === 'arrow') return { x: (s.x1 + s.x2) / 2, y: (s.y1 + s.y2) / 2 };
+  if (s.type === 'polyline') {
+    const pts = s.points || [];
+    if (pts.length === 0) return { x: 0.5, y: 0.5 };
+    const sx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
+    const sy = pts.reduce((a, p) => a + p.y, 0) / pts.length;
+    return { x: sx, y: sy };
+  }
+  if (s.type === 'curve') return { x: (s.x1 + s.cpx + s.x2) / 3, y: (s.y1 + s.cpy + s.y2) / 3 };
   if (s.type === 'rect') return { x: s.x + s.width / 2, y: s.y + s.height / 2 };
   if (s.type === 'ellipse') return { x: s.cx, y: s.cy };
   if (s.type === 'text') {
@@ -238,6 +287,21 @@ const snapAngle = (pivotX, pivotY, x, y, aspect) => {
   return { x: pivotX + nx / a, y: pivotY + ny };
 };
 
+const ARROW_WING_FACTOR = 3.5;
+const ARROW_WING_ANGLE = Math.PI / 6; // 30 degrees
+
+const LINE_TOOL_TYPES = ['line', 'arrow', 'polyline', 'curve'];
+
+const lineToolIcon = (type) => {
+  const sx = { fontSize: '16px' };
+  switch (type) {
+    case 'arrow': return <TrendingFlatIcon sx={sx} />;
+    case 'polyline': return <TimelineIcon sx={sx} />;
+    case 'curve': return <GestureIcon sx={sx} />;
+    default: return <RemoveIcon sx={sx} />;
+  }
+};
+
 /**
  * Layer の描画エディタ。
  * 画像アセットビューアと同レイアウト（上: メニューバー、中: キャンバス、下: ステータスバー）。
@@ -262,6 +326,9 @@ function LayerEditor() {
   const [ctxMenu, setCtxMenu] = useState(null); // { mouseX, mouseY, shapeId }
   const [generating, setGenerating] = useState(false);
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
+  const [lineSubMenu, setLineSubMenu] = useState(null);
+  const [lineToolType, setLineToolType] = useState('line');
+  const [polylinePoints, setPolylinePoints] = useState([]);
   const [comment, setComment] = useState('');
   const [updated, setUpdated] = useState(false);
 
@@ -447,25 +514,43 @@ function LayerEditor() {
   };
 
   const handlePointerDown = (e) => {
-    if (e.button !== 0) return; // 中ボタン等は描画対象外（中ボタンはパンに使用）
+    if (e.button !== 0) return;
     if (tool === 'select') return;
     const { x, y } = toClientPos(e);
     const base = { id: uuid(), ...defaultShapeProps };
     let shape;
     if (tool === 'line') {
       shape = { ...base, type: 'line', x1: x, y1: y, x2: x, y2: y };
+    } else if (tool === 'arrow') {
+      shape = { ...base, type: 'arrow', x1: x, y1: y, x2: x, y2: y };
+    } else if (tool === 'polyline') {
+      if (polylinePoints.length === 0) {
+        setPolylinePoints([{ x, y }]);
+        setDrawing({
+          shape: { ...base, type: 'polyline', points: [{ x, y }, { x, y }] },
+          startX: x, startY: y,
+        });
+      } else {
+        setPolylinePoints((prev) => [...prev, { x, y }]);
+        setDrawing((prev) => {
+          if (!prev) return prev;
+          const pts = [...polylinePoints, { x, y }, { x, y }];
+          return { ...prev, shape: { ...prev.shape, points: pts } };
+        });
+      }
+      return;
+    } else if (tool === 'curve') {
+      shape = { ...base, type: 'curve', x1: x, y1: y, x2: x, y2: y, cpx: x, cpy: y };
     } else if (tool === 'rect') {
       shape = { ...base, type: 'rect', x, y, width: 0, height: 0 };
     } else if (tool === 'ellipse') {
       shape = { ...base, type: 'ellipse', cx: x, cy: y, rx: 0, ry: 0 };
     } else if (tool === 'text') {
-      // テキストはクリックで即座に配置（ドラッグ不要）
       const textShape = {
         ...base,
         type: 'text',
         x, y,
         text: t("layer.defaultText"),
-        // px 単位で保存。描画時に svg 表示高 (px) で割って viewBox 単位へ変換。
         fontSize: DEFAULT_FONT_SIZE_PX,
       };
       setShapes((prev) => [...prev, textShape]);
@@ -511,8 +596,7 @@ function LayerEditor() {
         y = p.y;
       }
       let resized = orig;
-      if (orig.type === 'line') {
-        // Shift 押下で水平・垂直・45度 斜めへスナップ（fixed を支点とする）。
+      if (orig.type === 'line' || orig.type === 'arrow') {
         let ex = x, ey = y;
         if (e.shiftKey && fixed) {
           const p = snapAngle(fixed.x, fixed.y, x, y, aspect);
@@ -520,6 +604,20 @@ function LayerEditor() {
         }
         if (handle === 'start') resized = { ...orig, x1: ex, y1: ey };
         else if (handle === 'end') resized = { ...orig, x2: ex, y2: ey };
+      } else if (orig.type === 'polyline') {
+        const m = handle.match(/^pt-(\d+)$/);
+        if (m) {
+          const idx = parseInt(m[1], 10);
+          const pts = [...(orig.points || [])];
+          if (idx >= 0 && idx < pts.length) {
+            pts[idx] = { x, y };
+            resized = { ...orig, points: pts };
+          }
+        }
+      } else if (orig.type === 'curve') {
+        if (handle === 'start') resized = { ...orig, x1: x, y1: y };
+        else if (handle === 'end') resized = { ...orig, x2: x, y2: y };
+        else if (handle === 'cp') resized = { ...orig, cpx: x, cpy: y };
       } else if (orig.type === 'rect') {
         resized = {
           ...orig,
@@ -554,8 +652,12 @@ function LayerEditor() {
       const dy = y - dragging.startY;
       const { orig } = dragging;
       let moved = orig;
-      if (orig.type === 'line') {
+      if (orig.type === 'line' || orig.type === 'arrow') {
         moved = { ...orig, x1: orig.x1 + dx, y1: orig.y1 + dy, x2: orig.x2 + dx, y2: orig.y2 + dy };
+      } else if (orig.type === 'polyline') {
+        moved = { ...orig, points: (orig.points || []).map((p) => ({ x: p.x + dx, y: p.y + dy })) };
+      } else if (orig.type === 'curve') {
+        moved = { ...orig, x1: orig.x1 + dx, y1: orig.y1 + dy, x2: orig.x2 + dx, y2: orig.y2 + dy, cpx: orig.cpx + dx, cpy: orig.cpy + dy };
       } else if (orig.type === 'rect') {
         moved = { ...orig, x: orig.x + dx, y: orig.y + dy };
       } else if (orig.type === 'ellipse') {
@@ -570,14 +672,24 @@ function LayerEditor() {
     const { x, y } = toClientPos(e);
     const { shape, startX, startY } = drawing;
     let next;
-    if (shape.type === 'line') {
-      // Shift 押下で水平・垂直・45度 斜めへスナップ（開始点 startX/startY を支点）。
+    if (shape.type === 'line' || shape.type === 'arrow') {
       let ex = x, ey = y;
       if (e.shiftKey) {
         const p = snapAngle(startX, startY, x, y, aspect);
         ex = p.x; ey = p.y;
       }
       next = { ...shape, x2: ex, y2: ey };
+    } else if (shape.type === 'polyline') {
+      const pts = [...polylinePoints, { x, y }];
+      next = { ...shape, points: pts };
+    } else if (shape.type === 'curve') {
+      let ex = x, ey = y;
+      if (e.shiftKey) {
+        const p = snapAngle(startX, startY, x, y, aspect);
+        ex = p.x; ey = p.y;
+      }
+      const mx = (startX + ex) / 2, my = (startY + ey) / 2;
+      next = { ...shape, x2: ex, y2: ey, cpx: mx, cpy: my };
     } else if (shape.type === 'rect') {
       next = {
         ...shape,
@@ -594,6 +706,23 @@ function LayerEditor() {
     setDrawing({ ...drawing, shape: next });
   };
 
+  const finishPolyline = () => {
+    if (!drawing || drawing.shape.type !== 'polyline') return;
+    if (polylinePoints.length >= 2) {
+      const final = { ...drawing.shape, points: [...polylinePoints] };
+      setShapes((prev) => [...prev, final]);
+      setSelectedId(final.id);
+    }
+    setPolylinePoints([]);
+    setDrawing(null);
+    setTool('select');
+  };
+
+  const cancelPolyline = () => {
+    setPolylinePoints([]);
+    setDrawing(null);
+  };
+
   const handlePointerUp = () => {
     if (rotating) {
       setRotating(null);
@@ -608,10 +737,10 @@ function LayerEditor() {
       return;
     }
     if (!drawing) return;
+    if (drawing.shape.type === 'polyline') return;
     setShapes((prev) => [...prev, drawing.shape]);
     setSelectedId(drawing.shape.id);
     setDrawing(null);
-    // 連続で新規作成してしまわないよう選択ツールへ戻す
     setTool('select');
   };
 
@@ -699,6 +828,19 @@ function LayerEditor() {
       focusTextOnNextRenderRef.current = false;
     }
   });
+
+  useEffect(() => {
+    if (tool !== 'polyline' || polylinePoints.length === 0) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') { cancelPolyline(); }
+      else if (e.key === 'Enter') { finishPolyline(); }
+      else if ((e.key === 'Backspace' || e.key === 'Delete') && polylinePoints.length > 1) {
+        setPolylinePoints((prev) => prev.slice(0, -1));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tool, polylinePoints.length]);
 
   const handleShapeContextMenu = (e, shapeId) => {
     e.preventDefault();
@@ -796,15 +938,30 @@ function LayerEditor() {
     Browser.OpenURL(`${serverAddress}/layers/${a}.svg`);
   };
 
+  const renderArrowhead = (tipX, tipY, fromX, fromY, stroke, sw) => {
+    const dx = tipX - fromX, dy = tipY - fromY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 1e-9) return null;
+    const h = naturalH > 0 ? naturalH : 1;
+    const wingLen = (sw * ARROW_WING_FACTOR) / h;
+    const angle = Math.atan2(dy, dx);
+    const wings = [1, -1].map((sign, i) => {
+      const a = angle + Math.PI + sign * ARROW_WING_ANGLE;
+      const wx = tipX + wingLen * Math.cos(a);
+      const wy = tipY + wingLen * Math.sin(a);
+      return (
+        <line key={`ah${i}`} x1={tipX} y1={tipY} x2={wx} y2={wy}
+          stroke={stroke} strokeWidth={sw} strokeLinecap="round"
+          vectorEffect="non-scaling-stroke" pointerEvents="none" />
+      );
+    });
+    return <>{wings}</>;
+  };
+
   const renderShape = (s, isPreview = false) => {
     const stroke = s.color || '#ff0000';
-    // vector-effect="non-scaling-stroke" 付きで描画するため、stroke-width は
-    // ピクセル単位として解釈される。legacy の正規化値 (< 1) はピクセルに変換。
     const sw = normalizeStrokeWidth(s.strokeWidth);
     const fill = s.fill || 'none';
-    // fill="none" は SVG ヒットテストの対象外（ストローク線上のみクリック可）。
-    // fill="transparent" は視覚的に同じ（完全透明）だが領域全体がクリック可になる。
-    // rect/ellipse の内部をクリックして選択できるようにするため none→transparent に変換。
     const svgFill = fill === 'none' ? 'transparent' : fill;
     const common = {
       stroke,
@@ -819,6 +976,49 @@ function LayerEditor() {
     let el = null;
     if (s.type === 'line') {
       el = <line {...common} x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />;
+    } else if (s.type === 'arrow') {
+      el = (
+        <g onPointerDown={(e) => handleShapePointerDown(e, s.id)}
+           onClick={(e) => handleShapeClick(e, s.id)}
+           onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
+           style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+          <line stroke={stroke} strokeWidth={sw} fill="none" vectorEffect="non-scaling-stroke"
+            x1={vbX(s.x1)} y1={s.y1} x2={vbX(s.x2)} y2={s.y2} strokeLinecap="round" />
+          {renderArrowhead(vbX(s.x2), s.y2, vbX(s.x1), s.y1, stroke, sw)}
+        </g>
+      );
+    } else if (s.type === 'polyline') {
+      const pts = (s.points || []).map((p) => `${vbX(p.x)},${p.y}`).join(' ');
+      const pArr = s.points || [];
+      el = (
+        <g onPointerDown={(e) => handleShapePointerDown(e, s.id)}
+           onClick={(e) => handleShapeClick(e, s.id)}
+           onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
+           style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+          <polyline points={pts} stroke={stroke} strokeWidth={sw} fill="none"
+            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <polyline points={pts} stroke="transparent" strokeWidth={Math.max(sw, 8)} fill="none"
+            vectorEffect="non-scaling-stroke" pointerEvents="stroke" />
+          {pArr.length >= 2 && renderArrowhead(
+            vbX(pArr[pArr.length - 1].x), pArr[pArr.length - 1].y,
+            vbX(pArr[pArr.length - 2].x), pArr[pArr.length - 2].y,
+            stroke, sw)}
+        </g>
+      );
+    } else if (s.type === 'curve') {
+      const d = `M ${vbX(s.x1)} ${s.y1} Q ${vbX(s.cpx)} ${s.cpy} ${vbX(s.x2)} ${s.y2}`;
+      el = (
+        <g onPointerDown={(e) => handleShapePointerDown(e, s.id)}
+           onClick={(e) => handleShapeClick(e, s.id)}
+           onContextMenu={(e) => handleShapeContextMenu(e, s.id)}
+           style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+          <path d={d} stroke={stroke} strokeWidth={sw} fill="none"
+            strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <path d={d} stroke="transparent" strokeWidth={Math.max(sw, 8)} fill="none"
+            vectorEffect="non-scaling-stroke" pointerEvents="stroke" />
+          {renderArrowhead(vbX(s.x2), s.y2, vbX(s.cpx), s.cpy, stroke, sw)}
+        </g>
+      );
     } else if (s.type === 'rect') {
       el = <rect {...common} x={vbX(s.x)} y={s.y} width={vbX(s.width)} height={s.height} />;
     } else if (s.type === 'ellipse') {
@@ -921,8 +1121,19 @@ function LayerEditor() {
             <Tooltip title={t("layer.toolSelect")} placement="bottom">
               <ToggleButton value="select" sx={toggleBtnSx}><NearMeIcon sx={{ fontSize: '16px' }} /></ToggleButton>
             </Tooltip>
-            <Tooltip title={t("layer.toolLine")} placement="bottom">
-              <ToggleButton value="line" sx={toggleBtnSx}><RemoveIcon sx={{ fontSize: '16px' }} /></ToggleButton>
+            <Tooltip title={t(`layer.tool${lineToolType.charAt(0).toUpperCase() + lineToolType.slice(1)}`)} placement="bottom">
+              <ToggleButton
+                value={lineToolType}
+                sx={{ ...toggleBtnSx, pr: '2px' }}
+                selected={LINE_TOOL_TYPES.includes(tool)}
+                onClick={() => setTool(lineToolType)}
+              >
+                {lineToolIcon(lineToolType)}
+                <ArrowDropDownIcon
+                  sx={{ fontSize: '12px', ml: '-2px', opacity: 0.6 }}
+                  onClick={(e) => { e.stopPropagation(); setLineSubMenu(e.currentTarget); }}
+                />
+              </ToggleButton>
             </Tooltip>
             <Tooltip title={t("layer.toolRect")} placement="bottom">
               <ToggleButton value="rect" sx={toggleBtnSx}><RectangleOutlinedIcon sx={{ fontSize: '16px' }} /></ToggleButton>
@@ -965,6 +1176,27 @@ function LayerEditor() {
         <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
           <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
         </MenuItem>
+      </Menu>
+
+      {/* 線種サブメニュー */}
+      <Menu
+        open={lineSubMenu !== null}
+        anchorEl={lineSubMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        onClose={() => setLineSubMenu(null)}
+        slotProps={{ paper: { sx: { minWidth: 140 } } }}
+      >
+        {LINE_TOOL_TYPES.map((lt) => (
+          <MenuItem
+            key={lt}
+            selected={lineToolType === lt}
+            onClick={() => { setLineToolType(lt); setTool(lt); setLineSubMenu(null); }}
+          >
+            <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>{lineToolIcon(lt)}</Box>
+            {t(`layer.tool${lt.charAt(0).toUpperCase() + lt.slice(1)}`)}
+          </MenuItem>
+        ))}
       </Menu>
 
       {/* コンテンツ: キャンバス + フローティングパネル */}
@@ -1021,6 +1253,7 @@ function LayerEditor() {
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
                 onClick={(e) => { if (tool === 'select' && e.target === svgRef.current) setSelectedId(null); }}
+                onDoubleClick={(e) => { if (tool === 'polyline' && polylinePoints.length >= 2) { e.preventDefault(); finishPolyline(); } }}
                 onContextMenu={(e) => {
                   if (e.target === svgRef.current) e.preventDefault();
                 }}
@@ -1050,6 +1283,17 @@ function LayerEditor() {
                           style={{ animation: 'layerMarchingAnts 1s linear infinite' }}
                         />
                       )}
+                      {/* curve の制御点スケルトン線 */}
+                      {tool === 'select' && !drawing && selected.type === 'curve' && (
+                        <>
+                          <line x1={vbX(selected.x1)} y1={selected.y1} x2={vbX(selected.cpx)} y2={selected.cpy}
+                            stroke="#ff8800" strokeWidth={1} strokeDasharray="4,3"
+                            vectorEffect="non-scaling-stroke" pointerEvents="none" />
+                          <line x1={vbX(selected.x2)} y1={selected.y2} x2={vbX(selected.cpx)} y2={selected.cpy}
+                            stroke="#ff8800" strokeWidth={1} strokeDasharray="4,3"
+                            vectorEffect="non-scaling-stroke" pointerEvents="none" />
+                        </>
+                      )}
                       {tool === 'select' && !drawing && getHandles(selected, imgAspect, naturalH).map((h) => (
                         <g key={h.id} style={{ cursor: h.cursor }}
                            onPointerDown={(e) => handleHandlePointerDown(e, h.id, selected.id)}>
@@ -1058,14 +1302,24 @@ function LayerEditor() {
                             width={hitSize} height={hitSize}
                             fill="transparent"
                           />
-                          <rect
-                            x={vbX(h.x) - handleSize / 2} y={h.y - handleSize / 2}
-                            width={handleSize} height={handleSize}
-                            fill="#ffffff"
-                            stroke="#00aaff"
-                            strokeWidth={1}
-                            vectorEffect="non-scaling-stroke"
-                          />
+                          {h.isControlPoint ? (
+                            <circle
+                              cx={vbX(h.x)} cy={h.y} r={handleSize / 2}
+                              fill="#ffffff"
+                              stroke="#ff8800"
+                              strokeWidth={1.5}
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          ) : (
+                            <rect
+                              x={vbX(h.x) - handleSize / 2} y={h.y - handleSize / 2}
+                              width={handleSize} height={handleSize}
+                              fill="#ffffff"
+                              stroke="#00aaff"
+                              strokeWidth={1}
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          )}
                         </g>
                       ))}
                       {/* 回転ハンドル: bbox 右下からさらに外側 (固定ピクセル) に配置。
@@ -1227,7 +1481,7 @@ function LayerEditor() {
                     value={normalizeStrokeWidth(selected.strokeWidth ?? 2)}
                     onChange={(e) => updateSelected({ strokeWidth: parseFloat(e.target.value) || 2 })}
                   />
-                  {selected.type !== 'line' && (
+                  {!['line', 'arrow', 'polyline', 'curve'].includes(selected.type) && (
                     <TextField
                       label={t("layer.fill")} size="small"
                       value={selected.fill || 'none'}
