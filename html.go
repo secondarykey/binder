@@ -206,6 +206,45 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	return builder.String(), nil
 }
 
+// CreateNoteHTMLForExport はエクスポート用にノートHTMLを生成し、参照された依存関係を返す。
+// relativePrefix を常に "./" にし、テンプレート実行中に参照されたアセット・ダイアグラム・レイヤーを収集する。
+func (b *Binder) CreateNoteHTMLForExport(note *json.Note, elm string) (string, *exportDeps, error) {
+
+	if b == nil {
+		return "", nil, EmptyError
+	}
+
+	deps := &exportDeps{
+		assets:   make(map[string]*json.Asset),
+		diagrams: make(map[string]*json.Diagram),
+		layers:   make(map[string]*json.Layer),
+	}
+
+	w, err := newWrapper(b, false, note)
+	if err != nil {
+		return "", nil, xerrors.Errorf("newWrapper() error: %w", err)
+	}
+	w.exportAsIndex = true
+	w.deps = deps
+
+	tmpl, err := b.createHTMLTemplate(w)
+	if err != nil {
+		return "", nil, xerrors.Errorf("createHTMLTemplate() error: %w", err)
+	}
+
+	dto, err := b.createDto(w, elm)
+	if err != nil {
+		return "", nil, xerrors.Errorf("createDto() error: %w", err)
+	}
+
+	var builder strings.Builder
+	err = b.writeHTML(&builder, tmpl, dto)
+	if err != nil {
+		return "", nil, xerrors.Errorf("writeHTML() error: %w", err)
+	}
+	return builder.String(), deps, nil
+}
+
 // テキストアセットの要素を一度テンプレート処理を行う。
 // text/template を使用して {{assets}} 等のテンプレート関数を展開する。
 func (b *Binder) ParseAsset(local bool, elm string) (string, error) {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"binder/api/json"
 	"binder/log"
 	"fmt"
 )
@@ -27,6 +28,32 @@ func (a *App) DownloadAll(savePath string) error {
 	if err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("DownloadAll() error\n%+v", err)
+	}
+	return nil
+}
+
+// CollectExportDeps はノートZIPエクスポートに必要な依存関係を収集する。
+func (a *App) CollectExportDeps(noteId string, text string) (*json.ExportDeps, error) {
+
+	defer log.PrintTrace(log.Func("CollectExportDeps()"))
+
+	deps, err := a.current.CollectExportDeps(noteId, text)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("CollectExportDeps() error\n%+v", err)
+	}
+	return deps, nil
+}
+
+// DownloadNote はノートを自己完結したZIPとしてエクスポートする。
+func (a *App) DownloadNote(noteId string, text string, diagramSVGs map[string]string, savePath string) error {
+
+	defer log.PrintTrace(log.Func("DownloadNote()"))
+
+	err := a.current.DownloadNote(noteId, text, diagramSVGs, savePath)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DownloadNote() error\n%+v", err)
 	}
 	return nil
 }

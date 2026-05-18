@@ -9,11 +9,20 @@ import (
 	"binder/fs"
 )
 
+// exportDeps はエクスポート時にテンプレート実行中に参照されたリソースを収集する。
+type exportDeps struct {
+	assets   map[string]*json.Asset
+	diagrams map[string]*json.Diagram
+	layers   map[string]*json.Layer
+}
+
 type wrapper struct {
-	owner   *Binder
-	note    *json.Note
-	Local   bool
-	visited map[string]bool // embed で現在展開中のIDセット（循環参照防止）
+	owner         *Binder
+	note          *json.Note
+	Local         bool
+	visited       map[string]bool // embed で現在展開中のIDセット（循環参照防止）
+	deps          *exportDeps     // nil = 通常モード、非nil = 依存関係収集モード
+	exportAsIndex bool            // true の場合 relativePrefix() は常に "./" を返す
 }
 
 // visitedWith は現在の visited に id を加えた新しいマップを返す。
@@ -42,6 +51,9 @@ func (w *wrapper) localAddr() string {
 // relativePrefix は公開HTMLでのリソース参照用の相対パスプレフィックスを返す。
 // index.html は docs/ 直下にあるため "./"、サブページは docs/pages/ 配下にあるため "../"。
 func (w *wrapper) relativePrefix() string {
+	if w.exportAsIndex {
+		return "./"
+	}
 	if w.note != nil && w.note.Id != "index" {
 		return "../"
 	}

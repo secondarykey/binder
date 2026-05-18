@@ -375,6 +375,28 @@ func (win *Window) DownloadDocs() error {
 	return nil
 }
 
+// DownloadNote はノートを自己完結したZIPとしてダウンロードする。
+// 保存先ダイアログを表示し、選択されたパスにZIPを書き出す。
+func (win *Window) DownloadNote(noteId string, text string, diagramSVGs map[string]string) error {
+	defer log.PrintTrace(log.Func("DownloadNote()"))
+
+	savePath, err := win.downloadSaveDialog("_note")
+	if err != nil {
+		return err
+	}
+	if savePath == "" {
+		return nil
+	}
+
+	err = win.app.DownloadNote(noteId, text, diagramSVGs, savePath)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return fmt.Errorf("DownloadNote() error\n%+v", err)
+	}
+
+	return nil
+}
+
 // DownloadAll はバインダー全体をZIPファイルとしてダウンロードする。
 // 保存先ダイアログを表示し、選択されたパスにZIPを書き出す。
 func (win *Window) DownloadAll() error {

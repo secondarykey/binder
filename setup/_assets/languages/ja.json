@@ -436,6 +436,7 @@
         "unpublish" : "未公開状態にする",
         "unpublishConfirm" : "未公開状態にしますか？",
         "download" : "ダウンロード",
+        "downloadZip" : "ZIPでダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー",
         "alwaysOnTop" : "最前面に固定",

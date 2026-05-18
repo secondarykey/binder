@@ -2,6 +2,7 @@ package binder
 
 import (
 	"archive/zip"
+	"binder/api/json"
 	"binder/fs"
 	"io"
 	"os"
@@ -106,6 +107,165 @@ func createZip(savePath, baseDir string, excludes map[string]bool) error {
 
 	if err != nil {
 		return xerrors.Errorf("filepath.Walk() error: %w", err)
+	}
+
+	return nil
+}
+
+// CollectExportDeps はノートのエクスポートに必要な依存関係を収集し、
+// フロントエンドでSVG生成が必要なダイアグラムのリストを返す。
+func (b *Binder) CollectExportDeps(noteId string, text string) (*json.ExportDeps, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	note, err := b.GetNote(noteId)
+	if err != nil {
+		return nil, xerrors.Errorf("GetNote() error: %w", err)
+	}
+
+	expanded, err := b.ParseNote(note, false, text)
+	if err != nil {
+		return nil, xerrors.Errorf("ParseNote() error: %w", err)
+	}
+
+	_, deps, err := b.CreateNoteHTMLForExport(note, expanded)
+	if err != nil {
+		return nil, xerrors.Errorf("CreateNoteHTMLForExport() error: %w", err)
+	}
+
+	result := &json.ExportDeps{}
+	for id, diag := range deps.diagrams {
+		svgPath := fs.SVGFile(diag)
+		if _, err := b.fileSystem.Stat(svgPath); err != nil {
+			result.MissingDiagrams = append(result.MissingDiagrams, json.ExportDiagram{
+				Id:   id,
+				Name: diag.Name,
+			})
+		}
+	}
+	return result, nil
+}
+
+// DownloadNote はノートを自己完結したZIPとしてエクスポートする。
+// diagramSVGs はフロントエンドでMermaid.jsにより生成されたSVGデータ（key=diagramId）。
+func (b *Binder) DownloadNote(noteId string, text string, diagramSVGs map[string]string, savePath string) error {
+
+	if b == nil {
+		return EmptyError
+	}
+
+	note, err := b.GetNote(noteId)
+	if err != nil {
+		return xerrors.Errorf("GetNote() error: %w", err)
+	}
+
+	expanded, err := b.ParseNote(note, false, text)
+	if err != nil {
+		return xerrors.Errorf("ParseNote() error: %w", err)
+	}
+
+	htmlStr, deps, err := b.CreateNoteHTMLForExport(note, expanded)
+	if err != nil {
+		return xerrors.Errorf("CreateNoteHTMLForExport() error: %w", err)
+	}
+
+	return b.writeExportZip(savePath, []byte(htmlStr), note, deps, diagramSVGs)
+}
+
+func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d *exportDeps, diagramSVGs map[string]string) error {
+
+	outFile, err := os.Create(savePath)
+	if err != nil {
+		return xerrors.Errorf("os.Create() error: %w", err)
+	}
+	defer outFile.Close()
+
+	w := zip.NewWriter(outFile)
+	defer w.Close()
+
+	// index.html
+	f, err := w.Create("index.html")
+	if err != nil {
+		return xerrors.Errorf("zip create index.html error: %w", err)
+	}
+	if _, err := f.Write(html); err != nil {
+		return xerrors.Errorf("zip write index.html error: %w", err)
+	}
+
+	// assets
+	for id, a := range d.assets {
+		if a.Alias == "" {
+			continue
+		}
+		data, _, err := b.ReadAssetBytes(id)
+		if err != nil {
+			continue
+		}
+		zipPath := "assets/" + a.Alias
+		af, err := w.Create(zipPath)
+		if err != nil {
+			continue
+		}
+		af.Write(data)
+	}
+
+	// diagrams
+	for id, diag := range d.diagrams {
+		if diag.Alias == "" {
+			continue
+		}
+		zipPath := "images/" + diag.Alias + ".svg"
+
+		var svgData []byte
+		if data, ok := diagramSVGs[id]; ok && data != "" {
+			svgData = []byte(data)
+		} else {
+			svgPath := fs.SVGFile(diag)
+			sf, err := b.fileSystem.Open(svgPath)
+			if err != nil {
+				continue
+			}
+			svgData, err = io.ReadAll(sf)
+			sf.Close()
+			if err != nil {
+				continue
+			}
+		}
+
+		df, err := w.Create(zipPath)
+		if err != nil {
+			continue
+		}
+		df.Write(svgData)
+	}
+
+	// layers
+	for id, l := range d.layers {
+		if l.Alias == "" {
+			continue
+		}
+		svg, err := b.BuildLayerSVGForId(id)
+		if err != nil {
+			continue
+		}
+		zipPath := "layers/" + l.Alias + ".svg"
+		lf, err := w.Create(zipPath)
+		if err != nil {
+			continue
+		}
+		lf.Write([]byte(svg))
+	}
+
+	// meta image
+	metaData, err := b.ReadMetaBytes(note.Id)
+	if err == nil && metaData != nil && note.Alias != "" {
+		zipPath := "images/meta/" + note.Alias
+		mf, err := w.Create(zipPath)
+		if err == nil {
+			mf.Write(metaData)
+		}
 	}
 
 	return nil

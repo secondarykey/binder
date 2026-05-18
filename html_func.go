@@ -92,6 +92,10 @@ func (w *wrapper) assets(id string) string {
 		return "assets/error"
 	}
 
+	if w.deps != nil {
+		w.deps.assets[id] = a
+	}
+
 	p := fs.PublicAssetFile(a)
 	return w.convertURL(p)
 }
@@ -263,6 +267,13 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 		}
 	} else {
 
+		if w.deps != nil {
+			diag, err := w.owner.GetDiagram(id)
+			if err == nil {
+				w.deps.diagrams[id] = diag
+			}
+		}
+
 		f, err := w.getSVGFile(id)
 		if err != nil {
 			code = fmt.Sprintf("SVG File error: %v", err)
@@ -313,6 +324,12 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		m, err := w.owner.GetLayerWithParent(id)
 		if err != nil {
 			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+		}
+		if w.deps != nil {
+			w.deps.layers[id] = m
+			if m.Parent != nil {
+				w.deps.assets[m.ParentId] = m.Parent
+			}
 		}
 		if m.Parent != nil {
 			imageSrc = w.convertURL(fs.PublicAssetFile(m.Parent))
@@ -373,10 +390,12 @@ func (w *wrapper) embedNote(id string) (template.HTML, error) {
 	}
 
 	childWrap := &wrapper{
-		owner:   w.owner,
-		note:    note,
-		Local:   w.Local,
-		visited: w.visitedWith(id),
+		owner:         w.owner,
+		note:          note,
+		Local:         w.Local,
+		visited:       w.visitedWith(id),
+		deps:          w.deps,
+		exportAsIndex: w.exportAsIndex,
 	}
 
 	content := buf.String()
@@ -415,10 +434,12 @@ func (w *wrapper) embedTextAsset(id string) (template.HTML, error) {
 	}
 
 	childWrap := &wrapper{
-		owner:   w.owner,
-		note:    w.note,
-		Local:   w.Local,
-		visited: w.visitedWith(id),
+		owner:         w.owner,
+		note:          w.note,
+		Local:         w.Local,
+		visited:       w.visitedWith(id),
+		deps:          w.deps,
+		exportAsIndex: w.exportAsIndex,
 	}
 
 	content := string(data)

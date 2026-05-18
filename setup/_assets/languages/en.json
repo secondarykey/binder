@@ -436,6 +436,7 @@
         "unpublish" : "Unpublish",
         "unpublishConfirm" : "Unpublish this item?",
         "download" : "Download",
+        "downloadZip" : "Download as ZIP",
         "windowTitle" : "Preview",
         "parseError" : "Parse Error",
         "alwaysOnTop" : "Always on Top",
