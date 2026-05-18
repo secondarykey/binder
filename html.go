@@ -206,6 +206,44 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	return builder.String(), nil
 }
 
+// ParseNoteForExport はエクスポート用にノート要素のテンプレート関数を展開する。
+// exportAsIndex=true で relativePrefix を "./" にし、依存関係も収集する。
+func (b *Binder) ParseNoteForExport(note *json.Note, elm string) (string, *exportDeps, error) {
+
+	if b == nil {
+		return "", nil, EmptyError
+	}
+
+	deps := &exportDeps{
+		assets:   make(map[string]*json.Asset),
+		diagrams: make(map[string]*json.Diagram),
+		layers:   make(map[string]*json.Layer),
+	}
+
+	wrap, err := newWrapper(b, false, note)
+	if err != nil {
+		return "", nil, xerrors.Errorf("newWrapper() error: %w", err)
+	}
+	wrap.exportAsIndex = true
+	wrap.deps = deps
+
+	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
+	if err != nil {
+		return "", nil, xerrors.Errorf("Element Parse() error: %w", err)
+	}
+
+	dto, err := b.createDto(wrap, elm)
+	if err != nil {
+		return "", nil, xerrors.Errorf("createDto() error: %w", err)
+	}
+
+	var builder strings.Builder
+	if err := tmpl.Execute(&builder, dto); err != nil {
+		return "", nil, xerrors.Errorf("elm Execute() error: %w", err)
+	}
+	return builder.String(), deps, nil
+}
+
 // CreateNoteHTMLForExport はエクスポート用にノートHTMLを生成し、参照された依存関係を返す。
 // relativePrefix を常に "./" にし、テンプレート実行中に参照されたアセット・ダイアグラム・レイヤーを収集する。
 func (b *Binder) CreateNoteHTMLForExport(note *json.Note, elm string) (string, *exportDeps, error) {

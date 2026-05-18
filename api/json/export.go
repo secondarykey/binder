@@ -2,7 +2,8 @@ package json
 
 // ExportDeps はノートZIPエクスポート時に不足しているリソースの情報を返す。
 type ExportDeps struct {
-	MissingDiagrams []ExportDiagram `json:"missingDiagrams"`
+	ExpandedMarkdown string          `json:"expandedMarkdown"`
+	MissingDiagrams  []ExportDiagram `json:"missingDiagrams"`
 }
 
 // ExportDiagram はフロントエンドでSVG生成が必要なダイアグラムの情報。
