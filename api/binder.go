@@ -97,6 +97,10 @@ func (a *App) CreateBinder(dir string, name string, installType string) (string,
 	return address, nil
 }
 
+func (a *App) GetInstallPresets() []setup.InstallPreset {
+	return setup.GetInstallPresets()
+}
+
 func (a *App) CreateRemoteBinder(url, dir, branch, workBranch string, info *json.UserInfo, save bool) (string, error) {
 
 	defer log.PrintTrace(log.Func("CreateRemoteBinder()"))

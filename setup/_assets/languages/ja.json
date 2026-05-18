@@ -338,9 +338,9 @@
         "binderName" : "バインダー名",
         "requiredDirectory" : "ディレクトリを選択してください",
         "templateType" : "テンプレート",
-        "templateSimple" : "シンプル",
-        "templateDocument" : "ドキュメント",
-        "templateBlog" : "ブログ",
+        "template_simple" : "シンプル",
+        "template_document" : "ドキュメント",
+        "template_blog" : "ブログ",
         "templateDesc_simple" : "最小構成のレイアウト。メモや軽量プロジェクト向け。",
         "templateDesc_document" : "目次付きレイアウトと章構成。技術文書やマニュアル向け。",
         "templateDesc_blog" : "日付・著者表示付きレイアウト。ブログや記事投稿向け。"

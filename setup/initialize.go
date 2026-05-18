@@ -145,72 +145,37 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 			ContentTemplate: n.ContentTemplate,
 		}
 
-		if n.Id != "" {
-			// 固定IDのノート（ルートノートなど）
-			_, err := f.CreateNoteFile(jn)
-			if err != nil {
-				return xerrors.Errorf("fs.CreateNoteFile(%s) error: %w", n.Id, err)
-			}
-
-			mn := model.ConvertNote(jn)
-			err = inst.InsertNote(mn, op)
-			if err != nil {
-				return xerrors.Errorf("db.InsertNote(%s) error: %w", n.Id, err)
-			}
-
-			// 固定IDなのでStructureも直接作成
-			var rootStruct model.Structure
-			rootStruct.Id = n.Id
-			rootStruct.ParentId = n.ParentId
-			rootStruct.Seq = 1
-			rootStruct.Typ = "note"
-			rootStruct.Name = n.Name
-			rootStruct.Alias = n.Alias
-			err = inst.InsertStructure(&rootStruct, op)
-			if err != nil {
-				return xerrors.Errorf("db.InsertStructure(%s) error: %w", n.Id, err)
-			}
-
-			data, err := m.readFile(n.File)
-			if err != nil {
-				return xerrors.Errorf("ReadFile(%s) error: %w", n.File, err)
-			}
-			if len(data) > 0 {
-				err = f.WriteNoteText(n.Id, data)
-				if err != nil {
-					return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", n.Id, err)
-				}
-			}
-		} else {
-			// 通常ノート — IDを生成して作成
+		if jn.Id == "" {
 			jn.Id = generateId()
+		}
+		if jn.Alias == "" {
 			jn.Alias = jn.Id
+		}
 
-			_, err := f.CreateNoteFile(jn)
-			if err != nil {
-				return xerrors.Errorf("fs.CreateNoteFile(%s) error: %w", jn.Id, err)
-			}
+		_, err := f.CreateNoteFile(jn)
+		if err != nil {
+			return xerrors.Errorf("fs.CreateNoteFile(%s) error: %w", jn.Id, err)
+		}
 
-			mn := model.ConvertNote(jn)
-			err = inst.InsertNote(mn, op)
-			if err != nil {
-				return xerrors.Errorf("db.InsertNote(%s) error: %w", jn.Id, err)
-			}
+		mn := model.ConvertNote(jn)
+		err = inst.InsertNote(mn, op)
+		if err != nil {
+			return xerrors.Errorf("db.InsertNote(%s) error: %w", jn.Id, err)
+		}
 
-			err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, "", jn.Alias)
-			if err != nil {
-				return xerrors.Errorf("createStructure(%s) error: %w", jn.Id, err)
-			}
+		err = createStructure(inst, op, jn.Id, jn.ParentId, "note", jn.Name, "", jn.Alias)
+		if err != nil {
+			return xerrors.Errorf("createStructure(%s) error: %w", jn.Id, err)
+		}
 
-			data, err := m.readFile(n.File)
+		data, err := m.readFile(n.File)
+		if err != nil {
+			return xerrors.Errorf("ReadFile(%s) error: %w", n.File, err)
+		}
+		if len(data) > 0 {
+			err = f.WriteNoteText(jn.Id, data)
 			if err != nil {
-				return xerrors.Errorf("ReadFile(%s) error: %w", n.File, err)
-			}
-			if len(data) > 0 {
-				err = f.WriteNoteText(jn.Id, data)
-				if err != nil {
-					return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", jn.Id, err)
-				}
+				return xerrors.Errorf("fs.WriteNoteText(%s) error: %w", jn.Id, err)
 			}
 		}
 	}
@@ -225,8 +190,11 @@ func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *install
 			StyleTemplate: d.StyleTemplate,
 		}
 
-		// IDを生成
-		jd.Id = generateId()
+		if d.Id != "" {
+			jd.Id = d.Id
+		} else {
+			jd.Id = generateId()
+		}
 		jd.Alias = jd.Id
 
 		fn, err := f.CreateDiagramFile(jd)

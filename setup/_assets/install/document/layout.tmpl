@@ -5,24 +5,26 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{{ .Home.Name }}</title>
     <meta name="description" content="{{.Home.Detail}}">
-    <style>
-      body { display: flex; }
-      nav { width: 220px; padding: 1em; border-right: 1px solid #ccc; }
-      main { flex: 1; padding: 1em; }
-      nav ul { list-style: none; padding: 0; }
-      nav li { margin: 0.3em 0; }
-    </style>
+
+    <link rel="stylesheet" href="{{assets "019e38a8-26ab-737e-892a-2607ca76b639"}}">
   </head>
+
   <body>
-    <nav>
-      <ul>
-      {{ range .Children }}
-        <li><a href="{{.Link}}">{{ .Name }}</a></li>
-      {{ end }}
-      </ul>
-    </nav>
+    <h1>{{ .Home.Name }}</h1>
+
     <main>
       {{ template "Content" . }}
     </main>
+
+
+  <hr>
+<ul>
+      {{ range childrenNotes 10  }}
+        <li><a href="{{.Link}}">{{ .Name }}</a></li>
+      {{ end }}
+</ul>
+
+
+    <footer>&copy; 2026 Binder</footer>
   </body>
 </html>
