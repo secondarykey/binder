@@ -1,0 +1,6 @@
+<h1>{{ .Home.Name }}</h1>
+<ul>
+{{ range .Children }}
+  <li><a href="{{.Link}}">{{ .Name }}</a></li>
+{{ end }}
+</ul>

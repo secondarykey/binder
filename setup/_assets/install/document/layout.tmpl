@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ .Home.Name }}</title>
+    <meta name="description" content="{{.Home.Detail}}">
+    <style>
+      body { display: flex; }
+      nav { width: 220px; padding: 1em; border-right: 1px solid #ccc; }
+      main { flex: 1; padding: 1em; }
+      nav ul { list-style: none; padding: 0; }
+      nav li { margin: 0.3em 0; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <ul>
+      {{ range .Children }}
+        <li><a href="{{.Link}}">{{ .Name }}</a></li>
+      {{ end }}
+      </ul>
+    </nav>
+    <main>
+      {{ template "Content" . }}
+    </main>
+  </body>
+</html>

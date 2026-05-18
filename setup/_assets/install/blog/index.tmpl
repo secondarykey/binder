@@ -1,0 +1,7 @@
+<h1>{{ .Home.Name }}</h1>
+{{ range latestNotes 10 }}
+<article>
+  <h2><a href="{{.Link}}">{{ .Name }}</a></h2>
+  <div class="post-meta">{{ .PublishDate }}</div>
+</article>
+{{ end }}

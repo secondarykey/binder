@@ -13,9 +13,9 @@ import (
 
 // initialize はマニフェストからサンプルデータ（テンプレート・ノート・ダイアグラム・アセット）を作成する。
 // db.Instance と fs.FileSystem を直接操作するため、Binder に依存しない。
-func initialize(f *fs.FileSystem, inst *db.Instance, name string) error {
+func initialize(f *fs.FileSystem, inst *db.Instance, name string, installType string) error {
 
-	m, err := loadInstallManifest()
+	m, err := loadInstallManifest(installType)
 	if err != nil {
 		return xerrors.Errorf("loadInstallManifest() error: %w", err)
 	}

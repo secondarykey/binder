@@ -1,0 +1,29 @@
+{
+  "templates": [
+    {"id": "layout",  "type": "layout",  "name": "Layout",  "file": "layout.tmpl"},
+    {"id": "content", "type": "content", "name": "Content", "file": "content.tmpl"},
+    {"id": "index",   "type": "content", "name": "Index",   "file": "index.tmpl"},
+    {"id": "diagram_style", "type": "diagram", "name": "Base Theme", "file": "shared/diagram_style.tmpl"}
+  ],
+  "notes": [
+    {
+      "id": "index", "alias": "index", "name": "Index",
+      "parentId": "", "layoutTemplate": "layout", "contentTemplate": "index",
+      "file": "index.md"
+    },
+    {
+      "name": "Chapter 1", "parentId": "index",
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "chapter1.md"
+    },
+    {
+      "name": "Chapter 2", "parentId": "index",
+      "layoutTemplate": "layout", "contentTemplate": "content",
+      "file": "chapter2.md"
+    }
+  ],
+  "diagrams": [
+    {"name": "Diagram", "parentId": "index", "styleTemplate": "diagram_style", "file": "diagram.md"}
+  ],
+  "assets": []
+}

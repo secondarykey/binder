@@ -14,7 +14,7 @@ import (
 func TestInitialize(t *testing.T) {
 
 	dir := filepath.Join(test.Dir, "init")
-	err := setup.Install(dir, test.LatestVersion, "simple")
+	err := setup.Install(dir, test.LatestVersion, "simple", "")
 	if err != nil {
 		t.Fatalf("create error: %v", err)
 	}

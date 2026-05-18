@@ -19,6 +19,10 @@ const (
 	TemplateLayoutId  = "layout"
 	TemplateIndexId   = "index"
 	TemplateContentId = "content"
+
+	InstallTypeSimple   = "simple"
+	InstallTypeDocument = "document"
+	InstallTypeBlog     = "blog"
 )
 
 //go:embed _assets
@@ -26,7 +30,7 @@ var embFs embed.FS
 
 // Install は指定パスに新しいBinderを作成する。
 // ディレクトリが存在しない場合は作成し、git初期化・DB作成・binder.json作成・サンプルデータ初期化を行う。
-func Install(dir string, ver *Version, name string) error {
+func Install(dir string, ver *Version, name string, installType string) error {
 
 	// ディレクトリが存在しない場合は作成する
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -63,7 +67,7 @@ func Install(dir string, ver *Version, name string) error {
 	}
 	defer inst.Close()
 
-	err = initialize(f, inst, name)
+	err = initialize(f, inst, name, installType)
 	if err != nil {
 		return xerrors.Errorf("initialize() error: %w", err)
 	}

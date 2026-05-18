@@ -2,15 +2,17 @@ package setup
 
 import (
 	jsonenc "encoding/json"
+	"strings"
 
 	"golang.org/x/xerrors"
 )
 
-const installDir = "_assets/install"
+const installBaseDir = "_assets/install"
 
 // installManifest はインストール時に作成するデータの一覧を定義する。
-// _assets/install/manifest.json から読み込む。
+// _assets/install/{type}/manifest.json から読み込む。
 type installManifest struct {
+	baseDir   string
 	Templates []installTemplate `json:"templates"`
 	Notes     []installNote     `json:"notes"`
 	Diagrams  []installDiagram  `json:"diagrams"`
@@ -48,26 +50,39 @@ type installAsset struct {
 	File     string `json:"file"`
 }
 
-// loadInstallManifest は _assets/install/manifest.json を読み込んで返す。
-func loadInstallManifest() (*installManifest, error) {
-	data, err := embFs.ReadFile(installDir + "/manifest.json")
+// loadInstallManifest は _assets/install/{installType}/manifest.json を読み込んで返す。
+// installType が空の場合は "simple" をデフォルトとする。
+func loadInstallManifest(installType string) (*installManifest, error) {
+	if installType == "" {
+		installType = InstallTypeSimple
+	}
+	dir := installBaseDir + "/" + installType
+	data, err := embFs.ReadFile(dir + "/manifest.json")
 	if err != nil {
-		return nil, xerrors.Errorf("embFs.ReadFile(manifest.json) error: %w", err)
+		return nil, xerrors.Errorf("embFs.ReadFile(%s/manifest.json) error: %w", installType, err)
 	}
 	var m installManifest
 	if err := jsonenc.Unmarshal(data, &m); err != nil {
 		return nil, xerrors.Errorf("json.Unmarshal(manifest.json) error: %w", err)
 	}
+	m.baseDir = dir
 	return &m, nil
 }
 
-// readFile は _assets/install/ 内のファイルを読み込む。
+// readFile はマニフェストのベースディレクトリ内のファイルを読み込む。
+// file が "shared/" プレフィックスの場合は _assets/install/shared/ から読む。
 // file が空の場合は nil を返す。
 func (m *installManifest) readFile(file string) ([]byte, error) {
 	if file == "" {
 		return nil, nil
 	}
-	data, err := embFs.ReadFile(installDir + "/" + file)
+	var path string
+	if strings.HasPrefix(file, "shared/") {
+		path = installBaseDir + "/" + file
+	} else {
+		path = m.baseDir + "/" + file
+	}
+	data, err := embFs.ReadFile(path)
 	if err != nil {
 		return nil, xerrors.Errorf("embFs.ReadFile(%s) error: %w", file, err)
 	}
