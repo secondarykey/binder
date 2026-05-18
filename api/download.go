@@ -46,11 +46,11 @@ func (a *App) CollectExportDeps(noteId string, text string) (*json.ExportDeps, e
 }
 
 // DownloadNote はノートを自己完結したZIPとしてエクスポートする。
-func (a *App) DownloadNote(noteId string, text string, diagramSVGs map[string]string, savePath string) error {
+func (a *App) DownloadNote(noteId string, text string, markedHTML string, diagramSVGs map[string]string, savePath string) error {
 
 	defer log.PrintTrace(log.Func("DownloadNote()"))
 
-	err := a.current.DownloadNote(noteId, text, diagramSVGs, savePath)
+	err := a.current.DownloadNote(noteId, text, markedHTML, diagramSVGs, savePath)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return fmt.Errorf("DownloadNote() error\n%+v", err)

@@ -306,6 +306,7 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 	clazz := Arg[string](v, 1).Default("")
 
 	imageSrc := ""
+	svgSrc := ""
 	if w.Local {
 		// 親Assetのプライベートアセット配信URL
 		m, err := w.owner.GetLayerWithParent(id)
@@ -334,9 +335,10 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		if m.Parent != nil {
 			imageSrc = w.convertURL(fs.PublicAssetFile(m.Parent))
 		}
+		svgSrc = w.convertURL(fs.PublicLayerFile(m))
 	}
 
-	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, clazz)
+	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, svgSrc, clazz)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
 	}

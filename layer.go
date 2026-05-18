@@ -656,7 +656,7 @@ func (b *Binder) BuildLayerSVGForId(id string) (string, error) {
 // local=true: エディタプレビュー（インラインSVG + private assetのHTTP URL）
 // local=false: 公開（公開済みSVGを <img> で参照）
 // extraClass は外側 div に追加するクラス名（空文字なら追加しない）。
-func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraClass string) (template.HTML, error) {
+func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, svgSrc string, extraClass string) (template.HTML, error) {
 	m, err := b.GetLayerWithParent(id)
 	if err != nil {
 		return "", xerrors.Errorf("GetLayerWithParent() error: %w", err)
@@ -688,7 +688,7 @@ func (b *Binder) BuildLayerHTML(id string, local bool, imageSrc string, extraCla
 		// 公開版: 公開アセットと公開SVGを重ねる
 		inner = fmt.Sprintf(
 			`<img src="%s" style="display:block;width:100%%;height:auto;"/><img src="%s" style="position:absolute;inset:0;width:100%%;height:100%%;pointer-events:none;"/>`,
-			imageSrc, fs.PublicLayerFile(m))
+			imageSrc, svgSrc)
 	}
 
 	// 外側 div のクラス名: デフォルト "binderLayer" に追加クラスを連結。
