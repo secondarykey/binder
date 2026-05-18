@@ -85,6 +85,7 @@ function App() {
   const [commitModalFilter, setCommitModalFilter] = useState(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishModalTemplate, setPublishModalTemplate] = useState(null);
+  const [publishModalSubtree, setPublishModalSubtree] = useState(null);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
@@ -213,6 +214,12 @@ function App() {
     //公開一覧モーダルを開く
     evt.register("App", Event.OpenPublishModal, function (data) {
       setPublishModalTemplate(data ?? null);
+      setPublishModalOpen(true);
+    });
+
+    //サブツリー公開モーダルを開く
+    evt.register("App", Event.OpenPublishSubtreeModal, function (data) {
+      setPublishModalSubtree(data ?? null);
       setPublishModalOpen(true);
     });
 
@@ -434,7 +441,7 @@ function App() {
       <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => { setCommitModalOpen(false); setCommitModalFilter(null); }} />
 
       {/** 公開一覧モーダル */}
-      <PublishModal open={publishModalOpen} template={publishModalTemplate} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); }} />
+      <PublishModal open={publishModalOpen} template={publishModalTemplate} subtreeData={publishModalSubtree} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); setPublishModalSubtree(null); }} />
 
       {/** 設定モーダル */}
       <SettingModal open={settingModalOpen} onClose={() => setSettingModalOpen(false)} />
