@@ -1,6 +1,7 @@
 package setup_test
 
 import (
+	"binder/db"
 	"binder/setup"
 	"binder/test"
 	"os"
@@ -42,5 +43,105 @@ func TestInstall(t *testing.T) {
 	configCSV := filepath.Join(dir, "db", "config.csv")
 	if _, err = os.Stat(configCSV); err == nil {
 		t.Errorf("config.csv should not exist in 0.4.5+")
+	}
+}
+
+func TestInstallDocument(t *testing.T) {
+	dir := filepath.Join(test.Dir, "create_document")
+	err := setup.Install(dir, test.LatestVersion, "Document", "document")
+	if err != nil {
+		t.Fatalf("create error: %+v\n", err)
+	}
+
+	inst, err := db.New(filepath.Join(dir, "db"))
+	if err != nil {
+		t.Fatalf("db.New error: %v", err)
+	}
+	err = inst.Open()
+	if err != nil {
+		t.Fatalf("db.Open error: %v", err)
+	}
+	defer inst.Close()
+
+	// テンプレート3件
+	tmpls, err := inst.FindTemplates()
+	if err != nil {
+		t.Fatalf("FindTemplates error: %v", err)
+	}
+	if len(tmpls) != 3 {
+		t.Errorf("templates: want 3, got %d", len(tmpls))
+	}
+
+	// ノート4件（Index, Chapter1, Chapter2, Chapter2-1）
+	notes, err := inst.FindNotes()
+	if err != nil {
+		t.Fatalf("FindNotes error: %v", err)
+	}
+	if len(notes) != 4 {
+		t.Errorf("notes: want 4, got %d", len(notes))
+	}
+
+	// ダイアグラム1件
+	diagrams, err := inst.FindDiagrams()
+	if err != nil {
+		t.Fatalf("FindDiagrams error: %v", err)
+	}
+	if len(diagrams) != 1 {
+		t.Errorf("diagrams: want 1, got %d", len(diagrams))
+	}
+
+	// アセット1件
+	assets, err := inst.FindAssets()
+	if err != nil {
+		t.Fatalf("FindAssets error: %v", err)
+	}
+	if len(assets) != 1 {
+		t.Errorf("assets: want 1, got %d", len(assets))
+	}
+	if len(assets) > 0 {
+		if assets[0].Mime != "text/css" {
+			t.Errorf("asset mime: want text/css, got %s", assets[0].Mime)
+		}
+	}
+
+	// Chapter2-1 の親がChapter2であること確認
+	structures, err := inst.FindStructures()
+	if err != nil {
+		t.Fatalf("FindStructures error: %v", err)
+	}
+	var ch21ParentId string
+	for _, s := range structures {
+		if s.Name == "Chapter 2-1" {
+			ch21ParentId = s.ParentId
+		}
+	}
+	if ch21ParentId != "019e389d-3c44-76dc-9e8c-1523d3e2332a" {
+		t.Errorf("Chapter 2-1 parentId: want 019e389d-3c44-76dc-9e8c-1523d3e2332a, got %s", ch21ParentId)
+	}
+
+	// ノートファイルの内容が空でないこと
+	indexNote := filepath.Join(dir, "notes", "index.md")
+	data, err := os.ReadFile(indexNote)
+	if err != nil {
+		t.Errorf("ReadFile(index.md) error: %v", err)
+	} else if len(data) == 0 {
+		t.Errorf("index.md content is empty")
+	}
+
+	ch1Note := filepath.Join(dir, "notes", "019e389d-3c37-775d-a9bd-34623dd39f2a.md")
+	data, err = os.ReadFile(ch1Note)
+	if err != nil {
+		t.Errorf("ReadFile(chapter1) error: %v", err)
+	} else if len(data) == 0 {
+		t.Errorf("chapter1 note content is empty")
+	}
+
+	// アセットファイルの存在確認
+	assetFile := filepath.Join(dir, "assets", "019e38a8-26ab-737e-892a-2607ca76b639")
+	data, err = os.ReadFile(assetFile)
+	if err != nil {
+		t.Errorf("ReadFile(asset) error: %v", err)
+	} else if len(data) == 0 {
+		t.Errorf("asset content is empty")
 	}
 }
