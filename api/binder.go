@@ -128,11 +128,18 @@ func (a *App) Generate(mode string, id string, data string) error {
 	switch mode {
 	case "note":
 
-		result, err := a.CreateNoteHTML(id, false, data)
-		if err == nil && result.Error != "" {
+		result, genErr := a.CreateNoteHTML(id, false, data)
+		if genErr != nil {
+			err = genErr
+		} else if result.Error != "" {
 			err = fmt.Errorf("%s", result.Error)
 		}
 		if err == nil {
+			if len(result.Warnings) > 0 {
+				for _, w := range result.Warnings {
+					log.Warn("Generate warning: " + w)
+				}
+			}
 			_, err = a.current.PublishNote(id, []byte(result.HTML))
 		}
 
@@ -169,6 +176,11 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 			}
 			if result.Error != "" {
 				return xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
+			}
+			if len(result.Warnings) > 0 {
+				for _, w := range result.Warnings {
+					log.Warn("GenerateAll warning: " + w)
+				}
 			}
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {

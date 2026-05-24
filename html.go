@@ -107,32 +107,32 @@ func (b *Binder) createHTMLTemplate(w *wrapper) (*template.Template, error) {
 // ノートの要素を一度テンプレート処理を行う。
 // ノート内容はMarkdownであり最終HTMLではないため、html/templateのコンテキスト認識エスケープを避けるtext/templateを使用する。
 // （ParseDiagramと同じ方針）
-func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, error) {
+func (b *Binder) ParseNote(note *json.Note, local bool, elm string) (string, []string, error) {
 
 	if b == nil {
-		return "", EmptyError
+		return "", nil, EmptyError
 	}
 
 	wrap, err := newWrapper(b, local, note)
 	if err != nil {
-		return "", xerrors.Errorf("newWrapper() error: %w", err)
+		return "", nil, xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
 	if err != nil {
-		return "", xerrors.Errorf("Element Parse() error: %w", err)
+		return "", wrap.getWarnings(), xerrors.Errorf("Element Parse() error: %w", err)
 	}
 
 	dto, err := b.createDto(wrap, elm)
 	if err != nil {
-		return "", xerrors.Errorf("creteDto() error: %w", err)
+		return "", wrap.getWarnings(), xerrors.Errorf("creteDto() error: %w", err)
 	}
 
 	var builder strings.Builder
 	if err := tmpl.Execute(&builder, dto); err != nil {
-		return "", xerrors.Errorf("elm Execute() error: %w", err)
+		return "", wrap.getWarnings(), xerrors.Errorf("elm Execute() error: %w", err)
 	}
-	return builder.String(), nil
+	return builder.String(), wrap.getWarnings(), nil
 }
 
 func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
@@ -177,33 +177,33 @@ func (b *Binder) writeHTML(w io.Writer, tmpl *template.Template, dto interface{}
 }
 
 // HTMLメモリ作成
-func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string, error) {
+func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string, []string, error) {
 
 	if b == nil {
-		return "", EmptyError
+		return "", nil, EmptyError
 	}
 
 	w, err := newWrapper(b, local, note)
 	if err != nil {
-		return "", xerrors.Errorf("newWrapper() error: %w", err)
+		return "", nil, xerrors.Errorf("newWrapper() error: %w", err)
 	}
 
 	tmpl, err := b.createHTMLTemplate(w)
 	if err != nil {
-		return "", xerrors.Errorf("createHTMLTemplate() error: %w", err)
+		return "", w.getWarnings(), xerrors.Errorf("createHTMLTemplate() error: %w", err)
 	}
 
 	dto, err := b.createDto(w, elm)
 	if err != nil {
-		return "", xerrors.Errorf("creteDto() error: %w", err)
+		return "", w.getWarnings(), xerrors.Errorf("creteDto() error: %w", err)
 	}
 
 	var builder strings.Builder
 	err = b.writeHTML(&builder, tmpl, dto)
 	if err != nil {
-		return "", xerrors.Errorf("writeHTML() error: %w", err)
+		return "", w.getWarnings(), xerrors.Errorf("writeHTML() error: %w", err)
 	}
-	return builder.String(), nil
+	return builder.String(), w.getWarnings(), nil
 }
 
 // ParseNoteForExport はエクスポート用にノート要素のテンプレート関数を展開する。
@@ -285,35 +285,54 @@ func (b *Binder) CreateNoteHTMLForExport(note *json.Note, elm string) (string, *
 
 // テキストアセットの要素を一度テンプレート処理を行う。
 // text/template を使用して {{assets}} 等のテンプレート関数を展開する。
-func (b *Binder) ParseAsset(local bool, elm string) (string, error) {
+func (b *Binder) ParseAsset(local bool, elm string) (string, []string, error) {
 
 	if b == nil {
-		return "", EmptyError
+		return "", nil, EmptyError
 	}
 
-	wrap := &wrapper{owner: b, Local: local}
+	wrap, err := newWrapper(b, local, nil)
+	if err != nil {
+		return "", nil, xerrors.Errorf("newWrapper() error: %w", err)
+	}
 
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
 	if err != nil {
-		return "", xerrors.Errorf("Asset Parse() error: %w", err)
+		return "", wrap.getWarnings(), xerrors.Errorf("Asset Parse() error: %w", err)
 	}
 
 	var builder strings.Builder
 	if err := tmpl.Execute(&builder, nil); err != nil {
-		return "", xerrors.Errorf("Asset Execute() error: %w", err)
+		return "", wrap.getWarnings(), xerrors.Errorf("Asset Execute() error: %w", err)
 	}
-	return builder.String(), nil
+	return builder.String(), wrap.getWarnings(), nil
 }
 
 // ダイアグラムの要素を一度テンプレート処理を行う。
 // Mermaid 記法には `-->` や `&` が含まれるため、HTML エスケープを避けるため text/template を使用する。
-func (b *Binder) ParseDiagram(diag *json.Diagram, local bool, elm string) (string, error) {
+func (b *Binder) ParseDiagram(diag *json.Diagram, local bool, elm string) (string, []string, error) {
+
+	if b == nil {
+		return "", nil, EmptyError
+	}
+
+	ws := make([]string, 0)
+	result, err := b.parseDiagram(diag, local, elm, &ws)
+	if err != nil {
+		return "", ws, err
+	}
+	return result, ws, nil
+}
+
+// parseDiagram はダイアグラムのテンプレート処理を行う内部メソッド。
+// 呼び出し元の warnings ポインタを共有し、テンプレート関数の警告を親に伝播する。
+func (b *Binder) parseDiagram(diag *json.Diagram, local bool, elm string, ws *[]string) (string, error) {
 
 	if b == nil {
 		return "", EmptyError
 	}
 
-	wrap := &wrapper{owner: b, Local: local}
+	wrap := &wrapper{owner: b, Local: local, warnings: ws}
 
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(wrap))).Parse(elm)
 	if err != nil {
@@ -352,10 +371,10 @@ func (b *Binder) ParseDiagram(diag *json.Diagram, local bool, elm string) (strin
 	return builder.String(), nil
 }
 
-func (b *Binder) CreateTemplateHTML(id string, typ json.TemplateType, oId string, note *json.Note, elm string) (string, error) {
+func (b *Binder) CreateTemplateHTML(id string, typ json.TemplateType, oId string, note *json.Note, elm string) (string, []string, error) {
 
 	if b == nil {
-		return "", EmptyError
+		return "", nil, EmptyError
 	}
 
 	//ノートのテンプレートを書き換える
