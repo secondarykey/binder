@@ -128,9 +128,12 @@ func (a *App) Generate(mode string, id string, data string) error {
 	switch mode {
 	case "note":
 
-		html, err := a.CreateNoteHTML(id, false, data)
+		result, err := a.CreateNoteHTML(id, false, data)
+		if err == nil && result.Error != "" {
+			err = fmt.Errorf("%s", result.Error)
+		}
 		if err == nil {
-			_, err = a.current.PublishNote(id, []byte(html))
+			_, err = a.current.PublishNote(id, []byte(result.HTML))
 		}
 
 	case "diagram":
@@ -160,11 +163,14 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 	for _, item := range items {
 		switch item.Mode {
 		case "note":
-			html, err := a.CreateNoteHTML(item.Id, false, item.Data)
+			result, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
 				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
 			}
-			files, _, err := a.current.PublishNoteStage(item.Id, []byte(html))
+			if result.Error != "" {
+				return xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
+			}
+			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {
 				return xerrors.Errorf("PublishNoteStage() error: %+v", err)
 			}

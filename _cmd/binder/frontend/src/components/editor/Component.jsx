@@ -156,8 +156,9 @@ function detectTableAt(fullText, cursorPos) {
  */
 async function runTemplatePreview(templateId, templateType, otherTemplateId, noteId) {
   const content = await OpenNote(noteId);
-  const parsed = await ParseNote(noteId, true, content);
-  const marked = await Marked.parse(parsed);
+  const parseResult = await ParseNote(noteId, true, content);
+  if (parseResult.error) return parseResult;
+  const marked = await Marked.parse(parseResult.html);
   return await CreateTemplateHTML(templateId, templateType, otherTemplateId, noteId, marked);
 }
 
@@ -604,8 +605,12 @@ function Editor(props) {
     if (mode !== Mode.template || templateType === "diagram" || !previewNoteId || !previewOtherTemplateId || !templateType) return;
     runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
       .then((result) => {
-        setHTML(result);
-        Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+        if (result.error) {
+          evt.showErrorMessage(result.error);
+        } else {
+          setHTML(result.html);
+          Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result.html });
+        }
       })
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
@@ -705,9 +710,13 @@ function Editor(props) {
         await SaveTemplate(id, text);
         runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
           .then((result) => {
-            setHTML(result);
-            setParseStatus({ status: "success", err: null });
-            Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+            if (result.error) {
+              setParseStatus({ status: "error", err: result.error });
+            } else {
+              setHTML(result.html);
+              setParseStatus({ status: "success", err: null });
+              Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result.html });
+            }
           })
           .catch((err) => setParseStatus({ status: "error", err }));
       }
@@ -737,13 +746,14 @@ function Editor(props) {
   const createMarked = async (id, txt, local, lineNumbers = false) => {
     var p = ""
     var parseError = false;
-    await ParseNote(id, local, txt).then((resp) => {
-      p = resp;
-    }).catch((err) => {
-      setParseStatus({ status: "error", err });
+    const result = await ParseNote(id, local, txt);
+    if (result.error) {
+      setParseStatus({ status: "error", err: result.error });
       parseError = true;
       p = txt;
-    });
+    } else {
+      p = result.html;
+    }
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
     return { html: val || "", parseError };
@@ -757,13 +767,14 @@ function Editor(props) {
     if (mode === "note") {
 
       var result = await createMarked(id, txt, true, true);
-      CreateNoteHTML(id, true, result.html).then((resp) => {
-        setHTML(resp);
+      const noteResult = await CreateNoteHTML(id, true, result.html);
+      if (noteResult.error) {
+        setParseStatus({ status: "error", err: noteResult.error });
+      } else {
+        setHTML(noteResult.html);
         if (!result.parseError) setParseStatus({ status: "success", err: null });
-        Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
-      }).catch((err) => {
-        setParseStatus({ status: "error", err });
-      })
+        Events.Emit('binder:preview:update', { typ: mode, id, name, html: noteResult.html });
+      }
 
     } else if (mode === "template") {
       //CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
@@ -779,13 +790,12 @@ function Editor(props) {
    */
   const viewDiagram = async (txt) => {
 
-    let parsedTxt = txt;
-    try {
-      parsedTxt = await ParseDiagram(id, true, txt);
-    } catch (err) {
-      setParseStatus({ status: "error", err });
+    const diagramResult = await ParseDiagram(id, true, txt);
+    if (diagramResult.error) {
+      setParseStatus({ status: "error", err: diagramResult.error });
       return;
     }
+    let parsedTxt = diagramResult.html;
 
     Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
@@ -846,13 +856,12 @@ function Editor(props) {
   const viewDiagramTemplatePreview = async (templateText, diagramId) => {
     if (!diagramId || !templateText) return;
     OpenDiagram(diagramId).then(async (diagramContent) => {
-      let parsedContent = diagramContent;
-      try {
-        parsedContent = await ParseDiagram(diagramId, true, diagramContent);
-      } catch (err) {
-        setParseStatus({ status: "error", err });
+      const parsedResult = await ParseDiagram(diagramId, true, diagramContent);
+      if (parsedResult.error) {
+        setParseStatus({ status: "error", err: parsedResult.error });
         return;
       }
+      let parsedContent = parsedResult.html;
       const prefix = `%%{init:${templateText}}%%\n`;
       const fullTxt = prefix + parsedContent;
       Mermaid.parse(fullTxt).then((data) => {
@@ -966,8 +975,9 @@ function Editor(props) {
       if (mode === Mode.note) {
         elm = (await createMarked(id, text, false)).html;
       } else if (mode === Mode.diagram) {
-        const parsedTxt = await ParseDiagram(id, false, text);
-        var obj = await Mermaid.parse(parsedTxt, styleTemplateId);
+        const diagResult = await ParseDiagram(id, false, text);
+        if (diagResult.error) throw new Error(diagResult.error);
+        var obj = await Mermaid.parse(diagResult.html, styleTemplateId);
         elm = obj.svg;
       } else if (mode === Mode.template) {
         elm = text;
@@ -1049,16 +1059,20 @@ function Editor(props) {
   };
 
   /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
-  const handleDownloadExpanded = () => {
+  const handleDownloadExpanded = async () => {
     closeEditorMoreMenu();
-    if (mode === Mode.note) {
-      ParseNote(id, false, text)
-        .then(expanded => triggerTextDownload(expanded, name + '.md'))
-        .catch(err => evt.showErrorMessage(err));
-    } else if (mode === Mode.diagram) {
-      ParseDiagram(id, false, text)
-        .then(expanded => triggerTextDownload(expanded, name + '.mmd'))
-        .catch(err => evt.showErrorMessage(err));
+    try {
+      if (mode === Mode.note) {
+        const result = await ParseNote(id, false, text);
+        if (result.error) { evt.showErrorMessage(result.error); return; }
+        triggerTextDownload(result.html, name + '.md');
+      } else if (mode === Mode.diagram) {
+        const result = await ParseDiagram(id, false, text);
+        if (result.error) { evt.showErrorMessage(result.error); return; }
+        triggerTextDownload(result.html, name + '.mmd');
+      }
+    } catch (err) {
+      evt.showErrorMessage(err);
     }
   };
 
@@ -1072,9 +1086,10 @@ function Editor(props) {
         for (const diag of deps.missingDiagrams) {
           try {
             const source = await OpenDiagram(diag.id);
-            const expanded = await ParseDiagram(diag.id, false, source);
+            const expandResult = await ParseDiagram(diag.id, false, source);
+            if (expandResult.error) throw new Error(expandResult.error);
             const diagMeta = await GetDiagram(diag.id);
-            const result = await Mermaid.parse(expanded, diagMeta.styleTemplate);
+            const result = await Mermaid.parse(expandResult.html, diagMeta.styleTemplate);
             if (result && result.svg) {
               diagramSVGs[diag.id] = result.svg;
             }

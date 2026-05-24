@@ -485,7 +485,10 @@ function AssetViewer() {
   const handleDownloadExpanded = () => {
     setTextDownloadMenuAnchor(null);
     ParseAsset(id, false, editText)
-      .then(expanded => triggerTextDownload(expanded, assetName))
+      .then(result => {
+        if (result.error) { evt.showErrorMessage(result.error); return; }
+        triggerTextDownload(result.html, assetName);
+      })
       .catch(err => evt.showErrorMessage(err));
   };
 
