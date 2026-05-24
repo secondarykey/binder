@@ -47,14 +47,14 @@ func init() {
 func main() {
 
 	flag.Parse()
-
-	if debug {
-		log.SetLevel(slog.LevelDebug)
-	}
-	if err := log.Init(); err != nil {
+	logger, err := log.Init()
+	if err != nil {
 		log.WarnE("ログファイルの初期化に失敗", err)
 	}
 	defer log.Close()
+	if debug {
+		log.SetLevel(slog.LevelDebug)
+	}
 
 	app := api.New(strings.TrimSpace(ver))
 	win := NewWindow(app)
@@ -62,7 +62,8 @@ func main() {
 	// 1. アプリケーション作成
 	// wails3 に依存するサービスはWindowに設定する
 	wailsApp := application.New(application.Options{
-		Name: "Binder",
+		Name:   "Binder",
+		Logger: logger,
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
@@ -166,7 +167,7 @@ func main() {
 	// 5. 実行
 	err = wailsApp.Run()
 	if err != nil {
-		println("Error:", err.Error())
+		log.WarnE("Run() error:", err)
 	}
 
 	// wailsApp.Run() が正常リターンした = 正常終了。

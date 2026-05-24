@@ -32,16 +32,16 @@ func init() {
 }
 
 // Init はログファイルを temp ディレクトリに作成し、slog を設定する。
-func Init() error {
+func Init() (*slog.Logger, error) {
 	dir := filepath.Join(os.TempDir(), "binder")
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
+		return nil, err
 	}
 
 	name := time.Now().Format("20060102") + ".log"
 	f, err := os.OpenFile(filepath.Join(dir, name), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logFile = f
 
@@ -50,9 +50,9 @@ func Init() error {
 	slog.SetDefault(logger)
 	def = logger
 
-	Notice(fmt.Sprintf("Log Level:%v", logLevel.Level()))
+	//Notice(fmt.Sprintf("Log Level:%v", levelName(logLevel)))
 
-	return nil
+	return def, nil
 }
 
 // simpleHandler はデフォルトの log パッケージに近いシンプルな出力を行う slog.Handler。
