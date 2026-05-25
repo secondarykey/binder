@@ -67,8 +67,8 @@ func (h *simpleHandler) Enabled(_ context.Context, l slog.Level) bool {
 }
 
 func (h *simpleHandler) Handle(_ context.Context, r slog.Record) error {
-	t := r.Time.Format("2006/01/02 15:04:05")
-	_, err := fmt.Fprintf(h.w, "%s [%s] %s\n", t, levelName(r.Level), r.Message)
+	t := r.Time.Format(time.RFC3339)
+	_, err := fmt.Fprintf(h.w, "%s [%-6s] %s\n", t, levelName(r.Level), r.Message)
 	return err
 }
 

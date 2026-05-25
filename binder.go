@@ -116,6 +116,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 
 func Load(dir string) (*Binder, error) {
 
+	log.Notice("Load Binder:" + dir)
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
