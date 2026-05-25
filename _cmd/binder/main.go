@@ -74,7 +74,12 @@ func main() {
 	})
 
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
-	app.SetDevMode(wailsApp.Env.Info().Debug)
+	dev := wailsApp.Env.Info().Debug
+	app.SetDevMode(dev)
+	if dev {
+		log.SetLevel(slog.LevelInfo)
+	}
+
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
 	set, err := app.Setup()
 	if err != nil {
