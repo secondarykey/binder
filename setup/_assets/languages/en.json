@@ -481,7 +481,8 @@
         "scrollToBottom" : "Scroll to Bottom",
         "follow" : "Follow",
         "search" : "Search",
-        "wordWrap" : "Word Wrap"
+        "wordWrap" : "Word Wrap",
+        "colorize" : "Colorize"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
