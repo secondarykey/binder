@@ -126,15 +126,6 @@ function SyslogApp() {
             <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
           ))}
         </Select>
-        <Tooltip title={t('syslog.follow')}>
-          <IconButton size="small" onClick={handleToggleFollow} sx={{
-            mr: 0.5,
-            color: autoScroll ? 'var(--accent-primary)' : 'inherit',
-            backgroundColor: autoScroll ? 'rgba(255,255,255,0.1)' : 'transparent',
-          }}>
-            <VerticalAlignBottomIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <Tooltip title={t('syslog.save')}>
           <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ mr: 0.5 }}>
             <DownloadIcon fontSize="small" />
@@ -150,8 +141,26 @@ function SyslogApp() {
         </IconButton>
       </Toolbar>
 
-      <div id="syslogContent" ref={contentRef}>
-        {lines}
+      <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+        <div id="syslogContent" ref={contentRef}>
+          {lines}
+        </div>
+        <Tooltip title={t('syslog.follow')}>
+          <IconButton
+            size="small"
+            onClick={handleToggleFollow}
+            sx={{
+              position: 'absolute',
+              right: 16,
+              bottom: 16,
+              backgroundColor: autoScroll ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+              color: autoScroll ? 'var(--accent-primary)' : '#c9d1d9',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+            }}
+          >
+            <VerticalAlignBottomIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </div>
     </div>
   );
