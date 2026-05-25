@@ -5,6 +5,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
 import DownloadIcon from '@mui/icons-material/Download';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 
 import { Window } from '@wailsio/runtime';
 
@@ -26,6 +28,7 @@ function SyslogApp() {
   const offsetRef = useRef(0);
   const [lines, setLines] = useState('');
   const [autoScroll, setAutoScroll] = useState(true);
+  const [pin, setPin] = useState(false);
   const [level, setLevel] = useState(2); // NoticeLevel
 
   // ログレベル定義: slog.Level の値に対応
@@ -77,6 +80,13 @@ function SyslogApp() {
   // 追従モードのトグル
   const handleToggleFollow = () => {
     setAutoScroll((prev) => !prev);
+  };
+
+  // 最前面表示のトグル
+  const handlePin = () => {
+    var p = !pin;
+    Window.SetAlwaysOnTop(p);
+    setPin(p);
   };
 
   const handleClear = () => {
@@ -136,6 +146,12 @@ function SyslogApp() {
             <CancelPresentationIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+        <IconButton id="pinBtn" className={pin ? "top" : ""} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
+          {pin
+            ? <PushPinIcon fontSize="small" />
+            : <PushPinOutlinedIcon fontSize="small" sx={{ transform: 'rotate(45deg)' }} />
+          }
+        </IconButton>
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>
