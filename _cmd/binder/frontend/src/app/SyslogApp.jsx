@@ -236,7 +236,7 @@ function SyslogApp() {
   return (
     <div id="SyslogApp">
       <Toolbar id="syslogTitle" className="binderTitle" variant="dense" onDoubleClick={() => Window.ToggleMaximise()}>
-        <Typography variant="body2" sx={{ flex: 1 }} noWrap>
+        <Typography variant="body2" noWrap>
           {t('syslog.title')}
         </Typography>
         <Select
@@ -248,7 +248,8 @@ function SyslogApp() {
           sx={{
             fontSize: '11px',
             color: 'var(--text-muted)',
-            mr: 1,
+            ml: 1,
+            flex: 1,
             '--wails-draggable': 'no-drag',
             '& .MuiSelect-select': { py: 0, px: 1 },
             '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '16px' },
@@ -287,7 +288,27 @@ function SyslogApp() {
 
       {searchOpen && (
         <div id="syslogSearchBar">
-          <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', ml: 1, mr: 0.5 }} />
+          <Select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            size="small"
+            variant="standard"
+            disableUnderline
+            sx={{
+              fontSize: '11px',
+              color: filterLevel >= 0 ? 'var(--accent-primary)' : 'var(--text-muted)',
+              ml: 1,
+              '& .MuiSelect-select': { py: 0, px: 0.5 },
+              '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '14px' },
+            }}
+            MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+          >
+            {filterLevels.map((lv) => (
+              <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
+            ))}
+          </Select>
+          <span style={{ borderLeft: '1px solid var(--border-subtle)', height: '18px', margin: '0 4px' }} />
+          <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: 0.5 }} />
           <InputBase
             inputRef={searchInputRef}
             value={searchText}
@@ -313,25 +334,6 @@ function SyslogApp() {
           <IconButton size="small" onClick={handleSearchNext} disabled={matchCount === 0} sx={{ color: 'var(--text-muted)', p: '2px' }}>
             <KeyboardArrowDownIcon sx={{ fontSize: '18px' }} />
           </IconButton>
-          <span style={{ borderLeft: '1px solid var(--border-subtle)', height: '18px', margin: '0 4px' }} />
-          <Select
-            value={filterLevel}
-            onChange={(e) => setFilterLevel(e.target.value)}
-            size="small"
-            variant="standard"
-            disableUnderline
-            sx={{
-              fontSize: '11px',
-              color: filterLevel >= 0 ? 'var(--accent-primary)' : 'var(--text-muted)',
-              '& .MuiSelect-select': { py: 0, px: 0.5 },
-              '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '14px' },
-            }}
-            MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
-          >
-            {filterLevels.map((lv) => (
-              <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
-            ))}
-          </Select>
           <IconButton size="small" onClick={handleSearchClose} sx={{ color: 'var(--text-muted)', p: '2px', mr: 0.5 }}>
             <CloseIcon sx={{ fontSize: '16px' }} />
           </IconButton>
