@@ -35,6 +35,7 @@ function SyslogApp() {
   const [level, setLevel] = useState(2); // NoticeLevel
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [filterLevel, setFilterLevel] = useState(-1); // -1 = ALL
   const [currentMatch, setCurrentMatch] = useState(0);
   const searchInputRef = useRef(null);
   const matchRefs = useRef([]);
@@ -47,6 +48,22 @@ function SyslogApp() {
     { value:  2, label: 'NOTICE' },
     { value:  4, label: 'WARN' },
     { value:  8, label: 'ERROR' },
+  ];
+
+  // フィルタ用レベル優先度（クライアントサイドのみ）
+  const levelPriority = {
+    'TRACE': 0, 'DEBUG': 1, 'INFO': 2, 'NOTICE': 3, 'WARN': 4, 'ERROR': 5, 'EMERGENCY': 6,
+  };
+
+  // フィルタ用レベル選択肢
+  const filterLevels = [
+    { value: -1, label: 'ALL' },
+    { value: 0,  label: 'TRACE' },
+    { value: 1,  label: 'DEBUG' },
+    { value: 2,  label: 'INFO' },
+    { value: 3,  label: 'NOTICE' },
+    { value: 4,  label: 'WARN' },
+    { value: 5,  label: 'ERROR' },
   ];
 
   // 自動スクロール（追従モード時のみ）
@@ -84,10 +101,11 @@ function SyslogApp() {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        setSearchOpen((prev) => !prev);
+        if (searchOpen) handleSearchClose();
+        else setSearchOpen(true);
       }
       if (e.key === 'Escape' && searchOpen) {
-        setSearchOpen(false);
+        handleSearchClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -101,14 +119,34 @@ function SyslogApp() {
     }
   }, [searchOpen]);
 
-  // 検索テキストのハイライトとマッチ数
+  // レベルフィルタ: 行単位でフィルタリング（継続行は直前の行に追従）
+  const filteredLines = useMemo(() => {
+    if (filterLevel < 0 || !lines) return lines;
+
+    const lineArr = lines.split('\n');
+    const filtered = [];
+    let lastVisible = true;
+    const levelRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERGENCY)\]/;
+
+    for (const line of lineArr) {
+      const m = line.match(levelRegex);
+      if (m) {
+        const priority = levelPriority[m[1]] ?? 0;
+        lastVisible = priority >= filterLevel;
+      }
+      if (lastVisible) filtered.push(line);
+    }
+    return filtered.join('\n');
+  }, [lines, filterLevel]);
+
+  // 検索テキストのハイライトとマッチ数（フィルタ後のテキストに対して適用）
   const { highlightedContent, matchCount } = useMemo(() => {
     matchRefs.current = [];
-    if (!searchText || !lines) return { highlightedContent: lines, matchCount: 0 };
+    if (!searchText || !filteredLines) return { highlightedContent: filteredLines, matchCount: 0 };
 
     const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escaped})`, 'gi');
-    const parts = lines.split(regex);
+    const parts = filteredLines.split(regex);
 
     let count = 0;
     const elements = parts.map((part, i) => {
@@ -120,7 +158,7 @@ function SyslogApp() {
       return part;
     });
     return { highlightedContent: elements, matchCount: count };
-  }, [lines, searchText, currentMatch]);
+  }, [filteredLines, searchText, currentMatch]);
 
   // マッチ位置が変わったらスクロール
   useEffect(() => {
@@ -133,6 +171,12 @@ function SyslogApp() {
   useEffect(() => {
     setCurrentMatch(0);
   }, [searchText]);
+
+  const handleSearchClose = () => {
+    setSearchOpen(false);
+    setSearchText('');
+    setFilterLevel(-1);
+  };
 
   const handleSearchNext = () => {
     if (matchCount > 0) setCurrentMatch((prev) => (prev + 1) % matchCount);
@@ -269,7 +313,26 @@ function SyslogApp() {
           <IconButton size="small" onClick={handleSearchNext} disabled={matchCount === 0} sx={{ color: 'var(--text-muted)', p: '2px' }}>
             <KeyboardArrowDownIcon sx={{ fontSize: '18px' }} />
           </IconButton>
-          <IconButton size="small" onClick={() => setSearchOpen(false)} sx={{ color: 'var(--text-muted)', p: '2px', mr: 0.5 }}>
+          <span style={{ borderLeft: '1px solid var(--border-subtle)', height: '18px', margin: '0 4px' }} />
+          <Select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            size="small"
+            variant="standard"
+            disableUnderline
+            sx={{
+              fontSize: '11px',
+              color: filterLevel >= 0 ? 'var(--accent-primary)' : 'var(--text-muted)',
+              '& .MuiSelect-select': { py: 0, px: 0.5 },
+              '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '14px' },
+            }}
+            MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+          >
+            {filterLevels.map((lv) => (
+              <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
+            ))}
+          </Select>
+          <IconButton size="small" onClick={handleSearchClose} sx={{ color: 'var(--text-muted)', p: '2px', mr: 0.5 }}>
             <CloseIcon sx={{ fontSize: '16px' }} />
           </IconButton>
         </div>
