@@ -249,7 +249,6 @@ function SyslogApp() {
             fontSize: '11px',
             color: 'var(--text-muted)',
             ml: 1,
-            flex: 1,
             '--wails-draggable': 'no-drag',
             '& .MuiSelect-select': { py: 0, px: 1 },
             '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '16px' },
@@ -260,6 +259,7 @@ function SyslogApp() {
             <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
           ))}
         </Select>
+        <div style={{ flex: 1 }} />
         <Tooltip title={t('syslog.search')}>
           <IconButton size="small" color="inherit" onClick={() => setSearchOpen((prev) => !prev)} sx={{ mr: 0.5 }}>
             <SearchIcon fontSize="small" />
