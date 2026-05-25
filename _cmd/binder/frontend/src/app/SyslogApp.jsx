@@ -296,28 +296,24 @@ function SyslogApp() {
             <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
           ))}
         </Select>
-        <div style={{ flex: 1 }} />
-        <Tooltip title={t('syslog.search')}>
-          <IconButton size="small" color="inherit" onClick={() => setSearchOpen((prev) => !prev)} sx={{ mr: 0.5 }}>
-            <SearchIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <Tooltip title={t('syslog.save')}>
-          <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ mr: 0.5 }}>
+          <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ ml: 0.5 }}>
             <DownloadIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title={t('syslog.clear')}>
-          <IconButton size="small" color="inherit" onClick={handleClear} sx={{ mr: 0.5 }}>
+          <IconButton size="small" color="inherit" onClick={handleClear}>
             <CancelPresentationIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+        <div style={{ flex: 1 }} />
         <IconButton id="pinBtn" className={pin ? "top" : ""} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
           {pin
             ? <PushPinIcon fontSize="small" />
             : <PushPinOutlinedIcon fontSize="small" sx={{ transform: 'rotate(45deg)' }} />
           }
         </IconButton>
+        <div style={{ width: '8px' }} />
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>
