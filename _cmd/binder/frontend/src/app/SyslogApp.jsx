@@ -8,6 +8,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import SearchIcon from '@mui/icons-material/Search';
+import WrapTextIcon from '@mui/icons-material/WrapText';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
@@ -31,6 +32,7 @@ function SyslogApp() {
   const offsetRef = useRef(0);
   const [lines, setLines] = useState('');
   const [autoScroll, setAutoScroll] = useState(true);
+  const [wordWrap, setWordWrap] = useState(false);
   const [pin, setPin] = useState(false);
   const [level, setLevel] = useState(2); // NoticeLevel
   const [searchOpen, setSearchOpen] = useState(false);
@@ -341,9 +343,25 @@ function SyslogApp() {
       )}
 
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
-        <div id="syslogContent" ref={contentRef}>
+        <div id="syslogContent" ref={contentRef} style={wordWrap ? undefined : { whiteSpace: 'pre', wordBreak: 'normal', overflowX: 'auto' }}>
           {highlightedContent}
         </div>
+        <Tooltip title={t('syslog.wordWrap')}>
+          <IconButton
+            size="small"
+            onClick={() => setWordWrap((prev) => !prev)}
+            sx={{
+              position: 'absolute',
+              right: 52,
+              bottom: 16,
+              backgroundColor: wordWrap ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+              color: wordWrap ? 'var(--accent-primary)' : '#c9d1d9',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+            }}
+          >
+            <WrapTextIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title={t('syslog.follow')}>
           <IconButton
             size="small"

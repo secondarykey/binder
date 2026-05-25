@@ -480,7 +480,8 @@
         "save" : "ログを保存",
         "scrollToBottom" : "末尾へスクロール",
         "follow" : "追従",
-        "search" : "検索"
+        "search" : "検索",
+        "wordWrap" : "折り返し"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",

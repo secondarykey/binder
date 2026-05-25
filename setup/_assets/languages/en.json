@@ -480,7 +480,8 @@
         "save" : "Save Log",
         "scrollToBottom" : "Scroll to Bottom",
         "follow" : "Follow",
-        "search" : "Search"
+        "search" : "Search",
+        "wordWrap" : "Word Wrap"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
