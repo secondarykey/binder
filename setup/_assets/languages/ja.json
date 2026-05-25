@@ -479,7 +479,8 @@
         "clear" : "表示クリア",
         "save" : "ログを保存",
         "scrollToBottom" : "末尾へスクロール",
-        "follow" : "追従"
+        "follow" : "追従",
+        "search" : "検索"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",

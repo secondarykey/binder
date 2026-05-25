@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Toolbar, Typography, IconButton, Tooltip, Select, MenuItem } from '@mui/material';
+import { Toolbar, Typography, IconButton, Tooltip, Select, MenuItem, InputBase } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
 import DownloadIcon from '@mui/icons-material/Download';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 import { Window } from '@wailsio/runtime';
 
@@ -30,6 +33,11 @@ function SyslogApp() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [pin, setPin] = useState(false);
   const [level, setLevel] = useState(2); // NoticeLevel
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const searchInputRef = useRef(null);
+  const matchRefs = useRef([]);
 
   // ログレベル定義: slog.Level の値に対応
   const logLevels = [
@@ -70,6 +78,77 @@ function SyslogApp() {
     const timer = setInterval(fetchLog, 1000);
     return () => clearInterval(timer);
   }, [autoScroll]);
+
+  // Ctrl+F で検索バーを開く / Escape で閉じる
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen]);
+
+  // 検索バー表示時にフォーカス
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  // 検索テキストのハイライトとマッチ数
+  const { highlightedContent, matchCount } = useMemo(() => {
+    matchRefs.current = [];
+    if (!searchText || !lines) return { highlightedContent: lines, matchCount: 0 };
+
+    const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    const parts = lines.split(regex);
+
+    let count = 0;
+    const elements = parts.map((part, i) => {
+      if (i % 2 === 1) {
+        const idx = count;
+        count++;
+        return <mark key={i} ref={(el) => { matchRefs.current[idx] = el; }} className="syslogMatch">{part}</mark>;
+      }
+      return part;
+    });
+    return { highlightedContent: elements, matchCount: count };
+  }, [lines, searchText]);
+
+  // マッチ位置が変わったらスクロール
+  useEffect(() => {
+    if (matchCount > 0 && matchRefs.current[currentMatch]) {
+      matchRefs.current[currentMatch].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [currentMatch, matchCount, searchText]);
+
+  // 検索テキスト変更時にカレント位置をリセット
+  useEffect(() => {
+    setCurrentMatch(0);
+  }, [searchText]);
+
+  const handleSearchNext = () => {
+    if (matchCount > 0) setCurrentMatch((prev) => (prev + 1) % matchCount);
+  };
+
+  const handleSearchPrev = () => {
+    if (matchCount > 0) setCurrentMatch((prev) => (prev - 1 + matchCount) % matchCount);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.shiftKey) handleSearchPrev();
+      else handleSearchNext();
+    }
+  };
 
   const handleLevelChange = (e) => {
     const lv = e.target.value;
@@ -136,6 +215,11 @@ function SyslogApp() {
             <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
           ))}
         </Select>
+        <Tooltip title={t('syslog.search')}>
+          <IconButton size="small" color="inherit" onClick={() => setSearchOpen((prev) => !prev)} sx={{ mr: 0.5 }}>
+            <SearchIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title={t('syslog.save')}>
           <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ mr: 0.5 }}>
             <DownloadIcon fontSize="small" />
@@ -157,9 +241,43 @@ function SyslogApp() {
         </IconButton>
       </Toolbar>
 
+      {searchOpen && (
+        <div id="syslogSearchBar">
+          <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', ml: 1, mr: 0.5 }} />
+          <InputBase
+            inputRef={searchInputRef}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={t('syslog.search')}
+            size="small"
+            sx={{
+              flex: 1,
+              fontSize: '12px',
+              color: 'var(--text-primary)',
+              '& input': { padding: '2px 4px' },
+            }}
+          />
+          {searchText && (
+            <Typography variant="caption" sx={{ color: 'var(--text-muted)', mx: 0.5, whiteSpace: 'nowrap' }}>
+              {matchCount > 0 ? `${currentMatch + 1} / ${matchCount}` : `0 / 0`}
+            </Typography>
+          )}
+          <IconButton size="small" onClick={handleSearchPrev} disabled={matchCount === 0} sx={{ color: 'var(--text-muted)', p: '2px' }}>
+            <KeyboardArrowUpIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+          <IconButton size="small" onClick={handleSearchNext} disabled={matchCount === 0} sx={{ color: 'var(--text-muted)', p: '2px' }}>
+            <KeyboardArrowDownIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+          <IconButton size="small" onClick={() => setSearchOpen(false)} sx={{ color: 'var(--text-muted)', p: '2px', mr: 0.5 }}>
+            <CloseIcon sx={{ fontSize: '16px' }} />
+          </IconButton>
+        </div>
+      )}
+
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <div id="syslogContent" ref={contentRef}>
-          {lines}
+          {highlightedContent}
         </div>
         <Tooltip title={t('syslog.follow')}>
           <IconButton

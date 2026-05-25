@@ -40,3 +40,22 @@
     white-space: pre-wrap;
     word-break: break-all;
 }
+
+#syslogSearchBar {
+    display: flex;
+    align-items: center;
+    padding: 2px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-panel);
+}
+
+#syslogSearchBar button {
+    --wails-draggable: no-drag;
+}
+
+.syslogMatch {
+    background-color: rgba(255, 213, 79, 0.4);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}

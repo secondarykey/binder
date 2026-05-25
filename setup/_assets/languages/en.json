@@ -479,7 +479,8 @@
         "clear" : "Clear Display",
         "save" : "Save Log",
         "scrollToBottom" : "Scroll to Bottom",
-        "follow" : "Follow"
+        "follow" : "Follow",
+        "search" : "Search"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
