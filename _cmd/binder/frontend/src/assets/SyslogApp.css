@@ -29,7 +29,8 @@
 }
 
 #syslogContent {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     background-color: #0d1117;
     padding: 8px 12px;

@@ -478,7 +478,8 @@
         "title" : "システムログ",
         "clear" : "表示クリア",
         "save" : "ログを保存",
-        "scrollToBottom" : "末尾へスクロール"
+        "scrollToBottom" : "末尾へスクロール",
+        "follow" : "追従"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",

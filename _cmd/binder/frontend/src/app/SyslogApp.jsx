@@ -38,20 +38,22 @@ function SyslogApp() {
     { value:  8, label: 'ERROR' },
   ];
 
-  // 自動スクロール
+  // 自動スクロール（追従モード時のみ）
   useEffect(() => {
     if (autoScroll && contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [lines, autoScroll]);
+  }, [lines]);
 
   // 初期ログレベルを取得
   useEffect(() => {
     GetLogLevel().then((lv) => setLevel(lv)).catch(() => {});
   }, []);
 
-  // ポーリングでログを取得
+  // ポーリングでログを取得（追従モード時のみ）
   useEffect(() => {
+    if (!autoScroll) return;
+
     const fetchLog = () => {
       ReadLogTail(offsetRef.current).then((result) => {
         if (result.content) {
@@ -64,7 +66,7 @@ function SyslogApp() {
     fetchLog();
     const timer = setInterval(fetchLog, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [autoScroll]);
 
   const handleLevelChange = (e) => {
     const lv = e.target.value;
@@ -72,19 +74,9 @@ function SyslogApp() {
     SetLogLevel(lv).catch(() => {});
   };
 
-  // スクロール位置で autoScroll を切り替え
-  const handleScroll = () => {
-    if (!contentRef.current) return;
-    const el = contentRef.current;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    setAutoScroll(atBottom);
-  };
-
-  const handleScrollToBottom = () => {
-    setAutoScroll(true);
-    if (contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
-    }
+  // 追従モードのトグル
+  const handleToggleFollow = () => {
+    setAutoScroll((prev) => !prev);
   };
 
   const handleClear = () => {
@@ -134,6 +126,15 @@ function SyslogApp() {
             <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
           ))}
         </Select>
+        <Tooltip title={t('syslog.follow')}>
+          <IconButton size="small" onClick={handleToggleFollow} sx={{
+            mr: 0.5,
+            color: autoScroll ? 'var(--accent-primary)' : 'inherit',
+            backgroundColor: autoScroll ? 'rgba(255,255,255,0.1)' : 'transparent',
+          }}>
+            <VerticalAlignBottomIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title={t('syslog.save')}>
           <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ mr: 0.5 }}>
             <DownloadIcon fontSize="small" />
@@ -149,28 +150,8 @@ function SyslogApp() {
         </IconButton>
       </Toolbar>
 
-      <div style={{ position: 'relative', flex: 1, minHeight: 0, paddingBottom: '15px', backgroundColor: '#0d1117' }}>
-        <div id="syslogContent" ref={contentRef} onScroll={handleScroll}>
-          {lines}
-        </div>
-        {!autoScroll && (
-          <Tooltip title={t('syslog.scrollToBottom')}>
-            <IconButton
-              size="small"
-              onClick={handleScrollToBottom}
-              sx={{
-                position: 'absolute',
-                right: 16,
-                bottom: 16,
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                color: '#c9d1d9',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)' },
-              }}
-            >
-              <VerticalAlignBottomIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
+      <div id="syslogContent" ref={contentRef}>
+        {lines}
       </div>
     </div>
   );

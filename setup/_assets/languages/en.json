@@ -478,7 +478,8 @@
         "title" : "System Log",
         "clear" : "Clear Display",
         "save" : "Save Log",
-        "scrollToBottom" : "Scroll to Bottom"
+        "scrollToBottom" : "Scroll to Bottom",
+        "follow" : "Follow"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",
