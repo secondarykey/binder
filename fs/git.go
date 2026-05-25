@@ -902,7 +902,7 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 		mod, err := getModelType(path)
 		if err != nil {
 			// db/・binder.json など管理外のファイルは無視（Debugレベル）
-			log.DebugE("getModelType() error", err)
+			log.Debug("getModelType() error: %+v", err)
 		} else {
 			mod.Status = s
 			rtn = append(rtn, mod)

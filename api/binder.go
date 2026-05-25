@@ -51,7 +51,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	// 履歴を保存（最近開いたバインダーを先頭にする）
 	if err := settings.SaveHistory(dir); err != nil {
-		log.WarnE("SaveHistory error", err)
+		log.Warn("SaveHistory error:\n%+v", err)
 	}
 
 	return address, nil
@@ -137,7 +137,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 		if err == nil {
 			if len(result.Warnings) > 0 {
 				for _, w := range result.Warnings {
-					log.Warn("Generate warning: " + w)
+					log.Warn("Generate warning: %s", w)
 				}
 			}
 			_, err = a.current.PublishNote(id, []byte(result.HTML))
@@ -152,7 +152,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 
 	default:
 		//templateはないはず
-		log.Warn("Unknown Mode:" + mode)
+		log.Warn("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {
@@ -179,7 +179,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 			}
 			if len(result.Warnings) > 0 {
 				for _, w := range result.Warnings {
-					log.Warn("GenerateAll warning: " + w)
+					log.Warn("GenerateAll warning: %s", w)
 				}
 			}
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
@@ -206,7 +206,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 			}
 			allFiles = append(allFiles, files...)
 		default:
-			log.Warn("Unknown Mode:" + item.Mode)
+			log.Warn("Unknown Mode:%s", item.Mode)
 		}
 	}
 
@@ -231,7 +231,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	case "layer":
 		err = a.current.UnpublishLayer(id)
 	default:
-		log.Warn("Unknown Mode:" + mode)
+		log.Warn("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {

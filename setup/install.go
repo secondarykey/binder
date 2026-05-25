@@ -75,14 +75,14 @@ func Install(dir string, ver *Version, name string, installType string) error {
 	// ユーザデータを暗号化して保存（Git設定のユーザ名・メールアドレスを初期値とする）
 	key, err := GetUserKey()
 	if err != nil {
-		log.WarnE("Install: GetUserKey()", err)
+		log.Warn("Install: GetUserKey():\n%+v", err)
 	} else {
 		info := &fs.UserInfo{
 			Name:  s.Git.Name,
 			Email: s.Git.Mail,
 		}
 		if err = f.SaveUserData(key, info); err != nil {
-			log.WarnE("Install: SaveUserData()", err)
+			log.Warn("Install: SaveUserData():\n%+v", err)
 		}
 	}
 

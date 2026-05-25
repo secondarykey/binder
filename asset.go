@@ -84,18 +84,18 @@ func convertToWebP(data []byte, filename string) ([]byte, string) {
 
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		log.WarnE("convertToWebP: image.Decode failed, keeping original", err)
+		log.Warn("convertToWebP: image.Decode failed, keeping original:\n%+v", err)
 		return data, filename
 	}
 
 	var buf bytes.Buffer
 	if err := webp.Encode(&buf, img, &webp.Options{Quality: 80}); err != nil {
-		log.WarnE("convertToWebP: webp.Encode failed, keeping original", err)
+		log.Warn("convertToWebP: webp.Encode failed, keeping original:\n%+v", err)
 		return data, filename
 	}
 
 	newFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + ".webp"
-	log.Info("convertToWebP: " + filename + " -> " + newFilename)
+	log.Info("convertToWebP: %s -> %s", filename, newFilename)
 	return buf.Bytes(), newFilename
 }
 

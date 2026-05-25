@@ -58,7 +58,7 @@ func (h ArgHelper[T]) get() (T, bool) {
 	}
 	val, ok := h.args[h.index].(T)
 	if !ok {
-		log.Warn(fmt.Sprintf("[%d] expected %T got %T", h.index, *new(T), h.args[h.index]))
+		log.Warn("[%d] expected %T got %T", h.index, *new(T), h.args[h.index])
 	}
 	return val, ok
 }
@@ -508,7 +508,7 @@ func formatDate(d string, f string) string {
 
 	t, e := time.Parse(time.RFC3339, d)
 	if e != nil {
-		log.WarnE("format error:"+d, e)
+		log.Warn("format error:%s\n%+v", d, e)
 		return d
 	}
 	return t.Format(f)

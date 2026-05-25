@@ -74,7 +74,7 @@ func flattenAssetDir(assetsDir string) error {
 				dst = filepath.Join(assetsDir, f.Name())
 			}
 
-			log.Info("migrate asset src=" + src + " dst=" + dst)
+			log.Info("migrate asset src=%s dts=%s", src, dst)
 			if err := os.Rename(src, dst); err != nil {
 				return xerrors.Errorf("os.Rename(%s→%s) error: %w", src, dst, err)
 			}
@@ -83,7 +83,7 @@ func flattenAssetDir(assetsDir string) error {
 		// 空になったサブディレクトリを削除
 		if err := os.Remove(parentDir); err != nil {
 			// 削除できなくても致命的ではない（警告のみ）
-			log.WarnE("Could not remove directory after migration dir="+parentDir, err)
+			log.Warn("Could not remove directory after migration dir=%s \n%+v", parentDir, err)
 		}
 	}
 

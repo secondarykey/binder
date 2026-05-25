@@ -22,12 +22,12 @@ type BinderWindowCloser interface {
 
 // App struct
 type App struct {
-	current        *binder.Binder
-	version        *Version
-	devMode        bool
-	searchCancel   context.CancelFunc
-	SearchEmitter  SearchEmitter
-	WindowCloser   BinderWindowCloser
+	current       *binder.Binder
+	version       *Version
+	devMode       bool
+	searchCancel  context.CancelFunc
+	SearchEmitter SearchEmitter
+	WindowCloser  BinderWindowCloser
 }
 
 func New(version string) *App {
@@ -36,9 +36,9 @@ func New(version string) *App {
 	var err error
 	app.version, err = NewVersion(version)
 	if err != nil {
-		log.WarnE("Version parse error", err)
+		log.Warn("Version parse error:\n%+v", err)
 	}
-	log.Notice(fmt.Sprintf("Binder Version: %s", app.version))
+	log.Notice("Binder Version: %v", app.version)
 
 	return &app
 }

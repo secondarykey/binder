@@ -387,7 +387,7 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 			mergeLog.LocalBranch = branch
 		}
 		if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-			log.WarnE("CreateMergeLogNote() error", err)
+			log.Warn("CreateMergeLogNote() error:\n+%v", err)
 		}
 	}
 
@@ -419,9 +419,9 @@ func migrateSourceInPlace(dir string, tmpFs *fs.FileSystem, sourceHash gogitplum
 	// ワークツリーが不整合な状態で残らないようにする。
 	defer func() {
 		if restoreErr := tmpFs.CheckoutBranch(currentBranch); restoreErr != nil {
-			log.WarnE("migrateSourceInPlace: CheckoutBranch() error, forcing checkout to current hash", restoreErr)
+			log.Warn("migrateSourceInPlace: CheckoutBranch() error, forcing checkout to current hash:\n%+v", restoreErr)
 			if forceErr := tmpFs.CheckoutDetached(currentHash); forceErr != nil {
-				log.WarnE("migrateSourceInPlace: force CheckoutDetached() also failed", forceErr)
+				log.Warn("migrateSourceInPlace: force CheckoutDetached() also failed:\n%+v", forceErr)
 			}
 		}
 	}()
@@ -493,7 +493,7 @@ func (a *App) handleMergeAnalysis(dir string, tmpFs *fs.FileSystem, analysis *fs
 		if mergeLog != nil {
 			logSetter(mergeLog)
 			if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-				log.WarnE("CreateMergeLogNote() error", err)
+				log.Warn("CreateMergeLogNote() error:\n%+v", err)
 			}
 		}
 		return &json.MergeResult{
@@ -779,7 +779,7 @@ func (a *App) GetOverallHistoryByPath(dir string, limit int, offset int) (*json.
 	}
 
 	// binder.Load() 失敗 → fs.Load() にフォールバック
-	log.WarnE("binder.Load() failed, falling back to fs.Load()", err)
+	log.Warn("binder.Load() failed, falling back to fs.Load():\n%+v", err)
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
@@ -811,7 +811,7 @@ func (a *App) GetCommitFilesByPath(dir string, hash string) ([]*json.CommitFileE
 	}
 
 	// binder.Load() 失敗 → fs.Load() にフォールバック（名前解決なし）
-	log.WarnE("binder.Load() failed, falling back to fs.Load()", err)
+	log.Warn("binder.Load() failed, falling back to fs.Load():\n%+v", err)
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)

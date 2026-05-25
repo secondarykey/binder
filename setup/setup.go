@@ -76,7 +76,7 @@ func migrateApp(ver *Version, devMode bool) error {
 
 	if needUpdate {
 		if err := UpdateDefaults(); err != nil {
-			log.WarnE("migrateApp: UpdateDefaults", err)
+			log.Warn("migrateApp: UpdateDefaults:\n%+v", err)
 		}
 	}
 
@@ -93,7 +93,7 @@ func migrateApp(ver *Version, devMode bool) error {
 		}
 		editor.GitBash = false
 		if err := settings.SaveEditor(editor); err != nil {
-			log.WarnE("migrateApp: SaveEditor", err)
+			log.Warn("migrateApp: SaveEditor:\n%+v", err)
 		}
 	}
 

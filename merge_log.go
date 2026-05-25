@@ -52,14 +52,14 @@ func (b *Binder) CreateMergeLogNote(mergeLog *fs.MergeLog) error {
 	// テンプレートをデフォルト設定
 	lt, err := b.db.FindDefaultLayoutTemplate()
 	if err != nil {
-		log.WarnE("FindDefaultLayoutTemplate() error", err)
+		log.Warn("FindDefaultLayoutTemplate() error:\n%+v", err)
 	} else if lt != nil {
 		n.LayoutTemplate = lt.Id
 	}
 
 	dt, err := b.db.FindDefaultContentTemplate()
 	if err != nil {
-		log.WarnE("FindDefaultContentTemplate() error", err)
+		log.Warn("FindDefaultContentTemplate() error:\n%+v", err)
 	} else if dt != nil {
 		n.ContentTemplate = dt.Id
 	}

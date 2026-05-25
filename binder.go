@@ -91,12 +91,12 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	// ユーザ情報を暗号化して保存（認証情報の保存 or ユーザ名/メールの保存）
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.WarnE("CreateRemote: GetUserKey", err)
+		log.Warn("CreateRemote: GetUserKey:\n%+v", err)
 	} else {
 		if save && fsInfo != nil {
 			// 認証情報ごと保存
 			if err = bfs.SaveUserData(key, fsInfo); err != nil {
-				log.WarnE("CreateRemote: SaveUserData", err)
+				log.Warn("CreateRemote: SaveUserData:\n%+v", err)
 			}
 		} else {
 			// save=false またはfsInfo==nil でもデフォルトのName/Emailで作成
@@ -106,7 +106,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 				Email: s.Git.Mail,
 			}
 			if err = bfs.SaveUserData(key, info); err != nil {
-				log.WarnE("CreateRemote: SaveUserData", err)
+				log.Warn("CreateRemote: SaveUserData:\n%+v", err)
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 
 func Load(dir string) (*Binder, error) {
 
-	log.Notice("Load Binder:" + dir)
+	log.Notice("Load Binder:%s", dir)
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
@@ -153,11 +153,11 @@ func Load(dir string) (*Binder, error) {
 	// バインダーのユーザ情報をコミット署名に設定
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.WarnE("Load: GetUserKey()", err)
+		log.Warn("Load: GetUserKey():\n%+v", err)
 	} else {
 		info, err := bfs.LoadUserData(key)
 		if err != nil {
-			log.WarnE("Load: LoadUserData()", err)
+			log.Warn("Load: LoadUserData():\n%+v", err)
 		} else if info != nil {
 			bfs.SetUserSig(info)
 		} else {
@@ -168,7 +168,7 @@ func Load(dir string) (*Binder, error) {
 				Email: s.Git.Mail,
 			}
 			if err = bfs.SaveUserData(key, info); err != nil {
-				log.WarnE("Load: SaveUserData()", err)
+				log.Warn("Load: SaveUserData():\n%+v", err)
 			}
 			bfs.SetUserSig(info)
 		}
@@ -451,11 +451,11 @@ func (b *Binder) Fetch(remoteName, branchName string, info *fs.UserInfo) error {
 func (b *Binder) SaveUserInfo(info *fs.UserInfo) {
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.WarnE("setup.GetUserKey() error", err)
+		log.Warn("setup.GetUserKey() error:\n%+v", err)
 		return
 	}
 	if err = b.fileSystem.SaveUserData(key, info); err != nil {
-		log.WarnE("SaveUserData() error", err)
+		log.Warn("SaveUserData() error:\n%+v", err)
 		return
 	}
 	b.fileSystem.SetUserSig(info)
@@ -465,7 +465,7 @@ func (b *Binder) generateId() string {
 
 	id, err := uuid.NewV7()
 	if err != nil {
-		log.ErrorE("UUID v7 generate error", err)
+		log.Error("UUID v7 generate error:\n%+v", err)
 		return ""
 	}
 	return id.String()
