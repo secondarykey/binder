@@ -414,7 +414,7 @@ function BinderTree(props) {
           viewTree();
           // アセット登録後、エディタのカーソル位置に {{assetsImage "id"}} を挿入
           if (result?.id) {
-            evt.insertText(`{{assetsImage "${result.id}"}}`);
+            evt.insertText(`{{assetsImage "${result.id}" ""}}`);
           }
         }).catch((err) => {
           evt.showErrorMessage(err);

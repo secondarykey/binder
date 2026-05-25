@@ -1131,7 +1131,7 @@ function Editor(props) {
           evt.refreshTree();
           if (result?.id) {
             const tag = isImage
-              ? `{{assetsImage "${result.id}"}}`
+              ? `{{assetsImage "${result.id}" ""}}`
               : `{{assets "${result.id}"}}`;
             const ta = document.querySelector('#editor');
             if (!ta) return;
