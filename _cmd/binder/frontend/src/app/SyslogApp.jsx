@@ -389,9 +389,10 @@ function SyslogApp() {
               position: 'absolute',
               right: 88,
               bottom: 16,
+              opacity: 0.5,
               backgroundColor: colorize ? 'rgba(100,160,255,0.25)' : 'rgba(255,255,255,0.06)',
               color: colorize ? 'var(--accent-primary)' : 'rgba(201,209,217,0.6)',
-              '&:hover': { backgroundColor: colorize ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
+              '&:hover': { opacity: 1, backgroundColor: colorize ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
             }}
           >
             <FormatColorTextIcon fontSize="small" />
@@ -405,9 +406,10 @@ function SyslogApp() {
               position: 'absolute',
               right: 52,
               bottom: 16,
+              opacity: 0.5,
               backgroundColor: wordWrap ? 'rgba(100,160,255,0.25)' : 'rgba(255,255,255,0.06)',
               color: wordWrap ? 'var(--accent-primary)' : 'rgba(201,209,217,0.6)',
-              '&:hover': { backgroundColor: wordWrap ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
+              '&:hover': { opacity: 1, backgroundColor: wordWrap ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
             }}
           >
             <WrapTextIcon fontSize="small" />
@@ -421,9 +423,10 @@ function SyslogApp() {
               position: 'absolute',
               right: 16,
               bottom: 16,
+              opacity: 0.5,
               backgroundColor: autoScroll ? 'rgba(100,160,255,0.25)' : 'rgba(255,255,255,0.06)',
               color: autoScroll ? 'var(--accent-primary)' : 'rgba(201,209,217,0.6)',
-              '&:hover': { backgroundColor: autoScroll ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
+              '&:hover': { opacity: 1, backgroundColor: autoScroll ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
             }}
           >
             <VerticalAlignBottomIcon fontSize="small" />
