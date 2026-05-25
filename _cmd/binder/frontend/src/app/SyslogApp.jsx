@@ -84,7 +84,7 @@ function SyslogApp() {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        setSearchOpen(true);
+        setSearchOpen((prev) => !prev);
       }
       if (e.key === 'Escape' && searchOpen) {
         setSearchOpen(false);
@@ -115,12 +115,12 @@ function SyslogApp() {
       if (i % 2 === 1) {
         const idx = count;
         count++;
-        return <mark key={i} ref={(el) => { matchRefs.current[idx] = el; }} className="syslogMatch">{part}</mark>;
+        return <mark key={i} ref={(el) => { matchRefs.current[idx] = el; }} className={idx === currentMatch ? "syslogMatchCurrent" : "syslogMatch"}>{part}</mark>;
       }
       return part;
     });
     return { highlightedContent: elements, matchCount: count };
-  }, [lines, searchText]);
+  }, [lines, searchText, currentMatch]);
 
   // マッチ位置が変わったらスクロール
   useEffect(() => {
