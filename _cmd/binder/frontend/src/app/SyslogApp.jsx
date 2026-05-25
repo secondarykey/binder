@@ -9,6 +9,7 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import WrapTextIcon from '@mui/icons-material/WrapText';
+import FormatColorTextIcon from '@mui/icons-material/FormatColorText';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
@@ -33,6 +34,7 @@ function SyslogApp() {
   const [lines, setLines] = useState('');
   const [autoScroll, setAutoScroll] = useState(true);
   const [wordWrap, setWordWrap] = useState(false);
+  const [colorize, setColorize] = useState(false);
   const [pin, setPin] = useState(false);
   const [level, setLevel] = useState(2); // NoticeLevel
   const [searchOpen, setSearchOpen] = useState(false);
@@ -141,26 +143,59 @@ function SyslogApp() {
     return filtered.join('\n');
   }, [lines, filterLevel]);
 
-  // 検索テキストのハイライトとマッチ数（フィルタ後のテキストに対して適用）
+  // 色付け＋検索ハイライト（フィルタ後のテキストに対して行単位で適用）
   const { highlightedContent, matchCount } = useMemo(() => {
     matchRefs.current = [];
-    if (!searchText || !filteredLines) return { highlightedContent: filteredLines, matchCount: 0 };
+    const text = filteredLines || '';
 
-    const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escaped})`, 'gi');
-    const parts = filteredLines.split(regex);
+    if (!colorize && !searchText) return { highlightedContent: text, matchCount: 0 };
 
-    let count = 0;
-    const elements = parts.map((part, i) => {
-      if (i % 2 === 1) {
-        const idx = count;
-        count++;
-        return <mark key={i} ref={(el) => { matchRefs.current[idx] = el; }} className={idx === currentMatch ? "syslogMatchCurrent" : "syslogMatch"}>{part}</mark>;
+    const lineArr = text.split('\n');
+    const lvlRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERGENCY)\]/;
+    const searchEscaped = searchText ? searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : null;
+    const searchRegex = searchEscaped ? new RegExp(`(${searchEscaped})`, 'gi') : null;
+
+    let matchIdx = 0;
+    let lastColorClass = '';
+
+    const elements = lineArr.map((line, lineIdx) => {
+      // 行のレベルに応じた色クラスを決定（継続行は直前の色を引き継ぐ）
+      if (colorize) {
+        const m = line.match(lvlRegex);
+        if (m) {
+          const lvl = m[1];
+          if (lvl === 'WARN') lastColorClass = 'syslogWarn';
+          else if (lvl === 'ERROR' || lvl === 'EMERGENCY') lastColorClass = 'syslogError';
+          else lastColorClass = '';
+        }
       }
-      return part;
+      const colorClass = colorize ? lastColorClass : '';
+
+      // 検索ハイライト
+      let content;
+      if (searchRegex) {
+        const parts = line.split(searchRegex);
+        content = parts.map((part, i) => {
+          if (i % 2 === 1) {
+            const idx = matchIdx++;
+            return <mark key={`${lineIdx}-${i}`} ref={(el) => { matchRefs.current[idx] = el; }} className={idx === currentMatch ? "syslogMatchCurrent" : "syslogMatch"}>{part}</mark>;
+          }
+          return part;
+        });
+      } else {
+        content = line;
+      }
+
+      return (
+        <span key={lineIdx}>
+          {lineIdx > 0 && '\n'}
+          {colorClass ? <span className={colorClass}>{content}</span> : content}
+        </span>
+      );
     });
-    return { highlightedContent: elements, matchCount: count };
-  }, [filteredLines, searchText, currentMatch]);
+
+    return { highlightedContent: elements, matchCount: matchIdx };
+  }, [filteredLines, searchText, colorize, currentMatch]);
 
   // マッチ位置が変わったらスクロール
   useEffect(() => {
@@ -346,6 +381,22 @@ function SyslogApp() {
         <div id="syslogContent" ref={contentRef} style={wordWrap ? undefined : { whiteSpace: 'pre', wordBreak: 'normal', overflowX: 'auto' }}>
           {highlightedContent}
         </div>
+        <Tooltip title={t('syslog.colorize')}>
+          <IconButton
+            size="small"
+            onClick={() => setColorize((prev) => !prev)}
+            sx={{
+              position: 'absolute',
+              right: 88,
+              bottom: 16,
+              backgroundColor: colorize ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+              color: colorize ? 'var(--accent-primary)' : '#c9d1d9',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+            }}
+          >
+            <FormatColorTextIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title={t('syslog.wordWrap')}>
           <IconButton
             size="small"

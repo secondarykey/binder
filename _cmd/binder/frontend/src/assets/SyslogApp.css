@@ -54,6 +54,14 @@
     --wails-draggable: no-drag;
 }
 
+.syslogWarn {
+    color: #e2b93d;
+}
+
+.syslogError {
+    color: #f85149;
+}
+
 .syslogMatch {
     background-color: rgba(255, 213, 79, 0.3);
     color: inherit;

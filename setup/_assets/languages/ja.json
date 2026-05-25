@@ -481,7 +481,8 @@
         "scrollToBottom" : "末尾へスクロール",
         "follow" : "追従",
         "search" : "検索",
-        "wordWrap" : "折り返し"
+        "wordWrap" : "折り返し",
+        "colorize" : "色付け"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",
