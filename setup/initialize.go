@@ -69,7 +69,7 @@ func newOp(userId string) db.Op {
 func generateId() string {
 	id, err := uuid.NewV7()
 	if err != nil {
-		log.ErrorE("UUID v7 generate error ", err)
+		log.Error("UUID v7 generate error:\n%+v", err)
 		return ""
 	}
 	return id.String()

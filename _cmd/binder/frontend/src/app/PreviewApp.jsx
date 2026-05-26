@@ -4,8 +4,10 @@ import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import ContrastIcon from '@mui/icons-material/Contrast';
 
 import { Events, Window } from '@wailsio/runtime';
+import { GetConfig } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
 import HTMLFrame from '../components/editor/HTMLFrame';
@@ -31,6 +33,8 @@ function PreviewApp() {
   const [name, setName] = useState(params.get('name') ?? '');
   const [html, setHTML] = useState('');
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
+  const [colorSchemeConfig, setColorSchemeConfig] = useState(null);
+  const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
 
   useEffect(() => {
     // プレビュー内容の更新イベント
@@ -56,6 +60,12 @@ function PreviewApp() {
         }
       }
     });
+
+    GetConfig().then((conf) => {
+      if (conf.previewColorScheme) {
+        setColorSchemeConfig(conf.previewColorScheme);
+      }
+    }).catch(() => {});
 
     // 起動完了をエディタに通知（初期コンテンツを要求）
     Events.Emit('binder:preview:ready', { id });
@@ -96,6 +106,15 @@ function PreviewApp() {
         <Typography variant="body2" sx={{ flex: 1 }} noWrap>
           {t('preview.windowTitle')}{name ? ` — ${name}` : ''}
         </Typography>
+        {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
+          <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
+            <IconButton size="small" color="inherit" aria-label="color-scheme"
+              onClick={() => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length)}
+            >
+              <ContrastIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        }
         <Tooltip title={t('preview.alwaysOnTop')} placement="bottom">
           <IconButton size="small" color="inherit" aria-label="always on top" onClick={handleToggleAlwaysOnTop}
             sx={{ color: alwaysOnTop ? 'var(--accent-primary)' : 'inherit', backgroundColor: alwaysOnTop ? 'var(--bg-button)' : 'transparent' }}>
@@ -113,7 +132,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{

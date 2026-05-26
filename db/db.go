@@ -231,7 +231,7 @@ func loadOldSchemaFile(dir string) string {
 	//存在する場合
 	if len(files) >= 1 {
 		if len(files) > 1 {
-			log.Warn("schema file duplicate:" + dir)
+			log.Warn("schema file duplicate: %s", dir)
 		}
 
 		f := files[0]

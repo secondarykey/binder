@@ -240,9 +240,11 @@ function Menu(props) {
 
       </Paper>
 
-      {/** エディタルートでは Editor 内部でツリーを管理するため非表示。
-           アンマウントせず display:none で隠すことで BinderTree のステートを保持する */}
-        <Paper id="menu" className={menuClasses} style={{ display: isEditorRoute ? 'none' : undefined }}>
+      {/** エディタルートでは Editor 内部でツリーを管理するため非表示にする。
+           BinderTree はエディタ内に別インスタンスがあるため、二重マウントを避けるよう
+           エディタルート時はアンマウントする。 */}
+        {!isEditorRoute && (
+        <Paper id="menu" className={menuClasses}>
 
           {/** メニューの中身 */}
           <Paper id="leftContent">
@@ -253,7 +255,6 @@ function Menu(props) {
               <Route path={"/"} element={<> <FileMenu /> </>} />
               <Route path={"/file/*"} element={<> <FileMenu /> </>} />
               <Route path={"/template/*"} element={tempTree} />
-              <Route path={"/editor/template/:id"} element={tempTree} />
 
               <Route path="*" element={<>
                 <BinderTree />
@@ -264,6 +265,7 @@ function Menu(props) {
           </Paper>
 
         </Paper>
+        )}
     </>
   );
 }

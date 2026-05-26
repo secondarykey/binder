@@ -34,7 +34,7 @@ func (a *App) GetPublishSettings() (*json.PublishSettings, error) {
 
 	defer log.PrintTrace(log.Func("GetPublishSettings()"))
 
-	publishOnly, publishBranch, err := a.current.GetPublishSettings()
+	publishOnly, publishBranch, publishSubDir, err := a.current.GetPublishSettings()
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("GetPublishSettings() error\n%+v", err)
@@ -42,6 +42,7 @@ func (a *App) GetPublishSettings() (*json.PublishSettings, error) {
 	return &json.PublishSettings{
 		PublishOnly:   publishOnly,
 		PublishBranch: publishBranch,
+		PublishSubDir: publishSubDir,
 	}, nil
 }
 

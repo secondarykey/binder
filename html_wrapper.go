@@ -38,6 +38,20 @@ type wrapper struct {
 	visited       map[string]bool // embed で現在展開中のIDセット（循環参照防止）
 	deps          *exportDeps     // nil = 通常モード、非nil = 依存関係収集モード
 	exportAsIndex bool            // true の場合 relativePrefix() は常に "./" を返す
+	warnings      *[]string       // テンプレート関数実行中のエラーを蓄積（親子wrapper間で共有）
+}
+
+func (w *wrapper) addWarning(msg string) {
+	if w.warnings != nil {
+		*w.warnings = append(*w.warnings, msg)
+	}
+}
+
+func (w *wrapper) getWarnings() []string {
+	if w.warnings == nil {
+		return nil
+	}
+	return *w.warnings
 }
 
 // visitedWith は現在の visited に id を加えた新しいマップを返す。
@@ -52,10 +66,12 @@ func (w *wrapper) visitedWith(id string) map[string]bool {
 }
 
 func newWrapper(o *Binder, local bool, note *json.Note) (*wrapper, error) {
+	ws := make([]string, 0)
 	var w wrapper
 	w.owner = o
 	w.Local = local
 	w.note = note
+	w.warnings = &ws
 	return &w, nil
 }
 

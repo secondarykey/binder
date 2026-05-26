@@ -385,11 +385,28 @@ function BinderTree(props) {
       const items = e.clipboardData?.items;
       if (!items) return;
 
-      const imageItem = Array.from(items).find(item => item.type.startsWith('image/'));
+      // デバッグ: クリップボードの全アイテムを出力
+      const allItems = Array.from(items);
+      console.debug('[Paste] items count:', allItems.length);
+      allItems.forEach((item, i) => {
+        console.debug(`[Paste] item[${i}]: kind=${item.kind}, type=${item.type}`);
+      });
+
+      // デバッグ: テキストデータがあれば出力
+      const textItem = allItems.find(item => item.kind === 'string');
+      if (textItem) {
+        textItem.getAsString((text) => {
+          console.debug('[Paste] text data:', text);
+        });
+      }
+
+      const imageItem = allItems.find(item => item.type.startsWith('image/'));
+      console.debug('[Paste] imageItem:', imageItem ? `kind=${imageItem.kind}, type=${imageItem.type}` : 'none');
       if (!imageItem) return;
 
       const file = imageItem.getAsFile();
       if (!file) return;
+      console.debug('[Paste] file:', `name=${file.name}, size=${file.size}, type=${file.type}`);
 
       // MIME サブタイプを拡張子に変換（image/jpeg → jpg）
       const ext = imageItem.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
@@ -414,7 +431,7 @@ function BinderTree(props) {
           viewTree();
           // アセット登録後、エディタのカーソル位置に {{assetsImage "id"}} を挿入
           if (result?.id) {
-            evt.insertText(`{{assetsImage "${result.id}"}}`);
+            evt.insertText(`{{assetsImage "${result.id}" ""}}`);
           }
         }).catch((err) => {
           evt.showErrorMessage(err);

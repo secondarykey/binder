@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Toolbar, Typography, IconButton, Tooltip, Select, MenuItem } from '@mui/material';
+import { Toolbar, Typography, IconButton, Tooltip, Select, MenuItem, InputBase } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
 import DownloadIcon from '@mui/icons-material/Download';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import WrapTextIcon from '@mui/icons-material/WrapText';
+import FormatColorTextIcon from '@mui/icons-material/FormatColorText';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 import { Window } from '@wailsio/runtime';
 
@@ -26,7 +33,16 @@ function SyslogApp() {
   const offsetRef = useRef(0);
   const [lines, setLines] = useState('');
   const [autoScroll, setAutoScroll] = useState(true);
+  const [wordWrap, setWordWrap] = useState(false);
+  const [colorize, setColorize] = useState(false);
+  const [pin, setPin] = useState(false);
   const [level, setLevel] = useState(2); // NoticeLevel
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filterLevel, setFilterLevel] = useState(-1); // -1 = ALL
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const searchInputRef = useRef(null);
+  const matchRefs = useRef([]);
 
   // ログレベル定義: slog.Level の値に対応
   const logLevels = [
@@ -38,20 +54,38 @@ function SyslogApp() {
     { value:  8, label: 'ERROR' },
   ];
 
-  // 自動スクロール
+  // フィルタ用レベル優先度（クライアントサイドのみ）
+  const levelPriority = {
+    'TRACE': 0, 'DEBUG': 1, 'INFO': 2, 'NOTICE': 3, 'WARN': 4, 'ERROR': 5, 'EMERGENCY': 6,
+  };
+
+  // フィルタ用レベル選択肢
+  const filterLevels = [
+    { value: -1, label: 'ALL' },
+    { value: 0,  label: 'TRACE' },
+    { value: 1,  label: 'DEBUG' },
+    { value: 2,  label: 'INFO' },
+    { value: 3,  label: 'NOTICE' },
+    { value: 4,  label: 'WARN' },
+    { value: 5,  label: 'ERROR' },
+  ];
+
+  // 自動スクロール（追従モード時のみ）
   useEffect(() => {
     if (autoScroll && contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [lines, autoScroll]);
+  }, [lines]);
 
   // 初期ログレベルを取得
   useEffect(() => {
     GetLogLevel().then((lv) => setLevel(lv)).catch(() => {});
   }, []);
 
-  // ポーリングでログを取得
+  // ポーリングでログを取得（追従モード時のみ）
   useEffect(() => {
+    if (!autoScroll) return;
+
     const fetchLog = () => {
       ReadLogTail(offsetRef.current).then((result) => {
         if (result.content) {
@@ -64,7 +98,138 @@ function SyslogApp() {
     fetchLog();
     const timer = setInterval(fetchLog, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [autoScroll]);
+
+  // Ctrl+F で検索バーを開く / Escape で閉じる
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        if (searchOpen) handleSearchClose();
+        else setSearchOpen(true);
+      }
+      if (e.key === 'Escape' && searchOpen) {
+        handleSearchClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen]);
+
+  // 検索バー表示時にフォーカス
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  // レベルフィルタ: 行単位でフィルタリング（継続行は直前の行に追従）
+  const filteredLines = useMemo(() => {
+    if (filterLevel < 0 || !lines) return lines;
+
+    const lineArr = lines.split('\n');
+    const filtered = [];
+    let lastVisible = true;
+    const levelRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERGENCY)\]/;
+
+    for (const line of lineArr) {
+      const m = line.match(levelRegex);
+      if (m) {
+        const priority = levelPriority[m[1]] ?? 0;
+        lastVisible = priority >= filterLevel;
+      }
+      if (lastVisible) filtered.push(line);
+    }
+    return filtered.join('\n');
+  }, [lines, filterLevel]);
+
+  // 色付け＋検索ハイライト（フィルタ後のテキストに対して行単位で適用）
+  const { highlightedContent, matchCount } = useMemo(() => {
+    matchRefs.current = [];
+    const text = filteredLines || '';
+
+    if (!colorize && !searchText) return { highlightedContent: text, matchCount: 0 };
+
+    const lineArr = text.split('\n');
+    const lvlRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERGENCY)\]/;
+    const searchEscaped = searchText ? searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : null;
+    const searchRegex = searchEscaped ? new RegExp(`(${searchEscaped})`, 'gi') : null;
+
+    let matchIdx = 0;
+    let lastColorClass = '';
+
+    const elements = lineArr.map((line, lineIdx) => {
+      // 行のレベルに応じた色クラスを決定（継続行は直前の色を引き継ぐ）
+      if (colorize) {
+        const m = line.match(lvlRegex);
+        if (m) {
+          const lvl = m[1];
+          if (lvl === 'WARN') lastColorClass = 'syslogWarn';
+          else if (lvl === 'ERROR' || lvl === 'EMERGENCY') lastColorClass = 'syslogError';
+          else lastColorClass = '';
+        }
+      }
+      const colorClass = colorize ? lastColorClass : '';
+
+      // 検索ハイライト
+      let content;
+      if (searchRegex) {
+        const parts = line.split(searchRegex);
+        content = parts.map((part, i) => {
+          if (i % 2 === 1) {
+            const idx = matchIdx++;
+            return <mark key={`${lineIdx}-${i}`} ref={(el) => { matchRefs.current[idx] = el; }} className={idx === currentMatch ? "syslogMatchCurrent" : "syslogMatch"}>{part}</mark>;
+          }
+          return part;
+        });
+      } else {
+        content = line;
+      }
+
+      return (
+        <span key={lineIdx}>
+          {lineIdx > 0 && '\n'}
+          {colorClass ? <span className={colorClass}>{content}</span> : content}
+        </span>
+      );
+    });
+
+    return { highlightedContent: elements, matchCount: matchIdx };
+  }, [filteredLines, searchText, colorize, currentMatch]);
+
+  // マッチ位置が変わったらスクロール
+  useEffect(() => {
+    if (matchCount > 0 && matchRefs.current[currentMatch]) {
+      matchRefs.current[currentMatch].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [currentMatch, matchCount, searchText]);
+
+  // 検索テキスト変更時にカレント位置をリセット
+  useEffect(() => {
+    setCurrentMatch(0);
+  }, [searchText]);
+
+  const handleSearchClose = () => {
+    setSearchOpen(false);
+    setSearchText('');
+    setFilterLevel(-1);
+  };
+
+  const handleSearchNext = () => {
+    if (matchCount > 0) setCurrentMatch((prev) => (prev + 1) % matchCount);
+  };
+
+  const handleSearchPrev = () => {
+    if (matchCount > 0) setCurrentMatch((prev) => (prev - 1 + matchCount) % matchCount);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.shiftKey) handleSearchPrev();
+      else handleSearchNext();
+    }
+  };
 
   const handleLevelChange = (e) => {
     const lv = e.target.value;
@@ -72,19 +237,16 @@ function SyslogApp() {
     SetLogLevel(lv).catch(() => {});
   };
 
-  // スクロール位置で autoScroll を切り替え
-  const handleScroll = () => {
-    if (!contentRef.current) return;
-    const el = contentRef.current;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    setAutoScroll(atBottom);
+  // 追従モードのトグル
+  const handleToggleFollow = () => {
+    setAutoScroll((prev) => !prev);
   };
 
-  const handleScrollToBottom = () => {
-    setAutoScroll(true);
-    if (contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
-    }
+  // 最前面表示のトグル
+  const handlePin = () => {
+    var p = !pin;
+    Window.SetAlwaysOnTop(p);
+    setPin(p);
   };
 
   const handleClear = () => {
@@ -111,7 +273,7 @@ function SyslogApp() {
   return (
     <div id="SyslogApp">
       <Toolbar id="syslogTitle" className="binderTitle" variant="dense" onDoubleClick={() => Window.ToggleMaximise()}>
-        <Typography variant="body2" sx={{ flex: 1 }} noWrap>
+        <Typography variant="body2" noWrap>
           {t('syslog.title')}
         </Typography>
         <Select
@@ -123,7 +285,7 @@ function SyslogApp() {
           sx={{
             fontSize: '11px',
             color: 'var(--text-muted)',
-            mr: 1,
+            ml: 1,
             '--wails-draggable': 'no-drag',
             '& .MuiSelect-select': { py: 0, px: 1 },
             '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '16px' },
@@ -135,42 +297,137 @@ function SyslogApp() {
           ))}
         </Select>
         <Tooltip title={t('syslog.save')}>
-          <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ mr: 0.5 }}>
+          <IconButton size="small" color="inherit" onClick={handleDownload} sx={{ ml: 0.5 }}>
             <DownloadIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title={t('syslog.clear')}>
-          <IconButton size="small" color="inherit" onClick={handleClear} sx={{ mr: 0.5 }}>
+          <IconButton size="small" color="inherit" onClick={handleClear}>
             <CancelPresentationIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+        <div style={{ flex: 1 }} />
+        <IconButton id="pinBtn" className={pin ? "top" : ""} size="small" color="inherit" aria-label="pin" onClick={handlePin}>
+          {pin
+            ? <PushPinIcon fontSize="small" />
+            : <PushPinOutlinedIcon fontSize="small" sx={{ transform: 'rotate(45deg)' }} />
+          }
+        </IconButton>
+        <div style={{ width: '8px' }} />
         <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </Toolbar>
 
-      <div style={{ position: 'relative', flex: 1, minHeight: 0, paddingBottom: '15px', backgroundColor: '#0d1117' }}>
-        <div id="syslogContent" ref={contentRef} onScroll={handleScroll}>
-          {lines}
+      {searchOpen && (
+        <div id="syslogSearchBar">
+          <Select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            size="small"
+            variant="standard"
+            disableUnderline
+            sx={{
+              fontSize: '11px',
+              color: filterLevel >= 0 ? 'var(--accent-primary)' : 'var(--text-muted)',
+              ml: 1,
+              '& .MuiSelect-select': { py: 0, px: 0.5 },
+              '& .MuiSvgIcon-root': { color: 'var(--text-muted)', fontSize: '14px' },
+            }}
+            MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+          >
+            {filterLevels.map((lv) => (
+              <MenuItem key={lv.value} value={lv.value} sx={{ fontSize: '12px' }}>{lv.label}</MenuItem>
+            ))}
+          </Select>
+          <span style={{ borderLeft: '1px solid var(--border-subtle)', height: '18px', margin: '0 4px' }} />
+          <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: 0.5 }} />
+          <InputBase
+            inputRef={searchInputRef}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={t('syslog.search')}
+            size="small"
+            sx={{
+              flex: 1,
+              fontSize: '12px',
+              color: 'var(--text-primary)',
+              '& input': { padding: '2px 4px' },
+            }}
+          />
+          {searchText && (
+            <Typography variant="caption" sx={{ color: 'var(--text-muted)', mx: 0.5, whiteSpace: 'nowrap' }}>
+              {matchCount > 0 ? `${currentMatch + 1} / ${matchCount}` : `0 / 0`}
+            </Typography>
+          )}
+          <IconButton size="small" onClick={handleSearchPrev} disabled={matchCount === 0} sx={{ color: 'var(--text-muted)', p: '2px' }}>
+            <KeyboardArrowUpIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+          <IconButton size="small" onClick={handleSearchNext} disabled={matchCount === 0} sx={{ color: 'var(--text-muted)', p: '2px' }}>
+            <KeyboardArrowDownIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+          <IconButton size="small" onClick={handleSearchClose} sx={{ color: 'var(--text-muted)', p: '2px', mr: 0.5 }}>
+            <CloseIcon sx={{ fontSize: '16px' }} />
+          </IconButton>
         </div>
-        {!autoScroll && (
-          <Tooltip title={t('syslog.scrollToBottom')}>
-            <IconButton
-              size="small"
-              onClick={handleScrollToBottom}
-              sx={{
-                position: 'absolute',
-                right: 16,
-                bottom: 16,
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                color: '#c9d1d9',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)' },
-              }}
-            >
-              <VerticalAlignBottomIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
+      )}
+
+      <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+        <div id="syslogContent" ref={contentRef} style={wordWrap ? undefined : { whiteSpace: 'pre', wordBreak: 'normal', overflowX: 'auto' }}>
+          {highlightedContent}
+        </div>
+        <Tooltip title={t('syslog.colorize')}>
+          <IconButton
+            size="small"
+            onClick={() => setColorize((prev) => !prev)}
+            sx={{
+              position: 'absolute',
+              right: 88,
+              bottom: 16,
+              opacity: 0.5,
+              backgroundColor: colorize ? 'rgba(100,160,255,0.25)' : 'rgba(255,255,255,0.06)',
+              color: colorize ? 'var(--accent-primary)' : 'rgba(201,209,217,0.6)',
+              '&:hover': { opacity: 1, backgroundColor: colorize ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
+            }}
+          >
+            <FormatColorTextIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('syslog.wordWrap')}>
+          <IconButton
+            size="small"
+            onClick={() => setWordWrap((prev) => !prev)}
+            sx={{
+              position: 'absolute',
+              right: 52,
+              bottom: 16,
+              opacity: 0.5,
+              backgroundColor: wordWrap ? 'rgba(100,160,255,0.25)' : 'rgba(255,255,255,0.06)',
+              color: wordWrap ? 'var(--accent-primary)' : 'rgba(201,209,217,0.6)',
+              '&:hover': { opacity: 1, backgroundColor: wordWrap ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
+            }}
+          >
+            <WrapTextIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('syslog.follow')}>
+          <IconButton
+            size="small"
+            onClick={handleToggleFollow}
+            sx={{
+              position: 'absolute',
+              right: 16,
+              bottom: 16,
+              opacity: 0.5,
+              backgroundColor: autoScroll ? 'rgba(100,160,255,0.25)' : 'rgba(255,255,255,0.06)',
+              color: autoScroll ? 'var(--accent-primary)' : 'rgba(201,209,217,0.6)',
+              '&:hover': { opacity: 1, backgroundColor: autoScroll ? 'rgba(100,160,255,0.35)' : 'rgba(255,255,255,0.15)' },
+            }}
+          >
+            <VerticalAlignBottomIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </div>
     </div>
   );

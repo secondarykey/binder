@@ -13,6 +13,7 @@ import (
 	"binder/fs"
 	dbconvert "binder/setup/convert/db"
 	convert010 "binder/setup/convert/db/010"
+	convert0102 "binder/setup/convert/db/0102"
 	convert020 "binder/setup/convert/db/020"
 	convert021 "binder/setup/convert/db/021"
 	convert022 "binder/setup/convert/db/022"
@@ -23,7 +24,6 @@ import (
 	convert048 "binder/setup/convert/db/048"
 	convert092 "binder/setup/convert/db/092"
 	convert097 "binder/setup/convert/db/097"
-	convert0102 "binder/setup/convert/db/0102"
 	fsconvert "binder/setup/convert/fs"
 
 	"golang.org/x/xerrors"
@@ -33,12 +33,12 @@ var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097, v010
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
-	configMigrated        bool
-	configName            string
-	configDetail          string
-	docsMigrated          bool
-	gitignorCreated       bool
-	diagramStyleMigrated  bool
+	configMigrated       bool
+	configName           string
+	configDetail         string
+	docsMigrated         bool
+	gitignorCreated      bool
+	diagramStyleMigrated bool
 }
 
 // migration はひとつのバージョン移行を表す。
@@ -262,7 +262,7 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 		if err != nil {
 			log.Warn("convert.Run: migration failed, resetting worktree to HEAD")
 			if resetErr := bfs.ResetHard(); resetErr != nil {
-				log.WarnE("convert.Run: ResetHard() failed", resetErr)
+				log.Warn("convert.Run: ResetHard() failed:\n%+v", resetErr)
 			}
 		}
 	}()
@@ -309,7 +309,6 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 			return nil, xerrors.Errorf("MkdirAll(%s) error: %w", d, err)
 		}
 	}
-
 
 	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
 	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
@@ -383,4 +382,3 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 
 	return result, nil
 }
-

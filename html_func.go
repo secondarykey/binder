@@ -58,7 +58,7 @@ func (h ArgHelper[T]) get() (T, bool) {
 	}
 	val, ok := h.args[h.index].(T)
 	if !ok {
-		log.Warn(fmt.Sprintf("[%d] expected %T got %T", h.index, *new(T), h.args[h.index]))
+		log.Warn("[%d] expected %T got %T", h.index, *new(T), h.args[h.index])
 	}
 	return val, ok
 }
@@ -79,18 +79,18 @@ func (h ArgHelper[T]) Default(def T) T {
 
 func (w *wrapper) assets(id string) string {
 	if w.Local {
-		// エディタプレビュー用: HTTPサーバーのプライベートアセットエンドポイントを使用
 		addr := w.owner.ServerAddress()
 		if addr == "" {
-			return "assets/error"
+			w.addWarning(fmt.Sprintf("assets(%s): server not available", id))
+			return "ERROR: assets"
 		}
 		return fmt.Sprintf("http://%s/binder-assets/%s", addr, id)
 	}
 
-	// パブリッシュ用: 従来の相対URL（公開済みアセット）
 	a, err := w.owner.GetAssetWithParent(id)
 	if err != nil {
-		return "assets/error"
+		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
+		return "ERROR: assets/" + id
 	}
 
 	if w.deps != nil {
@@ -106,10 +106,10 @@ func (w *wrapper) assets(id string) string {
 // 第2引数でクラス名を指定した場合は "binderAssets" に追加する形で連結される。
 func (w *wrapper) assetsImage(v ...any) template.HTML {
 
-	//アセットId
 	id, ok := Arg[string](v, 0).Required()
 	if !ok {
-		return template.HTML(fmt.Sprintf(`assets id error`))
+		w.addWarning("assetsImage: missing id argument")
+		return template.HTML(`ERROR: assetsImage id`)
 	}
 	//クラス名指定（空可）。常に "binderAssets" を先頭に付与する。
 	clazz := Arg[string](v, 1).Default("")
@@ -156,14 +156,13 @@ func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 	var err error
 	var notes []*model.Note
 	if w.Local {
-		//TODO いるか？
 		notes, err = w.owner.db.FindUpdatedNotes(id, limit, offset)
 	} else {
 		notes, err = w.owner.db.FindPublishNotes(id, limit, offset)
 	}
 
 	if err != nil {
-		log.ErrorE("FindNote()", err)
+		w.addWarning(fmt.Sprintf("childNotes(%s): %v", id, err))
 		return nil
 	}
 
@@ -189,7 +188,7 @@ func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 func (w *wrapper) getSeqNotes(id string, limit int) []*tempNote {
 	notes, err := w.owner.db.FindSeqNotes(id, limit, -1)
 	if err != nil {
-		log.ErrorE("FindSeqNotes()", err)
+		w.addWarning(fmt.Sprintf("childNotes(%s, seq): %v", id, err))
 		return nil
 	}
 
@@ -220,6 +219,7 @@ func (w *wrapper) breadcrumb() []*tempNote {
 	for id != "" && id != "index" {
 		s, err := w.owner.db.GetStructure(id)
 		if err != nil {
+			w.addWarning(fmt.Sprintf("breadcrumb(%s): GetStructure: %v", id, err))
 			break
 		}
 		jn := &json.Note{Id: s.Id, Name: s.Name, Detail: s.Detail, Alias: s.Alias}
@@ -231,6 +231,8 @@ func (w *wrapper) breadcrumb() []*tempNote {
 	if err == nil {
 		jn := &json.Note{Id: indexS.Id, Name: indexS.Name, Detail: indexS.Detail, Alias: indexS.Alias}
 		chain = append(chain, w.convertNote(jn))
+	} else {
+		w.addWarning(fmt.Sprintf("breadcrumb: GetStructure(index): %v", err))
 	}
 	// reverse: root→current
 	for i, j := 0, len(chain)-1; i < j; i, j = i+1, j-1 {
@@ -245,21 +247,23 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 	if w.Local {
 		var d strings.Builder
 		if err := w.owner.ReadDiagram(&d, id); err != nil {
-			return template.HTML(err.Error())
+			w.addWarning(fmt.Sprintf("drawDiagram(%s): ReadDiagram: %v", id, err))
+			return template.HTML(fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err))
 		}
 		code = d.String()
 
 		diag, err := w.owner.GetDiagram(id)
 		if err != nil {
-			return template.HTML(err.Error())
+			w.addWarning(fmt.Sprintf("drawDiagram(%s): GetDiagram: %v", id, err))
+			return template.HTML(fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err))
 		}
 
-		// ダイアグラム内容のテンプレート関数を処理する
-		if parsed, err := w.owner.ParseDiagram(diag, w.Local, code); err == nil {
+		if parsed, err := w.owner.parseDiagram(diag, w.Local, code, w.warnings); err == nil {
 			code = parsed
+		} else {
+			w.addWarning(fmt.Sprintf("drawDiagram(%s): ParseDiagram: %v", id, err))
 		}
 
-		// スタイルテンプレートのディレクティブを付与
 		if diag.StyleTemplate != "" {
 			var sb strings.Builder
 			if err := w.owner.ReadTemplate(&sb, diag.StyleTemplate); err == nil {
@@ -277,12 +281,11 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 
 		f, err := w.getSVGFile(id)
 		if err != nil {
-			code = fmt.Sprintf("SVG File error: %v", err)
+			w.addWarning(fmt.Sprintf("drawDiagram(%s): SVG file: %v", id, err))
+			code = fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err)
 		} else {
 			code = fmt.Sprintf(`<img src="%s">`, f)
 		}
-
-		//TODO 公開しているかを確認するのOKかも
 	}
 
 	return template.HTML(fmt.Sprintf(`
@@ -301,7 +304,8 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 	// レイヤーID
 	id, ok := Arg[string](v, 0).Required()
 	if !ok {
-		return template.HTML(`drawLayer id error`)
+		w.addWarning("drawLayer: missing id argument")
+		return template.HTML(`ERROR: drawLayer id`)
 	}
 	// クラス名指定（省略可）
 	clazz := Arg[string](v, 1).Default("")
@@ -312,11 +316,13 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		// 親Assetのプライベートアセット配信URL
 		m, err := w.owner.GetLayerWithParent(id)
 		if err != nil {
-			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+			w.addWarning(fmt.Sprintf("drawLayer(%s): GetLayerWithParent: %v", id, err))
+			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 		}
 		addr := w.owner.ServerAddress()
 		if addr == "" {
-			return template.HTML("drawLayer: server not available")
+			w.addWarning(fmt.Sprintf("drawLayer(%s): server not available", id))
+			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): server not available", id))
 		}
 		if m.Parent != nil {
 			imageSrc = fmt.Sprintf("http://%s/binder-assets/%s", addr, m.Parent.Id)
@@ -325,7 +331,8 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		// 公開時は親 Asset の公開パスを参照
 		m, err := w.owner.GetLayerWithParent(id)
 		if err != nil {
-			return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+			w.addWarning(fmt.Sprintf("drawLayer(%s): GetLayerWithParent: %v", id, err))
+			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 		}
 		if w.deps != nil {
 			w.deps.layers[id] = m
@@ -341,7 +348,8 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 
 	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, svgSrc, clazz)
 	if err != nil {
-		return template.HTML(fmt.Sprintf("drawLayer error: %v", err))
+		w.addWarning(fmt.Sprintf("drawLayer(%s): BuildLayerHTML: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 	}
 	return html
 }
@@ -357,17 +365,19 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 }
 
 // embed は指定 ID のノートまたはテキストアセットの内容をインライン展開する。
-// 返値は (template.HTML, error) であり、エラー時は Execute() が停止してフロントエンドに伝播する。
-// 呼び出しパス上に同じ ID が既に存在する場合は循環参照エラーを返す。
+// エラー時は warnings に記録し、HTMLにERRORプレフィックスを出力して処理を継続する。
+// 呼び出しパス上に同じ ID が既に存在する場合は循環参照エラーとなる。
 // structure で type を確認し、note と（テキスト）asset のみをサポートする。
-func (w *wrapper) embed(id string) (template.HTML, error) {
+func (w *wrapper) embed(id string) template.HTML {
 	if w.visited[id] {
-		return "", xerrors.Errorf("embed: cycle detected for id=%s", id)
+		w.addWarning(fmt.Sprintf("embed(%s): cycle detected", id))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): cycle detected", id))
 	}
 
 	s, err := w.owner.db.GetStructure(id)
 	if err != nil {
-		return "", xerrors.Errorf("embed GetStructure() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): GetStructure: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	switch s.Typ {
@@ -376,20 +386,23 @@ func (w *wrapper) embed(id string) (template.HTML, error) {
 	case "asset":
 		return w.embedTextAsset(id)
 	default:
-		return "", xerrors.Errorf("embed: unsupported type=%s id=%s", s.Typ, id)
+		w.addWarning(fmt.Sprintf("embed(%s): unsupported type=%s", id, s.Typ))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): unsupported type=%s", id, s.Typ))
 	}
 }
 
 // embedNote はノートの Markdown 本文をテンプレート処理してインライン展開する。
-func (w *wrapper) embedNote(id string) (template.HTML, error) {
+func (w *wrapper) embedNote(id string) template.HTML {
 	note, err := w.owner.GetNote(id)
 	if err != nil {
-		return "", xerrors.Errorf("embed GetNote() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): GetNote: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	var buf strings.Builder
 	if err := w.owner.ReadNote(&buf, id); err != nil {
-		return "", xerrors.Errorf("embed ReadNote() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): ReadNote: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	childWrap := &wrapper{
@@ -399,41 +412,48 @@ func (w *wrapper) embedNote(id string) (template.HTML, error) {
 		visited:       w.visitedWith(id),
 		deps:          w.deps,
 		exportAsIndex: w.exportAsIndex,
+		warnings:      w.warnings,
 	}
 
 	content := buf.String()
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
-		return "", xerrors.Errorf("embed Parse() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): Parse: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	dto, err := w.owner.createDto(childWrap, content)
 	if err != nil {
-		return "", xerrors.Errorf("embed createDto() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): createDto: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	var out strings.Builder
 	if err := tmpl.Execute(&out, dto); err != nil {
-		return "", xerrors.Errorf("embed Execute() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): Execute: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
-	return template.HTML(out.String()), nil
+	return template.HTML(out.String())
 }
 
 // embedTextAsset はテキストアセットの内容をテンプレート処理してインライン展開する。
 // バイナリアセットは対象外。親ノートのコンテキストを継承してテンプレート関数を使用できる。
-func (w *wrapper) embedTextAsset(id string) (template.HTML, error) {
+func (w *wrapper) embedTextAsset(id string) template.HTML {
 	a, err := w.owner.db.GetAsset(id)
 	if err != nil {
-		return "", xerrors.Errorf("embed GetAsset() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): GetAsset: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 	if a.Binary {
-		return "", xerrors.Errorf("embed: asset is binary id=%s", id)
+		w.addWarning(fmt.Sprintf("embed(%s): asset is binary", id))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): asset is binary", id))
 	}
 
 	data, _, err := w.owner.ReadAssetBytes(id)
 	if err != nil {
-		return "", xerrors.Errorf("embed ReadAssetBytes() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): ReadAssetBytes: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	childWrap := &wrapper{
@@ -443,25 +463,29 @@ func (w *wrapper) embedTextAsset(id string) (template.HTML, error) {
 		visited:       w.visitedWith(id),
 		deps:          w.deps,
 		exportAsIndex: w.exportAsIndex,
+		warnings:      w.warnings,
 	}
 
 	content := string(data)
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
-		return "", xerrors.Errorf("embed asset Parse() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): asset Parse: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	dto, err := w.owner.createDto(childWrap, content)
 	if err != nil {
-		return "", xerrors.Errorf("embed asset createDto() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): asset createDto: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	var out strings.Builder
 	if err := tmpl.Execute(&out, dto); err != nil {
-		return "", xerrors.Errorf("embed asset Execute() id=%s: %w", id, err)
+		w.addWarning(fmt.Sprintf("embed(%s): asset Execute: %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
-	return template.HTML(out.String()), nil
+	return template.HTML(out.String())
 }
 
 func safeTemplate(src string) string {
@@ -484,7 +508,7 @@ func formatDate(d string, f string) string {
 
 	t, e := time.Parse(time.RFC3339, d)
 	if e != nil {
-		log.WarnE("format error:"+d, e)
+		log.Warn("format error:%s\n%+v", d, e)
 		return d
 	}
 	return t.Format(f)

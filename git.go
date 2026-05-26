@@ -24,7 +24,7 @@ func (b *Binder) ToFile(mode string, id string) string {
 	case "template":
 		f = fs.TemplateFile(id)
 	default:
-		log.Warn("leaf is template type? " + mode)
+		log.Warn("leaf is template type? %s", mode)
 	}
 	return f
 }

@@ -224,7 +224,11 @@
         "gcConfirmMessage" : "不要なオブジェクトを削除しますか？",
         "gcRun" : "実行",
         "gcComplete" : "GC完了: {{before}} → {{after}}",
-        "optimizeImage" : "画像を軽量化する（WebPに変換）"
+        "optimizeImage" : "画像を軽量化する（WebPに変換）",
+        "previewColorScheme" : "プレビュー カラースキーム",
+        "previewColorSchemeHint" : "プレビューiframeの<html>タグに指定した属性を設定します。テンプレートのダーク/ライトモードのテストに使用します。値に「default」を含めると、Binderの表示テーマ設定（dark/light）が反映されます。",
+        "previewColorSchemeAttr" : "属性名",
+        "previewColorSchemeValues" : "値（カンマ区切り）"
     },
     "binderHistory" : {
         "history" : "履歴"
@@ -246,6 +250,8 @@
         "saveCredentials" : "認証情報を保存する",
         "publishOnly" : "docs/ のみ push（ページ公開）",
         "publishBranch" : "公開先ブランチ名",
+        "publishSubDir" : "サブディレクトリ",
+        "publishSubDirHint" : "例: en（空 = ルート）",
         "pushSuccess" : "Pushしました",
         "pushDocsSuccess" : "docs/ をPushしました",
         "pushButton" : "Push"
@@ -449,7 +455,8 @@
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー",
         "alwaysOnTop" : "最前面に固定",
-        "notSupported" : "アセットは表示していません"
+        "notSupported" : "アセットは表示していません",
+        "colorScheme" : "カラースキーム"
     },
     "convert" : {
         "title" : "データ移行",
@@ -464,13 +471,18 @@
         "forceOpen" : "強制的に開く（データが正しく表示されない可能性があります）",
         "tooOldTitle" : "アプリのバージョンが古すぎます",
         "tooOldMessage" : "このBinderを開くには、より新しいアプリが必要です。アプリを更新してください。",
-        "tooOldVersionInfo" : "アプリバージョン: {{appVersion}} / 必要な最低バージョン: {{minAppVersion}}"
+        "tooOldVersionInfo" : "アプリバージョン: {{appVersion}} / 必要な最低バージョン: {{minAppVersion}}",
+        "notBinder" : "選択されたディレクトリはBinderではありません"
     },
     "syslog" : {
         "title" : "システムログ",
         "clear" : "表示クリア",
         "save" : "ログを保存",
-        "scrollToBottom" : "末尾へスクロール"
+        "scrollToBottom" : "末尾へスクロール",
+        "follow" : "追従",
+        "search" : "検索",
+        "wordWrap" : "折り返し",
+        "colorize" : "色付け"
     },
     "editor" : {
         "fileDataEmpty" : "ファイルデータが空です",

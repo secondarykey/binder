@@ -47,14 +47,14 @@ func init() {
 func main() {
 
 	flag.Parse()
-
+	logger, err := log.Init()
+	if err != nil {
+		log.Warn("ログファイルの初期化に失敗:\n%+v", err)
+	}
+	defer log.Close()
 	if debug {
 		log.SetLevel(slog.LevelDebug)
 	}
-	if err := log.Init(); err != nil {
-		log.WarnE("ログファイルの初期化に失敗", err)
-	}
-	defer log.Close()
 
 	app := api.New(strings.TrimSpace(ver))
 	win := NewWindow(app)
@@ -62,7 +62,8 @@ func main() {
 	// 1. アプリケーション作成
 	// wails3 に依存するサービスはWindowに設定する
 	wailsApp := application.New(application.Options{
-		Name: "Binder",
+		Name:   "Binder",
+		Logger: logger,
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
@@ -73,7 +74,12 @@ func main() {
 	})
 
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
-	app.SetDevMode(wailsApp.Env.Info().Debug)
+	dev := wailsApp.Env.Info().Debug
+	app.SetDevMode(dev)
+	if dev {
+		log.SetLevel(slog.LevelInfo)
+	}
+
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
 	set, err := app.Setup()
 	if err != nil {
@@ -89,7 +95,7 @@ func main() {
 	// 起動中フラグを false に設定して保存（正常終了しなかった場合のクラッシュ検出用）。
 	// アプリが正常終了したときに true に書き戻す。
 	if err := settings.SaveStartupOk(false); err != nil {
-		log.WarnE("SaveStartupOk(false) error", err)
+		log.Warn("SaveStartupOk(false) error:\n%+v", err)
 	}
 
 	// 3. ウィンドウ作成
@@ -166,12 +172,12 @@ func main() {
 	// 5. 実行
 	err = wailsApp.Run()
 	if err != nil {
-		println("Error:", err.Error())
+		log.Warn("Run() error:\n%+v", err)
 	}
 
 	// wailsApp.Run() が正常リターンした = 正常終了。
 	// 次回起動で自動オープンが動くよう StartupOk を true に戻す。
 	if err := settings.SaveStartupOk(true); err != nil {
-		log.WarnE("SaveStartupOk(true) error", err)
+		log.Warn("SaveStartupOk(true) error:\n%+v", err)
 	}
 }

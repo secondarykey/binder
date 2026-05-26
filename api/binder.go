@@ -51,7 +51,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	// 履歴を保存（最近開いたバインダーを先頭にする）
 	if err := settings.SaveHistory(dir); err != nil {
-		log.WarnE("SaveHistory error", err)
+		log.Warn("SaveHistory error:\n%+v", err)
 	}
 
 	return address, nil
@@ -128,9 +128,19 @@ func (a *App) Generate(mode string, id string, data string) error {
 	switch mode {
 	case "note":
 
-		html, err := a.CreateNoteHTML(id, false, data)
+		result, genErr := a.CreateNoteHTML(id, false, data)
+		if genErr != nil {
+			err = genErr
+		} else if result.Error != "" {
+			err = fmt.Errorf("%s", result.Error)
+		}
 		if err == nil {
-			_, err = a.current.PublishNote(id, []byte(html))
+			if len(result.Warnings) > 0 {
+				for _, w := range result.Warnings {
+					log.Warn("Generate warning: %s", w)
+				}
+			}
+			_, err = a.current.PublishNote(id, []byte(result.HTML))
 		}
 
 	case "diagram":
@@ -142,7 +152,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 
 	default:
 		//templateはないはず
-		log.Warn("Unknown Mode:" + mode)
+		log.Warn("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {
@@ -160,11 +170,19 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 	for _, item := range items {
 		switch item.Mode {
 		case "note":
-			html, err := a.CreateNoteHTML(item.Id, false, item.Data)
+			result, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
 				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
 			}
-			files, _, err := a.current.PublishNoteStage(item.Id, []byte(html))
+			if result.Error != "" {
+				return xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
+			}
+			if len(result.Warnings) > 0 {
+				for _, w := range result.Warnings {
+					log.Warn("GenerateAll warning: %s", w)
+				}
+			}
+			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {
 				return xerrors.Errorf("PublishNoteStage() error: %+v", err)
 			}
@@ -188,7 +206,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 			}
 			allFiles = append(allFiles, files...)
 		default:
-			log.Warn("Unknown Mode:" + item.Mode)
+			log.Warn("Unknown Mode:%s", item.Mode)
 		}
 	}
 
@@ -213,7 +231,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	case "layer":
 		err = a.current.UnpublishLayer(id)
 	default:
-		log.Warn("Unknown Mode:" + mode)
+		log.Warn("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {

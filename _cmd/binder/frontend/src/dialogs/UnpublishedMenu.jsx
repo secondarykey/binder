@@ -109,13 +109,15 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       try {
         if (leaf.type === "note") {
           const text = await OpenNote(leaf.id);
-          const parsed = await ParseNote(leaf.id, false, text);
-          const html = await Marked.parse(parsed);
+          const parseResult = await ParseNote(leaf.id, false, text);
+          if (parseResult.error) throw new Error(parseResult.error);
+          const html = await Marked.parse(parseResult.html);
           items.push({ mode: "note", id: leaf.id, data: html });
         } else if (leaf.type === "diagram") {
           const text = await OpenDiagram(leaf.id);
-          const parsedTxt = await ParseDiagram(leaf.id, false, text);
-          const obj = await Mermaid.parse(parsedTxt);
+          const diagResult = await ParseDiagram(leaf.id, false, text);
+          if (diagResult.error) throw new Error(diagResult.error);
+          const obj = await Mermaid.parse(diagResult.html);
           items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
         } else if (leaf.type === "layer") {
           items.push({ mode: "layer", id: leaf.id, data: "" });
@@ -237,13 +239,15 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
         try {
           if (leaf.type === "note") {
             const text = await OpenNote(leaf.id);
-            const parsed = await ParseNote(leaf.id, false, text);
-            const html = await Marked.parse(parsed);
+            const parseResult = await ParseNote(leaf.id, false, text);
+            if (parseResult.error) throw new Error(parseResult.error);
+            const html = await Marked.parse(parseResult.html);
             items.push({ mode: "note", id: leaf.id, data: html });
           } else if (leaf.type === "diagram") {
             const text = await OpenDiagram(leaf.id);
-            const parsedTxt = await ParseDiagram(leaf.id, false, text);
-            const obj = await Mermaid.parse(parsedTxt);
+            const diagResult = await ParseDiagram(leaf.id, false, text);
+            if (diagResult.error) throw new Error(diagResult.error);
+            const obj = await Mermaid.parse(diagResult.html);
             items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
           } else if (leaf.type === "layer") {
             items.push({ mode: "layer", id: leaf.id, data: "" });

@@ -18,8 +18,8 @@ const installBaseDir = "_assets/install"
 
 // installManifest はインストール時に作成するデータの一覧を定義する。
 type installManifest struct {
-	fsys    fs.FS
-	baseDir string
+	fsys      fs.FS
+	baseDir   string
 	Templates []installTemplate `json:"templates"`
 	Notes     []installNote     `json:"notes"`
 	Diagrams  []installDiagram  `json:"diagrams"`
@@ -178,7 +178,7 @@ func (m *installManifest) validate(installType string) {
 			return
 		}
 		if prev, ok := allIds[id]; ok {
-			log.Warn(prefix + fmt.Sprintf("duplicate id %q in %s and %s", id, prev, entity))
+			log.Warn("%s duplicate id %q in %s and %s", prefix, id, prev, entity)
 		}
 		allIds[id] = entity
 	}
@@ -194,13 +194,13 @@ func (m *installManifest) validate(installType string) {
 	for _, n := range m.Notes {
 		checkDupId(n.Id, "note "+n.Name)
 		if n.ParentId != "" && !knownIds[n.ParentId] {
-			log.Warn(prefix + fmt.Sprintf("note %q references unknown parentId %q", n.Name, n.ParentId))
+			log.Warn("%s note %q references unknown parentId %q", prefix, n.Name, n.ParentId)
 		}
 		if n.LayoutTemplate != "" && !templateIds[n.LayoutTemplate] {
-			log.Warn(prefix + fmt.Sprintf("note %q references unknown layoutTemplate %q", n.Name, n.LayoutTemplate))
+			log.Warn("%s note %q references unknown layoutTemplate %q", prefix, n.Name, n.LayoutTemplate)
 		}
 		if n.ContentTemplate != "" && !templateIds[n.ContentTemplate] {
-			log.Warn(prefix + fmt.Sprintf("note %q references unknown contentTemplate %q", n.Name, n.ContentTemplate))
+			log.Warn("%s note %q references unknown contentTemplate %q", prefix, n.Name, n.ContentTemplate)
 		}
 		if n.File != "" {
 			m.warnIfFileMissing(prefix, n.File, "note "+n.Name)
@@ -211,10 +211,10 @@ func (m *installManifest) validate(installType string) {
 	for _, d := range m.Diagrams {
 		checkDupId(d.Id, "diagram "+d.Name)
 		if d.ParentId != "" && !knownIds[d.ParentId] {
-			log.Warn(prefix + fmt.Sprintf("diagram %q references unknown parentId %q", d.Name, d.ParentId))
+			log.Warn("%s diagram %q references unknown parentId %q", prefix, d.Name, d.ParentId)
 		}
 		if d.StyleTemplate != "" && !templateIds[d.StyleTemplate] {
-			log.Warn(prefix + fmt.Sprintf("diagram %q references unknown styleTemplate %q", d.Name, d.StyleTemplate))
+			log.Warn("%s diagram %q references unknown styleTemplate %q", prefix, d.Name, d.StyleTemplate)
 		}
 		if d.File != "" {
 			m.warnIfFileMissing(prefix, d.File, "diagram "+d.Name)
@@ -225,10 +225,10 @@ func (m *installManifest) validate(installType string) {
 	for _, a := range m.Assets {
 		checkDupId(a.Id, "asset "+a.Name)
 		if a.ParentId != "" && !knownIds[a.ParentId] {
-			log.Warn(prefix + fmt.Sprintf("asset %q references unknown parentId %q", a.Name, a.ParentId))
+			log.Warn("%s asset %q references unknown parentId %q", prefix, a.Name, a.ParentId)
 		}
 		if a.Mime == "" {
-			log.Warn(prefix + fmt.Sprintf("asset %q has no mime type", a.Name))
+			log.Warn("%s asset %q has no mime type", prefix, a.Name)
 		}
 		if a.File != "" {
 			m.warnIfFileMissing(prefix, a.File, "asset "+a.Name)
@@ -239,7 +239,7 @@ func (m *installManifest) validate(installType string) {
 func (m *installManifest) warnIfFileMissing(prefix, file, entity string) {
 	_, err := m.readFile(file)
 	if err != nil {
-		log.Warn(prefix + fmt.Sprintf("%s references missing file %q", entity, file))
+		log.Warn("%s %s references missing file %q", prefix, entity, file)
 	}
 }
 

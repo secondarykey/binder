@@ -224,7 +224,11 @@
         "gcConfirmMessage" : "Remove unused objects?",
         "gcRun" : "Run",
         "gcComplete" : "GC complete: {{before}} → {{after}}",
-        "optimizeImage" : "Optimize Images (convert to WebP)"
+        "optimizeImage" : "Optimize Images (convert to WebP)",
+        "previewColorScheme" : "Preview Color Scheme",
+        "previewColorSchemeHint" : "Sets the specified attribute on the <html> tag in the preview iframe. Use this to test dark/light mode in your templates. If you include 'default' as a value, it will use Binder's own theme setting (dark/light).",
+        "previewColorSchemeAttr" : "Attribute",
+        "previewColorSchemeValues" : "Values (comma separated)"
     },
     "binderHistory" : {
         "history" : "History"
@@ -246,6 +250,8 @@
         "saveCredentials" : "Save credentials",
         "publishOnly" : "Push docs/ only (page publish)",
         "publishBranch" : "Publish branch name",
+        "publishSubDir" : "Subdirectory",
+        "publishSubDirHint" : "e.g. en (empty = root)",
         "pushSuccess" : "Pushed successfully.",
         "pushDocsSuccess" : "docs/ pushed successfully.",
         "pushButton" : "Push"
@@ -449,7 +455,8 @@
         "windowTitle" : "Preview",
         "parseError" : "Parse Error",
         "alwaysOnTop" : "Always on Top",
-        "notSupported" : "Assets are not displayed"
+        "notSupported" : "Assets are not displayed",
+        "colorScheme" : "Color Scheme"
     },
     "convert" : {
         "title" : "Data Migration",
@@ -464,13 +471,18 @@
         "forceOpen" : "Force open (data may not display correctly)",
         "tooOldTitle" : "App Version Too Old",
         "tooOldMessage" : "A newer version of the app is required to open this Binder. Please update the app.",
-        "tooOldVersionInfo" : "App version: {{appVersion}} / Required version: {{minAppVersion}}"
+        "tooOldVersionInfo" : "App version: {{appVersion}} / Required version: {{minAppVersion}}",
+        "notBinder" : "The selected directory is not a Binder"
     },
     "syslog" : {
         "title" : "System Log",
         "clear" : "Clear Display",
         "save" : "Save Log",
-        "scrollToBottom" : "Scroll to Bottom"
+        "scrollToBottom" : "Scroll to Bottom",
+        "follow" : "Follow",
+        "search" : "Search",
+        "wordWrap" : "Word Wrap",
+        "colorize" : "Colorize"
     },
     "editor" : {
         "fileDataEmpty" : "File data is empty.",

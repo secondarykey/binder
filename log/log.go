@@ -21,38 +21,38 @@ const (
 )
 
 var gCtx context.Context
-var def *slog.Logger
+var gLogger *slog.Logger
 var logFile *os.File
 var logLevel slog.LevelVar
 
 func init() {
 	gCtx = context.Background()
 	logLevel.Set(LevelNotice)
-	def = slog.Default()
+	gLogger = slog.Default()
 }
 
 // Init はログファイルを temp ディレクトリに作成し、slog を設定する。
-func Init() error {
+func Init() (*slog.Logger, error) {
 	dir := filepath.Join(os.TempDir(), "binder")
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
+		return nil, err
 	}
 
 	name := time.Now().Format("20060102") + ".log"
 	f, err := os.OpenFile(filepath.Join(dir, name), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logFile = f
 
 	handler := &simpleHandler{w: logFile, level: &logLevel}
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
-	def = logger
+	gLogger = logger
 
-	Notice(fmt.Sprintf("Log Level:%v", logLevel.Level()))
+	//Notice(fmt.Sprintf("Log Level:%v", levelName(logLevel)))
 
-	return nil
+	return gLogger, nil
 }
 
 // simpleHandler はデフォルトの log パッケージに近いシンプルな出力を行う slog.Handler。
@@ -67,8 +67,8 @@ func (h *simpleHandler) Enabled(_ context.Context, l slog.Level) bool {
 }
 
 func (h *simpleHandler) Handle(_ context.Context, r slog.Record) error {
-	t := r.Time.Format("2006/01/02 15:04:05")
-	_, err := fmt.Fprintf(h.w, "%s [%s] %s\n", t, levelName(r.Level), r.Message)
+	t := r.Time.Format(time.RFC3339)
+	_, err := fmt.Fprintf(h.w, "%s [%-6s] %s\n", t, levelName(r.Level), r.Message)
 	return err
 }
 
@@ -125,74 +125,49 @@ func SetContext(ctx context.Context) {
 	gCtx = ctx
 }
 
-func Trace(msg string) {
-	log(LevelTrace, msg, nil)
+func Trace(msg string, args ...interface{}) {
+	log(LevelTrace, msg, args...)
 }
 
-func TraceE(msg string, err error) {
-	log(LevelTrace, msg, err)
+func Debug(msg string, args ...interface{}) {
+	log(slog.LevelDebug, msg, args...)
 }
 
-func Debug(msg string) {
-	log(slog.LevelDebug, msg, nil)
+func Info(msg string, args ...interface{}) {
+	log(slog.LevelInfo, msg, args...)
 }
 
-func DebugE(msg string, err error) {
-	log(slog.LevelDebug, msg, err)
+func Notice(msg string, args ...interface{}) {
+	log(LevelNotice, msg, args...)
 }
 
-func Info(msg string) {
-	log(slog.LevelInfo, msg, nil)
+func Warn(msg string, args ...interface{}) {
+	log(slog.LevelWarn, msg, args...)
 }
 
-func InfoE(msg string, err error) {
-	log(slog.LevelInfo, msg, err)
+func Error(msg string, args ...interface{}) {
+	log(slog.LevelError, msg, args...)
 }
 
-func Notice(msg string) {
-	log(LevelNotice, msg, nil)
+func log(lv slog.Level, msg string, args ...interface{}) {
+	put(gCtx, lv, msg, args...)
 }
 
-func NoticeE(msg string, err error) {
-	log(LevelNotice, msg, err)
-}
-
-func Warn(msg string) {
-	log(slog.LevelWarn, msg, nil)
-}
-
-func WarnE(msg string, err error) {
-	log(slog.LevelWarn, msg, err)
-}
-
-func Error(msg string) {
-	log(slog.LevelError, msg, nil)
-}
-
-func ErrorE(msg string, err error) {
-	log(slog.LevelError, msg, err)
-}
-
-func log(lv slog.Level, msg string, err error) {
-	slog.Log(gCtx, lv, msg)
-	if err != nil && def.Enabled(gCtx, slog.LevelInfo) {
-		stacktrace(err)
+func put(ctx context.Context, lv slog.Level, format string, args ...interface{}) {
+	if gLogger.Enabled(ctx, lv) {
+		msg := fmt.Sprintf(format, args...)
+		slog.Log(ctx, lv, msg)
 	}
 }
 
 func PrintTrace(caller string) {
-	if def.Enabled(gCtx, LevelTrace) {
-		Trace(caller + " End")
-	}
+	Trace("%s %s", caller, "End")
 }
 
 func Func(caller string, args ...interface{}) string {
-	if def.Enabled(gCtx, LevelTrace) {
-		//pc,file,line,ok  := runtime.Caller(1)
-		Trace(caller + " Start")
-		if len(args) > 0 {
-			Trace("Arguments:" + arguments(args...))
-		}
+	Trace("%s %s", caller, "Start")
+	if len(args) > 0 {
+		Trace("Arguments:%s", arguments(args...))
 	}
 	return caller
 }
@@ -209,7 +184,7 @@ func arguments(args ...interface{}) string {
 }
 
 func PrintStackTrace(err error) {
-	slog.Error("Error:\n" + stacktrace(err))
+	Error("Error:%+v", err)
 	return
 }
 
@@ -219,19 +194,15 @@ func NoneStop() {
 	}
 }
 
-func stacktrace(err interface{}) string {
-	return fmt.Sprintf("%+v", err)
-}
-
 func emergency(err interface{}) {
 	//0.this
 	//1.emergency
 	//2.defer
 	//3. panic!
 	_, file, line, ok := runtime.Caller(3)
-	slog.Log(gCtx, LevelEmergency, "Emergency!!\n"+stacktrace(err))
+	put(gCtx, LevelEmergency, "Emergency!!\n%+v", err)
 	if ok {
-		slog.Log(gCtx, LevelEmergency, "File:"+file)
-		slog.Log(gCtx, LevelEmergency, fmt.Sprintf("Line:%d", line))
+		put(gCtx, LevelEmergency, "File:%s", file)
+		put(gCtx, LevelEmergency, "Line:%d", line)
 	}
 }

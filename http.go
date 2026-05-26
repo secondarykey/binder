@@ -56,8 +56,8 @@ type responseCapture struct {
 	body   bytes.Buffer
 }
 
-func (rc *responseCapture) Header() http.Header { return rc.header }
-func (rc *responseCapture) WriteHeader(code int) { rc.status = code }
+func (rc *responseCapture) Header() http.Header         { return rc.header }
+func (rc *responseCapture) WriteHeader(code int)        { rc.status = code }
 func (rc *responseCapture) Write(b []byte) (int, error) { return rc.body.Write(b) }
 
 // injectBanner はHTMLボディの </body> 直前にバナーを挿入して返す
@@ -216,7 +216,7 @@ func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 
 	s, err := h.binder.db.FindStructureByAlias(info.alias, info.typ)
 	if err != nil {
-		log.Warn(fmt.Sprintf("FindStructureByAlias(%s,%s): %v", info.alias, info.typ, err))
+		log.Warn("FindStructureByAlias(%s,%s): %v", info.alias, info.typ, err)
 		h.fileServer.ServeHTTP(w, r)
 		return
 	}
@@ -338,7 +338,7 @@ func (b *Binder) Serve() error {
 	}
 
 	go func() {
-		log.Notice(fmt.Sprintf("HTTPServer Listen: %s", b.httpServerAddress))
+		log.Notice("HTTPServer Listen: %s", b.httpServerAddress)
 		err := b.httpServer.Serve(ln)
 		if err != nil {
 			//nilになってない場合、Shutdownの流れではない

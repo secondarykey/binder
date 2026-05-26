@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 
 import {
   Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip,
+  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip, Typography,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
@@ -44,6 +44,8 @@ function Binder({ isModal, ...props }) {
   const [markedUrl, setMarkedUrl] = useState("");
   const [mermaidUrl, setMermaidUrl] = useState("");
   const [optimizeImage, setOptimizeImage] = useState(true);
+  const [colorSchemeAttr, setColorSchemeAttr] = useState("");
+  const [colorSchemeValues, setColorSchemeValues] = useState("");
   const [scriptSaving, setScriptSaving] = useState(false);
   const [markedStatus, setMarkedStatus] = useState("");  // "", "ok", "error"
   const [mermaidStatus, setMermaidStatus] = useState(""); // "", "ok", "error"
@@ -92,6 +94,10 @@ function Binder({ isModal, ...props }) {
       setMarkedUrl(conf.markedUrl || "");
       setMermaidUrl(conf.mermaidUrl || "");
       setOptimizeImage(conf.optimizeImage !== false);
+      if (conf.previewColorScheme) {
+        setColorSchemeAttr(conf.previewColorScheme.attribute || "");
+        setColorSchemeValues((conf.previewColorScheme.values || []).join(", "));
+      }
     }).catch((err) => {
       showError(err);
     });
@@ -121,7 +127,11 @@ function Binder({ isModal, ...props }) {
   }, []);
 
   const handleSave = () => {
-    const config = { name, detail, markedUrl, mermaidUrl, optimizeImage };
+    const values = colorSchemeValues.split(",").map(v => v.trim()).filter(v => v);
+    const previewColorScheme = colorSchemeAttr && values.length > 0
+      ? { attribute: colorSchemeAttr, values }
+      : null;
+    const config = { name, detail, markedUrl, mermaidUrl, optimizeImage, previewColorScheme };
     EditConfig(config).then(() => {
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
@@ -168,7 +178,11 @@ function Binder({ isModal, ...props }) {
         allowedDomains = await GetAllowedCDNs() || [];
       } catch (e) {}
 
-      const config = { name, detail, markedUrl, mermaidUrl };
+      const values = colorSchemeValues.split(",").map(v => v.trim()).filter(v => v);
+      const previewColorScheme = colorSchemeAttr && values.length > 0
+        ? { attribute: colorSchemeAttr, values }
+        : null;
+      const config = { name, detail, markedUrl, mermaidUrl, previewColorScheme };
       await EditConfig(config);
 
       // marked の検証と差し替え
@@ -321,6 +335,25 @@ function Binder({ isModal, ...props }) {
               label={t("binder.optimizeImage")}
               sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
             />
+
+            <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
+              <FormLabel sx={{ mb: 0, display: 'block' }}>{t("binder.previewColorScheme")}</FormLabel>
+              <Typography variant="caption" sx={{ color: 'var(--text-muted)', display: 'block', mb: 1 }}>
+                {t("binder.previewColorSchemeHint")}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <FormControl sx={{ flex: 1 }}>
+                  <FormLabel sx={{ fontSize: '12px' }}>{t("binder.previewColorSchemeAttr")}</FormLabel>
+                  <TextField size="small" value={colorSchemeAttr} onChange={(e) => setColorSchemeAttr(e.target.value)}
+                    placeholder="data-theme" />
+                </FormControl>
+                <FormControl sx={{ flex: 2 }}>
+                  <FormLabel sx={{ fontSize: '12px' }}>{t("binder.previewColorSchemeValues")}</FormLabel>
+                  <TextField size="small" value={colorSchemeValues} onChange={(e) => setColorSchemeValues(e.target.value)}
+                    placeholder="light, dark" />
+                </FormControl>
+              </Box>
+            </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />

@@ -44,7 +44,7 @@ func MigrateV048(dir string) error {
 		src := filepath.Join(assetsDir, name)
 		dst := filepath.Join(metaDir, noteId)
 
-		log.Info("migrate meta file src=" + src + " dst=" + dst)
+		log.Info("migrate meta file src=%s dst=%s", src, dst)
 		if err := os.Rename(src, dst); err != nil {
 			return xerrors.Errorf("os.Rename(%s→%s) error: %w", src, dst, err)
 		}

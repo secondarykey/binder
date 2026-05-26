@@ -91,12 +91,12 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	// ユーザ情報を暗号化して保存（認証情報の保存 or ユーザ名/メールの保存）
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.WarnE("CreateRemote: GetUserKey", err)
+		log.Warn("CreateRemote: GetUserKey:\n%+v", err)
 	} else {
 		if save && fsInfo != nil {
 			// 認証情報ごと保存
 			if err = bfs.SaveUserData(key, fsInfo); err != nil {
-				log.WarnE("CreateRemote: SaveUserData", err)
+				log.Warn("CreateRemote: SaveUserData:\n%+v", err)
 			}
 		} else {
 			// save=false またはfsInfo==nil でもデフォルトのName/Emailで作成
@@ -106,7 +106,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 				Email: s.Git.Mail,
 			}
 			if err = bfs.SaveUserData(key, info); err != nil {
-				log.WarnE("CreateRemote: SaveUserData", err)
+				log.Warn("CreateRemote: SaveUserData:\n%+v", err)
 			}
 		}
 	}
@@ -116,6 +116,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 
 func Load(dir string) (*Binder, error) {
 
+	log.Notice("Load Binder:%s", dir)
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
@@ -152,11 +153,11 @@ func Load(dir string) (*Binder, error) {
 	// バインダーのユーザ情報をコミット署名に設定
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.WarnE("Load: GetUserKey()", err)
+		log.Warn("Load: GetUserKey():\n%+v", err)
 	} else {
 		info, err := bfs.LoadUserData(key)
 		if err != nil {
-			log.WarnE("Load: LoadUserData()", err)
+			log.Warn("Load: LoadUserData():\n%+v", err)
 		} else if info != nil {
 			bfs.SetUserSig(info)
 		} else {
@@ -167,7 +168,7 @@ func Load(dir string) (*Binder, error) {
 				Email: s.Git.Mail,
 			}
 			if err = bfs.SaveUserData(key, info); err != nil {
-				log.WarnE("Load: SaveUserData()", err)
+				log.Warn("Load: SaveUserData():\n%+v", err)
 			}
 			bfs.SetUserSig(info)
 		}
@@ -389,10 +390,11 @@ func (b *Binder) Push(remoteName string, info *json.UserInfo, save bool) error {
 	return nil
 }
 
-// PushDocs は docs/ ディレクトリのみを指定ブランチに force push する。
+// PushDocs は docs/ ディレクトリのみを指定ブランチに push する。
+// subDir が指定された場合、公開ブランチ上の該当サブディレクトリのみを差し替える。
 // save が true の場合、認証情報を user_data.enc に保存する。
-// 公開設定（publishBranch）は binder.json に保存しコミットする。
-func (b *Binder) PushDocs(remoteName, publishBranch string, info *json.UserInfo, save bool) error {
+// 公開設定（publishBranch, publishSubDir）は binder.json に保存しコミットする。
+func (b *Binder) PushDocs(remoteName, publishBranch, subDir string, info *json.UserInfo, save bool) error {
 	if b == nil {
 		return EmptyError
 	}
@@ -421,11 +423,11 @@ func (b *Binder) PushDocs(remoteName, publishBranch string, info *json.UserInfo,
 	}
 
 	// 公開設定を保存（変更があった場合のみコミット）
-	if err := b.SavePublishSettings(true, publishBranch); err != nil {
+	if err := b.SavePublishSettings(true, publishBranch, subDir); err != nil {
 		return xerrors.Errorf("SavePublishSettings() error: %w", err)
 	}
 
-	if err := b.fileSystem.PushDocs(remoteName, publishBranch, fsInfo); err != nil {
+	if err := b.fileSystem.PushDocs(remoteName, publishBranch, subDir, fsInfo); err != nil {
 		return xerrors.Errorf("PushDocs() error: %w", err)
 	}
 
@@ -449,11 +451,11 @@ func (b *Binder) Fetch(remoteName, branchName string, info *fs.UserInfo) error {
 func (b *Binder) SaveUserInfo(info *fs.UserInfo) {
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.WarnE("setup.GetUserKey() error", err)
+		log.Warn("setup.GetUserKey() error:\n%+v", err)
 		return
 	}
 	if err = b.fileSystem.SaveUserData(key, info); err != nil {
-		log.WarnE("SaveUserData() error", err)
+		log.Warn("SaveUserData() error:\n%+v", err)
 		return
 	}
 	b.fileSystem.SetUserSig(info)
@@ -463,7 +465,7 @@ func (b *Binder) generateId() string {
 
 	id, err := uuid.NewV7()
 	if err != nil {
-		log.ErrorE("UUID v7 generate error", err)
+		log.Error("UUID v7 generate error:\n%+v", err)
 		return ""
 	}
 	return id.String()

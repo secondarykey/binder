@@ -34,7 +34,7 @@ func (b *Binder) Search(ctx context.Context, query string, onResult func(SearchR
 	// ノート・ダイアグラム・アセット（structures テーブル）
 	structures, err := b.db.FindStructures()
 	if err != nil {
-		log.WarnE("Search: FindStructures error", err)
+		log.Warn("Search: FindStructures error:\n%+v", err)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (b *Binder) Search(ctx context.Context, query string, onResult func(SearchR
 	// テンプレート（templates テーブル）
 	templates, err := b.db.FindTemplates()
 	if err != nil {
-		log.WarnE("Search: FindTemplates error", err)
+		log.Warn("Search: FindTemplates error:\n%+v", err)
 		return
 	}
 

@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
@@ -51,6 +51,8 @@ import FolderZipIcon from '@mui/icons-material/FolderZip';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ContrastIcon from '@mui/icons-material/Contrast';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
 
@@ -155,9 +157,12 @@ function detectTableAt(fullText, cursorPos) {
  */
 async function runTemplatePreview(templateId, templateType, otherTemplateId, noteId) {
   const content = await OpenNote(noteId);
-  const parsed = await ParseNote(noteId, true, content);
-  const marked = await Marked.parse(parsed);
-  return await CreateTemplateHTML(templateId, templateType, otherTemplateId, noteId, marked);
+  const parseResult = await ParseNote(noteId, true, content);
+  if (parseResult.error) return parseResult;
+  const marked = await Marked.parse(parseResult.html);
+  const templateResult = await CreateTemplateHTML(templateId, templateType, otherTemplateId, noteId, marked);
+  templateResult.warnings = [...(parseResult.warnings || []), ...(templateResult.warnings || [])];
+  return templateResult;
 }
 
 //指定秒数での実行処理
@@ -291,13 +296,18 @@ function Editor(props) {
   const editorSettingRef = useRef(null);
 
   // パースステータス（プレビュー下部のステータスバー用）
-  const [parseStatus, setParseStatus] = useState({ status: "success", err: null });
+  const [parseStatus, setParseStatus] = useState({ status: "success", err: null, warnings: [] });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
+  const [parseWarningDlg, setParseWarningDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [alias, setAlias] = useState('');
   const [serverAddress, setServerAddress] = useState('');
   // ダイアグラムスタイルテンプレートID
   const [styleTemplateId, setStyleTemplateId] = useState("");
+
+  // プレビューカラースキーム
+  const [colorSchemeConfig, setColorSchemeConfig] = useState(null);
+  const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
 
   //viewHTMLのprop
   const [html, setHTML] = useState("");
@@ -345,6 +355,11 @@ function Editor(props) {
 
   useEffect(() => {
     Address().then((addr) => setServerAddress(addr)).catch(() => {});
+    GetConfig().then((conf) => {
+      if (conf.previewColorScheme) {
+        setColorSchemeConfig(conf.previewColorScheme);
+      }
+    }).catch(() => {});
   }, []);
 
   //開いた時の初期処理
@@ -594,8 +609,14 @@ function Editor(props) {
     if (mode !== Mode.template || templateType === "diagram" || !previewNoteId || !previewOtherTemplateId || !templateType) return;
     runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
       .then((result) => {
-        setHTML(result);
-        Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+        const ws = result.warnings || [];
+        if (result.error) {
+          evt.showErrorMessage(result.error);
+        } else {
+          setHTML(result.html);
+          setParseStatus(ws.length > 0 ? { status: "warning", err: null, warnings: ws } : { status: "success", err: null, warnings: [] });
+          Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result.html });
+        }
       })
       .catch((err) => evt.showErrorMessage(err));
   }, [previewNoteId, previewOtherTemplateId]);
@@ -695,11 +716,16 @@ function Editor(props) {
         await SaveTemplate(id, text);
         runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
           .then((result) => {
-            setHTML(result);
-            setParseStatus({ status: "success", err: null });
-            Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result });
+            const ws = result.warnings || [];
+            if (result.error) {
+              setParseStatus({ status: "error", err: result.error, warnings: ws });
+            } else {
+              setHTML(result.html);
+              setParseStatus(ws.length > 0 ? { status: "warning", err: null, warnings: ws } : { status: "success", err: null, warnings: [] });
+              Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result.html });
+            }
           })
-          .catch((err) => setParseStatus({ status: "error", err }));
+          .catch((err) => setParseStatus({ status: "error", err, warnings: [] }));
       }
     } else {
       //初回時の実行があるか
@@ -727,16 +753,19 @@ function Editor(props) {
   const createMarked = async (id, txt, local, lineNumbers = false) => {
     var p = ""
     var parseError = false;
-    await ParseNote(id, local, txt).then((resp) => {
-      p = resp;
-    }).catch((err) => {
-      setParseStatus({ status: "error", err });
+    var warnings = [];
+    const result = await ParseNote(id, local, txt);
+    if (result.error) {
+      setParseStatus({ status: "error", err: result.error, warnings: result.warnings || [] });
       parseError = true;
       p = txt;
-    });
+    } else {
+      p = result.html;
+      warnings = result.warnings || [];
+    }
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
-    return { html: val || "", parseError };
+    return { html: val || "", parseError, warnings };
   }
 
   /**
@@ -747,13 +776,21 @@ function Editor(props) {
     if (mode === "note") {
 
       var result = await createMarked(id, txt, true, true);
-      CreateNoteHTML(id, true, result.html).then((resp) => {
-        setHTML(resp);
-        if (!result.parseError) setParseStatus({ status: "success", err: null });
-        Events.Emit('binder:preview:update', { typ: mode, id, name, html: resp });
-      }).catch((err) => {
-        setParseStatus({ status: "error", err });
-      })
+      const noteResult = await CreateNoteHTML(id, true, result.html);
+      const allWarnings = [...(result.warnings || []), ...(noteResult.warnings || [])];
+      if (noteResult.error) {
+        setParseStatus({ status: "error", err: noteResult.error, warnings: allWarnings });
+      } else {
+        setHTML(noteResult.html);
+        if (!result.parseError) {
+          if (allWarnings.length > 0) {
+            setParseStatus({ status: "warning", err: null, warnings: allWarnings });
+          } else {
+            setParseStatus({ status: "success", err: null, warnings: [] });
+          }
+        }
+        Events.Emit('binder:preview:update', { typ: mode, id, name, html: noteResult.html });
+      }
 
     } else if (mode === "template") {
       //CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
@@ -769,20 +806,24 @@ function Editor(props) {
    */
   const viewDiagram = async (txt) => {
 
-    let parsedTxt = txt;
-    try {
-      parsedTxt = await ParseDiagram(id, true, txt);
-    } catch (err) {
-      setParseStatus({ status: "error", err });
+    const diagramResult = await ParseDiagram(id, true, txt);
+    if (diagramResult.error) {
+      setParseStatus({ status: "error", err: diagramResult.error, warnings: diagramResult.warnings || [] });
       return;
     }
+    let parsedTxt = diagramResult.html;
+    const diagWarnings = diagramResult.warnings || [];
 
     Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
       var elm = document.querySelector('#mermaidViewer');
       if (!elm) return;
       elm.innerHTML = data.svg;
-      setParseStatus({ status: "success", err: null });
+      if (diagWarnings.length > 0) {
+        setParseStatus({ status: "warning", err: null, warnings: diagWarnings });
+      } else {
+        setParseStatus({ status: "success", err: null, warnings: [] });
+      }
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
 
       var svg = document.querySelector('#mermaidViewer svg');
@@ -826,7 +867,7 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
-      setParseStatus({ status: "error", err });
+      setParseStatus({ status: "error", err, warnings: diagWarnings });
     });
   }
 
@@ -836,25 +877,25 @@ function Editor(props) {
   const viewDiagramTemplatePreview = async (templateText, diagramId) => {
     if (!diagramId || !templateText) return;
     OpenDiagram(diagramId).then(async (diagramContent) => {
-      let parsedContent = diagramContent;
-      try {
-        parsedContent = await ParseDiagram(diagramId, true, diagramContent);
-      } catch (err) {
-        setParseStatus({ status: "error", err });
+      const parsedResult = await ParseDiagram(diagramId, true, diagramContent);
+      const ws = parsedResult.warnings || [];
+      if (parsedResult.error) {
+        setParseStatus({ status: "error", err: parsedResult.error, warnings: ws });
         return;
       }
+      let parsedContent = parsedResult.html;
       const prefix = `%%{init:${templateText}}%%\n`;
       const fullTxt = prefix + parsedContent;
       Mermaid.parse(fullTxt).then((data) => {
         var elm = document.querySelector('#mermaidViewer');
         if (elm) elm.innerHTML = data.svg;
-        setParseStatus({ status: "success", err: null });
+        setParseStatus(ws.length > 0 ? { status: "warning", err: null, warnings: ws } : { status: "success", err: null, warnings: [] });
         Events.Emit('binder:preview:update', { typ: 'diagram', id, name, html: fullTxt });
       }).catch((err) => {
-        setParseStatus({ status: "error", err });
+        setParseStatus({ status: "error", err, warnings: ws });
       });
     }).catch((err) => {
-      setParseStatus({ status: "error", err });
+      setParseStatus({ status: "error", err, warnings: [] });
     });
   }
 
@@ -956,8 +997,9 @@ function Editor(props) {
       if (mode === Mode.note) {
         elm = (await createMarked(id, text, false)).html;
       } else if (mode === Mode.diagram) {
-        const parsedTxt = await ParseDiagram(id, false, text);
-        var obj = await Mermaid.parse(parsedTxt, styleTemplateId);
+        const diagResult = await ParseDiagram(id, false, text);
+        if (diagResult.error) throw new Error(diagResult.error);
+        var obj = await Mermaid.parse(diagResult.html, styleTemplateId);
         elm = obj.svg;
       } else if (mode === Mode.template) {
         elm = text;
@@ -1039,16 +1081,20 @@ function Editor(props) {
   };
 
   /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
-  const handleDownloadExpanded = () => {
+  const handleDownloadExpanded = async () => {
     closeEditorMoreMenu();
-    if (mode === Mode.note) {
-      ParseNote(id, false, text)
-        .then(expanded => triggerTextDownload(expanded, name + '.md'))
-        .catch(err => evt.showErrorMessage(err));
-    } else if (mode === Mode.diagram) {
-      ParseDiagram(id, false, text)
-        .then(expanded => triggerTextDownload(expanded, name + '.mmd'))
-        .catch(err => evt.showErrorMessage(err));
+    try {
+      if (mode === Mode.note) {
+        const result = await ParseNote(id, false, text);
+        if (result.error) { evt.showErrorMessage(result.error); return; }
+        triggerTextDownload(result.html, name + '.md');
+      } else if (mode === Mode.diagram) {
+        const result = await ParseDiagram(id, false, text);
+        if (result.error) { evt.showErrorMessage(result.error); return; }
+        triggerTextDownload(result.html, name + '.mmd');
+      }
+    } catch (err) {
+      evt.showErrorMessage(err);
     }
   };
 
@@ -1062,9 +1108,10 @@ function Editor(props) {
         for (const diag of deps.missingDiagrams) {
           try {
             const source = await OpenDiagram(diag.id);
-            const expanded = await ParseDiagram(diag.id, false, source);
+            const expandResult = await ParseDiagram(diag.id, false, source);
+            if (expandResult.error) throw new Error(expandResult.error);
             const diagMeta = await GetDiagram(diag.id);
-            const result = await Mermaid.parse(expanded, diagMeta.styleTemplate);
+            const result = await Mermaid.parse(expandResult.html, diagMeta.styleTemplate);
             if (result && result.svg) {
               diagramSVGs[diag.id] = result.svg;
             }
@@ -1131,7 +1178,7 @@ function Editor(props) {
           evt.refreshTree();
           if (result?.id) {
             const tag = isImage
-              ? `{{assetsImage "${result.id}"}}`
+              ? `{{assetsImage "${result.id}" ""}}`
               : `{{assets "${result.id}"}}`;
             const ta = document.querySelector('#editor');
             if (!ta) return;
@@ -1899,6 +1946,15 @@ function Editor(props) {
                 })()}
                 {mode !== Mode.template && <div className="previewMenuLeft" />}
                 <div className="previewMenuRight">
+                  {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
+                    <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
+                      <IconButton size="small" aria-label="color-scheme" className="editorBtn"
+                        onClick={() => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length)}
+                      >
+                        <ContrastIcon sx={{ fontSize: '16px' }} />
+                      </IconButton>
+                    </Tooltip>
+                  }
                   {mode !== Mode.template &&
                     <Tooltip title={t("preview.download")} placement="bottom">
                       <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
@@ -1956,7 +2012,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -1965,15 +2021,20 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
                 }
               </div>
 
               {/** パースステータスバー */}
               <div id="parseStatusBar">
-                <div className="parseStatusLeft" onDoubleClick={() => { if (parseStatus.err) setParseErrorDlg(true); }}>
+                <div className="parseStatusLeft" onDoubleClick={() => {
+                  if (parseStatus.err) setParseErrorDlg(true);
+                  else if (parseStatus.warnings?.length > 0) setParseWarningDlg(true);
+                }}>
                   {parseStatus.status === "error"
                     ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
+                    : parseStatus.status === "warning"
+                    ? <><WarningAmberIcon sx={{ fontSize: '16px', color: 'var(--accent-warning, orange)', mr: '6px' }} /><span className="parseStatusText">Warning ({parseStatus.warnings?.length})</span></>
                     : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
                   }
                 </div>
@@ -2005,6 +2066,21 @@ function Editor(props) {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseErrorDlg(false)} />
+        </DialogActions>
+      </Dialog>
+
+      {/** テンプレート関数警告ダイアログ */}
+      <Dialog open={parseWarningDlg} onClose={() => setParseWarningDlg(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Warnings ({parseStatus.warnings?.length || 0})</DialogTitle>
+        <DialogContent>
+          {(parseStatus.warnings || []).map((w, i) => (
+            <DialogContentText key={i} className="messageTxt" sx={{ fontSize: '13px', mb: '4px', color: 'var(--text-secondary)' }}>
+              {w}
+            </DialogContentText>
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseWarningDlg(false)} />
         </DialogActions>
       </Dialog>
 

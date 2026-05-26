@@ -434,7 +434,7 @@ func (f *FileSystem) Push(r, name string, info *UserInfo) error {
 
 // PushDocs は docs/ ディレクトリのみを指定ブランチに force push する。
 // in-memory リポジトリで orphan commit を生成し、リモートの指定ブランチへ強制 push する。
-func (f *FileSystem) PushDocs(r, branch string, info *UserInfo) error {
+func (f *FileSystem) PushDocs(r, branch, subDir string, info *UserInfo) error {
 	auth, err := authMethod(info)
 	if err != nil {
 		return xerrors.Errorf("authMethod() error: %w", err)
@@ -460,9 +460,40 @@ func (f *FileSystem) PushDocs(r, branch string, info *UserInfo) error {
 		return xerrors.Errorf("Worktree() error: %w", err)
 	}
 
-	// docs/ 以下のファイルを memfs にコピーし、追加したパス一覧を取得
+	tmpRemote, err := tmpRepo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{remoteURL},
+	})
+	if err != nil {
+		return xerrors.Errorf("CreateRemote() error: %w", err)
+	}
+
+	// subDir 指定がある場合のみ、既存の公開ブランチを fetch して既存コンテンツを保持する。
+	// ルート（subDir 空）の場合は従来どおり全置換する。
+	useExisting := subDir != ""
+	if useExisting {
+		fetchErr := tmpRemote.Fetch(&git.FetchOptions{
+			RefSpecs: []config.RefSpec{config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branch, branch))},
+			Auth:     auth,
+			Force:    true,
+		})
+		if fetchErr == nil {
+			branchRef := plumbing.NewBranchReferenceName(branch)
+			if err = wt.Checkout(&git.CheckoutOptions{Branch: branchRef}); err != nil {
+				return xerrors.Errorf("Checkout(%s) error: %w", branch, err)
+			}
+		}
+		removeAllFromMemFS(mfs, subDir)
+		if err = mfs.MkdirAll(subDir, 0755); err != nil {
+			return xerrors.Errorf("MkdirAll(%s) error: %w", subDir, err)
+		}
+	}
+
+	destDir := subDir
+
+	// docs/ 以下のファイルを memfs にコピー
 	var files []string
-	if err = f.copyDocsToMemFS(publishDir, "", mfs, &files); err != nil {
+	if err = f.copyDocsToMemFS(publishDir, destDir, mfs, &files); err != nil {
 		return xerrors.Errorf("copyDocsToMemFS() error: %w", err)
 	}
 	if len(files) == 0 {
@@ -476,26 +507,20 @@ func (f *FileSystem) PushDocs(r, branch string, info *UserInfo) error {
 		}
 	}
 
-	// orphan commit（親なし）を作成
 	sig := f.userSigOrDefault()
-	if _, err = wt.Commit("publish docs", &git.CommitOptions{
+	commitMsg := "publish docs"
+	if subDir != "" {
+		commitMsg = fmt.Sprintf("publish docs (%s)", subDir)
+	}
+	if _, err = wt.Commit(commitMsg, &git.CommitOptions{
 		Author: sig,
 	}); err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
 
-	// in-memory リポジトリにリモートを登録して force push
 	head, err := tmpRepo.Head()
 	if err != nil {
 		return xerrors.Errorf("Head() error: %w", err)
-	}
-
-	tmpRemote, err := tmpRepo.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{remoteURL},
-	})
-	if err != nil {
-		return xerrors.Errorf("CreateRemote() error: %w", err)
 	}
 
 	refSpec := config.RefSpec(fmt.Sprintf("+%s:refs/heads/%s", head.Name(), branch))
@@ -509,6 +534,23 @@ func (f *FileSystem) PushDocs(r, branch string, info *UserInfo) error {
 	}
 
 	return nil
+}
+
+// removeAllFromMemFS は memfs 上の指定ディレクトリを再帰的に削除する。
+func removeAllFromMemFS(mfs billy.Filesystem, dir string) {
+	infos, err := mfs.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, info := range infos {
+		path := dir + "/" + info.Name()
+		if info.IsDir() {
+			removeAllFromMemFS(mfs, path)
+		} else {
+			mfs.Remove(path)
+		}
+	}
+	mfs.Remove(dir)
 }
 
 // copyDocsToMemFS は srcDir 以下のファイルを再帰的に memfs にコピーする。
@@ -860,7 +902,7 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 		mod, err := getModelType(path)
 		if err != nil {
 			// db/・binder.json など管理外のファイルは無視（Debugレベル）
-			log.DebugE("getModelType() error", err)
+			log.Debug("getModelType() error: %+v", err)
 		} else {
 			mod.Status = s
 			rtn = append(rtn, mod)
