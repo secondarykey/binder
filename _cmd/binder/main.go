@@ -49,7 +49,7 @@ func main() {
 	flag.Parse()
 	logger, err := log.Init()
 	if err != nil {
-		log.WarnE("ログファイルの初期化に失敗", err)
+		log.Warn("ログファイルの初期化に失敗:\n%+v", err)
 	}
 	defer log.Close()
 	if debug {
@@ -95,7 +95,7 @@ func main() {
 	// 起動中フラグを false に設定して保存（正常終了しなかった場合のクラッシュ検出用）。
 	// アプリが正常終了したときに true に書き戻す。
 	if err := settings.SaveStartupOk(false); err != nil {
-		log.WarnE("SaveStartupOk(false) error", err)
+		log.Warn("SaveStartupOk(false) error:\n%+v", err)
 	}
 
 	// 3. ウィンドウ作成
@@ -172,12 +172,12 @@ func main() {
 	// 5. 実行
 	err = wailsApp.Run()
 	if err != nil {
-		log.WarnE("Run() error:", err)
+		log.Warn("Run() error:\n%+v", err)
 	}
 
 	// wailsApp.Run() が正常リターンした = 正常終了。
 	// 次回起動で自動オープンが動くよう StartupOk を true に戻す。
 	if err := settings.SaveStartupOk(true); err != nil {
-		log.WarnE("SaveStartupOk(true) error", err)
+		log.Warn("SaveStartupOk(true) error:\n%+v", err)
 	}
 }
