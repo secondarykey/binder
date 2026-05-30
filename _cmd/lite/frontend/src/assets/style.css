@@ -49,7 +49,7 @@
   text-align: right;
   padding: 8px 6px 8px 0;
   line-height: 1.5em;
-  background-color: var(--bg-surface, #252525);
+  background-color: var(--bg-editor, #1e1e1e);
   color: var(--text-muted, #666);
   font-size: inherit;
   user-select: none;
