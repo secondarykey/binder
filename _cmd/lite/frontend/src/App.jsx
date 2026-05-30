@@ -39,10 +39,10 @@ function App() {
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
 
+  const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
+
   // エディタのスクロールバー検出（展開ボタンの位置調整用）
   const expandBtnRight = useScrollbarOffset('#editor', 6, activeTab?.content);
-
-  const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
   // --- 確認ダイアログ ---
   const [confirmState, setConfirmState] = useState({ open: false, message: '', resolve: null });
