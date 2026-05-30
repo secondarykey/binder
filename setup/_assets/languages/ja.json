@@ -543,6 +543,8 @@
         "hidePreview" : "プレビューを非表示",
         "wordWrapOn" : "折り返し: オン",
         "wordWrapOff" : "折り返し: オフ",
+        "lineNumbersOn" : "行番号: オン",
+        "lineNumbersOff" : "行番号: オフ",
         "theme" : {
             "system" : "システム",
             "light" : "ライト",

@@ -40,6 +40,7 @@ function App() {
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [wordWrap, setWordWrap] = useState(true);
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [themeMode, setThemeMode_] = useState('system');
 
   // 起動時に保存済みのテーマモードを取得
@@ -327,6 +328,8 @@ function App() {
                 onChange={updateContent}
                 wordWrap={wordWrap}
                 onWordWrapToggle={() => setWordWrap(prev => !prev)}
+                showLineNumbers={showLineNumbers}
+                onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (

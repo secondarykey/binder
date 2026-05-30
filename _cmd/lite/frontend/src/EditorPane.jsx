@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import WrapTextIcon from '@mui/icons-material/WrapText';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import EditorArea from './components/editor/EditorArea';
 import SearchBar from './components/editor/SearchBar';
 
@@ -11,7 +12,7 @@ import { useTranslation } from 'react-i18next';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle }) {
   const { t } = useTranslation();
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
@@ -65,12 +66,36 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle }) {
         <EditorArea
           text={text}
           style={editorStyle}
-          showLineNumbers={true}
+          showLineNumbers={showLineNumbers}
           wordWrap={wordWrap}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
         />
       </Box>
+
+      {/* 行番号トグル（左上） */}
+      <Tooltip title={t(showLineNumbers ? 'lite.lineNumbersOn' : 'lite.lineNumbersOff')} placement="right">
+        <IconButton
+          size="small"
+          onClick={onLineNumbersToggle}
+          sx={{
+            position: 'absolute',
+            top: 6,
+            left: 6,
+            zIndex: 10,
+            color: showLineNumbers ? 'var(--text-primary)' : 'var(--text-muted)',
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--border-primary)',
+            borderRadius: '4px',
+            width: 28,
+            height: 28,
+            opacity: 0.7,
+            '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
+          }}
+        >
+          <FormatListNumberedIcon sx={{ fontSize: '16px' }} />
+        </IconButton>
+      </Tooltip>
 
       {/* 折り返しトグル（右下） */}
       <Tooltip title={t(wordWrap ? 'lite.wordWrapOn' : 'lite.wordWrapOff')} placement="top">

@@ -543,6 +543,8 @@
         "hidePreview" : "Hide Preview",
         "wordWrapOn" : "Word Wrap: On",
         "wordWrapOff" : "Word Wrap: Off",
+        "lineNumbersOn" : "Line Numbers: On",
+        "lineNumbersOff" : "Line Numbers: Off",
         "theme" : {
             "system" : "System",
             "light" : "Light",
