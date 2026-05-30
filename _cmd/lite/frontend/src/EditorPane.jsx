@@ -4,7 +4,7 @@ import WrapTextIcon from '@mui/icons-material/WrapText';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import EditorArea from './components/editor/EditorArea';
 import SearchBar from './components/editor/SearchBar';
-import { useScrollbarOffset } from './useHasScrollbar';
+import { useScrollbarOffset, useHScrollbarOffset } from './useHasScrollbar';
 
 import './language';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
+  const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
 
@@ -106,7 +107,7 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
           onClick={onWordWrapToggle}
           sx={{
             position: 'absolute',
-            bottom: 6,
+            bottom: wrapBtnBottom,
             right: wrapBtnRight,
             zIndex: 10,
             color: wordWrap ? 'var(--text-primary)' : 'var(--text-muted)',
