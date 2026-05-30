@@ -1,18 +1,36 @@
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
 import AddIcon from '@mui/icons-material/Add';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { Window } from '@wailsio/runtime';
 
+import './language';
+import { useTranslation } from 'react-i18next';
+
 const btnSx = { color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, '&:hover': { color: 'var(--text-primary)' } };
+
+const themeIcons = {
+  system: <SettingsBrightnessIcon sx={{ fontSize: '16px' }} />,
+  light:  <LightModeIcon sx={{ fontSize: '16px' }} />,
+  dark:   <DarkModeIcon sx={{ fontSize: '16px' }} />,
+};
+
+const themeCycle = ['system', 'light', 'dark'];
 
 /**
  * フレームレスウィンドウ用タイトルバー
  */
-function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty }) {
+function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty, themeMode, onThemeToggle }) {
+  const { t } = useTranslation();
+
+  const themeLabelKey = `lite.theme.${themeMode}`;
+
   return (
     <Box
       sx={{
@@ -45,8 +63,13 @@ function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty }) {
         </IconButton>
       </Box>
 
-      {/* 右: ウィンドウ操作 */}
+      {/* 右: テーマ切り替え + ウィンドウ操作 */}
       <Box sx={{ display: 'flex', '--wails-draggable': 'no-drag' }}>
+        <Tooltip title={t(themeLabelKey)} placement="bottom">
+          <IconButton size="small" onClick={onThemeToggle} sx={btnSx}>
+            {themeIcons[themeMode]}
+          </IconButton>
+        </Tooltip>
         <IconButton size="small" onClick={() => Window.Minimise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>
           <MinimizeIcon sx={{ fontSize: '16px' }} />
         </IconButton>

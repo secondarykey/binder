@@ -4,8 +4,9 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles } from '../bindings/binder/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/lite/app';
 import { OpenFileDialog, NewFile, Terminate } from '../bindings/main/window';
+import { setThemeMode } from './theme';
 
 import TabBar from './TabBar';
 import EditorPane from './EditorPane';
@@ -38,6 +39,25 @@ function App() {
   const splitterRef = useRef(null);
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [themeMode, setThemeMode_] = useState('system');
+
+  // 起動時に保存済みのテーマモードを取得
+  useEffect(() => {
+    GetTheme().then(saved => {
+      const mode = saved || 'system';
+      setThemeMode_(mode);
+    }).catch(() => {});
+  }, []);
+
+  const themeCycle = ['system', 'light', 'dark'];
+  const handleThemeToggle = useCallback(() => {
+    setThemeMode_(prev => {
+      const idx = themeCycle.indexOf(prev);
+      const next = themeCycle[(idx + 1) % themeCycle.length];
+      setThemeMode(next);
+      return next;
+    });
+  }, []);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
@@ -279,6 +299,8 @@ function App() {
         onOpen={openFile}
         onSave={saveActiveTab}
         hasDirty={activeTab ? activeTab.content !== activeTab.savedContent : false}
+        themeMode={themeMode}
+        onThemeToggle={handleThemeToggle}
       />
 
       <TabBar

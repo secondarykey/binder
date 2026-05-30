@@ -540,6 +540,11 @@
         "confirmTitle" : "Confirm",
         "discard" : "Discard",
         "showPreview" : "Show Preview",
-        "hidePreview" : "Hide Preview"
+        "hidePreview" : "Hide Preview",
+        "theme" : {
+            "system" : "System",
+            "light" : "Light",
+            "dark" : "Dark"
+        }
     }
 }
