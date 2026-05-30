@@ -73,12 +73,12 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
     height: 24,
     borderRadius: 0,
     flexShrink: 0,
-    backgroundColor: 'var(--bg-surface)',
-    '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-elevated)' },
+    backgroundColor: 'var(--bg-elevated)',
+    '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-overlay)' },
   };
 
-  const leftArrowSx = { ...arrowSx, borderRight: '1px solid var(--border-primary)' };
-  const rightArrowSx = { ...arrowSx, borderLeft: '1px solid var(--border-primary)' };
+  const leftArrowSx = { ...arrowSx, borderRight: '2px solid var(--border-primary)' };
+  const rightArrowSx = { ...arrowSx, borderLeft: '2px solid var(--border-primary)' };
 
   return (
     <Box sx={{
