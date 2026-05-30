@@ -541,6 +541,8 @@
         "discard" : "Discard",
         "showPreview" : "Show Preview",
         "hidePreview" : "Hide Preview",
+        "wordWrapOn" : "Word Wrap: On",
+        "wordWrapOff" : "Word Wrap: Off",
         "theme" : {
             "system" : "System",
             "light" : "Light",

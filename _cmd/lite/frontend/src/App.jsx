@@ -39,6 +39,7 @@ function App() {
   const splitterRef = useRef(null);
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [wordWrap, setWordWrap] = useState(true);
   const [themeMode, setThemeMode_] = useState('system');
 
   // 起動時に保存済みのテーマモードを取得
@@ -301,6 +302,8 @@ function App() {
         hasDirty={activeTab ? activeTab.content !== activeTab.savedContent : false}
         themeMode={themeMode}
         onThemeToggle={handleThemeToggle}
+        wordWrap={wordWrap}
+        onWordWrapToggle={() => setWordWrap(prev => !prev)}
       />
 
       <TabBar
@@ -324,6 +327,7 @@ function App() {
               <EditorPane
                 text={activeTab.content}
                 onChange={updateContent}
+                wordWrap={wordWrap}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (

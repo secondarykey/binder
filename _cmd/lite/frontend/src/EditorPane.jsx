@@ -7,7 +7,7 @@ import SearchBar from './components/editor/SearchBar';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange }) {
+function EditorPane({ text, onChange, wordWrap }) {
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
 
@@ -61,7 +61,7 @@ function EditorPane({ text, onChange }) {
           text={text}
           style={editorStyle}
           showLineNumbers={true}
-          wordWrap={true}
+          wordWrap={wordWrap}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
         />
