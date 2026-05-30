@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -8,6 +9,25 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
  * タブ表示 + 未保存マーク + 閉じるボタン + ファイルを開くボタン
  */
 function TabBar({ tabs, activeTabId, onSelect, onClose, onOpen, onNew }) {
+  const scrollRef = useRef(null);
+
+  // アクティブタブが変わったら表示範囲にスクロール
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const active = scrollRef.current.querySelector('[data-active="true"]');
+    if (active) {
+      active.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    }
+  }, [activeTabId]);
+
+  // ホイールで横スクロール
+  const handleWheel = (e) => {
+    if (scrollRef.current && e.deltaY !== 0) {
+      e.preventDefault();
+      scrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
   return (
     <Box sx={{
       display: 'flex',
@@ -16,22 +36,34 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onOpen, onNew }) {
       borderBottom: '1px solid var(--border-primary)',
       minHeight: '34px',
       flexShrink: 0,
-      overflow: 'hidden',
     }}>
-      {/* タブ一覧 */}
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'auto', '&::-webkit-scrollbar': { height: 0 } }}>
+      {/* タブ一覧（横スクロール） */}
+      <Box
+        ref={scrollRef}
+        onWheel={handleWheel}
+        sx={{
+          display: 'flex',
+          flex: 1,
+          minWidth: 0,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          '&::-webkit-scrollbar': { height: '2px' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'var(--border-primary)', borderRadius: '1px' },
+        }}
+      >
         {tabs.map(tab => {
           const isDirty = tab.content !== tab.savedContent;
           const isActive = tab.id === activeTabId;
           return (
             <Box
               key={tab.id}
+              data-active={isActive ? 'true' : undefined}
               onClick={() => onSelect(tab.id)}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 0.5,
-                px: 1.5,
+                px: 1,
                 py: 0.5,
                 cursor: 'pointer',
                 fontSize: '12px',
@@ -40,17 +72,25 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onOpen, onNew }) {
                 borderRight: '1px solid var(--border-primary)',
                 borderBottom: isActive ? '2px solid var(--accent-primary)' : '2px solid transparent',
                 whiteSpace: 'nowrap',
-                minWidth: 0,
+                flexShrink: 0,
+                maxWidth: '180px',
                 '&:hover': { backgroundColor: isActive ? 'var(--bg-app)' : 'var(--bg-elevated)' },
               }}
             >
-              <span>{isDirty ? '● ' : ''}{tab.filename}</span>
+              <span style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
+              }}>
+                {isDirty ? '● ' : ''}{tab.filename}
+              </span>
               <IconButton
                 size="small"
                 onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
                 sx={{
                   color: 'var(--text-muted)',
                   p: 0.25,
+                  flexShrink: 0,
                   '& svg': { fontSize: '14px' },
                   '&:hover': { color: 'var(--text-primary)' },
                 }}
