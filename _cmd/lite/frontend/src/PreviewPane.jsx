@@ -6,44 +6,14 @@ import HTMLFrame from './components/editor/HTMLFrame';
 import Marked from './components/editor/engines/Marked';
 import Mermaid from './components/editor/engines/Mermaid';
 
-import './language';
-import { useTranslation } from 'react-i18next';
-
-const MERMAID_EXTENSIONS = ['.mmd', '.mermaid'];
-
-/**
- * ファイル名からMermaidファイルかどうかを判定する
- */
-function isMermaidFile(filename) {
-  if (!filename) return false;
-  const lower = filename.toLowerCase();
-  return MERMAID_EXTENSIONS.some(ext => lower.endsWith(ext));
-}
-
 /**
  * プレビューペイン
- * ファイル種別に応じて Markdown または Mermaid でプレビューする。
- * 右上の切り替えボタンで手動切替も可能。
+ * mermaidMode に応じて Markdown または Mermaid でプレビューする。
+ * 切り替えは親（App）がタブごとに管理する。
  */
-function PreviewPane({ text, filename }) {
-  const { t } = useTranslation();
+function PreviewPane({ text, mermaidMode, onToggleMode }) {
   const [html, setHtml] = useState('');
-  const [mermaidMode, setMermaidMode] = useState(false);
   const timerRef = useRef(null);
-  const prevFilenameRef = useRef(filename);
-
-  // ファイルが切り替わったら拡張子に基づいてモードをリセット
-  useEffect(() => {
-    if (filename !== prevFilenameRef.current) {
-      setMermaidMode(isMermaidFile(filename));
-      prevFilenameRef.current = filename;
-    }
-  }, [filename]);
-
-  // 初回マウント時にも拡張子判定
-  useEffect(() => {
-    setMermaidMode(isMermaidFile(filename));
-  }, []);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -83,7 +53,7 @@ function PreviewPane({ text, filename }) {
       <Tooltip title={mermaidMode ? 'Markdown' : 'Mermaid'} placement="left">
         <IconButton
           size="small"
-          onClick={() => setMermaidMode(prev => !prev)}
+          onClick={onToggleMode}
           sx={{
             position: 'absolute',
             top: 6,

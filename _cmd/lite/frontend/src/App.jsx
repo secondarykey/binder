@@ -13,6 +13,14 @@ import TitleBar from './TitleBar';
 import './language';
 import { useTranslation } from 'react-i18next';
 
+const MERMAID_EXTENSIONS = ['.mmd', '.mermaid'];
+
+function isMermaidFile(filename) {
+  if (!filename) return false;
+  const lower = filename.toLowerCase();
+  return MERMAID_EXTENSIONS.some(ext => lower.endsWith(ext));
+}
+
 let nextTabId = 1;
 
 /**
@@ -51,6 +59,7 @@ function App() {
         filename,
         content,
         savedContent: content,
+        mermaidMode: isMermaidFile(filename),
       }]);
       setActiveTabId(id);
     } catch (err) {
@@ -76,6 +85,7 @@ function App() {
         filename,
         content: '',
         savedContent: '',
+        mermaidMode: isMermaidFile(filename),
       }]);
       setActiveTabId(id);
     } catch (err) {
@@ -123,6 +133,14 @@ function App() {
     setTabs(prev => prev.map(tab =>
       tab.id === activeTabId
         ? { ...tab, content: newContent }
+        : tab
+    ));
+  }, [activeTabId]);
+
+  const toggleMermaidMode = useCallback(() => {
+    setTabs(prev => prev.map(tab =>
+      tab.id === activeTabId
+        ? { ...tab, mermaidMode: !tab.mermaidMode }
         : tab
     ));
   }, [activeTabId]);
@@ -262,7 +280,7 @@ function App() {
             <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
               {/* ドラッグ中はiframeの上にオーバーレイを被せてマウスイベントの吸収を防ぐ */}
               {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
-              <PreviewPane text={activeTab.content} filename={activeTab.filename} />
+              <PreviewPane text={activeTab.content} mermaidMode={activeTab.mermaidMode} onToggleMode={toggleMermaidMode} />
             </Box>
           </>
         ) : (
