@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router";
 
-import { Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress } from "@mui/material";
+import { IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Tabs, Tab } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import RestoreIcon from "@mui/icons-material/Restore";
 
@@ -11,6 +11,7 @@ import DiffIcon from "@mui/icons-material/Difference";
 import { Events, Window } from "@wailsio/runtime";
 
 import { GetFont,GetHistoryPatch, GetModifiedIds, RestoreHistory } from "../../bindings/binder/api/app";
+import MermaidScript from "../components/editor/engines/Mermaid";
 
 import { EventContext } from "../Event";
 import "../language";
@@ -184,6 +185,50 @@ function TextPanel({ rows, html, fontName, fontSize, fontColor, fontBgColor, scr
 }
 
 /**
+ * Mermaidテキストを描画してSVGを表示するパネル
+ */
+function DiagramPanel({ text }) {
+    const containerRef = useRef();
+    const [svg, setSvg] = useState("");
+    const [error, setError] = useState(null);
+    const [rendering, setRendering] = useState(false);
+
+    useEffect(() => {
+        if (!text) {
+            setSvg("");
+            setError(null);
+            return;
+        }
+        setRendering(true);
+        setError(null);
+        MermaidScript.parse(text).then((data) => {
+            setSvg(data.svg);
+        }).catch((err) => {
+            setError(err?.message || String(err));
+            setSvg("");
+        }).finally(() => {
+            setRendering(false);
+        });
+    }, [text]);
+
+    return (
+        <div style={{ width: "100%", height: "100%", overflow: "auto", padding: "16px", boxSizing: "border-box" }} ref={containerRef}>
+            {rendering && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                    <CircularProgress size={24} thickness={4} sx={{ color: "var(--text-disabled)" }} />
+                </div>
+            )}
+            {error && (
+                <div style={{ color: "var(--text-error, #f44336)", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>{error}</div>
+            )}
+            {svg && (
+                <div dangerouslySetInnerHTML={{ __html: svg }} style={{ display: "flex", justifyContent: "center" }} />
+            )}
+        </div>
+    );
+}
+
+/**
  * 履歴パッチコンポーネント（左右分割）
  * 左: 選択コミット時点のテキスト / 右: 現在ファイルとの差分
  * @param {{ typ: string, id: string }} props
@@ -205,6 +250,9 @@ function HistoryPatch({ typ, id }) {
     // デフォルトは履歴ファイルのみ表示。Diff ボタンで差分パネルをトグル
     const [showDiff, setShowDiff] = useState(true);
     const [loading, setLoading] = useState(false);
+    // ダイアグラム用タブ: 0 = テキスト, 1 = プレビュー
+    const [viewTab, setViewTab] = useState(0);
+    const isDiagram = typ === "diagram";
 
     const histScrollRef = useRef();
     const histLineRef   = useRef();
@@ -314,69 +362,87 @@ function HistoryPatch({ typ, id }) {
         overflow: "hidden",
     };
 
-    const btnSx = {
-        fontSize: "0.65rem", py: 0, px: 1,
-        color: "var(--text-muted)", borderColor: "var(--border-strong)",
-        textTransform: "none",
-        "&:hover": { borderColor: "var(--text-muted)", color: "var(--text-primary)" },
+    const tabSx = {
+        minHeight: 0, height: "28px", py: 0, px: 1,
+        fontSize: "0.7rem", textTransform: "none",
+        color: "var(--text-muted)",
+        "&.Mui-selected": { color: "var(--text-primary)" },
     };
 
-    return (
-        <>
-        <div style={{ display: "flex", width: "100%", height: "100%" }}>
+    const headerBar = (
+        <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            borderBottom: "1px solid var(--border-primary)",
+            backgroundColor: "var(--bg-titlebar)",
+            flexShrink: 0,
+            padding: "0 8px",
+            minHeight: "32px",
+        }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Tooltip title="Restore">
+                    <span>
+                        <IconButton
+                            size="small"
+                            onClick={handleRestoreClick}
+                            disabled={!hash}
+                            sx={{
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-strong)",
+                                color: "var(--text-muted)",
+                                padding: "1px 4px",
+                                "&:hover": { borderColor: "var(--text-muted)", color: "var(--text-primary)" },
+                                "&.Mui-disabled": { opacity: 0.3 },
+                            }}
+                        >
+                            <RestoreIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+                {isDiagram && (
+                    <Tabs
+                        value={viewTab}
+                        onChange={(_, v) => setViewTab(v)}
+                        sx={{ minHeight: 0, "& .MuiTabs-indicator": { backgroundColor: "var(--text-primary)" } }}
+                    >
+                        <Tab label={t("history.tabText")} sx={tabSx} />
+                        <Tab label={t("history.tabPreview")} sx={tabSx} />
+                    </Tabs>
+                )}
+            </div>
+            <Tooltip title="Diff">
+                <span>
+                    <IconButton
+                        size="small"
+                        onClick={() => setShowDiff(v => !v)}
+                        disabled={!hash || !patch || (isDiagram && viewTab === 1)}
+                        sx={{
+                            borderRadius: "4px",
+                            border: "1px solid",
+                            borderColor: showDiff ? "var(--selected-bg)" : "var(--border-strong)",
+                            color: showDiff ? "var(--text-primary)" : "var(--text-muted)",
+                            backgroundColor: showDiff ? "var(--selected-bg)" : "transparent",
+                            padding: "1px 4px",
+                            "&:hover": {
+                                borderColor: showDiff ? "var(--selected-bg)" : "var(--text-muted)",
+                                color: "var(--text-primary)",
+                                backgroundColor: showDiff ? "var(--selected-hover)" : "transparent",
+                            },
+                            "&.Mui-disabled": { opacity: 0.3 },
+                        }}
+                    >
+                        <DiffIcon fontSize="small" />
+                    </IconButton>
+                </span>
+            </Tooltip>
+        </div>
+    );
 
+    const textView = (
+        <div style={{ display: "flex", width: "100%", height: "100%" }}>
             {/* 履歴ファイル表示パネル */}
             <div style={{ ...panelStyle, borderRight: showDiff ? "1px solid var(--border-strong)" : "none" }}>
                 <div style={panelLabelStyle}>
-                    {/* 左: Historical ラベル + Restore ボタン */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span>Historical</span>
-                        <Tooltip title="Restore">
-                            <span>
-                                <IconButton
-                                    size="small"
-                                    onClick={handleRestoreClick}
-                                    disabled={!hash}
-                                    sx={{
-                                        borderRadius: "4px",
-                                        border: "1px solid var(--border-strong)",
-                                        color: "var(--text-muted)",
-                                        padding: "1px 4px",
-                                        "&:hover": { borderColor: "var(--text-muted)", color: "var(--text-primary)" },
-                                        "&.Mui-disabled": { opacity: 0.3 },
-                                    }}
-                                >
-                                    <RestoreIcon fontSize="small" />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </div>
-                    {/* 右: Diff トグルボタン */}
-                    <Tooltip title="Diff">
-                        <span>
-                            <IconButton
-                                size="small"
-                                onClick={() => setShowDiff(v => !v)}
-                                disabled={!hash || !patch}
-                                sx={{
-                                    borderRadius: "4px",
-                                    border: "1px solid",
-                                    borderColor: showDiff ? "var(--selected-bg)" : "var(--border-strong)",
-                                    color: showDiff ? "var(--text-primary)" : "var(--text-muted)",
-                                    backgroundColor: showDiff ? "var(--selected-bg)" : "transparent",
-                                    padding: "1px 4px",
-                                    "&:hover": {
-                                        borderColor: showDiff ? "var(--selected-bg)" : "var(--text-muted)",
-                                        color: "var(--text-primary)",
-                                        backgroundColor: showDiff ? "var(--selected-hover)" : "transparent",
-                                    },
-                                    "&.Mui-disabled": { opacity: 0.3 },
-                                }}
-                            >
-                                <DiffIcon fontSize="small" />
-                            </IconButton>
-                        </span>
-                    </Tooltip>
+                    <span>Historical</span>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     {loading && (
@@ -421,7 +487,47 @@ function HistoryPatch({ typ, id }) {
                     </div>
                 </div>
             )}
+        </div>
+    );
 
+    const previewView = (
+        <div style={{ display: "flex", width: "100%", height: "100%" }}>
+            <div style={{ ...panelStyle, borderRight: "1px solid var(--border-strong)" }}>
+                <div style={panelLabelStyle}>
+                    <span>Historical</span>
+                </div>
+                <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                    {loading ? (
+                        <div style={{
+                            position: "absolute", inset: 0, zIndex: 20,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            backgroundColor: "var(--bg-overlay)",
+                        }}>
+                            <CircularProgress size={24} thickness={4} sx={{ color: "var(--text-disabled)" }} />
+                        </div>
+                    ) : (
+                        <DiagramPanel text={historical} />
+                    )}
+                </div>
+            </div>
+            <div style={panelStyle}>
+                <div style={panelLabelStyle}>
+                    <span>Current</span>
+                </div>
+                <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                    <DiagramPanel text={source} />
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%" }}>
+            {headerBar}
+            <div style={{ flex: 1, minHeight: 0 }}>
+                {(isDiagram && viewTab === 1) ? previewView : textView}
+            </div>
         </div>
 
         {/* 未コミット変更がある場合の確認ダイアログ */}
