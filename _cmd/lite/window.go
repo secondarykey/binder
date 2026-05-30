@@ -27,8 +27,9 @@ func (w *Window) OpenFileDialog() (string, error) {
 	defer log.PrintTrace(log.Func("OpenFileDialog()"))
 
 	result, err := w.runtime.Dialog.OpenFile().
-		SetTitle("Open Markdown File").
+		SetTitle("Open File").
 		AddFilter("Markdown Files", "*.md;*.markdown;*.txt").
+		AddFilter("Mermaid Files", "*.mmd;*.mermaid").
 		AddFilter("All Files", "*.*").
 		PromptForSingleSelection()
 	if err != nil {

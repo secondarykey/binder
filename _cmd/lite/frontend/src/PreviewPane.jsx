@@ -2,34 +2,61 @@ import { useState, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import HTMLFrame from './components/editor/HTMLFrame';
 import Marked from './components/editor/engines/Marked';
+import Mermaid from './components/editor/engines/Mermaid';
+
+const MERMAID_EXTENSIONS = ['.mmd', '.mermaid'];
+
+/**
+ * ファイル名からMermaidファイルかどうかを判定する
+ */
+function isMermaidFile(filename) {
+  if (!filename) return false;
+  const lower = filename.toLowerCase();
+  return MERMAID_EXTENSIONS.some(ext => lower.endsWith(ext));
+}
 
 /**
  * プレビューペイン
- * Markdown テキストを marked.js で HTML に変換し、HTMLFrame で表示する。
- * 固定テンプレートでラップする。
+ * ファイル種別に応じて Markdown または Mermaid でプレビューする。
  */
-function PreviewPane({ text }) {
+function PreviewPane({ text, filename }) {
   const [html, setHtml] = useState('');
   const timerRef = useRef(null);
+  const mermaid = isMermaidFile(filename);
 
   useEffect(() => {
     // デバウンス（300ms）でパース
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
-        const parsed = await Marked.parseWithSourceLines(text || '');
         const themeId = document.documentElement.dataset.theme || 'dark';
-        const wrapped = wrapHTML(parsed, themeId);
-        setHtml(wrapped);
+        if (mermaid) {
+          // Mermaid: SVGに変換してラップ
+          const data = await Mermaid.parse(text || '');
+          const wrapped = wrapHTML(`<div class="binderSVG">${data.svg}</div>`, themeId);
+          setHtml(wrapped);
+        } else {
+          // Markdown: marked.js でパース
+          const parsed = await Marked.parseWithSourceLines(text || '');
+          const wrapped = wrapHTML(parsed, themeId);
+          setHtml(wrapped);
+        }
       } catch (err) {
         console.error('Parse error:', err);
+        // Mermaidパースエラー時はエラーメッセージを表示
+        if (mermaid) {
+          const themeId = document.documentElement.dataset.theme || 'dark';
+          const errMsg = String(err.message || err).replace(/</g, '&lt;');
+          const wrapped = wrapHTML(`<pre style="color:#e57373;white-space:pre-wrap">${errMsg}</pre>`, themeId);
+          setHtml(wrapped);
+        }
       }
     }, 300);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [text]);
+  }, [text, mermaid]);
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
@@ -109,7 +136,7 @@ function wrapHTML(bodyHTML, themeId) {
   hr { border: none; border-top: 1px solid ${isDark ? '#444' : '#ddd'}; margin: 2em 0; }
   ul, ol { padding-left: 2em; }
   li { margin: 0.3em 0; }
-  .binderSVG { margin: 1em 0; }
+  .binderSVG { margin: 1em 0; text-align: center; }
 </style>
 </head>
 <body>${bodyHTML}</body>

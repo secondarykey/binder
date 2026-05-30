@@ -240,7 +240,7 @@ function App() {
             />
 
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
-              <PreviewPane text={activeTab.content} />
+              <PreviewPane text={activeTab.content} filename={activeTab.filename} />
             </Box>
           </>
         ) : (
