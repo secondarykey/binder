@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"path/filepath"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -45,6 +46,17 @@ func main() {
 
 	version := strings.TrimSpace(ver)
 	app := lite.New(version)
+
+	// 第一引数にファイルが指定されていれば起動時に開く
+	if args := flag.Args(); len(args) > 0 {
+		absPath, err := filepath.Abs(args[0])
+		if err == nil {
+			app.SetInitialFile(absPath)
+		} else {
+			app.SetInitialFile(args[0])
+		}
+	}
+
 	win := NewWindow(app)
 
 	wailsApp := application.New(application.Options{

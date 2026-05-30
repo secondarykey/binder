@@ -12,12 +12,23 @@ import (
 // App は binder-lite の Wails v3 Service。
 // ファイルI/O とテーマ・言語の提供のみを担当する。
 type App struct {
-	version string
+	version     string
+	initialFile string
 }
 
 // New は App を生成する。
 func New(version string) *App {
 	return &App{version: version}
+}
+
+// SetInitialFile は起動時に開くファイルパスを設定する。
+func (a *App) SetInitialFile(path string) {
+	a.initialFile = path
+}
+
+// InitialFile は起動時に開くファイルパスを返す。空文字なら指定なし。
+func (a *App) InitialFile() string {
+	return a.initialFile
 }
 
 // Version はアプリバージョンを返す。
