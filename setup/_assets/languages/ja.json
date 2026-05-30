@@ -536,6 +536,8 @@
     },
     "lite" : {
         "openFileHint" : "Ctrl+O でファイルを開く、Ctrl+N で新規作成",
-        "unsavedConfirm" : "保存されていない変更があります。破棄しますか？"
+        "unsavedConfirm" : "保存されていない変更があります。破棄しますか？",
+        "confirmTitle" : "確認",
+        "discard" : "破棄"
     }
 }

@@ -9,6 +9,7 @@ import TabBar from './TabBar';
 import EditorPane from './EditorPane';
 import PreviewPane from './PreviewPane';
 import TitleBar from './TitleBar';
+import ConfirmDialog from './ConfirmDialog';
 
 import './language';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +36,25 @@ function App() {
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
+
+  // --- 確認ダイアログ ---
+  const [confirmState, setConfirmState] = useState({ open: false, message: '', resolve: null });
+
+  const showConfirm = useCallback((message) => {
+    return new Promise((resolve) => {
+      setConfirmState({ open: true, message, resolve });
+    });
+  }, []);
+
+  const handleConfirmOk = useCallback(() => {
+    confirmState.resolve?.(true);
+    setConfirmState({ open: false, message: '', resolve: null });
+  }, [confirmState]);
+
+  const handleConfirmCancel = useCallback(() => {
+    confirmState.resolve?.(false);
+    setConfirmState({ open: false, message: '', resolve: null });
+  }, [confirmState]);
 
   // --- ファイル操作 ---
 
@@ -109,15 +129,7 @@ function App() {
     }
   }, [activeTab]);
 
-  const closeTab = useCallback((tabId) => {
-    const tab = tabs.find(t => t.id === tabId);
-    if (!tab) return;
-
-    if (tab.content !== tab.savedContent) {
-      // TODO: 未保存確認ダイアログ
-      if (!window.confirm(t('lite.unsavedConfirm'))) return;
-    }
-
+  const removeTab = useCallback((tabId) => {
     setTabs(prev => {
       const next = prev.filter(t => t.id !== tabId);
       if (activeTabId === tabId) {
@@ -127,7 +139,19 @@ function App() {
       }
       return next;
     });
-  }, [tabs, activeTabId, t]);
+  }, [activeTabId]);
+
+  const closeTab = useCallback(async (tabId) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    if (tab.content !== tab.savedContent) {
+      const ok = await showConfirm(t('lite.unsavedConfirm'));
+      if (!ok) return;
+    }
+
+    removeTab(tabId);
+  }, [tabs, t, showConfirm, removeTab]);
 
   const updateContent = useCallback((newContent) => {
     setTabs(prev => prev.map(tab =>
@@ -225,9 +249,12 @@ function App() {
     <Box data-file-drop-target="" sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-app)' }}>
 
       <TitleBar
-        onClose={() => {
+        onClose={async () => {
           const hasDirty = tabs.some(t => t.content !== t.savedContent);
-          if (hasDirty && !window.confirm(t('lite.unsavedConfirm'))) return;
+          if (hasDirty) {
+            const ok = await showConfirm(t('lite.unsavedConfirm'));
+            if (!ok) return;
+          }
           Terminate();
         }}
         onNew={newFile}
@@ -296,6 +323,13 @@ function App() {
           </Box>
         )}
       </Box>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        message={confirmState.message}
+        onCancel={handleConfirmCancel}
+        onConfirm={handleConfirmOk}
+      />
     </Box>
   );
 }
