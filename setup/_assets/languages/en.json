@@ -385,7 +385,6 @@
         "restoreWarning" : "The current file has unrecorded changes. Restoring will discard those changes.",
         "restore" : "Restore",
         "loadMore" : "Load more",
-        "tabText" : "Text",
         "tabPreview" : "Preview"
     },
     "overallHistory" : {

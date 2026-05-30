@@ -385,7 +385,6 @@
         "restoreWarning" : "現在のファイルに記録されていない変更があります。復元すると、その変更は失われます。",
         "restore" : "復元する",
         "loadMore" : "さらに読み込む",
-        "tabText" : "テキスト",
         "tabPreview" : "プレビュー"
     },
     "overallHistory" : {
