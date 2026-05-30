@@ -1,14 +1,12 @@
 import { useRef, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import AddIcon from '@mui/icons-material/Add';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 
 /**
  * ファイルタブバー
- * タブ表示 + 未保存マーク + 閉じるボタン + ファイルを開くボタン
+ * タブ表示 + 未保存マーク + 閉じるボタン
  */
-function TabBar({ tabs, activeTabId, onSelect, onClose, onOpen, onNew }) {
+function TabBar({ tabs, activeTabId, onSelect, onClose }) {
   const scrollRef = useRef(null);
 
   // アクティブタブが変わったら表示範囲にスクロール
@@ -102,15 +100,6 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onOpen, onNew }) {
         })}
       </Box>
 
-      {/* 新規・開くボタン */}
-      <Box sx={{ display: 'flex', flexShrink: 0, px: 0.5 }}>
-        <IconButton size="small" onClick={onNew} sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}>
-          <AddIcon sx={{ fontSize: '18px' }} />
-        </IconButton>
-        <IconButton size="small" onClick={onOpen} sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}>
-          <FolderOpenIcon sx={{ fontSize: '18px' }} />
-        </IconButton>
-      </Box>
     </Box>
   );
 }

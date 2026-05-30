@@ -201,19 +201,23 @@ function App() {
   return (
     <Box data-file-drop-target="" sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-app)' }}>
 
-      <TitleBar onClose={() => {
-        const hasDirty = tabs.some(t => t.content !== t.savedContent);
-        if (hasDirty && !window.confirm(t('lite.unsavedConfirm'))) return;
-        Terminate();
-      }} />
+      <TitleBar
+        onClose={() => {
+          const hasDirty = tabs.some(t => t.content !== t.savedContent);
+          if (hasDirty && !window.confirm(t('lite.unsavedConfirm'))) return;
+          Terminate();
+        }}
+        onNew={newFile}
+        onOpen={openFile}
+        onSave={saveActiveTab}
+        hasDirty={activeTab ? activeTab.content !== activeTab.savedContent : false}
+      />
 
       <TabBar
         tabs={tabs}
         activeTabId={activeTabId}
         onSelect={setActiveTabId}
         onClose={closeTab}
-        onOpen={openFile}
-        onNew={newFile}
       />
 
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
