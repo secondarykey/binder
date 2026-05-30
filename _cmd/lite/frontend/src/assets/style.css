@@ -37,7 +37,6 @@
   padding: 8px 12px;
   line-height: 1.5em;
   tab-size: 4;
-  white-space: pre-wrap;
   overflow-y: auto;
   background-color: var(--bg-editor, #1e1e1e);
   color: var(--text-primary, #e0e0e0);

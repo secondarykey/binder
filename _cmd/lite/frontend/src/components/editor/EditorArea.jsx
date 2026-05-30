@@ -75,8 +75,8 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
   };
 
   const textareaStyle = wordWrap
-    ? style
-    : { ...style, overflowX: 'auto' };
+    ? { ...style, whiteSpace: 'pre-wrap' }
+    : { ...style, whiteSpace: 'pre', overflowX: 'auto' };
 
   return (
     <div className="editorArea">
