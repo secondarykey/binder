@@ -77,6 +77,9 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
     '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-elevated)' },
   };
 
+  const leftArrowSx = { ...arrowSx, borderRight: '1px solid var(--border-primary)' };
+  const rightArrowSx = { ...arrowSx, borderLeft: '1px solid var(--border-primary)' };
+
   return (
     <Box sx={{
       display: 'flex',
@@ -88,7 +91,7 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
     }}>
       {/* 左スクロールボタン */}
       {canScrollLeft && (
-        <IconButton size="small" onClick={scrollLeft} sx={arrowSx}>
+        <IconButton size="small" onClick={scrollLeft} sx={leftArrowSx}>
           <ChevronLeftIcon sx={{ fontSize: '18px' }} />
         </IconButton>
       )}
@@ -161,7 +164,7 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
 
       {/* 右スクロールボタン */}
       {canScrollRight && (
-        <IconButton size="small" onClick={scrollRight} sx={arrowSx}>
+        <IconButton size="small" onClick={scrollRight} sx={rightArrowSx}>
           <ChevronRightIcon sx={{ fontSize: '18px' }} />
         </IconButton>
       )}
