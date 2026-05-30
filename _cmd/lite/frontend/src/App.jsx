@@ -199,7 +199,7 @@ function App() {
   }, [tabs]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-app)' }}>
+    <Box data-file-drop-target="" sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-app)' }}>
 
       <TitleBar onClose={() => {
         const hasDirty = tabs.some(t => t.content !== t.savedContent);
