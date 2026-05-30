@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFile } from '../bindings/binder/lite/app';
+import { ReadFile, SaveFile, InitialFiles } from '../bindings/binder/lite/app';
 import { OpenFileDialog, NewFile, Terminate } from '../bindings/main/window';
 
 import TabBar from './TabBar';
@@ -172,8 +172,11 @@ function App() {
   // --- 起動時の初期ファイル ---
 
   useEffect(() => {
-    InitialFile().then(path => {
-      if (path) openFilePath(path);
+    InitialFiles().then(paths => {
+      if (!paths || paths.length === 0) return;
+      for (const path of paths) {
+        openFilePath(path);
+      }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

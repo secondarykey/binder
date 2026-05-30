@@ -47,14 +47,18 @@ func main() {
 	version := strings.TrimSpace(ver)
 	app := lite.New(version)
 
-	// 第一引数にファイルが指定されていれば起動時に開く
+	// 引数にファイルが指定されていれば起動時に開く（存在しないパスは無視）
 	if args := flag.Args(); len(args) > 0 {
-		absPath, err := filepath.Abs(args[0])
-		if err == nil {
-			app.SetInitialFile(absPath)
-		} else {
-			app.SetInitialFile(args[0])
+		paths := make([]string, 0, len(args))
+		for _, arg := range args {
+			absPath, err := filepath.Abs(arg)
+			if err == nil {
+				paths = append(paths, absPath)
+			} else {
+				paths = append(paths, arg)
+			}
 		}
+		app.SetInitialFiles(paths)
 	}
 
 	win := NewWindow(app)
