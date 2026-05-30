@@ -363,10 +363,10 @@ function App() {
               ref={splitterRef}
               onMouseDown={previewCollapsed ? undefined : handleSplitterMouseDown}
               sx={{
-                width: previewCollapsed ? '0px' : '6px',
+                width: previewCollapsed ? '0px' : '8px',
                 cursor: previewCollapsed ? 'default' : 'col-resize',
                 backgroundColor: 'var(--border-primary)',
-                '&:hover': previewCollapsed ? {} : { backgroundColor: 'var(--accent-primary)' },
+                '&:hover': previewCollapsed ? {} : { backgroundColor: 'var(--accent-blue)' },
                 flexShrink: 0,
                 position: 'relative',
                 overflow: 'hidden',
