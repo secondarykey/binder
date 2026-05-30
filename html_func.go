@@ -241,7 +241,18 @@ func (w *wrapper) breadcrumb() []*tempNote {
 	return chain
 }
 
-func (w *wrapper) drawSVG(id string) template.HTML {
+func (w *wrapper) drawSVG(v ...any) template.HTML {
+
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		w.addWarning("drawDiagram: missing id argument")
+		return template.HTML(`ERROR: drawDiagram id`)
+	}
+	clazz := Arg[string](v, 1).Default("")
+	classAttr := "binderSVG"
+	if strings.TrimSpace(clazz) != "" {
+		classAttr = classAttr + " " + clazz
+	}
 
 	code := ""
 	if w.Local {
@@ -291,7 +302,7 @@ func (w *wrapper) drawSVG(id string) template.HTML {
 	return template.HTML(fmt.Sprintf(`
 <div class="%s" id="%s">
 %s
-</div>`, "binderSVG", id, code))
+</div>`, classAttr, id, code))
 }
 
 // drawLayer はレイヤーIDから画像 + SVG オーバーレイの合成HTMLを返す。
