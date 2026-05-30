@@ -14,31 +14,40 @@ import { useIframeScrollbarOffset } from './useHasScrollbar';
  */
 function PreviewPane({ text, mermaidMode, onToggleMode }) {
   const [html, setHtml] = useState('');
+  const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
   const timerRef = useRef(null);
 
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
   const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
 
+  // data-theme 属性の変更を監視してプレビューを再描画
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const theme = document.documentElement.dataset.theme || 'dark';
+      setCurrentTheme(theme);
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
-        const themeId = document.documentElement.dataset.theme || 'dark';
         if (mermaidMode) {
           const data = await Mermaid.parse(text || '');
-          const wrapped = wrapHTML(`<div class="binderSVG">${data.svg}</div>`, themeId);
+          const wrapped = wrapHTML(`<div class="binderSVG">${data.svg}</div>`, currentTheme);
           setHtml(wrapped);
         } else {
           const parsed = await Marked.parseWithSourceLines(text || '');
-          const wrapped = wrapHTML(parsed, themeId);
+          const wrapped = wrapHTML(parsed, currentTheme);
           setHtml(wrapped);
         }
       } catch (err) {
         console.error('Parse error:', err);
         if (mermaidMode) {
-          const themeId = document.documentElement.dataset.theme || 'dark';
           const errMsg = String(err.message || err).replace(/</g, '&lt;');
-          const wrapped = wrapHTML(`<pre style="color:#e57373;white-space:pre-wrap">${errMsg}</pre>`, themeId);
+          const wrapped = wrapHTML(`<pre style="color:#e57373;white-space:pre-wrap">${errMsg}</pre>`, currentTheme);
           setHtml(wrapped);
         }
       }
@@ -47,7 +56,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [text, mermaidMode]);
+  }, [text, mermaidMode, currentTheme]);
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
