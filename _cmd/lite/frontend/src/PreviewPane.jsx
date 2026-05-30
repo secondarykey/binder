@@ -78,7 +78,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
             borderRadius: '4px',
             width: 28,
             height: 28,
-            opacity: 0.7,
+            opacity: 0.4,
             '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
           }}
         >

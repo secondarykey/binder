@@ -91,7 +91,7 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
             borderRadius: '4px',
             width: 28,
             height: 28,
-            opacity: 0.7,
+            opacity: 0.4,
             '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
           }}
         >
@@ -115,7 +115,7 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
             borderRadius: '4px',
             width: 28,
             height: 28,
-            opacity: 0.7,
+            opacity: 0.4,
             '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
           }}
         >
