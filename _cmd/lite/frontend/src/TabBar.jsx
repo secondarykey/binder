@@ -128,13 +128,13 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
                 cursor: 'pointer',
                 fontSize: '12px',
                 color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--bg-app)' : 'transparent',
+                backgroundColor: isActive ? 'var(--bg-editor)' : 'transparent',
                 borderRight: '1px solid var(--border-primary)',
                 borderBottom: isActive ? '2px solid var(--accent-primary)' : '2px solid transparent',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
                 maxWidth: '180px',
-                '&:hover': { backgroundColor: isActive ? 'var(--bg-app)' : 'var(--bg-elevated)' },
+                '&:hover': { backgroundColor: isActive ? 'var(--bg-editor)' : 'var(--bg-elevated)' },
               }}
             >
               <span style={{
