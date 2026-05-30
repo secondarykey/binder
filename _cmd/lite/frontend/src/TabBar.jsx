@@ -1,13 +1,39 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+
+const SCROLL_AMOUNT = 150;
 
 /**
  * ファイルタブバー
  * タブ表示 + 未保存マーク + 閉じるボタン
+ * オーバーフロー時は左右スクロールボタンを表示
  */
 function TabBar({ tabs, activeTabId, onSelect, onClose }) {
   const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // スクロール状態を更新
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  // タブ数やウィンドウサイズ変更時にスクロール状態を再計算
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tabs.length, updateScrollState]);
 
   // アクティブタブが変わったら表示範囲にスクロール
   useEffect(() => {
@@ -16,14 +42,39 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
     if (active) {
       active.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     }
-  }, [activeTabId]);
+    // スクロール後に状態を更新
+    requestAnimationFrame(updateScrollState);
+  }, [activeTabId, updateScrollState]);
 
   // ホイールで横スクロール
   const handleWheel = (e) => {
     if (scrollRef.current && e.deltaY !== 0) {
       e.preventDefault();
       scrollRef.current.scrollLeft += e.deltaY;
+      requestAnimationFrame(updateScrollState);
     }
+  };
+
+  const scrollLeft = () => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+    setTimeout(updateScrollState, 200);
+  };
+
+  const scrollRight = () => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+    setTimeout(updateScrollState, 200);
+  };
+
+  const arrowSx = {
+    color: 'var(--text-muted)',
+    width: 24,
+    height: 24,
+    borderRadius: 0,
+    flexShrink: 0,
+    backgroundColor: 'var(--bg-surface)',
+    '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-elevated)' },
   };
 
   return (
@@ -35,18 +86,26 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
       minHeight: '34px',
       flexShrink: 0,
     }}>
+      {/* 左スクロールボタン */}
+      {canScrollLeft && (
+        <IconButton size="small" onClick={scrollLeft} sx={arrowSx}>
+          <ChevronLeftIcon sx={{ fontSize: '18px' }} />
+        </IconButton>
+      )}
+
       {/* タブ一覧（横スクロール） */}
       <Box
         ref={scrollRef}
         onWheel={handleWheel}
+        onScroll={updateScrollState}
         sx={{
           display: 'flex',
           flex: 1,
           minWidth: 0,
           overflowX: 'auto',
           overflowY: 'hidden',
-          '&::-webkit-scrollbar': { height: '2px' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: 'var(--border-primary)', borderRadius: '1px' },
+          scrollbarWidth: 'none',           // Firefox
+          '&::-webkit-scrollbar': { display: 'none' },  // スクロールバー非表示（ボタンで操作）
         }}
       >
         {tabs.map(tab => {
@@ -100,6 +159,12 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
         })}
       </Box>
 
+      {/* 右スクロールボタン */}
+      {canScrollRight && (
+        <IconButton size="small" onClick={scrollRight} sx={arrowSx}>
+          <ChevronRightIcon sx={{ fontSize: '18px' }} />
+        </IconButton>
+      )}
     </Box>
   );
 }
