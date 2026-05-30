@@ -1,0 +1,158 @@
+/* === Binder Lite CSS === */
+
+/* MUI テーマ上書き */
+.MuiSvgIcon-root {
+  color: var(--icon-color);
+}
+
+.MuiFormLabel-root {
+  color: var(--text-primary) !important;
+}
+
+.MuiInputBase-input {
+  color: var(--text-primary) !important;
+}
+
+.MuiOutlinedInput-root {
+  background-color: var(--bg-elevated) !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border-color: var(--border-input) !important;
+}
+
+/* === エディタエリア === */
+
+.editorArea {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.editorArea textarea {
+  flex: 1;
+  resize: none;
+  border: none;
+  outline: none;
+  padding: 8px 12px;
+  line-height: 1.5em;
+  tab-size: 4;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  background-color: var(--bg-editor, #1e1e1e);
+  color: var(--text-primary, #e0e0e0);
+}
+
+.editorLineNumbers {
+  width: 44px;
+  overflow: hidden;
+  text-align: right;
+  padding: 8px 6px 8px 0;
+  line-height: 1.5em;
+  background-color: var(--bg-surface, #252525);
+  color: var(--text-muted, #666);
+  font-size: inherit;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.editorLineNumber {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.editorLineNumber.active {
+  color: var(--text-primary, #e0e0e0);
+  font-weight: bold;
+}
+
+/* === 検索バー === */
+
+.editorSearchFloat {
+  position: absolute;
+  z-index: 100;
+  background-color: var(--bg-elevated, #2d2d2d);
+  border: 1px solid var(--border-primary, #444);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 6px 8px;
+  min-width: 320px;
+  max-width: 500px;
+}
+
+.editorSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorSearchDragHandle {
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.editorSearchDragHandle:active {
+  cursor: grabbing;
+}
+
+.editorSearchResults {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-primary, #444);
+  padding-top: 4px;
+}
+
+.editorSearchResultItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-secondary, #aaa);
+  border-radius: 3px;
+}
+
+.editorSearchResultItem:hover {
+  background-color: var(--bg-overlay, #333);
+}
+
+.editorSearchResultItem.active {
+  background-color: var(--selected-menu, #264f78);
+  color: var(--text-primary, #e0e0e0);
+}
+
+.editorSearchLineNum {
+  min-width: 32px;
+  text-align: right;
+  color: var(--text-muted, #666);
+  flex-shrink: 0;
+}
+
+.editorSearchLineText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorSearchLineText mark {
+  background-color: var(--accent-primary, #e9a320);
+  color: #000;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* === プレビュー iframe === */
+
+.htmlViewer {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
