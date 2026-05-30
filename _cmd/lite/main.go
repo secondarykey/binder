@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"binder/lite"
 	"binder/log"
@@ -72,6 +73,7 @@ func main() {
 		BackgroundColour:       application.NewRGBA(27, 38, 54, 255),
 		URL:                    "/",
 		OpenInspectorOnStartup: debug,
+		EnableFileDrop:         true,
 	})
 
 	// 位置がおかしい場合は中央に設定
@@ -81,6 +83,18 @@ func main() {
 
 	win.runtime = wailsApp
 	win.window = window
+
+	// ファイルドロップ: ドロップされたファイルをフロントエンドに通知
+	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		ctx := event.Context()
+		files := ctx.DroppedFiles()
+		if len(files) == 0 {
+			return
+		}
+		for _, file := range files {
+			wailsApp.Event.Emit("lite:file:dropped", file)
+		}
+	})
 
 	err = wailsApp.Run()
 	if err != nil {

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
+import { Events } from '@wailsio/runtime';
 
 import { ReadFile, SaveFile } from '../bindings/binder/lite/app';
 import { OpenFileDialog, NewFile, Terminate } from '../bindings/main/window';
@@ -29,18 +30,18 @@ function App() {
 
   // --- ファイル操作 ---
 
-  const openFile = useCallback(async () => {
+  // パスを指定してファイルを開く（ダイアログ・ドロップ共通）
+  const openFilePath = useCallback(async (path) => {
+    if (!path) return;
+
+    // 既に開いているファイルならタブをアクティブにするだけ
+    const existing = tabs.find(tab => tab.path === path);
+    if (existing) {
+      setActiveTabId(existing.id);
+      return;
+    }
+
     try {
-      const path = await OpenFileDialog();
-      if (!path) return;
-
-      // 既に開いているファイルならタブをアクティブにするだけ
-      const existing = tabs.find(tab => tab.path === path);
-      if (existing) {
-        setActiveTabId(existing.id);
-        return;
-      }
-
       const content = await ReadFile(path);
       const filename = path.split(/[/\\]/).pop();
       const id = nextTabId++;
@@ -56,6 +57,11 @@ function App() {
       console.error('Open file error:', err);
     }
   }, [tabs]);
+
+  const openFile = useCallback(async () => {
+    const path = await OpenFileDialog();
+    openFilePath(path);
+  }, [openFilePath]);
 
   const newFile = useCallback(async () => {
     try {
@@ -120,6 +126,16 @@ function App() {
         : tab
     ));
   }, [activeTabId]);
+
+  // --- ファイルドロップ ---
+
+  useEffect(() => {
+    const cancel = Events.On('lite:file:dropped', (event) => {
+      const path = event.data;
+      if (path) openFilePath(path);
+    });
+    return () => cancel();
+  }, [openFilePath]);
 
   // --- キーボードショートカット ---
 
