@@ -5,6 +5,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import HTMLFrame from './components/editor/HTMLFrame';
 import Marked from './components/editor/engines/Marked';
 import Mermaid from './components/editor/engines/Mermaid';
+import { useIframeScrollbarOffset } from './useHasScrollbar';
 
 /**
  * プレビューペイン
@@ -14,6 +15,9 @@ import Mermaid from './components/editor/engines/Mermaid';
 function PreviewPane({ text, mermaidMode, onToggleMode }) {
   const [html, setHtml] = useState('');
   const timerRef = useRef(null);
+
+  // iframe のスクロールバー検出（切り替えボタンの位置調整用）
+  const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -57,7 +61,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
           sx={{
             position: 'absolute',
             top: 6,
-            right: 6,
+            right: toggleBtnRight,
             zIndex: 10,
             color: 'var(--text-muted)',
             backgroundColor: 'var(--bg-elevated)',

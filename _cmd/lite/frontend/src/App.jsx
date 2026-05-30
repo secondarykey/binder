@@ -12,6 +12,7 @@ import EditorPane from './EditorPane';
 import PreviewPane from './PreviewPane';
 import TitleBar from './TitleBar';
 import ConfirmDialog from './ConfirmDialog';
+import { useScrollbarOffset } from './useHasScrollbar';
 
 import './language';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +38,9 @@ function App() {
   const splitterRef = useRef(null);
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+
+  // エディタのスクロールバー検出（展開ボタンの位置調整用）
+  const expandBtnRight = useScrollbarOffset('#editor', 6, activeTab?.content);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
@@ -302,7 +306,7 @@ function App() {
                     sx={{
                       position: 'absolute',
                       top: 6,
-                      right: 6,
+                      right: expandBtnRight,
                       zIndex: 10,
                       color: 'var(--text-muted)',
                       backgroundColor: 'var(--bg-elevated)',
