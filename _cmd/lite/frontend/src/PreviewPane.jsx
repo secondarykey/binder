@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import DescriptionIcon from '@mui/icons-material/Description';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import HTMLFrame from './components/editor/HTMLFrame';
 import Marked from './components/editor/engines/Marked';
 import Mermaid from './components/editor/engines/Mermaid';
+
+import './language';
+import { useTranslation } from 'react-i18next';
 
 const MERMAID_EXTENSIONS = ['.mmd', '.mermaid'];
 
@@ -18,33 +23,45 @@ function isMermaidFile(filename) {
 /**
  * プレビューペイン
  * ファイル種別に応じて Markdown または Mermaid でプレビューする。
+ * 右上の切り替えボタンで手動切替も可能。
  */
 function PreviewPane({ text, filename }) {
+  const { t } = useTranslation();
   const [html, setHtml] = useState('');
+  const [mermaidMode, setMermaidMode] = useState(false);
   const timerRef = useRef(null);
-  const mermaid = isMermaidFile(filename);
+  const prevFilenameRef = useRef(filename);
+
+  // ファイルが切り替わったら拡張子に基づいてモードをリセット
+  useEffect(() => {
+    if (filename !== prevFilenameRef.current) {
+      setMermaidMode(isMermaidFile(filename));
+      prevFilenameRef.current = filename;
+    }
+  }, [filename]);
+
+  // 初回マウント時にも拡張子判定
+  useEffect(() => {
+    setMermaidMode(isMermaidFile(filename));
+  }, []);
 
   useEffect(() => {
-    // デバウンス（300ms）でパース
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
         const themeId = document.documentElement.dataset.theme || 'dark';
-        if (mermaid) {
-          // Mermaid: SVGに変換してラップ
+        if (mermaidMode) {
           const data = await Mermaid.parse(text || '');
           const wrapped = wrapHTML(`<div class="binderSVG">${data.svg}</div>`, themeId);
           setHtml(wrapped);
         } else {
-          // Markdown: marked.js でパース
           const parsed = await Marked.parseWithSourceLines(text || '');
           const wrapped = wrapHTML(parsed, themeId);
           setHtml(wrapped);
         }
       } catch (err) {
         console.error('Parse error:', err);
-        // Mermaidパースエラー時はエラーメッセージを表示
-        if (mermaid) {
+        if (mermaidMode) {
           const themeId = document.documentElement.dataset.theme || 'dark';
           const errMsg = String(err.message || err).replace(/</g, '&lt;');
           const wrapped = wrapHTML(`<pre style="color:#e57373;white-space:pre-wrap">${errMsg}</pre>`, themeId);
@@ -56,11 +73,38 @@ function PreviewPane({ text, filename }) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [text, mermaid]);
+  }, [text, mermaidMode]);
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
       <HTMLFrame html={html} />
+
+      {/* 切り替えボタン（右上に重ねて配置） */}
+      <Tooltip title={mermaidMode ? 'Markdown' : 'Mermaid'} placement="left">
+        <IconButton
+          size="small"
+          onClick={() => setMermaidMode(prev => !prev)}
+          sx={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            zIndex: 10,
+            color: 'var(--text-muted)',
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--border-primary)',
+            borderRadius: '4px',
+            width: 28,
+            height: 28,
+            opacity: 0.7,
+            '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
+          }}
+        >
+          {mermaidMode
+            ? <DescriptionIcon sx={{ fontSize: '16px' }} />
+            : <AccountTreeIcon sx={{ fontSize: '16px' }} />
+          }
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }
