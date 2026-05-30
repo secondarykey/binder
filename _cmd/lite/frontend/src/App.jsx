@@ -302,8 +302,6 @@ function App() {
         hasDirty={activeTab ? activeTab.content !== activeTab.savedContent : false}
         themeMode={themeMode}
         onThemeToggle={handleThemeToggle}
-        wordWrap={wordWrap}
-        onWordWrapToggle={() => setWordWrap(prev => !prev)}
       />
 
       <TabBar
@@ -328,6 +326,7 @@ function App() {
                 text={activeTab.content}
                 onChange={updateContent}
                 wordWrap={wordWrap}
+                onWordWrapToggle={() => setWordWrap(prev => !prev)}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (

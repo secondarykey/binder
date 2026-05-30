@@ -1,13 +1,18 @@
-import { useState, useCallback, useRef } from 'react';
-import { Box } from '@mui/material';
+import { useState, useCallback } from 'react';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import WrapTextIcon from '@mui/icons-material/WrapText';
 import EditorArea from './components/editor/EditorArea';
 import SearchBar from './components/editor/SearchBar';
+
+import './language';
+import { useTranslation } from 'react-i18next';
 
 /**
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle }) {
+  const { t } = useTranslation();
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
 
@@ -66,6 +71,30 @@ function EditorPane({ text, onChange, wordWrap }) {
           onChange={handleChange}
         />
       </Box>
+
+      {/* 折り返しトグル（右下） */}
+      <Tooltip title={t(wordWrap ? 'lite.wordWrapOn' : 'lite.wordWrapOff')} placement="top">
+        <IconButton
+          size="small"
+          onClick={onWordWrapToggle}
+          sx={{
+            position: 'absolute',
+            bottom: 6,
+            right: 6,
+            zIndex: 10,
+            color: wordWrap ? 'var(--text-primary)' : 'var(--text-muted)',
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--border-primary)',
+            borderRadius: '4px',
+            width: 28,
+            height: 28,
+            opacity: 0.7,
+            '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
+          }}
+        >
+          <WrapTextIcon sx={{ fontSize: '16px' }} />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }

@@ -8,7 +8,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
-import WrapTextIcon from '@mui/icons-material/WrapText';
 import { Window } from '@wailsio/runtime';
 
 import './language';
@@ -25,7 +24,7 @@ const themeIcons = {
 /**
  * フレームレスウィンドウ用タイトルバー
  */
-function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty, themeMode, onThemeToggle, wordWrap, onWordWrapToggle }) {
+function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty, themeMode, onThemeToggle }) {
   const { t } = useTranslation();
 
   const themeLabelKey = `lite.theme.${themeMode}`;
@@ -62,16 +61,8 @@ function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty, themeMode, onTheme
         </IconButton>
       </Box>
 
-      {/* 右: エディタ設定 + テーマ切り替え + ウィンドウ操作 */}
+      {/* 右: テーマ切り替え + ウィンドウ操作 */}
       <Box sx={{ display: 'flex', '--wails-draggable': 'no-drag' }}>
-        <Tooltip title={t(wordWrap ? 'lite.wordWrapOn' : 'lite.wordWrapOff')} placement="bottom">
-          <IconButton size="small" onClick={onWordWrapToggle} sx={{
-            ...btnSx,
-            color: wordWrap ? 'var(--text-primary)' : 'var(--text-muted)',
-          }}>
-            <WrapTextIcon sx={{ fontSize: '16px' }} />
-          </IconButton>
-        </Tooltip>
         <Tooltip title={t(themeLabelKey)} placement="bottom">
           <IconButton size="small" onClick={onThemeToggle} sx={btnSx}>
             {themeIcons[themeMode]}
