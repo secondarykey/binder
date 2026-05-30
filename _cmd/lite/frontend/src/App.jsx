@@ -291,7 +291,13 @@ function App() {
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {activeTab ? (
           <>
-            <Box sx={{ width: previewCollapsed ? '100%' : `${splitterPos}%`, overflow: 'hidden', position: 'relative' }}>
+            {/* エディタペイン */}
+            <Box sx={{
+              width: previewCollapsed ? '100%' : `${splitterPos}%`,
+              overflow: 'hidden',
+              position: 'relative',
+              transition: dragging ? 'none' : 'width 0.25s ease',
+            }}>
               {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
               <EditorPane
                 text={activeTab.content}
@@ -324,59 +330,65 @@ function App() {
               )}
             </Box>
 
-            {!previewCollapsed && (
-              <>
-                {/* スプリッター */}
-                <Box
-                  ref={splitterRef}
-                  onMouseDown={handleSplitterMouseDown}
-                  sx={{
-                    width: '6px',
-                    cursor: 'col-resize',
-                    backgroundColor: 'var(--border-primary)',
-                    '&:hover': { backgroundColor: 'var(--accent-primary)' },
-                    flexShrink: 0,
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      left: '-4px',
-                      right: '-4px',
-                    },
-                  }}
-                />
+            {/* スプリッター */}
+            <Box
+              ref={splitterRef}
+              onMouseDown={previewCollapsed ? undefined : handleSplitterMouseDown}
+              sx={{
+                width: previewCollapsed ? '0px' : '6px',
+                cursor: previewCollapsed ? 'default' : 'col-resize',
+                backgroundColor: 'var(--border-primary)',
+                '&:hover': previewCollapsed ? {} : { backgroundColor: 'var(--accent-primary)' },
+                flexShrink: 0,
+                position: 'relative',
+                overflow: 'hidden',
+                transition: dragging ? 'none' : 'width 0.25s ease',
+                '&::before': previewCollapsed ? {} : {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: '-4px',
+                  right: '-4px',
+                },
+              }}
+            />
 
-                <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-                  {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
-                  {/* プレビュー折りたたみボタン（左上） */}
-                  <Tooltip title={t('lite.hidePreview')} placement="right">
-                    <IconButton
-                      size="small"
-                      onClick={() => setPreviewCollapsed(true)}
-                      sx={{
-                        position: 'absolute',
-                        top: 6,
-                        left: 6,
-                        zIndex: 10,
-                        color: 'var(--text-muted)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        border: '1px solid var(--border-primary)',
-                        borderRadius: '4px',
-                        width: 28,
-                        height: 28,
-                        opacity: 0.7,
-                        '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
-                      }}
-                    >
-                      <ChevronRightIcon sx={{ fontSize: '18px' }} />
-                    </IconButton>
-                  </Tooltip>
-                  <PreviewPane text={activeTab.content} mermaidMode={activeTab.mermaidMode} onToggleMode={toggleMermaidMode} />
-                </Box>
-              </>
-            )}
+            {/* プレビューペイン */}
+            <Box sx={{
+              width: previewCollapsed ? '0%' : `${100 - splitterPos}%`,
+              overflow: 'hidden',
+              position: 'relative',
+              transition: dragging ? 'none' : 'width 0.25s ease',
+            }}>
+              {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
+              {/* プレビュー折りたたみボタン（左上） */}
+              {!previewCollapsed && (
+                <Tooltip title={t('lite.hidePreview')} placement="right">
+                  <IconButton
+                    size="small"
+                    onClick={() => setPreviewCollapsed(true)}
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      zIndex: 10,
+                      color: 'var(--text-muted)',
+                      backgroundColor: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-primary)',
+                      borderRadius: '4px',
+                      width: 28,
+                      height: 28,
+                      opacity: 0.7,
+                      '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
+                    }}
+                  >
+                    <ChevronRightIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <PreviewPane text={activeTab.content} mermaidMode={activeTab.mermaidMode} onToggleMode={toggleMermaidMode} />
+            </Box>
           </>
         ) : (
           <Box sx={{
