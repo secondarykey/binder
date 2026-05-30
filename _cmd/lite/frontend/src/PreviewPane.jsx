@@ -32,7 +32,7 @@ function PreviewPane({ text }) {
   }, [text]);
 
   return (
-    <Box sx={{ height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
       <HTMLFrame html={html} />
     </Box>
   );
