@@ -161,6 +161,8 @@ function App() {
 
   // --- スプリッター ---
 
+  const [dragging, setDragging] = useState(false);
+
   const handleSplitterMouseDown = useCallback((e) => {
     e.preventDefault();
     const startX = e.clientX;
@@ -169,6 +171,8 @@ function App() {
     if (!container) return;
     const containerWidth = container.getBoundingClientRect().width;
 
+    setDragging(true);
+
     const handleMouseMove = (e) => {
       const dx = e.clientX - startX;
       const newPos = startPos + (dx / containerWidth) * 100;
@@ -176,6 +180,7 @@ function App() {
     };
 
     const handleMouseUp = () => {
+      setDragging(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -223,7 +228,8 @@ function App() {
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {activeTab ? (
           <>
-            <Box sx={{ width: `${splitterPos}%`, overflow: 'hidden' }}>
+            <Box sx={{ width: `${splitterPos}%`, overflow: 'hidden', position: 'relative' }}>
+              {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
               <EditorPane
                 text={activeTab.content}
                 onChange={updateContent}
@@ -235,15 +241,27 @@ function App() {
               ref={splitterRef}
               onMouseDown={handleSplitterMouseDown}
               sx={{
-                width: '4px',
+                width: '6px',
                 cursor: 'col-resize',
                 backgroundColor: 'var(--border-primary)',
-                '&:hover': { backgroundColor: 'var(--border-strong)' },
+                '&:hover': { backgroundColor: 'var(--accent-primary)' },
                 flexShrink: 0,
+                position: 'relative',
+                // ドラッグ判定を広げる透明な領域
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: '-4px',
+                  right: '-4px',
+                },
               }}
             />
 
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              {/* ドラッグ中はiframeの上にオーバーレイを被せてマウスイベントの吸収を防ぐ */}
+              {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
               <PreviewPane text={activeTab.content} filename={activeTab.filename} />
             </Box>
           </>
