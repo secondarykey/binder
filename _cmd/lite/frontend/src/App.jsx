@@ -366,11 +366,11 @@ function App() {
                 width: previewCollapsed ? '0px' : '8px',
                 cursor: previewCollapsed ? 'default' : 'col-resize',
                 backgroundColor: 'var(--border-primary)',
+                transition: dragging ? 'none' : 'width 0.25s ease, background-color 0.2s ease',
                 '&:hover': previewCollapsed ? {} : { backgroundColor: 'var(--accent-blue)' },
                 flexShrink: 0,
                 position: 'relative',
                 overflow: 'hidden',
-                transition: dragging ? 'none' : 'width 0.25s ease',
                 '&::before': previewCollapsed ? {} : {
                   content: '""',
                   position: 'absolute',
