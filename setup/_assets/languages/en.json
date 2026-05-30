@@ -538,6 +538,8 @@
         "openFileHint" : "Press Ctrl+O to open a file, or Ctrl+N to create a new file",
         "unsavedConfirm" : "There are unsaved changes. Discard them?",
         "confirmTitle" : "Confirm",
-        "discard" : "Discard"
+        "discard" : "Discard",
+        "showPreview" : "Show Preview",
+        "hidePreview" : "Hide Preview"
     }
 }

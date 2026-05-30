@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Box } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
 import { ReadFile, SaveFile, InitialFiles } from '../bindings/binder/lite/app';
@@ -34,6 +36,7 @@ function App() {
   const [activeTabId, setActiveTabId] = useState(null);
   const splitterRef = useRef(null);
   const [splitterPos, setSplitterPos] = useState(50); // パーセント
+  const [previewCollapsed, setPreviewCollapsed] = useState(false);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
@@ -284,42 +287,92 @@ function App() {
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {activeTab ? (
           <>
-            <Box sx={{ width: `${splitterPos}%`, overflow: 'hidden', position: 'relative' }}>
+            <Box sx={{ width: previewCollapsed ? '100%' : `${splitterPos}%`, overflow: 'hidden', position: 'relative' }}>
               {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
               <EditorPane
                 text={activeTab.content}
                 onChange={updateContent}
               />
+              {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
+              {previewCollapsed && (
+                <Tooltip title={t('lite.showPreview')} placement="left">
+                  <IconButton
+                    size="small"
+                    onClick={() => setPreviewCollapsed(false)}
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      zIndex: 10,
+                      color: 'var(--text-muted)',
+                      backgroundColor: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-primary)',
+                      borderRadius: '4px',
+                      width: 28,
+                      height: 28,
+                      opacity: 0.7,
+                      '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
+                    }}
+                  >
+                    <ChevronLeftIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
 
-            {/* スプリッター */}
-            <Box
-              ref={splitterRef}
-              onMouseDown={handleSplitterMouseDown}
-              sx={{
-                width: '6px',
-                cursor: 'col-resize',
-                backgroundColor: 'var(--border-primary)',
-                '&:hover': { backgroundColor: 'var(--accent-primary)' },
-                flexShrink: 0,
-                position: 'relative',
-                // ドラッグ判定を広げる透明な領域
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  left: '-4px',
-                  right: '-4px',
-                },
-              }}
-            />
+            {!previewCollapsed && (
+              <>
+                {/* スプリッター */}
+                <Box
+                  ref={splitterRef}
+                  onMouseDown={handleSplitterMouseDown}
+                  sx={{
+                    width: '6px',
+                    cursor: 'col-resize',
+                    backgroundColor: 'var(--border-primary)',
+                    '&:hover': { backgroundColor: 'var(--accent-primary)' },
+                    flexShrink: 0,
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      bottom: 0,
+                      left: '-4px',
+                      right: '-4px',
+                    },
+                  }}
+                />
 
-            <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-              {/* ドラッグ中はiframeの上にオーバーレイを被せてマウスイベントの吸収を防ぐ */}
-              {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
-              <PreviewPane text={activeTab.content} mermaidMode={activeTab.mermaidMode} onToggleMode={toggleMermaidMode} />
-            </Box>
+                <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+                  {dragging && <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, cursor: 'col-resize' }} />}
+                  {/* プレビュー折りたたみボタン（左上） */}
+                  <Tooltip title={t('lite.hidePreview')} placement="right">
+                    <IconButton
+                      size="small"
+                      onClick={() => setPreviewCollapsed(true)}
+                      sx={{
+                        position: 'absolute',
+                        top: 6,
+                        left: 6,
+                        zIndex: 10,
+                        color: 'var(--text-muted)',
+                        backgroundColor: 'var(--bg-elevated)',
+                        border: '1px solid var(--border-primary)',
+                        borderRadius: '4px',
+                        width: 28,
+                        height: 28,
+                        opacity: 0.7,
+                        '&:hover': { opacity: 1, backgroundColor: 'var(--bg-overlay)' },
+                      }}
+                    >
+                      <ChevronRightIcon sx={{ fontSize: '18px' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <PreviewPane text={activeTab.content} mermaidMode={activeTab.mermaidMode} onToggleMode={toggleMermaidMode} />
+                </Box>
+              </>
+            )}
           </>
         ) : (
           <Box sx={{
