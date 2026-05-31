@@ -6,6 +6,7 @@ import (
 	"binder/settings"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -42,7 +43,8 @@ func (w *Window) OpenFileDialog() (string, error) {
 }
 
 // SaveFileDialog は保存先ファイル選択ダイアログを表示する（名前を付けて保存）。
-func (w *Window) SaveFileDialog(defaultName string) (string, error) {
+// defaultPath が指定されていればそのディレクトリとファイル名をデフォルトにする。
+func (w *Window) SaveFileDialog(defaultPath string) (string, error) {
 	defer log.PrintTrace(log.Func("SaveFileDialog()"))
 
 	dialog := w.runtime.Dialog.SaveFile().
@@ -50,8 +52,11 @@ func (w *Window) SaveFileDialog(defaultName string) (string, error) {
 		AddFilter("Markdown Files", "*.md;*.markdown").
 		AddFilter("All Files", "*.*")
 
-	if defaultName != "" {
-		dialog.SetFilename(defaultName)
+	if defaultPath != "" {
+		dir := filepath.Dir(defaultPath)
+		name := filepath.Base(defaultPath)
+		dialog.SetDirectory(dir)
+		dialog.SetFilename(name)
 	}
 
 	result, err := dialog.PromptForSingleSelection()

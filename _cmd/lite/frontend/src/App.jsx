@@ -181,13 +181,11 @@ function App() {
   const saveAsActiveTab = useCallback(async () => {
     if (!activeTab) return;
 
-    const defaultName = activeTab.path
-      ? activeTab.path.split(/[/\\]/).pop()
-      : 'untitled.md';
+    const defaultPath = activeTab.path || 'untitled.md';
 
     let savePath;
     try {
-      savePath = await SaveFileDialog(defaultName);
+      savePath = await SaveFileDialog(defaultPath);
     } catch (err) {
       console.error('SaveFileDialog error:', err);
       return;
