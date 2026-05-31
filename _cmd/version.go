@@ -14,9 +14,11 @@ const (
 	versionFile     = "./_cmd/binder/version"
 	liteVersionFile = "./_cmd/lite/version"
 	configYml       = "./_cmd/binder/build/config.yml"
+	liteConfigYml   = "./_cmd/lite/build/config.yml"
 	configRg        = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
 	configFmt       = `  version: "%v"`
 	packJsn         = "./_cmd/binder/frontend/package.json"
+	litePackJsn     = "./_cmd/lite/frontend/package.json"
 	packRg          = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
 	packFmt         = `  "version": "%v",`
 )
@@ -218,6 +220,8 @@ func write(v *ver) error {
 	ops := []*op{
 		{configYml, "", v, []*rgSet{{configRg, configFmt, nil}}},
 		{packJsn, "", v, []*rgSet{{packRg, packFmt, nil}}},
+		{liteConfigYml, "", v, []*rgSet{{configRg, configFmt, nil}}},
+		{litePackJsn, "", v, []*rgSet{{packRg, packFmt, nil}}},
 	}
 
 	for _, o := range ops {

@@ -54,8 +54,10 @@ go run ./_cmd/version.go 0.0.0
 - ./_cmd/binder/build/windows/info.json
 - ./_cmd/binder/build/darwin/Info.plist
 - ./_cmd/binder/frontend/package.json
+- ./_cmd/lite/build/config.yml
+- ./_cmd/lite/frontend/package.json
 
-６つのファイルのバージョンが引数のバージョンに変更されます。
+８つのファイルのバージョンが引数のバージョンに変更されます。
 `_cmd/binder/version` がバージョンの実体で、`main.go` は `//go:embed version` で読み込みます。
 
 ### テスト
