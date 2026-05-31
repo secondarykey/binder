@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
@@ -65,10 +65,10 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
   }, []);
 
   const editorStyle = {
-    fontFamily: 'monospace',
-    fontSize: '14px',
-    color: 'var(--text-primary)',
-    backgroundColor: 'var(--bg-editor)',
+    fontFamily: font?.name || 'monospace',
+    fontSize: (font?.size || 14) + 'px',
+    color: font?.color || 'var(--text-primary)',
+    backgroundColor: font?.backgroundColor || 'var(--bg-editor)',
   };
 
   return (
