@@ -111,6 +111,24 @@ class MermaidScript {
   }
 
   /**
+   * テキストが Mermaid 構文かどうかを判定する。
+   * @param {string} txt
+   * @returns {Promise<boolean>} Mermaid 構文なら true
+   */
+  static async detectType(txt) {
+    if (!txt || !txt.trim()) return false;
+    try {
+      if (!this.isExists()) {
+        await this.init(null, DefaultOpts);
+      }
+      globalThis.mermaid.detectType(txt);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * mermaidでパースしてSVGを生成する
    * @param {string} txt
    * @param {string} [styleTemplateId]

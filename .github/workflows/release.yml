@@ -71,8 +71,18 @@ jobs:
           wails3 version
           wails3 doctor
 
-      - name: Build or Package
+      - name: Build or Package (Binder)
         working-directory: ./_cmd/binder
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            wails3 package
+          else
+            wails3 build
+          fi
+
+      - name: Build or Package (Binder Lite)
+        working-directory: ./_cmd/lite
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "macOS" ]; then
@@ -87,11 +97,17 @@ jobs:
           export GOOS=$(go env GOOS)
           export GOARCH=$(go env GOARCH)
           export ZIP_NAME="binder-${VERSION}_${GOOS}_${GOARCH}.zip"
-          cd ./_cmd/binder/bin
+
+          # 一時ディレクトリに成果物を集約
+          mkdir -p _archive
+          cp -r ./_cmd/binder/bin/* _archive/
+          cp -r ./_cmd/lite/bin/* _archive/
+
+          cd _archive
           if [ "${{ runner.os }}" = "Windows" ]; then
-            7z a ../../../${ZIP_NAME} ./*
+            7z a ../${ZIP_NAME} ./*
           else
-            zip -r ../../../${ZIP_NAME} ./*
+            zip -r ../${ZIP_NAME} ./*
           fi
           echo "ZIP_PATH=${ZIP_NAME}" >> $GITHUB_ENV
 
