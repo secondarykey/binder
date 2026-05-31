@@ -9,7 +9,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"binder/lite"
+	"binder/api/lite"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"

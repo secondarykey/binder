@@ -1,7 +1,7 @@
 package main
 
 import (
-	"binder/lite"
+	"binder/api/lite"
 	"binder/log"
 	"binder/settings"
 	"fmt"

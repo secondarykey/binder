@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import './assets/style.css'
 import App from './App'
 
-import { GetTheme, GetLanguage } from '../bindings/binder/lite/app'
+import { GetTheme, GetLanguage } from '../bindings/binder/api/lite/app'
 import { initTheme } from './theme'
 import { loadLanguage } from './language'
 

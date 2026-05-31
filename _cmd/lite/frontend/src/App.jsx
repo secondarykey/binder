@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, NewFile, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 

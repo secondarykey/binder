@@ -295,8 +295,8 @@ binder-lite file1.md file2.mmd file3.md
 
 ```
 React フロントエンド (MUI, Vite)
-    ↓ Wails v3 バインディング (frontend/bindings/binder/lite/app.js)
-lite/api.go — 薄い Service（ファイルI/O + テーマ/言語）
+    ↓ Wails v3 バインディング (frontend/bindings/binder/api/lite/app.js)
+api/lite/api.go — 薄い Service（ファイルI/O + テーマ/言語）
     ↓
 os.ReadFile / os.WriteFile（標準ライブラリ）
 setup/, settings/（Binder と共有）
@@ -304,7 +304,7 @@ setup/, settings/（Binder と共有）
 
 ### Go バックエンド
 
-- **`lite.App`** (lite/api.go) — Wails v3 Service。`ReadFile`, `SaveFile`（アトミック書き込み）、テーマ・言語は `settings` パッケージに委譲。起動引数ファイルの管理（`SetInitialFiles` / `InitialFiles`）
+- **`lite.App`** (api/lite/api.go) — Wails v3 Service。`ReadFile`, `SaveFile`（アトミック書き込み）、テーマ・言語は `settings` パッケージに委譲。起動引数ファイルの管理（`SetInitialFiles` / `InitialFiles`）
 - **`Window`** (_cmd/lite/window.go) — 第2 Service。ファイルダイアログ（Open/Save）、新規ファイル作成、ウィンドウ操作
 - Binder の `fs/`, `db/`, `api/` には一切依存しない
 
