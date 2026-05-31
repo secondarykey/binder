@@ -12,10 +12,12 @@ const SCROLL_AMOUNT = 150;
  * タブ表示 + 未保存マーク + 閉じるボタン
  * オーバーフロー時は左右スクロールボタンを表示
  */
-function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }) {
+function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder }) {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [dragTabId, setDragTabId] = useState(null);
+  const [dropTargetId, setDropTargetId] = useState(null);
 
   // スクロール状態を更新
   const updateScrollState = useCallback(() => {
@@ -132,10 +134,37 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }) {
         {tabs.map(tab => {
           const isDirty = tab.content !== tab.savedContent;
           const isActive = tab.id === activeTabId;
+          const isDragging = tab.id === dragTabId;
+          const isDropTarget = tab.id === dropTargetId && tab.id !== dragTabId;
           return (
             <Box
               key={tab.id}
               data-active={isActive ? 'true' : undefined}
+              draggable
+              onDragStart={(e) => {
+                setDragTabId(tab.id);
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setDropTargetId(tab.id);
+              }}
+              onDragLeave={() => {
+                setDropTargetId(prev => prev === tab.id ? null : prev);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragTabId != null && dragTabId !== tab.id) {
+                  onReorder(dragTabId, tab.id);
+                }
+                setDragTabId(null);
+                setDropTargetId(null);
+              }}
+              onDragEnd={() => {
+                setDragTabId(null);
+                setDropTargetId(null);
+              }}
               onClick={() => onSelect(tab.id)}
               sx={{
                 display: 'flex',
@@ -149,9 +178,12 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }) {
                 backgroundColor: isActive ? 'var(--bg-editor)' : 'transparent',
                 borderRight: '1px solid var(--border-primary)',
                 borderBottom: isActive ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                borderLeft: isDropTarget ? '2px solid var(--accent-blue)' : '2px solid transparent',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
                 maxWidth: '180px',
+                opacity: isDragging ? 0.4 : 1,
+                transition: 'opacity 0.15s ease',
                 '&:hover': { backgroundColor: isActive ? 'var(--bg-editor)' : 'var(--bg-elevated)' },
               }}
             >
