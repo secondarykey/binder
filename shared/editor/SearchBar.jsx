@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
 import { IconButton, TextField, InputAdornment } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
@@ -262,13 +261,5 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
     </div>
   );
 }
-
-SearchBar.propTypes = {
-  text: PropTypes.string.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onNavigate: PropTypes.func.isRequired,
-  onClearHighlight: PropTypes.func,
-  initialQuery: PropTypes.string,
-};
 
 export default SearchBar;

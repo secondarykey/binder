@@ -1,5 +1,4 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import PropTypes from "prop-types";
 
 /**
  * 行番号ガター + textarea を一体化したエディタエリアコンポーネント
@@ -108,19 +107,5 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     </div>
   );
 }
-
-EditorArea.propTypes = {
-  text: PropTypes.string.isRequired,
-  style: PropTypes.object,
-  showLineNumbers: PropTypes.bool,
-  wordWrap: PropTypes.bool,
-  activeLine: PropTypes.number,
-  onKeyDown: PropTypes.func,
-  onChange: PropTypes.func,
-  onCompositionStart: PropTypes.func,
-  onCompositionEnd: PropTypes.func,
-  onDragOver: PropTypes.func,
-  onDrop: PropTypes.func,
-};
 
 export default EditorArea;
