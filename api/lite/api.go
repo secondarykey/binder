@@ -130,6 +130,11 @@ func (a *App) SaveFont(theme string, f *settings.Font) error {
 	return settings.SaveLiteFont(theme, f)
 }
 
+// GetFontNames はシステムにインストールされたフォント名の一覧を返す。
+func (a *App) GetFontNames() ([]string, error) {
+	return settings.FontNames(), nil
+}
+
 // --- テーマ・言語リソース（共有リソース） ---
 
 // GetThemeList は利用可能なテーマ一覧を返す。
