@@ -319,7 +319,6 @@ function App() {
           }
           Terminate();
         }}
-        onNew={newFile}
         onOpen={openFile}
         onSave={saveActiveTab}
         hasDirty={activeTab ? (activeTab.path ? activeTab.content !== activeTab.savedContent : activeTab.content !== '') : false}
