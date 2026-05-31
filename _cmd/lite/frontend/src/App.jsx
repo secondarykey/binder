@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/api/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, SaveEditorSettings } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
@@ -14,6 +14,7 @@ import EditorPane from './EditorPane';
 import PreviewPane from './PreviewPane';
 import TitleBar from './TitleBar';
 import ConfirmDialog from './ConfirmDialog';
+import SettingDialog from './SettingDialog';
 import { useScrollbarOffset } from './useHasScrollbar';
 
 import './language';
@@ -43,22 +44,39 @@ function App() {
   const [wordWrap, setWordWrap] = useState(true);
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [themeMode, setThemeMode_] = useState('system');
+  const [language, setLanguage_] = useState('en');
+  const [settingOpen, setSettingOpen] = useState(false);
 
-  // 起動時に保存済みのテーマモードを取得
+  // 起動時に保存済みの設定を取得
   useEffect(() => {
     GetTheme().then(saved => {
       const mode = saved || 'system';
       setThemeMode_(mode);
     }).catch(() => {});
+    GetLanguage().then(saved => {
+      if (saved) setLanguage_(saved);
+    }).catch(() => {});
+    GetEditorSettings().then(s => {
+      if (s) {
+        if (s.showLineNumbers !== undefined) setShowLineNumbers(s.showLineNumbers);
+        if (s.wordWrap !== undefined) setWordWrap(s.wordWrap);
+      }
+    }).catch(() => {});
   }, []);
 
-  const handleThemeToggle = useCallback(() => {
-    // 現在適用中のテーマ（data-theme）の逆に切り替える
-    const current = document.documentElement.dataset.theme || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    setThemeMode(next);
-    setThemeMode_(next);
-  }, []);
+  // 設定ダイアログからの変更を反映
+  const handleSettingsChange = useCallback((changes) => {
+    if (changes.themeMode !== undefined) setThemeMode_(changes.themeMode);
+    if (changes.language !== undefined) setLanguage_(changes.language);
+    if (changes.showLineNumbers !== undefined) {
+      setShowLineNumbers(changes.showLineNumbers);
+      SaveEditorSettings(changes.showLineNumbers, wordWrap).catch(() => {});
+    }
+    if (changes.wordWrap !== undefined) {
+      setWordWrap(changes.wordWrap);
+      SaveEditorSettings(showLineNumbers, changes.wordWrap).catch(() => {});
+    }
+  }, [showLineNumbers, wordWrap]);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
@@ -363,8 +381,7 @@ function App() {
         onOpen={openFile}
         onSave={saveAsActiveTab}
         hasActiveTab={!!activeTab}
-        themeMode={themeMode}
-        onThemeToggle={handleThemeToggle}
+        onOpenSettings={() => setSettingOpen(true)}
       />
 
       <TabBar
@@ -391,9 +408,17 @@ function App() {
                 text={activeTab.content}
                 onChange={updateContent}
                 wordWrap={wordWrap}
-                onWordWrapToggle={() => setWordWrap(prev => !prev)}
+                onWordWrapToggle={() => setWordWrap(prev => {
+                  const next = !prev;
+                  SaveEditorSettings(showLineNumbers, next).catch(() => {});
+                  return next;
+                })}
                 showLineNumbers={showLineNumbers}
-                onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
+                onLineNumbersToggle={() => setShowLineNumbers(prev => {
+                  const next = !prev;
+                  SaveEditorSettings(next, wordWrap).catch(() => {});
+                  return next;
+                })}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
@@ -501,6 +526,13 @@ function App() {
         message={confirmState.message}
         onCancel={handleConfirmCancel}
         onConfirm={handleConfirmOk}
+      />
+
+      <SettingDialog
+        open={settingOpen}
+        onClose={() => setSettingOpen(false)}
+        settings={{ themeMode, language, showLineNumbers, wordWrap }}
+        onSettingsChange={handleSettingsChange}
       />
     </Box>
   );

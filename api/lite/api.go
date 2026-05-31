@@ -84,18 +84,53 @@ func (a *App) SaveFile(path, content string) error {
 	return nil
 }
 
-// --- テーマ・言語（settings パッケージに委譲） ---
+// --- lite 固有設定（setting-lite.json） ---
 
 // GetTheme は現在のテーマIDを返す。
 func (a *App) GetTheme() string {
-	s := settings.Get()
-	return s.Look.Theme
+	return settings.GetLite().Theme
 }
 
 // SetTheme はテーマIDを保存する。
 func (a *App) SetTheme(theme string) error {
-	return settings.SaveTheme(theme)
+	return settings.SaveLiteTheme(theme)
 }
+
+// GetLanguage は現在の言語コードを返す。
+func (a *App) GetLanguage() string {
+	return settings.GetLite().Language
+}
+
+// SetLanguage は言語コードを保存する。
+func (a *App) SetLanguage(lang string) error {
+	return settings.SaveLiteLanguage(lang)
+}
+
+// GetEditorSettings は行番号・折り返し設定を返す。
+func (a *App) GetEditorSettings() map[string]bool {
+	s := settings.GetLite()
+	return map[string]bool{
+		"showLineNumbers": s.ShowLineNumbers,
+		"wordWrap":        s.WordWrap,
+	}
+}
+
+// SaveEditorSettings は行番号・折り返し設定を保存する。
+func (a *App) SaveEditorSettings(showLineNumbers, wordWrap bool) error {
+	return settings.SaveLiteEditor(showLineNumbers, wordWrap)
+}
+
+// GetFont は指定テーマのフォント設定を返す。
+func (a *App) GetFont(theme string) *settings.Font {
+	return settings.GetLiteFont(theme)
+}
+
+// SaveFont は指定テーマのフォント設定を保存する。
+func (a *App) SaveFont(theme string, f *settings.Font) error {
+	return settings.SaveLiteFont(theme, f)
+}
+
+// --- テーマ・言語リソース（共有リソース） ---
 
 // GetThemeList は利用可能なテーマ一覧を返す。
 func (a *App) GetThemeList() ([]settings.ThemeInfo, error) {
@@ -105,17 +140,6 @@ func (a *App) GetThemeList() ([]settings.ThemeInfo, error) {
 // GetThemeCSS は指定IDのテーマCSSを返す。
 func (a *App) GetThemeCSS(id string) (string, error) {
 	return settings.ReadThemeCSS(id)
-}
-
-// GetLanguage は現在の言語コードを返す。
-func (a *App) GetLanguage() string {
-	s := settings.Get()
-	return s.Language
-}
-
-// SetLanguage は言語コードを保存する。
-func (a *App) SetLanguage(lang string) error {
-	return settings.SaveLanguage(lang)
 }
 
 // GetLanguageList は利用可能な言語一覧を返す。

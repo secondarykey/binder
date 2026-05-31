@@ -549,6 +549,18 @@
             "system" : "System",
             "light" : "Light",
             "dark" : "Dark"
-        }
+        },
+        "settings" : "Settings",
+        "settingsTitle" : "Settings",
+        "themeLabel" : "Theme",
+        "languageLabel" : "Language",
+        "lineNumbers" : "Line Numbers",
+        "wordWrap" : "Word Wrap",
+        "fontName" : "Font",
+        "fontSize" : "Size",
+        "fontColor" : "Color",
+        "fontBgColor" : "Background",
+        "fontLabel" : "Editor Font",
+        "close" : "Close"
     }
 }

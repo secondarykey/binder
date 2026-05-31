@@ -549,6 +549,18 @@
             "system" : "システム",
             "light" : "ライト",
             "dark" : "ダーク"
-        }
+        },
+        "settings" : "設定",
+        "settingsTitle" : "設定",
+        "themeLabel" : "テーマ",
+        "languageLabel" : "言語",
+        "lineNumbers" : "行番号",
+        "wordWrap" : "折り返し",
+        "fontName" : "フォント",
+        "fontSize" : "サイズ",
+        "fontColor" : "文字色",
+        "fontBgColor" : "背景色",
+        "fontLabel" : "エディタフォント",
+        "close" : "閉じる"
     }
 }

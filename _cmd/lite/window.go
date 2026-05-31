@@ -95,7 +95,7 @@ func (w *Window) SavePosition() error {
 	width, height := w.window.Size()
 	x, y := w.window.Position()
 
-	return settings.SavePosition(&settings.Position{
+	return settings.SaveLitePosition(&settings.Position{
 		Left:   x,
 		Top:    y,
 		Width:  width,
