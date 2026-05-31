@@ -241,6 +241,18 @@ function App() {
     ));
   }, [activeTabId]);
 
+  const reorderTabs = useCallback((dragId, dropId) => {
+    setTabs(prev => {
+      const next = [...prev];
+      const fromIdx = next.findIndex(t => t.id === dragId);
+      const toIdx = next.findIndex(t => t.id === dropId);
+      if (fromIdx === -1 || toIdx === -1) return prev;
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
+  }, []);
+
   const toggleMermaidMode = useCallback(() => {
     setTabs(prev => prev.map(tab =>
       tab.id === activeTabId
@@ -365,6 +377,7 @@ function App() {
         onSelect={setActiveTabId}
         onClose={closeTab}
         onNew={newFile}
+        onReorder={reorderTabs}
       />
 
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
