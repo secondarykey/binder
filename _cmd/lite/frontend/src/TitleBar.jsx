@@ -23,7 +23,7 @@ const themeIcons = {
 /**
  * フレームレスウィンドウ用タイトルバー
  */
-function TitleBar({ onClose, onOpen, onSave, hasDirty, themeMode, onThemeToggle }) {
+function TitleBar({ onClose, onOpen, onSave, hasActiveTab, themeMode, onThemeToggle }) {
   const { t } = useTranslation();
 
   const themeLabelKey = `lite.theme.${themeMode}`;
@@ -52,7 +52,7 @@ function TitleBar({ onClose, onOpen, onSave, hasDirty, themeMode, onThemeToggle 
         <IconButton size="small" onClick={onOpen} sx={btnSx} title="Open (Ctrl+O)">
           <FolderOpenIcon sx={{ fontSize: '16px' }} />
         </IconButton>
-        <IconButton size="small" onClick={onSave} disabled={!hasDirty} sx={{ ...btnSx, '&.Mui-disabled': { color: 'var(--text-disabled)' } }} title="Save (Ctrl+S)">
+        <IconButton size="small" onClick={onSave} disabled={!hasActiveTab} sx={{ ...btnSx, '&.Mui-disabled': { color: 'var(--text-disabled)' } }} title="Save As">
           <SaveIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Box>

@@ -178,6 +178,35 @@ function App() {
     }
   }, [activeTab]);
 
+  const saveAsActiveTab = useCallback(async () => {
+    if (!activeTab) return;
+
+    const defaultName = activeTab.path
+      ? activeTab.path.split(/[/\\]/).pop()
+      : 'untitled.md';
+
+    let savePath;
+    try {
+      savePath = await SaveFileDialog(defaultName);
+    } catch (err) {
+      console.error('SaveFileDialog error:', err);
+      return;
+    }
+    if (!savePath) return;
+
+    try {
+      await SaveFile(savePath, activeTab.content);
+      const filename = savePath.split(/[/\\]/).pop();
+      setTabs(prev => prev.map(tab =>
+        tab.id === activeTab.id
+          ? { ...tab, path: savePath, filename, savedContent: tab.content }
+          : tab
+      ));
+    } catch (err) {
+      console.error('Save error:', err);
+    }
+  }, [activeTab]);
+
   const removeTab = useCallback((tabId) => {
     setTabs(prev => {
       const next = prev.filter(t => t.id !== tabId);
@@ -320,8 +349,8 @@ function App() {
           Terminate();
         }}
         onOpen={openFile}
-        onSave={saveActiveTab}
-        hasDirty={activeTab ? (activeTab.path ? activeTab.content !== activeTab.savedContent : activeTab.content !== '') : false}
+        onSave={saveAsActiveTab}
+        hasActiveTab={!!activeTab}
         themeMode={themeMode}
         onThemeToggle={handleThemeToggle}
       />
