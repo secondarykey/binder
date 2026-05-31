@@ -95,7 +95,7 @@ function Patch({ type: typeProp, currentId: currentIdProp, ...props }) {
             lineViewer.current.scrollTop = viewer.current.scrollTop;
         })
         //エディタのフォント設定を取得
-        GetFont().then((f) => {
+        GetFont(document.documentElement.dataset.theme || 'dark').then((f) => {
             if (f) {
                 if (f.name) setFontName(f.name);
                 if (f.size) setFontSize(f.size);

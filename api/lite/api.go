@@ -127,3 +127,11 @@ func (a *App) GetLanguageList() ([]settings.LanguageInfo, error) {
 func (a *App) GetLanguageData(code string) (string, error) {
 	return settings.ReadLanguageJSON(code)
 }
+
+// --- プレビューテンプレート ---
+
+// GetPreviewHTML はテンプレートと CSS を結合したプレビュー用 HTML を返す。
+// content にはパース済みの HTML ボディを渡す。
+func (a *App) GetPreviewHTML(theme string, content string) (string, error) {
+	return settings.BuildLitePreviewHTML(theme, content)
+}
