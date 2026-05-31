@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
-import EditorArea from './components/editor/EditorArea';
-import SearchBar from './components/editor/SearchBar';
+import EditorArea from '@shared/editor/EditorArea';
+import SearchBar from '@shared/editor/SearchBar';
+import { handleMarkdownKeyDown } from '@shared/editor/markdown-keys';
 import { useScrollbarOffset, useHScrollbarOffset } from './useHasScrollbar';
 
 import './language';
@@ -19,21 +20,36 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
+  const composingRef = useRef(false);
 
   const handleKeyDown = useCallback((e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
       e.preventDefault();
-      // 選択テキストがあれば初期クエリにする
       const textarea = e.target;
       const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
       setSearchInitialQuery(selected || '');
       setShowSearch(true);
+      return;
     }
-  }, []);
+
+    // Markdown入力支援（リスト継続・引用継続等）
+    handleMarkdownKeyDown(e, composingRef, onChange);
+  }, [onChange]);
 
   const handleChange = useCallback((e) => {
     onChange(e.target.value);
   }, [onChange]);
+
+  const handleCompositionStart = useCallback(() => {
+    composingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback(() => {
+    composingRef.current = true;
+    requestAnimationFrame(() => {
+      composingRef.current = false;
+    });
+  }, []);
 
   const handleSearchNavigate = useCallback((start, end) => {
     const textarea = document.querySelector('#editor');
@@ -73,6 +89,8 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
           wordWrap={wordWrap}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
         />
       </Box>
 

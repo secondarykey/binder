@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import HTMLFrame from './components/editor/HTMLFrame';
-import Marked from './components/editor/engines/Marked';
-import Mermaid from './components/editor/engines/Mermaid';
+import HTMLFrame from '@shared/editor/HTMLFrame';
+import Marked from '@shared/editor/engines/Marked';
+import Mermaid from '@shared/editor/engines/Mermaid';
 import { useIframeScrollbarOffset } from './useHasScrollbar';
 
 /**

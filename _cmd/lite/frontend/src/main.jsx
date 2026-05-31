@@ -8,6 +8,14 @@ import { GetTheme, GetLanguage } from '../bindings/binder/lite/app'
 import { initTheme } from './theme'
 import { loadLanguage } from './language'
 
+// 共有エンジンにベンダー URL を設定
+import Marked from '@shared/editor/engines/Marked'
+import Mermaid from '@shared/editor/engines/Mermaid'
+import markedVendorUrl from './assets/vendor/marked.min.js?url'
+import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
+Marked.setVendorUrl(markedVendorUrl)
+Mermaid.setVendorUrl(mermaidVendorUrl)
+
 const container = document.getElementById('root')
 const root = createRoot(container)
 
