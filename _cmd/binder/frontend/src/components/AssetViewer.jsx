@@ -249,7 +249,7 @@ function AssetViewer() {
   }, []);
 
   useEffect(() => {
-    GetFont().then((s) => {
+    GetFont(document.documentElement.dataset.theme || 'dark').then((s) => {
       setEditorStyle({
         fontFamily: s.name,
         fontSize: s.size + 'px',

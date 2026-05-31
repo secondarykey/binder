@@ -1393,7 +1393,7 @@ function Editor(props) {
     setEditorFont(f)
     if ( save ) {
       // フォント設定を保存
-      SaveFont(set).then(() => {
+      SaveFont(document.documentElement.dataset.theme || 'dark', set).then(() => {
         Events.Emit('binder:editor:fontChanged', set);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -1432,7 +1432,7 @@ function Editor(props) {
     const cleanupWindowFocus = Events.On('binder:window:focus', handleWindowFocus);
 
     //設定を取得
-    GetFont().then((s) => {
+    GetFont(document.documentElement.dataset.theme || 'dark').then((s) => {
       if (s) settingFont(s);
     }).catch((err) => {
       evt.showErrorMessage(err);

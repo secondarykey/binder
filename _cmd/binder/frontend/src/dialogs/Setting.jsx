@@ -83,7 +83,7 @@ function Setting({ isModal, ...props }) {
     applyTheme(next);
     SetTheme(next).then(() => {
       // テーマ変更後にそのテーマのフォント設定を取得して全画面に通知
-      GetFont().then((f) => {
+      GetFont(next).then((f) => {
         if (f) Events.Emit('binder:editor:fontChanged', f);
       }).catch(() => {});
     }).catch((err) => {

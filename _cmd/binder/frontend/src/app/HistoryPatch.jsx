@@ -276,7 +276,7 @@ function HistoryPatch({ typ, id }) {
     }, [showDiff]);
 
     useEffect(() => {
-        GetFont().then((f) => {
+        GetFont(document.documentElement.dataset.theme || 'dark').then((f) => {
             if (f) {
                 if (f.name) setFontName(f.name);
                 if (f.size) setFontSize(f.size);
