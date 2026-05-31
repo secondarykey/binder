@@ -13,10 +13,10 @@ import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
-import Marked from "@shared/editor/engines/Marked.jsx";
-import Mermaid from "@shared/editor/engines/Mermaid.jsx";
-import EditorArea from "@shared/editor/EditorArea.jsx";
-import SearchBar from "@shared/editor/SearchBar.jsx";
+import Marked from "./engines/Marked.jsx";
+import Mermaid from "./engines/Mermaid.jsx";
+import EditorArea from "./EditorArea.jsx";
+import SearchBar from "./SearchBar.jsx";
 import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
 
 import Event, { EventContext } from "../../Event.jsx";
@@ -24,7 +24,7 @@ import { ActionButton } from "../../dialogs/components/ActionButton";
 import "../../language";
 import { useTranslation } from 'react-i18next';
 
-import HTMLFrame from "@shared/editor/HTMLFrame.jsx";
+import HTMLFrame from "./HTMLFrame.jsx";
 import '../../assets/Editor.css'
 import { Mode } from "../../app/App.jsx";
 
