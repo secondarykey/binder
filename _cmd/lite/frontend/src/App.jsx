@@ -378,7 +378,7 @@ function App() {
         onReorder={reorderTabs}
       />
 
-      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden', margin: '0px 4px 4px 4px' }}>
         {activeTab ? (
           <>
             {/* エディタペイン */}
