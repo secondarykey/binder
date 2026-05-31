@@ -166,6 +166,7 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder }) {
                 setDropTargetId(null);
               }}
               onClick={() => onSelect(tab.id)}
+              title={tab.path || tab.filename}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
