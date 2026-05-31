@@ -1433,7 +1433,7 @@ function Editor(props) {
 
     //設定を取得
     GetFont().then((s) => {
-      settingFont(s);
+      if (s) settingFont(s);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
