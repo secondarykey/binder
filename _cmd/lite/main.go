@@ -75,7 +75,7 @@ func main() {
 		},
 	})
 
-	set := settings.Get()
+	set := settings.GetLite()
 
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:                  "Binder Lite",

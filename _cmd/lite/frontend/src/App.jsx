@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/api/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme, GetEditorSettings, SaveEditorSettings } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
@@ -44,11 +44,17 @@ function App() {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [themeMode, setThemeMode_] = useState('system');
 
-  // 起動時に保存済みのテーマモードを取得
+  // 起動時に保存済みの設定を取得
   useEffect(() => {
     GetTheme().then(saved => {
       const mode = saved || 'system';
       setThemeMode_(mode);
+    }).catch(() => {});
+    GetEditorSettings().then(s => {
+      if (s) {
+        if (s.showLineNumbers !== undefined) setShowLineNumbers(s.showLineNumbers);
+        if (s.wordWrap !== undefined) setWordWrap(s.wordWrap);
+      }
     }).catch(() => {});
   }, []);
 
@@ -391,9 +397,17 @@ function App() {
                 text={activeTab.content}
                 onChange={updateContent}
                 wordWrap={wordWrap}
-                onWordWrapToggle={() => setWordWrap(prev => !prev)}
+                onWordWrapToggle={() => setWordWrap(prev => {
+                  const next = !prev;
+                  SaveEditorSettings(showLineNumbers, next).catch(() => {});
+                  return next;
+                })}
                 showLineNumbers={showLineNumbers}
-                onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
+                onLineNumbersToggle={() => setShowLineNumbers(prev => {
+                  const next = !prev;
+                  SaveEditorSettings(next, wordWrap).catch(() => {});
+                  return next;
+                })}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
