@@ -6,7 +6,6 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { Window } from '@wailsio/runtime';
 
 import './language';
@@ -15,7 +14,6 @@ import { useTranslation } from 'react-i18next';
 const btnSx = { color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, '&:hover': { color: 'var(--text-primary)' } };
 
 const themeIcons = {
-  system: <SettingsBrightnessIcon sx={{ fontSize: '16px' }} />,
   light:  <LightModeIcon sx={{ fontSize: '16px' }} />,
   dark:   <DarkModeIcon sx={{ fontSize: '16px' }} />,
 };
@@ -26,7 +24,11 @@ const themeIcons = {
 function TitleBar({ onClose, onOpen, onSave, hasActiveTab, themeMode, onThemeToggle }) {
   const { t } = useTranslation();
 
-  const themeLabelKey = `lite.theme.${themeMode}`;
+  // themeMode が "system" の場合は実際の適用テーマを参照
+  const effectiveTheme = (themeMode === 'system')
+    ? (document.documentElement.dataset.theme || 'dark')
+    : themeMode;
+  const themeLabelKey = `lite.theme.${effectiveTheme}`;
 
   return (
     <Box
@@ -61,7 +63,7 @@ function TitleBar({ onClose, onOpen, onSave, hasActiveTab, themeMode, onThemeTog
       <Box sx={{ display: 'flex', '--wails-draggable': 'no-drag' }}>
         <Tooltip title={t(themeLabelKey)} placement="bottom">
           <IconButton size="small" onClick={onThemeToggle} sx={btnSx}>
-            {themeIcons[themeMode]}
+            {themeIcons[effectiveTheme] || themeIcons.dark}
           </IconButton>
         </Tooltip>
         <IconButton size="small" onClick={() => Window.Minimise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>

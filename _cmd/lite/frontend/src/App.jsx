@@ -52,14 +52,12 @@ function App() {
     }).catch(() => {});
   }, []);
 
-  const themeCycle = ['system', 'light', 'dark'];
   const handleThemeToggle = useCallback(() => {
-    setThemeMode_(prev => {
-      const idx = themeCycle.indexOf(prev);
-      const next = themeCycle[(idx + 1) % themeCycle.length];
-      setThemeMode(next);
-      return next;
-    });
+    // 現在適用中のテーマ（data-theme）の逆に切り替える
+    const current = document.documentElement.dataset.theme || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    setThemeMode(next);
+    setThemeMode_(next);
   }, []);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
