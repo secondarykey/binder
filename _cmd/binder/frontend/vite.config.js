@@ -3,20 +3,30 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 const sharedDir = path.resolve(__dirname, '../../../shared')
-const nodeModules = path.resolve(__dirname, 'node_modules')
+
+/**
+ * shared/ ディレクトリ内の bare import（react, @mui 等）を
+ * 本プロジェクトの node_modules で解決するプラグイン
+ */
+function resolveSharedDeps() {
+  const anchor = path.resolve(__dirname, 'src/main.jsx')
+  return {
+    name: 'resolve-shared-deps',
+    async resolveId(source, importer, options) {
+      if (!importer || !importer.replace(/\\/g, '/').includes('/shared/')) return null
+      if (source.startsWith('.') || source.startsWith('/') || source.startsWith('@shared')) return null
+      const resolved = await this.resolve(source, anchor, { ...options, skipSelf: true })
+      return resolved
+    },
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [resolveSharedDeps(), react()],
   resolve: {
     alias: {
       '@shared': sharedDir,
-      // shared/ 内の bare import を本プロジェクトの node_modules で解決
-      '@mui/material': path.resolve(nodeModules, '@mui/material'),
-      '@mui/icons-material': path.resolve(nodeModules, '@mui/icons-material'),
-      'react': path.resolve(nodeModules, 'react'),
-      'react-dom': path.resolve(nodeModules, 'react-dom'),
-      'react-i18next': path.resolve(nodeModules, 'react-i18next'),
     },
   },
   server: {
