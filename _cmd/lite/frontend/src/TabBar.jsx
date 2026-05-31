@@ -160,7 +160,7 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }) {
                 textOverflow: 'ellipsis',
                 minWidth: 0,
               }}>
-                {isDirty ? '● ' : ''}{tab.filename}
+                {isDirty ? '* ' : ''}{tab.filename}
               </span>
               <IconButton
                 size="small"

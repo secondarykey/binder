@@ -2,7 +2,6 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
-import AddIcon from '@mui/icons-material/Add';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -24,7 +23,7 @@ const themeIcons = {
 /**
  * フレームレスウィンドウ用タイトルバー
  */
-function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty, themeMode, onThemeToggle }) {
+function TitleBar({ onClose, onOpen, onSave, hasActiveTab, themeMode, onThemeToggle }) {
   const { t } = useTranslation();
 
   const themeLabelKey = `lite.theme.${themeMode}`;
@@ -50,13 +49,10 @@ function TitleBar({ onClose, onNew, onOpen, onSave, hasDirty, themeMode, onTheme
         <Box sx={{ fontSize: '12px', color: 'var(--text-secondary)', pl: 1, pr: 1, '--wails-draggable': 'drag' }}>
           Binder Lite
         </Box>
-        <IconButton size="small" onClick={onNew} sx={btnSx} title="New (Ctrl+N)">
-          <AddIcon sx={{ fontSize: '16px' }} />
-        </IconButton>
         <IconButton size="small" onClick={onOpen} sx={btnSx} title="Open (Ctrl+O)">
           <FolderOpenIcon sx={{ fontSize: '16px' }} />
         </IconButton>
-        <IconButton size="small" onClick={onSave} disabled={!hasDirty} sx={{ ...btnSx, '&.Mui-disabled': { color: 'var(--text-disabled)' } }} title="Save (Ctrl+S)">
+        <IconButton size="small" onClick={onSave} disabled={!hasActiveTab} sx={{ ...btnSx, '&.Mui-disabled': { color: 'var(--text-disabled)' } }} title="Save As">
           <SaveIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Box>
