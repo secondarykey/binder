@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings } from '../bindings/binder/api/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, GetFont } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
@@ -46,12 +46,24 @@ function App() {
   const [themeMode, setThemeMode_] = useState('system');
   const [language, setLanguage_] = useState('en');
   const [settingOpen, setSettingOpen] = useState(false);
+  const [editorFont, setEditorFont] = useState(null);
+
+  // フォント設定を読み込む
+  const loadFont = useCallback((theme) => {
+    const effectiveTheme = (!theme || theme === 'system')
+      ? (document.documentElement.dataset.theme || 'dark')
+      : theme;
+    GetFont(effectiveTheme).then(f => {
+      if (f) setEditorFont(f);
+    }).catch(() => {});
+  }, []);
 
   // 起動時に保存済みの設定を取得
   useEffect(() => {
     GetTheme().then(saved => {
       const mode = saved || 'system';
       setThemeMode_(mode);
+      loadFont(mode);
     }).catch(() => {});
     GetLanguage().then(saved => {
       if (saved) setLanguage_(saved);
@@ -62,7 +74,7 @@ function App() {
         if (s.wordWrap !== undefined) setWordWrap(s.wordWrap);
       }
     }).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 設定ダイアログの保存時に一括反映
   const handleSettingsSaved = useCallback((saved) => {
@@ -70,7 +82,8 @@ function App() {
     setLanguage_(saved.language);
     setShowLineNumbers(saved.showLineNumbers);
     setWordWrap(saved.wordWrap);
-  }, []);
+    loadFont(saved.themeMode);
+  }, [loadFont]);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
@@ -405,6 +418,7 @@ function App() {
                 onWordWrapToggle={() => setWordWrap(prev => !prev)}
                 showLineNumbers={showLineNumbers}
                 onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
+                font={editorFont}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
