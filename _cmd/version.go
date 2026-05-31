@@ -11,13 +11,14 @@ import (
 )
 
 const (
-	versionFile  = "./_cmd/binder/version"
-	configYml    = "./_cmd/binder/build/config.yml"
-	configRg     = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	configFmt    = `  version: "%v"`
-	packJsn  = "./_cmd/binder/frontend/package.json"
-	packRg   = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
-	packFmt  = `  "version": "%v",`
+	versionFile     = "./_cmd/binder/version"
+	liteVersionFile = "./_cmd/lite/version"
+	configYml       = "./_cmd/binder/build/config.yml"
+	configRg        = `version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	configFmt       = `  version: "%v"`
+	packJsn         = "./_cmd/binder/frontend/package.json"
+	packRg          = `"version":\s*"([0-9]+\.[0-9]+\.[0-9]+)"`
+	packFmt         = `  "version": "%v",`
 )
 
 const inqury = `
@@ -152,6 +153,12 @@ func run(args []string) error {
 		return err
 	}
 	fmt.Println("Write:", versionFile)
+
+	// lite の version ファイルも同期
+	if err := os.WriteFile(liteVersionFile, []byte(rtn.String()), 0644); err != nil {
+		return err
+	}
+	fmt.Println("Write:", liteVersionFile)
 
 	return write(rtn)
 }
