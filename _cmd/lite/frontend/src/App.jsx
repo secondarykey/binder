@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, SaveEditorSettings } from '../bindings/binder/api/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
@@ -64,19 +64,13 @@ function App() {
     }).catch(() => {});
   }, []);
 
-  // 設定ダイアログからの変更を反映
-  const handleSettingsChange = useCallback((changes) => {
-    if (changes.themeMode !== undefined) setThemeMode_(changes.themeMode);
-    if (changes.language !== undefined) setLanguage_(changes.language);
-    if (changes.showLineNumbers !== undefined) {
-      setShowLineNumbers(changes.showLineNumbers);
-      SaveEditorSettings(changes.showLineNumbers, wordWrap).catch(() => {});
-    }
-    if (changes.wordWrap !== undefined) {
-      setWordWrap(changes.wordWrap);
-      SaveEditorSettings(showLineNumbers, changes.wordWrap).catch(() => {});
-    }
-  }, [showLineNumbers, wordWrap]);
+  // 設定ダイアログの保存時に一括反映
+  const handleSettingsSaved = useCallback((saved) => {
+    setThemeMode_(saved.themeMode);
+    setLanguage_(saved.language);
+    setShowLineNumbers(saved.showLineNumbers);
+    setWordWrap(saved.wordWrap);
+  }, []);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
@@ -408,17 +402,9 @@ function App() {
                 text={activeTab.content}
                 onChange={updateContent}
                 wordWrap={wordWrap}
-                onWordWrapToggle={() => setWordWrap(prev => {
-                  const next = !prev;
-                  SaveEditorSettings(showLineNumbers, next).catch(() => {});
-                  return next;
-                })}
+                onWordWrapToggle={() => setWordWrap(prev => !prev)}
                 showLineNumbers={showLineNumbers}
-                onLineNumbersToggle={() => setShowLineNumbers(prev => {
-                  const next = !prev;
-                  SaveEditorSettings(next, wordWrap).catch(() => {});
-                  return next;
-                })}
+                onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
@@ -532,7 +518,7 @@ function App() {
         open={settingOpen}
         onClose={() => setSettingOpen(false)}
         settings={{ themeMode, language, showLineNumbers, wordWrap }}
-        onSettingsChange={handleSettingsChange}
+        onSettingsSaved={handleSettingsSaved}
       />
     </Box>
   );
