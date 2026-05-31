@@ -253,9 +253,13 @@ function App() {
 
   useEffect(() => {
     InitialFiles().then(paths => {
-      if (!paths || paths.length === 0) return;
-      for (const path of paths) {
-        openFilePath(path);
+      if (paths && paths.length > 0) {
+        for (const path of paths) {
+          openFilePath(path);
+        }
+      } else {
+        // 引数なしの場合は Untitled タブを開く
+        newFile();
       }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
