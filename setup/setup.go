@@ -37,6 +37,12 @@ func EnsureExists(ver *Version, devMode bool) error {
 		return xerrors.Errorf("installLanguages() error: %w", err)
 	}
 
+	// ~/.binder/lite/_default/ にデフォルトプレビューテンプレートを配置（存在しなければ）
+	err = installLiteAssets(false)
+	if err != nil {
+		return xerrors.Errorf("installLiteAssets() error: %w", err)
+	}
+
 	// 旧サービス名のキーを新サービス名に移行
 	if err := migrateUserKeyService(); err != nil {
 		return xerrors.Errorf("migrateUserKeyService() error: %w", err)
