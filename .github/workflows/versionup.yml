@@ -64,10 +64,15 @@ jobs:
 
           echo "NEW_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
 
-      - name: Update Build Assets
+      - name: Update Build Assets (Binder)
         run: |
           cd _cmd/binder
           wails3 update build-assets -name "Binder" -binaryname "Binder" -config build/config.yml -dir build
+
+      - name: Update Build Assets (Binder Lite)
+        run: |
+          cd _cmd/lite
+          wails3 update build-assets -name "Binder Lite" -binaryname "binder-lite" -config build/config.yml -dir build
 
       - name: Commit and Pull Request
         run: |

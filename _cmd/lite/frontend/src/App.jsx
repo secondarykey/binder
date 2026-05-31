@@ -7,6 +7,7 @@ import { Events } from '@wailsio/runtime';
 import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, NewFile, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
+import Mermaid from '@shared/editor/engines/Mermaid';
 
 import TabBar from './TabBar';
 import EditorPane from './EditorPane';
@@ -101,6 +102,13 @@ function App() {
     try {
       const content = await ReadFile(path);
       const filename = path.split(/[/\\]/).pop();
+
+      // 拡張子で判定、それ以外は内容から自動検出
+      let mermaidMode = isMermaidFile(filename);
+      if (!mermaidMode && content) {
+        mermaidMode = await Mermaid.detectType(content);
+      }
+
       const id = nextTabId++;
       setTabs(prev => [...prev, {
         id,
@@ -108,7 +116,7 @@ function App() {
         filename,
         content,
         savedContent: content,
-        mermaidMode: isMermaidFile(filename),
+        mermaidMode,
       }]);
       setActiveTabId(id);
     } catch (err) {
