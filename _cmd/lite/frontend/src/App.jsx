@@ -5,7 +5,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
 import { ReadFile, SaveFile, InitialFiles, GetTheme } from '../bindings/binder/api/lite/app';
-import { OpenFileDialog, NewFile, Terminate } from '../bindings/main/window';
+import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
 
@@ -129,36 +129,48 @@ function App() {
     openFilePath(path);
   }, [openFilePath]);
 
-  const newFile = useCallback(async () => {
-    try {
-      const path = await NewFile();
-      if (!path) return;
+  let untitledCount = useRef(0);
 
-      const filename = path.split(/[/\\]/).pop();
-      const id = nextTabId++;
-      setTabs(prev => [...prev, {
-        id,
-        path,
-        filename,
-        content: '',
-        savedContent: '',
-        mermaidMode: isMermaidFile(filename),
-      }]);
-      setActiveTabId(id);
-    } catch (err) {
-      console.error('New file error:', err);
-    }
+  const newFile = useCallback(() => {
+    untitledCount.current++;
+    const name = untitledCount.current === 1 ? 'Untitled' : `Untitled-${untitledCount.current}`;
+    const id = nextTabId++;
+    setTabs(prev => [...prev, {
+      id,
+      path: null,
+      filename: name,
+      content: '',
+      savedContent: '',
+      mermaidMode: false,
+    }]);
+    setActiveTabId(id);
   }, []);
 
   const saveActiveTab = useCallback(async () => {
     if (!activeTab) return;
-    if (activeTab.content === activeTab.savedContent) return;
+
+    let savePath = activeTab.path;
+
+    // パス未設定（新規タブ）なら保存先を選択
+    if (!savePath) {
+      try {
+        savePath = await SaveFileDialog('untitled.md');
+      } catch (err) {
+        console.error('SaveFileDialog error:', err);
+        return;
+      }
+      if (!savePath) return; // キャンセル
+    }
+
+    // 既にパスがある場合は内容が変わっていなければスキップ
+    if (activeTab.path && activeTab.content === activeTab.savedContent) return;
 
     try {
-      await SaveFile(activeTab.path, activeTab.content);
+      await SaveFile(savePath, activeTab.content);
+      const filename = savePath.split(/[/\\]/).pop();
       setTabs(prev => prev.map(tab =>
         tab.id === activeTab.id
-          ? { ...tab, savedContent: tab.content }
+          ? { ...tab, path: savePath, filename, savedContent: tab.content }
           : tab
       ));
     } catch (err) {
@@ -182,7 +194,9 @@ function App() {
     const tab = tabs.find(t => t.id === tabId);
     if (!tab) return;
 
-    if (tab.content !== tab.savedContent) {
+    // 未保存の変更がある場合は確認（新規タブで内容がある場合も含む）
+    const isDirty = tab.path ? tab.content !== tab.savedContent : tab.content !== '';
+    if (isDirty) {
       const ok = await showConfirm(t('lite.unsavedConfirm'));
       if (!ok) return;
     }
@@ -283,7 +297,7 @@ function App() {
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      const hasDirty = tabs.some(t => t.content !== t.savedContent);
+      const hasDirty = tabs.some(t => t.path ? t.content !== t.savedContent : t.content !== '');
       if (hasDirty) {
         e.preventDefault();
         e.returnValue = '';
@@ -298,7 +312,7 @@ function App() {
 
       <TitleBar
         onClose={async () => {
-          const hasDirty = tabs.some(t => t.content !== t.savedContent);
+          const hasDirty = tabs.some(t => t.path ? t.content !== t.savedContent : t.content !== '');
           if (hasDirty) {
             const ok = await showConfirm(t('lite.unsavedConfirm'));
             if (!ok) return;
@@ -308,7 +322,7 @@ function App() {
         onNew={newFile}
         onOpen={openFile}
         onSave={saveActiveTab}
-        hasDirty={activeTab ? activeTab.content !== activeTab.savedContent : false}
+        hasDirty={activeTab ? (activeTab.path ? activeTab.content !== activeTab.savedContent : activeTab.content !== '') : false}
         themeMode={themeMode}
         onThemeToggle={handleThemeToggle}
       />
@@ -318,6 +332,7 @@ function App() {
         activeTabId={activeTabId}
         onSelect={setActiveTabId}
         onClose={closeTab}
+        onNew={newFile}
       />
 
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

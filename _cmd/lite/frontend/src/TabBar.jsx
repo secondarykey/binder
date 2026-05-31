@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
@@ -11,7 +12,7 @@ const SCROLL_AMOUNT = 150;
  * タブ表示 + 未保存マーク + 閉じるボタン
  * オーバーフロー時は左右スクロールボタンを表示
  */
-function TabBar({ tabs, activeTabId, onSelect, onClose }) {
+function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }) {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -89,6 +90,23 @@ function TabBar({ tabs, activeTabId, onSelect, onClose }) {
       minHeight: '34px',
       flexShrink: 0,
     }}>
+      {/* 新規タブボタン（左固定） */}
+      <IconButton
+        size="small"
+        onClick={onNew}
+        sx={{
+          color: 'var(--text-muted)',
+          width: 28,
+          height: 28,
+          borderRadius: 0,
+          flexShrink: 0,
+          borderRight: '1px solid var(--border-primary)',
+          '&:hover': { color: 'var(--text-primary)', backgroundColor: 'var(--bg-elevated)' },
+        }}
+      >
+        <AddIcon sx={{ fontSize: '18px' }} />
+      </IconButton>
+
       {/* 左スクロールボタン */}
       {canScrollLeft && (
         <IconButton size="small" onClick={scrollLeft} sx={leftArrowSx}>
