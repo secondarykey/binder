@@ -250,26 +250,28 @@ func defaultAllowedCDNs() []string {
 func GetFont() *Font {
 	obj := Get()
 	theme := obj.Look.Theme
+	// "system" はテーマ固有のフォント設定を持たないので "dark" にフォールバック
+	if theme != "dark" && theme != "light" {
+		theme = "dark"
+	}
 	tfs := obj.Look.Editor.ThemeFonts
 	for _, tf := range tfs {
 		if tf.Theme == theme {
 			return tf.Font
 		}
 	}
-	// "system" 等でテーマ固有のフォントが未設定の場合はデフォルトを返す
-	return &Font{
-		Name:            "monospace",
-		Color:           "#e0e0e0",
-		BackgroundColor: "#1e1e1e",
-		Size:            14,
-	}
+	return nil
 }
 
 func SaveFont(f *Font) error {
 	obj := Get()
+	theme := obj.Look.Theme
+	if theme != "dark" && theme != "light" {
+		theme = "dark"
+	}
 	tfs := obj.Look.Editor.ThemeFonts
 	for _, tf := range tfs {
-		if tf.Theme == obj.Look.Theme {
+		if tf.Theme == theme {
 			tf.Font = f
 		}
 	}
