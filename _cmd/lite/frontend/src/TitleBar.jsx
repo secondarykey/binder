@@ -67,7 +67,7 @@ function TitleBar({ onClose, onOpen, onSave, hasActiveTab, themeMode, onThemeTog
         <IconButton size="small" onClick={() => Window.Minimise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>
           <MinimizeIcon sx={{ fontSize: '16px' }} />
         </IconButton>
-        <IconButton size="small" onClick={() => Window.Maximise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>
+        <IconButton size="small" onClick={() => Window.ToggleMaximise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>
           <CropSquareIcon sx={{ fontSize: '14px' }} />
         </IconButton>
         <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, '&:hover': { backgroundColor: 'var(--accent-red)', color: '#fff' } }}>
