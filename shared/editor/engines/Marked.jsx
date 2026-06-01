@@ -76,12 +76,15 @@ class MarkedScript {
 
     static applyPlugins(plugins) {
         if (!plugins || plugins.length === 0) return;
+        console.info(`[Binder] Applying ${plugins.length} plugin(s)`);
         for (const plugin of plugins) {
             try {
                 const fn = new Function(plugin.content);
                 const ext = fn();
+                console.info(`[Binder] Plugin "${plugin.name}":`, ext);
                 if (ext && typeof ext === 'object') {
                     marked.marked.use(ext);
+                    console.info(`[Binder] Plugin "${plugin.name}" applied`);
                 }
             } catch (err) {
                 console.warn(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
