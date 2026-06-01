@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"binder/log"
 	"bytes"
 	"io/fs"
 	"path/filepath"
@@ -18,6 +19,7 @@ type PluginInfo struct {
 func (sys *FileSystem) ReadPlugins() ([]PluginInfo, error) {
 
 	if _, err := sys.fs.Stat(PluginDir); err != nil {
+		log.Info("plugins directory not found")
 		return []PluginInfo{}, nil
 	}
 
@@ -43,14 +45,17 @@ func (sys *FileSystem) ReadPlugins() ([]PluginInfo, error) {
 		var buf bytes.Buffer
 		fn := filepath.Join(PluginDir, e.Name())
 		if err := sys.readFile(&buf, fn); err != nil {
+			log.Warn("plugin read error %s: %+v", e.Name(), err)
 			continue
 		}
 		name := strings.TrimSuffix(e.Name(), ".js")
+		log.Info("plugin loaded: %s", name)
 		plugins = append(plugins, PluginInfo{
 			Name:    name,
 			Content: buf.String(),
 		})
 	}
 
+	log.Info("plugins found: %d", len(plugins))
 	return plugins, nil
 }
