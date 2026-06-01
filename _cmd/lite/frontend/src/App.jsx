@@ -533,6 +533,11 @@ function App() {
         onClose={() => setSettingOpen(false)}
         settings={{ themeMode, language, showLineNumbers, wordWrap }}
         onSettingsSaved={handleSettingsSaved}
+        onOpenFiles={(paths) => {
+          for (const p of paths) {
+            openFilePath(p);
+          }
+        }}
       />
     </Box>
   );

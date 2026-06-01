@@ -171,7 +171,51 @@ func SaveLitePosition(pos *Position) error {
 	return s.save()
 }
 
-// --- プレビューテンプレート ---
+// --- プレビューテンプレート（ファイルパス・編集用コピー） ---
+
+// EnsureLitePreviewFiles はユーザーディレクトリにプレビューファイルを配置し、パスを返す。
+// ユーザーディレクトリにファイルがなければ _default/ からコピーする。
+func EnsureLitePreviewFiles(theme string) (cssPath string, tmplPath string, err error) {
+
+	userDir := LiteDirPath()
+	if err := os.MkdirAll(userDir, 0755); err != nil {
+		return "", "", xerrors.Errorf("os.MkdirAll(%s) error: %w", userDir, err)
+	}
+
+	cssName := "preview-" + theme + ".css"
+	tmplName := "template.html"
+
+	cssPath = filepath.Join(userDir, cssName)
+	tmplPath = filepath.Join(userDir, tmplName)
+
+	// CSS: ユーザーファイルがなければ _default/ からコピー
+	if _, e := os.Stat(cssPath); os.IsNotExist(e) {
+		src := filepath.Join(DefaultLiteDirPath(), cssName)
+		data, readErr := os.ReadFile(src)
+		if readErr != nil {
+			return "", "", xerrors.Errorf("os.ReadFile(%s) error: %w", src, readErr)
+		}
+		if writeErr := os.WriteFile(cssPath, data, 0644); writeErr != nil {
+			return "", "", xerrors.Errorf("os.WriteFile(%s) error: %w", cssPath, writeErr)
+		}
+	}
+
+	// テンプレート: ユーザーファイルがなければ _default/ からコピー
+	if _, e := os.Stat(tmplPath); os.IsNotExist(e) {
+		src := filepath.Join(DefaultLiteDirPath(), tmplName)
+		data, readErr := os.ReadFile(src)
+		if readErr != nil {
+			return "", "", xerrors.Errorf("os.ReadFile(%s) error: %w", src, readErr)
+		}
+		if writeErr := os.WriteFile(tmplPath, data, 0644); writeErr != nil {
+			return "", "", xerrors.Errorf("os.WriteFile(%s) error: %w", tmplPath, writeErr)
+		}
+	}
+
+	return cssPath, tmplPath, nil
+}
+
+// ---
 
 // LiteDirPath は ~/.binder/lite のパスを返す。
 func LiteDirPath() string {
