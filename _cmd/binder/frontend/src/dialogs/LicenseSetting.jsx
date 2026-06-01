@@ -2,7 +2,8 @@ import { useEffect, useState, useContext } from "react";
 
 import { Box, Typography } from "@mui/material";
 
-import { GetLicense, GetThirdPartyLicenses, GetVersionInfo } from "../../bindings/binder/api/app";
+import { GetVersionInfo } from "../../bindings/binder/api/app";
+import { GetLicense, GetThirdPartyLicenses } from "../../bindings/binder/api/shared/shared";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import "../language";

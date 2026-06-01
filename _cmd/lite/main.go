@@ -10,6 +10,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"binder/api/lite"
+	"binder/api/shared"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -69,6 +70,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
+			application.NewService(shared.New()),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),

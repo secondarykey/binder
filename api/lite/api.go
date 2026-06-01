@@ -130,32 +130,9 @@ func (a *App) SaveFont(theme string, f *settings.Font) error {
 	return settings.SaveLiteFont(theme, f)
 }
 
-// GetFontNames はシステムにインストールされたフォント名の一覧を返す。
-func (a *App) GetFontNames() ([]string, error) {
-	return settings.FontNames(), nil
-}
-
-// --- テーマ・言語リソース（共有リソース） ---
-
-// GetThemeList は利用可能なテーマ一覧を返す。
-func (a *App) GetThemeList() ([]settings.ThemeInfo, error) {
-	return settings.ListThemes()
-}
-
-// GetThemeCSS は指定IDのテーマCSSを返す。
-func (a *App) GetThemeCSS(id string) (string, error) {
-	return settings.ReadThemeCSS(id)
-}
-
-// GetLanguageList は利用可能な言語一覧を返す。
-func (a *App) GetLanguageList() ([]settings.LanguageInfo, error) {
-	return settings.ListLanguages()
-}
-
-// GetLanguageData は指定コードの言語JSONを返す。
-func (a *App) GetLanguageData(code string) (string, error) {
-	return settings.ReadLanguageJSON(code)
-}
+// 以下のメソッドは api/shared パッケージに移動:
+// GetFontNames, GetThemeList, GetThemeCSS, GetLanguageList, GetLanguageData,
+// GetLicense, GetThirdPartyLicenses
 
 // --- プレビューテンプレート ---
 

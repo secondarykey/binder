@@ -11,6 +11,7 @@ import (
 
 	"binder"
 	"binder/api"
+	"binder/api/shared"
 	"binder/log"
 	"binder/settings"
 )
@@ -67,6 +68,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
+			application.NewService(shared.New()),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
