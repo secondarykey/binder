@@ -4,7 +4,8 @@ import {
   Button, Box, Select, MenuItem, Switch, Typography, Tabs, Tab,
 } from '@mui/material';
 
-import { GetThemeList, GetLanguageList, GetFont, SaveFont, GetFontNames, SetTheme, SetLanguage, SaveEditorSettings, Version, GetLicense, GetThirdPartyLicenses } from '../bindings/binder/api/lite/app';
+import { GetThemeList, GetLanguageList, GetFont, SaveFont, GetFontNames, SetTheme, SetLanguage, SaveEditorSettings, Version, GetLicense, GetThirdPartyLicenses, OpenPreviewFiles } from '../bindings/binder/api/lite/app';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import { setThemeMode } from './theme';
 import { loadLanguage } from './language';
 import FontDialog from '@shared/editor/FontDialog';
@@ -15,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * lite 設定ダイアログ（タブ化：外観 / ライセンス）
  */
-function SettingDialog({ open, onClose, settings, onSettingsSaved }) {
+function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }) {
   const { t } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -84,6 +85,22 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved }) {
     }
     onSettingsSaved({ themeMode: themeValue, language: langValue, showLineNumbers, wordWrap });
     onClose();
+  };
+
+  // プレビューファイルを開く
+  const handleOpenPreviewFiles = async () => {
+    const effectiveTheme = themeValue === 'system'
+      ? (document.documentElement.dataset.theme || 'dark')
+      : themeValue;
+    try {
+      const paths = await OpenPreviewFiles(effectiveTheme);
+      if (paths && onOpenFiles) {
+        onOpenFiles(paths);
+        onClose();
+      }
+    } catch (err) {
+      console.error('OpenPreviewFiles error:', err);
+    }
   };
 
   const labelSx = { fontSize: '12px', color: 'var(--text-secondary)', minWidth: 80 };
@@ -165,6 +182,18 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved }) {
                 <Button size="small" onClick={() => setFontOpen(true)}
                   sx={{ textTransform: 'none', fontSize: '12px', color: 'var(--text-primary)', border: '1px solid var(--border-input)', px: 2, '&:hover': { backgroundColor: 'var(--bg-elevated)' } }}>
                   {font ? `${font.name}, ${font.size}px` : '...'}
+                </Button>
+              </Box>
+
+              {/* プレビュー */}
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', mt: 2, mb: 1 }}>
+                {t('lite.previewLabel')}
+              </Typography>
+              <Box sx={rowSx}>
+                <Typography sx={{ ...labelSx, fontSize: '11px' }}>{t('lite.previewDesc')}</Typography>
+                <Button size="small" onClick={handleOpenPreviewFiles} startIcon={<FolderOpenIcon sx={{ fontSize: '14px' }} />}
+                  sx={{ textTransform: 'none', fontSize: '12px', color: 'var(--text-primary)', border: '1px solid var(--border-input)', px: 2, flexShrink: 0, '&:hover': { backgroundColor: 'var(--bg-elevated)' } }}>
+                  {t('lite.openPreviewFiles')}
                 </Button>
               </Box>
             </Box>

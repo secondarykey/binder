@@ -164,3 +164,13 @@ func (a *App) GetLanguageData(code string) (string, error) {
 func (a *App) GetPreviewHTML(theme string, content string) (string, error) {
 	return settings.BuildLitePreviewHTML(theme, content)
 }
+
+// OpenPreviewFiles はプレビュー CSS とテンプレートのユーザー編集用ファイルパスを返す。
+// ユーザーディレクトリにファイルがなければ _default/ からコピーする。
+func (a *App) OpenPreviewFiles(theme string) ([]string, error) {
+	cssPath, tmplPath, err := settings.EnsureLitePreviewFiles(theme)
+	if err != nil {
+		return nil, err
+	}
+	return []string{cssPath, tmplPath}, nil
+}
