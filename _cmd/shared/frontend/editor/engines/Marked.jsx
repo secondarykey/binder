@@ -79,8 +79,7 @@ class MarkedScript {
         console.info(`[Binder] Applying ${plugins.length} plugin(s)`);
         for (const plugin of plugins) {
             try {
-                const fn = new Function(plugin.content);
-                const ext = fn();
+                const ext = (0, eval)(plugin.content);
                 console.info(`[Binder] Plugin "${plugin.name}":`, ext);
                 if (ext && typeof ext === 'object') {
                     marked.marked.use(ext);
