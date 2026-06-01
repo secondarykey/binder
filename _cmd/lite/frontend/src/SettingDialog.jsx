@@ -117,7 +117,7 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
           style: {
             backgroundColor: 'var(--bg-surface)',
             color: 'var(--text-primary)',
-            minHeight: 420,
+            height: 500,
           },
         }}
       >
