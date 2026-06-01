@@ -10,7 +10,7 @@ import PreviewApp from './app/PreviewApp'
 import SyslogApp from './app/SyslogApp'
 import SearchApp from './app/SearchApp'
 
-import { GetTheme, GetLanguage, GetConfig, GetAllowedCDNs } from '../bindings/binder/api/app'
+import { GetTheme, GetLanguage, GetConfig, GetAllowedCDNs, GetPlugins } from '../bindings/binder/api/app'
 import { applyTheme } from './theme'
 import { loadLanguage } from './language'
 
@@ -41,10 +41,24 @@ Marked.init = async function() {
     } catch (e) {}
   }
   if (cdnUrl) {
-    if (await Marked.tryLoadUrl(cdnUrl)) return
+    if (await Marked.tryLoadUrl(cdnUrl)) {
+      try {
+        const plugins = await GetPlugins()
+        Marked.applyPlugins(plugins)
+      } catch (e) {
+        console.warn("[Binder] Plugin load failed:", e)
+      }
+      return
+    }
     console.warn("CDN URL failed, falling back to vendor")
   }
   await origMarkedInit()
+  try {
+    const plugins = await GetPlugins()
+    Marked.applyPlugins(plugins)
+  } catch (e) {
+    console.warn("[Binder] Plugin load failed:", e)
+  }
 }
 
 const origMermaidInit = Mermaid.init.bind(Mermaid)

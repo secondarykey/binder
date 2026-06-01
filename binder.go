@@ -179,6 +179,13 @@ func Load(dir string) (*Binder, error) {
 	return &b, nil
 }
 
+func (b *Binder) GetPlugins() ([]fs.PluginInfo, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+	return b.fileSystem.ReadPlugins()
+}
+
 func (b *Binder) Close() error {
 
 	if b == nil {

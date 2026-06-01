@@ -74,6 +74,21 @@ class MarkedScript {
         return { success: false };
     }
 
+    static applyPlugins(plugins) {
+        if (!plugins || plugins.length === 0) return;
+        for (const plugin of plugins) {
+            try {
+                const fn = new Function(plugin.content);
+                const ext = fn();
+                if (ext && typeof ext === 'object') {
+                    marked.marked.use(ext);
+                }
+            } catch (err) {
+                console.warn(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
+            }
+        }
+    }
+
     static async parse(txt) {
         return new Promise((res, rej) => {
             var func = function() {

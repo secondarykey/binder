@@ -102,7 +102,37 @@ func installLiteAssets(force bool) error {
 	return nil
 }
 
-// UpdateDefaults はデフォルトテーマ・言語・lite テンプレートを強制的に最新に上書きする。
+// installPlugins はデフォルトプラグインテンプレートを ~/.binder/plugins/_default/ に配置する。
+func installPlugins(force bool) error {
+
+	dir := settings.DefaultPluginsDirPath()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
+	}
+
+	files := []string{"example.js"}
+	for _, name := range files {
+		p := filepath.Join(dir, name)
+		if !force {
+			if _, err := os.Stat(p); err == nil {
+				continue
+			}
+		}
+
+		data, err := embFs.ReadFile("_assets/plugins/" + name)
+		if err != nil {
+			return xerrors.Errorf("embFs.ReadFile(%s) error: %w", name, err)
+		}
+
+		if err := os.WriteFile(p, data, 0644); err != nil {
+			return xerrors.Errorf("os.WriteFile(%s) error: %w", p, err)
+		}
+	}
+
+	return nil
+}
+
+// UpdateDefaults はデフォルトテーマ・言語・lite テンプレート・プラグインテンプレートを強制的に最新に上書きする。
 // 開発モード起動時およびマイグレーション実行時に呼ばれる。
 func UpdateDefaults() error {
 	if err := installThemes(true); err != nil {
@@ -113,6 +143,9 @@ func UpdateDefaults() error {
 	}
 	if err := installLiteAssets(true); err != nil {
 		return xerrors.Errorf("installLiteAssets(force) error: %w", err)
+	}
+	if err := installPlugins(true); err != nil {
+		return xerrors.Errorf("installPlugins(force) error: %w", err)
 	}
 	return nil
 }

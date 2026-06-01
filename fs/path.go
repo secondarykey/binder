@@ -221,6 +221,8 @@ func templateFile(id string) string {
 	return filepath.Join(TemplateDir, fmt.Sprintf("%s.tmpl", id))
 }
 
+const PluginDir = "plugins"
+
 const DBDir = "db"
 
 func (f *FileSystem) DatabaseDir() string {
