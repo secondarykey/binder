@@ -10,7 +10,7 @@ import { Window } from '@wailsio/runtime';
 import './language';
 import { useTranslation } from 'react-i18next';
 
-const btnSx = { color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, '&:hover': { color: 'var(--text-primary)' } };
+const btnSx = { color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, opacity: 0.6, '&:hover': { opacity: 1, color: 'var(--text-primary)' } };
 
 /**
  * フレームレスウィンドウ用タイトルバー
@@ -54,13 +54,13 @@ function TitleBar({ onClose, onOpen, onSave, hasActiveTab, onOpenSettings }) {
             <SettingsIcon sx={{ fontSize: '16px' }} />
           </IconButton>
         </Tooltip>
-        <IconButton size="small" onClick={() => Window.Minimise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>
+        <IconButton size="small" onClick={() => Window.Minimise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, opacity: 0.6, '&:hover': { opacity: 1 } }}>
           <MinimizeIcon sx={{ fontSize: '16px' }} />
         </IconButton>
-        <IconButton size="small" onClick={() => Window.ToggleMaximise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32 }}>
+        <IconButton size="small" onClick={() => Window.ToggleMaximise()} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, opacity: 0.6, '&:hover': { opacity: 1 } }}>
           <CropSquareIcon sx={{ fontSize: '14px' }} />
         </IconButton>
-        <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, '&:hover': { backgroundColor: 'var(--accent-red)', color: '#fff' } }}>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)', borderRadius: 0, width: 32, height: 32, opacity: 0.6, '&:hover': { opacity: 1, backgroundColor: 'var(--accent-red)', color: '#fff' } }}>
           <CloseIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Box>
