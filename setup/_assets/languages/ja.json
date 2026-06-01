@@ -561,6 +561,10 @@
         "fontColor" : "文字色",
         "fontBgColor" : "背景色",
         "fontLabel" : "エディタフォント",
-        "close" : "閉じる"
+        "close" : "閉じる",
+        "tabAppearance" : "外観",
+        "tabLicense" : "ライセンス",
+        "license" : "ライセンス",
+        "thirdPartyLicense" : "サードパーティライセンス"
     }
 }

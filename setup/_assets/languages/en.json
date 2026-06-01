@@ -561,6 +561,10 @@
         "fontColor" : "Color",
         "fontBgColor" : "Background",
         "fontLabel" : "Editor Font",
-        "close" : "Close"
+        "close" : "Close",
+        "tabAppearance" : "Appearance",
+        "tabLicense" : "License",
+        "license" : "License",
+        "thirdPartyLicense" : "Third Party Licenses"
     }
 }
