@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
@@ -6,6 +6,7 @@ import EditorArea from '@shared/editor/EditorArea';
 import SearchBar from '@shared/editor/SearchBar';
 import { handleMarkdownKeyDown } from '@shared/editor/markdown-keys';
 import { useScrollbarOffset, useHScrollbarOffset } from './useHasScrollbar';
+import { Events } from '@wailsio/runtime';
 
 import './language';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,28 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
   const composingRef = useRef(false);
+  const hiddenFocusRef = useRef(null);
+
+  // ウィンドウフォーカス時の IME リセット
+  // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
+  // 一度 hidden input に移してから textarea に戻す
+  useEffect(() => {
+    const cancel = Events.On('lite:window:focus', () => {
+      if (composingRef.current) return;
+      const textarea = document.querySelector('#editor');
+      if (!textarea || !hiddenFocusRef.current) return;
+      const active = document.activeElement;
+      if (active && active !== textarea && active !== document.body && active !== hiddenFocusRef.current) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      hiddenFocusRef.current.focus();
+      requestAnimationFrame(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start, end);
+      });
+    });
+    return () => cancel();
+  }, []);
 
   const handleKeyDown = useCallback((e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -73,6 +96,15 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
 
   return (
     <Box id="editorContent" sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* IME リセット用 hidden input */}
+      <input
+        ref={hiddenFocusRef}
+        type="text"
+        tabIndex={-1}
+        aria-hidden="true"
+        style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+        readOnly
+      />
       {showSearch && (
         <SearchBar
           text={text}

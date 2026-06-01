@@ -102,6 +102,12 @@ func main() {
 	win.runtime = wailsApp
 	win.window = window
 
+	// ウィンドウフォーカス: IME リセット用イベントをフロントエンドに通知
+	// events.Common.WindowFocus は Windows 実装では emit されないため WindowSetFocus を使う
+	window.OnWindowEvent(events.Windows.WindowSetFocus, func(event *application.WindowEvent) {
+		wailsApp.Event.Emit("lite:window:focus")
+	})
+
 	// ファイルドロップ: ドロップされたファイルをフロントエンドに通知
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
 		ctx := event.Context()
