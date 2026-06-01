@@ -2,10 +2,10 @@
 set -e
 
 # Build configuration
-APP_NAME=""
-BUNDLE_ID=""
-VERSION="0.1.0"
-BUILD_NUMBER="0.1.0"
+APP_NAME="binder-lite"
+BUNDLE_ID="com.github.secondarykey.binder-lite"
+VERSION="0.11.0"
+BUILD_NUMBER="0.11.0"
 BUILD_DIR="build/ios"
 TARGET="simulator"
 
