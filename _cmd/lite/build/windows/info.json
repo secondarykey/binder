@@ -5,11 +5,11 @@
 	"info": {
 		"0000": {
 			"ProductVersion": "0.1.0",
-			"CompanyName": "My Company",
-			"FileDescription": "My Product Description",
-			"LegalCopyright": "© now, My Company",
-			"ProductName": "My Product",
-			"Comments": "This is a comment"
+			"CompanyName": "secondarykey",
+			"FileDescription": "A lightweight Markdown editor with preview",
+			"LegalCopyright": "(c)2026, secondarykey",
+			"ProductName": "Binder Lite",
+			"Comments": "Binder Lite - Lightweight Markdown Editor"
 		}
 	}
 }
