@@ -1,10 +1,15 @@
 <!DOCTYPE html>
+<!-- The dark/light mode switching is changed in the preview iframe. -->
 <html>
-<head>
-<meta charset="utf-8">
-<style>
-{{style}}
-</style>
-</head>
-<body>{{content}}</body>
+  <head>
+    <meta charset="utf-8">
+    <!-- The contents of the opened CSS will be embedded. -->
+    <style>
+    {{style}}
+    </style>
+  </head>
+  <!-- The file contents will be processed and displayed as Markdown (marked, mermaid). -->
+  <body>
+    {{content}}
+  </body>
 </html>
