@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"binder/api/json"
 	"binder/fs"
+	"encoding/base64"
 	"io"
 	"os"
 	"path/filepath"
@@ -189,12 +190,17 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 	w := zip.NewWriter(outFile)
 	defer w.Close()
 
+	// SVGをData URIとしてHTMLに埋め込む
+	htmlStr := string(html)
+	htmlStr = b.embedDiagramDataURIs(htmlStr, d, diagramSVGs)
+	htmlStr = b.embedLayerDataURIs(htmlStr, d)
+
 	// index.html
 	f, err := w.Create("index.html")
 	if err != nil {
 		return xerrors.Errorf("zip create index.html error: %w", err)
 	}
-	if _, err := f.Write(html); err != nil {
+	if _, err := f.Write([]byte(htmlStr)); err != nil {
 		return xerrors.Errorf("zip write index.html error: %w", err)
 	}
 
@@ -215,12 +221,25 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 		af.Write(data)
 	}
 
-	// diagrams
+	// meta image
+	metaData, err := b.ReadMetaBytes(note.Id)
+	if err == nil && metaData != nil && note.Alias != "" {
+		zipPath := "images/meta/" + note.Alias
+		mf, err := w.Create(zipPath)
+		if err == nil {
+			mf.Write(metaData)
+		}
+	}
+
+	return nil
+}
+
+// embedDiagramDataURIs はHTML内のダイアグラムSVGパス参照をData URIに置換する。
+func (b *Binder) embedDiagramDataURIs(html string, d *exportDeps, diagramSVGs map[string]string) string {
 	for id, diag := range d.diagrams {
 		if diag.Alias == "" {
 			continue
 		}
-		zipPath := "images/" + diag.Alias + ".svg"
 
 		var svgData []byte
 		if data, ok := diagramSVGs[id]; ok && data != "" {
@@ -238,14 +257,15 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 			}
 		}
 
-		df, err := w.Create(zipPath)
-		if err != nil {
-			continue
-		}
-		df.Write(svgData)
+		oldSrc := "./images/" + diag.Alias + ".svg"
+		dataURI := "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(svgData)
+		html = strings.ReplaceAll(html, oldSrc, dataURI)
 	}
+	return html
+}
 
-	// layers
+// embedLayerDataURIs はHTML内のレイヤーSVGパス参照をData URIに置換する。
+func (b *Binder) embedLayerDataURIs(html string, d *exportDeps) string {
 	for id, l := range d.layers {
 		if l.Alias == "" {
 			continue
@@ -254,25 +274,12 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 		if err != nil {
 			continue
 		}
-		zipPath := "layers/" + l.Alias + ".svg"
-		lf, err := w.Create(zipPath)
-		if err != nil {
-			continue
-		}
-		lf.Write([]byte(svg))
-	}
 
-	// meta image
-	metaData, err := b.ReadMetaBytes(note.Id)
-	if err == nil && metaData != nil && note.Alias != "" {
-		zipPath := "images/meta/" + note.Alias
-		mf, err := w.Create(zipPath)
-		if err == nil {
-			mf.Write(metaData)
-		}
+		oldSrc := "./layers/" + l.Alias + ".svg"
+		dataURI := "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(svg))
+		html = strings.ReplaceAll(html, oldSrc, dataURI)
 	}
-
-	return nil
+	return html
 }
 
 // GetBinderName はバインダー名を返す（ダウンロードファイル名生成用）

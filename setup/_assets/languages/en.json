@@ -384,7 +384,8 @@
         "restoreTitle" : "Restore file?",
         "restoreWarning" : "The current file has unrecorded changes. Restoring will discard those changes.",
         "restore" : "Restore",
-        "loadMore" : "Load more"
+        "loadMore" : "Load more",
+        "tabPreview" : "Preview"
     },
     "overallHistory" : {
         "title" : "Overall History",
@@ -532,5 +533,41 @@
         "publishDate" : "Publish Date",
         "republishDate" : "Republish Date",
         "resetNow" : "Reset to Now"
+    },
+    "lite" : {
+        "openFileHint" : "Press Ctrl+O to open a file, or Ctrl+N to create a new file",
+        "unsavedConfirm" : "There are unsaved changes. Discard them?",
+        "confirmTitle" : "Confirm",
+        "discard" : "Discard",
+        "showPreview" : "Show Preview",
+        "hidePreview" : "Hide Preview",
+        "wordWrapOn" : "Word Wrap: On",
+        "wordWrapOff" : "Word Wrap: Off",
+        "lineNumbersOn" : "Line Numbers: On",
+        "lineNumbersOff" : "Line Numbers: Off",
+        "theme" : {
+            "system" : "System",
+            "light" : "Light",
+            "dark" : "Dark"
+        },
+        "settings" : "Settings",
+        "settingsTitle" : "Settings",
+        "themeLabel" : "Theme",
+        "languageLabel" : "Language",
+        "lineNumbers" : "Line Numbers",
+        "wordWrap" : "Word Wrap",
+        "fontName" : "Font",
+        "fontSize" : "Size",
+        "fontColor" : "Color",
+        "fontBgColor" : "Background",
+        "fontLabel" : "Editor Font",
+        "close" : "Close",
+        "previewLabel" : "Preview",
+        "previewDesc" : "Customize preview CSS and template",
+        "openPreviewFiles" : "Open Files",
+        "tabAppearance" : "Appearance",
+        "tabLicense" : "License",
+        "license" : "License",
+        "thirdPartyLicense" : "Third Party Licenses"
     }
 }

@@ -49,7 +49,7 @@ function EditorSetting() {
       console.log(err);
     });
 
-    GetFont().then((f) => {
+    GetFont(document.documentElement.dataset.theme || 'dark').then((f) => {
       if (f) {
         setFont(f);
       }
@@ -116,7 +116,7 @@ function EditorSetting() {
     setFontDialogOpen(false);
     if (result) {
       setFont(result);
-      SaveFont(result).then(() => {
+      SaveFont(document.documentElement.dataset.theme || 'dark', result).then(() => {
         Events.Emit('binder:editor:fontChanged', result);
       }).catch((err) => {
         showError(err);

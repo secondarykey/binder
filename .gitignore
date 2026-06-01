@@ -4,3 +4,5 @@ work
 *.exe
 *.db
 _cmd/binder/frontend/bindings/**
+_cmd/binder/bin
+_cmd/lite/bin

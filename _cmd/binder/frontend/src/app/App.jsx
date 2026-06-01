@@ -15,7 +15,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
-import MaximizeIcon from '@mui/icons-material/Maximize';
+import CropSquareIcon from '@mui/icons-material/CropSquare';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -423,7 +423,7 @@ function App() {
           </IconButton>
           {/** 最大化 */}
           <IconButton size="small" color="inherit" aria-label="maximize" onClick={handleMax}>
-            <MaximizeIcon fontSize="small" />
+            <CropSquareIcon sx={{ fontSize: '14px' }} />
           </IconButton>
           {/** アプリ終了（右端に8px余白） */}
           <IconButton size="small" color="inherit" aria-label="close" sx={{ mr: 1 }} onClick={handleExit}>

@@ -1,7 +1,7 @@
 /* @theme-name: Dark */
 :root {
   /* --- 背景 --- */
-  --bg-app:           #050505;
+  --bg-app:           #222222;
   --bg-titlebar:      #1c1c1c;
   --bg-sidebar:       #191919;
   --bg-panel:         #292929;
@@ -11,6 +11,7 @@
   --bg-dialog:        #1e1e1e;
   --bg-dropdown:      #1a1a1a;
   --bg-button:        #333333;
+  --bg-editor:        #1e1e1e;
 
   /* --- テキスト --- */
   --text-primary:     #f1f1f1;

@@ -17,6 +17,7 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
+import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
 
 import Event, { EventContext } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
@@ -1264,86 +1265,26 @@ function Editor(props) {
       return;
     }
 
-    const textarea = e.target;
-    const val = textarea.value;
-
     if (e.key !== "Enter") {
       return;
     }
     e.preventDefault();
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    const textarea = e.target;
+    const result = handleMarkdownEnter(textarea);
 
-    const before = val.substring(0, start)
-    const after = val.substring(end)
-
-    var indent = "";
-    var char = "";
-    //文字列の前方の状態を確認
-    const last = before.lastIndexOf('\n')
-    const currentLine = last !== -1 ? before.substring(last + 1) : before;
-    if (last !== -1) {
-      const line = before.substring(last + 1);
-      for (let idx = 0; idx < line.length; ++idx) {
-        var c = line[idx]
-        if (c !== " ") {
-          if (c === "-") {
-            char = "- ";
-            var txt = line.substring(idx);
-            if (txt.startsWith("- [ ]") || txt.startsWith("- [x]")) {
-              char = "- [ ] ";
-            }
-          } else if (c === ">") {
-            char = "> ";
-          } else if (c === "1") {
-            var c2 = line[idx + 1];
-            if (c2 === ".") {
-              char = "1. ";
-            }
-          }
-          break;
-        }
-        indent += " ";
-      }
-    }
-
-    // 空のリスト項目（プレフィックスのみの行）でEnterを押した場合はプレフィックスをキャンセル
-    if (char && currentLine === indent + char) {
-      const newBefore = before.substring(0, before.length - char.length);
-      const newCursor = newBefore.length;
-      textarea.value = newBefore + after;
-      textarea.selectionStart = newCursor;
-      textarea.selectionEnd = newCursor;
+    if (result.handled) {
+      textarea.value = result.value;
+      textarea.selectionStart = result.cursor;
+      textarea.selectionEnd = result.cursor;
       isEditingRef.current = true;
-      const newVal = textarea.value;
-      setText(newVal);
-      writeFn(mode, id, newVal);
+      setText(result.value);
+      writeFn(mode, id, result.value);
       requestAnimationFrame(() => {
-        textarea.selectionStart = newCursor;
-        textarea.selectionEnd = newCursor;
+        textarea.selectionStart = result.cursor;
+        textarea.selectionEnd = result.cursor;
       });
-      return;
     }
-
-    var at = "\n" + indent + char;
-    const newCursor = start + at.length;
-
-    textarea.value = before + at + after;
-    textarea.selectionStart = newCursor;
-    textarea.selectionEnd = newCursor;
-
-    // isEditingRef を立ててデバウンスを有効化し、即時 setText する。
-    // setTimeout を使うと次の Enter 連打時に React 再レンダリングでカーソルが末尾に飛ぶため、
-    // requestAnimationFrame で再レンダリング後にカーソル位置を復元する。
-    isEditingRef.current = true;
-    const newVal = textarea.value;
-    setText(newVal);
-    writeFn(mode, id, newVal);
-    requestAnimationFrame(() => {
-      textarea.selectionStart = newCursor;
-      textarea.selectionEnd = newCursor;
-    });
   }
 
   /**
@@ -1452,7 +1393,7 @@ function Editor(props) {
     setEditorFont(f)
     if ( save ) {
       // フォント設定を保存
-      SaveFont(set).then(() => {
+      SaveFont(document.documentElement.dataset.theme || 'dark', set).then(() => {
         Events.Emit('binder:editor:fontChanged', set);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -1491,8 +1432,8 @@ function Editor(props) {
     const cleanupWindowFocus = Events.On('binder:window:focus', handleWindowFocus);
 
     //設定を取得
-    GetFont().then((s) => {
-      settingFont(s);
+    GetFont(document.documentElement.dataset.theme || 'dark').then((s) => {
+      if (s) settingFont(s);
     }).catch((err) => {
       evt.showErrorMessage(err);
     });

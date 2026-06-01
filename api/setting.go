@@ -13,14 +13,14 @@ func (a *App) SavePosition(pos *settings.Position) error {
 	return settings.SavePosition(pos)
 }
 
-func (a *App) SaveFont(f *settings.Font) error {
-	return settings.SaveFont(f)
+func (a *App) SaveFont(theme string, f *settings.Font) error {
+	return settings.SaveFont(theme, f)
 }
 
-func (a *App) GetFont() *settings.Font {
+func (a *App) GetFont(theme string) *settings.Font {
 
-	defer log.PrintTrace(log.Func("GetSetting()"))
-	font := settings.GetFont()
+	defer log.PrintTrace(log.Func("GetFont()"))
+	font := settings.GetFont(theme)
 	if font == nil {
 		log.PrintStackTrace(fmt.Errorf("font is nil"))
 	}

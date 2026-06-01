@@ -247,22 +247,22 @@ func defaultAllowedCDNs() []string {
 	}
 }
 
-func GetFont() *Font {
+func GetFont(theme string) *Font {
 	obj := Get()
 	tfs := obj.Look.Editor.ThemeFonts
 	for _, tf := range tfs {
-		if tf.Theme == obj.Look.Theme {
+		if tf.Theme == theme {
 			return tf.Font
 		}
 	}
 	return nil
 }
 
-func SaveFont(f *Font) error {
+func SaveFont(theme string, f *Font) error {
 	obj := Get()
 	tfs := obj.Look.Editor.ThemeFonts
 	for _, tf := range tfs {
-		if tf.Theme == obj.Look.Theme {
+		if tf.Theme == theme {
 			tf.Font = f
 		}
 	}

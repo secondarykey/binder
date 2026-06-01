@@ -384,7 +384,8 @@
         "restoreTitle" : "ファイルを復元しますか？",
         "restoreWarning" : "現在のファイルに記録されていない変更があります。復元すると、その変更は失われます。",
         "restore" : "復元する",
-        "loadMore" : "さらに読み込む"
+        "loadMore" : "さらに読み込む",
+        "tabPreview" : "プレビュー"
     },
     "overallHistory" : {
         "title" : "全体履歴",
@@ -532,5 +533,41 @@
         "publishDate" : "公開日時",
         "republishDate" : "再公開日時",
         "resetNow" : "現在時刻にリセット"
+    },
+    "lite" : {
+        "openFileHint" : "Ctrl+O でファイルを開く、Ctrl+N で新規作成",
+        "unsavedConfirm" : "保存されていない変更があります。破棄しますか？",
+        "confirmTitle" : "確認",
+        "discard" : "破棄",
+        "showPreview" : "プレビューを表示",
+        "hidePreview" : "プレビューを非表示",
+        "wordWrapOn" : "折り返し: オン",
+        "wordWrapOff" : "折り返し: オフ",
+        "lineNumbersOn" : "行番号: オン",
+        "lineNumbersOff" : "行番号: オフ",
+        "theme" : {
+            "system" : "システム",
+            "light" : "ライト",
+            "dark" : "ダーク"
+        },
+        "settings" : "設定",
+        "settingsTitle" : "設定",
+        "themeLabel" : "テーマ",
+        "languageLabel" : "言語",
+        "lineNumbers" : "行番号",
+        "wordWrap" : "折り返し",
+        "fontName" : "フォント",
+        "fontSize" : "サイズ",
+        "fontColor" : "文字色",
+        "fontBgColor" : "背景色",
+        "fontLabel" : "エディタフォント",
+        "close" : "閉じる",
+        "previewLabel" : "プレビュー",
+        "previewDesc" : "プレビューの CSS とテンプレートをカスタマイズ",
+        "openPreviewFiles" : "ファイルを開く",
+        "tabAppearance" : "外観",
+        "tabLicense" : "ライセンス",
+        "license" : "ライセンス",
+        "thirdPartyLicense" : "サードパーティライセンス"
     }
 }
