@@ -43,7 +43,7 @@ Marked.init = async function() {
   if (cdnUrl) {
     if (await Marked.tryLoadUrl(cdnUrl)) {
       try {
-        const plugins = await GetPlugins()
+        const plugins = await GetPlugins("marked")
         Marked.applyPlugins(plugins)
       } catch (e) {
         console.warn("[Binder] Plugin load failed:", e)
@@ -54,7 +54,7 @@ Marked.init = async function() {
   }
   await origMarkedInit()
   try {
-    const plugins = await GetPlugins()
+    const plugins = await GetPlugins("marked")
     Marked.applyPlugins(plugins)
   } catch (e) {
     console.warn("[Binder] Plugin load failed:", e)

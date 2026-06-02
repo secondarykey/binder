@@ -248,6 +248,35 @@ func (win *Window) SelectFileContent(name string, ptn string) (string, error) {
 	return string(data), nil
 }
 
+// JSFileInfo はJSファイルの名前と内容を保持する。
+type JSFileInfo struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
+}
+
+// SelectJSFile はJSファイル選択ダイアログを表示し、ファイル名（拡張子なし）と内容を返す。
+// キャンセル時は nil を返す。
+func (win *Window) SelectJSFile() (*JSFileInfo, error) {
+	defer log.PrintTrace(log.Func("SelectJSFile()"))
+
+	selection, err := win.OpenFilePicker("JavaScript Files", "*.js")
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, fmt.Errorf("SelectJSFile() error\n%+v", err)
+	}
+	if selection == "" {
+		return nil, nil
+	}
+
+	data, err := os.ReadFile(selection)
+	if err != nil {
+		return nil, fmt.Errorf("ReadFile() error\n%+v", err)
+	}
+
+	base := fs.BaseWithoutExt(selection)
+	return &JSFileInfo{Name: base, Content: string(data)}, nil
+}
+
 func (win *Window) OpenBinderSite() error {
 	defer log.PrintTrace(log.Func("OpenBinderSite()"))
 

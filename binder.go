@@ -179,11 +179,51 @@ func Load(dir string) (*Binder, error) {
 	return &b, nil
 }
 
-func (b *Binder) GetPlugins() ([]fs.PluginInfo, error) {
+func (b *Binder) GetPlugins(engine string) ([]fs.PluginInfo, error) {
 	if b == nil {
 		return nil, EmptyError
 	}
-	return b.fileSystem.ReadPlugins()
+	return b.fileSystem.ReadPlugins(engine)
+}
+
+func (b *Binder) ListPlugins(engine string) ([]fs.PluginInfo, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+	return b.fileSystem.ListPlugins(engine)
+}
+
+func (b *Binder) SavePlugin(engine, name, content string) error {
+	if b == nil {
+		return EmptyError
+	}
+	fn, err := b.fileSystem.WritePlugin(engine, name, []byte(content))
+	if err != nil {
+		return xerrors.Errorf("fs.WritePlugin() error: %w", err)
+	}
+	return b.fileSystem.Commit(fs.M("Save Plugin", name), fn)
+}
+
+func (b *Binder) RemovePlugin(engine, name string) error {
+	if b == nil {
+		return EmptyError
+	}
+	fn, err := b.fileSystem.DeletePlugin(engine, name)
+	if err != nil {
+		return xerrors.Errorf("fs.DeletePlugin() error: %w", err)
+	}
+	return b.fileSystem.Commit(fs.M("Remove Plugin", name), fn)
+}
+
+func (b *Binder) RenamePlugin(engine, oldName, newName string) error {
+	if b == nil {
+		return EmptyError
+	}
+	files, err := b.fileSystem.RenamePlugin(engine, oldName, newName)
+	if err != nil {
+		return xerrors.Errorf("fs.RenamePlugin() error: %w", err)
+	}
+	return b.fileSystem.Commit(fs.M("Rename Plugin", oldName+" -> "+newName), files...)
 }
 
 func (b *Binder) Close() error {

@@ -197,6 +197,26 @@
         "domainPlaceholder" : "例: cdn.jsdelivr.net",
         "security" : "セキュリティ"
     },
+    "plugin" : {
+        "title" : "プラグイン",
+        "engine" : "対象エンジン",
+        "engineMarkdown" : "マークダウン",
+        "add" : "プラグインを追加",
+        "update" : "ファイルを更新",
+        "nameLabel" : "プラグイン名",
+        "namePlaceholder" : "例: github-alerts",
+        "nameRequired" : "名前は必須です",
+        "duplicateName" : "この名前は既に使用されています",
+        "invalidName" : "名前に使用できない文字が含まれています",
+        "addSuccess" : "プラグインを追加しました",
+        "updateSuccess" : "プラグインを更新しました",
+        "renameSuccess" : "プラグイン名を変更しました",
+        "removeSuccess" : "プラグインを削除しました",
+        "deleteTitle" : "プラグインの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "renameTitle" : "プラグイン名の変更",
+        "empty" : "プラグインがありません"
+    },
     "binder" : {
         "editTitle" : "Binder編集",
         "git" : "Git",

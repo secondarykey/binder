@@ -102,30 +102,36 @@ func installLiteAssets(force bool) error {
 	return nil
 }
 
-// installPlugins はデフォルトプラグインテンプレートを ~/.binder/plugins/_default/ に配置する。
+// installPlugins はデフォルトプラグインテンプレートを ~/.binder/plugins/_default/{engine}/ に配置する。
 func installPlugins(force bool) error {
 
-	dir := settings.DefaultPluginsDirPath()
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
+	engines := []string{"marked"}
+	files := map[string][]string{
+		"marked": {"example.js"},
 	}
 
-	files := []string{"example.js"}
-	for _, name := range files {
-		p := filepath.Join(dir, name)
-		if !force {
-			if _, err := os.Stat(p); err == nil {
-				continue
+	for _, engine := range engines {
+		dir := filepath.Join(settings.DefaultPluginsDirPath(), engine)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
+		}
+
+		for _, name := range files[engine] {
+			p := filepath.Join(dir, name)
+			if !force {
+				if _, err := os.Stat(p); err == nil {
+					continue
+				}
 			}
-		}
 
-		data, err := embFs.ReadFile("_assets/plugins/" + name)
-		if err != nil {
-			return xerrors.Errorf("embFs.ReadFile(%s) error: %w", name, err)
-		}
+			data, err := embFs.ReadFile("_assets/plugins/" + engine + "/" + name)
+			if err != nil {
+				return xerrors.Errorf("embFs.ReadFile(%s/%s) error: %w", engine, name, err)
+			}
 
-		if err := os.WriteFile(p, data, 0644); err != nil {
-			return xerrors.Errorf("os.WriteFile(%s) error: %w", p, err)
+			if err := os.WriteFile(p, data, 0644); err != nil {
+				return xerrors.Errorf("os.WriteFile(%s) error: %w", p, err)
+			}
 		}
 	}
 
