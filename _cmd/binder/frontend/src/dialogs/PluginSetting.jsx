@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 
 import {
-  Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon,
   ListItemText, MenuItem, Select, TextField, Typography,
 } from "@mui/material";
@@ -280,12 +280,13 @@ function PluginSetting() {
                           {t("plugin.alreadyInstalled")}
                         </Typography>
                       ) : (
-                        <ActionButton
-                          variant="save"
-                          label={t("plugin.install")}
-                          onClick={() => handleInstall(p.name)}
+                        <Button
                           size="small"
-                        />
+                          onClick={() => handleInstall(p.name)}
+                          sx={{ fontSize: '11px', color: 'var(--accent-green)', minWidth: 'auto', px: 1 }}
+                        >
+                          {t("plugin.install")}
+                        </Button>
                       )}
                     </ListItemIcon>
                   </ListItemButton>
