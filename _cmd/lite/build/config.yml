@@ -8,11 +8,7 @@ info:
   copyright: "(c)2026, secondarykey"
   homepage: "https://github.com/secondarykey/binder"
   comments: "Binder Lite - Lightweight Markdown Editor"
-<<<<<<< HEAD
   version: "0.12.0"
-=======
-  version: "0.12.0"
->>>>>>> origin/main
 
 dev_mode:
   root_path: .
