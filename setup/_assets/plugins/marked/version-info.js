@@ -1,10 +1,10 @@
-/* @plugin-name: Marked Info (--info) */
+/* @plugin-name: Marked Info (@info) */
 //
-// --info を marked.js の情報表示ブロックに変換する。
+// @info を marked.js の情報表示ブロックに変換する。
 // 現在ロード中の拡張機能やオプション設定を確認できる。
 //
 // 使い方:
-//   --info
+//   @info
 //
 (function() {
   return {
@@ -13,11 +13,11 @@
         name: 'markedInfo',
         level: 'block',
         start: function(src) {
-          var m = src.match(/^--info\s*$/m);
+          var m = src.match(/^@info\s*$/m);
           return m ? m.index : undefined;
         },
         tokenizer: function(src) {
-          var match = src.match(/^--info[ \t]*(?:\n|$)/);
+          var match = src.match(/^@info[ \t]*(?:\n|$)/);
           if (match) {
             return {
               type: 'markedInfo',
