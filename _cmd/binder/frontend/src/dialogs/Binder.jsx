@@ -386,6 +386,7 @@ function Binder({ isModal, ...props }) {
                 error={markedStatus === "error"}
                 color={markedStatus === "ok" ? "success" : undefined}
                 focused={markedStatus === "ok"}
+                FormHelperTextProps={{ sx: markedStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
             </FormControl>
 
@@ -404,6 +405,7 @@ function Binder({ isModal, ...props }) {
                 error={mermaidStatus === "error"}
                 color={mermaidStatus === "ok" ? "success" : undefined}
                 focused={mermaidStatus === "ok"}
+                FormHelperTextProps={{ sx: mermaidStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
             </FormControl>
 
