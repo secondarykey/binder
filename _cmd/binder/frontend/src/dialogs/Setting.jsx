@@ -5,10 +5,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetThemeList, GetLanguageList, GetAllowedCDNs, SaveAllowedCDNs } from "../../bindings/binder/api/app";
 import { Events } from '@wailsio/runtime';
-import { OpenFileDialog, OpenSyslogWindow } from "../../bindings/main/window";
+import { OpenFileDialog } from "../../bindings/main/window";
 import CheckIcon from '@mui/icons-material/Check';
 import FolderIcon from '@mui/icons-material/Folder';
-import TerminalIcon from '@mui/icons-material/Terminal';
 
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
@@ -293,26 +292,6 @@ function Setting({ isModal, ...props }) {
                     }}
                   />
                 </Paper>
-                {/** システムログ */}
-                <FormControl>
-                  <FormLabel>{t("setting.systemLog")}</FormLabel>
-                  <IconButton
-                    onClick={() => OpenSyslogWindow().catch((err) => showError(err))}
-                    sx={{
-                      width: 'fit-content',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-input)',
-                      borderRadius: '4px',
-                      px: 2,
-                      py: 0.5,
-                      fontSize: '13px',
-                      gap: 1,
-                    }}
-                  >
-                    <TerminalIcon fontSize="small" />
-                    <span style={{ fontSize: '13px' }}>{t("setting.openSystemLog")}</span>
-                  </IconButton>
-                </FormControl>
               </div>
             </div>
 

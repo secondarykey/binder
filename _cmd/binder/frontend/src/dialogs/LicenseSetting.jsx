@@ -1,8 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, Typography } from "@mui/material";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+import TerminalIcon from '@mui/icons-material/Terminal';
 
 import { GetLicense, GetThirdPartyLicenses, GetVersionInfo } from "../../bindings/binder/api/app";
+import { OpenSyslogWindow } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import "../language";
@@ -44,9 +46,20 @@ function LicenseSetting() {
       <Box sx={{ margin: '20px 24px', flex: 1, overflowY: 'auto' }}>
 
         {versionInfo && (
-          <Typography variant="subtitle1" sx={{ color: 'var(--text-primary)', mb: 2, fontWeight: 'bold' }}>
-            Binder Version {versionInfo.version}{versionInfo.dev ? " (DEV)" : ""}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Typography variant="subtitle1" sx={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
+              Binder Version {versionInfo.version}{versionInfo.dev ? " (DEV)" : ""}
+            </Typography>
+            <Tooltip title={t("setting.openSystemLog")}>
+              <IconButton
+                size="small"
+                onClick={() => OpenSyslogWindow().catch((err) => showError(err))}
+                sx={{ color: 'var(--text-muted)' }}
+              >
+                <TerminalIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         )}
 
         <Typography variant="subtitle2" sx={{ color: 'var(--text-primary)', mb: 1 }}>
