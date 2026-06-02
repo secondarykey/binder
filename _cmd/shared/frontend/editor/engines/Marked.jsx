@@ -94,7 +94,7 @@ class MarkedScript {
                     console.debug(`[Binder] Plugin "${plugin.name}" applied`);
                 }
             } catch (err) {
-                console.debug(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
+                console.warn(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
             }
         }
     }

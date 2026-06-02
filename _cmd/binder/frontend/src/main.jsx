@@ -46,7 +46,7 @@ Marked.init = async function() {
         const plugins = await GetPlugins("marked")
         Marked.applyPlugins(plugins)
       } catch (e) {
-        console.debug("[Binder] Plugin load failed:", e)
+        console.warn("[Binder] Plugin load failed:", e)
       }
       return
     }
@@ -57,7 +57,7 @@ Marked.init = async function() {
     const plugins = await GetPlugins("marked")
     Marked.applyPlugins(plugins)
   } catch (e) {
-    console.debug("[Binder] Plugin load failed:", e)
+    console.warn("[Binder] Plugin load failed:", e)
   }
 }
 

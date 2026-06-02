@@ -23,7 +23,7 @@ func (sys *FileSystem) ReadPlugins(engine string) ([]PluginInfo, error) {
 	dir := PluginEngineDir(engine)
 
 	if _, err := sys.fs.Stat(dir); err != nil {
-		log.Debug("plugins directory not found: %s", dir)
+		log.Info("plugins directory not found: %s", dir)
 		return []PluginInfo{}, nil
 	}
 
@@ -53,14 +53,14 @@ func (sys *FileSystem) ReadPlugins(engine string) ([]PluginInfo, error) {
 			continue
 		}
 		name := strings.TrimSuffix(e.Name(), ".js")
-		log.Debug("plugin loaded: %s/%s", engine, name)
+		log.Info("plugin loaded: %s/%s", engine, name)
 		plugins = append(plugins, PluginInfo{
 			Name:    name,
 			Content: buf.String(),
 		})
 	}
 
-	log.Debug("plugins found: %d (%s)", len(plugins), engine)
+	log.Info("plugins found: %d (%s)", len(plugins), engine)
 	return plugins, nil
 }
 
