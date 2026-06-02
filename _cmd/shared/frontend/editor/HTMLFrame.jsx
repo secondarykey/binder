@@ -215,7 +215,7 @@ class HTMLFrame extends React.Component {
 
     // 全 Mermaid の描画完了を待ってから切り替え
     const promises = mermaidElements.map((elm) => {
-      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップ
+      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用
       if (elm.querySelector('svg')) {
         this.attachPanZoom(elm);
         return Promise.resolve();
@@ -223,7 +223,6 @@ class HTMLFrame extends React.Component {
       const txt = elm.textContent;
       return Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
-        this.attachPanZoom(elm);
       }).catch((err) => {
         console.error(err);
       });
