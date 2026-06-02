@@ -2,9 +2,9 @@
 //
 // 脚注記法を追加する。
 //
-// 使い方:
-//   本文中で [^id] と書くと脚注参照になる。
-//   ドキュメントの任意の場所に [^id]: 本文 と書くと脚注定義になる。
+// 書き方:
+//   本文中に [^id] と書く（参照）
+//   行頭に [^id]: テキスト と書く（定義）
 //
 //   例:
 //     Go言語[^go]はGoogleが開発した言語です。
@@ -20,14 +20,15 @@
       preprocess: function(src) {
         defs = {};
         refs = [];
-        // 脚注定義 [^id]: text を抽出して除去
         src = src.replace(/^\[\^([^\]]+)\]:\s+(.+)$/gm, function(_, id, text) {
           defs[id.toLowerCase()] = text.trim();
           return '';
         });
+        console.info('[footnotes] defs:', defs);
         return src;
       },
       postprocess: function(html) {
+        console.info('[footnotes] refs:', refs, 'defs:', defs);
         if (refs.length === 0) return html;
         var items = refs.map(function(id, i) {
           var n = i + 1;
@@ -64,6 +65,7 @@
         },
         renderer: function(token) {
           var id = token.id;
+          console.info('[footnotes] renderer called for id:', id);
           if (refs.indexOf(id) === -1) refs.push(id);
           var n = refs.indexOf(id) + 1;
           return '<sup id="fnref-' + id + '">'
