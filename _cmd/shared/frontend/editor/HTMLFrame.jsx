@@ -143,6 +143,48 @@ class HTMLFrame extends React.Component {
     }
   }
 
+  /**
+   * SVG にホイールズーム + 中ボタンドラッグのパン操作を付与する
+   */
+  attachPanZoom(container) {
+    const svg = container.querySelector('svg');
+    if (!svg) return;
+
+    let left = 0, top = 0, scale = 1.0;
+    const transform = () => {
+      svg.style.transform = `translate(${left}px,${top}px) scale(${scale})`;
+    };
+
+    // 中ボタンドラッグで移動
+    svg.addEventListener('pointerdown', (e) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      container.style.cursor = 'grabbing';
+    });
+    svg.addEventListener('pointermove', (e) => {
+      if (!(e.buttons & 4)) return;
+      left += e.movementX;
+      top += e.movementY;
+      transform();
+    });
+    svg.addEventListener('pointerup', (e) => {
+      if (e.button === 1) container.style.cursor = '';
+    });
+
+    // ホイールでズーム
+    svg.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const s = e.deltaY > 0 ? -0.1 : 0.1;
+      scale += s;
+      if (scale < 0.1) scale = 0.1;
+      transform();
+    });
+
+    // SVG のオーバーフロー表示を許可
+    svg.style.overflow = 'visible';
+    container.style.overflow = 'hidden';
+  }
+
   postProcess(doc, onComplete) {
     if (!doc) { onComplete?.(); return; }
 
@@ -173,6 +215,11 @@ class HTMLFrame extends React.Component {
 
     // 全 Mermaid の描画完了を待ってから切り替え
     const promises = mermaidElements.map((elm) => {
+      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用
+      if (elm.querySelector('svg')) {
+        this.attachPanZoom(elm);
+        return Promise.resolve();
+      }
       const txt = elm.textContent;
       return Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;

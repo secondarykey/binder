@@ -17,7 +17,8 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import GestureIcon from '@mui/icons-material/Gesture';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetFontNames, GetModifiedIds } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetModifiedIds } from '../../bindings/binder/api/app';
+import { GetFontNames } from '../../bindings/binder/api/shared/shared';
 import { Browser } from '@wailsio/runtime';
 import CommitBar from './CommitBar';
 import { ActionButton } from '../dialogs/components/ActionButton';

@@ -3,7 +3,8 @@ import { useEffect, useState, useContext } from "react";
 import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import TerminalIcon from '@mui/icons-material/Terminal';
 
-import { GetLicense, GetThirdPartyLicenses, GetVersionInfo } from "../../bindings/binder/api/app";
+import { GetVersionInfo } from "../../bindings/binder/api/app";
+import { GetLicense, GetThirdPartyLicenses } from "../../bindings/binder/api/shared/shared";
 import { OpenSyslogWindow } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';

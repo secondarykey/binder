@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GetFontNames } from "../../bindings/binder/api/app";
+import { GetFontNames } from "../../bindings/binder/api/shared/shared";
 import SharedFontDialog from "./components/FontDialog";
 
 import "../language";
