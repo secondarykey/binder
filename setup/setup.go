@@ -109,6 +109,14 @@ func migrateApp(ver *Version, devMode bool) error {
 		}
 	}
 
+	// 0.12.0: サンプルプラグインを ~/.binder/plugins/marked/ にインストール
+	v0120, _ := NewVersion("0.12.0")
+	if prevVer.Lt(v0120) {
+		if err := InstallSamplePlugins(); err != nil {
+			log.Warn("migrateApp: InstallSamplePlugins:\n%+v", err)
+		}
+	}
+
 	// EnsureExists 終了時点で常に現在のバージョンを記録する
 	if !prevVer.Eq(ver) {
 		if err := settings.SaveAppVersion(ver.String()); err != nil {

@@ -23,6 +23,10 @@ func DefaultPluginsEngineDirPath(engine string) string {
 	return filepath.Join(DefaultPluginsDirPath(), engine)
 }
 
+func PluginsEngineDirPath(engine string) string {
+	return filepath.Join(PluginsDirPath(), engine)
+}
+
 // AppPluginInfo はアプリレベルプラグインの情報を保持する。
 type AppPluginInfo struct {
 	Name string `json:"name"`

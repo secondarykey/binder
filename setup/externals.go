@@ -138,6 +138,44 @@ func installPlugins(force bool) error {
 	return nil
 }
 
+// InstallSamplePlugins は 0.12.0 移行時に _assets/plugins/marked/ のサンプルプラグイン（example.js 除く）を
+// ~/.binder/plugins/marked/ にインストールする。既にファイルが存在する場合はスキップする。
+func InstallSamplePlugins() error {
+
+	dir := settings.PluginsEngineDirPath("marked")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return xerrors.Errorf("os.MkdirAll(%s) error: %w", dir, err)
+	}
+
+	// example.js は参考用テンプレートのため除外
+	skip := map[string]bool{"example.js": true}
+
+	entries, err := embFs.ReadDir("_assets/plugins/marked")
+	if err != nil {
+		return xerrors.Errorf("embFs.ReadDir error: %w", err)
+	}
+
+	for _, e := range entries {
+		if e.IsDir() || skip[e.Name()] {
+			continue
+		}
+		p := filepath.Join(dir, e.Name())
+		if _, err := os.Stat(p); err == nil {
+			// 既に存在する場合はスキップ
+			continue
+		}
+		data, err := embFs.ReadFile("_assets/plugins/marked/" + e.Name())
+		if err != nil {
+			return xerrors.Errorf("embFs.ReadFile(%s) error: %w", e.Name(), err)
+		}
+		if err := os.WriteFile(p, data, 0644); err != nil {
+			return xerrors.Errorf("os.WriteFile(%s) error: %w", p, err)
+		}
+	}
+
+	return nil
+}
+
 // UpdateDefaults はデフォルトテーマ・言語・lite テンプレート・プラグインテンプレートを強制的に最新に上書きする。
 // 開発モード起動時およびマイグレーション実行時に呼ばれる。
 func UpdateDefaults() error {
