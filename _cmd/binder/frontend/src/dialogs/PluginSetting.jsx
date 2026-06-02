@@ -14,6 +14,7 @@ import CheckIcon from '@mui/icons-material/Check';
 
 import { ListPlugins, SavePlugin, RemovePlugin, RenamePlugin } from "../../bindings/binder/api/app";
 import { SelectJSFile } from "../../bindings/main/window";
+import Marked from "../components/editor/engines/Marked";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
@@ -89,6 +90,7 @@ function PluginSetting() {
       evt.showSuccessMessage(t("plugin.addSuccess"));
       setAddDialog(false);
       loadPlugins();
+      Marked.reset();
     }).catch((err) => showError(err));
   };
 
@@ -99,6 +101,7 @@ function PluginSetting() {
       SavePlugin(engine, name, info.content).then(() => {
         evt.showSuccessMessage(t("plugin.updateSuccess"));
         loadPlugins();
+        Marked.reset();
       }).catch((err) => showError(err));
     }).catch((err) => showError(err));
   };
@@ -119,6 +122,7 @@ function PluginSetting() {
       evt.showSuccessMessage(t("plugin.renameSuccess"));
       setRenameDialog(false);
       loadPlugins();
+      Marked.reset();
     }).catch((err) => showError(err));
   };
 
@@ -134,6 +138,7 @@ function PluginSetting() {
       setDeleteDialog(false);
       if (selectedName === deleteTarget) setSelectedName(null);
       loadPlugins();
+      Marked.reset();
     }).catch((err) => showError(err));
   };
 
