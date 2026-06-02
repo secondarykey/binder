@@ -84,17 +84,17 @@ class MarkedScript {
 
     static applyPlugins(plugins) {
         if (!plugins || plugins.length === 0) return;
-        console.info(`[Binder] Applying ${plugins.length} plugin(s)`);
+        console.debug(`[Binder] Applying ${plugins.length} plugin(s)`);
         for (const plugin of plugins) {
             try {
                 const ext = (0, eval)(plugin.content);
-                console.info(`[Binder] Plugin "${plugin.name}":`, ext);
+                console.debug(`[Binder] Plugin "${plugin.name}":`, ext);
                 if (ext && typeof ext === 'object') {
                     marked.marked.use(ext);
-                    console.info(`[Binder] Plugin "${plugin.name}" applied`);
+                    console.debug(`[Binder] Plugin "${plugin.name}" applied`);
                 }
             } catch (err) {
-                console.warn(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
+                console.debug(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
             }
         }
     }
