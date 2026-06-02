@@ -211,6 +211,7 @@ function EditorSetting() {
               onChange={handleArgsChange}
               error={argsError}
               helperText={argsError ? t("setting.editorArgsError") : t("setting.editorArgsHint")}
+              FormHelperTextProps={{ sx: argsError ? {} : { color: 'var(--text-muted)' } }}
             />
           </FormControl>
 
