@@ -24,6 +24,14 @@ class MarkedScript {
     }
 
     static reset() {
+        // ESM動的importはブラウザにキャッシュされるため、
+        // globalThis.marked を削除するだけでは marked の内部状態（use()で追加したextensions等）が残る。
+        // setOptions(getDefaults()) でデフォルトに戻してから削除する。
+        if (globalThis.marked && globalThis.marked.marked) {
+            try {
+                globalThis.marked.marked.setOptions(globalThis.marked.marked.getDefaults());
+            } catch (e) {}
+        }
         delete globalThis.marked;
     }
 
