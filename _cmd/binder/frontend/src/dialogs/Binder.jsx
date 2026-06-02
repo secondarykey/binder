@@ -451,12 +451,12 @@ function Binder({ isModal, ...props }) {
               sshKey={authSSHKey} onSSHKeyChange={setAuthSSHKey}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
             </Box>
 
             {/** リポジトリメンテナンス */}
-            <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
+            <Box sx={{ borderTop: '1px solid var(--border-subtle)' }}>
               <FormLabel>
                 {t("binder.gcLabel")}
                 <ActionButton variant="cancel" label={t("binder.gcButton")}
