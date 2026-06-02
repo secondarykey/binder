@@ -31,6 +31,7 @@ div.linkBtn input , div.linkBtn svg {
 .formGrid {
   display: grid;
   flex-flow: column;
+  gap: 12px;
   margin: 40px;
   margin-top: 20px;
 
