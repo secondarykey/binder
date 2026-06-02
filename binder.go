@@ -215,6 +215,21 @@ func (b *Binder) RemovePlugin(engine, name string) error {
 	return b.fileSystem.Commit(fs.M("Remove Plugin", name), fn)
 }
 
+func (b *Binder) InstallAppPlugin(engine, name string) error {
+	if b == nil {
+		return EmptyError
+	}
+	content, err := settings.ReadAppPlugin(engine, name)
+	if err != nil {
+		return xerrors.Errorf("settings.ReadAppPlugin() error: %w", err)
+	}
+	fn, err := b.fileSystem.WritePlugin(engine, name, []byte(content))
+	if err != nil {
+		return xerrors.Errorf("fs.WritePlugin() error: %w", err)
+	}
+	return b.fileSystem.Commit(fs.M("Install Plugin", name), fn)
+}
+
 func (b *Binder) RenamePlugin(engine, oldName, newName string) error {
 	if b == nil {
 		return EmptyError

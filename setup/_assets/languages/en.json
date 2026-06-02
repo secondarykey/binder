@@ -215,7 +215,12 @@
         "deleteTitle" : "Delete Plugin",
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "renameTitle" : "Rename Plugin",
-        "empty" : "No plugins installed"
+        "empty" : "No plugins installed",
+        "appPlugins" : "Install from App Plugins",
+        "appPluginsEmpty" : "No app plugins registered",
+        "install" : "Install",
+        "installSuccess" : "Plugin installed",
+        "alreadyInstalled" : "Installed"
     },
     "binder" : {
         "editTitle" : "Edit Binder",

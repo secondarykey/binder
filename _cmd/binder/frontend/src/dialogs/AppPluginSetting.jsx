@@ -12,9 +12,8 @@ import UploadIcon from '@mui/icons-material/Upload';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 
-import { ListPlugins, SavePlugin, RemovePlugin, RenamePlugin, ListAppPlugins, InstallAppPlugin } from "../../bindings/binder/api/app";
+import { ListAppPlugins, SaveAppPlugin, RemoveAppPlugin, RenameAppPlugin } from "../../bindings/binder/api/app";
 import { SelectJSFile } from "../../bindings/main/window";
-import Marked from "../components/editor/engines/Marked";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
@@ -27,7 +26,7 @@ const ENGINES = [
 
 const NAME_PATTERN = /^[a-zA-Z0-9_\-]+$/;
 
-function PluginSetting() {
+function AppPluginSetting() {
 
   const evt = useContext(EventContext);
   const { showError } = useDialogMessage();
@@ -36,43 +35,39 @@ function PluginSetting() {
   const [engine, setEngine] = useState("marked");
   const [plugins, setPlugins] = useState([]);
   const [selectedName, setSelectedName] = useState(null);
-  const [appPlugins, setAppPlugins] = useState([]);
 
-  // 追加ダイアログ
   const [addDialog, setAddDialog] = useState(false);
   const [addName, setAddName] = useState("");
   const [addContent, setAddContent] = useState("");
   const [addNameError, setAddNameError] = useState("");
 
-  // リネームダイアログ
   const [renameDialog, setRenameDialog] = useState(false);
   const [renameTarget, setRenameTarget] = useState("");
   const [renameName, setRenameName] = useState("");
   const [renameNameError, setRenameNameError] = useState("");
 
-  // 削除確認ダイアログ
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState("");
 
   const loadPlugins = () => {
-    ListPlugins(engine).then((list) => {
+    ListAppPlugins(engine).then((list) => {
       setPlugins(list || []);
     }).catch((err) => showError(err));
   };
 
-  const loadAppPlugins = () => {
-    ListAppPlugins(engine).then((list) => {
-      setAppPlugins(list || []);
-    }).catch(() => setAppPlugins([]));
-  };
-
   useEffect(() => {
     loadPlugins();
-    loadAppPlugins();
     setSelectedName(null);
   }, [engine]);
 
-  // --- 追加 ---
+  const validateName = (name, excludeName = null) => {
+    if (!name.trim()) return t("plugin.nameRequired");
+    if (!NAME_PATTERN.test(name)) return t("plugin.invalidName");
+    const exists = plugins.some((p) => p.name === name && p.name !== excludeName);
+    if (exists) return t("plugin.duplicateName");
+    return "";
+  };
+
   const handleOpenAddDialog = () => {
     SelectJSFile().then((info) => {
       if (!info) return;
@@ -83,38 +78,26 @@ function PluginSetting() {
     }).catch((err) => showError(err));
   };
 
-  const validateName = (name, excludeName = null) => {
-    if (!name.trim()) return t("plugin.nameRequired");
-    if (!NAME_PATTERN.test(name)) return t("plugin.invalidName");
-    const exists = plugins.some((p) => p.name === name && p.name !== excludeName);
-    if (exists) return t("plugin.duplicateName");
-    return "";
-  };
-
   const handleAddConfirm = () => {
     const err = validateName(addName);
     if (err) { setAddNameError(err); return; }
-    SavePlugin(engine, addName, addContent).then(() => {
+    SaveAppPlugin(engine, addName, addContent).then(() => {
       evt.showSuccessMessage(t("plugin.addSuccess"));
       setAddDialog(false);
       loadPlugins();
-      Marked.reset();
     }).catch((err) => showError(err));
   };
 
-  // --- 更新（ファイル再インポート）---
   const handleUpdate = (name) => {
     SelectJSFile().then((info) => {
       if (!info) return;
-      SavePlugin(engine, name, info.content).then(() => {
+      SaveAppPlugin(engine, name, info.content).then(() => {
         evt.showSuccessMessage(t("plugin.updateSuccess"));
         loadPlugins();
-        Marked.reset();
       }).catch((err) => showError(err));
     }).catch((err) => showError(err));
   };
 
-  // --- リネーム ---
   const handleOpenRenameDialog = (name) => {
     setRenameTarget(name);
     setRenameName(name);
@@ -126,35 +109,24 @@ function PluginSetting() {
     const err = validateName(renameName, renameTarget);
     if (err) { setRenameNameError(err); return; }
     if (renameName === renameTarget) { setRenameDialog(false); return; }
-    RenamePlugin(engine, renameTarget, renameName).then(() => {
+    RenameAppPlugin(engine, renameTarget, renameName).then(() => {
       evt.showSuccessMessage(t("plugin.renameSuccess"));
       setRenameDialog(false);
       loadPlugins();
-      Marked.reset();
     }).catch((err) => showError(err));
   };
 
-  // --- 削除 ---
   const handleOpenDeleteDialog = (name) => {
     setDeleteTarget(name);
     setDeleteDialog(true);
   };
 
   const handleDeleteConfirm = () => {
-    RemovePlugin(engine, deleteTarget).then(() => {
+    RemoveAppPlugin(engine, deleteTarget).then(() => {
       evt.showSuccessMessage(t("plugin.removeSuccess"));
       setDeleteDialog(false);
       if (selectedName === deleteTarget) setSelectedName(null);
       loadPlugins();
-      Marked.reset();
-    }).catch((err) => showError(err));
-  };
-
-  const handleInstall = (name) => {
-    InstallAppPlugin(engine, name).then(() => {
-      evt.showSuccessMessage(t("plugin.installSuccess"));
-      loadPlugins();
-      Marked.reset();
     }).catch((err) => showError(err));
   };
 
@@ -249,52 +221,6 @@ function PluginSetting() {
           )}
         </FormControl>
 
-        {/** アプリプラグインからのインストール */}
-        {appPlugins.length > 0 && (
-          <FormControl>
-            <FormLabel sx={{ mb: 1 }}>{t("plugin.appPlugins")}</FormLabel>
-            <List dense disablePadding>
-              {appPlugins.map((p) => {
-                const installed = plugins.some((bp) => bp.name === p.name);
-                return (
-                  <ListItemButton
-                    key={p.name}
-                    disableRipple
-                    sx={{
-                      py: 0.5,
-                      textAlign: 'left',
-                      cursor: 'default',
-                      '&:hover': { backgroundColor: 'transparent' },
-                    }}
-                  >
-                    <ListItemText
-                      primary={p.name}
-                      primaryTypographyProps={{
-                        fontSize: '13px',
-                        color: installed ? 'var(--text-muted)' : 'var(--text-primary)',
-                      }}
-                    />
-                    <ListItemIcon sx={{ minWidth: 'auto' }}>
-                      {installed ? (
-                        <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '11px', px: 1 }}>
-                          {t("plugin.alreadyInstalled")}
-                        </Typography>
-                      ) : (
-                        <ActionButton
-                          variant="save"
-                          label={t("plugin.install")}
-                          onClick={() => handleInstall(p.name)}
-                          size="small"
-                        />
-                      )}
-                    </ListItemIcon>
-                  </ListItemButton>
-                );
-              })}
-            </List>
-          </FormControl>
-        )}
-
       </Box>
 
       {/** 追加ダイアログ */}
@@ -374,4 +300,4 @@ function PluginSetting() {
   );
 }
 
-export default PluginSetting;
+export default AppPluginSetting;

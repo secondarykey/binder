@@ -215,7 +215,12 @@
         "deleteTitle" : "プラグインの削除",
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "renameTitle" : "プラグイン名の変更",
-        "empty" : "プラグインがありません"
+        "empty" : "プラグインがありません",
+        "appPlugins" : "アプリのプラグインからインストール",
+        "appPluginsEmpty" : "アプリにプラグインが登録されていません",
+        "install" : "インストール",
+        "installSuccess" : "プラグインをインストールしました",
+        "alreadyInstalled" : "インストール済み"
     },
     "binder" : {
         "editTitle" : "Binder編集",

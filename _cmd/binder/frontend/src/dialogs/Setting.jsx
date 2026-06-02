@@ -17,6 +17,7 @@ import SnippetSetting from "./SnippetSetting";
 import EditorSetting from "./EditorSetting";
 import GitSetting from "./GitSetting";
 import LicenseSetting from "./LicenseSetting";
+import AppPluginSetting from "./AppPluginSetting";
 import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -150,6 +151,7 @@ function Setting({ isModal, ...props }) {
     { key: "editor", label: t("setting.editor") },
     { key: "snippet", label: t("setting.snippet") },
     { key: "git", label: t("setting.git") },
+    { key: "plugin", label: t("plugin.title") },
     { key: "security", label: t("setting.security") },
     { key: "license", label: t("setting.license") },
   ];
@@ -381,6 +383,10 @@ function Setting({ isModal, ...props }) {
               </Box>
             </FormControl>
           </div>
+        )}
+
+        {activeSection === "plugin" && (
+          <AppPluginSetting />
         )}
 
         {activeSection === "license" && (
