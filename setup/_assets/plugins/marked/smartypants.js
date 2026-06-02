@@ -31,9 +31,9 @@
   return {
     hooks: {
       preprocess: function(src) {
-        // コードブロック・インラインコードを退避してから変換
+        // コードブロック・インラインコード・HTMLコメントを退避してから変換
         var blocks = [];
-        var result = src.replace(/```[\s\S]*?```|`[^`\n]+`/g, function(m) {
+        var result = src.replace(/<!--[\s\S]*?-->|```[\s\S]*?```|`[^`\n]+`/g, function(m) {
           blocks.push(m);
           return '\x00CODE' + (blocks.length - 1) + '\x00';
         });
