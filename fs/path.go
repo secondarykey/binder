@@ -223,6 +223,10 @@ func templateFile(id string) string {
 
 const PluginDir = "plugins"
 
+func PluginEngineDir(engine string) string {
+	return filepath.Join(PluginDir, engine)
+}
+
 const DBDir = "db"
 
 func (f *FileSystem) DatabaseDir() string {

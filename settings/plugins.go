@@ -11,3 +11,7 @@ func PluginsDirPath() string {
 func DefaultPluginsDirPath() string {
 	return filepath.Join(PluginsDirPath(), DefaultDirName)
 }
+
+func DefaultPluginsEngineDirPath(engine string) string {
+	return filepath.Join(DefaultPluginsDirPath(), engine)
+}

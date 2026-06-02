@@ -179,11 +179,11 @@ func Load(dir string) (*Binder, error) {
 	return &b, nil
 }
 
-func (b *Binder) GetPlugins() ([]fs.PluginInfo, error) {
+func (b *Binder) GetPlugins(engine string) ([]fs.PluginInfo, error) {
 	if b == nil {
 		return nil, EmptyError
 	}
-	return b.fileSystem.ReadPlugins()
+	return b.fileSystem.ReadPlugins(engine)
 }
 
 func (b *Binder) Close() error {

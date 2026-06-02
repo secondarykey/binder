@@ -16,16 +16,18 @@ type PluginInfo struct {
 	Content string `json:"content"`
 }
 
-func (sys *FileSystem) ReadPlugins() ([]PluginInfo, error) {
+func (sys *FileSystem) ReadPlugins(engine string) ([]PluginInfo, error) {
 
-	if _, err := sys.fs.Stat(PluginDir); err != nil {
-		log.Info("plugins directory not found")
+	dir := PluginEngineDir(engine)
+
+	if _, err := sys.fs.Stat(dir); err != nil {
+		log.Info("plugins directory not found: %s", dir)
 		return []PluginInfo{}, nil
 	}
 
-	entries, err := sys.ReadDir(PluginDir)
+	entries, err := sys.ReadDir(dir)
 	if err != nil {
-		return nil, xerrors.Errorf("ReadDir(%s) error: %w", PluginDir, err)
+		return nil, xerrors.Errorf("ReadDir(%s) error: %w", dir, err)
 	}
 
 	var jsFiles []fs.DirEntry
@@ -43,19 +45,19 @@ func (sys *FileSystem) ReadPlugins() ([]PluginInfo, error) {
 	plugins := make([]PluginInfo, 0, len(jsFiles))
 	for _, e := range jsFiles {
 		var buf bytes.Buffer
-		fn := filepath.Join(PluginDir, e.Name())
+		fn := filepath.Join(dir, e.Name())
 		if err := sys.readFile(&buf, fn); err != nil {
 			log.Warn("plugin read error %s: %+v", e.Name(), err)
 			continue
 		}
 		name := strings.TrimSuffix(e.Name(), ".js")
-		log.Info("plugin loaded: %s", name)
+		log.Info("plugin loaded: %s/%s", engine, name)
 		plugins = append(plugins, PluginInfo{
 			Name:    name,
 			Content: buf.String(),
 		})
 	}
 
-	log.Info("plugins found: %d", len(plugins))
+	log.Info("plugins found: %d (%s)", len(plugins), engine)
 	return plugins, nil
 }
