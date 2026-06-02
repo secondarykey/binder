@@ -4,8 +4,8 @@ set -e
 # Build configuration
 APP_NAME="binder-lite"
 BUNDLE_ID="com.github.secondarykey.binder-lite"
-VERSION="0.11.0"
-BUILD_NUMBER="0.11.0"
+VERSION="0.11.1"
+BUILD_NUMBER="0.11.1"
 BUILD_DIR="build/ios"
 TARGET="simulator"
 
