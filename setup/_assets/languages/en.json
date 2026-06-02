@@ -199,7 +199,7 @@
     },
     "plugin" : {
         "title" : "Plugins",
-        "engine" : "Target Engine",
+        "type" : "Type",
         "engineMarkdown" : "Markdown",
         "add" : "Add Plugin",
         "update" : "Update File",

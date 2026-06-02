@@ -155,35 +155,31 @@ function PluginSetting() {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
 
-        {/** エンジン選択 */}
-        <FormControl>
-          <FormLabel>{t("plugin.engine")}</FormLabel>
-          <Select
-            value={engine}
-            onChange={(e) => setEngine(e.target.value)}
-            size="small"
-            sx={inputSx}
-            MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
-          >
-            {ENGINES.map((e) => (
-              <MenuItem key={e.value} value={e.value} sx={{ fontSize: '13px' }}>
-                {t(e.labelKey)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {/** タイプ選択 + 追加ボタン */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+          <FormControl sx={{ flex: 1 }}>
+            <FormLabel>{t("plugin.type")}</FormLabel>
+            <Select
+              value={engine}
+              onChange={(e) => setEngine(e.target.value)}
+              size="small"
+              sx={inputSx}
+              MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+            >
+              {ENGINES.map((e) => (
+                <MenuItem key={e.value} value={e.value} sx={{ fontSize: '13px' }}>
+                  {t(e.labelKey)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <ActionButton variant="save" icon={<AddIcon />} label={t("common.add")} onClick={handleOpenAddDialog} size="small" />
+        </Box>
 
         {/** プラグイン一覧 */}
         <FormControl>
-          <FormLabel>
-            {t("plugin.title")}
-            <IconButton size="small" onClick={handleOpenAddDialog} sx={{ ml: 0.5 }}>
-              <AddIcon fontSize="small" />
-            </IconButton>
-          </FormLabel>
-
           {plugins.length === 0 ? (
-            <Typography variant="body2" sx={{ color: 'var(--text-muted)', mt: 1, fontSize: '13px' }}>
+            <Typography variant="body2" sx={{ color: 'var(--text-muted)', mt: 1, fontSize: '13px', textAlign: 'left' }}>
               {t("plugin.empty")}
             </Typography>
           ) : (
@@ -195,6 +191,7 @@ function PluginSetting() {
                   onClick={() => setSelectedName(p.name)}
                   sx={{
                     py: 0.5,
+                    textAlign: 'left',
                     '&.Mui-selected': { backgroundColor: 'var(--selected-menu)', color: 'var(--selected-text)' },
                     '&.Mui-selected:hover': { backgroundColor: 'var(--selected-menu)' },
                     '&:hover': { backgroundColor: 'var(--bg-elevated)' },
@@ -202,7 +199,7 @@ function PluginSetting() {
                 >
                   <ListItemText
                     primary={p.name}
-                    primaryTypographyProps={{ fontSize: '13px' }}
+                    primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
                   />
                   <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
                     <IconButton
