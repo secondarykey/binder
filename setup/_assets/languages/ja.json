@@ -199,7 +199,7 @@
     },
     "plugin" : {
         "title" : "プラグイン",
-        "engine" : "対象エンジン",
+        "type" : "タイプ",
         "engineMarkdown" : "マークダウン",
         "add" : "プラグインを追加",
         "update" : "ファイルを更新",
