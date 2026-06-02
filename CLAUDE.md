@@ -272,6 +272,59 @@ t("menu.setting")
 
 **配置の仕組みはテーマと同じ**: `setup/externals.go` の `installLanguages()` が管理。優先順位もテーマと同様（ユーザーディレクトリ > `_default/`）。
 
+### プラグイン（marked.js 拡張）
+
+ユーザーが配置した JS ファイルを `marked.use()` に渡してマークダウンレンダリングを拡張する仕組み。
+
+**ディレクトリ構造**:
+```
+plugins/              ← バインダー内（git管理・共有される）
+  marked/
+    github-alerts.js  ← ユーザーが配置するプラグイン
+  mermaid/            ← 将来用（未実装）
+
+~/.binder/plugins/    ← アプリレベル（全バインダー共通）
+  _default/
+    marked/
+      example.js      ← テンプレート（参考用）
+  marked/             ← ユーザーが登録したアプリプラグイン
+    github-alerts.js
+```
+
+**プラグイン JS ファイル形式**（IIFE で `marked.use()` 互換オブジェクトを返す）:
+```js
+/* @plugin-name: GitHub Alerts */
+(function() {
+  return {
+    extensions: [{ name, level, start, tokenizer, renderer }],
+    renderer: { blockquote(token) { ... } },
+    hooks: { preprocess(md) { ... } },
+    walkTokens(token) { ... }
+  };
+})();
+```
+
+**読み込み順**: ファイル名アルファベット順。`01-alerts.js`, `02-footnotes.js` のようにプレフィックスで制御可能。
+
+**Go 実装**:
+- `fs/plugin.go` — `ReadPlugins(engine)`, `ListPlugins(engine)`, `WritePlugin`, `DeletePlugin`, `RenamePlugin`
+- `fs/path.go` — `PluginDir = "plugins"`, `PluginEngineDir(engine)`
+- `binder.go` — `GetPlugins`, `ListPlugins`, `SavePlugin`, `RemovePlugin`, `RenamePlugin`, `InstallAppPlugin`
+- `api/plugin.go` — バインダープラグイン CRUD の Wails バインディング
+- `api/app_plugin.go` — アプリプラグイン CRUD + `InstallAppPlugin`
+- `settings/plugins.go` — `~/.binder/plugins/` のパスヘルパー・CRUD（OS レベル、git 管理外）
+- `setup/externals.go` — `installPlugins()` でテンプレートを `_default/` に配置
+
+**フロントエンド実装**:
+- `shared/editor/engines/Marked.jsx` — `applyPlugins(plugins)`: `(0, eval)(content)` で評価し `marked.use()` に渡す
+- `_cmd/binder/frontend/src/main.jsx` — `Marked.init` オーバーライド内で `GetPlugins("marked")` を呼びプラグインを適用
+- `dialogs/PluginSetting.jsx` — バインダー設定のプラグインタブ（CRUD + アプリプラグインからのインストール）
+- `dialogs/AppPluginSetting.jsx` — アプリ設定のプラグインタブ（CRUD）
+
+**即時反映**: プラグインの追加・更新・削除後に `Marked.reset()` を呼ぶことで、次回プレビュー描画時に marked を再初期化してプラグインを再適用する。
+
+**サンプルプラグイン**: `setup/_assets/plugins/marked/github-alerts.js` — GitHub Note 記法（`> [!NOTE]` 等）のサンプル実装（配布対象外・動作確認用）。
+
 ## Binder Lite
 
 Binder Lite は軽量版の Markdown/Mermaid エディタ。git管理・DB・ツリー階層・公開機能を持たず、OSの任意ファイルを直接開いて編集する。

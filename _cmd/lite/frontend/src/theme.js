@@ -1,4 +1,5 @@
-import { GetThemeCSS, SetTheme } from '../bindings/binder/api/lite/app';
+import { GetThemeCSS } from '../bindings/binder/api/shared/shared';
+import { SetTheme } from '../bindings/binder/api/lite/app';
 
 let styleEl = null;
 let mediaQuery = null;

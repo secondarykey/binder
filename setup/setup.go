@@ -43,6 +43,12 @@ func EnsureExists(ver *Version, devMode bool) error {
 		return xerrors.Errorf("installLiteAssets() error: %w", err)
 	}
 
+	// ~/.binder/plugins/_default/ にデフォルトプラグインテンプレートを配置（存在しなければ）
+	err = installPlugins(false)
+	if err != nil {
+		return xerrors.Errorf("installPlugins() error: %w", err)
+	}
+
 	// 旧サービス名のキーを新サービス名に移行
 	if err := migrateUserKeyService(); err != nil {
 		return xerrors.Errorf("migrateUserKeyService() error: %w", err)
@@ -100,6 +106,14 @@ func migrateApp(ver *Version, devMode bool) error {
 		editor.GitBash = false
 		if err := settings.SaveEditor(editor); err != nil {
 			log.Warn("migrateApp: SaveEditor:\n%+v", err)
+		}
+	}
+
+	// 0.12.0: サンプルプラグインを ~/.binder/plugins/marked/ にインストール
+	v0120, _ := NewVersion("0.12.0")
+	if prevVer.Lt(v0120) {
+		if err := InstallSamplePlugins(); err != nil {
+			log.Warn("migrateApp: InstallSamplePlugins:\n%+v", err)
 		}
 	}
 

@@ -12,6 +12,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs, RunGC } from "../../bindings/binder/api/app";
+import PluginSetting from "./PluginSetting";
 import MarkedScript from "../components/editor/engines/Marked";
 import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
@@ -26,6 +27,7 @@ const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
   { key: "script", labelKey: "binder.script" },
   { key: "git", labelKey: "binder.git" },
+  { key: "plugin", labelKey: "plugin.title" },
 ];
 
 /**
@@ -333,7 +335,11 @@ function Binder({ isModal, ...props }) {
                 <Switch checked={optimizeImage} onChange={(e) => setOptimizeImage(e.target.checked)} size="small" />
               }
               label={t("binder.optimizeImage")}
-              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+              sx={{
+                mt: 1,
+                ml: 0.5,
+                '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' },
+              }}
             />
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
@@ -359,15 +365,6 @@ function Binder({ isModal, ...props }) {
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
 
-            <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
-              <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
-              <Box sx={{ mt: 1 }}>
-                <ActionButton variant="cancel" label={t("binder.gcButton")}
-                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
-                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
-              </Box>
-            </Box>
-
           </div>
         )}
 
@@ -389,6 +386,7 @@ function Binder({ isModal, ...props }) {
                 error={markedStatus === "error"}
                 color={markedStatus === "ok" ? "success" : undefined}
                 focused={markedStatus === "ok"}
+                FormHelperTextProps={{ sx: markedStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
             </FormControl>
 
@@ -407,6 +405,7 @@ function Binder({ isModal, ...props }) {
                 error={mermaidStatus === "error"}
                 color={mermaidStatus === "ok" ? "success" : undefined}
                 focused={mermaidStatus === "ok"}
+                FormHelperTextProps={{ sx: mermaidStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
             </FormControl>
 
@@ -416,6 +415,10 @@ function Binder({ isModal, ...props }) {
             </Box>
 
           </div>
+        )}
+
+        {activeSection === "plugin" && (
+          <PluginSetting />
         )}
 
         {activeSection === "git" && (
@@ -448,8 +451,18 @@ function Binder({ isModal, ...props }) {
               sshKey={authSSHKey} onSSHKeyChange={setAuthSSHKey}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
+            </Box>
+
+            {/** リポジトリメンテナンス */}
+            <Box sx={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <FormLabel>
+                {t("binder.gcLabel")}
+                <ActionButton variant="cancel" label={t("binder.gcButton")}
+                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
+                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
+              </FormLabel>
             </Box>
 
             {/** リモート一覧 */}

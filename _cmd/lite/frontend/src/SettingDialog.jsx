@@ -4,7 +4,8 @@ import {
   Button, Box, Select, MenuItem, Switch, Typography, Tabs, Tab,
 } from '@mui/material';
 
-import { GetThemeList, GetLanguageList, GetFont, SaveFont, GetFontNames, SetTheme, SetLanguage, SaveEditorSettings, Version, GetLicense, GetThirdPartyLicenses, OpenPreviewFiles } from '../bindings/binder/api/lite/app';
+import { GetFont, SaveFont, SetTheme, SetLanguage, SaveEditorSettings, Version, OpenPreviewFiles } from '../bindings/binder/api/lite/app';
+import { GetThemeList, GetLanguageList, GetFontNames, GetLicense, GetThirdPartyLicenses } from '../bindings/binder/api/shared/shared';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import { setThemeMode } from './theme';
 import { loadLanguage } from './language';
@@ -117,7 +118,7 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
           style: {
             backgroundColor: 'var(--bg-surface)',
             color: 'var(--text-primary)',
-            minHeight: 420,
+            height: 500,
           },
         }}
       >

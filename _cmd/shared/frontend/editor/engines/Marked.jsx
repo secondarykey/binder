@@ -24,6 +24,14 @@ class MarkedScript {
     }
 
     static reset() {
+        // ESM動的importはブラウザにキャッシュされるため、
+        // globalThis.marked を削除するだけでは marked の内部状態（use()で追加したextensions等）が残る。
+        // setOptions(getDefaults()) でデフォルトに戻してから削除する。
+        if (globalThis.marked && globalThis.marked.marked) {
+            try {
+                globalThis.marked.marked.setOptions(globalThis.marked.marked.getDefaults());
+            } catch (e) {}
+        }
         delete globalThis.marked;
     }
 
@@ -72,6 +80,23 @@ class MarkedScript {
         var m = await Scripter.import(MarkedScript._vendorUrl);
         globalThis.marked = m;
         return { success: false };
+    }
+
+    static applyPlugins(plugins) {
+        if (!plugins || plugins.length === 0) return;
+        console.debug(`[Binder] Applying ${plugins.length} plugin(s)`);
+        for (const plugin of plugins) {
+            try {
+                const ext = (0, eval)(plugin.content);
+                console.debug(`[Binder] Plugin "${plugin.name}":`, ext);
+                if (ext && typeof ext === 'object') {
+                    marked.marked.use(ext);
+                    console.debug(`[Binder] Plugin "${plugin.name}" applied`);
+                }
+            } catch (err) {
+                console.warn(`[Binder] Plugin "${plugin.name}" failed to load:`, err);
+            }
+        }
     }
 
     static async parse(txt) {

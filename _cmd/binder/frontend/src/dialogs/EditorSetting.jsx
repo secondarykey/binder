@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { Events } from '@wailsio/runtime';
 
-import { Box, FormControl, FormControlLabel, FormLabel, Switch, TextField } from "@mui/material";
+import { Box, Button, FormControl, FormControlLabel, FormLabel, Switch, TextField } from "@mui/material";
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import CheckIcon from '@mui/icons-material/Check';
@@ -131,8 +131,21 @@ function EditorSetting() {
 
           {/** フォント設定ボタン */}
           <FormControl>
-            <ActionButton variant="cancel" label={t("setting.fontSetting")} icon={<FontDownloadIcon />}
-              onClick={() => setFontDialogOpen(true)} />
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FontDownloadIcon />}
+              onClick={() => setFontDialogOpen(true)}
+              sx={{
+                width: 'fit-content',
+                fontSize: '13px',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-input)',
+                '&:hover': { borderColor: 'var(--border-strong)', backgroundColor: 'var(--bg-elevated)' },
+              }}
+            >
+              {t("setting.fontSetting")}
+            </Button>
           </FormControl>
 
           {/** 行番号表示 */}
@@ -198,6 +211,7 @@ function EditorSetting() {
               onChange={handleArgsChange}
               error={argsError}
               helperText={argsError ? t("setting.editorArgsError") : t("setting.editorArgsHint")}
+              FormHelperTextProps={{ sx: argsError ? {} : { color: 'var(--text-muted)' } }}
             />
           </FormControl>
 

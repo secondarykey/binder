@@ -1,4 +1,4 @@
-import { GetThemeCSS } from '../bindings/binder/api/app';
+import { GetThemeCSS } from '../bindings/binder/api/shared/shared';
 
 let styleEl = null;
 

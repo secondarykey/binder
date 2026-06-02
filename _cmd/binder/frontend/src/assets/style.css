@@ -26,6 +26,7 @@
 .formContainer {
   display: flex;
   flex-flow: column;
+  gap: 12px;
   background-color: var(--bg-panel);
   color: var(--text-primary);
   padding: 8px;

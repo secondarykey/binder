@@ -2,7 +2,7 @@ import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-const sharedDir = path.resolve(__dirname, '../../../shared')
+const sharedDir = path.resolve(__dirname, '../../shared/frontend')
 
 /**
  * shared/ ディレクトリ内の bare import（react, @mui 等）を

@@ -10,6 +10,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"binder/api/lite"
+	"binder/api/shared"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -69,6 +70,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
+			application.NewService(shared.New()),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -99,6 +101,12 @@ func main() {
 
 	win.runtime = wailsApp
 	win.window = window
+
+	// ウィンドウフォーカス: IME リセット用イベントをフロントエンドに通知
+	// events.Common.WindowFocus は Windows 実装では emit されないため WindowSetFocus を使う
+	window.OnWindowEvent(events.Windows.WindowSetFocus, func(event *application.WindowEvent) {
+		wailsApp.Event.Emit("lite:window:focus")
+	})
 
 	// ファイルドロップ: ドロップされたファイルをフロントエンドに通知
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
