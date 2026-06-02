@@ -153,7 +153,7 @@ function PluginSetting() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, margin: '20px 24px', flex: 1 }}>
 
         {/** タイプ選択 + 追加ボタン */}
         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
@@ -233,7 +233,7 @@ function PluginSetting() {
           )}
         </FormControl>
 
-      </div>
+      </Box>
 
       {/** 追加ダイアログ */}
       <Dialog
