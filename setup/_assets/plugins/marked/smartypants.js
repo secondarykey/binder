@@ -31,9 +31,10 @@
   return {
     hooks: {
       preprocess: function(src) {
-        // コードブロック・インラインコード・HTMLコメントを退避してから変換
+        // コードブロック・インラインコード・HTMLコメント・水平線を退避してから変換
+        // 水平線 (---, ***, ___) は行全体が記号のみの行なので保護する
         var blocks = [];
-        var result = src.replace(/<!--[\s\S]*?-->|```[\s\S]*?```|`[^`\n]+`/g, function(m) {
+        var result = src.replace(/<!--[\s\S]*?-->|```[\s\S]*?```|`[^`\n]+`|^[ \t]*(?:-[ \t]*){3,}$|^[ \t]*(?:\*[ \t]*){3,}$|^[ \t]*(?:_[ \t]*){3,}$/gm, function(m) {
           blocks.push(m);
           return '\x00CODE' + (blocks.length - 1) + '\x00';
         });
