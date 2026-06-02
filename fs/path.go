@@ -227,6 +227,13 @@ func PluginEngineDir(engine string) string {
 	return filepath.Join(PluginDir, engine)
 }
 
+// BaseWithoutExt はパスのファイル名から拡張子を除いた名前を返す。
+func BaseWithoutExt(path string) string {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
+	return strings.TrimSuffix(base, ext)
+}
+
 const DBDir = "db"
 
 func (f *FileSystem) DatabaseDir() string {

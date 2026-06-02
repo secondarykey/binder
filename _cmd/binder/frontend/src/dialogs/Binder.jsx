@@ -12,6 +12,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs, RunGC } from "../../bindings/binder/api/app";
+import PluginSetting from "./PluginSetting";
 import MarkedScript from "../components/editor/engines/Marked";
 import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
@@ -26,6 +27,7 @@ const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
   { key: "script", labelKey: "binder.script" },
   { key: "git", labelKey: "binder.git" },
+  { key: "plugin", labelKey: "plugin.title" },
 ];
 
 /**
@@ -416,6 +418,10 @@ function Binder({ isModal, ...props }) {
             </Box>
 
           </div>
+        )}
+
+        {activeSection === "plugin" && (
+          <PluginSetting />
         )}
 
         {activeSection === "git" && (
