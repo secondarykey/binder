@@ -335,7 +335,11 @@ function Binder({ isModal, ...props }) {
                 <Switch checked={optimizeImage} onChange={(e) => setOptimizeImage(e.target.checked)} size="small" />
               }
               label={t("binder.optimizeImage")}
-              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+              sx={{
+                mt: 1,
+                ml: 0.5,
+                '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' },
+              }}
             />
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
