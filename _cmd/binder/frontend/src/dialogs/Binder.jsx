@@ -361,15 +361,6 @@ function Binder({ isModal, ...props }) {
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
 
-            <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
-              <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
-              <Box sx={{ mt: 1 }}>
-                <ActionButton variant="cancel" label={t("binder.gcButton")}
-                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
-                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
-              </Box>
-            </Box>
-
           </div>
         )}
 
@@ -456,6 +447,16 @@ function Binder({ isModal, ...props }) {
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
+            </Box>
+
+            {/** リポジトリメンテナンス */}
+            <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
+              <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
+              <Box sx={{ mt: 1 }}>
+                <ActionButton variant="cancel" label={t("binder.gcButton")}
+                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
+                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
+              </Box>
             </Box>
 
             {/** リモート一覧 */}
