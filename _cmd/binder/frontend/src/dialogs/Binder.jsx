@@ -451,12 +451,12 @@ function Binder({ isModal, ...props }) {
 
             {/** リポジトリメンテナンス */}
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
-              <FormLabel sx={{ mb: 1 }}>{t("binder.gcLabel")}</FormLabel>
-              <Box sx={{ mt: 1 }}>
+              <FormLabel>
+                {t("binder.gcLabel")}
                 <ActionButton variant="cancel" label={t("binder.gcButton")}
                   icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
                   onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
-              </Box>
+              </FormLabel>
             </Box>
 
             {/** リモート一覧 */}
