@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder/fs"
+	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -67,7 +68,11 @@ func (a *App) GetLanguage() string {
 
 func (a *App) SetLanguage(lang string) error {
 	defer log.PrintTrace(log.Func("SetLanguage()"))
-	return settings.SaveLanguage(lang)
+	if err := settings.SaveLanguage(lang); err != nil {
+		return err
+	}
+	i18n.SetLanguage(lang)
+	return nil
 }
 
 func (a *App) GetEditor() *settings.Editor {

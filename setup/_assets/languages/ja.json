@@ -559,6 +559,41 @@
         "republishDate" : "再公開日時",
         "resetNow" : "現在時刻にリセット"
     },
+    "go" : {
+        "window" : {
+            "main" : "Binder",
+            "history" : "Binder - 履歴",
+            "overallHistory" : "Binder - 全体履歴",
+            "preview" : "Binder - プレビュー",
+            "syslog" : "Binder - システムログ",
+            "search" : "Binder - 検索",
+            "lite" : "Binder Lite"
+        },
+        "dialog" : {
+            "selectBinderDir" : "Binderディレクトリの選択",
+            "selectFile" : "ファイルの選択",
+            "openFile" : "ファイルを開く",
+            "save" : "保存",
+            "saveAs" : "名前を付けて保存"
+        },
+        "filter" : {
+            "javascript" : "JavaScriptファイル",
+            "zip" : "ZIPファイル",
+            "markdown" : "Markdownファイル",
+            "mermaid" : "Mermaidファイル",
+            "all" : "すべてのファイル"
+        },
+        "default" : {
+            "untitled" : "untitled.md"
+        },
+        "error" : {
+            "binderNotOpened" : "Binderが開かれていません",
+            "noBinderOpen" : "Binderが開かれていません",
+            "emitterNotSet" : "検索エミッターが設定されていません",
+            "assetsNoteOnly" : "アセットはノートにのみ追加できます",
+            "emptyDirectory" : "ディレクトリを選択してください"
+        }
+    },
     "lite" : {
         "openFileHint" : "Ctrl+O でファイルを開く、Ctrl+N で新規作成",
         "unsavedConfirm" : "保存されていない変更があります。破棄しますか？",

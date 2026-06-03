@@ -12,6 +12,7 @@ import (
 	"binder"
 	"binder/api"
 	"binder/api/shared"
+	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 )
@@ -88,6 +89,11 @@ func main() {
 		log.PrintStackTrace(err)
 	}
 
+	// i18n 初期化（ウィンドウ作成前に実行）
+	if err := i18n.Init(set.Language); err != nil {
+		log.Warn("i18n.Init() error:\n%+v", err)
+	}
+
 	// セーフモードまたは前回クラッシュ検出時は、今セッションの自動オープンをオフにする。
 	// RunWithOpen 自体は setting.json に保存しない（次回以降の設定は保持する）。
 	if safe || !set.Path.StartupOk {
@@ -102,7 +108,7 @@ func main() {
 
 	// 3. ウィンドウ作成
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:                  "Binder",
+		Title:                  i18n.T("go.window.main"),
 		X:                      set.Position.Left,
 		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
@@ -131,6 +137,12 @@ func main() {
 	// バインダー切り替え時にウィンドウを閉じる
 	app.WindowCloser = win
 
+	// 言語変更時にウィンドウタイトルを更新
+	i18n.OnLanguageChange(func(code string) {
+		window.SetTitle(i18n.T("go.window.main"))
+		win.UpdateWindowTitles()
+	})
+
 	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）
 	// events.Common.WindowFocus は Windows 実装では emit されない（WM_SETFOCUS は
 	// events.Windows.WindowSetFocus を emit する）ため、正しいイベントを使う。
@@ -158,7 +170,7 @@ func main() {
 		}
 
 		if nodeType != "note" {
-			wailsApp.Event.Emit("binder:error", "アセットはノートにのみ追加できます")
+			wailsApp.Event.Emit("binder:error", i18n.T("go.error.assetsNoteOnly"))
 			return
 		}
 
