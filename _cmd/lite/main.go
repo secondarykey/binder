@@ -11,6 +11,7 @@ import (
 
 	"binder/api/lite"
 	"binder/api/shared"
+	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -62,10 +63,16 @@ func main() {
 		app.SetInitialFiles(paths)
 	}
 
+	// i18n 初期化（ウィンドウ作成前に実行）
+	liteLang := settings.GetLite().Language
+	if err := i18n.Init(liteLang); err != nil {
+		log.Warn("i18n.Init() error:\n%+v", err)
+	}
+
 	win := NewWindow(app)
 
 	wailsApp := application.New(application.Options{
-		Name:   "Binder Lite",
+		Name:   i18n.T("go.window.lite"),
 		Logger: logger,
 		Services: []application.Service{
 			application.NewService(app),
@@ -80,7 +87,7 @@ func main() {
 	set := settings.GetLite()
 
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:                  "Binder Lite",
+		Title:                  i18n.T("go.window.lite"),
 		X:                      set.Position.Left,
 		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
@@ -101,6 +108,11 @@ func main() {
 
 	win.runtime = wailsApp
 	win.window = window
+
+	// 言語変更時にウィンドウタイトルを更新
+	i18n.OnLanguageChange(func(code string) {
+		window.SetTitle(i18n.T("go.window.lite"))
+	})
 
 	// ウィンドウフォーカス: IME リセット用イベントをフロントエンドに通知
 	// events.Common.WindowFocus は Windows 実装では emit されないため WindowSetFocus を使う

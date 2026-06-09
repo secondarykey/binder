@@ -191,6 +191,11 @@
         "thirdPartyLicense" : "サードパーティライセンス",
         "systemLog" : "システムログ",
         "openSystemLog" : "システムログを開く",
+        "treeDisplayMode" : "ツリー初期表示",
+        "treeDisplayMode_none" : "なし",
+        "treeDisplayMode_commit" : "未記録",
+        "treeDisplayMode_publish" : "未公開",
+        "treeExpandTargets" : "初回表示に対象を展開する",
         "allowedCDNs" : "許可するCDNドメイン",
         "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
         "addDomain" : "ドメインを追加",
@@ -558,6 +563,41 @@
         "publishDate" : "公開日時",
         "republishDate" : "再公開日時",
         "resetNow" : "現在時刻にリセット"
+    },
+    "go" : {
+        "window" : {
+            "main" : "Binder",
+            "history" : "Binder - 履歴",
+            "overallHistory" : "Binder - 全体履歴",
+            "preview" : "Binder - プレビュー",
+            "syslog" : "Binder - システムログ",
+            "search" : "Binder - 検索",
+            "lite" : "Binder Lite"
+        },
+        "dialog" : {
+            "selectBinderDir" : "Binderディレクトリの選択",
+            "selectFile" : "ファイルの選択",
+            "openFile" : "ファイルを開く",
+            "save" : "保存",
+            "saveAs" : "名前を付けて保存"
+        },
+        "filter" : {
+            "javascript" : "JavaScriptファイル",
+            "zip" : "ZIPファイル",
+            "markdown" : "Markdownファイル",
+            "mermaid" : "Mermaidファイル",
+            "all" : "すべてのファイル"
+        },
+        "default" : {
+            "untitled" : "untitled.md"
+        },
+        "error" : {
+            "binderNotOpened" : "Binderが開かれていません",
+            "noBinderOpen" : "Binderが開かれていません",
+            "emitterNotSet" : "検索エミッターが設定されていません",
+            "assetsNoteOnly" : "アセットはノートにのみ追加できます",
+            "emptyDirectory" : "ディレクトリを選択してください"
+        }
     },
     "lite" : {
         "openFileHint" : "Ctrl+O でファイルを開く、Ctrl+N で新規作成",

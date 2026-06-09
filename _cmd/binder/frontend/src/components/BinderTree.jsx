@@ -30,7 +30,7 @@ import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset, RemoveLayer,
          EditNote, EditDiagram, EditAsset, EditLayer, AddTextAsset, GetNote, GetDiagram, GetAsset, GetLayer, GetHTMLTemplates, Address, GetFullPath,
-         IsGitBashPath, GetGitBashFullPath } from '../../bindings/binder/api/app';
+         IsGitBashPath, GetGitBashFullPath, GetTreeDisplayMode, GetTreeExpandTargets, SaveLastData } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
 
@@ -175,11 +175,11 @@ function BinderTree(props) {
   // Git変更済みIDのSet（ツリー表示後に非同期で取得）
   const [modifiedIds, setModifiedIds] = useState(null);
 
-  // 表示モード: 'none' | 'commit' | 'publish'
-  const [displayMode, setDisplayMode] = useState('commit');
-  const displayModeRef = useRef('commit');
+  // 表示モード: 'none' | 'commit' | 'publish'（初期値は設定から取得）
+  const [displayMode, setDisplayMode] = useState(null);
+  const displayModeRef = useRef(null);
 
-  // 表示モードから派生するフラグ
+  // 表示モードから派生するフラグ（null = 設定読み込み中、いずれも非表示）
   const showModified = displayMode === 'commit';
   const showPublishStatus = displayMode === 'publish';
 
@@ -247,6 +247,10 @@ function BinderTree(props) {
   const treeRef = useRef([]);
   useEffect(() => { treeRef.current = tree; }, [tree]);
 
+  // 初回自動展開の設定値と実行済みフラグ
+  const autoExpandEnabledRef = useRef(false);
+  const autoExpandDoneRef = useRef(false);
+
   // 現在のバインダーアドレスを追跡する ref。
   // ChangeAddress 発火時に「本当に別バインダーへ切り替わったか」を判定するために使う。
   // 別バインダーのときだけ expandTop=true（トップ展開リセット）を呼ぶ。
@@ -304,6 +308,7 @@ function BinderTree(props) {
       currentAddressRef.current = addr;
       setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
       setLocalPublishDirtyIds(new Set()); // バインダー切替時にローカル未公開ダーティをクリア
+      autoExpandDoneRef.current = false;  // バインダー切替時に自動展開を再有効化
       setModifiedIds(null);               // 旧バインダーの未コミットIDをクリア（GetModifiedIds 完了まで非表示）
       viewTree(isNewBinder);
     });
@@ -339,6 +344,18 @@ function BinderTree(props) {
     });
     // 初期URLを取得
     Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
+    // 設定からツリー初期表示モードと自動展開設定を取得
+    GetTreeDisplayMode().then((mode) => {
+      const m = mode || 'commit';
+      setDisplayMode(m);
+      displayModeRef.current = m;
+    }).catch(() => {
+      setDisplayMode('commit');
+      displayModeRef.current = 'commit';
+    });
+    GetTreeExpandTargets().then((v) => {
+      autoExpandEnabledRef.current = !!v;
+    }).catch(() => {});
     // 履歴復元などでツリーのノード選択を外部から更新する
     evt.register("BinderTree", Event.SelectTree, (id) => {
       setSelectedId(id);
@@ -480,6 +497,38 @@ function BinderTree(props) {
     [tree, effectiveModifiedIds, showModified, effectiveUnpublishedMap, showPublishStatus]
   );
 
+  // 初回自動展開: 設定 ON かつ displayMode が none 以外の場合、
+  // ツリーデータと対応する状態データが揃ったら対象の祖先を展開する
+  useEffect(() => {
+    if (autoExpandDoneRef.current || !autoExpandEnabledRef.current) return;
+    if (!tree.length || !displayMode || displayMode === 'none') return;
+
+    let targetIds = [];
+    if (displayMode === 'commit') {
+      if (!modifiedIds) return;
+      targetIds = [...modifiedIds];
+    } else if (displayMode === 'publish') {
+      if (!unpublishedMap) return;
+      targetIds = [...unpublishedMap.keys()].filter(id => (unpublishedMap.get(id) ?? 0) > 0);
+    }
+
+    autoExpandDoneRef.current = true;
+    if (targetIds.length === 0) return;
+
+    const ancestorIds = new Set();
+    for (const id of targetIds) {
+      const ancestors = findAncestorIds(tree, id);
+      if (ancestors) ancestors.forEach(aid => ancestorIds.add(aid));
+    }
+    if (ancestorIds.size > 0) {
+      setExpand(prev => {
+        const merged = new Set(prev);
+        ancestorIds.forEach(aid => merged.add(aid));
+        return [...merged];
+      });
+    }
+  }, [tree, displayMode, modifiedIds, unpublishedMap]);
+
   // ---- ハンドラ ----
 
   /** 展開/折りたたみトグル */
@@ -492,6 +541,7 @@ function BinderTree(props) {
   /** ノードクリック → エディタ or ビューアへナビゲート */
   const handleClick = (node) => {
     const type = node.nodeType || node.type;
+    SaveLastData(type, node.id).catch(() => {});
     if (type === 'asset') {
       // エディタルート経由で表示し、BinderTree インスタンスを editor と統一する
       nav("/editor/assets/" + node.id);

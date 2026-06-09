@@ -191,6 +191,11 @@
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",
         "openSystemLog" : "Open System Log",
+        "treeDisplayMode" : "Tree Initial Display",
+        "treeDisplayMode_none" : "None",
+        "treeDisplayMode_commit" : "Unrecorded",
+        "treeDisplayMode_publish" : "Unpublished",
+        "treeExpandTargets" : "Expand targets on initial display",
         "allowedCDNs" : "Allowed CDN Domains",
         "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
         "addDomain" : "Add Domain",
@@ -558,6 +563,41 @@
         "publishDate" : "Publish Date",
         "republishDate" : "Republish Date",
         "resetNow" : "Reset to Now"
+    },
+    "go" : {
+        "window" : {
+            "main" : "Binder",
+            "history" : "Binder - History",
+            "overallHistory" : "Binder - Overall History",
+            "preview" : "Binder - Preview",
+            "syslog" : "Binder - System Log",
+            "search" : "Binder - Search",
+            "lite" : "Binder Lite"
+        },
+        "dialog" : {
+            "selectBinderDir" : "Select Binder Directory",
+            "selectFile" : "Select File",
+            "openFile" : "Open File",
+            "save" : "Save",
+            "saveAs" : "Save As"
+        },
+        "filter" : {
+            "javascript" : "JavaScript Files",
+            "zip" : "ZIP files",
+            "markdown" : "Markdown Files",
+            "mermaid" : "Mermaid Files",
+            "all" : "All Files"
+        },
+        "default" : {
+            "untitled" : "untitled.md"
+        },
+        "error" : {
+            "binderNotOpened" : "Binder is not opened",
+            "noBinderOpen" : "No binder open",
+            "emitterNotSet" : "Search emitter is not set",
+            "assetsNoteOnly" : "Assets can only be added to notes",
+            "emptyDirectory" : "Please select a directory"
+        }
     },
     "lite" : {
         "openFileHint" : "Press Ctrl+O to open a file, or Ctrl+N to create a new file",

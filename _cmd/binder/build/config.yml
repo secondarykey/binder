@@ -10,7 +10,7 @@ info:
   # If you change this value, also update build/linux/nfpm/nfpm.yaml manually.
   homepage: "https://github.com/secondarykey/binder"
   comments: "Binder - Markdown Editor"
-  version: "0.12.0"
+  version: "0.12.1"
 
 dev_mode:
   root_path: .

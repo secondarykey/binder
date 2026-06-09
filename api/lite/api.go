@@ -1,6 +1,7 @@
 package lite
 
 import (
+	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"os"
@@ -103,7 +104,11 @@ func (a *App) GetLanguage() string {
 
 // SetLanguage は言語コードを保存する。
 func (a *App) SetLanguage(lang string) error {
-	return settings.SaveLiteLanguage(lang)
+	if err := settings.SaveLiteLanguage(lang); err != nil {
+		return err
+	}
+	i18n.SetLanguage(lang)
+	return nil
 }
 
 // GetEditorSettings は行番号・折り返し設定を返す。

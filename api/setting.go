@@ -2,6 +2,7 @@ package api
 
 import (
 	"binder/fs"
+	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -67,7 +68,11 @@ func (a *App) GetLanguage() string {
 
 func (a *App) SetLanguage(lang string) error {
 	defer log.PrintTrace(log.Func("SetLanguage()"))
-	return settings.SaveLanguage(lang)
+	if err := settings.SaveLanguage(lang); err != nil {
+		return err
+	}
+	i18n.SetLanguage(lang)
+	return nil
 }
 
 func (a *App) GetEditor() *settings.Editor {
@@ -92,6 +97,26 @@ func (a *App) SaveGit(g *settings.Git) error {
 
 // 以下のメソッドは api/shared パッケージに移動:
 // GetFontNames, GetThemeList, GetThemeCSS, GetLanguageList, GetLanguageData
+
+func (a *App) GetTreeDisplayMode() string {
+	return settings.GetTreeDisplayMode()
+}
+
+func (a *App) SetTreeDisplayMode(mode string) error {
+	return settings.SaveTreeDisplayMode(mode)
+}
+
+func (a *App) GetTreeExpandTargets() bool {
+	return settings.GetTreeExpandTargets()
+}
+
+func (a *App) SetTreeExpandTargets(v bool) error {
+	return settings.SaveTreeExpandTargets(v)
+}
+
+func (a *App) SaveLastData(dataType, id string) error {
+	return settings.SaveLastData(dataType, id)
+}
 
 // IsGitBashPath はエディタ引数に {bfile} が含まれる場合に true を返す。
 // コピーメニューで GitBash 形式パスを表示するかどうかの判定に使用する。

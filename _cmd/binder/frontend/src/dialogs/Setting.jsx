@@ -3,7 +3,7 @@ import { useEffect, useState, useContext } from "react";
 import { Box, Button, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs } from "../../bindings/binder/api/app";
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets } from "../../bindings/binder/api/app";
 import { GetThemeList, GetLanguageList } from "../../bindings/binder/api/shared/shared";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog } from "../../bindings/main/window";
@@ -44,6 +44,8 @@ function Setting({ isModal, ...props }) {
   );
   const [themeList, setThemeList] = useState([]);
   const [langList, setLangList] = useState([]);
+  const [treeDisplayMode, setTreeDisplayMode] = useState("commit");
+  const [treeExpandTargets, setTreeExpandTargets] = useState(false);
   const [allowedCDNs, setAllowedCDNs] = useState([]);
   const [newDomain, setNewDomain] = useState("");
 
@@ -76,6 +78,12 @@ function Setting({ isModal, ...props }) {
     GetAllowedCDNs().then((cdns) => {
       setAllowedCDNs(cdns || []);
     }).catch(() => {});
+    GetTreeDisplayMode().then((mode) => {
+      setTreeDisplayMode(mode || 'commit');
+    }).catch(() => {});
+    GetTreeExpandTargets().then((v) => {
+      setTreeExpandTargets(!!v);
+    }).catch(() => {});
   }, []);
 
   const handleThemeChange = (e) => {
@@ -88,6 +96,22 @@ function Setting({ isModal, ...props }) {
         if (f) Events.Emit('binder:editor:fontChanged', f);
       }).catch(() => {});
     }).catch((err) => {
+      showError(err);
+    });
+  };
+
+  const handleTreeDisplayModeChange = (e) => {
+    const mode = e.target.value;
+    setTreeDisplayMode(mode);
+    SetTreeDisplayMode(mode).catch((err) => {
+      showError(err);
+    });
+  };
+
+  const handleTreeExpandTargetsChange = (e) => {
+    const v = e.target.checked;
+    setTreeExpandTargets(v);
+    SetTreeExpandTargets(v).catch((err) => {
       showError(err);
     });
   };
@@ -270,28 +294,65 @@ function Setting({ isModal, ...props }) {
                   backgroundColor: 'var(--bg-overlay)',
                   borderColor: 'var(--border-primary)',
                   display: 'flex',
-                  flexDirection: 'row',
-                  gap: 3,
+                  flexDirection: 'column',
+                  gap: 1,
                 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} size="small" />
-                    }
-                    label={t("setting.runWithOpen")}
-                    sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} size="small" />
-                    }
-                    label={t("setting.openWithNote")}
-                    sx={{
-                      '& .MuiFormControlLabel-label': {
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} size="small" />
+                      }
+                      label={t("setting.runWithOpen")}
+                      sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} size="small" />
+                      }
+                      label={t("setting.openWithNote")}
+                      sx={{
+                        '& .MuiFormControlLabel-label': {
+                          fontSize: '13px',
+                          color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+                    <FormLabel sx={{ fontSize: '13px', whiteSpace: 'nowrap', m: 0 }}>{t("setting.treeDisplayMode")}</FormLabel>
+                    <Select
+                      value={treeDisplayMode}
+                      onChange={handleTreeDisplayModeChange}
+                      size="small"
+                      sx={{
                         fontSize: '13px',
-                        color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
-                      },
-                    }}
-                  />
+                        minWidth: 120,
+                        color: 'var(--text-primary)',
+                        backgroundColor: 'var(--bg-dropdown)',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+                        '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
+                      }}
+                      MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+                    >
+                      <MenuItem value="none" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_none")}</MenuItem>
+                      <MenuItem value="commit" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_commit")}</MenuItem>
+                      <MenuItem value="publish" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_publish")}</MenuItem>
+                    </Select>
+                    <FormControlLabel
+                      control={
+                        <Switch checked={treeExpandTargets} disabled={treeDisplayMode === 'none'} onChange={handleTreeExpandTargetsChange} size="small" />
+                      }
+                      label={t("setting.treeExpandTargets")}
+                      sx={{
+                        ml: 0,
+                        '& .MuiFormControlLabel-label': {
+                          fontSize: '13px',
+                          color: treeDisplayMode !== 'none' ? 'var(--text-primary)' : 'var(--text-disabled)',
+                        },
+                      }}
+                    />
+                  </Box>
                 </Paper>
               </div>
             </div>

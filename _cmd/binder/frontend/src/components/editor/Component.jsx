@@ -110,6 +110,34 @@ function flattenStructures(nodes) {
 }
 
 /**
+ * タブ区切りテキストをMarkdownテーブルに変換する
+ * Excel等からの貼り付けデータを想定。
+ * 判定条件: 2行以上、各行にタブが1つ以上、全行のタブ数（列数）が一致
+ * @param {string} text
+ * @returns {string|null} Markdownテーブル文字列。タブ区切りでなければ null
+ */
+function tsvToMarkdownTable(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimEnd().split('\n');
+  if (lines.length < 2) return null;
+
+  const tabCounts = lines.map(line => (line.match(/\t/g) || []).length);
+  if (tabCounts[0] === 0) return null;
+  if (!tabCounts.every(c => c === tabCounts[0])) return null;
+
+  const rows = lines.map(line => line.split('\t').map(cell => cell.trim()));
+  const colCount = rows[0].length;
+
+  const header = '| ' + rows[0].join(' | ') + ' |';
+  const separator = '| ' + rows[0].map(() => '---').join(' | ') + ' |';
+  const body = rows.slice(1).map(row => {
+    while (row.length < colCount) row.push('');
+    return '| ' + row.join(' | ') + ' |';
+  });
+
+  return [header, separator, ...body].join('\n');
+}
+
+/**
  * カーソル位置からマークダウンテーブルの範囲を検出する
  * @param {string} fullText
  * @param {number} cursorPos
@@ -278,6 +306,8 @@ function Editor(props) {
   const htmlRef = useRef("");
   // ダイアグラムテンプレートの初回描画済みIDを記録（非同期レース対策）
   const diagramInitializedRef = useRef(null);
+  // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
+  const fileOpeningRef = useRef(false);
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { idRef.current = id; }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
@@ -406,6 +436,7 @@ function Editor(props) {
       });
 
       Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        fileOpeningRef.current = true;
         setText(diagramText);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -419,6 +450,7 @@ function Editor(props) {
         setViewer(editorSettingRef.current.showPreview);
       }
       OpenNote(id).then((resp) => {
+        fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -453,6 +485,7 @@ function Editor(props) {
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
+        fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -529,9 +562,16 @@ function Editor(props) {
     }
 
     // note/diagram/template ではエディタ textarea にフォーカスを移す
+    // カーソル位置を保持してからfocusすることで、focusによるスクロールジャンプを防ぐ
     if (mode === Mode.note || mode === Mode.diagram || mode === Mode.template) {
       setTimeout(() => {
-        document.querySelector('#editor')?.focus();
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          const s = textarea.selectionStart;
+          const e = textarea.selectionEnd;
+          textarea.focus();
+          textarea.setSelectionRange(s, e);
+        }
       }, 200);
     }
 
@@ -746,6 +786,21 @@ function Editor(props) {
     }
     // ファイルオープン時（または挿入操作） → 即座に描画
     if (text === "") return;
+
+    // ファイルオープン時: カーソルを先頭に戻しスクロール位置をリセット
+    // React の controlled textarea は value 更新時にカーソルを末尾に移動するため、
+    // それによる自動スクロール（末尾へのジャンプ）を防ぐ
+    if (fileOpeningRef.current) {
+      fileOpeningRef.current = false;
+      requestAnimationFrame(() => {
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          textarea.setSelectionRange(0, 0);
+          textarea.scrollTop = 0;
+        }
+      });
+    }
+
     parseText();
   }, [text]);
 
@@ -1127,6 +1182,32 @@ function Editor(props) {
     } catch (err) {
       evt.showErrorMessage(err);
     }
+  };
+
+  /**
+   * ペースト処理: Excelなどからのタブ区切りデータをMarkdownテーブルに変換
+   * タブ区切りと判定された場合、デフォルトのペースト（画像含む）をキャンセルし
+   * Markdownテーブルとして挿入する
+   */
+  const handlePaste = (e) => {
+    const plainText = e.clipboardData?.getData('text/plain');
+    if (!plainText) return;
+
+    const markdown = tsvToMarkdownTable(plainText);
+    if (!markdown) return;
+
+    e.preventDefault();
+    const textarea = e.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const insertText = '\n' + markdown + '\n';
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, insertText);
+
+    isEditingRef.current = true;
+    setText(textarea.value);
+    writeFn(mode, id, textarea.value);
   };
 
   /**
@@ -1808,6 +1889,7 @@ function Editor(props) {
                 activeLine={activeMatchLine}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
+                onPaste={handlePaste}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
                 onDragOver={handleDragOver}
