@@ -2,7 +2,7 @@ import { useEffect, useState, useContext, useRef } from "react";
 import { Events } from '@wailsio/runtime';
 
 import { Box, Button, FormControl, FormControlLabel, FormLabel, InputAdornment, Switch, TextField } from "@mui/material";
-import FolderIcon from '@mui/icons-material/Folder';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import CheckIcon from '@mui/icons-material/Check';
 
@@ -198,7 +198,7 @@ function EditorSetting() {
                 readOnly: true,
                 startAdornment: (
                   <InputAdornment position="start">
-                    <FolderIcon sx={{ color: 'var(--text-muted)', fontSize: '20px' }} />
+                    <TerminalIcon sx={{ color: 'var(--text-muted)', fontSize: '20px' }} />
                   </InputAdornment>
                 ),
               }}
