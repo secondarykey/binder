@@ -22,7 +22,7 @@ const (
 func isExistsUserKey() bool {
 	_, err := GetUserKey()
 	if err != nil {
-		if errors.Is(keyring.ErrNotFound, err) {
+		if errors.Is(err, keyring.ErrNotFound) {
 			return false
 		}
 		log.PrintStackTrace(err)
