@@ -107,7 +107,8 @@ function App() {
   const CompatNotBinder = 5;
 
   // バインダーを開く共通処理（CheckCompat付き）
-  const openBinder = (dir) => {
+  // openLastData=true の場合、起動後に前回開いたデータに遷移する
+  const openBinder = (dir, openLastData = false) => {
     CheckCompat(dir).then((result) => {
       setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
       switch (result.status) {
@@ -125,7 +126,7 @@ function App() {
         case CompatVersionOnly:
           // スキーマ移行不要なバージョンアップ: ダイアログなしで静かに更新して開く
           Convert(dir).then(() => {
-            loadBinder(dir);
+            loadBinder(dir, openLastData);
           }).catch((err) => {
             evt.showErrorMessage(err);
           });
@@ -134,7 +135,7 @@ function App() {
           setTooOldOpen(true);
           break;
         default:
-          loadBinder(dir);
+          loadBinder(dir, openLastData);
           break;
       }
     }).catch((err) => {
@@ -143,13 +144,30 @@ function App() {
   };
 
   // LoadBinder を呼んでエディタに遷移する
-  const loadBinder = (dir) => {
+  // openLastData=true の場合、前回開いたデータに遷移する
+  const loadBinder = (dir, openLastData = false) => {
     // バインダー切り替え時にスクリプトエンジンをリセット（次回parseで新バインダーの設定で再初期化）
     MarkedScript.reset();
     MermaidScript.reset();
     LoadBinder(dir).then((href) => {
       evt.changeAddress(href);
-      nav("/editor/note/index");
+      if (openLastData) {
+        GetPath().then((path) => {
+          const dataType = path?.lastDataType;
+          const dataId = path?.lastNoteId;
+          if (dataType && dataId) {
+            const urlType = dataType === 'asset' ? 'assets' : dataType;
+            nav("/editor/" + urlType + "/" + dataId);
+            evt.selectTreeNode(dataId);
+          } else {
+            nav("/editor/note/index");
+          }
+        }).catch(() => {
+          nav("/editor/note/index");
+        });
+      } else {
+        nav("/editor/note/index");
+      }
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
@@ -286,7 +304,7 @@ function App() {
       if (path?.runWithOpen) {
         const h = path.histories;
         if (h && h.length > 0) {
-          openBinder(h[0]);
+          openBinder(h[0], !!path.openWithItem);
         }
       }
     }).catch((err) => {

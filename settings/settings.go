@@ -49,6 +49,7 @@ type Path struct {
 	OpenWithItem bool     `json:"openWithItem"`
 	Histories    []string `json:"histories"`
 	LastNoteId   string   `json:"lastNoteId"`
+	LastDataType string   `json:"lastDataType"`
 	// StartupOk は前回の起動が正常終了したかを記録するフラグ。
 	// 起動時に false に設定され、正常終了時に true になる。
 	// 起動時に false のままなら前回クラッシュと判断し、自動オープンをスキップする。
@@ -81,11 +82,13 @@ type Git struct {
 }
 
 type Look struct {
-	DarkMode    bool    `json:"darkMode"`
-	Theme       string  `json:"theme"`
-	WholeText   *Font   `json:"whole"`
-	TreeNoteNum int     `json:"treeNoteNum"`
-	Editor      *Editor `json:"editor"`
+	DarkMode        bool    `json:"darkMode"`
+	Theme           string  `json:"theme"`
+	WholeText       *Font   `json:"whole"`
+	TreeNoteNum     int     `json:"treeNoteNum"`
+	TreeDisplayMode    string  `json:"treeDisplayMode"`
+	TreeExpandTargets bool    `json:"treeExpandTargets"`
+	Editor             *Editor `json:"editor"`
 }
 
 type Editor struct {
@@ -174,6 +177,7 @@ func def() *Setting {
 	var look Look
 	look.DarkMode = true
 	look.Theme = "dark"
+	look.TreeDisplayMode = "commit"
 
 	var darkf Font
 
@@ -314,6 +318,13 @@ func SaveStartupOk(ok bool) error {
 	return obj.save()
 }
 
+func SaveLastData(dataType, id string) error {
+	obj := Get()
+	obj.Path.LastDataType = dataType
+	obj.Path.LastNoteId = id
+	return obj.save()
+}
+
 func SaveLanguage(lang string) error {
 	obj := Get()
 	obj.Language = lang
@@ -348,6 +359,32 @@ func SaveGit(g *Git) error {
 	obj.Git.WorkBranch = g.WorkBranch
 	obj.Git.Name = g.Name
 	obj.Git.Mail = g.Mail
+	return obj.save()
+}
+
+func GetTreeDisplayMode() string {
+	obj := Get()
+	mode := obj.Look.TreeDisplayMode
+	if mode == "" {
+		return "commit"
+	}
+	return mode
+}
+
+func SaveTreeDisplayMode(mode string) error {
+	obj := Get()
+	obj.Look.TreeDisplayMode = mode
+	return obj.save()
+}
+
+func GetTreeExpandTargets() bool {
+	obj := Get()
+	return obj.Look.TreeExpandTargets
+}
+
+func SaveTreeExpandTargets(v bool) error {
+	obj := Get()
+	obj.Look.TreeExpandTargets = v
 	return obj.save()
 }
 
