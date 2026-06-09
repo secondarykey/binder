@@ -1671,7 +1671,7 @@ function Editor(props) {
                       disableAutoFocus
                       disableEnforceFocus
                       disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 300 } }}
                     >
                       {snippetList.map((s) => (
                         <MenuItem key={s.id}
