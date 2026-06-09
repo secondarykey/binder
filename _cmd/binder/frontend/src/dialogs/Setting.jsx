@@ -230,7 +230,7 @@ function Setting({ isModal, ...props }) {
                 <FormControl>
                   <FormLabel>{t("setting.language")}</FormLabel>
                   <Select
-                    value={i18n.language}
+                    value={langList.length > 0 ? i18n.language : ''}
                     onChange={handleLanguageChange}
                     size="small"
                     sx={{
@@ -252,7 +252,7 @@ function Setting({ isModal, ...props }) {
                 <FormControl>
                   <FormLabel>{t("setting.theme")}</FormLabel>
                   <Select
-                    value={theme}
+                    value={themeList.length > 0 ? theme : ''}
                     onChange={handleThemeChange}
                     size="small"
                     sx={{
