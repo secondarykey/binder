@@ -1,8 +1,8 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { Events } from '@wailsio/runtime';
 
-import { Box, Button, FormControl, FormControlLabel, FormLabel, Switch, TextField } from "@mui/material";
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import { Box, Button, FormControl, FormControlLabel, FormLabel, InputAdornment, Switch, TextField } from "@mui/material";
+import FolderIcon from '@mui/icons-material/Folder';
 import FontDownloadIcon from '@mui/icons-material/FontDownload';
 import CheckIcon from '@mui/icons-material/Check';
 
@@ -190,16 +190,20 @@ function EditorSetting() {
           {/** エディタプログラム */}
           <FormControl>
             <FormLabel>{t("setting.editorProgram")}</FormLabel>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                size="small"
-                value={editorProgram}
-                InputProps={{ readOnly: true }}
-                sx={{ flex: 1 }}
-              />
-              <ActionButton variant="cancel" label={t("common.select")} icon={<FolderOpenIcon />}
-                onClick={handleSelectProgram} />
-            </Box>
+            <TextField
+              size="small"
+              value={editorProgram}
+              onClick={handleSelectProgram}
+              InputProps={{
+                readOnly: true,
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <FolderIcon sx={{ color: 'var(--text-muted)', fontSize: '20px' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ cursor: 'pointer', '& input': { cursor: 'pointer' } }}
+            />
           </FormControl>
 
           {/** エディタ引数 */}
