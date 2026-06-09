@@ -38,6 +38,12 @@ class HTMLFrame extends React.Component {
   componentDidUpdate(prevProps) {
     if (prevProps.html !== this.props.html) {
       this.view();
+    } else if (prevProps.cursorLine !== this.props.cursorLine) {
+      // HTML未変更でカーソル行のみ変化 → 表示中のiframeでスクロールだけ実行
+      const activeIframe = this.getIframe(this.active);
+      if (activeIframe?.contentDocument) {
+        this.scrollToSourceLine(activeIframe.contentDocument, this.props.cursorLine);
+      }
     } else {
       // HTML未変更でもカラースキームが変わった場合は両方のiframeに属性を反映
       const activeIframe = this.getIframe(this.active);
