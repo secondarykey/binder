@@ -278,6 +278,8 @@ function Editor(props) {
   const htmlRef = useRef("");
   // ダイアグラムテンプレートの初回描画済みIDを記録（非同期レース対策）
   const diagramInitializedRef = useRef(null);
+  // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
+  const fileOpeningRef = useRef(false);
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { idRef.current = id; }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
@@ -406,6 +408,7 @@ function Editor(props) {
       });
 
       Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        fileOpeningRef.current = true;
         setText(diagramText);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -419,6 +422,7 @@ function Editor(props) {
         setViewer(editorSettingRef.current.showPreview);
       }
       OpenNote(id).then((resp) => {
+        fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -453,6 +457,7 @@ function Editor(props) {
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
+        fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -529,9 +534,16 @@ function Editor(props) {
     }
 
     // note/diagram/template ではエディタ textarea にフォーカスを移す
+    // カーソル位置を保持してからfocusすることで、focusによるスクロールジャンプを防ぐ
     if (mode === Mode.note || mode === Mode.diagram || mode === Mode.template) {
       setTimeout(() => {
-        document.querySelector('#editor')?.focus();
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          const s = textarea.selectionStart;
+          const e = textarea.selectionEnd;
+          textarea.focus();
+          textarea.setSelectionRange(s, e);
+        }
       }, 200);
     }
 
@@ -746,6 +758,21 @@ function Editor(props) {
     }
     // ファイルオープン時（または挿入操作） → 即座に描画
     if (text === "") return;
+
+    // ファイルオープン時: カーソルを先頭に戻しスクロール位置をリセット
+    // React の controlled textarea は value 更新時にカーソルを末尾に移動するため、
+    // それによる自動スクロール（末尾へのジャンプ）を防ぐ
+    if (fileOpeningRef.current) {
+      fileOpeningRef.current = false;
+      requestAnimationFrame(() => {
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          textarea.setSelectionRange(0, 0);
+          textarea.scrollTop = 0;
+        }
+      });
+    }
+
     parseText();
   }, [text]);
 
