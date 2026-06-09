@@ -187,6 +187,7 @@
         "editorArgs" : "Editor Arguments",
         "editorArgsError" : "Editor arguments must contain {file} or {bfile}",
         "editorArgsHint" : "To use Git Bash on Windows, use {bfile} instead of {file}",
+        "editorExample" : "Example: Enter -c \"vim {bfile}\" to edit with vim in GitBash (Windows).",
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",

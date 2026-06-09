@@ -187,6 +187,7 @@
         "editorArgs" : "エディタ引数",
         "editorArgsError" : "エディタ引数に {file} または {bfile} を含めてください",
         "editorArgsHint" : "WindowsでGit Bashを利用する場合は、ファイル名の指定を {bfile} にしてください",
+        "editorExample" : "例: -c \"vim {bfile}\" と入力すると、GitBash(Windows)でvim編集が可能です。",
         "license" : "ライセンス",
         "thirdPartyLicense" : "サードパーティライセンス",
         "systemLog" : "システムログ",
