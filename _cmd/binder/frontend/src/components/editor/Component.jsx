@@ -1016,6 +1016,19 @@ function Editor(props) {
 
 
   /**
+   * カーソル移動時にプレビューのスクロール位置を追従させる（ノートモードのみ）
+   */
+  const handleCursorMove = useCallback((e) => {
+    if (modeRef.current !== Mode.note) return;
+    const textarea = e.target;
+    const line = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
+    if (line !== cursorLineRef.current) {
+      cursorLineRef.current = line;
+      setCursorLine(line);
+    }
+  }, []);
+
+  /**
    * テキストの変更
    */
   const handleChangeText = (e) => {
@@ -1890,6 +1903,7 @@ function Editor(props) {
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onPaste={handlePaste}
+                onCursorMove={handleCursorMove}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
                 onDragOver={handleDragOver}
