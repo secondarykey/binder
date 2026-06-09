@@ -270,41 +270,6 @@ function Setting({ isModal, ...props }) {
                     ))}
                   </Select>
                 </FormControl>
-                {/** ツリー初期表示 */}
-                <FormControl>
-                  <FormLabel>{t("setting.treeDisplayMode")}</FormLabel>
-                  <Select
-                    value={treeDisplayMode}
-                    onChange={handleTreeDisplayModeChange}
-                    size="small"
-                    sx={{
-                      fontSize: '13px',
-                      color: 'var(--text-primary)',
-                      backgroundColor: 'var(--bg-dropdown)',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
-                      '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
-                    }}
-                    MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
-                  >
-                    <MenuItem value="none" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_none")}</MenuItem>
-                    <MenuItem value="commit" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_commit")}</MenuItem>
-                    <MenuItem value="publish" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_publish")}</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControlLabel
-                  control={
-                    <Switch checked={treeExpandTargets} disabled={treeDisplayMode === 'none'} onChange={handleTreeExpandTargetsChange} size="small" />
-                  }
-                  label={t("setting.treeExpandTargets")}
-                  sx={{
-                    ml: 0,
-                    '& .MuiFormControlLabel-label': {
-                      fontSize: '13px',
-                      color: treeDisplayMode !== 'none' ? 'var(--text-primary)' : 'var(--text-disabled)',
-                    },
-                  }}
-                />
                 {/** デフォルトパス保存先 */}
                 <FormControl>
                   <FormLabel>{t("setting.defaultPath")}</FormLabel>
@@ -329,28 +294,65 @@ function Setting({ isModal, ...props }) {
                   backgroundColor: 'var(--bg-overlay)',
                   borderColor: 'var(--border-primary)',
                   display: 'flex',
-                  flexDirection: 'row',
-                  gap: 3,
+                  flexDirection: 'column',
+                  gap: 1,
                 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} size="small" />
-                    }
-                    label={t("setting.runWithOpen")}
-                    sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} size="small" />
-                    }
-                    label={t("setting.openWithNote")}
-                    sx={{
-                      '& .MuiFormControlLabel-label': {
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch checked={pathRunWith} onChange={(e) => handleSwitch(e, setPathRunWith)} size="small" />
+                      }
+                      label={t("setting.runWithOpen")}
+                      sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch checked={pathOpenWith} disabled={!pathRunWith} onChange={(e) => handleSwitch(e, setPathOpenWith)} size="small" />
+                      }
+                      label={t("setting.openWithNote")}
+                      sx={{
+                        '& .MuiFormControlLabel-label': {
+                          fontSize: '13px',
+                          color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+                    <FormLabel sx={{ fontSize: '13px', whiteSpace: 'nowrap', m: 0 }}>{t("setting.treeDisplayMode")}</FormLabel>
+                    <Select
+                      value={treeDisplayMode}
+                      onChange={handleTreeDisplayModeChange}
+                      size="small"
+                      sx={{
                         fontSize: '13px',
-                        color: pathRunWith ? 'var(--text-primary)' : 'var(--text-disabled)',
-                      },
-                    }}
-                  />
+                        minWidth: 120,
+                        color: 'var(--text-primary)',
+                        backgroundColor: 'var(--bg-dropdown)',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' },
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong)' },
+                        '& .MuiSvgIcon-root': { color: 'var(--text-muted)' },
+                      }}
+                      MenuProps={{ PaperProps: { sx: { backgroundColor: 'var(--bg-dropdown)', color: 'var(--text-primary)' } } }}
+                    >
+                      <MenuItem value="none" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_none")}</MenuItem>
+                      <MenuItem value="commit" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_commit")}</MenuItem>
+                      <MenuItem value="publish" sx={{ fontSize: '13px' }}>{t("setting.treeDisplayMode_publish")}</MenuItem>
+                    </Select>
+                    <FormControlLabel
+                      control={
+                        <Switch checked={treeExpandTargets} disabled={treeDisplayMode === 'none'} onChange={handleTreeExpandTargetsChange} size="small" />
+                      }
+                      label={t("setting.treeExpandTargets")}
+                      sx={{
+                        ml: 0,
+                        '& .MuiFormControlLabel-label': {
+                          fontSize: '13px',
+                          color: treeDisplayMode !== 'none' ? 'var(--text-primary)' : 'var(--text-disabled)',
+                        },
+                      }}
+                    />
+                  </Box>
                 </Paper>
               </div>
             </div>
