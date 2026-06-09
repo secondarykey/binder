@@ -219,6 +219,10 @@ function EditorSetting() {
             />
           </FormControl>
 
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
+            {t("setting.editorExample")}
+          </p>
+
         </div>
       </div>
 
