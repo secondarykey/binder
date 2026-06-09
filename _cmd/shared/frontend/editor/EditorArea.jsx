@@ -13,7 +13,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
  *   onDragOver      - ドラッグオーバーハンドラ
  *   onDrop          - ドロップハンドラ
  */
-function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, onKeyDown, onChange, onPaste, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   const canvasRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
@@ -99,6 +99,8 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
         onKeyDown={onKeyDown}
         onChange={onChange}
         onPaste={onPaste}
+        onClick={onCursorMove}
+        onKeyUp={onCursorMove}
         onCompositionStart={onCompositionStart}
         onCompositionEnd={onCompositionEnd}
         onDragOver={onDragOver}
