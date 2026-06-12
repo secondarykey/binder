@@ -74,6 +74,10 @@ func (data ModifiedFiles) Templates() ModifiedFiles {
 	return data.filter("template")
 }
 
+func (data ModifiedFiles) Files() ModifiedFiles {
+	return data.filter("file")
+}
+
 func (data ModifiedFiles) filter(t string) ModifiedFiles {
 	var files []*Modified
 	for _, f := range data {
@@ -970,7 +974,14 @@ func getModelType(f string) (*Modified, error) {
 
 	data := strings.Split(f, "/")
 	if len(data) < 2 {
-		return nil, fmt.Errorf("Path error")
+		// ルート直下のユーザーファイル（README.md 等）は "file" として扱う。
+		// binder.json 等の予約ファイルは管理外として無視する。
+		if isReservedRootName(f) || strings.HasPrefix(f, ".") {
+			return nil, fmt.Errorf("Path error")
+		}
+		mod.Typ = "file"
+		mod.Id = f
+		return &mod, nil
 	}
 
 	fn := data[1]

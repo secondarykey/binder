@@ -559,6 +559,27 @@
         "republishDate" : "Republish Date",
         "resetNow" : "Reset to Now"
     },
+    "rootFile" : {
+        "title" : "Files",
+        "hint" : "Files placed at the binder root (e.g. README.md). Changes appear in the unrecorded list.",
+        "empty" : "No files",
+        "add" : "Add File",
+        "nameLabel" : "File Name",
+        "namePlaceholder" : "e.g. README.md",
+        "nameRequired" : "File name is required",
+        "invalidName" : "File name contains invalid characters or is reserved",
+        "duplicateName" : "This file name is already in use",
+        "addSuccess" : "File created",
+        "saveSuccess" : "File saved",
+        "renameSuccess" : "File renamed",
+        "removeSuccess" : "File deleted",
+        "deleteTitle" : "Delete File",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "renameTitle" : "Rename File",
+        "editTitle" : "Edit File",
+        "preview" : "Preview",
+        "modifiedSection" : "File"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",

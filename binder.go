@@ -241,6 +241,53 @@ func (b *Binder) RenamePlugin(engine, oldName, newName string) error {
 	return b.fileSystem.Commit(fs.M("Rename Plugin", oldName+" -> "+newName), files...)
 }
 
+// ルートファイル（README.md 等）の操作。
+// プラグインと異なりコミットは行わず、未記録一覧から記録する。
+
+func (b *Binder) ListRootFiles() ([]fs.RootFileInfo, error) {
+	if b == nil {
+		return nil, EmptyError
+	}
+	return b.fileSystem.ListRootFiles()
+}
+
+func (b *Binder) ReadRootFile(name string) (string, error) {
+	if b == nil {
+		return "", EmptyError
+	}
+	return b.fileSystem.ReadRootFile(name)
+}
+
+func (b *Binder) SaveRootFile(name, content string) error {
+	if b == nil {
+		return EmptyError
+	}
+	if _, err := b.fileSystem.WriteRootFile(name, []byte(content)); err != nil {
+		return xerrors.Errorf("fs.WriteRootFile() error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) RemoveRootFile(name string) error {
+	if b == nil {
+		return EmptyError
+	}
+	if _, err := b.fileSystem.DeleteRootFile(name); err != nil {
+		return xerrors.Errorf("fs.DeleteRootFile() error: %w", err)
+	}
+	return nil
+}
+
+func (b *Binder) RenameRootFile(oldName, newName string) error {
+	if b == nil {
+		return EmptyError
+	}
+	if _, err := b.fileSystem.RenameRootFile(oldName, newName); err != nil {
+		return xerrors.Errorf("fs.RenameRootFile() error: %w", err)
+	}
+	return nil
+}
+
 func (b *Binder) Close() error {
 
 	if b == nil {

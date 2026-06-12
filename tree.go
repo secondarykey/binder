@@ -224,6 +224,15 @@ func (b *Binder) GetModifiedTree() (*json.Tree, error) {
 		}
 	}
 
+	// ルートファイル（README.md 等）はDBに存在しないためファイル名をそのまま表示する
+	dirFile := json.NewLeaf("DIR_File", "file")
+	tree.Data = append(tree.Data, dirFile)
+	for _, m := range files.Files() {
+		l := json.NewLeaf(m.Id, m.Id)
+		l.Type = "file"
+		dirFile.AddChild(l)
+	}
+
 	return &tree, nil
 }
 

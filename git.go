@@ -23,6 +23,9 @@ func (b *Binder) ToFile(mode string, id string) string {
 		f = fs.LayerFile(id)
 	case "template":
 		f = fs.TemplateFile(id)
+	case "file":
+		// ルートファイルは id がファイル名そのもの
+		f = id
 	default:
 		log.Warn("leaf is template type? %s", mode)
 	}
@@ -58,6 +61,12 @@ func (b *Binder) getFilename(typ, id string) (string, error) {
 		fn = fs.AssetFile(a)
 	case "template":
 		fn = fs.TemplateFile(id)
+	case "file":
+		// ルートファイルは id がファイル名そのもの
+		if err := fs.ValidateRootFileName(id); err != nil {
+			return "", xerrors.Errorf("ValidateRootFileName() error: %w", err)
+		}
+		fn = id
 	default:
 		return "", fmt.Errorf("Not Found Type: %s", typ)
 	}

@@ -40,6 +40,8 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
 
   const openItem = (leaf) => {
     if (!leaf) return;
+    // ルートファイルにはエディタ画面がないため開かない
+    if (leaf.type === 'file') return;
     const path = leaf.type === 'asset' ? `/editor/assets/${leaf.id}` : `/editor/${leaf.type}/${leaf.id}`;
     if (onClose) onClose();
     routerNav(path);
@@ -57,12 +59,14 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
   const [assets, setAssets] = useState([]);
   const [layers, setLayers] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [rootFiles, setRootFiles] = useState([]);
 
   const noteRef = useRef(null);
   const diagramRef = useRef(null);
   const assetRef = useRef(null);
   const layerRef = useRef(null);
   const templateRef = useRef(null);
+  const rootFileRef = useRef(null);
 
   useEffect(() => {
 
@@ -75,6 +79,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       files.push(...assetRef.current.checked());
       files.push(...layerRef.current.checked());
       files.push(...templateRef.current.checked());
+      files.push(...rootFileRef.current.checked());
 
       evt.raise(Event.ModifiedProgress, { running: true });
       CommitFiles(files, comment).then(() => {
@@ -141,6 +146,11 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
             setTemplates(leafs)
           }
           writeComment("Template", leafs)
+        } else if (leaf.id === "DIR_File") {
+          if (leafs.length != rootFiles.length) {
+            setRootFiles(leafs)
+          }
+          writeComment("File", leafs)
         }
       })
 
@@ -166,6 +176,7 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
       <ModifiedList name="Asset"    data={assets}    filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={assetRef} />
       <ModifiedList name="Layer"    data={layers}    filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={layerRef} />
       <ModifiedList name="Template" data={templates} filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={templateRef} />
+      <ModifiedList name="File"     data={rootFiles} filterIds={filterIds} onClick={handleOpen} onDoubleClick={(e, leaf) => openItem(leaf)} onContextMenu={handleContextMenu} selectedId={currentId} ref={rootFileRef} />
     </List>
 
     <Menu open={contextMenu.open}

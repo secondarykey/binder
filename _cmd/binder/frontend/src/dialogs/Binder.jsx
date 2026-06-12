@@ -13,6 +13,7 @@ import AuthFields from "../components/AuthFields";
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs, RunGC } from "../../bindings/binder/api/app";
 import PluginSetting from "./PluginSetting";
+import RootFileSetting from "./RootFileSetting";
 import MarkedScript from "../components/editor/engines/Marked";
 import MermaidScript from "../components/editor/engines/Mermaid";
 import Scripter from "../components/editor/engines/Scripter";
@@ -28,6 +29,7 @@ const MENU_ITEMS_KEYS = [
   { key: "script", labelKey: "binder.script" },
   { key: "git", labelKey: "binder.git" },
   { key: "plugin", labelKey: "plugin.title" },
+  { key: "rootfile", labelKey: "rootFile.title" },
 ];
 
 /**
@@ -419,6 +421,10 @@ function Binder({ isModal, ...props }) {
 
         {activeSection === "plugin" && (
           <PluginSetting />
+        )}
+
+        {activeSection === "rootfile" && (
+          <RootFileSetting />
         )}
 
         {activeSection === "git" && (
