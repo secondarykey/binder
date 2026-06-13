@@ -51,14 +51,19 @@ go run ./_cmd/version.go 0.0.0
 - ./_cmd/binder/version
 - ./_cmd/lite/version
 - ./_cmd/binder/build/config.yml
-- ./_cmd/binder/build/windows/info.json
-- ./_cmd/binder/build/darwin/Info.plist
 - ./_cmd/binder/frontend/package.json
 - ./_cmd/lite/build/config.yml
 - ./_cmd/lite/frontend/package.json
 
-８つのファイルのバージョンが引数のバージョンに変更されます。
+６つのファイルのバージョンが引数のバージョンに変更されます。
 `_cmd/binder/version` がバージョンの実体で、`main.go` は `//go:embed version` で読み込みます。
+
+**注意**: `_cmd/binder/build/windows/info.json`（`file_version` / `ProductVersion`）と
+`_cmd/binder/build/darwin/Info.plist`（`CFBundleShortVersionString` / `CFBundleVersion`）にも
+バージョン文字列があるが、`_cmd/version.go` の更新対象**外**である。これらは CI（`.github/workflows/versionup.yml`）の
+`wails3 update build-assets` ステップで `config.yml` のバージョンから再生成・同期される。
+ローカルで `go run _cmd/version.go` だけを実行した場合は info 系が取り残されるため、
+ローカルでプラットフォームバージョンまで揃えたいときは `wails3 update build-assets` を併せて実行すること。
 
 ### テスト
 ```bash
