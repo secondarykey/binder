@@ -121,35 +121,25 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
           leafs = [];
         }
 
+        // 取得は date 変更時のみ（useEffect [date]）。件数比較で更新を抑制すると
+        // 件数が同じで中身だけ変わったケースを取りこぼすため、常に最新で置き換える。
         if (leaf.id === "DIR_Note") {
-          if (leafs.length != notes.length) {
-            setNotes(leafs);
-          }
+          setNotes(leafs);
           writeComment("Note", leafs)
         } else if (leaf.id === "DIR_Diagram") {
-          if (leafs.length != diagrams.length) {
-            setDiagrams(leafs)
-          }
+          setDiagrams(leafs)
           writeComment("Diagram", leafs)
         } else if (leaf.id === "DIR_Asset") {
-          if (leafs.length != assets.length) {
-            setAssets(leafs)
-          }
+          setAssets(leafs)
           writeComment("Asset", leafs)
         } else if (leaf.id === "DIR_Layer") {
-          if (leafs.length != layers.length) {
-            setLayers(leafs)
-          }
+          setLayers(leafs)
           writeComment("Layer", leafs)
         } else if (leaf.id === "DIR_Template") {
-          if (leafs.length != templates.length) {
-            setTemplates(leafs)
-          }
+          setTemplates(leafs)
           writeComment("Template", leafs)
         } else if (leaf.id === "DIR_File") {
-          if (leafs.length != rootFiles.length) {
-            setRootFiles(leafs)
-          }
+          setRootFiles(leafs)
           writeComment("File", leafs)
         }
       })
