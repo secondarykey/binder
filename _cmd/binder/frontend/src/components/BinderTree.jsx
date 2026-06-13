@@ -29,7 +29,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Events, Browser } from '@wailsio/runtime';
 
 import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset, RemoveLayer,
-         EditNote, EditDiagram, EditAsset, EditLayer, AddTextAsset, GetNote, GetDiagram, GetAsset, GetLayer, GetHTMLTemplates, Address, GetFullPath,
+         EditNote, EditDiagram, EditAsset, EditLayer, AddTextAsset, GetNote, GetDiagram, GetAsset, GetLayer, GetHTMLTemplates, EnsureAddress, GetFullPath,
          IsGitBashPath, GetGitBashFullPath, GetTreeDisplayMode, GetTreeExpandTargets, SaveLastData } from '../../bindings/binder/api/app';
 
 import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../bindings/main/window';
@@ -193,8 +193,6 @@ function BinderTree(props) {
   const openMoreMenuEl = (el) => setMoreMenu({ open: true, el, x: 0, y: 0 });
   const closeMoreMenu = () => setMoreMenu({ open: false, el: null, x: 0, y: 0 });
 
-  // バインダーのサイトURL（ブラウザで開くボタン用）
-  const [siteUrl, setSiteUrl] = useState("");
   useEffect(() => { displayModeRef.current = displayMode; }, [displayMode]);
 
   // 展開しているノードのID配列
@@ -303,7 +301,6 @@ function BinderTree(props) {
     // アドレスが変わった（別バインダー）ときだけトップ展開リセット。
     // 同じバインダーの再ロードや画面遷移では展開状態を維持する。
     evt.register("BinderTree", Event.ChangeAddress, (addr) => {
-      setSiteUrl(addr);
       const isNewBinder = addr !== currentAddressRef.current;
       currentAddressRef.current = addr;
       setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
@@ -342,8 +339,6 @@ function BinderTree(props) {
     evt.register("BinderTree", Event.MarkPublishDirty, (id) => {
       if (id) setLocalPublishDirtyIds(prev => new Set([...prev, id]));
     });
-    // 初期URLを取得
-    Address().then((addr) => { setSiteUrl(addr); }).catch(() => {});
     // 設定からツリー初期表示モードと自動展開設定を取得
     GetTreeDisplayMode().then((mode) => {
       const m = mode || 'commit';
@@ -998,7 +993,7 @@ function BinderTree(props) {
       </MenuItem>
       <Divider />
       {/** ブラウザで開く */}
-      <MenuItem onClick={() => { closeMoreMenu(); Browser.OpenURL(siteUrl); }}>
+      <MenuItem onClick={() => { closeMoreMenu(); EnsureAddress().then((addr) => { if (addr) Browser.OpenURL(addr + "/"); }).catch(() => {}); }}>
         <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
       </MenuItem>
       {/** ダウンロード */}

@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
@@ -332,7 +332,6 @@ function Editor(props) {
   const [parseWarningDlg, setParseWarningDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [alias, setAlias] = useState('');
-  const [serverAddress, setServerAddress] = useState('');
   // ダイアグラムスタイルテンプレートID
   const [styleTemplateId, setStyleTemplateId] = useState("");
 
@@ -385,7 +384,6 @@ function Editor(props) {
   }, [text]);
 
   useEffect(() => {
-    Address().then((addr) => setServerAddress(addr)).catch(() => {});
     GetConfig().then((conf) => {
       if (conf.previewColorScheme) {
         setColorSchemeConfig(conf.previewColorScheme);
@@ -1038,12 +1036,18 @@ function Editor(props) {
   }
 
   const handleOpenInBrowser = () => {
-    if (!alias || !serverAddress) return;
+    if (!alias) return;
+    let path = null;
     if (mode === Mode.note) {
-      Browser.OpenURL(id === "index" ? `${serverAddress}/` : `${serverAddress}/pages/${alias}.html`);
+      path = id === "index" ? "/" : `/pages/${alias}.html`;
     } else if (mode === Mode.diagram) {
-      Browser.OpenURL(`${serverAddress}/images/${alias}.svg`);
+      path = `/images/${alias}.svg`;
     }
+    if (!path) return;
+    // HTTPサーバを遅延起動してから開く
+    EnsureAddress().then((addr) => {
+      if (addr) Browser.OpenURL(addr + path);
+    }).catch((err) => evt.showErrorMessage(err));
   };
 
   //出力処理

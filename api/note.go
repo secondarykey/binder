@@ -47,27 +47,20 @@ func (a *App) GetNote(id string) (*json.Note, error) {
 	return n, nil
 }
 
-// GetNoteImageURL はノートのメタ画像URLを返す。
-// assets/meta/{noteId} が存在する場合は HTTP URL を返し、存在しない場合は空文字を返す。
+// GetNoteImageURL はノートのメタ画像を data URI で返す。
+// assets/meta/{noteId} が存在する場合は data:{mime};base64,... を返し、
+// 存在しない場合は空文字を返す。HTTPサーバに依存しない。
 func (a *App) GetNoteImageURL(noteId string) (string, error) {
 
 	defer log.PrintTrace(log.Func("GetNoteImageURL()"))
 
-	data, err := a.current.ReadMetaBytes(noteId)
+	uri, err := a.current.MetaImageDataURI(noteId)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("GetNoteImageURL() error\n%+v", err)
 	}
-	if data == nil {
-		return "", nil
-	}
 
-	addr := a.current.ServerAddress()
-	if addr == "" {
-		return "", nil
-	}
-
-	return fmt.Sprintf("http://%s/binder-meta/%s", addr, noteId), nil
+	return uri, nil
 }
 
 // UploadNoteImage はノートのメタ画像ファイルをアップロードする。

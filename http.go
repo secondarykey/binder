@@ -320,11 +320,41 @@ func (h *handler) serveNoteMetaImage(w http.ResponseWriter, r *http.Request, not
 	http.ServeContent(w, r, noteId, time.Time{}, bytes.NewReader(data))
 }
 
-func (b *Binder) Serve() error {
+// EnsureServing は HTTPサーバが未起動なら起動し、アドレス（host:port）を返す。
+// 「ブラウザで開く」（公開サイト確認）など、サーバが実際に必要になった時点で
+// 遅延起動するために使う。既に起動済みなら現在のアドレスをそのまま返す。
+func (b *Binder) EnsureServing() (string, error) {
+	if b == nil {
+		return "", EmptyError
+	}
 
+	b.serveMu.Lock()
+	defer b.serveMu.Unlock()
+
+	if b.httpServer != nil {
+		return b.httpServerAddress, nil
+	}
+
+	if err := b.serve(); err != nil {
+		return "", err
+	}
+	return b.httpServerAddress, nil
+}
+
+func (b *Binder) Serve() error {
 	if b == nil {
 		return EmptyError
 	}
+	b.serveMu.Lock()
+	defer b.serveMu.Unlock()
+	if b.httpServer != nil {
+		return nil
+	}
+	return b.serve()
+}
+
+// serve は実際にリスナを開いてHTTPサーバを起動する。serveMu を保持した状態で呼ぶこと。
+func (b *Binder) serve() error {
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
