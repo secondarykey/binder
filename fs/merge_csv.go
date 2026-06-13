@@ -3,7 +3,6 @@ package fs
 import (
 	"encoding/csv"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -33,9 +32,10 @@ type MergedCSV struct {
 
 // mergeCSVFiles は base/ours/theirs の3つのコミットから指定パスの CSV を読み取り、
 // ID列ベースの行単位 3-way マージを行う。
-// isStructure=true の場合、双方追加された行の parent_id を rootId に、seq を末尾に設定する。
+// theirs のみに追加された行は parent_id/seq を維持したまま取り込む。
+// 親ノードが失われて dangling になるケースはマージ後の normalizeMergedTree で救済する。
 func mergeCSVFiles(baseCommit, oursCommit, theirsCommit *object.Commit,
-	path string, isStructure bool, rootId string) (*MergedCSV, error) {
+	path string) (*MergedCSV, error) {
 
 	baseContent, err := readCommitFile(baseCommit, path)
 	if err != nil {
@@ -63,7 +63,7 @@ func mergeCSVFiles(baseCommit, oursCommit, theirsCommit *object.Commit,
 		return nil, fmt.Errorf("parse theirs %s: %w", path, err)
 	}
 
-	return mergeRows(header, baseRows, oursRows, theirsRows, isStructure, rootId)
+	return mergeRows(header, baseRows, oursRows, theirsRows)
 }
 
 // readCommitFile はコミットからファイル内容を文字列として読み取る。
@@ -122,8 +122,7 @@ func rowSummary(row csvRow) CSVRowSummary {
 }
 
 // mergeRows は3つの行セットをIDベースでマージする。
-func mergeRows(header []string, baseRows, oursRows, theirsRows []csvRow,
-	isStructure bool, rootId string) (*MergedCSV, error) {
+func mergeRows(header []string, baseRows, oursRows, theirsRows []csvRow) (*MergedCSV, error) {
 
 	baseMap := rowsToMap(baseRows)
 	oursMap := rowsToMap(oursRows)
@@ -193,8 +192,9 @@ func mergeRows(header []string, baseRows, oursRows, theirsRows []csvRow,
 		}
 	}
 
-	// theirs のみに追加された行を追加
-	maxSeq := findMaxSeq(result)
+	// theirs のみに追加された行を追加（parent_id/seq はそのまま維持）。
+	// 親ノードが ours 側で削除されて dangling になるケースは、
+	// マージ後の normalizeMergedTree で index 直下へ救済する。
 	for _, row := range theirsRows {
 		id := row["id"]
 		if _, inBase := baseMap[id]; inBase {
@@ -205,12 +205,6 @@ func mergeRows(header []string, baseRows, oursRows, theirsRows []csvRow,
 		}
 		// theirs のみの新規行
 		changed = true
-		if isStructure {
-			row = cloneRow(row)
-			row["parent_id"] = rootId
-			maxSeq++
-			row["seq"] = strconv.Itoa(maxSeq)
-		}
 		result = append(result, row)
 		merged.AddedTheirs = append(merged.AddedTheirs, rowSummary(row))
 	}
@@ -232,28 +226,6 @@ func rowEqual(a, b csvRow) bool {
 		}
 	}
 	return true
-}
-
-// findMaxSeq は行リストから seq カラムの最大値を返す。
-func findMaxSeq(rows []csvRow) int {
-	max := 0
-	for _, row := range rows {
-		if s, ok := row["seq"]; ok {
-			if n, err := strconv.Atoi(s); err == nil && n > max {
-				max = n
-			}
-		}
-	}
-	return max
-}
-
-// cloneRow は csvRow のコピーを返す。
-func cloneRow(row csvRow) csvRow {
-	c := make(csvRow, len(row))
-	for k, v := range row {
-		c[k] = v
-	}
-	return c
 }
 
 // renderCSV はヘッダと行リストからCSV文字列を生成する。

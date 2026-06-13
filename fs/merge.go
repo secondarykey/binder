@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -35,6 +36,7 @@ type MergeLog struct {
 	AutoFiles    []ResolvedFile
 	MergedCSVs   map[string]*MergedCSV
 	UserFiles    []FileResolution
+	Reparented   []CSVRowSummary // マージ後に親が失われ index 直下へ救済したノード
 }
 
 // ResolvedFile は自動解決されたファイル。
@@ -210,9 +212,9 @@ func isDBCSV(path string) bool {
 	return strings.HasPrefix(path, DBDir+"/") && strings.HasSuffix(path, ".csv")
 }
 
-// isStructureCSV は structures.csv かを判定する。
-func isStructureCSV(path string) bool {
-	return path == DBDir+"/structures.csv"
+// structureCSVPath は structures.csv のスラッシュ区切りパスを返す。
+func structureCSVPath() string {
+	return DBDir + "/structures.csv"
 }
 
 // analyzeChanges は3つのツリーを比較してコンフリクトを分類する。
@@ -319,8 +321,7 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 		// DB CSV は行単位マージで自動解決を試みる
 		if isDBCSV(path) && ours.action != merkletrie.Delete && theirs.action != merkletrie.Delete {
 			merged, err := mergeCSVFiles(
-				baseCommit, oursCommit, theirsCommit,
-				path, isStructureCSV(path), structureRootId,
+				baseCommit, oursCommit, theirsCommit, path,
 			)
 			if err == nil {
 				content := renderCSV(merged.Header, merged.Rows)
@@ -474,6 +475,13 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 		}
 	}
 
+	// 全解決を適用した最終 structures.csv を検査し、親ノードが失われて
+	// ツリーから不可視（orphan）になるノードを index 直下へ救済する。
+	reparented, err := f.normalizeMergedTree(wt)
+	if err != nil {
+		return nil, xerrors.Errorf("normalizeMergedTree() error: %w", err)
+	}
+
 	// マージコミット（2親）
 	sig := f.userSigOrDefault()
 	_, err = wt.Commit("Merge remote branch", &git.CommitOptions{
@@ -491,9 +499,86 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 		AutoFiles:  analysis.AutoFiles,
 		MergedCSVs: analysis.MergedCSVInfos,
 		UserFiles:  userResolutions,
+		Reparented: reparented,
 	}
 
 	return mergeLog, nil
+}
+
+// normalizeMergedTree はマージ適用後のワークツリー上 structures.csv を検査し、
+// 親 (parent_id) がツリー上に存在しないノードを root（index）直下へ再配置する。
+// ours/theirs の追加・削除が交差して親ノードが失われると、子ノードは
+// dangling parent_id を持ち GetBinderTree で不可視（orphan）になるため、
+// それらを救済してツリーに復帰させる。変更があった場合のみファイルを書き戻す。
+func (f *FileSystem) normalizeMergedTree(wt *git.Worktree) ([]CSVRowSummary, error) {
+	rel := structureCSVPath()
+	fullPath := filepath.Join(f.base, filepath.FromSlash(rel))
+
+	data, err := os.ReadFile(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, xerrors.Errorf("ReadFile(%s) error: %w", rel, err)
+	}
+
+	rows, header, err := parseCSV(string(data))
+	if err != nil {
+		return nil, xerrors.Errorf("parseCSV(%s) error: %w", rel, err)
+	}
+
+	reparented := repairDanglingParents(rows)
+	if len(reparented) == 0 {
+		return nil, nil
+	}
+
+	content := renderCSV(header, rows)
+	if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+		return nil, xerrors.Errorf("WriteFile(%s) error: %w", rel, err)
+	}
+	if _, err := wt.Add(rel); err != nil {
+		return nil, xerrors.Errorf("Add(%s) error: %w", rel, err)
+	}
+
+	return reparented, nil
+}
+
+// repairDanglingParents は structures 行のうち、参照先の親が存在しないものを
+// root（structureRootId）直下へ再配置する。再配置した行は parent_id を root に、
+// seq を root 直下の末尾に書き換え、サマリを返す。rows は in-place で変更される。
+func repairDanglingParents(rows []csvRow) []CSVRowSummary {
+	// 全 id 集合（親参照先の検証用）
+	idSet := make(map[string]bool, len(rows))
+	for _, row := range rows {
+		if id := row["id"]; id != "" {
+			idSet[id] = true
+		}
+	}
+
+	// 親単位の最大 seq（再配置時の採番用）
+	maxSeqByParent := make(map[string]int)
+	for _, row := range rows {
+		pid := row["parent_id"]
+		if n, err := strconv.Atoi(row["seq"]); err == nil && n > maxSeqByParent[pid] {
+			maxSeqByParent[pid] = n
+		}
+	}
+
+	var reparented []CSVRowSummary
+	for _, row := range rows {
+		pid := row["parent_id"]
+		// ルート（parent_id 空 or index 自身）と、存在する親は正当
+		if pid == "" || pid == structureRootId || idSet[pid] {
+			continue
+		}
+		// 親が存在しない → root 直下へ救済
+		row["parent_id"] = structureRootId
+		maxSeqByParent[structureRootId]++
+		row["seq"] = strconv.Itoa(maxSeqByParent[structureRootId])
+		reparented = append(reparented, rowSummary(row))
+	}
+
+	return reparented
 }
 
 // changePath は Change からファイルパスを取得する。
