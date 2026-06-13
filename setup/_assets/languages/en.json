@@ -320,7 +320,9 @@
         "localLabel" : "Local",
         "remoteLabel" : "Remote",
         "sourceLabel" : "Source",
-        "selectFile" : "Select a file from the list."
+        "selectFile" : "Select a file from the list.",
+        "diffTitle" : "Changes (diff)",
+        "diffUnavailable" : "Diff unavailable (binary, deleted, or added)"
     },
     "branch" : {
         "title" : "Overall History",

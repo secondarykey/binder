@@ -15,7 +15,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import ModalWrapper from './components/ModalWrapper';
 import AuthFields from '../components/AuthFields';
-import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListBranches, ListRemoteBranches, MergeFromRemote, MergeFromLocal, ApplyMergeResolution } from '../../bindings/binder/api/app';
+import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListBranches, ListRemoteBranches, MergeFromRemote, MergeFromLocal, ApplyMergeResolution, GetHistoryPatch } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import { useDialogMessage } from './components/DialogError';
@@ -72,6 +72,8 @@ function MergeModal({ open, onClose }) {
   const [autoResolved, setAutoResolved] = useState(0);
   const [selectedPath, setSelectedPath] = useState(null);
   const [applying, setApplying] = useState(false);
+  const [diffPatch, setDiffPatch] = useState(null);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -267,6 +269,26 @@ function MergeModal({ open, onClose }) {
 
   const allResolved = conflicts.length > 0 && Object.keys(resolutions).length === conflicts.length;
   const selectedConflict = conflicts.find((c) => c.path === selectedPath);
+
+  // diff 表示対象（テキスト系エンティティ）
+  const DIFF_TYPES = ['note', 'diagram', 'template'];
+  const canShowDiff = selectedConflict && DIFF_TYPES.includes(selectedConflict.type) && selectedConflict.id;
+
+  // 選択中コンフリクトの ours↔theirs 差分を取得する。
+  // コンフリクト解決中はワークツリーが ours のままなので、
+  // GetHistoryPatch(type, id, theirsHash) で historical=theirs / source=ours の
+  // 差分（theirs→ours）が得られる。削除・追加・バイナリ時はエラーになるため握り潰す。
+  useEffect(() => {
+    if (phase !== 'conflicts' || !canShowDiff || !mergeHashes.theirs) {
+      setDiffPatch(null);
+      return;
+    }
+    setDiffLoading(true);
+    GetHistoryPatch(selectedConflict.type, selectedConflict.id, mergeHashes.theirs)
+      .then((res) => { setDiffPatch(res?.patch ?? ''); })
+      .catch(() => { setDiffPatch(null); })
+      .finally(() => { setDiffLoading(false); });
+  }, [phase, selectedPath]);
 
   const actionLabel = (action) => {
     switch (action) {
@@ -558,6 +580,32 @@ function MergeModal({ open, onClose }) {
                         : t('merge.keepBoth')}
                   </Typography>
                 )}
+
+                {/* ours↔theirs の差分（テキスト系のみ） */}
+                {canShowDiff && (
+                  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
+                      <Typography sx={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                        {t('merge.diffTitle')}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1.5, fontSize: '11px' }}>
+                        <span style={{ color: '#4caf50' }}>+ {t('merge.localLabel')}</span>
+                        <span style={{ color: '#f44336' }}>
+                          - {mergeMode === 'local' ? t('merge.sourceLabel') : t('merge.remoteLabel')}
+                        </span>
+                      </Box>
+                    </Box>
+                    {diffLoading ? (
+                      <CircularProgress size={18} sx={{ mt: 1 }} />
+                    ) : diffPatch ? (
+                      <DiffView patch={diffPatch} />
+                    ) : (
+                      <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        {t('merge.diffUnavailable')}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
               </>
             ) : (
               <Typography sx={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -568,6 +616,36 @@ function MergeModal({ open, onClose }) {
         </Box>
       )}
     </ModalWrapper>
+  );
+}
+
+/**
+ * DiffView は unified patch 文字列を行頭記号で色付けして表示する。
+ * + 行（ローカルのみ）=緑、- 行（リモート/マージ元のみ）=赤、@@ ヘッダ=淡色。
+ * ファイルヘッダ（diff/index/---/+++）は表示しない。
+ */
+function DiffView({ patch }) {
+  const lines = (patch || '').split('\n');
+  return (
+    <Box sx={{
+      maxHeight: '260px', overflow: 'auto',
+      fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5,
+      backgroundColor: 'var(--bg-overlay)',
+      border: '1px solid var(--border-primary)',
+      borderRadius: '4px', p: 1, whiteSpace: 'pre',
+    }}>
+      {lines.map((line, i) => {
+        if (line.startsWith('diff ') || line.startsWith('index ') ||
+            line.startsWith('--- ') || line.startsWith('+++ ')) {
+          return null;
+        }
+        let color = 'var(--text-secondary)';
+        if (line.startsWith('@@')) color = 'var(--text-muted)';
+        else if (line.startsWith('+')) color = '#4caf50';
+        else if (line.startsWith('-')) color = '#f44336';
+        return <div key={i} style={{ color }}>{line || ' '}</div>;
+      })}
+    </Box>
   );
 }
 

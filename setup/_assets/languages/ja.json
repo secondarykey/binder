@@ -320,7 +320,9 @@
         "localLabel" : "ローカル",
         "remoteLabel" : "リモート",
         "sourceLabel" : "マージ元",
-        "selectFile" : "左のファイルを選択してください"
+        "selectFile" : "左のファイルを選択してください",
+        "diffTitle" : "変更の差分",
+        "diffUnavailable" : "差分を表示できません（バイナリ・削除・追加など）"
     },
     "branch" : {
         "title" : "全体履歴",
