@@ -378,6 +378,11 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 	if err != nil {
 		return nil, xerrors.Errorf("CommitObject(theirs) error: %w", err)
 	}
+	// base コミット（3-wayマージの共通祖先）。「両方残す」で diff3 に使用する。
+	baseCommit, err := f.repo.CommitObject(analysis.BaseHash)
+	if err != nil {
+		return nil, xerrors.Errorf("CommitObject(base) error: %w", err)
+	}
 
 	wt, err := f.repo.Worktree()
 	if err != nil {
@@ -416,8 +421,12 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 			resolution = "ours"
 		}
 
-		// 両方残す: ours と theirs をセパレータ付きで結合
+		// 両方残す: base/ours/theirs の 3-way マージで競合箇所のみマーカー化する
 		if resolution == "both" {
+			baseContent := ""
+			if f, err := baseCommit.File(path); err == nil {
+				baseContent, _ = f.Contents()
+			}
 			oursContent := ""
 			if f, err := oursCommit.File(path); err == nil {
 				oursContent, _ = f.Contents()
@@ -433,7 +442,7 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 			} else if theirsContent == "" {
 				combined = oursContent
 			} else {
-				combined = "<<<< LOCAL >>>>\n" + oursContent + "\n<<<< REMOTE >>>>\n" + theirsContent
+				combined, _ = mergeDiff3(baseContent, oursContent, theirsContent)
 			}
 
 			dir := filepath.Dir(fullPath)
