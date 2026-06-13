@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -34,6 +35,7 @@ type Binder struct {
 	db                *db.Instance
 	httpServer        *http.Server
 	httpServerAddress string
+	serveMu           sync.Mutex // httpServer の遅延起動を保護する
 	op                db.Op
 }
 

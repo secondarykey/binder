@@ -17,7 +17,7 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import GestureIcon from '@mui/icons-material/Gesture';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
-import { GetLayerWithParent, GetLayerContent, SaveLayerContent, Address, Generate, Unpublish, Commit, GetModifiedIds } from '../../bindings/binder/api/app';
+import { GetLayerWithParent, GetLayerContent, SaveLayerContent, GetAssetContent, EnsureAddress, Generate, Unpublish, Commit, GetModifiedIds } from '../../bindings/binder/api/app';
 import { GetFontNames } from '../../bindings/binder/api/shared/shared';
 import { Browser } from '@wailsio/runtime';
 import CommitBar from './CommitBar';
@@ -316,7 +316,6 @@ function LayerEditor() {
 
   const [layer, setLayer] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
-  const [serverAddress, setServerAddress] = useState('');
   const [shapes, setShapes] = useState([]);
   const [tool, setTool] = useState('select');
   const [selectedId, setSelectedId] = useState(null);
@@ -380,14 +379,16 @@ function LayerEditor() {
     Promise.all([
       GetLayerWithParent(id),
       GetLayerContent(id),
-      Address(),
-    ]).then(([lw, content, addr]) => {
+    ]).then(([lw, content]) => {
       if (cancelled) return;
       setLayer(lw);
-      setServerAddress(addr);
       if (lw?.name) setComment('Updated: ' + lw.name);
       if (lw?.parentId) {
-        setImageUrl(`${addr}/binder-assets/${lw.parentId}`);
+        // 親アセット画像を data URI で取得（HTTPサーバ非依存）
+        GetAssetContent(lw.parentId).then((resp) => {
+          if (cancelled || !resp) return;
+          setImageUrl(`data:${resp.mime};base64,${resp.content}`);
+        }).catch(() => {});
       }
       try {
         const parsed = content ? JSON.parse(content) : { shapes: [] };
@@ -934,8 +935,11 @@ function LayerEditor() {
 
   const handleOpenInBrowser = () => {
     const a = layer?.alias;
-    if (!a || !serverAddress) return;
-    Browser.OpenURL(`${serverAddress}/layers/${a}.svg`);
+    if (!a) return;
+    // HTTPサーバを遅延起動してから開く
+    EnsureAddress().then((addr) => {
+      if (addr) Browser.OpenURL(`${addr}/layers/${a}.svg`);
+    }).catch((err) => evt.showErrorMessage(err));
   };
 
   const renderArrowhead = (tipX, tipY, fromX, fromY, stroke, sw, arrowSize, keyPrefix = '') => {
