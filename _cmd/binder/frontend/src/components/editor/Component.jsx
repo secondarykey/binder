@@ -700,10 +700,11 @@ function Editor(props) {
     textarea.setSelectionRange(start, end);
     document.execCommand('insertText', false, body);
     setSnippetAnchor(null);
-    setTimeout(() => {
+    // execCommand は同期で textarea.value を確定するため、次フレームで state へ反映すれば足りる
+    requestAnimationFrame(() => {
       setText(textarea.value);
       writeFn(mode, id, textarea.value);
-    }, 500);
+    });
   };
 
   // エディタへのテキスト挿入イベントを購読
@@ -719,10 +720,10 @@ function Editor(props) {
       textarea.setSelectionRange(start, end);
       document.execCommand('insertText', false, text);
 
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         setText(textarea.value);
         writeFn(modeRef.current, idRef.current, textarea.value);
-      }, 500);
+      });
     });
   }, []);
 
@@ -974,12 +975,18 @@ function Editor(props) {
     if (!splitStartRef.current) return;
     const delta = e.clientX - splitStartRef.current.startX;
     const newWidth = Math.max(100, splitStartRef.current.startWidth + delta);
-    setWidth(newWidth);
+    // ドラッグ中は state を更新せず DOM を直接書き換え、巨大な Editor の再レンダーを回避する。
+    // 最終値は pointerup で一度だけ setWidth して確定する。
+    splitStartRef.current.lastWidth = newWidth;
+    const wrapper = document.getElementById('editorWrapper');
+    if (wrapper) wrapper.style.width = (newWidth - 4) + 'px';
   };
 
   const handleSplitterPointerUp = () => {
     if (!splitStartRef.current) return;
+    const finalWidth = splitStartRef.current.lastWidth;
     splitStartRef.current = null;
+    if (finalWidth != null) setWidth(finalWidth);
     document.getElementById('editorContent')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
@@ -1003,12 +1010,17 @@ function Editor(props) {
     if (!treeSplitStartRef.current) return;
     const delta = e.clientX - treeSplitStartRef.current.startX;
     const newWidth = Math.max(80, treeSplitStartRef.current.startWidth + delta);
-    setTreeWidth(newWidth);
+    // ドラッグ中は state を更新せず DOM を直接書き換え、ツリー・エディタの再レンダーを回避する。
+    treeSplitStartRef.current.lastWidth = newWidth;
+    const panel = document.getElementById('editorTreePanel');
+    if (panel) panel.style.width = newWidth + 'px';
   };
 
   const handleTreeSplitterPointerUp = () => {
     if (!treeSplitStartRef.current) return;
+    const finalWidth = treeSplitStartRef.current.lastWidth;
     treeSplitStartRef.current = null;
+    if (finalWidth != null) setTreeWidth(finalWidth);
     document.getElementById('splitScreen')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
@@ -1284,10 +1296,10 @@ function Editor(props) {
             ta.value = newVal;
             ta.selectionStart = dropPos + tag.length;
             ta.selectionEnd = dropPos + tag.length;
-            setTimeout(() => {
+            requestAnimationFrame(() => {
               setText(newVal);
               writeFn(mode, id, newVal);
-            }, 500);
+            });
           }
         }).catch((err) => {
           evt.showErrorMessage(err);
@@ -1330,11 +1342,11 @@ function Editor(props) {
     textarea.setSelectionRange(start, end);
     document.execCommand('insertText', false, insertText);
 
-    setTimeout(function () {
+    requestAnimationFrame(function () {
       const val = textarea.value;
       setText(val);
       writeFn(mode, id, val);
-    }, 500)
+    })
 
   }
 

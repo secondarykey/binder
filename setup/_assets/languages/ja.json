@@ -565,6 +565,27 @@
         "republishDate" : "再公開日時",
         "resetNow" : "現在時刻にリセット"
     },
+    "rootFile" : {
+        "title" : "ファイル",
+        "hint" : "バインダーのルートに配置するファイル（README.md 等）。変更は未記録一覧に表示されます。",
+        "empty" : "ファイルがありません",
+        "add" : "ファイルを追加",
+        "nameLabel" : "ファイル名",
+        "namePlaceholder" : "例: README.md",
+        "nameRequired" : "ファイル名は必須です",
+        "invalidName" : "ファイル名に使用できない文字または予約名が含まれています",
+        "duplicateName" : "このファイル名は既に使用されています",
+        "addSuccess" : "ファイルを作成しました",
+        "saveSuccess" : "ファイルを保存しました",
+        "renameSuccess" : "ファイル名を変更しました",
+        "removeSuccess" : "ファイルを削除しました",
+        "deleteTitle" : "ファイルの削除",
+        "deleteConfirm" : "「{{name}}」を削除しますか？",
+        "renameTitle" : "ファイル名の変更",
+        "editTitle" : "ファイル編集",
+        "preview" : "プレビュー",
+        "modifiedSection" : "ファイル"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",

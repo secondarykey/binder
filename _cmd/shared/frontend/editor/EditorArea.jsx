@@ -50,19 +50,40 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     setLineHeights(heights);
   }, [text, style, wordWrap]);
 
+  // 全行の measureText は重いため、連続入力・連続リサイズでは rAF で 1 フレーム 1 回に間引く。
+  // rAF はスケジュール時点のクロージャを実行するため、コアレッシングで最新の計算関数を
+  // 取りこぼさないよう ref 経由で常に最新の calcLineHeights を呼ぶ。
+  const calcRef = useRef(calcLineHeights);
+  calcRef.current = calcLineHeights;
+
+  const rafRef = useRef(0);
+  const scheduleCalc = useCallback(() => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      calcRef.current();
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   // テキスト・フォント・折り返し変更時に再計算
   useEffect(() => {
-    calcLineHeights();
-  }, [calcLineHeights]);
+    scheduleCalc();
+  }, [text, style, wordWrap, scheduleCalc]);
 
   // textarea のリサイズ時に再計算（スプリッター操作など）
   useEffect(() => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
-    const observer = new ResizeObserver(calcLineHeights);
+    const observer = new ResizeObserver(scheduleCalc);
     observer.observe(textarea);
     return () => observer.disconnect();
-  }, [calcLineHeights]);
+  }, [scheduleCalc]);
 
   /**
    * テキストエリアのスクロールに合わせて行番号ガターを同期
