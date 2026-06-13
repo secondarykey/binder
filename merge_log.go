@@ -161,6 +161,16 @@ func buildMergeLogMarkdown(ml *fs.MergeLog) string {
 		sb.WriteString("\n")
 	}
 
+	// structure 行が失われた実体ファイルを復元したエンティティ
+	if len(ml.Restored) > 0 {
+		sb.WriteString(fmt.Sprintf("## 実体ファイルの復元 (%d件)\n\n", len(ml.Restored)))
+		sb.WriteString("削除と内容変更が競合し内容ファイルのみ残ったため、ツリーへ復元しました（名前は仮にIDを設定）。\n\n")
+		for _, r := range ml.Restored {
+			sb.WriteString(fmt.Sprintf("- [%s] id=%s\n", r.Typ, r.Id))
+		}
+		sb.WriteString("\n")
+	}
+
 	// ユーザー選択
 	if len(ml.UserFiles) > 0 {
 		sb.WriteString(fmt.Sprintf("## ユーザー選択で解決したファイル (%d件)\n\n", len(ml.UserFiles)))

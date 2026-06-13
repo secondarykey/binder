@@ -378,11 +378,18 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 		return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
 	}
 
+	// 6.5 structure 行が失われた orphan 実体ファイルをツリーへ復元する
+	restored, rerr := a.current.ReconcileMergedTree()
+	if rerr != nil {
+		log.Warn("ReconcileMergedTree() error:\n%+v", rerr)
+	}
+
 	// 7. マージログノートを作成（失敗してもマージ自体は成功とする）
 	if mergeLog != nil {
 		mergeLog.RemoteName = resolution.RemoteName
 		mergeLog.RemoteBranch = resolution.RemoteBranch
 		mergeLog.SourceBranch = resolution.SourceBranch
+		mergeLog.Restored = restored
 		if branch, err := a.current.GetCurrentBranch(); err == nil {
 			mergeLog.LocalBranch = branch
 		}
@@ -490,8 +497,14 @@ func (a *App) handleMergeAnalysis(dir string, tmpFs *fs.FileSystem, analysis *fs
 		if err != nil {
 			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
 		}
+		// structure 行が失われた orphan 実体ファイルをツリーへ復元する
+		restored, rerr := a.current.ReconcileMergedTree()
+		if rerr != nil {
+			log.Warn("ReconcileMergedTree() error:\n%+v", rerr)
+		}
 		if mergeLog != nil {
 			logSetter(mergeLog)
+			mergeLog.Restored = restored
 			if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
 				log.Warn("CreateMergeLogNote() error:\n%+v", err)
 			}

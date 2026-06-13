@@ -36,7 +36,16 @@ type MergeLog struct {
 	AutoFiles    []ResolvedFile
 	MergedCSVs   map[string]*MergedCSV
 	UserFiles    []FileResolution
-	Reparented   []CSVRowSummary // マージ後に親が失われ index 直下へ救済したノード
+	Reparented   []CSVRowSummary  // マージ後に親が失われ index 直下へ救済したノード
+	Restored     []RestoredEntity // structure 行が失われた実体ファイルを復元したエンティティ
+}
+
+// RestoredEntity はマージ後に structure 行が失われた orphan 実体ファイルを
+// 検出し、ツリー（index 直下）へ復元したエンティティ。
+type RestoredEntity struct {
+	Id   string
+	Typ  string // note/diagram/asset/layer
+	Name string
 }
 
 // ResolvedFile は自動解決されたファイル。
