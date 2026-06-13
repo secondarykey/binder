@@ -34,7 +34,10 @@ type tempNote struct {
 
 	Created string
 	Link    string
-	Image   string
+	// Image はローカルプレビューでは data URI を持つため template.URL とする。
+	// string のままだと html/template の URL サニタイザが data: スキームを
+	// 安全でないと判断し src="#ZgotmplZ" に置換してしまう。
+	Image template.URL
 }
 
 // parseTemplateFile はファイルシステムからテンプレートを読み込み、

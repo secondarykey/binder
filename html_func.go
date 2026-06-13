@@ -77,21 +77,25 @@ func (h ArgHelper[T]) Default(def T) T {
 	return v
 }
 
-func (w *wrapper) assets(id string) string {
+// assets はアセットの参照URLを template.URL で返す。
+// 戻り値を string にすると、ローカルプレビューの data URI が
+// html/template の URL サニタイザで href="#ZgotmplZ" に置換され、
+// <link rel="stylesheet" href="{{assets ...}}"> 等でCSSが適用されなくなる。
+func (w *wrapper) assets(id string) template.URL {
 	if w.Local {
 		// ローカルプレビューは data URI で埋め込み、HTTPサーバに依存しない
 		uri, err := w.owner.AssetDataURI(id)
 		if err != nil {
 			w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
-			return "ERROR: assets"
+			return template.URL("ERROR: assets")
 		}
-		return uri
+		return template.URL(uri)
 	}
 
 	a, err := w.owner.GetAssetWithParent(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
-		return "ERROR: assets/" + id
+		return template.URL("ERROR: assets/" + id)
 	}
 
 	if w.deps != nil {
@@ -99,7 +103,7 @@ func (w *wrapper) assets(id string) string {
 	}
 
 	p := fs.PublicAssetFile(a)
-	return w.convertURL(p)
+	return template.URL(w.convertURL(p))
 }
 
 // assetsImage はアセットIDから <img> タグを生成するテンプレート関数

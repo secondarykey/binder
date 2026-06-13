@@ -2,6 +2,7 @@ package binder
 
 import (
 	"fmt"
+	"html/template"
 	"strings"
 	"time"
 
@@ -112,11 +113,11 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 		if err != nil {
 			w.addWarning(fmt.Sprintf("convertNote(%s): MetaImageDataURI: %v", n.Id, err))
 		} else {
-			t.Image = uri
+			t.Image = template.URL(uri)
 		}
 	} else {
 		m := fs.PublicMetaFile(n)
-		t.Image = w.convertURL(m)
+		t.Image = template.URL(w.convertURL(m))
 	}
 
 	//TODO PREV NEXTは？
