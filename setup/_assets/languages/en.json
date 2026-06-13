@@ -519,6 +519,7 @@
         "colorize" : "Colorize"
     },
     "editor" : {
+        "conflictBanner" : "This note has unresolved conflicts. Remove the markers (<<<<<<< / ======= / >>>>>>>) and clean up the content.",
         "fileDataEmpty" : "File data is empty.",
         "lineNumberOn" : "Line Numbers: ON",
         "lineNumberOff" : "Line Numbers: OFF",

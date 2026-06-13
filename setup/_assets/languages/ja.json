@@ -519,6 +519,7 @@
         "colorize" : "色付け"
     },
     "editor" : {
+        "conflictBanner" : "このノートには未解決のコンフリクトがあります。マーカー（<<<<<<< / ======= / >>>>>>>）を削除して内容を整えてください。",
         "fileDataEmpty" : "ファイルデータが空です",
         "lineNumberOn" : "行番号: ON",
         "lineNumberOff" : "行番号: OFF",
