@@ -16,6 +16,8 @@ import { useRef, useState, useCallback, useEffect } from "react";
 function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
+  // エディタがまだサイズ未確定（幅0）で計測できない時のリトライ回数
+  const retryRef = useRef(0);
 
   /**
    * 各論理行が折り返しで何 visual 行になるかを算出する。
@@ -33,13 +35,22 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     }
 
     const textarea = document.querySelector('#editor');
-    if (!textarea) return;
+    const cs = textarea ? window.getComputedStyle(textarea) : null;
+    const paddingLeft = cs ? (parseFloat(cs.paddingLeft) || 0) : 0;
+    const paddingRight = cs ? (parseFloat(cs.paddingRight) || 0) : 0;
+    const availWidth = textarea ? textarea.clientWidth - paddingLeft - paddingRight : 0;
 
-    const cs = window.getComputedStyle(textarea);
-    const paddingLeft = parseFloat(cs.paddingLeft) || 0;
-    const paddingRight = parseFloat(cs.paddingRight) || 0;
-    const availWidth = textarea.clientWidth - paddingLeft - paddingRight;
-    if (availWidth <= 0) return;
+    // エディタがまだレイアウトされていない（幅0）と計測できず lineHeights が
+    // 空のままになり、折り返しのスペーサーが入らず番号がずれる。測れるように
+    // なるまで次フレームで再試行する（上限付きで無限ループを防ぐ）。
+    if (!textarea || availWidth <= 0) {
+      if (retryRef.current < 60) {
+        retryRef.current++;
+        requestAnimationFrame(() => calcRef.current());
+      }
+      return;
+    }
+    retryRef.current = 0;
 
     // textarea の内容幅・折り返し条件を再現するミラー
     const mirror = document.createElement('div');
