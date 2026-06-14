@@ -87,11 +87,30 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
 
     document.body.appendChild(mirror);
     const unit = probe.offsetHeight || 1;
-    const wraps = lineEls.map((d) => Math.max(1, Math.round(d.offsetHeight / unit)));
+    const offsets = lineEls.map((d) => d.offsetHeight);
+    const wraps = offsets.map((h) => Math.max(1, Math.round(h / unit)));
     document.body.removeChild(mirror);
+
+    // [DEBUG] 実環境の計測値
+    console.log('[gutter] calc availWidth=%d unit=%d wraps=%o offsets=%o lines=%d',
+      availWidth, unit, wraps, offsets, text.split('\n').length);
 
     setLineWraps(wraps);
   }, [text, style, wordWrap]);
+
+  // [DEBUG] エディタ本体とガターの実高さ・行数を比較（ズレ検出用）
+  useEffect(() => {
+    const ta = document.querySelector('#editor');
+    const gut = lineNumbersRef.current;
+    if (!ta || !gut) return;
+    const taCS = window.getComputedStyle(ta);
+    const gCS = window.getComputedStyle(gut);
+    console.log('[gutter] HEIGHTS editor.scrollH=%d gutter.scrollH=%d | rows(gutter children)=%d totalWraps=%d | editor.lh=%s gutter.lh=%s editor.fs=%s gutter.fs=%s | editor.padT=%s gutter.padT=%s',
+      ta.scrollHeight, gut.scrollHeight,
+      gut.children.length, lineWraps.reduce((a, b) => a + b, 0),
+      taCS.lineHeight, gCS.lineHeight, taCS.fontSize, gCS.fontSize,
+      taCS.paddingTop, gCS.paddingTop);
+  }, [lineWraps]);
 
   // 計測は重いため、連続入力・連続リサイズでは rAF で 1 フレーム 1 回に間引く。
   // rAF はスケジュール時点のクロージャを実行するため、コアレッシングで最新の計算関数を
