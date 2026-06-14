@@ -33,10 +33,8 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 		return "", xerrors.Errorf("Binder Load() error: %w", err)
 	}
 
-	err = b.Serve()
-	if err != nil {
-		return "", xerrors.Errorf("Binder Serve() error: %w", err)
-	}
+	// HTTPサーバは起動時には立てず、「ブラウザで開く」などで必要になった時点で
+	// EnsureServing() により遅延起動する。
 
 	// バインダー切り替え時にバインダー関連ウィンドウを閉じる
 	if a.WindowCloser != nil {

@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset, Address, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
@@ -181,6 +181,63 @@ function detectTableAt(fullText, cursorPos) {
   return { startOffset, endOffset, lines: tableLines };
 }
 
+// ---- マージコンフリクトマーカー（diff3）の検出・表示 ----
+// マーカーは fs/diff3.go が出力する構造的プレフィックスで判定する（ラベル文字列に依存しない）。
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * ノート本文に未解決のコンフリクトマーカーが含まれるか。
+ * ours(<<<<<<<) → mid(=======) → theirs(>>>>>>>) の3点が「この順」で存在する
+ * 構造のみを検出する。単独行の誤検出（git を説明する文書など）を避けるため、
+ * 3マーカーが揃った構造に限定する。
+ */
+function hasConflictMarkers(text) {
+  if (!text) return false;
+  return /^<<<<<<< .*$[\s\S]*^=======$[\s\S]*^>>>>>>> .*$/m.test(text);
+}
+
+/**
+ * コンフリクトマーカー入りの本文を、marked を通さずに色分けした完結HTMLへ変換する。
+ * ours ブロック=緑、theirs ブロック=赤、マーカー行=強調。HTMLFrame の srcdoc に渡す。
+ */
+function buildConflictHTML(text, bannerText) {
+  const lines = (text || '').split('\n');
+  let zone = 'normal'; // normal | ours | theirs
+  const rows = lines.map((line) => {
+    const esc = escapeHtml(line) || '&nbsp;';
+    if (/^<<<<<<< /.test(line)) { zone = 'ours'; return `<div class="m ours-m">${esc}</div>`; }
+    if (zone !== 'normal' && /^=======\s*$/.test(line)) { zone = 'theirs'; return `<div class="m mid-m">${esc}</div>`; }
+    if (/^>>>>>>> /.test(line)) { zone = 'normal'; return `<div class="m theirs-m">${esc}</div>`; }
+    const cls = zone === 'ours' ? 'ours' : zone === 'theirs' ? 'theirs' : '';
+    return `<div class="${cls}">${esc}</div>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    body { margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; line-height:1.5; color:#1a1a1a; background:#fff; }
+    .banner { padding:8px 12px; background:#fff3cd; color:#664d03; border-bottom:1px solid #ffe69c; font-family: system-ui, sans-serif; }
+    .body { padding:8px 12px; }
+    .body > div { white-space:pre-wrap; word-break:break-word; }
+    .ours { background: rgba(76,175,80,0.14); }
+    .theirs { background: rgba(244,67,54,0.14); }
+    .m { font-weight:bold; }
+    .ours-m { background: rgba(76,175,80,0.30); color:#1b5e20; }
+    .mid-m { background: rgba(0,0,0,0.08); color:#555; }
+    .theirs-m { background: rgba(244,67,54,0.30); color:#b71c1c; }
+    @media (prefers-color-scheme: dark) {
+      body { color:#e0e0e0; background:#1e1e1e; }
+      .banner { background:#3a3000; color:#ffe69c; border-bottom-color:#5a4b00; }
+      .mid-m { background: rgba(255,255,255,0.12); color:#bbb; }
+      .ours-m { color:#a5d6a7; } .theirs-m { color:#ef9a9a; }
+    }
+  </style></head><body>
+    <div class="banner">&#9888; ${escapeHtml(bannerText || '')}</div>
+    <div class="body">${rows}</div>
+  </body></html>`;
+}
+
 /**
  * テンプレートプレビューHTMLを生成する
  */
@@ -332,7 +389,6 @@ function Editor(props) {
   const [parseWarningDlg, setParseWarningDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [alias, setAlias] = useState('');
-  const [serverAddress, setServerAddress] = useState('');
   // ダイアグラムスタイルテンプレートID
   const [styleTemplateId, setStyleTemplateId] = useState("");
 
@@ -385,7 +441,6 @@ function Editor(props) {
   }, [text]);
 
   useEffect(() => {
-    Address().then((addr) => setServerAddress(addr)).catch(() => {});
     GetConfig().then((conf) => {
       if (conf.previewColorScheme) {
         setColorSchemeConfig(conf.previewColorScheme);
@@ -700,10 +755,11 @@ function Editor(props) {
     textarea.setSelectionRange(start, end);
     document.execCommand('insertText', false, body);
     setSnippetAnchor(null);
-    setTimeout(() => {
+    // execCommand は同期で textarea.value を確定するため、次フレームで state へ反映すれば足りる
+    requestAnimationFrame(() => {
       setText(textarea.value);
       writeFn(mode, id, textarea.value);
-    }, 500);
+    });
   };
 
   // エディタへのテキスト挿入イベントを購読
@@ -719,10 +775,10 @@ function Editor(props) {
       textarea.setSelectionRange(start, end);
       document.execCommand('insertText', false, text);
 
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         setText(textarea.value);
         writeFn(modeRef.current, idRef.current, textarea.value);
-      }, 500);
+      });
     });
   }, []);
 
@@ -830,6 +886,16 @@ function Editor(props) {
   const viewHTML = async (txt, embNoteElm) => {
 
     if (mode === "note") {
+
+      // マージコンフリクトマーカーが残っている間は marked を通さず、
+      // 色分けしたコンフリクト表示に切り替える（エディタ側は変更しない）。
+      if (hasConflictMarkers(txt)) {
+        const conflictHtml = buildConflictHTML(txt, t('editor.conflictBanner'));
+        setHTML(conflictHtml);
+        setParseStatus({ status: "warning", err: null, warnings: [t('editor.conflictBanner')] });
+        Events.Emit('binder:preview:update', { typ: mode, id, name, html: conflictHtml });
+        return;
+      }
 
       var result = await createMarked(id, txt, true, true);
       const noteResult = await CreateNoteHTML(id, true, result.html);
@@ -974,12 +1040,18 @@ function Editor(props) {
     if (!splitStartRef.current) return;
     const delta = e.clientX - splitStartRef.current.startX;
     const newWidth = Math.max(100, splitStartRef.current.startWidth + delta);
-    setWidth(newWidth);
+    // ドラッグ中は state を更新せず DOM を直接書き換え、巨大な Editor の再レンダーを回避する。
+    // 最終値は pointerup で一度だけ setWidth して確定する。
+    splitStartRef.current.lastWidth = newWidth;
+    const wrapper = document.getElementById('editorWrapper');
+    if (wrapper) wrapper.style.width = (newWidth - 4) + 'px';
   };
 
   const handleSplitterPointerUp = () => {
     if (!splitStartRef.current) return;
+    const finalWidth = splitStartRef.current.lastWidth;
     splitStartRef.current = null;
+    if (finalWidth != null) setWidth(finalWidth);
     document.getElementById('editorContent')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
@@ -1003,17 +1075,35 @@ function Editor(props) {
     if (!treeSplitStartRef.current) return;
     const delta = e.clientX - treeSplitStartRef.current.startX;
     const newWidth = Math.max(80, treeSplitStartRef.current.startWidth + delta);
-    setTreeWidth(newWidth);
+    // ドラッグ中は state を更新せず DOM を直接書き換え、ツリー・エディタの再レンダーを回避する。
+    treeSplitStartRef.current.lastWidth = newWidth;
+    const panel = document.getElementById('editorTreePanel');
+    if (panel) panel.style.width = newWidth + 'px';
   };
 
   const handleTreeSplitterPointerUp = () => {
     if (!treeSplitStartRef.current) return;
+    const finalWidth = treeSplitStartRef.current.lastWidth;
     treeSplitStartRef.current = null;
+    if (finalWidth != null) setTreeWidth(finalWidth);
     document.getElementById('splitScreen')?.classList.remove('no-transition');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
 
+
+  /**
+   * カーソル移動時にプレビューのスクロール位置を追従させる（ノートモードのみ）
+   */
+  const handleCursorMove = useCallback((e) => {
+    if (modeRef.current !== Mode.note) return;
+    const textarea = e.target;
+    const line = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
+    if (line !== cursorLineRef.current) {
+      cursorLineRef.current = line;
+      setCursorLine(line);
+    }
+  }, []);
 
   /**
    * テキストの変更
@@ -1038,12 +1128,18 @@ function Editor(props) {
   }
 
   const handleOpenInBrowser = () => {
-    if (!alias || !serverAddress) return;
+    if (!alias) return;
+    let path = null;
     if (mode === Mode.note) {
-      Browser.OpenURL(id === "index" ? `${serverAddress}/` : `${serverAddress}/pages/${alias}.html`);
+      path = id === "index" ? "/" : `/pages/${alias}.html`;
     } else if (mode === Mode.diagram) {
-      Browser.OpenURL(`${serverAddress}/images/${alias}.svg`);
+      path = `/images/${alias}.svg`;
     }
+    if (!path) return;
+    // HTTPサーバを遅延起動してから開く
+    EnsureAddress().then((addr) => {
+      if (addr) Browser.OpenURL(addr + path);
+    }).catch((err) => evt.showErrorMessage(err));
   };
 
   //出力処理
@@ -1271,10 +1367,10 @@ function Editor(props) {
             ta.value = newVal;
             ta.selectionStart = dropPos + tag.length;
             ta.selectionEnd = dropPos + tag.length;
-            setTimeout(() => {
+            requestAnimationFrame(() => {
               setText(newVal);
               writeFn(mode, id, newVal);
-            }, 500);
+            });
           }
         }).catch((err) => {
           evt.showErrorMessage(err);
@@ -1317,11 +1413,11 @@ function Editor(props) {
     textarea.setSelectionRange(start, end);
     document.execCommand('insertText', false, insertText);
 
-    setTimeout(function () {
+    requestAnimationFrame(function () {
       const val = textarea.value;
       setText(val);
       writeFn(mode, id, val);
-    }, 500)
+    })
 
   }
 
@@ -1658,7 +1754,7 @@ function Editor(props) {
                       disableAutoFocus
                       disableEnforceFocus
                       disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 300 } }}
                     >
                       {snippetList.map((s) => (
                         <MenuItem key={s.id}
@@ -1890,6 +1986,7 @@ function Editor(props) {
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onPaste={handlePaste}
+                onCursorMove={handleCursorMove}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
                 onDragOver={handleDragOver}

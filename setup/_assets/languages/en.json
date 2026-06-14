@@ -187,6 +187,7 @@
         "editorArgs" : "Editor Arguments",
         "editorArgsError" : "Editor arguments must contain {file} or {bfile}",
         "editorArgsHint" : "To use Git Bash on Windows, use {bfile} instead of {file}",
+        "editorExample" : "Example: Enter -c \"vim {bfile}\" to edit with vim in GitBash (Windows).",
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "systemLog" : "System Log",
@@ -319,7 +320,9 @@
         "localLabel" : "Local",
         "remoteLabel" : "Remote",
         "sourceLabel" : "Source",
-        "selectFile" : "Select a file from the list."
+        "selectFile" : "Select a file from the list.",
+        "diffTitle" : "Changes (diff)",
+        "diffUnavailable" : "Diff unavailable (binary, deleted, or added)"
     },
     "branch" : {
         "title" : "Overall History",
@@ -516,6 +519,7 @@
         "colorize" : "Colorize"
     },
     "editor" : {
+        "conflictBanner" : "This note has unresolved conflicts. Remove the markers (<<<<<<< / ======= / >>>>>>>) and clean up the content.",
         "fileDataEmpty" : "File data is empty.",
         "lineNumberOn" : "Line Numbers: ON",
         "lineNumberOff" : "Line Numbers: OFF",
@@ -563,6 +567,27 @@
         "publishDate" : "Publish Date",
         "republishDate" : "Republish Date",
         "resetNow" : "Reset to Now"
+    },
+    "rootFile" : {
+        "title" : "Files",
+        "hint" : "Files placed at the binder root (e.g. README.md). Changes appear in the unrecorded list.",
+        "empty" : "No files",
+        "add" : "Add File",
+        "nameLabel" : "File Name",
+        "namePlaceholder" : "e.g. README.md",
+        "nameRequired" : "File name is required",
+        "invalidName" : "File name contains invalid characters or is reserved",
+        "duplicateName" : "This file name is already in use",
+        "addSuccess" : "File created",
+        "saveSuccess" : "File saved",
+        "renameSuccess" : "File renamed",
+        "removeSuccess" : "File deleted",
+        "deleteTitle" : "Delete File",
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "renameTitle" : "Rename File",
+        "editTitle" : "Edit File",
+        "preview" : "Preview",
+        "modifiedSection" : "File"
     },
     "go" : {
         "window" : {

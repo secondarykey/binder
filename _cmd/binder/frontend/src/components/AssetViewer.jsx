@@ -12,7 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
 
-import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, Address, ParseAsset, DetectAssetMime } from '../../bindings/binder/api/app';
+import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, EnsureAddress, ParseAsset, DetectAssetMime } from '../../bindings/binder/api/app';
 import CommitBar from './CommitBar';
 import EditorArea from './editor/EditorArea';
 import { Events, Browser } from '@wailsio/runtime';
@@ -227,7 +227,6 @@ function AssetViewer() {
   const [updating, setUpdating] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [migrateDeleteAsset, setMigrateDeleteAsset] = useState(true);
-  const [serverAddress, setServerAddress] = useState('');
   // MoreVert メニュー
   const [moreMenu, setMoreMenu] = useState({ open: false, el: null });
   const openMoreMenu = (el) => setMoreMenu({ open: true, el });
@@ -244,9 +243,6 @@ function AssetViewer() {
   const [selectedMime, setSelectedMime] = useState('');
   const [detectedMime, setDetectedMime] = useState(null);
 
-  useEffect(() => {
-    Address().then((addr) => setServerAddress(addr)).catch(() => {});
-  }, []);
 
   useEffect(() => {
     GetFont(document.documentElement.dataset.theme || 'dark').then((s) => {
@@ -343,8 +339,11 @@ function AssetViewer() {
 
   const handleOpenInBrowser = () => {
     const a = assetMeta?.alias;
-    if (!a || !serverAddress) return;
-    Browser.OpenURL(`${serverAddress}/assets/${a}`);
+    if (!a) return;
+    // HTTPサーバを遅延起動してから開く
+    EnsureAddress().then((addr) => {
+      if (addr) Browser.OpenURL(`${addr}/assets/${a}`);
+    }).catch((err) => evt.showErrorMessage(err));
   };
 
   /** Migrate ボタン押下: 確認ダイアログを開く */

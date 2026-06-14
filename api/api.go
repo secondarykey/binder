@@ -94,9 +94,25 @@ func (a *App) SearchBinder(query string) error {
 	return nil
 }
 
+// Address はバインダーを一意に識別するための安定した識別子（バインダーのディレクトリ）を返す。
+// 以前は HTTPサーバのURLを返していたが、サーバは遅延起動になったため、
+// フロントエンドの「別バインダーへ切り替わったか」判定にはサーバ非依存の識別子を使う。
+// 実際にブラウザで開くためのサーバURLは EnsureAddress() を使うこと。
 func (a *App) Address() (string, error) {
 	defer log.PrintTrace(log.Func("Address()"))
-	return fmt.Sprintf("http://%s", a.current.ServerAddress()), nil
+	return a.current.Dir(), nil
+}
+
+// EnsureAddress は HTTPサーバを（未起動なら）起動し、その http URL を返す。
+// 「ブラウザで開く」など公開サイト確認が必要になった時点で呼ぶ。
+func (a *App) EnsureAddress() (string, error) {
+	defer log.PrintTrace(log.Func("EnsureAddress()"))
+	addr, err := a.current.EnsureServing()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", fmt.Errorf("EnsureAddress() error\n%+v", err)
+	}
+	return fmt.Sprintf("http://%s", addr), nil
 }
 
 type KVList []*KeyValue

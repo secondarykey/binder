@@ -154,9 +154,9 @@ function NoteMetaDialog({ open, id, onClose }) {
       if (!f) return;
       UploadNoteImage(id, f).then(() => {
         setHasImage(true);
-        // キャッシュ回避のためタイムスタンプ付きURLで再取得
+        // data URI を再取得（内容が変わるため自動的に新しい画像になる）
         GetNoteImageURL(id).then((url) => {
-          setViewImage(url ? url + "?t=" + Date.now() : noImage);
+          setViewImage(url || noImage);
         }).catch(() => {});
         evt.showSuccessMessage(t("note.imageUploaded"));
       }).catch((err) => showError(err));

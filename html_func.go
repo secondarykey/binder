@@ -77,20 +77,25 @@ func (h ArgHelper[T]) Default(def T) T {
 	return v
 }
 
-func (w *wrapper) assets(id string) string {
+// assets はアセットの参照URLを template.URL で返す。
+// 戻り値を string にすると、ローカルプレビューの data URI が
+// html/template の URL サニタイザで href="#ZgotmplZ" に置換され、
+// <link rel="stylesheet" href="{{assets ...}}"> 等でCSSが適用されなくなる。
+func (w *wrapper) assets(id string) template.URL {
 	if w.Local {
-		addr := w.owner.ServerAddress()
-		if addr == "" {
-			w.addWarning(fmt.Sprintf("assets(%s): server not available", id))
-			return "ERROR: assets"
+		// ローカルプレビューは data URI で埋め込み、HTTPサーバに依存しない
+		uri, err := w.owner.AssetDataURI(id)
+		if err != nil {
+			w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
+			return template.URL("ERROR: assets")
 		}
-		return fmt.Sprintf("http://%s/binder-assets/%s", addr, id)
+		return template.URL(uri)
 	}
 
 	a, err := w.owner.GetAssetWithParent(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
-		return "ERROR: assets/" + id
+		return template.URL("ERROR: assets/" + id)
 	}
 
 	if w.deps != nil {
@@ -98,7 +103,7 @@ func (w *wrapper) assets(id string) string {
 	}
 
 	p := fs.PublicAssetFile(a)
-	return w.convertURL(p)
+	return template.URL(w.convertURL(p))
 }
 
 // assetsImage はアセットIDから <img> タグを生成するテンプレート関数
@@ -324,19 +329,19 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 	imageSrc := ""
 	svgSrc := ""
 	if w.Local {
-		// 親Assetのプライベートアセット配信URL
+		// 親Assetの画像を data URI で埋め込み、HTTPサーバに依存しない
 		m, err := w.owner.GetLayerWithParent(id)
 		if err != nil {
 			w.addWarning(fmt.Sprintf("drawLayer(%s): GetLayerWithParent: %v", id, err))
 			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 		}
-		addr := w.owner.ServerAddress()
-		if addr == "" {
-			w.addWarning(fmt.Sprintf("drawLayer(%s): server not available", id))
-			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): server not available", id))
-		}
 		if m.Parent != nil {
-			imageSrc = fmt.Sprintf("http://%s/binder-assets/%s", addr, m.Parent.Id)
+			uri, err := w.owner.AssetDataURI(m.Parent.Id)
+			if err != nil {
+				w.addWarning(fmt.Sprintf("drawLayer(%s): AssetDataURI: %v", id, err))
+				return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
+			}
+			imageSrc = uri
 		}
 	} else {
 		// 公開時は親 Asset の公開パスを参照

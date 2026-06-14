@@ -147,6 +147,30 @@ func buildMergeLogMarkdown(ml *fs.MergeLog) string {
 		}
 	}
 
+	// 親が失われ index 直下へ救済したノード
+	if len(ml.Reparented) > 0 {
+		sb.WriteString(fmt.Sprintf("## ツリー再配置 (%d件)\n\n", len(ml.Reparented)))
+		sb.WriteString("親ノードが双方の変更で失われたため、index 直下へ移動しました。\n\n")
+		for _, r := range ml.Reparented {
+			sb.WriteString(fmt.Sprintf("- id=%s", r.Id))
+			if r.Name != "" {
+				sb.WriteString(fmt.Sprintf(", name=\"%s\"", r.Name))
+			}
+			sb.WriteString("\n")
+		}
+		sb.WriteString("\n")
+	}
+
+	// structure 行が失われた実体ファイルを復元したエンティティ
+	if len(ml.Restored) > 0 {
+		sb.WriteString(fmt.Sprintf("## 実体ファイルの復元 (%d件)\n\n", len(ml.Restored)))
+		sb.WriteString("削除と内容変更が競合し内容ファイルのみ残ったため、ツリーへ復元しました（名前は仮にIDを設定）。\n\n")
+		for _, r := range ml.Restored {
+			sb.WriteString(fmt.Sprintf("- [%s] id=%s\n", r.Typ, r.Id))
+		}
+		sb.WriteString("\n")
+	}
+
 	// ユーザー選択
 	if len(ml.UserFiles) > 0 {
 		sb.WriteString(fmt.Sprintf("## ユーザー選択で解決したファイル (%d件)\n\n", len(ml.UserFiles)))
@@ -172,7 +196,7 @@ func writeCSVDetails(sb *strings.Builder, info *fs.MergedCSV) {
 		sb.WriteString("\n")
 	}
 	for _, r := range info.AddedTheirs {
-		sb.WriteString(fmt.Sprintf("- 追加(リモート → indexに配置): id=%s", r.Id))
+		sb.WriteString(fmt.Sprintf("- 追加(リモート): id=%s", r.Id))
 		if r.Name != "" {
 			sb.WriteString(fmt.Sprintf(", name=\"%s\"", r.Name))
 		}
