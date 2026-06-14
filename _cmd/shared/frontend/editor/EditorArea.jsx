@@ -17,11 +17,6 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
   const lineNumbersRef = useRef(null);
   // 各論理行が折り返しで何 visual 行になるか（折り返し行数）。
   const [lineWraps, setLineWraps] = useState([]);
-  // textarea の実フォント（font-size/font-family）。editorStyle が font-size を
-  // 持たない場合、<textarea> と <div> の既定フォントサイズが食い違って行高が
-  // ずれるため、textarea の実フォントをガターに適用して行高を一致させる。
-  const [editorFont, setEditorFont] = useState(null);
-  const editorFontRef = useRef('');
   // エディタがまだサイズ未確定（幅0）で計測できない時のリトライ回数
   const retryRef = useRef(0);
 
@@ -45,15 +40,6 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
 
     const textarea = document.querySelector('#editor');
     const cs = textarea ? window.getComputedStyle(textarea) : null;
-
-    // textarea の実フォントをガターへ反映（行高を一致させる）
-    if (cs) {
-      const key = cs.fontFamily + '|' + cs.fontSize;
-      if (editorFontRef.current !== key) {
-        editorFontRef.current = key;
-        setEditorFont({ fontFamily: cs.fontFamily, fontSize: cs.fontSize });
-      }
-    }
 
     const paddingLeft = cs ? (parseFloat(cs.paddingLeft) || 0) : 0;
     const paddingRight = cs ? (parseFloat(cs.paddingRight) || 0) : 0;
@@ -165,8 +151,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
   return (
     <div className="editorArea">
       {showLineNumbers && (
-        <div className="editorLineNumbers" ref={lineNumbersRef}
-          style={editorFont ? { ...style, fontFamily: editorFont.fontFamily, fontSize: editorFont.fontSize } : style}>
+        <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
           {text.split('\n').flatMap((_, i) => {
             // 論理行の折り返し行数ぶん visual 行を出す。先頭行に番号、
             // 折り返した継続行は空白（&nbsp;）にして textarea の各行と 1 対 1 で揃える。
