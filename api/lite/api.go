@@ -1,7 +1,6 @@
 package lite
 
 import (
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"os"
@@ -107,7 +106,7 @@ func (a *App) SetLanguage(lang string) error {
 	if err := settings.SaveLiteLanguage(lang); err != nil {
 		return err
 	}
-	i18n.SetLanguage(lang)
+	settings.SetI18nLanguage(lang)
 	return nil
 }
 

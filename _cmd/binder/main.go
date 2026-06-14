@@ -12,7 +12,6 @@ import (
 	"binder"
 	"binder/api"
 	"binder/api/shared"
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 )
@@ -90,8 +89,8 @@ func main() {
 	}
 
 	// i18n 初期化（ウィンドウ作成前に実行）
-	if err := i18n.Init(set.Language); err != nil {
-		log.Warn("i18n.Init() error:\n%+v", err)
+	if err := settings.InitI18n(set.Language); err != nil {
+		log.Warn("settings.InitI18n() error:\n%+v", err)
 	}
 
 	// セーフモードまたは前回クラッシュ検出時は、今セッションの自動オープンをオフにする。
@@ -108,7 +107,7 @@ func main() {
 
 	// 3. ウィンドウ作成
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:                  i18n.T("go.window.main"),
+		Title:                  settings.T("go.window.main"),
 		X:                      set.Position.Left,
 		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
@@ -138,8 +137,8 @@ func main() {
 	app.WindowCloser = win
 
 	// 言語変更時にウィンドウタイトルを更新
-	i18n.OnLanguageChange(func(code string) {
-		window.SetTitle(i18n.T("go.window.main"))
+	settings.OnLanguageChange(func(code string) {
+		window.SetTitle(settings.T("go.window.main"))
 		win.UpdateWindowTitles()
 	})
 
@@ -170,7 +169,7 @@ func main() {
 		}
 
 		if nodeType != "note" {
-			wailsApp.Event.Emit("binder:error", i18n.T("go.error.assetsNoteOnly"))
+			wailsApp.Event.Emit("binder:error", settings.T("go.error.assetsNoteOnly"))
 			return
 		}
 

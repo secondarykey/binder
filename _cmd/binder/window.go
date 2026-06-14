@@ -3,7 +3,6 @@ package main
 import (
 	"binder/api"
 	"binder/fs"
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -48,7 +47,7 @@ func (r *Window) OpenFileDialog(create bool, defaultDir string) (string, error) 
 		CanChooseDirectories(true).
 		CanChooseFiles(false).
 		CanCreateDirectories(create).
-		SetTitle(i18n.T("go.dialog.selectBinderDir"))
+		SetTitle(settings.T("go.dialog.selectBinderDir"))
 	if defaultDir != "" {
 		if _, err := os.Stat(defaultDir); err == nil {
 			dialog.SetDirectory(defaultDir)
@@ -68,7 +67,7 @@ func (r *Window) OpenFileDialog(create bool, defaultDir string) (string, error) 
 
 func (r *Window) OpenFilePicker(name, ptn string) (string, error) {
 	result, err := r.runtime.Dialog.OpenFile().
-		SetTitle(i18n.T("go.dialog.selectFile")).
+		SetTitle(settings.T("go.dialog.selectFile")).
 		AddFilter(name, ptn).
 		PromptForSingleSelection()
 	if err != nil {
@@ -103,7 +102,7 @@ func (r *Window) OpenHistoryWindow(typ, id, name string) error {
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            i18n.T("go.window.history"),
+		Title:            settings.T("go.window.history"),
 		Width:            900,
 		Height:           600,
 		MinWidth:         600,
@@ -136,7 +135,7 @@ func (r *Window) OpenOverallHistoryWindow(binderPath string) error {
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            i18n.T("go.window.overallHistory"),
+		Title:            settings.T("go.window.overallHistory"),
 		Width:            1000,
 		Height:           600,
 		MinWidth:         700,
@@ -164,7 +163,7 @@ func (r *Window) OpenPreviewWindow(typ, id, name string) error {
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            i18n.T("go.window.preview"),
+		Title:            settings.T("go.window.preview"),
 		Width:            800,
 		Height:           600,
 		MinWidth:         480,
@@ -260,7 +259,7 @@ type JSFileInfo struct {
 func (win *Window) SelectJSFile() (*JSFileInfo, error) {
 	defer log.PrintTrace(log.Func("SelectJSFile()"))
 
-	selection, err := win.OpenFilePicker(i18n.T("go.filter.javascript"), "*.js")
+	selection, err := win.OpenFilePicker(settings.T("go.filter.javascript"), "*.js")
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, fmt.Errorf("SelectJSFile() error\n%+v", err)
@@ -466,8 +465,8 @@ func (win *Window) downloadSaveDialog(suffix string) (string, error) {
 
 	// 保存先ダイアログを表示
 	savePath, err := win.runtime.Dialog.SaveFile().
-		SetButtonText(i18n.T("go.dialog.save")).
-		AddFilter(i18n.T("go.filter.zip"), "*.zip").
+		SetButtonText(settings.T("go.dialog.save")).
+		AddFilter(settings.T("go.filter.zip"), "*.zip").
 		SetFilename(defaultName).
 		PromptForSingleSelection()
 	if err != nil {
@@ -489,7 +488,7 @@ func (r *Window) OpenSyslogWindow() error {
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            i18n.T("go.window.syslog"),
+		Title:            settings.T("go.window.syslog"),
 		Width:            900,
 		Height:           500,
 		MinWidth:         600,
@@ -517,7 +516,7 @@ func (r *Window) OpenSearchWindow() error {
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            i18n.T("go.window.search"),
+		Title:            settings.T("go.window.search"),
 		Width:            700,
 		Height:           46,
 		MinWidth:         500,
@@ -550,7 +549,7 @@ func (r *Window) OpenSearchWindowWithQuery(query string) error {
 	}
 
 	w := r.runtime.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            i18n.T("go.window.search"),
+		Title:            settings.T("go.window.search"),
 		Width:            700,
 		Height:           46,
 		MinWidth:         500,
@@ -667,19 +666,19 @@ func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
 // UpdateWindowTitles は開いているサブウィンドウのタイトルを現在の言語で更新する。
 func (win *Window) UpdateWindowTitles() {
 	if win.syslogWindow != nil {
-		win.syslogWindow.SetTitle(i18n.T("go.window.syslog"))
+		win.syslogWindow.SetTitle(settings.T("go.window.syslog"))
 	}
 	if win.previewWindow != nil {
-		win.previewWindow.SetTitle(i18n.T("go.window.preview"))
+		win.previewWindow.SetTitle(settings.T("go.window.preview"))
 	}
 	if win.overallHistoryWindow != nil {
-		win.overallHistoryWindow.SetTitle(i18n.T("go.window.overallHistory"))
+		win.overallHistoryWindow.SetTitle(settings.T("go.window.overallHistory"))
 	}
 	if win.searchWindow != nil {
-		win.searchWindow.SetTitle(i18n.T("go.window.search"))
+		win.searchWindow.SetTitle(settings.T("go.window.search"))
 	}
 	for _, w := range win.historyWindows {
-		w.SetTitle(i18n.T("go.window.history"))
+		w.SetTitle(settings.T("go.window.history"))
 	}
 }
 

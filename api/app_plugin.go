@@ -1,7 +1,6 @@
 package api
 
 import (
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -42,7 +41,7 @@ func (a *App) RenameAppPlugin(engine, oldName, newName string) error {
 func (a *App) InstallAppPlugin(engine, name string) error {
 	defer log.PrintTrace(log.Func("InstallAppPlugin()"))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.InstallAppPlugin(engine, name); err != nil {
 		log.PrintStackTrace(err)

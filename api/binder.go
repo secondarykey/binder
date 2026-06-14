@@ -3,7 +3,6 @@ package api
 import (
 	"binder"
 	"binder/api/json"
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -25,7 +24,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 	}()
 
 	if dir == "" {
-		return "", xerrors.Errorf("%s", i18n.T("go.error.emptyDirectory"))
+		return "", xerrors.Errorf("%s", settings.T("go.error.emptyDirectory"))
 	}
 
 	b, err := binder.Load(dir)

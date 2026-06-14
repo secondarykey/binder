@@ -5,9 +5,111 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"golang.org/x/xerrors"
 )
+
+var (
+	i18nMu        sync.RWMutex
+	i18nMessages  map[string]string
+	i18nLangCode  string
+	i18nCallbacks []func(string)
+)
+
+// InitI18n は指定された言語コードで翻訳マップを初期化する。
+// EnsureExists 後（言語ファイルが配置済み）のタイミングで呼ぶこと。
+func InitI18n(code string) error {
+	if code == "" {
+		code = "en"
+	}
+	return loadI18n(code)
+}
+
+// T はキーに対応する翻訳文字列を返す。
+// キーが見つからない場合はキー自体を返す。
+func T(key string) string {
+	i18nMu.RLock()
+	defer i18nMu.RUnlock()
+	if v, ok := i18nMessages[key]; ok {
+		return v
+	}
+	return key
+}
+
+// SetI18nLanguage は実行時に言語を切り替え、登録済みコールバックを呼ぶ。
+// 実際に設定された言語コードを返す。
+func SetI18nLanguage(code string) string {
+	if code == "" {
+		code = "en"
+	}
+	if err := loadI18n(code); err != nil {
+		if code != "en" {
+			loadI18n("en")
+		}
+	}
+
+	i18nMu.RLock()
+	cbs := make([]func(string), len(i18nCallbacks))
+	copy(cbs, i18nCallbacks)
+	current := i18nLangCode
+	i18nMu.RUnlock()
+
+	for _, fn := range cbs {
+		fn(current)
+	}
+	return current
+}
+
+// OnLanguageChange は言語変更時に呼ばれるコールバックを登録する。
+func OnLanguageChange(fn func(string)) {
+	i18nMu.Lock()
+	defer i18nMu.Unlock()
+	i18nCallbacks = append(i18nCallbacks, fn)
+}
+
+// I18nLang は現在の言語コードを返す。
+func I18nLang() string {
+	i18nMu.RLock()
+	defer i18nMu.RUnlock()
+	return i18nLangCode
+}
+
+func loadI18n(code string) error {
+	jsonStr, err := ReadLanguageJSON(code)
+	if err != nil {
+		return err
+	}
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &raw); err != nil {
+		return err
+	}
+
+	flat := make(map[string]string)
+	flattenJSON("", raw, flat)
+
+	i18nMu.Lock()
+	i18nMessages = flat
+	i18nLangCode = code
+	i18nMu.Unlock()
+	return nil
+}
+
+func flattenJSON(prefix string, m map[string]interface{}, out map[string]string) {
+	for k, v := range m {
+		key := k
+		if prefix != "" {
+			key = prefix + "." + k
+		}
+		switch val := v.(type) {
+		case string:
+			out[key] = val
+		case map[string]interface{}:
+			flattenJSON(key, val, out)
+		}
+	}
+}
 
 const (
 	LanguagesDirName = "languages"
