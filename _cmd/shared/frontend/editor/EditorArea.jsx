@@ -20,20 +20,15 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
   const retryRef = useRef(0);
 
   /**
-   * 各論理行が折り返しで何 visual 行になるかを算出する。
-   * wordWrap が OFF の場合は折り返しなしなので全行 1 とする。
+   * 各論理行の「実ピクセル高さ」を算出する（折り返しぶんを含む）。
    *
-   * textarea と同じ内容幅・フォント・折り返し条件のミラー要素で実測する。
-   * canvas の ceil(行幅 / 利用幅) 近似は単語折り返しを過小評価し、長い行で
-   * ガターが実テキストより短くなって行番号がずれる（最終行が表示されない）
-   * 原因になるため、実DOMの折り返し結果を計測する方式にしている。
+   * 行番号ガターは論理行ごとに番号を1つ表示し、折り返した継続行は空白に
+   * しておく必要がある。その空白量（=行の高さ）を textarea と完全に一致させ
+   * ないと番号が累積でずれるため、textarea と同じ内容幅・フォント・折り返し
+   * 条件のミラー要素で各論理行の実ピクセル高さを計測し、その値をそのまま
+   * ガター行の height に使う（「1行=1.5em」のような決め打ちはしない）。
    */
   const calcLineHeights = useCallback(() => {
-    if (!wordWrap) {
-      setLineHeights(text.split('\n').map(() => 1));
-      return;
-    }
-
     const textarea = document.querySelector('#editor');
     const cs = textarea ? window.getComputedStyle(textarea) : null;
     const paddingLeft = cs ? (parseFloat(cs.paddingLeft) || 0) : 0;
@@ -66,15 +61,13 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     s.height = 'auto';
     ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
       'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
-    s.whiteSpace = 'pre-wrap';
+    // wordWrap OFF（textarea wrap=off）は折り返さないので pre、ON は pre-wrap
+    s.whiteSpace = wordWrap ? 'pre-wrap' : 'pre';
     s.overflowWrap = 'break-word'; // textarea(wrap=soft) と同様に長い単語も折り返す
     s.wordBreak = cs.wordBreak;
 
     const lines = text.split('\n');
-    // 1 visual 行の高さ基準（プローブ）と各行要素を一括追加し reflow を 1 回にする
-    const probe = document.createElement('div');
-    probe.textContent = 'X';
-    mirror.appendChild(probe);
+    // 各行要素を一括追加して reflow を 1 回にする
     const lineEls = lines.map((line) => {
       const d = document.createElement('div');
       d.textContent = line === '' ? '​' : line; // 空行も 1 行分の高さを確保
@@ -83,8 +76,8 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     });
 
     document.body.appendChild(mirror);
-    const unit = probe.offsetHeight || 1;
-    const heights = lineEls.map((d) => Math.max(1, Math.round(d.offsetHeight / unit)));
+    // 各論理行の実ピクセル高さ（折り返しぶん込み）をそのまま使う
+    const heights = lineEls.map((d) => d.offsetHeight);
     document.body.removeChild(mirror);
 
     setLineHeights(heights);
@@ -143,9 +136,11 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
       {showLineNumbers && (
         <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
           {text.split('\n').map((_, i) => {
-            const wraps = lineHeights[i] || 1;
+            // 計測済みなら実ピクセル高さを適用（折り返しぶんの空白を確保）。
+            // 未計測の間は自然高さ（1行）で表示し、計測完了後に揃う。
+            const h = lineHeights[i];
             return (
-              <div key={i} className={`editorLineNumber${activeLine === i + 1 ? ' active' : ''}`} style={{ height: `${wraps * 1.5}em` }}>
+              <div key={i} className={`editorLineNumber${activeLine === i + 1 ? ' active' : ''}`} style={h ? { height: `${h}px` } : undefined}>
                 {i + 1}
               </div>
             );
