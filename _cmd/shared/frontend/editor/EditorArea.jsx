@@ -15,12 +15,16 @@ import { useRef, useState, useCallback, useEffect } from "react";
  */
 function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
-  const canvasRef = useRef(null);
   const [lineHeights, setLineHeights] = useState([]);
 
   /**
-   * Canvas でテキスト幅を計測し、各論理行の折り返し visual 行数を算出。
+   * 各論理行が折り返しで何 visual 行になるかを算出する。
    * wordWrap が OFF の場合は折り返しなしなので全行 1 とする。
+   *
+   * textarea と同じ内容幅・フォント・折り返し条件のミラー要素で実測する。
+   * canvas の ceil(行幅 / 利用幅) 近似は単語折り返しを過小評価し、長い行で
+   * ガターが実テキストより短くなって行番号がずれる（最終行が表示されない）
+   * 原因になるため、実DOMの折り返し結果を計測する方式にしている。
    */
   const calcLineHeights = useCallback(() => {
     if (!wordWrap) {
@@ -31,22 +35,47 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
 
-    if (!canvasRef.current) {
-      canvasRef.current = document.createElement('canvas');
-    }
-    const ctx = canvasRef.current.getContext('2d');
     const cs = window.getComputedStyle(textarea);
-    ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-
     const paddingLeft = parseFloat(cs.paddingLeft) || 0;
     const paddingRight = parseFloat(cs.paddingRight) || 0;
     const availWidth = textarea.clientWidth - paddingLeft - paddingRight;
     if (availWidth <= 0) return;
 
-    const heights = text.split('\n').map(line => {
-      if (line === '') return 1;
-      return Math.max(1, Math.ceil(ctx.measureText(line).width / availWidth));
+    // textarea の内容幅・折り返し条件を再現するミラー
+    const mirror = document.createElement('div');
+    const s = mirror.style;
+    s.position = 'absolute';
+    s.top = '-9999px';
+    s.left = '-9999px';
+    s.visibility = 'hidden';
+    s.boxSizing = 'content-box';
+    s.padding = '0';
+    s.border = '0';
+    s.width = availWidth + 'px';
+    s.height = 'auto';
+    ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
+      'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
+    s.whiteSpace = 'pre-wrap';
+    s.overflowWrap = 'break-word'; // textarea(wrap=soft) と同様に長い単語も折り返す
+    s.wordBreak = cs.wordBreak;
+
+    const lines = text.split('\n');
+    // 1 visual 行の高さ基準（プローブ）と各行要素を一括追加し reflow を 1 回にする
+    const probe = document.createElement('div');
+    probe.textContent = 'X';
+    mirror.appendChild(probe);
+    const lineEls = lines.map((line) => {
+      const d = document.createElement('div');
+      d.textContent = line === '' ? '​' : line; // 空行も 1 行分の高さを確保
+      mirror.appendChild(d);
+      return d;
     });
+
+    document.body.appendChild(mirror);
+    const unit = probe.offsetHeight || 1;
+    const heights = lineEls.map((d) => Math.max(1, Math.round(d.offsetHeight / unit)));
+    document.body.removeChild(mirror);
+
     setLineHeights(heights);
   }, [text, style, wordWrap]);
 
