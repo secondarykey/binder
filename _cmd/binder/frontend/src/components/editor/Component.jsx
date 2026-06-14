@@ -239,6 +239,49 @@ function buildConflictHTML(text, bannerText) {
 }
 
 /**
+ * textarea 内の指定文字位置（キャレット）の、スクロール内容先頭からのピクセル上端を返す。
+ * textarea と同じフォント・内容幅・折り返し設定のミラー要素で計測するため、
+ * テキストの折り返しを正確に反映する（論理行数ベースの近似ではない）。
+ */
+function measureCaretTop(textarea, position) {
+  const cs = window.getComputedStyle(textarea);
+  const paddingLeft = parseFloat(cs.paddingLeft) || 0;
+  const paddingRight = parseFloat(cs.paddingRight) || 0;
+  const paddingTop = parseFloat(cs.paddingTop) || 0;
+  // clientWidth は padding を含み border/スクロールバーを除くので、内容幅 = clientWidth - 左右padding
+  const contentWidth = textarea.clientWidth - paddingLeft - paddingRight;
+
+  const div = document.createElement('div');
+  const s = div.style;
+  s.position = 'absolute';
+  s.top = '-9999px';
+  s.left = '-9999px';
+  s.visibility = 'hidden';
+  s.boxSizing = 'content-box';
+  s.padding = '0';
+  s.border = '0';
+  s.width = Math.max(0, contentWidth) + 'px';
+  s.height = 'auto';
+  s.overflow = 'hidden';
+  // フォント・折り返しに関わる算出値を textarea からコピー（whiteSpace で折り返し有無も反映）
+  ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
+    'letterSpacing', 'textTransform', 'tabSize', 'whiteSpace', 'wordBreak'].forEach((p) => { s[p] = cs[p]; });
+  // textarea(wrap=soft) は長い単語も幅に合わせて折り返すため break-word を明示する
+  // （whiteSpace=pre の折り返しOFF時は効果なし）
+  s.overflowWrap = 'break-word';
+
+  div.textContent = textarea.value.substring(0, position);
+  const marker = document.createElement('span');
+  marker.textContent = '.';
+  div.appendChild(marker);
+
+  document.body.appendChild(div);
+  const top = paddingTop + marker.offsetTop;
+  document.body.removeChild(div);
+  return top;
+}
+
+/**
  * テンプレートプレビューHTMLを生成する
  */
 async function runTemplatePreview(templateId, templateType, otherTemplateId, noteId) {
@@ -435,9 +478,10 @@ function Editor(props) {
     // ブラウザは「カーソル位置へスクロール」するため、カーソルをマッチ位置に
     // 置くことでスクロール先を正しい位置に誘導する。
     textarea.setSelectionRange(absoluteStart, absoluteStart);
-    const totalLines = text.split('\n').length;
-    const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
-    textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
+    // 折り返しを正確に反映するため、ミラー要素でキャレットのピクセル位置を計測する。
+    // 論理行数だけで計算すると、折り返した行が上にあるぶんスクロール先がずれる。
+    const caretTop = measureCaretTop(textarea, absoluteStart);
+    textarea.scrollTop = Math.max(0, caretTop - textarea.clientHeight / 3);
   }, [text]);
 
   useEffect(() => {
