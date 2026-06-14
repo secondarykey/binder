@@ -15,28 +15,36 @@ import { useRef, useState, useCallback, useEffect } from "react";
  */
 function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
-  const [lineHeights, setLineHeights] = useState([]);
+  // 各論理行が折り返しで何 visual 行になるか（折り返し行数）。
+  const [lineWraps, setLineWraps] = useState([]);
   // エディタがまだサイズ未確定（幅0）で計測できない時のリトライ回数
   const retryRef = useRef(0);
 
   /**
-   * 各論理行の「実ピクセル高さ」を算出する（折り返しぶんを含む）。
+   * 各論理行の折り返し行数を算出する。
    *
-   * 行番号ガターは論理行ごとに番号を1つ表示し、折り返した継続行は空白に
-   * しておく必要がある。その空白量（=行の高さ）を textarea と完全に一致させ
-   * ないと番号が累積でずれるため、textarea と同じ内容幅・フォント・折り返し
-   * 条件のミラー要素で各論理行の実ピクセル高さを計測し、その値をそのまま
-   * ガター行の height に使う（「1行=1.5em」のような決め打ちはしない）。
+   * 行番号ガターは visual 行ごとに1行を描画し、論理行の先頭 visual 行に番号を、
+   * 折り返した継続行は空白を表示する（例: 5行のうち3行目だけ折り返す場合、
+   * 表示は6 visual 行で行番号は「1 2 3 空 4 5」）。各ガター行は textarea と同じ
+   * 自然な行高で並ぶため、textarea の各行と 1 対 1 で揃う（高さの決め打ちなし）。
+   *
+   * 折り返し行数は textarea と同じ内容幅・フォント・折り返し条件のミラーで実測する。
    */
-  const calcLineHeights = useCallback(() => {
+  const calcLineWraps = useCallback(() => {
+    // wordWrap OFF は折り返さないので全行 1（計測不要）
+    if (!wordWrap) {
+      retryRef.current = 0;
+      setLineWraps(text.split('\n').map(() => 1));
+      return;
+    }
+
     const textarea = document.querySelector('#editor');
     const cs = textarea ? window.getComputedStyle(textarea) : null;
     const paddingLeft = cs ? (parseFloat(cs.paddingLeft) || 0) : 0;
     const paddingRight = cs ? (parseFloat(cs.paddingRight) || 0) : 0;
     const availWidth = textarea ? textarea.clientWidth - paddingLeft - paddingRight : 0;
 
-    // エディタがまだレイアウトされていない（幅0）と計測できず lineHeights が
-    // 空のままになり、折り返しのスペーサーが入らず番号がずれる。測れるように
+    // エディタがまだレイアウトされていない（幅0）と計測できないので、測れるように
     // なるまで次フレームで再試行する（上限付きで無限ループを防ぐ）。
     if (!textarea || availWidth <= 0) {
       if (retryRef.current < 60) {
@@ -61,13 +69,15 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     s.height = 'auto';
     ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
       'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
-    // wordWrap OFF（textarea wrap=off）は折り返さないので pre、ON は pre-wrap
-    s.whiteSpace = wordWrap ? 'pre-wrap' : 'pre';
+    s.whiteSpace = 'pre-wrap';
     s.overflowWrap = 'break-word'; // textarea(wrap=soft) と同様に長い単語も折り返す
     s.wordBreak = cs.wordBreak;
 
     const lines = text.split('\n');
-    // 各行要素を一括追加して reflow を 1 回にする
+    // 1 visual 行の高さ基準（プローブ）と各行要素を一括追加し reflow を 1 回にする
+    const probe = document.createElement('div');
+    probe.textContent = 'X';
+    mirror.appendChild(probe);
     const lineEls = lines.map((line) => {
       const d = document.createElement('div');
       d.textContent = line === '' ? '​' : line; // 空行も 1 行分の高さを確保
@@ -76,18 +86,18 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     });
 
     document.body.appendChild(mirror);
-    // 各論理行の実ピクセル高さ（折り返しぶん込み）をそのまま使う
-    const heights = lineEls.map((d) => d.offsetHeight);
+    const unit = probe.offsetHeight || 1;
+    const wraps = lineEls.map((d) => Math.max(1, Math.round(d.offsetHeight / unit)));
     document.body.removeChild(mirror);
 
-    setLineHeights(heights);
+    setLineWraps(wraps);
   }, [text, style, wordWrap]);
 
-  // 全行の measureText は重いため、連続入力・連続リサイズでは rAF で 1 フレーム 1 回に間引く。
+  // 計測は重いため、連続入力・連続リサイズでは rAF で 1 フレーム 1 回に間引く。
   // rAF はスケジュール時点のクロージャを実行するため、コアレッシングで最新の計算関数を
-  // 取りこぼさないよう ref 経由で常に最新の calcLineHeights を呼ぶ。
-  const calcRef = useRef(calcLineHeights);
-  calcRef.current = calcLineHeights;
+  // 取りこぼさないよう ref 経由で常に最新の calcLineWraps を呼ぶ。
+  const calcRef = useRef(calcLineWraps);
+  calcRef.current = calcLineWraps;
 
   const rafRef = useRef(0);
   const scheduleCalc = useCallback(() => {
@@ -135,15 +145,18 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     <div className="editorArea">
       {showLineNumbers && (
         <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
-          {text.split('\n').map((_, i) => {
-            // 計測済みなら実ピクセル高さを適用（折り返しぶんの空白を確保）。
-            // 未計測の間は自然高さ（1行）で表示し、計測完了後に揃う。
-            const h = lineHeights[i];
-            return (
-              <div key={i} className={`editorLineNumber${activeLine === i + 1 ? ' active' : ''}`} style={h ? { height: `${h}px` } : undefined}>
-                {i + 1}
+          {text.split('\n').flatMap((_, i) => {
+            // 論理行の折り返し行数ぶん visual 行を出す。先頭行に番号、
+            // 折り返した継続行は空白（&nbsp;）にして textarea の各行と 1 対 1 で揃える。
+            const wraps = lineWraps[i] || 1;
+            return Array.from({ length: wraps }, (_, r) => (
+              <div
+                key={`${i}_${r}`}
+                className={`editorLineNumber${r === 0 && activeLine === i + 1 ? ' active' : ''}`}
+              >
+                {r === 0 ? i + 1 : ' '}
               </div>
-            );
+            ));
           })}
         </div>
       )}
