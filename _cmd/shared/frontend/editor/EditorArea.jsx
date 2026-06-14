@@ -156,7 +156,13 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
 
   useEffect(() => {
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        // cancel 後に必ず 0 へ戻す。戻さないと StrictMode の mount→unmount→remount や
+        // 再マウント時に rafRef が予約IDのまま固着し、scheduleCalc が永久に
+        // early-return して計測（calc）が一度も走らなくなる。
+        rafRef.current = 0;
+      }
     };
   }, []);
 
