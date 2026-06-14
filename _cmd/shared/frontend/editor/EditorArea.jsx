@@ -1,5 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 
+// [DEBUG] このバンドルが読み込まれたかの識別マーカー（HMR/ビルド鮮度確認用）
+console.log('[gutter] EditorArea module loaded TRACE-v5');
+
 /**
  * 行番号ガター + textarea を一体化したエディタエリアコンポーネント
  *
@@ -142,8 +145,10 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
 
   const rafRef = useRef(0);
   const scheduleCalc = useCallback(() => {
+    console.log('[gutter] scheduleCalc called rafRef=%o', rafRef.current);
     if (rafRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
+      console.log('[gutter] rAF fired -> calc');
       rafRef.current = 0;
       calcRef.current();
     });
@@ -157,6 +162,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
 
   // テキスト・フォント・折り返し変更時に再計算
   useEffect(() => {
+    console.log('[gutter] trigger effect fired -> scheduleCalc (textLen=%d wordWrap=%o)', (text || '').length, wordWrap);
     scheduleCalc();
   }, [text, style, wordWrap, scheduleCalc]);
 
