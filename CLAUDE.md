@@ -497,6 +497,57 @@ UIではGit用語を隠蔽し、ユーザーフレンドリーな表現を使用
 - **コミット → 記録**（英語: Record）。コード内部の変数名・イベント名・ファイル名は `commit` のまま維持し、言語ファイル（`setup/_assets/languages/`）の表示ラベルのみ「記録」を使用する
 - **未コミット → 未記録**（英語: Unrecorded）
 
+## ワークツリー開発の必須手順
+
+ワークツリーを作成したら、**他の作業より先に**以下を順番に実行すること。
+
+### 1. node_modules の Junction 作成（必須・最優先）
+
+ワークツリーには node_modules が存在しない。メインリポジトリの node_modules への Junction を作成する。
+
+```powershell
+# binder
+New-Item -ItemType Junction -Path "_cmd\binder\frontend\node_modules" -Target "D:\Go\Projects\binder\_cmd\binder\frontend\node_modules"
+# lite
+New-Item -ItemType Junction -Path "_cmd\lite\frontend\node_modules" -Target "D:\Go\Projects\binder\_cmd\lite\frontend\node_modules"
+```
+
+**禁止: ワークツリー内での `npm install`**。Junction が実体ディレクトリに上書きされ、メインリポジトリ側の node_modules を破壊する。
+
+Junction の安全な解除は `cmd /c rmdir <link>`。`Remove-Item -Recurse` はリンク先の実体を削除する危険があるため使わない。
+
+### 2. フロントエンドバインディング生成（必須）
+
+```bash
+cd _cmd/binder && wails3 task common:generate:bindings
+```
+
+Go API やフロントエンドを触る作業では、バインディングがないとビルドもテストも通らない。API 変更を行った場合はその都度再生成する。
+
+**禁止: バインディングのコミット**。`_cmd/binder/frontend/bindings/` は `.gitignore` 対象の生成物であり、`git add` や `git add -f` でステージングしてはならない。バインディングはローカルでのビルド・テスト用に生成するもので、各環境で都度生成される前提。
+
+### フロントエンドのビルド確認・テスト
+
+```bash
+# ビルド確認（Junction 済み前提）
+cd _cmd/binder/frontend && ./node_modules/.bin/vite.cmd build
+
+# フロントエンドテスト実行
+cd _cmd/binder/frontend && npx vitest run
+
+# 実機での見た目確認
+cd _cmd/binder && task dev
+```
+
+**注意**: `wails3 dev`（`task dev`）の Taskfile は `install:frontend:deps` ステップで `npm install` を実行するため、Junction が削除される。dev 実行後に再度 Junction が必要な場合は作り直すこと。ただし `wails3 dev` は bindings を自動生成するため、dev 時の bindings 不足は問題にならない。
+
+### フロントエンドテスト構成
+
+- テストフレームワーク: Vitest（`_cmd/binder/frontend/vitest.config.js`）
+- テストファイル: `_cmd/binder/frontend/src/__tests__/*.test.jsx`
+- セットアップ: `_cmd/binder/frontend/src/__tests__/setup.js`（`@wailsio/runtime` のグローバルモック、ResizeObserver ポリフィル、i18n 初期化）
+- 全コンポーネントにビルドパスレベルのテストあり（69ファイル・112テスト）
+
 ## コーディング規約
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）
