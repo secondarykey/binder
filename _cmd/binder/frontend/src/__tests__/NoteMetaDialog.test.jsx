@@ -5,7 +5,7 @@ import Event, { EventContext } from '../Event';
 
 vi.mock('../../bindings/binder/api/app', () => ({
   GetNote: vi.fn(() => Promise.resolve({})),
-  GetHTMLTemplates: vi.fn(() => Promise.resolve([])),
+  GetHTMLTemplates: vi.fn(() => Promise.resolve({ layouts: [], contents: [] })),
   GetNoteImageURL: vi.fn(() => Promise.resolve('')),
   DeleteNoteImage: vi.fn(() => Promise.resolve()),
   UploadNoteImage: vi.fn(() => Promise.resolve()),
