@@ -80,6 +80,24 @@ func (r *Window) OpenFilePicker(name, ptn string) (string, error) {
 	return result, nil
 }
 
+func (win *Window) mainScreen() *application.Screen {
+	if win.window == nil {
+		log.Info("mainScreen: window is nil")
+		return nil
+	}
+	s, err := win.window.GetScreen()
+	if err != nil {
+		log.Info("mainScreen: GetScreen error: %+v", err)
+		return nil
+	}
+	if s == nil {
+		log.Info("mainScreen: screen is nil")
+		return nil
+	}
+	log.Info("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
+	return s
+}
+
 func (win *Window) WindowSize() (int, int) {
 	return win.window.Size()
 }
@@ -110,6 +128,7 @@ func (r *Window) OpenHistoryWindow(typ, id, name string) error {
 		Frameless:        true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              "/?history=1&type=" + typ + "&id=" + id + "&name=" + url.QueryEscape(name),
+		Screen:           r.mainScreen(),
 	})
 
 	r.historyWindows[key] = w
@@ -143,6 +162,7 @@ func (r *Window) OpenOverallHistoryWindow(binderPath string) error {
 		Frameless:        true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              windowURL,
+		Screen:           r.mainScreen(),
 	})
 
 	r.overallHistoryWindow = w
@@ -171,6 +191,7 @@ func (r *Window) OpenPreviewWindow(typ, id, name string) error {
 		Frameless:        true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              "/?preview=1&type=" + typ + "&id=" + id + "&name=" + url.QueryEscape(name),
+		Screen:           r.mainScreen(),
 	})
 
 	r.previewWindow = w
@@ -496,6 +517,7 @@ func (r *Window) OpenSyslogWindow() error {
 		Frameless:        true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              "/?syslog=1",
+		Screen:           r.mainScreen(),
 	})
 
 	r.syslogWindow = w
@@ -525,6 +547,7 @@ func (r *Window) OpenSearchWindow() error {
 		AlwaysOnTop:      true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              "/?search=1",
+		Screen:           r.mainScreen(),
 	})
 
 	r.searchWindow = w
@@ -558,6 +581,7 @@ func (r *Window) OpenSearchWindowWithQuery(query string) error {
 		AlwaysOnTop:      true,
 		BackgroundColour: application.NewRGBA(27, 38, 54, 255),
 		URL:              "/?search=1&q=" + url.QueryEscape(query),
+		Screen:           r.mainScreen(),
 	})
 
 	r.searchWindow = w
