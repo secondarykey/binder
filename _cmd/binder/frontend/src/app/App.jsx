@@ -429,7 +429,7 @@ function App() {
                 <span>
                   <IconButton size="small" color="inherit" aria-label="history back"
                     disabled={!editorHistory.canGoBack()}
-                    sx={{ ml: 0.5, padding: '4px' }}
+                    sx={{ ml: 0.5, padding: '4px', '&.Mui-disabled': { opacity: 0.3, color: 'inherit' } }}
                     onClick={() => {
                       const entry = editorHistory.goBack();
                       if (entry) {
@@ -446,7 +446,7 @@ function App() {
                 <span>
                   <IconButton size="small" color="inherit" aria-label="history forward"
                     disabled={!editorHistory.canGoForward()}
-                    sx={{ padding: '4px' }}
+                    sx={{ padding: '4px', '&.Mui-disabled': { opacity: 0.3, color: 'inherit' } }}
                     onClick={() => {
                       const entry = editorHistory.goForward();
                       if (entry) {
