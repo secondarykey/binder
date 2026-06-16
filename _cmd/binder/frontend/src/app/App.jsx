@@ -13,6 +13,8 @@ import BranchHistoryModal from './BranchHistoryModal.jsx';
 import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
@@ -27,6 +29,7 @@ import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
+import { editorHistory } from '../components/editor/Component';
 import MermaidScript from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
@@ -418,6 +421,45 @@ function App() {
             <IconButton id="sidebarBtn" className={sidebarClass} size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
               <ViewSidebarIcon fontSize="small" />
             </IconButton>
+          )}
+          {/** 履歴ナビゲーション: エディタ画面のみ表示 */}
+          {isNonTemplateEditor && (
+            <>
+              <Tooltip title={t("editor.historyBack")} placement="bottom">
+                <span>
+                  <IconButton size="small" color="inherit" aria-label="history back"
+                    disabled={!editorHistory.canGoBack()}
+                    sx={{ ml: 0.5, padding: '4px' }}
+                    onClick={() => {
+                      const entry = editorHistory.goBack();
+                      if (entry) {
+                        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+                        nav("/editor/" + urlMode + "/" + entry.id);
+                      }
+                    }}
+                  >
+                    <ArrowBackIosNewIcon sx={{ fontSize: '14px' }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title={t("editor.historyForward")} placement="bottom">
+                <span>
+                  <IconButton size="small" color="inherit" aria-label="history forward"
+                    disabled={!editorHistory.canGoForward()}
+                    sx={{ padding: '4px' }}
+                    onClick={() => {
+                      const entry = editorHistory.goForward();
+                      if (entry) {
+                        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+                        nav("/editor/" + urlMode + "/" + entry.id);
+                      }
+                    }}
+                  >
+                    <ArrowForwardIosIcon sx={{ fontSize: '14px' }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
           )}
         </Box>
 
