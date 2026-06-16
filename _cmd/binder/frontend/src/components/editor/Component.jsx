@@ -112,6 +112,47 @@ function flattenStructures(nodes) {
 }
 
 /**
+ * エディタ専用の閲覧履歴スタック（MRU方式）。
+ * 同一IDは古い方を除去し、各IDが最大1回だけ存在する。
+ * コンポーネント外で保持するためリマウントでリセットされない。
+ */
+const editorHistory = {
+  stack: [],   // [{ mode, id }, ...]
+  cursor: -1,  // 現在位置（-1 = 現在のページはスタック外）
+
+  push(mode, id) {
+    // 戻る/進む中の場合、カーソルより先を切り捨て
+    if (this.cursor >= 0 && this.cursor < this.stack.length - 1) {
+      this.stack = this.stack.slice(0, this.cursor + 1);
+    }
+    // 重複除去: 古い同一IDを削除
+    this.stack = this.stack.filter((e) => e.id !== id);
+    this.stack.push({ mode, id });
+    this.cursor = this.stack.length - 1;
+  },
+
+  canGoBack() {
+    return this.cursor > 0;
+  },
+
+  canGoForward() {
+    return this.cursor < this.stack.length - 1;
+  },
+
+  goBack() {
+    if (!this.canGoBack()) return null;
+    this.cursor--;
+    return this.stack[this.cursor];
+  },
+
+  goForward() {
+    if (!this.canGoForward()) return null;
+    this.cursor++;
+    return this.stack[this.cursor];
+  },
+};
+
+/**
  * タブ区切りテキストをMarkdownテーブルに変換する
  * Excel等からの貼り付けデータを想定。
  * 判定条件: 2行以上、各行にタブが1つ以上、全行のタブ数（列数）が一致
@@ -374,8 +415,19 @@ function Editor(props) {
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
   const fileOpeningRef = useRef(false);
-  useEffect(() => { modeRef.current = mode; setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null; }, [mode]);
-  useEffect(() => { idRef.current = id; setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null; }, [id]);
+  const historyNavRef = useRef(false);
+  useEffect(() => {
+    modeRef.current = mode;
+    setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
+  }, [mode]);
+  useEffect(() => {
+    idRef.current = id;
+    setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
+    if (!historyNavRef.current) {
+      editorHistory.push(mode, id);
+    }
+    historyNavRef.current = false;
+  }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
@@ -434,16 +486,21 @@ function Editor(props) {
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  // Alt+← / Alt+→ で履歴ナビゲーション
+  // Alt+← / Alt+→ でエディタ履歴ナビゲーション
   useEffect(() => {
     const handler = (e) => {
       if (!e.altKey) return;
+      let entry = null;
       if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        nav(-1);
+        entry = editorHistory.goBack();
       } else if (e.key === 'ArrowRight') {
+        entry = editorHistory.goForward();
+      }
+      if (entry) {
         e.preventDefault();
-        nav(1);
+        historyNavRef.current = true;
+        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+        nav("/editor/" + urlMode + "/" + entry.id);
       }
     };
     document.addEventListener('keydown', handler);
