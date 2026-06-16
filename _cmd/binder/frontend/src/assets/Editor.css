@@ -505,20 +505,32 @@ iframe.htmlViewer {
 }
 
 /* ID ステータスバー（CommitBar の上） */
+@keyframes idStatusSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #editorWrapper #idStatusBar {
   position: absolute;
   bottom: 36px;
   left: 0;
   right: 0;
-  height: 22px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 4px 10px;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  background-color: var(--bg-overlay);
+  background-color: color-mix(in srgb, var(--bg-overlay) 85%, transparent);
+  backdrop-filter: blur(4px);
   border-top: 1px solid var(--border-primary);
   z-index: 1;
+  animation: idStatusSlideUp 0.2s ease-out;
 }
 
 #idStatusBar .idStatusLink {
