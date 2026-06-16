@@ -547,6 +547,8 @@
         "searchNoMatches" : "No matches",
         "tableEdit" : "Edit Table",
         "notInTable" : "Cursor is not inside a table",
+        "historyBack" : "Back (Alt+←)",
+        "historyForward" : "Forward (Alt+→)",
         "idStatus" : {
             "note" : "Note",
             "diagram" : "Diagram",

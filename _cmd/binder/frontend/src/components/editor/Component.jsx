@@ -55,6 +55,8 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ContrastIcon from '@mui/icons-material/Contrast';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
@@ -403,6 +405,10 @@ function Editor(props) {
   const idDetectTimerRef = useRef(null);
   const lastDetectedUuidsRef = useRef(null);
 
+  // 履歴ナビゲーションボタンの有効/無効を追跡するstate
+  const [historyCanNav, setHistoryCanNav] = useState({ back: false, forward: false });
+  const updateHistoryCanNav = () => setHistoryCanNav({ back: editorHistory.canGoBack(), forward: editorHistory.canGoForward() });
+
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
 
@@ -427,6 +433,7 @@ function Editor(props) {
       editorHistory.push(mode, id);
     }
     historyNavRef.current = false;
+    updateHistoryCanNav();
   }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
@@ -501,6 +508,7 @@ function Editor(props) {
         historyNavRef.current = true;
         const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
         nav("/editor/" + urlMode + "/" + entry.id);
+        updateHistoryCanNav();
       }
     };
     document.addEventListener('keydown', handler);
@@ -1865,6 +1873,48 @@ function Editor(props) {
                     >
                       <FormatListNumberedIcon sx={{ fontSize: '16px' }} />
                     </ToggleButton>
+                  </Tooltip>
+
+                  {/** 履歴ナビゲーション */}
+                  <Tooltip title={t("editor.historyBack")} placement="bottom">
+                    <span>
+                      <IconButton size="small" color="inherit"
+                        disabled={!historyCanNav.back}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          const entry = editorHistory.goBack();
+                          if (entry) {
+                            historyNavRef.current = true;
+                            const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+                            nav("/editor/" + urlMode + "/" + entry.id);
+                            updateHistoryCanNav();
+                          }
+                        }}
+                        sx={{ padding: '4px' }}
+                      >
+                        <ArrowBackIosNewIcon sx={{ fontSize: '14px' }} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={t("editor.historyForward")} placement="bottom">
+                    <span>
+                      <IconButton size="small" color="inherit"
+                        disabled={!historyCanNav.forward}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          const entry = editorHistory.goForward();
+                          if (entry) {
+                            historyNavRef.current = true;
+                            const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+                            nav("/editor/" + urlMode + "/" + entry.id);
+                            updateHistoryCanNav();
+                          }
+                        }}
+                        sx={{ padding: '4px', mr: '2px' }}
+                      >
+                        <ArrowForwardIosIcon sx={{ fontSize: '14px' }} />
+                      </IconButton>
+                    </span>
                   </Tooltip>
 
                   {/** スニペット挿入 */}

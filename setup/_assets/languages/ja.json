@@ -547,6 +547,8 @@
         "searchNoMatches" : "一致なし",
         "tableEdit" : "テーブル編集",
         "notInTable" : "カーソルがテーブル内にありません",
+        "historyBack" : "戻る (Alt+←)",
+        "historyForward" : "進む (Alt+→)",
         "idStatus" : {
             "note" : "ノート",
             "diagram" : "ダイアグラム",
