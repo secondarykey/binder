@@ -546,7 +546,14 @@
         "searchMatches" : "{{count}} matches",
         "searchNoMatches" : "No matches",
         "tableEdit" : "Edit Table",
-        "notInTable" : "Cursor is not inside a table"
+        "notInTable" : "Cursor is not inside a table",
+        "idStatus" : {
+            "note" : "Note",
+            "diagram" : "Diagram",
+            "asset" : "Asset",
+            "layer" : "Layer",
+            "unknown" : "Unknown"
+        }
     },
     "tableDialog" : {
         "title" : "Edit Table",

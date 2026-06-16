@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useRef, useCallback } from "react"
-import { useParams, useLocation } from "react-router";
+import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
@@ -9,7 +9,7 @@ import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binde
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
-import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -18,6 +18,8 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
+import { extractUuidAtCursor } from "@shared/editor/id-detect";
+import IdStatusBar from "./IdStatusBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
@@ -297,6 +299,7 @@ function Editor(props) {
 
   var { mode, id } = useParams();
   const location = useLocation();
+  const nav = useNavigate();
   const restoredAt = location.state?.restoredAt;
   const searchQuery = location.state?.searchQuery;
   const evt = useContext(EventContext)
@@ -353,6 +356,11 @@ function Editor(props) {
   const [idListAnchor, setIdListAnchor] = useState(null);
   const [idList, setIdList] = useState([]);
 
+  // カーソル位置の UUID に対応する Structure 情報
+  const [cursorStructure, setCursorStructure] = useState(null);
+  const idDetectTimerRef = useRef(null);
+  const lastDetectedUuidRef = useRef(null);
+
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
 
@@ -365,8 +373,8 @@ function Editor(props) {
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
   const fileOpeningRef = useRef(false);
-  useEffect(() => { modeRef.current = mode; }, [mode]);
-  useEffect(() => { idRef.current = id; }, [id]);
+  useEffect(() => { modeRef.current = mode; setCursorStructure(null); lastDetectedUuidRef.current = null; }, [mode]);
+  useEffect(() => { idRef.current = id; setCursorStructure(null); lastDetectedUuidRef.current = null; }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
@@ -1093,17 +1101,52 @@ function Editor(props) {
 
 
   /**
-   * カーソル移動時にプレビューのスクロール位置を追従させる（ノートモードのみ）
+   * カーソル位置の UUID を検出し、Structure 情報を取得する（デバウンス付き）
+   */
+  const detectIdAtCursor = useCallback((text, cursorPos) => {
+    const uuid = extractUuidAtCursor(text, cursorPos);
+    if (uuid === lastDetectedUuidRef.current) return;
+    lastDetectedUuidRef.current = uuid;
+
+    if (idDetectTimerRef.current) {
+      clearTimeout(idDetectTimerRef.current);
+    }
+
+    if (!uuid) {
+      setCursorStructure(null);
+      return;
+    }
+
+    idDetectTimerRef.current = setTimeout(() => {
+      GetStructure(uuid).then((s) => {
+        if (lastDetectedUuidRef.current === uuid) {
+          setCursorStructure(s);
+        }
+      }).catch(() => {
+        if (lastDetectedUuidRef.current === uuid) {
+          setCursorStructure(null);
+        }
+      });
+    }, 200);
+  }, []);
+
+  /**
+   * カーソル移動時にプレビューのスクロール位置を追従させる + ID 検出
    */
   const handleCursorMove = useCallback((e) => {
-    if (modeRef.current !== Mode.note) return;
     const textarea = e.target;
-    const line = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
-    if (line !== cursorLineRef.current) {
-      cursorLineRef.current = line;
-      setCursorLine(line);
+    const pos = textarea.selectionStart;
+
+    if (modeRef.current === Mode.note) {
+      const line = textarea.value.substring(0, pos).split('\n').length;
+      if (line !== cursorLineRef.current) {
+        cursorLineRef.current = line;
+        setCursorLine(line);
+      }
     }
-  }, []);
+
+    detectIdAtCursor(textarea.value, pos);
+  }, [detectIdAtCursor]);
 
   /**
    * テキストの変更
@@ -1114,8 +1157,10 @@ function Editor(props) {
     isEditingRef.current = true;
     var txt = e.target.value;
     // カーソル行を記録（デバウンス後の parseText で使用する）
-    cursorLineRef.current = txt.substring(0, e.target.selectionStart).split('\n').length;
+    const pos = e.target.selectionStart;
+    cursorLineRef.current = txt.substring(0, pos).split('\n').length;
     setText(txt);
+    detectIdAtCursor(txt, pos);
 
     setUpdated(true);
     writeFn(mode, id, txt).then(() => {
@@ -1437,8 +1482,20 @@ function Editor(props) {
     });
   };
 
+  const handleIdNavigate = useCallback((urlMode, targetId) => {
+    nav("/editor/" + urlMode + "/" + targetId);
+  }, [nav]);
+
   const handleKeyDown = (e) => {
     if (composingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) {
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructure) {
+      e.preventDefault();
+      const typ = cursorStructure.type;
+      const urlMode = typ === 'asset' ? 'assets' : typ;
+      handleIdNavigate(urlMode, cursorStructure.id);
       return;
     }
 
@@ -1992,6 +2049,9 @@ function Editor(props) {
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               />
+
+              {/** ID ステータスバー */}
+              <IdStatusBar structure={cursorStructure} onNavigate={handleIdNavigate} />
 
               {/** コミットバー */}
               <CommitBar

@@ -504,6 +504,36 @@ iframe.htmlViewer {
   padding: 0 1px;
 }
 
+/* ID ステータスバー（CommitBar の上） */
+#editorWrapper #idStatusBar {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-overlay);
+  border-top: 1px solid var(--border-primary);
+  z-index: 1;
+}
+
+#idStatusBar .idStatusLink {
+  cursor: pointer;
+  color: var(--accent-link, var(--text-link, var(--accent-primary)));
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#idStatusBar .idStatusLink:hover {
+  text-decoration: underline;
+}
+
 /* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */
 #editorWrapper #parseStatusBar {
   position: absolute;

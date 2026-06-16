@@ -19,6 +19,7 @@ vi.mock('../../../bindings/binder/api/app', () => ({
   GetModifiedIds: vi.fn(() => Promise.resolve([])),
   EnsureAddress: vi.fn(() => Promise.resolve('')),
   GetSnippets: vi.fn(() => Promise.resolve({ markdowns: [], diagrams: [], templates: [] })),
+  GetStructure: vi.fn(() => Promise.resolve(null)),
 }));
 vi.mock('../../../bindings/main/window', () => ({
   OpenHistoryWindow: vi.fn(),

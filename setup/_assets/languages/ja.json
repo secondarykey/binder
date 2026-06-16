@@ -546,7 +546,14 @@
         "searchMatches" : "{{count}}件",
         "searchNoMatches" : "一致なし",
         "tableEdit" : "テーブル編集",
-        "notInTable" : "カーソルがテーブル内にありません"
+        "notInTable" : "カーソルがテーブル内にありません",
+        "idStatus" : {
+            "note" : "ノート",
+            "diagram" : "ダイアグラム",
+            "asset" : "アセット",
+            "layer" : "レイヤー",
+            "unknown" : "不明"
+        }
     },
     "tableDialog" : {
         "title" : "テーブル編集",
