@@ -434,6 +434,22 @@ function Editor(props) {
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
+  // Alt+← / Alt+→ で履歴ナビゲーション
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.altKey) return;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        nav(-1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nav(1);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [nav]);
+
   // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
   const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
     const textarea = document.querySelector('#editor');
