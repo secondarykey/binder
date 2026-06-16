@@ -524,7 +524,7 @@ iframe.htmlViewer {
   display: flex;
   align-items: center;
   padding: 8px 10px;
-  font-size: 14px;
+  font-size: 1rem;
   color: var(--text-secondary);
   background-color: color-mix(in srgb, var(--bg-overlay) 50%, transparent);
   backdrop-filter: blur(4px);
