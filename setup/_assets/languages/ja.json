@@ -477,7 +477,9 @@
         "setMetaImageConfirm" : "「{{name}}」を親ノートのメタ画像に設定します。よろしいですか？",
         "setMetaImageDeleteAsset" : "アセットを削除する",
         "setMetaImageSuccess" : "メタ画像に設定しました。",
-        "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}"
+        "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}",
+        "editSource" : "ソース編集",
+        "showPreview" : "プレビュー表示"
     },
     "preview" : {
         "openPreviewWindow" : "別ウィンドウで開く",

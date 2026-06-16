@@ -11,6 +11,8 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
+import CodeIcon from '@mui/icons-material/Code';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import { GetAsset, GetAssetContent, EditAsset, Generate, Unpublish, Commit, MigrateAssetToNote, SetAssetAsMetaImage, GetFont, SaveAssetContent, GetModifiedIds, EnsureAddress, ParseAsset, DetectAssetMime } from '../../bindings/binder/api/app';
 import CommitBar from './CommitBar';
@@ -57,6 +59,14 @@ function isImageMime(mime) {
  */
 function isTextMime(mime) {
   return mime != null && mime.startsWith('text/');
+}
+
+function isSvgMime(mime) {
+  return mime === 'image/svg+xml';
+}
+
+function isHtmlMime(mime) {
+  return mime === 'text/html';
 }
 
 //指定秒数での実行処理
@@ -242,6 +252,8 @@ function AssetViewer() {
   const [mimeFixDlg, setMimeFixDlg] = useState(false);
   const [selectedMime, setSelectedMime] = useState('');
   const [detectedMime, setDetectedMime] = useState(null);
+  // SVG/HTML デュアルモードのプレビュー表示切替（SVG: デフォルトtrue, HTML: デフォルトfalse）
+  const [showPreview, setShowPreview] = useState(true);
 
 
   useEffect(() => {
@@ -273,6 +285,7 @@ function AssetViewer() {
     setAssetName('');
     setAssetMeta(null);
     setError(null);
+    setShowPreview(true);
 
     // メタデータ取得（タイトルはファイルが見つからなくても表示したい）
     GetAsset(id).then((meta) => {
@@ -298,8 +311,12 @@ function AssetViewer() {
         setAssetName(resp.name);
         evt.changeTitle(resp.name);
       }
-      // テキストアセットの場合、base64デコードして編集用stateに設定
-      if (resp && isTextMime(resp.mime)) {
+      // HTML はデフォルトでソース表示
+      if (resp && isHtmlMime(resp.mime)) {
+        setShowPreview(false);
+      }
+      // テキストアセットまたはSVGの場合、base64デコードして編集用stateに設定
+      if (resp && (isTextMime(resp.mime) || isSvgMime(resp.mime))) {
         try {
           setEditText(decodeURIComponent(escape(atob(resp.content))));
         } catch {
@@ -428,10 +445,11 @@ function AssetViewer() {
       .then(() => GetAssetContent(id))
       .then((resp) => {
         setAssetContent(resp);
-        if (resp && isTextMime(resp.mime)) {
+        if (resp && (isTextMime(resp.mime) || isSvgMime(resp.mime))) {
           try { setEditText(decodeURIComponent(escape(atob(resp.content)))); }
           catch { setEditText(atob(resp.content)); }
         }
+        setShowPreview(isHtmlMime(resp?.mime) ? false : true);
         setMimeFixDlg(false);
         evt.showSuccessMessage(t("assetViewer.mimeFixSuccess"));
       })
@@ -529,16 +547,39 @@ function AssetViewer() {
     const { name, mime, content: fileContent } = assetContent;
     const isImage = isImageMime(mime);
     const isText = isTextMime(mime);
+    const isSvg = isSvgMime(mime);
+    const isHtml = isHtmlMime(mime);
 
-    if (isImage) {
+    if (isImage && !isSvg) {
+      // 画像（SVG以外）: ImageViewer のみ
       content = (
         <ImageViewer
           src={`data:${mime};base64,${fileContent}`}
           alt={name}
         />
       );
-    } else if (isText) {
-      // テキストファイル: EditorArea（行番号付き、デバウンス自動保存）
+    } else if (isSvg && showPreview) {
+      // SVG プレビューモード: editText から生成して編集結果を即反映
+      const svgSrc = editText
+        ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(editText)}`
+        : `data:${mime};base64,${fileContent}`;
+      content = (
+        <ImageViewer
+          src={svgSrc}
+          alt={name}
+        />
+      );
+    } else if (isHtml && showPreview) {
+      // HTML プレビューモード: iframe で描画
+      content = (
+        <iframe
+          srcDoc={editText}
+          style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#fff' }}
+          sandbox="allow-same-origin"
+        />
+      );
+    } else if (isText || isSvg) {
+      // テキスト/SVGソース: EditorArea（行番号付き、デバウンス自動保存）
       content = (
         <EditorArea
           text={editText}
@@ -584,6 +625,15 @@ function AssetViewer() {
               </IconButton>
             </span>
           </Tooltip>
+          {assetContent && (isSvgMime(assetContent.mime) || isHtmlMime(assetContent.mime)) && (
+            <Tooltip title={showPreview ? t("assetViewer.editSource") : t("assetViewer.showPreview")} placement="bottom">
+              <span>
+                <IconButton size="small" onClick={() => setShowPreview(v => !v)} className="editorBtn">
+                  {showPreview ? <CodeIcon sx={{ fontSize: '16px' }} /> : <VisibilityIcon sx={{ fontSize: '16px' }} />}
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
         </div>
         <div className="previewMenuRight">
           <Tooltip title={t("preview.download")} placement="bottom">

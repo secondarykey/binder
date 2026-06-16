@@ -477,7 +477,9 @@
         "setMetaImageConfirm" : "Set \"{{name}}\" as the meta image for the parent note. Continue?",
         "setMetaImageDeleteAsset" : "Delete asset",
         "setMetaImageSuccess" : "Set as meta image.",
-        "setMetaImageError" : "Failed to set meta image: {{error}}"
+        "setMetaImageError" : "Failed to set meta image: {{error}}",
+        "editSource" : "Edit Source",
+        "showPreview" : "Show Preview"
     },
     "preview" : {
         "openPreviewWindow" : "Open in New Window",
