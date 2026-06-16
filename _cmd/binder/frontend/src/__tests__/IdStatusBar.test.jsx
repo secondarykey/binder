@@ -4,9 +4,12 @@ import { render, fireEvent } from '@testing-library/react';
 import IdStatusBar from '../components/editor/IdStatusBar';
 
 describe('IdStatusBar', () => {
-  it('renders nothing when structure is null', () => {
+  it('renders without visible class when structure is null', () => {
     const { container } = render(<IdStatusBar structure={null} onNavigate={vi.fn()} />);
-    expect(container.querySelector('#idStatusBar')).toBeNull();
+    const bar = container.querySelector('#idStatusBar');
+    expect(bar).toBeTruthy();
+    expect(bar.classList.contains('visible')).toBe(false);
+    expect(container.querySelector('.idStatusLink')).toBeNull();
   });
 
   it('renders note info and navigates on click', () => {
