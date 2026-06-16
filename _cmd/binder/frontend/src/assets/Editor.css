@@ -518,15 +518,15 @@ iframe.htmlViewer {
 
 #editorWrapper #idStatusBar {
   position: absolute;
-  bottom: 36px;
+  bottom: 40px;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   padding: 8px 10px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  background-color: color-mix(in srgb, var(--bg-overlay) 50%, transparent);
+  background-color: color-mix(in srgb, var(--bg-overlay) 30%, transparent);
   backdrop-filter: blur(4px);
   border-top: 1px solid var(--border-primary);
   z-index: 1;
