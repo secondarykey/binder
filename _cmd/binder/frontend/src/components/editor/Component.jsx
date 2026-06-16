@@ -18,7 +18,7 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
-import { extractUuidAtCursor } from "@shared/editor/id-detect";
+import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
@@ -356,10 +356,11 @@ function Editor(props) {
   const [idListAnchor, setIdListAnchor] = useState(null);
   const [idList, setIdList] = useState([]);
 
-  // カーソル位置の UUID に対応する Structure 情報
-  const [cursorStructure, setCursorStructure] = useState(null);
+  // カーソル行の UUID に対応する Structure 情報（複数対応）
+  const [cursorStructures, setCursorStructures] = useState([]);
+  const [cursorStructureIndex, setCursorStructureIndex] = useState(0);
   const idDetectTimerRef = useRef(null);
-  const lastDetectedUuidRef = useRef(null);
+  const lastDetectedUuidsRef = useRef(null);
 
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
@@ -373,8 +374,8 @@ function Editor(props) {
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
   const fileOpeningRef = useRef(false);
-  useEffect(() => { modeRef.current = mode; setCursorStructure(null); lastDetectedUuidRef.current = null; }, [mode]);
-  useEffect(() => { idRef.current = id; setCursorStructure(null); lastDetectedUuidRef.current = null; }, [id]);
+  useEffect(() => { modeRef.current = mode; setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null; }, [mode]);
+  useEffect(() => { idRef.current = id; setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null; }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
@@ -1101,31 +1102,32 @@ function Editor(props) {
 
 
   /**
-   * カーソル位置の UUID を検出し、Structure 情報を取得する（デバウンス付き）
+   * カーソル行の UUID を検出し、Structure 情報を取得する（デバウンス付き）
    */
   const detectIdAtCursor = useCallback((text, cursorPos) => {
-    const uuid = extractUuidAtCursor(text, cursorPos);
-    if (uuid === lastDetectedUuidRef.current) return;
-    lastDetectedUuidRef.current = uuid;
+    const uuids = extractUuidsOnLine(text, cursorPos);
+    const key = uuids.join(',');
+    if (key === lastDetectedUuidsRef.current) return;
+    lastDetectedUuidsRef.current = key;
 
     if (idDetectTimerRef.current) {
       clearTimeout(idDetectTimerRef.current);
     }
 
-    if (!uuid) {
-      setCursorStructure(null);
+    if (uuids.length === 0) {
+      setCursorStructures([]);
+      setCursorStructureIndex(0);
       return;
     }
 
     idDetectTimerRef.current = setTimeout(() => {
-      GetStructure(uuid).then((s) => {
-        if (lastDetectedUuidRef.current === uuid) {
-          setCursorStructure(s);
-        }
-      }).catch(() => {
-        if (lastDetectedUuidRef.current === uuid) {
-          setCursorStructure(null);
-        }
+      Promise.all(uuids.map((uuid) =>
+        GetStructure(uuid).then((s) => s).catch(() => null)
+      )).then((results) => {
+        if (lastDetectedUuidsRef.current !== key) return;
+        const found = results.filter(Boolean);
+        setCursorStructures(found);
+        setCursorStructureIndex(0);
       });
     }, 200);
   }, []);
@@ -1491,11 +1493,11 @@ function Editor(props) {
       return;
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructure) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructures.length > 0) {
       e.preventDefault();
-      const typ = cursorStructure.type;
-      const urlMode = typ === 'asset' ? 'assets' : typ;
-      handleIdNavigate(urlMode, cursorStructure.id);
+      const s = cursorStructures[cursorStructureIndex] || cursorStructures[0];
+      const urlMode = s.type === 'asset' ? 'assets' : s.type;
+      handleIdNavigate(urlMode, s.id);
       return;
     }
 
@@ -2051,7 +2053,12 @@ function Editor(props) {
               />
 
               {/** ID ステータスバー */}
-              <IdStatusBar structure={cursorStructure} onNavigate={handleIdNavigate} />
+              <IdStatusBar
+                structures={cursorStructures}
+                currentIndex={cursorStructureIndex}
+                onIndexChange={setCursorStructureIndex}
+                onNavigate={handleIdNavigate}
+              />
 
               {/** コミットバー */}
               <CommitBar

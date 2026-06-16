@@ -15,30 +15,50 @@ function typeToUrlMode(typ) {
 
 /**
  * エディタ下部の ID ステータスバー。
- * カーソル位置の UUID に対応するアイテム情報を表示し、クリックで遷移する。
- * 常にマウントし、CSS transition で表示/非表示をアニメーションする。
+ * カーソル行の UUID に対応するアイテム情報を表示し、クリックで遷移する。
+ * 複数の UUID がある場合は ◀ ▶ で切り替え可能。
  *
- * @param {{ structure: object|null, onNavigate: (mode: string, id: string) => void }} props
- *   structure: { id, type, name } or null
+ * @param {{ structures: object[], currentIndex: number, onIndexChange: (i: number) => void, onNavigate: (mode: string, id: string) => void }} props
  */
-function IdStatusBar({ structure, onNavigate }) {
+function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate }) {
   const { t } = useTranslation();
 
-  const visible = !!structure;
-  const labelKey = structure ? (TYPE_LABELS[structure.type] || "editor.idStatus.unknown") : "";
-  const label = structure ? t(labelKey) : "";
-  const urlMode = structure ? typeToUrlMode(structure.type) : "";
+  const visible = structures.length > 0;
+  const s = structures[currentIndex] || null;
+  const hasMultiple = structures.length > 1;
+
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    onIndexChange((currentIndex - 1 + structures.length) % structures.length);
+  };
+  const handleNext = (e) => {
+    e.stopPropagation();
+    onIndexChange((currentIndex + 1) % structures.length);
+  };
+
+  const labelKey = s ? (TYPE_LABELS[s.type] || "editor.idStatus.unknown") : "";
+  const label = s ? t(labelKey) : "";
+  const urlMode = s ? typeToUrlMode(s.type) : "";
 
   return (
     <div id="idStatusBar" className={visible ? 'visible' : ''}>
-      {structure && (
-        <span
-          className="idStatusLink"
-          onClick={() => onNavigate(urlMode, structure.id)}
-          title={structure.id}
-        >
-          {label}: {structure.name || structure.id}
-        </span>
+      {s && (
+        <>
+          {hasMultiple && (
+            <span className="idStatusNav">
+              <span className="idStatusNavBtn" onClick={handlePrev}>◀</span>
+              <span className="idStatusCount">{currentIndex + 1}/{structures.length}</span>
+              <span className="idStatusNavBtn" onClick={handleNext}>▶</span>
+            </span>
+          )}
+          <span
+            className="idStatusLink"
+            onClick={() => onNavigate(urlMode, s.id)}
+            title={s.id}
+          >
+            {label}: {s.name || s.id}
+          </span>
+        </>
       )}
     </div>
   );

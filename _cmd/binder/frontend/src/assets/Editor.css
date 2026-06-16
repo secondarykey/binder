@@ -544,6 +544,32 @@ iframe.htmlViewer {
   text-decoration: underline;
 }
 
+#idStatusBar .idStatusNav {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+#idStatusBar .idStatusNavBtn {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  user-select: none;
+  padding: 0 2px;
+}
+
+#idStatusBar .idStatusNavBtn:hover {
+  color: var(--text-primary);
+}
+
+#idStatusBar .idStatusCount {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */
 #editorWrapper #parseStatusBar {
   position: absolute;
