@@ -9,7 +9,7 @@ import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binde
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
-import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, SaveLastData } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -429,6 +429,7 @@ function Editor(props) {
       editorHistory.push(mode, id);
     }
     editorHistory.navigating = false;
+    SaveLastData(mode, id).catch(() => {});
   }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
