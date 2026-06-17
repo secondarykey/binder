@@ -250,7 +250,7 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
           variant="outlined"
           placeholder={t("editor.searchPlaceholder")}
           value={query}
-          onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; }}
+          onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; setSearched(false); }}
           onKeyDown={handleKeyDown}
           slotProps={{
             input: {
