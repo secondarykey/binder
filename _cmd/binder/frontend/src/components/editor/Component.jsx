@@ -66,6 +66,41 @@ import LayerEditor from "../../components/LayerEditor.jsx";
 import CommitBar from "../../components/CommitBar.jsx";
 
 /**
+ * textarea のカーソル位置からビューポート座標を取得する
+ */
+function getCaretPosition(textarea) {
+  if (!textarea) return null;
+  const mirror = document.createElement('div');
+  const style = window.getComputedStyle(textarea);
+  for (const prop of style) {
+    mirror.style.setProperty(prop, style.getPropertyValue(prop));
+  }
+  mirror.style.position = 'absolute';
+  mirror.style.visibility = 'hidden';
+  mirror.style.overflow = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.wordWrap = 'break-word';
+  mirror.style.width = textarea.clientWidth + 'px';
+  mirror.style.height = 'auto';
+
+  const text = textarea.value.substring(0, textarea.selectionStart);
+  mirror.textContent = text;
+  const span = document.createElement('span');
+  span.textContent = textarea.value.substring(textarea.selectionStart) || '.';
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+
+  const rect = textarea.getBoundingClientRect();
+  const spanRect = span.getBoundingClientRect();
+  const mirrorRect = mirror.getBoundingClientRect();
+
+  const top = rect.top + (spanRect.top - mirrorRect.top) - textarea.scrollTop;
+  const left = rect.left + (spanRect.left - mirrorRect.left) - textarea.scrollLeft;
+  document.body.removeChild(mirror);
+  return { top: Math.min(Math.max(top, rect.top), rect.bottom), left: Math.min(Math.max(left, rect.left), rect.right) };
+}
+
+/**
  * ツリーからノートのみを再帰的に抽出する
  */
 function flattenNotes(nodes) {
@@ -401,10 +436,12 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
+  const [snippetPos, setSnippetPos] = useState(null);
   const snippetBtnRef = useRef(null);
 
   // ID挿入
   const [idListAnchor, setIdListAnchor] = useState(null);
+  const [idListPos, setIdListPos] = useState(null);
   const [idList, setIdList] = useState([]);
   const idInsertBtnRef = useRef(null);
 
@@ -502,20 +539,37 @@ function Editor(props) {
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
         e.preventDefault();
-        if (snippetBtnRef.current) {
+        const pos = getCaretPosition(document.querySelector("#editor"));
+        if (pos) {
+          setSnippetPos(pos);
+          setSnippetAnchor(null);
+        } else if (snippetBtnRef.current) {
           setSnippetAnchor(snippetBtnRef.current);
+          setSnippetPos(null);
         }
       }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') {
         e.preventDefault();
-        if (idInsertBtnRef.current) {
-          idInsertBtnRef.current.click();
-        }
+        const textarea = document.querySelector("#editor");
+        const pos = getCaretPosition(textarea);
+        GetBinderTree().then((tree) => {
+          const all = flattenStructures(tree.data || []);
+          const children = all.filter((s) => s.parentId === id);
+          const others = all.filter((s) => s.parentId !== id && s.id !== id);
+          setIdList([...children, ...others]);
+          if (pos) {
+            setIdListPos(pos);
+            setIdListAnchor(null);
+          } else if (idInsertBtnRef.current) {
+            setIdListAnchor(idInsertBtnRef.current);
+            setIdListPos(null);
+          }
+        }).catch((err) => evt.showErrorMessage(err));
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [id]);
 
   // Alt+← / Alt+→ でエディタ履歴ナビゲーション
   useEffect(() => {
@@ -1949,15 +2003,17 @@ function Editor(props) {
                     <Tooltip title={t("editor.insertSnippet") + " (Ctrl+Shift+O)"} placement="bottom">
                       <IconButton ref={snippetBtnRef} size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
+                        onClick={(e) => { setSnippetAnchor(e.currentTarget); setSnippetPos(null); }}
                         className="editorBtn">
                         <PlaylistAddIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Menu
                       anchorEl={snippetAnchor}
-                      open={Boolean(snippetAnchor)}
-                      onClose={() => setSnippetAnchor(null)}
+                      anchorReference={snippetPos ? 'anchorPosition' : 'anchorEl'}
+                      anchorPosition={snippetPos || undefined}
+                      open={Boolean(snippetAnchor) || Boolean(snippetPos)}
+                      onClose={() => { setSnippetAnchor(null); setSnippetPos(null); }}
                       disableAutoFocus
                       disableEnforceFocus
                       disableRestoreFocus
@@ -1966,7 +2022,7 @@ function Editor(props) {
                       {snippetList.map((s) => (
                         <MenuItem key={s.id}
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleInsertSnippet(s.body)}
+                          onClick={() => { handleInsertSnippet(s.body); setSnippetPos(null); }}
                           sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                           {s.name}
                         </MenuItem>
@@ -1986,6 +2042,7 @@ function Editor(props) {
                           const others = all.filter((s) => s.parentId !== id && s.id !== id);
                           setIdList([...children, ...others]);
                           setIdListAnchor(anchor);
+                          setIdListPos(null);
                         }).catch((err) => evt.showErrorMessage(err));
                       }}
                       className="editorBtn">
@@ -1994,8 +2051,10 @@ function Editor(props) {
                   </Tooltip>
                   <Menu
                     anchorEl={idListAnchor}
-                    open={Boolean(idListAnchor)}
-                    onClose={() => setIdListAnchor(null)}
+                    anchorReference={idListPos ? 'anchorPosition' : 'anchorEl'}
+                    anchorPosition={idListPos || undefined}
+                    open={Boolean(idListAnchor) || Boolean(idListPos)}
+                    onClose={() => { setIdListAnchor(null); setIdListPos(null); }}
                     disableAutoFocus
                     disableEnforceFocus
                     disableRestoreFocus
@@ -2004,7 +2063,7 @@ function Editor(props) {
                     {idList.map((s) => (
                       <MenuItem key={s.id}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); }}
+                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); setIdListPos(null); }}
                         sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                         {s.name}
                       </MenuItem>
