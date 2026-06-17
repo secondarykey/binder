@@ -404,6 +404,7 @@ function Editor(props) {
   const [wordWrap, setWordWrap] = useState(true);
   // テキスト検索バーの表示状態
   const [searchOpen, setSearchOpen] = useState(false);
+  const [replaceMode, setReplaceMode] = useState(false);
   // 検索でアクティブな行番号（1始まり、null = なし）
   const [activeMatchLine, setActiveMatchLine] = useState(null);
 
@@ -521,12 +522,18 @@ function Editor(props) {
   const [previewDiagrams, setPreviewDiagrams] = useState([]);
   const [previewDiagramId, setPreviewDiagramId] = useState("");
 
-  // Ctrl+F で検索バーを開く
+  // Ctrl+F で検索バーを開く、Ctrl+H で置換モードで開く
   useEffect(() => {
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
+        setReplaceMode(false);
         setSearchOpen(prev => !prev);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        setReplaceMode(true);
+        setSearchOpen(true);
       }
     };
     document.addEventListener('keydown', handler);
@@ -605,6 +612,35 @@ function Editor(props) {
     const lineHeight = totalLines > 0 ? textarea.scrollHeight / totalLines : 20;
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
   }, [text]);
+
+  const handleReplace = useCallback((absoluteStart, absoluteEnd, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(absoluteStart, absoluteEnd);
+    document.execCommand('insertText', false, replacement);
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    });
+  }, [mode, id]);
+
+  const handleReplaceAll = useCallback((matches, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    let newText = text;
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const m = matches[i];
+      newText = newText.substring(0, m.absoluteStart) + replacement + newText.substring(m.absoluteEnd);
+    }
+    textarea.select();
+    document.execCommand('insertText', false, newText);
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    });
+  }, [text, mode, id]);
 
   useEffect(() => {
     GetConfig().then((conf) => {
@@ -2235,10 +2271,13 @@ function Editor(props) {
                 <SearchBar
                   key={restoredAt}
                   text={text}
-                  onClose={() => { setSearchOpen(false); setActiveMatchLine(null); }}
+                  onClose={() => { setSearchOpen(false); setReplaceMode(false); setActiveMatchLine(null); }}
                   onNavigate={handleSearchNavigate}
                   onClearHighlight={() => setActiveMatchLine(null)}
                   initialQuery={searchQuery}
+                  replaceMode={replaceMode}
+                  onReplace={handleReplace}
+                  onReplaceAll={handleReplaceAll}
                 />
               )}
 
