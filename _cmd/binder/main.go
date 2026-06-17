@@ -124,12 +124,18 @@ func main() {
 	log.Info("Window position from settings: left=%d top=%d width=%d height=%d isDefault=%v",
 		set.Position.Left, set.Position.Top, set.Position.Width, set.Position.Height, set.IsDefault())
 
-	//位置がおかしい場合は真ん中に設定、それ以外は保存位置を明示的に復元
-	// Wails v3 の NewWithOptions の X/Y が反映されないケースがあるため SetPosition で補強する
+	// Wails v3 はウィンドウ表示時にデフォルトで中央配置するため、
+	// NewWithOptions の X/Y や事前の SetPosition が上書きされる。
+	// WindowRuntimeReady 後に SetPosition することで確実に保存位置を復元する。
 	if set.IsDefault() || resetPosition {
 		window.Center()
 	} else {
-		window.SetPosition(set.Position.Left, set.Position.Top)
+		savedLeft := set.Position.Left
+		savedTop := set.Position.Top
+		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
+			log.Info("WindowRuntimeReady: restoring position left=%d top=%d", savedLeft, savedTop)
+			window.SetPosition(savedLeft, savedTop)
+		})
 	}
 
 	// 4. Wails ランタイムを注入して起動処理を実行
