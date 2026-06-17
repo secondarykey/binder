@@ -44,9 +44,8 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
-  // マウント時に入力欄にフォーカスし、初期位置を算出
+  // マウント時に初期位置を算出し、表示後にフォーカス
   useEffect(() => {
-    inputRef.current?.focus();
     const q = initialQuery || savedQuery;
     if (q) {
       savedQuery = q;
@@ -65,6 +64,9 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
         savedPosition = pos;
       }
       setVisible(true);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    } else {
+      inputRef.current?.focus();
     }
   }, []);
 
