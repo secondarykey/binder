@@ -236,75 +236,33 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
       ref={panelRef}
       style={{ left: position.x + 'px', top: position.y + 'px', visibility: visible ? 'visible' : 'hidden' }}
     >
-      {/** ドラッグハンドル + 検索入力行 */}
+      {/** ドラッグハンドル + 入力エリア + 右端ボタン群 */}
       <div className="editorSearchRow">
+        {/** 左: ドラッグハンドル */}
         <span
           className="editorSearchDragHandle"
           onMouseDown={handleDragStart}
         >
           <DragIndicatorIcon sx={{ fontSize: '16px' }} />
         </span>
-        <TextField
-          inputRef={inputRef}
-          size="small"
-          variant="outlined"
-          placeholder={t("editor.searchPlaceholder")}
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; setSearched(false); }}
-          onKeyDown={handleKeyDown}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: '28px',
-                fontSize: '0.82rem',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-              }
-            }
-          }}
-          sx={{ flex: 1, minWidth: 160 }}
-        />
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-          {searched
-            ? (matches.length > 0
-              ? `${currentIndex + 1} / ${matches.length}`
-              : t("editor.searchNoMatches"))
-            : ""}
-        </span>
-        {onReplace && (
-          <IconButton
-            size="small"
-            onClick={() => setShowReplace(!showReplace)}
-            sx={{ color: showReplace ? 'var(--text-primary)' : 'var(--text-muted)' }}
-            title={t("editor.replaceToggle")}
-          >
-            <FindReplaceIcon sx={{ fontSize: '16px' }} />
-          </IconButton>
-        )}
-        <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)' }}>
-          <CloseIcon sx={{ fontSize: '16px' }} />
-        </IconButton>
-      </div>
 
-      {/** 置換入力行 */}
-      {showReplace && (
-        <div className="editorSearchRow" style={{ marginTop: '4px' }}>
-          <span style={{ width: '20px', flexShrink: 0 }} />
+        {/** 中央: 検索・置換入力欄（縦並び） */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
           <TextField
-            inputRef={replaceInputRef}
+            inputRef={inputRef}
             size="small"
             variant="outlined"
-            placeholder={t("editor.replacePlaceholder")}
-            value={replaceText}
-            onChange={(e) => { setReplaceText(e.target.value); savedReplaceText = e.target.value; }}
-            onKeyDown={handleReplaceKeyDown}
+            placeholder={t("editor.searchPlaceholder")}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; setSearched(false); }}
+            onKeyDown={handleKeyDown}
             slotProps={{
               input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                  </InputAdornment>
+                ),
                 sx: {
                   height: '28px',
                   fontSize: '0.82rem',
@@ -313,26 +271,85 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
                 }
               }
             }}
-            sx={{ flex: 1, minWidth: 160 }}
+            sx={{ width: '100%' }}
           />
-          <button
-            className="editorSearchReplaceBtn"
-            onClick={handleReplaceCurrent}
-            disabled={currentIndex < 0}
-            title={t("editor.replaceOne")}
-          >
-            {t("editor.replaceOne")}
-          </button>
-          <button
-            className="editorSearchReplaceBtn"
-            onClick={handleReplaceAll}
-            disabled={matches.length === 0}
-            title={t("editor.replaceAll")}
-          >
-            {t("editor.replaceAll")}
-          </button>
+          {showReplace && (
+            <TextField
+              inputRef={replaceInputRef}
+              size="small"
+              variant="outlined"
+              placeholder={t("editor.replacePlaceholder")}
+              value={replaceText}
+              onChange={(e) => { setReplaceText(e.target.value); savedReplaceText = e.target.value; }}
+              onKeyDown={handleReplaceKeyDown}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FindReplaceIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    height: '28px',
+                    fontSize: '0.82rem',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: 'var(--text-primary)',
+                  }
+                }
+              }}
+              sx={{ width: '100%' }}
+            />
+          )}
         </div>
-      )}
+
+        {/** 右: ボタン群（縦並び・固定幅） */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0, alignItems: 'flex-end' }}>
+          {/** 検索行の右側: カウント + 置換トグル + 閉じる */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '28px' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: '48px', textAlign: 'right' }}>
+              {searched
+                ? (matches.length > 0
+                  ? `${currentIndex + 1} / ${matches.length}`
+                  : t("editor.searchNoMatches"))
+                : ""}
+            </span>
+            {onReplace && (
+              <IconButton
+                size="small"
+                onClick={() => setShowReplace(!showReplace)}
+                sx={{ color: showReplace ? 'var(--text-primary)' : 'var(--text-muted)', padding: '4px' }}
+                title={t("editor.replaceToggle")}
+              >
+                <FindReplaceIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            )}
+            <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)', padding: '4px' }}>
+              <CloseIcon sx={{ fontSize: '16px' }} />
+            </IconButton>
+          </div>
+          {/** 置換行の右側: 置換 + 全置換 */}
+          {showReplace && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '28px' }}>
+              <button
+                className="editorSearchReplaceBtn"
+                onClick={handleReplaceCurrent}
+                disabled={currentIndex < 0}
+                title={t("editor.replaceOne")}
+              >
+                {t("editor.replaceOne")}
+              </button>
+              <button
+                className="editorSearchReplaceBtn"
+                onClick={handleReplaceAll}
+                disabled={matches.length === 0}
+                title={t("editor.replaceAll")}
+              >
+                {t("editor.replaceAll")}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {matches.length > 0 && (
         <div className="editorSearchResults" ref={resultsRef}>
