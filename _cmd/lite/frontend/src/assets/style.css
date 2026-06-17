@@ -147,6 +147,27 @@
   padding: 0 1px;
 }
 
+.editorSearchReplaceBtn {
+  background: var(--bg-surface, #2a2a2a);
+  color: var(--text-primary, #e0e0e0);
+  border: 1px solid var(--border-input, #555);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.editorSearchReplaceBtn:hover:not(:disabled) {
+  background: var(--hover-overlay, rgba(255,255,255,0.08));
+}
+
+.editorSearchReplaceBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* === プレビュー iframe === */
 
 iframe.htmlViewer {

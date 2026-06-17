@@ -21,6 +21,7 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
+  const [replaceMode, setReplaceMode] = useState(false);
   const composingRef = useRef(false);
   const hiddenFocusRef = useRef(null);
 
@@ -51,6 +52,16 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
       const textarea = e.target;
       const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
       setSearchInitialQuery(selected || '');
+      setReplaceMode(false);
+      setShowSearch(true);
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+      e.preventDefault();
+      const textarea = e.target;
+      const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+      setSearchInitialQuery(selected || '');
+      setReplaceMode(true);
       setShowSearch(true);
       return;
     }
@@ -84,8 +95,36 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
 
   const handleSearchClose = useCallback(() => {
     setShowSearch(false);
+    setReplaceMode(false);
     document.querySelector('#editor')?.focus();
   }, []);
+
+  const handleReplace = useCallback((absoluteStart, absoluteEnd, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(absoluteStart, absoluteEnd);
+    document.execCommand('insertText', false, replacement);
+    requestAnimationFrame(() => {
+      onChange(textarea.value);
+    });
+  }, [onChange]);
+
+  const handleReplaceAll = useCallback((matches, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    let newText = text;
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const m = matches[i];
+      newText = newText.substring(0, m.absoluteStart) + replacement + newText.substring(m.absoluteEnd);
+    }
+    textarea.select();
+    document.execCommand('insertText', false, newText);
+    requestAnimationFrame(() => {
+      onChange(textarea.value);
+    });
+  }, [text, onChange]);
 
   const editorStyle = {
     fontFamily: font?.name || 'monospace',
@@ -111,6 +150,9 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
           onClose={handleSearchClose}
           onNavigate={handleSearchNavigate}
           initialQuery={searchInitialQuery}
+          replaceMode={replaceMode}
+          onReplace={handleReplace}
+          onReplaceAll={handleReplaceAll}
         />
       )}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
