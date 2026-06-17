@@ -22,7 +22,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -174,11 +174,13 @@ function App() {
       currentBinderDir = dir;
 
       // メモリ上の記録を優先し、なければ永続化された記録、それもなければindex
+      // ナビゲート先を SaveLastData で同期し、histories[0] と lastNoteId の不整合を防ぐ
       const mem = binderLastData.get(dir);
       if (mem) {
         const urlType = mem.mode === 'asset' ? 'assets' : mem.mode;
         nav("/editor/" + urlType + "/" + mem.id);
         evt.selectTreeNode(mem.id);
+        SaveLastData(mem.mode, mem.id).catch(() => {});
       } else if (openLastData) {
         GetPath().then((path) => {
           const dataType = path?.lastDataType;
@@ -189,12 +191,15 @@ function App() {
             evt.selectTreeNode(dataId);
           } else {
             nav("/editor/note/index");
+            SaveLastData("note", "index").catch(() => {});
           }
         }).catch(() => {
           nav("/editor/note/index");
+          SaveLastData("note", "index").catch(() => {});
         });
       } else {
         nav("/editor/note/index");
+        SaveLastData("note", "index").catch(() => {});
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
