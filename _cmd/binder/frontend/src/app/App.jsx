@@ -385,6 +385,15 @@ function App() {
    * ホームボタンクリック: バインダーを閉じてトップへ移動
    */
   const handleClickHome = () => {
+    // ホームに戻る前に現在のバインダーの表示ページをメモリに保存
+    if (currentBinderDir) {
+      const m = location.pathname.match(/^\/editor\/([^/]+)\/(.+)$/);
+      if (m) {
+        const mode = m[1] === 'assets' ? 'asset' : m[1];
+        binderLastData.set(currentBinderDir, { mode, id: m[2] });
+      }
+      currentBinderDir = null;
+    }
     CloseBinder().then(() => {
       setPageTitle("");
       setBinderName("");
