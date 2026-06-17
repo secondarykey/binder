@@ -121,7 +121,7 @@ func main() {
 		EnableFileDrop:         true,
 	})
 
-	log.Info("Window position from settings: left=%d top=%d width=%d height=%d isDefault=%v",
+	log.Debug("Window position from settings: left=%d top=%d width=%d height=%d isDefault=%v",
 		set.Position.Left, set.Position.Top, set.Position.Width, set.Position.Height, set.IsDefault())
 
 	// Wails v3 はウィンドウ表示時にデフォルトで中央配置するため、
@@ -133,7 +133,7 @@ func main() {
 		savedLeft := set.Position.Left
 		savedTop := set.Position.Top
 		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
-			log.Info("WindowRuntimeReady: restoring position left=%d top=%d", savedLeft, savedTop)
+			log.Debug("WindowRuntimeReady: restoring position left=%d top=%d", savedLeft, savedTop)
 			window.SetPosition(savedLeft, savedTop)
 		})
 	}
