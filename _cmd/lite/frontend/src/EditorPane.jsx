@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4 }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
@@ -55,9 +55,9 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
       return;
     }
 
-    // Markdown入力支援（リスト継続・引用継続等）
-    handleMarkdownKeyDown(e, composingRef, onChange);
-  }, [onChange]);
+    // Markdown入力支援（リスト継続・引用継続・Tab/Shift+Tab等）
+    handleMarkdownKeyDown(e, composingRef, onChange, tabSize);
+  }, [onChange, tabSize]);
 
   const handleChange = useCallback((e) => {
     onChange(e.target.value);

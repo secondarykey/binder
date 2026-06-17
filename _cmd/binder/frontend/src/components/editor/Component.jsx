@@ -17,7 +17,7 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
-import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
@@ -1573,11 +1573,56 @@ function Editor(props) {
       return;
     }
 
+    // Ctrl+Enter: IDステータスバーのアイテムへ遷移
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructures.length > 0) {
       e.preventDefault();
       const s = cursorStructures[cursorStructureIndex] || cursorStructures[0];
       const urlMode = s.type === 'asset' ? 'assets' : s.type;
       handleIdNavigate(urlMode, s.id);
+      return;
+    }
+
+    // Ctrl+B / Ctrl+I / Ctrl+K
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'b' || key === 'i' || key === 'k') {
+        e.preventDefault();
+        const textarea = e.target;
+        const result = handleMarkdownFormat(textarea, key);
+        if (result.handled) {
+          textarea.value = result.value;
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+          isEditingRef.current = true;
+          setText(result.value);
+          writeFn(mode, id, result.value);
+          requestAnimationFrame(() => {
+            textarea.selectionStart = result.selectionStart;
+            textarea.selectionEnd = result.selectionEnd;
+          });
+        }
+        return;
+      }
+    }
+
+    // Tab / Shift+Tab
+    if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      const textarea = e.target;
+      const tabSize = editorSettingRef.current?.tabSize || 4;
+      const result = handleMarkdownTab(textarea, e.shiftKey, tabSize);
+      if (result.handled) {
+        textarea.value = result.value;
+        textarea.selectionStart = result.selectionStart;
+        textarea.selectionEnd = result.selectionEnd;
+        isEditingRef.current = true;
+        setText(result.value);
+        writeFn(mode, id, result.value);
+        requestAnimationFrame(() => {
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+        });
+      }
       return;
     }
 
@@ -1949,14 +1994,14 @@ function Editor(props) {
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                     {/** 強調 */}
-                    <Tooltip title={t("editor.bold")} placement="bottom">
+                    <Tooltip title={`${t("editor.bold")} (Ctrl+B)`} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                         <FormatBoldIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** イタリック */}
-                    <Tooltip title={t("editor.italic")} placement="bottom">
+                    <Tooltip title={`${t("editor.italic")} (Ctrl+I)`} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
                         <FormatItalicIcon fontSize="small" />
                       </IconButton>

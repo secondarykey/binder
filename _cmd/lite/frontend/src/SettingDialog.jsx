@@ -29,6 +29,7 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
   const [langValue, setLangValue] = useState('en');
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [wordWrap, setWordWrap] = useState(true);
+  const [tabSize, setTabSize] = useState(4);
   const [font, setFont] = useState(null);
   const [fontOpen, setFontOpen] = useState(false);
 
@@ -46,6 +47,7 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
     setLangValue(settings.language || 'en');
     setShowLineNumbers(settings.showLineNumbers);
     setWordWrap(settings.wordWrap);
+    setTabSize(settings.tabSize || 4);
 
     GetThemeList().then(setThemes).catch(() => {});
     GetLanguageList().then(setLanguages).catch(() => {});
@@ -77,14 +79,14 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
     setThemeMode(themeValue);
     await SetLanguage(langValue).catch(() => {});
     if (langValue !== settings.language) loadLanguage(langValue);
-    await SaveEditorSettings(showLineNumbers, wordWrap).catch(() => {});
+    await SaveEditorSettings(showLineNumbers, wordWrap, tabSize).catch(() => {});
     if (font) {
       const effectiveTheme = themeValue === 'system'
         ? (document.documentElement.dataset.theme || 'dark')
         : themeValue;
       await SaveFont(effectiveTheme, font).catch(() => {});
     }
-    onSettingsSaved({ themeMode: themeValue, language: langValue, showLineNumbers, wordWrap });
+    onSettingsSaved({ themeMode: themeValue, language: langValue, showLineNumbers, wordWrap, tabSize });
     onClose();
   };
 
@@ -176,6 +178,16 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
               <Box sx={rowSx}>
                 <Typography sx={labelSx}>{t('lite.wordWrap')}</Typography>
                 <Switch checked={wordWrap} onChange={(e) => setWordWrap(e.target.checked)} size="small" />
+              </Box>
+
+              <Box sx={rowSx}>
+                <Typography sx={labelSx}>{t('lite.tabSize')}</Typography>
+                <Select value={tabSize} onChange={(e) => setTabSize(Number(e.target.value))} size="small"
+                  sx={{ width: 80, fontSize: '13px', color: 'var(--text-primary)', '.MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-input)' } }}>
+                  <MenuItem value={2}>2</MenuItem>
+                  <MenuItem value={4}>4</MenuItem>
+                  <MenuItem value={8}>8</MenuItem>
+                </Select>
               </Box>
 
               <Box sx={rowSx}>

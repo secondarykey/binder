@@ -110,18 +110,19 @@ func (a *App) SetLanguage(lang string) error {
 	return nil
 }
 
-// GetEditorSettings は行番号・折り返し設定を返す。
-func (a *App) GetEditorSettings() map[string]bool {
+// GetEditorSettings はエディタ設定を返す。
+func (a *App) GetEditorSettings() map[string]any {
 	s := settings.GetLite()
-	return map[string]bool{
+	return map[string]any{
 		"showLineNumbers": s.ShowLineNumbers,
 		"wordWrap":        s.WordWrap,
+		"tabSize":         s.TabSize,
 	}
 }
 
-// SaveEditorSettings は行番号・折り返し設定を保存する。
-func (a *App) SaveEditorSettings(showLineNumbers, wordWrap bool) error {
-	return settings.SaveLiteEditor(showLineNumbers, wordWrap)
+// SaveEditorSettings はエディタ設定を保存する。
+func (a *App) SaveEditorSettings(showLineNumbers, wordWrap bool, tabSize int) error {
+	return settings.SaveLiteEditor(showLineNumbers, wordWrap, tabSize)
 }
 
 // GetFont は指定テーマのフォント設定を返す。

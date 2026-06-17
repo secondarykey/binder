@@ -657,6 +657,7 @@
         "languageLabel" : "Language",
         "lineNumbers" : "Line Numbers",
         "wordWrap" : "Word Wrap",
+        "tabSize" : "Tab Size",
         "fontName" : "Font",
         "fontSize" : "Size",
         "fontColor" : "Color",

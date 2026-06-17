@@ -43,6 +43,7 @@ function App() {
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [wordWrap, setWordWrap] = useState(true);
   const [showLineNumbers, setShowLineNumbers] = useState(true);
+  const [tabSize, setTabSize] = useState(4);
   const [themeMode, setThemeMode_] = useState('system');
   const [language, setLanguage_] = useState('en');
   const [settingOpen, setSettingOpen] = useState(false);
@@ -72,6 +73,7 @@ function App() {
       if (s) {
         if (s.showLineNumbers !== undefined) setShowLineNumbers(s.showLineNumbers);
         if (s.wordWrap !== undefined) setWordWrap(s.wordWrap);
+        if (s.tabSize) setTabSize(s.tabSize);
       }
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -82,6 +84,7 @@ function App() {
     setLanguage_(saved.language);
     setShowLineNumbers(saved.showLineNumbers);
     setWordWrap(saved.wordWrap);
+    if (saved.tabSize) setTabSize(saved.tabSize);
     loadFont(saved.themeMode);
   }, [loadFont]);
 
@@ -419,6 +422,7 @@ function App() {
                 showLineNumbers={showLineNumbers}
                 onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
                 font={editorFont}
+                tabSize={tabSize}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
@@ -531,7 +535,7 @@ function App() {
       <SettingDialog
         open={settingOpen}
         onClose={() => setSettingOpen(false)}
-        settings={{ themeMode, language, showLineNumbers, wordWrap }}
+        settings={{ themeMode, language, showLineNumbers, wordWrap, tabSize }}
         onSettingsSaved={handleSettingsSaved}
         onOpenFiles={(paths) => {
           for (const p of paths) {
