@@ -59,6 +59,13 @@ export async function copyClipboard(val) {
 var intervalId = undefined;
 
 /**
+ * バインダーごとの最後に開いたデータをメモリ上で保持する。
+ * アプリ実行中のみ有効（永続化しない）。
+ */
+const binderLastData = new Map();
+let currentBinderDir = null;
+
+/**
  * アプリケーション全体
  * @returns
  */
@@ -149,12 +156,29 @@ function App() {
   // LoadBinder を呼んでエディタに遷移する
   // openLastData=true の場合、前回開いたデータに遷移する
   const loadBinder = (dir, openLastData = false) => {
+    // 切り替え前のバインダーの現在ページをメモリに保存
+    if (currentBinderDir) {
+      const m = location.pathname.match(/^\/editor\/([^/]+)\/(.+)$/);
+      if (m) {
+        const mode = m[1] === 'assets' ? 'asset' : m[1];
+        binderLastData.set(currentBinderDir, { mode, id: m[2] });
+      }
+    }
+
     // バインダー切り替え時にスクリプトエンジンをリセット（次回parseで新バインダーの設定で再初期化）
     MarkedScript.reset();
     MermaidScript.reset();
     LoadBinder(dir).then((href) => {
       evt.changeAddress(href);
-      if (openLastData) {
+      currentBinderDir = dir;
+
+      // メモリ上の記録を優先し、なければ永続化された記録、それもなければindex
+      const mem = binderLastData.get(dir);
+      if (mem) {
+        const urlType = mem.mode === 'asset' ? 'assets' : mem.mode;
+        nav("/editor/" + urlType + "/" + mem.id);
+        evt.selectTreeNode(mem.id);
+      } else if (openLastData) {
         GetPath().then((path) => {
           const dataType = path?.lastDataType;
           const dataId = path?.lastNoteId;
