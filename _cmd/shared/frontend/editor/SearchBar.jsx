@@ -95,8 +95,8 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
     const newPos = {
-      x: dragStartRef.current.posX + dx,
-      y: dragStartRef.current.posY + dy,
+      x: Math.max(0, dragStartRef.current.posX + dx),
+      y: Math.max(0, dragStartRef.current.posY + dy),
     };
     setPosition(newPos);
     savedPosition = newPos;
