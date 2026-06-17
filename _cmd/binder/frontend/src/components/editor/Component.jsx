@@ -527,18 +527,24 @@ function Editor(props) {
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        setReplaceMode(false);
-        setSearchOpen(prev => !prev);
+        setSearchOpen(prev => {
+          if (!prev) { setReplaceMode(false); return true; }
+          if (replaceMode) { setReplaceMode(false); return true; }
+          return false;
+        });
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
         e.preventDefault();
-        setReplaceMode(true);
-        setSearchOpen(true);
+        setSearchOpen(prev => {
+          if (!prev) { setReplaceMode(true); return true; }
+          if (!replaceMode) { setReplaceMode(true); return true; }
+          return false;
+        });
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [replaceMode]);
 
   // Ctrl+Shift+O でスニペット挿入メニューを開く
   // Ctrl+T でID挿入メニューを開く

@@ -46,25 +46,42 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
     return () => cancel();
   }, []);
 
+  // Ctrl+F / Ctrl+H でSearchBarを開閉（document レベルで処理）
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+          if (selected) setSearchInitialQuery(selected);
+        }
+        setShowSearch(prev => {
+          if (!prev) { setReplaceMode(false); return true; }
+          if (replaceMode) { setReplaceMode(false); return true; }
+          return false;
+        });
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+          if (selected) setSearchInitialQuery(selected);
+        }
+        setShowSearch(prev => {
+          if (!prev) { setReplaceMode(true); return true; }
+          if (!replaceMode) { setReplaceMode(true); return true; }
+          return false;
+        });
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [replaceMode]);
+
   const handleKeyDown = useCallback((e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      e.preventDefault();
-      const textarea = e.target;
-      const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
-      setSearchInitialQuery(selected || '');
-      setReplaceMode(false);
-      setShowSearch(true);
-      return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
-      e.preventDefault();
-      const textarea = e.target;
-      const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
-      setSearchInitialQuery(selected || '');
-      setReplaceMode(true);
-      setShowSearch(true);
-      return;
-    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) return;
 
     // Markdown入力支援（リスト継続・引用継続・Tab/Shift+Tab等）
     handleMarkdownKeyDown(e, composingRef, onChange, tabSize);
