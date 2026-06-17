@@ -106,8 +106,16 @@ func main() {
 	}
 
 	// 3. ウィンドウ作成
+	// InitialPosition のデフォルトは WindowCentered(0) なので、
+	// 保存位置を使う場合は WindowXY を明示的に指定する必要がある。
+	initialPos := application.WindowCentered
+	if !set.IsDefault() && !resetPosition {
+		initialPos = application.WindowXY
+	}
+
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:                  settings.T("go.window.main"),
+		InitialPosition:        initialPos,
 		X:                      set.Position.Left,
 		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
@@ -121,24 +129,12 @@ func main() {
 		EnableFileDrop:         true,
 	})
 
-	log.Debug("Window position from settings: left=%d top=%d width=%d height=%d isDefault=%v",
-		set.Position.Left, set.Position.Top, set.Position.Width, set.Position.Height, set.IsDefault())
-
-	// Wails v3 はウィンドウ表示時にデフォルトで中央配置するため、
-	// NewWithOptions の X/Y や事前の SetPosition が上書きされる。
-	// WindowRuntimeReady 後に SetPosition することで確実に保存位置を復元する。
-	// 保存位置がどの画面にも含まれない場合（モニター変更等）は中央配置にフォールバックする。
-	if set.IsDefault() || resetPosition {
-		window.Center()
-	} else {
-		savedLeft := set.Position.Left
-		savedTop := set.Position.Top
+	// 保存位置が画面外の場合（モニター変更等）は中央配置にフォールバック
+	if initialPos == application.WindowXY {
 		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
-			if isPositionOnScreen(wailsApp, savedLeft, savedTop) {
-				log.Debug("WindowRuntimeReady: restoring position left=%d top=%d", savedLeft, savedTop)
-				window.SetPosition(savedLeft, savedTop)
-			} else {
-				log.Debug("WindowRuntimeReady: saved position left=%d top=%d is off-screen, centering", savedLeft, savedTop)
+			if !isPositionOnScreen(wailsApp, set.Position.Left, set.Position.Top) {
+				log.Debug("saved position left=%d top=%d is off-screen, centering",
+					set.Position.Left, set.Position.Top)
 				window.Center()
 			}
 		})
