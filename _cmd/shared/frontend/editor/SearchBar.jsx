@@ -95,8 +95,8 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
     const newPos = {
-      x: dragStartRef.current.posX + dx,
-      y: dragStartRef.current.posY + dy,
+      x: Math.max(0, dragStartRef.current.posX + dx),
+      y: Math.max(0, dragStartRef.current.posY + dy),
     };
     setPosition(newPos);
     savedPosition = newPos;
@@ -169,7 +169,9 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
     if (e.key === 'Enter') {
       e.preventDefault();
       if (searched && matches.length > 0) {
-        const next = (currentIndex + 1) % matches.length;
+        const next = e.shiftKey
+          ? (currentIndex - 1 + matches.length) % matches.length
+          : (currentIndex + 1) % matches.length;
         setCurrentIndex(next);
         onNavigate(matches[next].absoluteStart, matches[next].absoluteEnd);
       } else {
