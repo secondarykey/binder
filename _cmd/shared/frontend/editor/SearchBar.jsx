@@ -169,7 +169,9 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
     if (e.key === 'Enter') {
       e.preventDefault();
       if (searched && matches.length > 0) {
-        const next = (currentIndex + 1) % matches.length;
+        const next = e.shiftKey
+          ? (currentIndex - 1 + matches.length) % matches.length
+          : (currentIndex + 1) % matches.length;
         setCurrentIndex(next);
         onNavigate(matches[next].absoluteStart, matches[next].absoluteEnd);
       } else {
