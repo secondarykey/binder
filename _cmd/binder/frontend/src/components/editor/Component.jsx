@@ -401,10 +401,12 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
+  const snippetBtnRef = useRef(null);
 
   // ID挿入
   const [idListAnchor, setIdListAnchor] = useState(null);
   const [idList, setIdList] = useState([]);
+  const idInsertBtnRef = useRef(null);
 
   // カーソル行の UUID に対応する Structure 情報（複数対応）
   const [cursorStructures, setCursorStructures] = useState([]);
@@ -488,6 +490,27 @@ function Editor(props) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         setSearchOpen(prev => !prev);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // Ctrl+Shift+O でスニペット挿入メニューを開く
+  // Ctrl+T でID挿入メニューを開く
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        if (snippetBtnRef.current) {
+          setSnippetAnchor(snippetBtnRef.current);
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        if (idInsertBtnRef.current) {
+          idInsertBtnRef.current.click();
+        }
       }
     };
     document.addEventListener('keydown', handler);
@@ -1923,8 +1946,8 @@ function Editor(props) {
                   {snippetList.length > 0 && (<>
                     {/** 区切り */}
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                    <Tooltip title={t("editor.insertSnippet")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
+                    <Tooltip title={t("editor.insertSnippet") + " (Ctrl+Shift+O)"} placement="bottom">
+                      <IconButton ref={snippetBtnRef} size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => setSnippetAnchor(e.currentTarget)}
                         className="editorBtn">
@@ -1952,8 +1975,8 @@ function Editor(props) {
                   </>)}
 
                   {/** ID挿入 */}
-                  <Tooltip title={t("editor.insertId")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
+                  <Tooltip title={t("editor.insertId") + " (Ctrl+T)"} placement="bottom">
+                    <IconButton ref={idInsertBtnRef} size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
                         const anchor = e.currentTarget;
