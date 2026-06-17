@@ -646,6 +646,7 @@
         "languageLabel" : "言語",
         "lineNumbers" : "行番号",
         "wordWrap" : "折り返し",
+        "tabSize" : "タブ幅",
         "fontName" : "フォント",
         "fontSize" : "サイズ",
         "fontColor" : "文字色",

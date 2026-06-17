@@ -17,7 +17,7 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
-import { handleMarkdownEnter, handleMarkdownFormat } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
 
 import Event, { EventContext } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
@@ -1463,6 +1463,27 @@ function Editor(props) {
         }
         return;
       }
+    }
+
+    // Tab / Shift+Tab
+    if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      const textarea = e.target;
+      const tabSize = editorSettingRef.current?.tabSize || 4;
+      const result = handleMarkdownTab(textarea, e.shiftKey, tabSize);
+      if (result.handled) {
+        textarea.value = result.value;
+        textarea.selectionStart = result.selectionStart;
+        textarea.selectionEnd = result.selectionEnd;
+        isEditingRef.current = true;
+        setText(result.value);
+        writeFn(mode, id, result.value);
+        requestAnimationFrame(() => {
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+        });
+      }
+      return;
     }
 
     if (e.key !== "Enter") {

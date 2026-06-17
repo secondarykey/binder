@@ -136,15 +136,96 @@ export function handleMarkdownFormat(textarea, key) {
 }
 
 /**
+ * Tab / Shift+Tab でインデント・アウトデントを行う。
+ *
+ * - 複数行選択: 各行の先頭にスペースを追加/削除
+ * - 単一行（選択なし）: カーソル位置にスペースを挿入 / 行頭のスペースを削除
+ *
+ * @param {HTMLTextAreaElement} textarea - 対象の textarea 要素
+ * @param {boolean} shiftKey - Shift が押されているか
+ * @param {number} tabSize - タブ幅（スペース数）
+ * @returns {{ handled: boolean, value?: string, selectionStart?: number, selectionEnd?: number }}
+ */
+export function handleMarkdownTab(textarea, shiftKey, tabSize) {
+  const val = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const indent = ' '.repeat(tabSize);
+
+  // 複数行選択の判定
+  const selectedText = val.substring(start, end);
+  const multiLine = selectedText.includes('\n');
+
+  if (!shiftKey && !multiLine) {
+    // 単一行 Tab: カーソル位置にスペース挿入
+    const before = val.substring(0, start);
+    const after = val.substring(end);
+    const newVal = before + indent + after;
+    const cursor = start + tabSize;
+    return { handled: true, value: newVal, selectionStart: cursor, selectionEnd: cursor };
+  }
+
+  // 選択範囲を行境界に拡張
+  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+  let lineEnd = end;
+  if (end > start && val[end - 1] === '\n') {
+    lineEnd = end - 1;
+  }
+  const blockEnd = val.indexOf('\n', lineEnd);
+  const actualEnd = blockEnd === -1 ? val.length : blockEnd;
+
+  const block = val.substring(lineStart, actualEnd);
+  const lines = block.split('\n');
+
+  let newLines;
+  let startDelta = 0;
+  let totalDelta = 0;
+
+  if (shiftKey) {
+    // Shift+Tab: アウトデント
+    newLines = lines.map((line, i) => {
+      let removed = 0;
+      for (let j = 0; j < tabSize && j < line.length; j++) {
+        if (line[j] === ' ') {
+          removed++;
+        } else {
+          break;
+        }
+      }
+      if (i === 0) startDelta = -removed;
+      totalDelta -= removed;
+      return line.substring(removed);
+    });
+  } else {
+    // Tab: インデント
+    newLines = lines.map((line, i) => {
+      if (i === 0) startDelta = tabSize;
+      totalDelta += tabSize;
+      return indent + line;
+    });
+  }
+
+  const newBlock = newLines.join('\n');
+  const before = val.substring(0, lineStart);
+  const after = val.substring(actualEnd);
+  const newVal = before + newBlock + after;
+
+  const newStart = Math.max(lineStart, start + startDelta);
+  const newEnd = Math.max(newStart, end + totalDelta);
+
+  return { handled: true, value: newVal, selectionStart: newStart, selectionEnd: newEnd };
+}
+
+/**
  * textarea の keydown イベントハンドラ。
- * IME 入力中は無視し、Enter キーおよび Ctrl+B/I/K を処理する。
+ * IME 入力中は無視し、Enter キーおよび Ctrl+B/I/K、Tab/Shift+Tab を処理する。
  *
  * @param {KeyboardEvent} e - keydown イベント
  * @param {React.MutableRefObject<boolean>} composingRef - IME入力中フラグ
  * @param {(value: string) => void} onChange - テキスト変更コールバック
  * @returns {boolean} イベントを処理した場合 true
  */
-export function handleMarkdownKeyDown(e, composingRef, onChange) {
+export function handleMarkdownKeyDown(e, composingRef, onChange, tabSize = 4) {
   if (composingRef.current || e.nativeEvent?.isComposing || e.keyCode === 229) {
     return false;
   }
@@ -168,6 +249,24 @@ export function handleMarkdownKeyDown(e, composingRef, onChange) {
       }
       return true;
     }
+  }
+
+  // Tab / Shift+Tab
+  if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    const textarea = e.target;
+    const result = handleMarkdownTab(textarea, e.shiftKey, tabSize);
+    if (result.handled) {
+      textarea.value = result.value;
+      textarea.selectionStart = result.selectionStart;
+      textarea.selectionEnd = result.selectionEnd;
+      onChange(result.value);
+      requestAnimationFrame(() => {
+        textarea.selectionStart = result.selectionStart;
+        textarea.selectionEnd = result.selectionEnd;
+      });
+    }
+    return true;
   }
 
   if (e.key !== "Enter") {
