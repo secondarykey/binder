@@ -121,7 +121,7 @@ func main() {
 		EnableFileDrop:         true,
 	})
 
-	log.Debug("Window position from settings: left=%d top=%d width=%d height=%d isDefault=%v",
+	log.Info("Window position from settings: left=%d top=%d width=%d height=%d isDefault=%v",
 		set.Position.Left, set.Position.Top, set.Position.Width, set.Position.Height, set.IsDefault())
 
 	//位置がおかしい場合は真ん中に設定
