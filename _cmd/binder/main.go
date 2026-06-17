@@ -127,14 +127,20 @@ func main() {
 	// Wails v3 はウィンドウ表示時にデフォルトで中央配置するため、
 	// NewWithOptions の X/Y や事前の SetPosition が上書きされる。
 	// WindowRuntimeReady 後に SetPosition することで確実に保存位置を復元する。
+	// 保存位置がどの画面にも含まれない場合（モニター変更等）は中央配置にフォールバックする。
 	if set.IsDefault() || resetPosition {
 		window.Center()
 	} else {
 		savedLeft := set.Position.Left
 		savedTop := set.Position.Top
 		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
-			log.Debug("WindowRuntimeReady: restoring position left=%d top=%d", savedLeft, savedTop)
-			window.SetPosition(savedLeft, savedTop)
+			if isPositionOnScreen(wailsApp, savedLeft, savedTop) {
+				log.Debug("WindowRuntimeReady: restoring position left=%d top=%d", savedLeft, savedTop)
+				window.SetPosition(savedLeft, savedTop)
+			} else {
+				log.Debug("WindowRuntimeReady: saved position left=%d top=%d is off-screen, centering", savedLeft, savedTop)
+				window.Center()
+			}
 		})
 	}
 
@@ -204,4 +210,20 @@ func main() {
 	if err := settings.SaveStartupOk(true); err != nil {
 		log.Warn("SaveStartupOk(true) error:\n%+v", err)
 	}
+}
+
+// isPositionOnScreen は指定座標がいずれかの画面の作業領域内にあるかを判定する。
+// ウィンドウの左上隅がどの画面にも含まれない場合は false を返す。
+func isPositionOnScreen(app *application.App, x, y int) bool {
+	screens := app.Screen.GetAll()
+	if len(screens) == 0 {
+		return true
+	}
+	for _, s := range screens {
+		wa := s.WorkArea
+		if x >= wa.X && x < wa.X+wa.Width && y >= wa.Y && y < wa.Y+wa.Height {
+			return true
+		}
+	}
+	return false
 }
