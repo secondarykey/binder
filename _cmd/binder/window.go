@@ -210,12 +210,17 @@ func (win *Window) SavePosition() error {
 	w, h := win.window.Size()
 	x, y := win.window.Position()
 
+	log.Debug("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
+
+	cur := settings.Get().Position
 	var pos settings.Position
 
 	pos.Left = x
 	pos.Top = y
 	pos.Width = w
 	pos.Height = h
+	pos.MenuWidth = cur.MenuWidth
+	pos.Splitter = cur.Splitter
 
 	err := win.app.SavePosition(&pos)
 	if err != nil {
