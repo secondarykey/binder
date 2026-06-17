@@ -17,7 +17,7 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
-import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat } from "@shared/editor/markdown-keys";
 
 import Event, { EventContext } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
@@ -1442,6 +1442,29 @@ function Editor(props) {
       return;
     }
 
+    // Ctrl+B / Ctrl+I / Ctrl+K
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'b' || key === 'i' || key === 'k') {
+        e.preventDefault();
+        const textarea = e.target;
+        const result = handleMarkdownFormat(textarea, key);
+        if (result.handled) {
+          textarea.value = result.value;
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+          isEditingRef.current = true;
+          setText(result.value);
+          writeFn(mode, id, result.value);
+          requestAnimationFrame(() => {
+            textarea.selectionStart = result.selectionStart;
+            textarea.selectionEnd = result.selectionEnd;
+          });
+        }
+        return;
+      }
+    }
+
     if (e.key !== "Enter") {
       return;
     }
@@ -1810,14 +1833,14 @@ function Editor(props) {
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                     {/** 強調 */}
-                    <Tooltip title={t("editor.bold")} placement="bottom">
+                    <Tooltip title={`${t("editor.bold")} (Ctrl+B)`} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                         <FormatBoldIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** イタリック */}
-                    <Tooltip title={t("editor.italic")} placement="bottom">
+                    <Tooltip title={`${t("editor.italic")} (Ctrl+I)`} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
                         <FormatItalicIcon fontSize="small" />
                       </IconButton>

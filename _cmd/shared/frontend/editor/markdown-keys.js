@@ -81,8 +81,58 @@ export function handleMarkdownEnter(textarea) {
 }
 
 /**
+ * Ctrl+B / Ctrl+I / Ctrl+K でMarkdown書式を適用する。
+ *
+ * - 選択テキストがある場合、書式マーカーで囲む
+ * - 選択テキストがない場合、プレースホルダ付きで挿入しプレースホルダを選択状態にする
+ * - Ctrl+K（リンク）は選択テキストをリンクテキストとして使い、URL部分を選択状態にする
+ *
+ * @param {HTMLTextAreaElement} textarea - 対象の textarea 要素
+ * @param {string} key - 押されたキー（'b', 'i', 'k'）
+ * @returns {{ handled: boolean, value?: string, selectionStart?: number, selectionEnd?: number }}
+ */
+export function handleMarkdownFormat(textarea, key) {
+  const val = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = val.substring(start, end);
+  const before = val.substring(0, start);
+  const after = val.substring(end);
+
+  if (key === 'b') {
+    if (selected) {
+      const newVal = before + '**' + selected + '**' + after;
+      return { handled: true, value: newVal, selectionStart: start + 2, selectionEnd: end + 2 };
+    }
+    const placeholder = 'text';
+    const newVal = before + '**' + placeholder + '**' + after;
+    return { handled: true, value: newVal, selectionStart: start + 2, selectionEnd: start + 2 + placeholder.length };
+  }
+
+  if (key === 'i') {
+    if (selected) {
+      const newVal = before + '*' + selected + '*' + after;
+      return { handled: true, value: newVal, selectionStart: start + 1, selectionEnd: end + 1 };
+    }
+    const placeholder = 'text';
+    const newVal = before + '*' + placeholder + '*' + after;
+    return { handled: true, value: newVal, selectionStart: start + 1, selectionEnd: start + 1 + placeholder.length };
+  }
+
+  if (key === 'k') {
+    const linkText = selected || 'text';
+    const urlPlaceholder = 'url';
+    const newVal = before + '[' + linkText + '](' + urlPlaceholder + ')' + after;
+    const urlStart = start + 1 + linkText.length + 2;
+    return { handled: true, value: newVal, selectionStart: urlStart, selectionEnd: urlStart + urlPlaceholder.length };
+  }
+
+  return { handled: false };
+}
+
+/**
  * textarea の keydown イベントハンドラ。
- * IME 入力中は無視し、Enter キーのみを処理する。
+ * IME 入力中は無視し、Enter キーおよび Ctrl+B/I/K を処理する。
  *
  * @param {KeyboardEvent} e - keydown イベント
  * @param {React.MutableRefObject<boolean>} composingRef - IME入力中フラグ
@@ -92,6 +142,27 @@ export function handleMarkdownEnter(textarea) {
 export function handleMarkdownKeyDown(e, composingRef, onChange) {
   if (composingRef.current || e.nativeEvent?.isComposing || e.keyCode === 229) {
     return false;
+  }
+
+  // Ctrl+B / Ctrl+I / Ctrl+K
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+    const key = e.key.toLowerCase();
+    if (key === 'b' || key === 'i' || key === 'k') {
+      e.preventDefault();
+      const textarea = e.target;
+      const result = handleMarkdownFormat(textarea, key);
+      if (result.handled) {
+        textarea.value = result.value;
+        textarea.selectionStart = result.selectionStart;
+        textarea.selectionEnd = result.selectionEnd;
+        onChange(result.value);
+        requestAnimationFrame(() => {
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+        });
+      }
+      return true;
+    }
   }
 
   if (e.key !== "Enter") {
