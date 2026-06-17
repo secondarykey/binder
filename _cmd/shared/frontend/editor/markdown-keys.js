@@ -120,11 +120,16 @@ export function handleMarkdownFormat(textarea, key) {
   }
 
   if (key === 'k') {
-    const linkText = selected || 'text';
-    const urlPlaceholder = 'url';
-    const newVal = before + '[' + linkText + '](' + urlPlaceholder + ')' + after;
+    const isUrl = selected && /^https?:\/\/\S+$/.test(selected);
+    const linkText = isUrl ? 'text' : (selected || 'text');
+    const linkUrl = isUrl ? selected : 'url';
+    const newVal = before + '[' + linkText + '](' + linkUrl + ')' + after;
+    if (isUrl) {
+      const textStart = start + 1;
+      return { handled: true, value: newVal, selectionStart: textStart, selectionEnd: textStart + linkText.length };
+    }
     const urlStart = start + 1 + linkText.length + 2;
-    return { handled: true, value: newVal, selectionStart: urlStart, selectionEnd: urlStart + urlPlaceholder.length };
+    return { handled: true, value: newVal, selectionStart: urlStart, selectionEnd: urlStart + linkUrl.length };
   }
 
   return { handled: false };
