@@ -165,9 +165,10 @@ function App() {
       }
     }
 
-    // バインダー切り替え時にスクリプトエンジンをリセット（次回parseで新バインダーの設定で再初期化）
+    // バインダー切り替え時にスクリプトエンジン・エディタ履歴をリセット
     MarkedScript.reset();
     MermaidScript.reset();
+    editorHistory.clear();
     LoadBinder(dir).then((href) => {
       evt.changeAddress(href);
       currentBinderDir = dir;

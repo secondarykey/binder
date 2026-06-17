@@ -153,6 +153,12 @@ const editorHistory = {
     this.navigating = true;
     return this.stack[this.cursor];
   },
+
+  clear() {
+    this.stack = [];
+    this.cursor = -1;
+    this.navigating = false;
+  },
 };
 
 /**
