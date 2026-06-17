@@ -13,6 +13,8 @@ import BranchHistoryModal from './BranchHistoryModal.jsx';
 import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
@@ -20,13 +22,14 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
 import { SystemMessage } from '../Message';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
+import { editorHistory } from '../components/editor/Component';
 import MermaidScript from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
@@ -54,6 +57,13 @@ export async function copyClipboard(val) {
 }
 
 var intervalId = undefined;
+
+/**
+ * バインダーごとの最後に開いたデータをメモリ上で保持する。
+ * アプリ実行中のみ有効（永続化しない）。
+ */
+const binderLastData = new Map();
+let currentBinderDir = null;
 
 /**
  * アプリケーション全体
@@ -146,12 +156,32 @@ function App() {
   // LoadBinder を呼んでエディタに遷移する
   // openLastData=true の場合、前回開いたデータに遷移する
   const loadBinder = (dir, openLastData = false) => {
-    // バインダー切り替え時にスクリプトエンジンをリセット（次回parseで新バインダーの設定で再初期化）
+    // 切り替え前のバインダーの現在ページをメモリに保存
+    if (currentBinderDir) {
+      const m = location.pathname.match(/^\/editor\/([^/]+)\/(.+)$/);
+      if (m) {
+        const mode = m[1] === 'assets' ? 'asset' : m[1];
+        binderLastData.set(currentBinderDir, { mode, id: m[2] });
+      }
+    }
+
+    // バインダー切り替え時にスクリプトエンジン・エディタ履歴をリセット
     MarkedScript.reset();
     MermaidScript.reset();
+    editorHistory.clear();
     LoadBinder(dir).then((href) => {
       evt.changeAddress(href);
-      if (openLastData) {
+      currentBinderDir = dir;
+
+      // メモリ上の記録を優先し、なければ永続化された記録、それもなければindex
+      // ナビゲート先を SaveLastData で同期し、histories[0] と lastNoteId の不整合を防ぐ
+      const mem = binderLastData.get(dir);
+      if (mem) {
+        const urlType = mem.mode === 'asset' ? 'assets' : mem.mode;
+        nav("/editor/" + urlType + "/" + mem.id);
+        evt.selectTreeNode(mem.id);
+        SaveLastData(mem.mode, mem.id).catch(() => {});
+      } else if (openLastData) {
         GetPath().then((path) => {
           const dataType = path?.lastDataType;
           const dataId = path?.lastNoteId;
@@ -161,12 +191,15 @@ function App() {
             evt.selectTreeNode(dataId);
           } else {
             nav("/editor/note/index");
+            SaveLastData("note", "index").catch(() => {});
           }
         }).catch(() => {
           nav("/editor/note/index");
+          SaveLastData("note", "index").catch(() => {});
         });
       } else {
         nav("/editor/note/index");
+        SaveLastData("note", "index").catch(() => {});
       }
     }).catch((err) => {
       evt.showErrorMessage(err);
@@ -358,6 +391,15 @@ function App() {
    * ホームボタンクリック: バインダーを閉じてトップへ移動
    */
   const handleClickHome = () => {
+    // ホームに戻る前に現在のバインダーの表示ページをメモリに保存
+    if (currentBinderDir) {
+      const m = location.pathname.match(/^\/editor\/([^/]+)\/(.+)$/);
+      if (m) {
+        const mode = m[1] === 'assets' ? 'asset' : m[1];
+        binderLastData.set(currentBinderDir, { mode, id: m[2] });
+      }
+      currentBinderDir = null;
+    }
     CloseBinder().then(() => {
       setPageTitle("");
       setBinderName("");
@@ -418,6 +460,45 @@ function App() {
             <IconButton id="sidebarBtn" className={sidebarClass} size="small" color="inherit" aria-label="toggle sidebar" sx={{ ml: 1 }} onClick={() => evt.toggleSidebar()}>
               <ViewSidebarIcon fontSize="small" />
             </IconButton>
+          )}
+          {/** 履歴ナビゲーション: エディタ画面のみ表示 */}
+          {isNonTemplateEditor && (
+            <>
+              <Tooltip title={t("editor.historyBack")} placement="bottom">
+                <span>
+                  <IconButton size="small" color="inherit" aria-label="history back"
+                    disabled={!editorHistory.canGoBack()}
+                    sx={{ ml: 0.5, padding: '4px', '&.Mui-disabled': { opacity: 0.3, color: 'inherit' } }}
+                    onClick={() => {
+                      const entry = editorHistory.goBack();
+                      if (entry) {
+                        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+                        nav("/editor/" + urlMode + "/" + entry.id);
+                      }
+                    }}
+                  >
+                    <ArrowBackIosNewIcon sx={{ fontSize: '14px' }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title={t("editor.historyForward")} placement="bottom">
+                <span>
+                  <IconButton size="small" color="inherit" aria-label="history forward"
+                    disabled={!editorHistory.canGoForward()}
+                    sx={{ padding: '4px', '&.Mui-disabled': { opacity: 0.3, color: 'inherit' } }}
+                    onClick={() => {
+                      const entry = editorHistory.goForward();
+                      if (entry) {
+                        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+                        nav("/editor/" + urlMode + "/" + entry.id);
+                      }
+                    }}
+                  >
+                    <ArrowForwardIosIcon sx={{ fontSize: '14px' }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
           )}
         </Box>
 

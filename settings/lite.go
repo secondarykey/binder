@@ -20,6 +20,7 @@ type LiteSetting struct {
 	Language        string           `json:"language"`
 	ShowLineNumbers bool             `json:"showLineNumbers"`
 	WordWrap        bool             `json:"wordWrap"`
+	TabSize         int              `json:"tabSize"`
 	Position        *Position        `json:"position"`
 	ThemeFonts      []*LiteThemeFont `json:"themeFont"`
 }
@@ -43,6 +44,7 @@ func liteDef() *LiteSetting {
 		Language:        "en",
 		ShowLineNumbers: true,
 		WordWrap:        true,
+		TabSize:         4,
 		Position: &Position{
 			Left:   -9999,
 			Top:    -9999,
@@ -88,6 +90,9 @@ func GetLite() *LiteSetting {
 		if pLiteSet.ThemeFonts == nil {
 			pLiteSet.ThemeFonts = liteDef().ThemeFonts
 		}
+		if pLiteSet.TabSize <= 0 {
+			pLiteSet.TabSize = 4
+		}
 	}
 	return pLiteSet
 }
@@ -131,11 +136,12 @@ func SaveLiteLanguage(lang string) error {
 	return s.save()
 }
 
-// SaveLiteEditor は行番号とテキスト折り返しの設定を保存する。
-func SaveLiteEditor(showLineNumbers, wordWrap bool) error {
+// SaveLiteEditor は行番号・テキスト折り返し・タブ幅の設定を保存する。
+func SaveLiteEditor(showLineNumbers, wordWrap bool, tabSize int) error {
 	s := GetLite()
 	s.ShowLineNumbers = showLineNumbers
 	s.WordWrap = wordWrap
+	s.TabSize = tabSize
 	return s.save()
 }
 

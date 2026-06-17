@@ -2,8 +2,8 @@ package api
 
 import (
 	"binder/fs"
-	"binder/i18n"
 	"binder/log"
+	"binder/settings"
 	"fmt"
 )
 
@@ -26,7 +26,7 @@ func (a *App) ListPlugins(engine string) ([]fs.PluginInfo, error) {
 func (a *App) SavePlugin(engine, name, content string) error {
 	defer log.PrintTrace(log.Func("SavePlugin()"))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.SavePlugin(engine, name, content); err != nil {
 		log.PrintStackTrace(err)
@@ -38,7 +38,7 @@ func (a *App) SavePlugin(engine, name, content string) error {
 func (a *App) RemovePlugin(engine, name string) error {
 	defer log.PrintTrace(log.Func("RemovePlugin()"))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.RemovePlugin(engine, name); err != nil {
 		log.PrintStackTrace(err)
@@ -50,7 +50,7 @@ func (a *App) RemovePlugin(engine, name string) error {
 func (a *App) RenamePlugin(engine, oldName, newName string) error {
 	defer log.PrintTrace(log.Func("RenamePlugin()"))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.RenamePlugin(engine, oldName, newName); err != nil {
 		log.PrintStackTrace(err)

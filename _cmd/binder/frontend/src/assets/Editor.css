@@ -504,6 +504,72 @@ iframe.htmlViewer {
   padding: 0 1px;
 }
 
+/* ID ステータスバー（CommitBar の上） */
+#editorWrapper #idStatusBar {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background-color: color-mix(in srgb, var(--bg-overlay) 30%, transparent);
+  backdrop-filter: blur(4px);
+  border-top: 1px solid var(--border-primary);
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+#editorWrapper #idStatusBar.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#idStatusBar .idStatusLink {
+  cursor: pointer;
+  color: var(--accent-link, var(--text-link, var(--accent-primary)));
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#idStatusBar .idStatusLink:hover {
+  text-decoration: underline;
+}
+
+#idStatusBar .idStatusNav {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+#idStatusBar .idStatusNavBtn {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  user-select: none;
+  padding: 0 2px;
+}
+
+#idStatusBar .idStatusNavBtn:hover {
+  color: var(--text-primary);
+}
+
+#idStatusBar .idStatusCount {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */
 #editorWrapper #parseStatusBar {
   position: absolute;

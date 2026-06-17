@@ -477,7 +477,9 @@
         "setMetaImageConfirm" : "Set \"{{name}}\" as the meta image for the parent note. Continue?",
         "setMetaImageDeleteAsset" : "Delete asset",
         "setMetaImageSuccess" : "Set as meta image.",
-        "setMetaImageError" : "Failed to set meta image: {{error}}"
+        "setMetaImageError" : "Failed to set meta image: {{error}}",
+        "editSource" : "Edit Source",
+        "showPreview" : "Show Preview"
     },
     "preview" : {
         "openPreviewWindow" : "Open in New Window",
@@ -544,7 +546,16 @@
         "searchMatches" : "{{count}} matches",
         "searchNoMatches" : "No matches",
         "tableEdit" : "Edit Table",
-        "notInTable" : "Cursor is not inside a table"
+        "notInTable" : "Cursor is not inside a table",
+        "historyBack" : "Back (Alt+←)",
+        "historyForward" : "Forward (Alt+→)",
+        "idStatus" : {
+            "note" : "Note",
+            "diagram" : "Diagram",
+            "asset" : "Asset",
+            "layer" : "Layer",
+            "unknown" : "Unknown"
+        }
     },
     "tableDialog" : {
         "title" : "Edit Table",
@@ -646,6 +657,7 @@
         "languageLabel" : "Language",
         "lineNumbers" : "Line Numbers",
         "wordWrap" : "Word Wrap",
+        "tabSize" : "Tab Size",
         "fontName" : "Font",
         "fontSize" : "Size",
         "fontColor" : "Color",

@@ -2,7 +2,6 @@ package main
 
 import (
 	"binder/api/lite"
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -29,10 +28,10 @@ func (w *Window) OpenFileDialog() (string, error) {
 	defer log.PrintTrace(log.Func("OpenFileDialog()"))
 
 	result, err := w.runtime.Dialog.OpenFile().
-		SetTitle(i18n.T("go.dialog.openFile")).
-		AddFilter(i18n.T("go.filter.markdown"), "*.md;*.markdown;*.txt").
-		AddFilter(i18n.T("go.filter.mermaid"), "*.mmd;*.mermaid").
-		AddFilter(i18n.T("go.filter.all"), "*.*").
+		SetTitle(settings.T("go.dialog.openFile")).
+		AddFilter(settings.T("go.filter.markdown"), "*.md;*.markdown;*.txt").
+		AddFilter(settings.T("go.filter.mermaid"), "*.mmd;*.mermaid").
+		AddFilter(settings.T("go.filter.all"), "*.*").
 		PromptForSingleSelection()
 	if err != nil {
 		if result == "" {
@@ -49,9 +48,9 @@ func (w *Window) SaveFileDialog(defaultPath string) (string, error) {
 	defer log.PrintTrace(log.Func("SaveFileDialog()"))
 
 	dialog := w.runtime.Dialog.SaveFile().
-		SetMessage(i18n.T("go.dialog.saveAs")).
-		AddFilter(i18n.T("go.filter.markdown"), "*.md;*.markdown").
-		AddFilter(i18n.T("go.filter.all"), "*.*")
+		SetMessage(settings.T("go.dialog.saveAs")).
+		AddFilter(settings.T("go.filter.markdown"), "*.md;*.markdown").
+		AddFilter(settings.T("go.filter.all"), "*.*")
 
 	if defaultPath != "" {
 		dir := filepath.Dir(defaultPath)
@@ -74,7 +73,7 @@ func (w *Window) SaveFileDialog(defaultPath string) (string, error) {
 func (w *Window) NewFile() (string, error) {
 	defer log.PrintTrace(log.Func("NewFile()"))
 
-	path, err := w.SaveFileDialog(i18n.T("go.default.untitled"))
+	path, err := w.SaveFileDialog(settings.T("go.default.untitled"))
 	if err != nil {
 		return "", err
 	}

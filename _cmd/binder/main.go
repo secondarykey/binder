@@ -12,7 +12,6 @@ import (
 	"binder"
 	"binder/api"
 	"binder/api/shared"
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 )
@@ -90,8 +89,8 @@ func main() {
 	}
 
 	// i18n 初期化（ウィンドウ作成前に実行）
-	if err := i18n.Init(set.Language); err != nil {
-		log.Warn("i18n.Init() error:\n%+v", err)
+	if err := settings.InitI18n(set.Language); err != nil {
+		log.Warn("settings.InitI18n() error:\n%+v", err)
 	}
 
 	// セーフモードまたは前回クラッシュ検出時は、今セッションの自動オープンをオフにする。
@@ -107,8 +106,16 @@ func main() {
 	}
 
 	// 3. ウィンドウ作成
+	// InitialPosition のデフォルトは WindowCentered(0) なので、
+	// 保存位置を使う場合は WindowXY を明示的に指定する必要がある。
+	initialPos := application.WindowCentered
+	if !set.IsDefault() && !resetPosition {
+		initialPos = application.WindowXY
+	}
+
 	window := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:                  i18n.T("go.window.main"),
+		Title:                  settings.T("go.window.main"),
+		InitialPosition:        initialPos,
 		X:                      set.Position.Left,
 		Y:                      set.Position.Top,
 		Width:                  set.Position.Width,
@@ -122,10 +129,15 @@ func main() {
 		EnableFileDrop:         true,
 	})
 
-	//位置がおかしい場合は真ん中に設定
-	if (set.Position.Left < 0 && set.Position.Top < 0) ||
-		resetPosition {
-		window.Center()
+	// 保存位置が画面外の場合（モニター変更等）は中央配置にフォールバック
+	if initialPos == application.WindowXY {
+		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
+			if !isPositionOnScreen(wailsApp, set.Position.Left, set.Position.Top) {
+				log.Debug("saved position left=%d top=%d is off-screen, centering",
+					set.Position.Left, set.Position.Top)
+				window.Center()
+			}
+		})
 	}
 
 	// 4. Wails ランタイムを注入して起動処理を実行
@@ -138,8 +150,8 @@ func main() {
 	app.WindowCloser = win
 
 	// 言語変更時にウィンドウタイトルを更新
-	i18n.OnLanguageChange(func(code string) {
-		window.SetTitle(i18n.T("go.window.main"))
+	settings.OnLanguageChange(func(code string) {
+		window.SetTitle(settings.T("go.window.main"))
 		win.UpdateWindowTitles()
 	})
 
@@ -170,7 +182,7 @@ func main() {
 		}
 
 		if nodeType != "note" {
-			wailsApp.Event.Emit("binder:error", i18n.T("go.error.assetsNoteOnly"))
+			wailsApp.Event.Emit("binder:error", settings.T("go.error.assetsNoteOnly"))
 			return
 		}
 
@@ -194,4 +206,20 @@ func main() {
 	if err := settings.SaveStartupOk(true); err != nil {
 		log.Warn("SaveStartupOk(true) error:\n%+v", err)
 	}
+}
+
+// isPositionOnScreen は指定座標がいずれかの画面の作業領域内にあるかを判定する。
+// ウィンドウの左上隅がどの画面にも含まれない場合は false を返す。
+func isPositionOnScreen(app *application.App, x, y int) bool {
+	screens := app.Screen.GetAll()
+	if len(screens) == 0 {
+		return true
+	}
+	for _, s := range screens {
+		wa := s.WorkArea
+		if x >= wa.X && x < wa.X+wa.Width && y >= wa.Y && y < wa.Y+wa.Height {
+			return true
+		}
+	}
+	return false
 }

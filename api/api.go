@@ -4,8 +4,8 @@ import (
 	. "binder/internal"
 
 	"binder"
-	"binder/i18n"
 	"binder/log"
+	"binder/settings"
 	"context"
 	"fmt"
 )
@@ -73,10 +73,10 @@ func (a *App) GetVersionInfo() (*VersionInfo, error) {
 // 結果は SearchEmitter 経由でイベントとして返される。
 func (a *App) SearchBinder(query string) error {
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.binderNotOpened"))
+		return fmt.Errorf("%s", settings.T("go.error.binderNotOpened"))
 	}
 	if a.SearchEmitter == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.emitterNotSet"))
+		return fmt.Errorf("%s", settings.T("go.error.emitterNotSet"))
 	}
 	// 前回の検索をキャンセル
 	if a.searchCancel != nil {

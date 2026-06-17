@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useRef, useCallback } from "react"
-import { useParams, useLocation } from "react-router";
+import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
 
@@ -9,7 +9,7 @@ import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binde
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
-import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -17,7 +17,9 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
-import { handleMarkdownEnter } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
+import { extractUuidsOnLine } from "@shared/editor/id-detect";
+import IdStatusBar from "./IdStatusBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
@@ -64,6 +66,41 @@ import LayerEditor from "../../components/LayerEditor.jsx";
 import CommitBar from "../../components/CommitBar.jsx";
 
 /**
+ * textarea のカーソル位置からビューポート座標を取得する
+ */
+function getCaretPosition(textarea) {
+  if (!textarea) return null;
+  const mirror = document.createElement('div');
+  const style = window.getComputedStyle(textarea);
+  for (const prop of style) {
+    mirror.style.setProperty(prop, style.getPropertyValue(prop));
+  }
+  mirror.style.position = 'absolute';
+  mirror.style.visibility = 'hidden';
+  mirror.style.overflow = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.wordWrap = 'break-word';
+  mirror.style.width = textarea.clientWidth + 'px';
+  mirror.style.height = 'auto';
+
+  const text = textarea.value.substring(0, textarea.selectionStart);
+  mirror.textContent = text;
+  const span = document.createElement('span');
+  span.textContent = textarea.value.substring(textarea.selectionStart) || '.';
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+
+  const rect = textarea.getBoundingClientRect();
+  const spanRect = span.getBoundingClientRect();
+  const mirrorRect = mirror.getBoundingClientRect();
+
+  const top = rect.top + (spanRect.top - mirrorRect.top) - textarea.scrollTop;
+  const left = rect.left + (spanRect.left - mirrorRect.left) - textarea.scrollLeft;
+  document.body.removeChild(mirror);
+  return { top: Math.min(Math.max(top, rect.top), rect.bottom), left: Math.min(Math.max(left, rect.left), rect.right) };
+}
+
+/**
  * ツリーからノートのみを再帰的に抽出する
  */
 function flattenNotes(nodes) {
@@ -108,6 +145,56 @@ function flattenStructures(nodes) {
   }
   return result;
 }
+
+/**
+ * エディタ専用の閲覧履歴スタック（MRU方式）。
+ * 同一IDは古い方を除去し、各IDが最大1回だけ存在する。
+ * コンポーネント外で保持するためリマウントでリセットされない。
+ */
+const editorHistory = {
+  stack: [],   // [{ mode, id }, ...]
+  cursor: -1,  // 現在位置（-1 = 現在のページはスタック外）
+  navigating: false,  // goBack/goForward による遷移中フラグ（push抑制用）
+
+  push(mode, id) {
+    // 戻る/進む中の場合、カーソルより先を切り捨て
+    if (this.cursor >= 0 && this.cursor < this.stack.length - 1) {
+      this.stack = this.stack.slice(0, this.cursor + 1);
+    }
+    // 重複除去: 古い同一IDを削除
+    this.stack = this.stack.filter((e) => e.id !== id);
+    this.stack.push({ mode, id });
+    this.cursor = this.stack.length - 1;
+  },
+
+  canGoBack() {
+    return this.cursor > 0;
+  },
+
+  canGoForward() {
+    return this.cursor < this.stack.length - 1;
+  },
+
+  goBack() {
+    if (!this.canGoBack()) return null;
+    this.cursor--;
+    this.navigating = true;
+    return this.stack[this.cursor];
+  },
+
+  goForward() {
+    if (!this.canGoForward()) return null;
+    this.cursor++;
+    this.navigating = true;
+    return this.stack[this.cursor];
+  },
+
+  clear() {
+    this.stack = [];
+    this.cursor = -1;
+    this.navigating = false;
+  },
+};
 
 /**
  * タブ区切りテキストをMarkdownテーブルに変換する
@@ -297,6 +384,7 @@ function Editor(props) {
 
   var { mode, id } = useParams();
   const location = useLocation();
+  const nav = useNavigate();
   const restoredAt = location.state?.restoredAt;
   const searchQuery = location.state?.searchQuery;
   const evt = useContext(EventContext)
@@ -348,10 +436,20 @@ function Editor(props) {
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
   const [snippetAnchor, setSnippetAnchor] = useState(null);
+  const [snippetPos, setSnippetPos] = useState(null);
+  const snippetBtnRef = useRef(null);
 
   // ID挿入
   const [idListAnchor, setIdListAnchor] = useState(null);
+  const [idListPos, setIdListPos] = useState(null);
   const [idList, setIdList] = useState([]);
+  const idInsertBtnRef = useRef(null);
+
+  // カーソル行の UUID に対応する Structure 情報（複数対応）
+  const [cursorStructures, setCursorStructures] = useState([]);
+  const [cursorStructureIndex, setCursorStructureIndex] = useState(0);
+  const idDetectTimerRef = useRef(null);
+  const lastDetectedUuidsRef = useRef(null);
 
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
@@ -365,8 +463,18 @@ function Editor(props) {
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
   const fileOpeningRef = useRef(false);
-  useEffect(() => { modeRef.current = mode; }, [mode]);
-  useEffect(() => { idRef.current = id; }, [id]);
+  useEffect(() => {
+    modeRef.current = mode;
+    setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
+  }, [mode]);
+  useEffect(() => {
+    idRef.current = id;
+    setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
+    if (!editorHistory.navigating) {
+      editorHistory.push(mode, id);
+    }
+    editorHistory.navigating = false;
+  }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
   // ユーザーがテキストを入力中かどうかのフラグ / デバウンスタイマー
@@ -424,6 +532,64 @@ function Editor(props) {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
+
+  // Ctrl+Shift+O でスニペット挿入メニューを開く
+  // Ctrl+T でID挿入メニューを開く
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        const pos = getCaretPosition(document.querySelector("#editor"));
+        if (pos) {
+          setSnippetPos(pos);
+          setSnippetAnchor(null);
+        } else if (snippetBtnRef.current) {
+          setSnippetAnchor(snippetBtnRef.current);
+          setSnippetPos(null);
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        const textarea = document.querySelector("#editor");
+        const pos = getCaretPosition(textarea);
+        GetBinderTree().then((tree) => {
+          const all = flattenStructures(tree.data || []);
+          const children = all.filter((s) => s.parentId === id);
+          const others = all.filter((s) => s.parentId !== id && s.id !== id);
+          setIdList([...children, ...others]);
+          if (pos) {
+            setIdListPos(pos);
+            setIdListAnchor(null);
+          } else if (idInsertBtnRef.current) {
+            setIdListAnchor(idInsertBtnRef.current);
+            setIdListPos(null);
+          }
+        }).catch((err) => evt.showErrorMessage(err));
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [id]);
+
+  // Alt+← / Alt+→ でエディタ履歴ナビゲーション
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.altKey) return;
+      let entry = null;
+      if (e.key === 'ArrowLeft') {
+        entry = editorHistory.goBack();
+      } else if (e.key === 'ArrowRight') {
+        entry = editorHistory.goForward();
+      }
+      if (entry) {
+        e.preventDefault();
+        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+        nav("/editor/" + urlMode + "/" + entry.id);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [nav]);
 
   // 検索結果クリック時にテキストエリアの該当箇所へ移動・選択
   const handleSearchNavigate = useCallback((absoluteStart, absoluteEnd) => {
@@ -1093,17 +1259,53 @@ function Editor(props) {
 
 
   /**
-   * カーソル移動時にプレビューのスクロール位置を追従させる（ノートモードのみ）
+   * カーソル行の UUID を検出し、Structure 情報を取得する（デバウンス付き）
+   */
+  const detectIdAtCursor = useCallback((text, cursorPos) => {
+    const uuids = extractUuidsOnLine(text, cursorPos);
+    const key = uuids.join(',');
+    if (key === lastDetectedUuidsRef.current) return;
+    lastDetectedUuidsRef.current = key;
+
+    if (idDetectTimerRef.current) {
+      clearTimeout(idDetectTimerRef.current);
+    }
+
+    if (uuids.length === 0) {
+      setCursorStructures([]);
+      setCursorStructureIndex(0);
+      return;
+    }
+
+    idDetectTimerRef.current = setTimeout(() => {
+      Promise.all(uuids.map((uuid) =>
+        GetStructure(uuid).then((s) => s).catch(() => null)
+      )).then((results) => {
+        if (lastDetectedUuidsRef.current !== key) return;
+        const found = results.filter(Boolean);
+        setCursorStructures(found);
+        setCursorStructureIndex(0);
+      });
+    }, 200);
+  }, []);
+
+  /**
+   * カーソル移動時にプレビューのスクロール位置を追従させる + ID 検出
    */
   const handleCursorMove = useCallback((e) => {
-    if (modeRef.current !== Mode.note) return;
     const textarea = e.target;
-    const line = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
-    if (line !== cursorLineRef.current) {
-      cursorLineRef.current = line;
-      setCursorLine(line);
+    const pos = textarea.selectionStart;
+
+    if (modeRef.current === Mode.note) {
+      const line = textarea.value.substring(0, pos).split('\n').length;
+      if (line !== cursorLineRef.current) {
+        cursorLineRef.current = line;
+        setCursorLine(line);
+      }
     }
-  }, []);
+
+    detectIdAtCursor(textarea.value, pos);
+  }, [detectIdAtCursor]);
 
   /**
    * テキストの変更
@@ -1114,8 +1316,10 @@ function Editor(props) {
     isEditingRef.current = true;
     var txt = e.target.value;
     // カーソル行を記録（デバウンス後の parseText で使用する）
-    cursorLineRef.current = txt.substring(0, e.target.selectionStart).split('\n').length;
+    const pos = e.target.selectionStart;
+    cursorLineRef.current = txt.substring(0, pos).split('\n').length;
     setText(txt);
+    detectIdAtCursor(txt, pos);
 
     setUpdated(true);
     writeFn(mode, id, txt).then(() => {
@@ -1437,8 +1641,65 @@ function Editor(props) {
     });
   };
 
+  const handleIdNavigate = useCallback((urlMode, targetId) => {
+    nav("/editor/" + urlMode + "/" + targetId);
+  }, [nav]);
+
   const handleKeyDown = (e) => {
     if (composingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) {
+      return;
+    }
+
+    // Ctrl+Enter: IDステータスバーのアイテムへ遷移
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructures.length > 0) {
+      e.preventDefault();
+      const s = cursorStructures[cursorStructureIndex] || cursorStructures[0];
+      const urlMode = s.type === 'asset' ? 'assets' : s.type;
+      handleIdNavigate(urlMode, s.id);
+      return;
+    }
+
+    // Ctrl+B / Ctrl+I / Ctrl+K
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'b' || key === 'i' || key === 'k') {
+        e.preventDefault();
+        const textarea = e.target;
+        const result = handleMarkdownFormat(textarea, key);
+        if (result.handled) {
+          textarea.value = result.value;
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+          isEditingRef.current = true;
+          setText(result.value);
+          writeFn(mode, id, result.value);
+          requestAnimationFrame(() => {
+            textarea.selectionStart = result.selectionStart;
+            textarea.selectionEnd = result.selectionEnd;
+          });
+        }
+        return;
+      }
+    }
+
+    // Tab / Shift+Tab
+    if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      const textarea = e.target;
+      const tabSize = editorSettingRef.current?.tabSize || 4;
+      const result = handleMarkdownTab(textarea, e.shiftKey, tabSize);
+      if (result.handled) {
+        textarea.value = result.value;
+        textarea.selectionStart = result.selectionStart;
+        textarea.selectionEnd = result.selectionEnd;
+        isEditingRef.current = true;
+        setText(result.value);
+        writeFn(mode, id, result.value);
+        requestAnimationFrame(() => {
+          textarea.selectionStart = result.selectionStart;
+          textarea.selectionEnd = result.selectionEnd;
+        });
+      }
       return;
     }
 
@@ -1739,18 +2000,20 @@ function Editor(props) {
                   {snippetList.length > 0 && (<>
                     {/** 区切り */}
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                    <Tooltip title={t("editor.insertSnippet")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
+                    <Tooltip title={t("editor.insertSnippet") + " (Ctrl+Shift+O)"} placement="bottom">
+                      <IconButton ref={snippetBtnRef} size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => setSnippetAnchor(e.currentTarget)}
+                        onClick={(e) => { setSnippetAnchor(e.currentTarget); setSnippetPos(null); }}
                         className="editorBtn">
                         <PlaylistAddIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Menu
                       anchorEl={snippetAnchor}
-                      open={Boolean(snippetAnchor)}
-                      onClose={() => setSnippetAnchor(null)}
+                      anchorReference={snippetPos ? 'anchorPosition' : 'anchorEl'}
+                      anchorPosition={snippetPos || undefined}
+                      open={Boolean(snippetAnchor) || Boolean(snippetPos)}
+                      onClose={() => { setSnippetAnchor(null); setSnippetPos(null); }}
                       disableAutoFocus
                       disableEnforceFocus
                       disableRestoreFocus
@@ -1759,7 +2022,7 @@ function Editor(props) {
                       {snippetList.map((s) => (
                         <MenuItem key={s.id}
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleInsertSnippet(s.body)}
+                          onClick={() => { handleInsertSnippet(s.body); setSnippetPos(null); }}
                           sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                           {s.name}
                         </MenuItem>
@@ -1768,8 +2031,8 @@ function Editor(props) {
                   </>)}
 
                   {/** ID挿入 */}
-                  <Tooltip title={t("editor.insertId")} placement="bottom">
-                    <IconButton size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
+                  <Tooltip title={t("editor.insertId") + " (Ctrl+T)"} placement="bottom">
+                    <IconButton ref={idInsertBtnRef} size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
                         const anchor = e.currentTarget;
@@ -1779,6 +2042,7 @@ function Editor(props) {
                           const others = all.filter((s) => s.parentId !== id && s.id !== id);
                           setIdList([...children, ...others]);
                           setIdListAnchor(anchor);
+                          setIdListPos(null);
                         }).catch((err) => evt.showErrorMessage(err));
                       }}
                       className="editorBtn">
@@ -1787,8 +2051,10 @@ function Editor(props) {
                   </Tooltip>
                   <Menu
                     anchorEl={idListAnchor}
-                    open={Boolean(idListAnchor)}
-                    onClose={() => setIdListAnchor(null)}
+                    anchorReference={idListPos ? 'anchorPosition' : 'anchorEl'}
+                    anchorPosition={idListPos || undefined}
+                    open={Boolean(idListAnchor) || Boolean(idListPos)}
+                    onClose={() => { setIdListAnchor(null); setIdListPos(null); }}
                     disableAutoFocus
                     disableEnforceFocus
                     disableRestoreFocus
@@ -1797,7 +2063,7 @@ function Editor(props) {
                     {idList.map((s) => (
                       <MenuItem key={s.id}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); }}
+                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); setIdListPos(null); }}
                         sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                         {s.name}
                       </MenuItem>
@@ -1810,14 +2076,14 @@ function Editor(props) {
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
                     {/** 強調 */}
-                    <Tooltip title={t("editor.bold")} placement="bottom">
+                    <Tooltip title={`${t("editor.bold")} (Ctrl+B)`} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
                         <FormatBoldIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
                     {/** イタリック */}
-                    <Tooltip title={t("editor.italic")} placement="bottom">
+                    <Tooltip title={`${t("editor.italic")} (Ctrl+I)`} placement="bottom">
                       <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
                         <FormatItalicIcon fontSize="small" />
                       </IconButton>
@@ -1991,6 +2257,14 @@ function Editor(props) {
                 onCompositionEnd={handleCompositionEnd}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+              />
+
+              {/** ID ステータスバー */}
+              <IdStatusBar
+                structures={cursorStructures}
+                currentIndex={cursorStructureIndex}
+                onIndexChange={setCursorStructureIndex}
+                onNavigate={handleIdNavigate}
               />
 
               {/** コミットバー */}
@@ -2222,3 +2496,4 @@ function Editor(props) {
 }
 
 export default Editor;
+export { editorHistory };

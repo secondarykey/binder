@@ -112,7 +112,7 @@ jobs:
           echo "ZIP_PATH=${ZIP_NAME}" >> $GITHUB_ENV
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.os }}-asset
           path: ${{ env.ZIP_PATH }}
@@ -133,7 +133,7 @@ jobs:
 
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v8
       with:
         path: ./all-zips
         merge-multiple: true

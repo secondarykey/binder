@@ -3,8 +3,7 @@ package setup_test
 import (
 	"binder"
 	"binder/api/json"
-	"binder/fs"
-	"binder/log"
+	"binder/setup"
 	"binder/test"
 
 	"path/filepath"
@@ -14,20 +13,18 @@ import (
 func TestInitialize(t *testing.T) {
 
 	dir := filepath.Join(test.Dir, "init")
-	err := Install(dir, test.LatestVersion, "simple", "")
+	err := setup.Install(dir, test.LatestVersion, "simple", "")
 	if err != nil {
 		t.Fatalf("create error: %v", err)
 	}
 
-	// Install内でInitializeも実行済み。Loadして結果を検証する
 	b, err := binder.Load(dir)
 	if err != nil {
 		t.Fatalf("Binder Load() error: %v", err)
 	}
 	defer b.Close()
 
-	//DB確認
-	//設定１件
+	// 設定が取得できること
 	c, err := b.GetConfig()
 	if err != nil {
 		t.Errorf("GetConfig() error: %v", err)
@@ -35,92 +32,71 @@ func TestInitialize(t *testing.T) {
 		t.Errorf("GetConfig() pointer is nil")
 	}
 
-	//テスト用のインスタンス
-	inst := b.GetDB()
-	//テンプレート３件（layout, content, diagram_style）
-	tmpls, err := inst.FindTemplates()
+	// ツリーを取得してエンティティ数を検証
+	tree, err := b.GetBinderTree()
 	if err != nil {
-		t.Errorf("db.FindTemplates() error: %v", err)
-	} else if len(tmpls) != 3 {
-		t.Errorf("db.FindTemplates() templates length want 3 got %d", len(tmpls))
+		t.Fatalf("GetBinderTree() error: %v", err)
 	}
 
-	//ノート２件
-	notes, err := inst.FindNotes()
+	// simpleテンプレート: ノート2件、ダイアグラム0件、アセット1件
+	var noteCount, diagramCount, assetCount int
+	countLeaves(tree.Data, &noteCount, &diagramCount, &assetCount)
+
+	if noteCount != 2 {
+		t.Errorf("notes count: want 2, got %d", noteCount)
+	}
+	if diagramCount != 0 {
+		t.Errorf("diagrams count: want 0, got %d", diagramCount)
+	}
+	if assetCount != 1 {
+		t.Errorf("assets count: want 1, got %d", assetCount)
+	}
+
+	// テンプレート3件（layout, content, diagram_style）
+	layouts, contents, diagramTemplates, err := b.GetHTMLTemplates()
 	if err != nil {
-		t.Errorf("db.FindNotes() error: %v", err)
-	} else if len(notes) != 2 {
-		t.Errorf("db.FindNotes() notes length want 2 got %d", len(notes))
+		t.Fatalf("GetHTMLTemplates() error: %v", err)
+	}
+	templateCount := len(layouts) + len(contents) + len(diagramTemplates)
+	if templateCount != 3 {
+		t.Errorf("templates count: want 3, got %d", templateCount)
 	}
 
-	//ダイアグラム０件（simpleテンプレートにはダイアグラムなし）
-	diagrams, err := inst.FindDiagrams()
-	if err != nil {
-		t.Errorf("db.FindDiagrams() error: %v", err)
-	} else if len(diagrams) != 0 {
-		t.Errorf("db.FindDiagrams() diagrams length want 0 got %d", len(diagrams))
-	}
+	// 個別エンティティのアクセス確認
+	verifyLeafAccess(t, b, tree.Data)
+}
 
-	//アセット１件
-	assets, err := inst.FindAssets()
-	if err != nil {
-		t.Errorf("db.FindAssets() error: %v", err)
-	} else if len(assets) != 1 {
-		t.Errorf("db.FindAssets() asset length want 1 got %d", len(assets))
-	}
-
-	//テンプレートファイル確認
-	f := b.GetFS()
-
-	tempIds := make(map[string]*json.Template)
-	for _, tmpl := range tmpls {
-		tempIds[tmpl.Id] = tmpl.To()
-	}
-
-	for id, _ := range tempIds {
-		fn := fs.TemplateFile(id)
-		_, err = f.Stat(fn)
-		if err != nil {
-			t.Errorf("template [%s] file not found error: %v", id, err)
+func countLeaves(leaves []*json.Leaf, notes, diagrams, assets *int) {
+	for _, leaf := range leaves {
+		switch leaf.Type {
+		case "note":
+			*notes++
+		case "diagram":
+			*diagrams++
+		case "asset":
+			*assets++
 		}
+		countLeaves(leaf.Children, notes, diagrams, assets)
 	}
+}
 
-	noteIds := make(map[string]*json.Note)
-	for _, n := range notes {
-		noteIds[n.Id] = n.To()
-	}
-	for id, _ := range noteIds {
-		fn := fs.NoteFile(id)
-		_, err = f.Stat(fn)
-		if err != nil {
-			t.Errorf("note [%s] file not found error: %v", id, err)
+func verifyLeafAccess(t *testing.T, b *binder.Binder, leaves []*json.Leaf) {
+	t.Helper()
+	for _, leaf := range leaves {
+		switch leaf.Type {
+		case "note":
+			if _, err := b.GetNote(leaf.Id); err != nil {
+				t.Errorf("GetNote(%s) error: %v", leaf.Id, err)
+			}
+		case "diagram":
+			if _, err := b.GetDiagram(leaf.Id); err != nil {
+				t.Errorf("GetDiagram(%s) error: %v", leaf.Id, err)
+			}
+		case "asset":
+			if _, err := b.GetAsset(leaf.Id); err != nil {
+				t.Errorf("GetAsset(%s) error: %v", leaf.Id, err)
+			}
 		}
+		verifyLeafAccess(t, b, leaf.Children)
 	}
-
-	for _, d := range diagrams {
-		fn := fs.DiagramFile(d.Id)
-		_, err = f.Stat(fn)
-		if err != nil {
-			t.Errorf("diagram [%s] file not found error: %v", d.Id, err)
-		}
-	}
-
-	asset := assets[0]
-	ja := asset.To()
-	// Structure経由でparentIdを取得
-	assetStruct, err := inst.GetStructure(asset.Id)
-	if err != nil {
-		t.Fatalf("GetStructure(asset) error: %v", err)
-	}
-	ja.ApplyStructure(assetStruct.To())
-	fn := fs.AssetFile(ja)
-
-	log.Error("Error:%s", fn)
-	_, err = f.Stat(fn)
-	if err != nil {
-		t.Errorf("asset [%s] file not found error: %v", asset.Id, err)
-	}
-
-	//Gitはステータスがすべて登録されていること
-
 }

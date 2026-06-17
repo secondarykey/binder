@@ -2,8 +2,8 @@ package api
 
 import (
 	"binder/fs"
-	"binder/i18n"
 	"binder/log"
+	"binder/settings"
 	"fmt"
 )
 
@@ -20,7 +20,7 @@ func (a *App) ListRootFiles() ([]fs.RootFileInfo, error) {
 func (a *App) ReadRootFile(name string) (string, error) {
 	defer log.PrintTrace(log.Func("ReadRootFile()", name))
 	if a.current == nil {
-		return "", fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return "", fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	content, err := a.current.ReadRootFile(name)
 	if err != nil {
@@ -34,7 +34,7 @@ func (a *App) ReadRootFile(name string) (string, error) {
 func (a *App) SaveRootFile(name, content string) error {
 	defer log.PrintTrace(log.Func("SaveRootFile()", name))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.SaveRootFile(name, content); err != nil {
 		log.PrintStackTrace(err)
@@ -47,7 +47,7 @@ func (a *App) SaveRootFile(name, content string) error {
 func (a *App) RemoveRootFile(name string) error {
 	defer log.PrintTrace(log.Func("RemoveRootFile()", name))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.RemoveRootFile(name); err != nil {
 		log.PrintStackTrace(err)
@@ -60,7 +60,7 @@ func (a *App) RemoveRootFile(name string) error {
 func (a *App) RenameRootFile(oldName, newName string) error {
 	defer log.PrintTrace(log.Func("RenameRootFile()", oldName, newName))
 	if a.current == nil {
-		return fmt.Errorf("%s", i18n.T("go.error.noBinderOpen"))
+		return fmt.Errorf("%s", settings.T("go.error.noBinderOpen"))
 	}
 	if err := a.current.RenameRootFile(oldName, newName); err != nil {
 		log.PrintStackTrace(err)

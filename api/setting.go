@@ -2,7 +2,6 @@ package api
 
 import (
 	"binder/fs"
-	"binder/i18n"
 	"binder/log"
 	"binder/settings"
 	"fmt"
@@ -71,7 +70,7 @@ func (a *App) SetLanguage(lang string) error {
 	if err := settings.SaveLanguage(lang); err != nil {
 		return err
 	}
-	i18n.SetLanguage(lang)
+	settings.SetI18nLanguage(lang)
 	return nil
 }
 

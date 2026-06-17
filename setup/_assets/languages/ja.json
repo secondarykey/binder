@@ -477,7 +477,9 @@
         "setMetaImageConfirm" : "「{{name}}」を親ノートのメタ画像に設定します。よろしいですか？",
         "setMetaImageDeleteAsset" : "アセットを削除する",
         "setMetaImageSuccess" : "メタ画像に設定しました。",
-        "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}"
+        "setMetaImageError" : "メタ画像の設定に失敗しました: {{error}}",
+        "editSource" : "ソース編集",
+        "showPreview" : "プレビュー表示"
     },
     "preview" : {
         "openPreviewWindow" : "別ウィンドウで開く",
@@ -544,7 +546,16 @@
         "searchMatches" : "{{count}}件",
         "searchNoMatches" : "一致なし",
         "tableEdit" : "テーブル編集",
-        "notInTable" : "カーソルがテーブル内にありません"
+        "notInTable" : "カーソルがテーブル内にありません",
+        "historyBack" : "戻る (Alt+←)",
+        "historyForward" : "進む (Alt+→)",
+        "idStatus" : {
+            "note" : "ノート",
+            "diagram" : "ダイアグラム",
+            "asset" : "アセット",
+            "layer" : "レイヤー",
+            "unknown" : "不明"
+        }
     },
     "tableDialog" : {
         "title" : "テーブル編集",
@@ -646,6 +657,7 @@
         "languageLabel" : "言語",
         "lineNumbers" : "行番号",
         "wordWrap" : "折り返し",
+        "tabSize" : "タブ幅",
         "fontName" : "フォント",
         "fontSize" : "サイズ",
         "fontColor" : "文字色",
