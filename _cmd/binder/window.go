@@ -210,7 +210,7 @@ func (win *Window) SavePosition() error {
 	w, h := win.window.Size()
 	x, y := win.window.Position()
 
-	log.Debug("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
+	log.Info("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
 
 	cur := settings.Get().Position
 	var pos settings.Position
