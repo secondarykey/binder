@@ -82,19 +82,19 @@ func (r *Window) OpenFilePicker(name, ptn string) (string, error) {
 
 func (win *Window) mainScreen() *application.Screen {
 	if win.window == nil {
-		log.Info("mainScreen: window is nil")
+		log.Debug("mainScreen: window is nil")
 		return nil
 	}
 	s, err := win.window.GetScreen()
 	if err != nil {
-		log.Info("mainScreen: GetScreen error: %+v", err)
+		log.Debug("mainScreen: GetScreen error: %+v", err)
 		return nil
 	}
 	if s == nil {
-		log.Info("mainScreen: screen is nil")
+		log.Debug("mainScreen: screen is nil")
 		return nil
 	}
-	log.Info("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
+	log.Debug("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
 	return s
 }
 
