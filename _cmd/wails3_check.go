@@ -19,7 +19,12 @@ var checks = []moduleCheck{
 
 func main() {
 
+	fmt.Println("CLI update:")
+	fmt.Println("  go install github.com/wailsapp/wails/v3/cmd/wails3@latest")
+	fmt.Println()
+
 	hasError := false
+	var mismatches []string
 
 	cliVersion, err := getCLIVersion()
 	if err != nil {
@@ -38,17 +43,25 @@ func main() {
 			hasError = true
 			continue
 		}
-		match := ""
 		if cliVersion != "" && modVersion != cliVersion {
-			match = " ** MISMATCH **"
+			fmt.Printf("%s: %s ** MISMATCH **\n", c.dir, modVersion)
+			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, cliVersion))
 			hasError = true
+		} else {
+			fmt.Printf("%s: %s\n", c.dir, modVersion)
 		}
-		fmt.Printf("%s: %s%s\n", c.dir, modVersion, match)
+	}
+
+	if len(mismatches) > 0 {
+		fmt.Println()
+		fmt.Println("Fix:")
+		for _, m := range mismatches {
+			fmt.Println(m)
+		}
 	}
 
 	if hasError {
 		fmt.Println()
-		fmt.Println("version mismatch detected")
 		os.Exit(1)
 	}
 }
