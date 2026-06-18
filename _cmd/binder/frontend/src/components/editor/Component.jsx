@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef, useCallback } from "react"
+import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
@@ -17,7 +17,10 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
+import Autocomplete from "./Autocomplete.jsx";
 import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
+import { getCaretPosition } from "@shared/editor/caret-position";
+import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
@@ -64,41 +67,6 @@ import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 import LayerEditor from "../../components/LayerEditor.jsx";
 import CommitBar from "../../components/CommitBar.jsx";
-
-/**
- * textarea のカーソル位置からビューポート座標を取得する
- */
-function getCaretPosition(textarea) {
-  if (!textarea) return null;
-  const mirror = document.createElement('div');
-  const style = window.getComputedStyle(textarea);
-  for (const prop of style) {
-    mirror.style.setProperty(prop, style.getPropertyValue(prop));
-  }
-  mirror.style.position = 'absolute';
-  mirror.style.visibility = 'hidden';
-  mirror.style.overflow = 'hidden';
-  mirror.style.whiteSpace = 'pre-wrap';
-  mirror.style.wordWrap = 'break-word';
-  mirror.style.width = textarea.clientWidth + 'px';
-  mirror.style.height = 'auto';
-
-  const text = textarea.value.substring(0, textarea.selectionStart);
-  mirror.textContent = text;
-  const span = document.createElement('span');
-  span.textContent = textarea.value.substring(textarea.selectionStart) || '.';
-  mirror.appendChild(span);
-  document.body.appendChild(mirror);
-
-  const rect = textarea.getBoundingClientRect();
-  const spanRect = span.getBoundingClientRect();
-  const mirrorRect = mirror.getBoundingClientRect();
-
-  const top = rect.top + (spanRect.top - mirrorRect.top) - textarea.scrollTop;
-  const left = rect.left + (spanRect.left - mirrorRect.left) - textarea.scrollLeft;
-  document.body.removeChild(mirror);
-  return { top: Math.min(Math.max(top, rect.top), rect.bottom), left: Math.min(Math.max(left, rect.left), rect.right) };
-}
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -487,6 +455,32 @@ function Editor(props) {
   const cursorLineRef = useRef(1);
   const composingRef = useRef(false);
   const [cursorLine, setCursorLine] = useState(1);
+
+  // オートコンプリートの挿入処理
+  const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(replaceStart, replaceEnd);
+    const insertText = trigger + selected;
+    document.execCommand('insertText', false, insertText);
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    });
+  }, [mode, id]);
+
+  // オートコンプリート（テンプレートキーワード補完のサンプル設定）
+  const autocompleteTriggers = useMemo(() => [
+    { trigger: '{{', candidates: ['end', 'if', 'else', 'range', 'with', 'define', 'template', 'block'] },
+  ], []);
+
+  const ac = useAutocomplete({
+    triggers: autocompleteTriggers,
+    textareaSelector: '#editor',
+    composingRef,
+    onSelect: handleAutocompleteSelect,
+  });
 
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
@@ -1362,6 +1356,7 @@ function Editor(props) {
     cursorLineRef.current = txt.substring(0, pos).split('\n').length;
     setText(txt);
     detectIdAtCursor(txt, pos);
+    ac.handleInput();
 
     setUpdated(true);
     writeFn(mode, id, txt).then(() => {
@@ -1691,6 +1686,8 @@ function Editor(props) {
     if (composingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) {
       return;
     }
+
+    if (ac.handleKeyDown(e)) return;
 
     // Ctrl+Enter: IDステータスバーのアイテムへ遷移
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructures.length > 0) {
@@ -2271,6 +2268,15 @@ function Editor(props) {
                 <MenuItem onClick={handleDownloadRaw}>{t("tree.downloadText")}</MenuItem>
                 <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
               </Menu>
+
+              {/** オートコンプリートポップアップ */}
+              <Autocomplete
+                isOpen={ac.isOpen}
+                items={ac.items}
+                selectedIndex={ac.selectedIndex}
+                position={ac.position}
+                onItemClick={(idx) => ac.selectItem(idx)}
+              />
 
               {/** テキスト検索フローティングパネル（Ctrl+F） */}
               {searchOpen && (

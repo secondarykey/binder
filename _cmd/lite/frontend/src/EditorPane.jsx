@@ -1,10 +1,12 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import EditorArea from '@shared/editor/EditorArea';
 import SearchBar from '@shared/editor/SearchBar';
+import Autocomplete from '@shared/editor/Autocomplete';
 import { handleMarkdownKeyDown } from '@shared/editor/markdown-keys';
+import { useAutocomplete } from '@shared/editor/useAutocomplete';
 import { useScrollbarOffset, useHScrollbarOffset } from './useHasScrollbar';
 import { Events } from '@wailsio/runtime';
 
@@ -15,7 +17,7 @@ import { useTranslation } from 'react-i18next';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4 }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [] }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
@@ -24,6 +26,24 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
   const [replaceMode, setReplaceMode] = useState(false);
   const composingRef = useRef(false);
   const hiddenFocusRef = useRef(null);
+
+  const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(replaceStart, replaceEnd);
+    document.execCommand('insertText', false, trigger + selected);
+    requestAnimationFrame(() => {
+      onChange(textarea.value);
+    });
+  }, [onChange]);
+
+  const ac = useAutocomplete({
+    triggers: autocompleteTriggers,
+    textareaSelector: '#editor',
+    composingRef,
+    onSelect: handleAutocompleteSelect,
+  });
 
   // ウィンドウフォーカス時の IME リセット
   // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
@@ -83,13 +103,16 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
   const handleKeyDown = useCallback((e) => {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) return;
 
+    if (ac.handleKeyDown(e)) return;
+
     // Markdown入力支援（リスト継続・引用継続・Tab/Shift+Tab等）
     handleMarkdownKeyDown(e, composingRef, onChange, tabSize);
-  }, [onChange, tabSize]);
+  }, [onChange, tabSize, ac]);
 
   const handleChange = useCallback((e) => {
     onChange(e.target.value);
-  }, [onChange]);
+    ac.handleInput();
+  }, [onChange, ac]);
 
   const handleCompositionStart = useCallback(() => {
     composingRef.current = true;
@@ -160,6 +183,13 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
         aria-hidden="true"
         style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
         readOnly
+      />
+      <Autocomplete
+        isOpen={ac.isOpen}
+        items={ac.items}
+        selectedIndex={ac.selectedIndex}
+        position={ac.position}
+        onItemClick={(idx) => ac.selectItem(idx)}
       />
       {showSearch && (
         <SearchBar
