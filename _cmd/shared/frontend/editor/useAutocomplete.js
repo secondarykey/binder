@@ -38,10 +38,12 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
   const filterCandidates = useCallback((candidates, filterText) => {
     if (!filterText) return [...candidates];
-    const lower = filterText.toLowerCase();
+    // スペース以降は引数等の追加入力とみなし、スペース前の部分のみで絞り込む
+    const keyword = filterText.split(/\s/)[0].toLowerCase();
+    if (!keyword) return [...candidates];
     return candidates.filter(c => {
       const label = typeof c === 'string' ? c : c.label;
-      return label.toLowerCase().startsWith(lower);
+      return label.toLowerCase().startsWith(keyword);
     });
   }, []);
 
