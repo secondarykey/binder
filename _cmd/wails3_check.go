@@ -17,11 +17,9 @@ var checks = []moduleCheck{
 	{dir: "./_cmd/lite", module: "github.com/wailsapp/wails/v3"},
 }
 
-func main() {
+const wailsModule = "github.com/wailsapp/wails/v3"
 
-	fmt.Println("CLI update:")
-	fmt.Println("  go install github.com/wailsapp/wails/v3/cmd/wails3@latest")
-	fmt.Println()
+func main() {
 
 	hasError := false
 	var mismatches []string
@@ -32,6 +30,16 @@ func main() {
 		hasError = true
 	} else {
 		fmt.Printf("wails3 CLI: %s\n", cliVersion)
+	}
+
+	latestVersion, err := getLatestVersion(checks[0].dir, wailsModule)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "latest version: %v\n", err)
+	} else if cliVersion != "" && cliVersion != latestVersion {
+		fmt.Printf("latest:      %s\n", latestVersion)
+		fmt.Println()
+		fmt.Println("CLI update:")
+		fmt.Printf("  go install %s/cmd/wails3@latest\n", wailsModule)
 	}
 
 	fmt.Println()
@@ -72,6 +80,20 @@ func getCLIVersion() (string, error) {
 		return "", fmt.Errorf("failed to run wails3 version: %w", err)
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+func getLatestVersion(dir, module string) (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-versions", module)
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to run go list -m -versions: %w", err)
+	}
+	parts := strings.Fields(strings.TrimSpace(string(out)))
+	if len(parts) < 2 {
+		return "", fmt.Errorf("no versions found")
+	}
+	return parts[len(parts)-1], nil
 }
 
 func getModuleVersion(dir, module string) (string, error) {
