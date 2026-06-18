@@ -26,7 +26,7 @@ tasks:
     dir: frontend
     sources:
       - "**/*"
-      - ecclude: node_modules/**/*
+      - exclude: node_modules/**/*
     generates:
       - dist/**/*
     deps:
