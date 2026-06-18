@@ -56,11 +56,11 @@ func main() {
 			continue
 		}
 		if cliVersion != "" && modVersion != cliVersion {
-			fmt.Printf("  %s (%s): %s ** MISMATCH **\n", c.name, c.dir, modVersion)
+			fmt.Printf("  %s: %s ** MISMATCH **\n", c.name, modVersion)
 			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, cliVersion))
 			hasError = true
 		} else {
-			fmt.Printf("  %s (%s): %s\n", c.name, c.dir, modVersion)
+			fmt.Printf("  %s: %s\n", c.name, modVersion)
 		}
 	}
 
