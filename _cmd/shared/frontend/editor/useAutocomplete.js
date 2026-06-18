@@ -38,8 +38,9 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
   const filterCandidates = useCallback((candidates, filterText) => {
     if (!filterText) return [...candidates];
-    // スペース以降は引数等の追加入力とみなし、スペース前の部分のみで絞り込む
-    const keyword = filterText.split(/\s/)[0].toLowerCase();
+    // 前後の空白を除去し、最初の単語をキーワードとして絞り込む
+    // スペース以降（引数等）は無視する
+    const keyword = filterText.trim().split(/\s+/)[0].toLowerCase();
     if (!keyword) return [...candidates];
     return candidates.filter(c => {
       const label = typeof c === 'string' ? c : c.label;
