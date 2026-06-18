@@ -39,13 +39,14 @@ func main() {
 	latestVersion, err := getLatestVersion(checks[0].dir, wailsModule)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "latest version: %v\n", err)
-	} else if cliVersion != "" && cliVersion != latestVersion {
+	} else {
 		fmt.Printf("%-14s %s\n", "latest:", latestVersion)
-		fmt.Println()
-		fmt.Println("CLI update:")
-		fmt.Printf("  go install %s/cmd/wails3@latest\n", wailsModule)
+		if cliVersion != "" && cliVersion != latestVersion {
+			fmt.Println()
+			fmt.Println("CLI update:")
+			fmt.Printf("  go install %s/cmd/wails3@latest\n", wailsModule)
+		}
 	}
-
 	fmt.Println()
 
 	for _, c := range checks {
