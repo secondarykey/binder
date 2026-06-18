@@ -8,18 +8,22 @@ import (
 )
 
 type moduleCheck struct {
+	name   string
 	dir    string
 	module string
 }
 
 var checks = []moduleCheck{
-	{dir: "./_cmd/binder", module: "github.com/wailsapp/wails/v3"},
-	{dir: "./_cmd/lite", module: "github.com/wailsapp/wails/v3"},
+	{name: "Binder", dir: "./_cmd/binder", module: "github.com/wailsapp/wails/v3"},
+	{name: "Binder Lite", dir: "./_cmd/lite", module: "github.com/wailsapp/wails/v3"},
 }
 
 const wailsModule = "github.com/wailsapp/wails/v3"
 
 func main() {
+
+	fmt.Println("=== Wails3 Module Check ===")
+	fmt.Println()
 
 	hasError := false
 	var mismatches []string
@@ -47,16 +51,16 @@ func main() {
 	for _, c := range checks {
 		modVersion, err := getModuleVersion(c.dir, c.module)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s (%s): %v\n", c.dir, c.module, err)
+			fmt.Fprintf(os.Stderr, "%s (%s): %v\n", c.name, c.module, err)
 			hasError = true
 			continue
 		}
 		if cliVersion != "" && modVersion != cliVersion {
-			fmt.Printf("%s: %s ** MISMATCH **\n", c.dir, modVersion)
+			fmt.Printf("  %s (%s): %s ** MISMATCH **\n", c.name, c.dir, modVersion)
 			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, cliVersion))
 			hasError = true
 		} else {
-			fmt.Printf("%s: %s\n", c.dir, modVersion)
+			fmt.Printf("  %s (%s): %s\n", c.name, c.dir, modVersion)
 		}
 	}
 
