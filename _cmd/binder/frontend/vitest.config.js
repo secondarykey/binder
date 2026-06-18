@@ -29,6 +29,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    pool: 'vmThreads',
     setupFiles: ['./src/__tests__/setup.js'],
     server: {
       deps: {
