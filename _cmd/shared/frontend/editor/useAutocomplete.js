@@ -23,15 +23,21 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     return document.querySelector(textareaSelector);
   }, [textareaSelector]);
 
-  const computePosition = useCallback((textarea) => {
+  const computePosition = useCallback((textarea, itemCount) => {
     const caret = getCaretPosition(textarea);
     if (!caret) return null;
     const container = textarea.closest('#editorContent') || textarea.parentElement;
     if (!container) return caret;
     const containerRect = container.getBoundingClientRect();
     const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
+    const popupHeight = Math.min((itemCount || 8) * 28 + 8, 200);
+    let top = caret.top - containerRect.top + lineHeight;
+    // コンテナ下端からはみ出す場合はカーソルの上側に表示
+    if (top + popupHeight > containerRect.height) {
+      top = caret.top - containerRect.top - popupHeight;
+    }
     return {
-      top: caret.top - containerRect.top + lineHeight,
+      top: Math.max(0, top),
       left: caret.left - containerRect.left,
     };
   }, []);
@@ -58,7 +64,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     triggerInfoRef.current = { trigger: trigger.trigger, startPos, candidates };
     setItems(filtered);
     setSelectedIndex(0);
-    setPosition(computePosition(textarea));
+    setPosition(computePosition(textarea, filtered.length));
     setIsOpen(true);
   }, [filterCandidates, computePosition]);
 
@@ -155,7 +161,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
             triggerInfoRef.current = { trigger: t, startPos: absoluteTriggerIdx, candidates: resolved };
             setItems(filtered);
             setSelectedIndex(0);
-            setPosition(computePosition(textarea));
+            setPosition(computePosition(textarea, filtered.length));
             setIsOpen(true);
           } else if (isOpen && triggerInfoRef.current?.trigger === t) {
             dismiss();
