@@ -30,17 +30,17 @@ func main() {
 
 	cliVersion, err := getCLIVersion()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "wails3 CLI: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%-14s %v\n", "wails3 CLI:", err)
 		hasError = true
 	} else {
-		fmt.Printf("wails3 CLI: %s\n", cliVersion)
+		fmt.Printf("%-14s %s\n", "wails3 CLI:", cliVersion)
 	}
 
 	latestVersion, err := getLatestVersion(checks[0].dir, wailsModule)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "latest version: %v\n", err)
 	} else if cliVersion != "" && cliVersion != latestVersion {
-		fmt.Printf("latest:      %s\n", latestVersion)
+		fmt.Printf("%-14s %s\n", "latest:", latestVersion)
 		fmt.Println()
 		fmt.Println("CLI update:")
 		fmt.Printf("  go install %s/cmd/wails3@latest\n", wailsModule)
@@ -55,12 +55,13 @@ func main() {
 			hasError = true
 			continue
 		}
+		label := fmt.Sprintf("  %s:", c.name)
 		if cliVersion != "" && modVersion != cliVersion {
-			fmt.Printf("  %s: %s ** MISMATCH **\n", c.name, modVersion)
+			fmt.Printf("%-14s %s ** MISMATCH **\n", label, modVersion)
 			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, cliVersion))
 			hasError = true
 		} else {
-			fmt.Printf("  %s: %s\n", c.name, modVersion)
+			fmt.Printf("%-14s %s\n", label, modVersion)
 		}
 	}
 
