@@ -98,6 +98,7 @@ type Editor struct {
 	ShowLineNumbers bool         `json:"showLineNumbers"`
 	WordWrap        bool         `json:"wordWrap"`
 	ShowPreview     bool         `json:"showPreview"`
+	AutoComplete    *bool        `json:"autoComplete,omitempty"`
 	TabSize         int          `json:"tabSize"`
 	ThemeFonts      []*ThemeFont `json:"themeFont"`
 }
@@ -140,6 +141,10 @@ func Get() *Setting {
 	}
 	if pSet.Look.Editor.TabSize <= 0 {
 		pSet.Look.Editor.TabSize = 4
+	}
+	if pSet.Look.Editor.AutoComplete == nil {
+		t := true
+		pSet.Look.Editor.AutoComplete = &t
 	}
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
@@ -349,6 +354,7 @@ func SaveEditor(e *Editor) error {
 	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
 	obj.Look.Editor.WordWrap = e.WordWrap
 	obj.Look.Editor.ShowPreview = e.ShowPreview
+	obj.Look.Editor.AutoComplete = e.AutoComplete
 	obj.Look.Editor.TabSize = e.TabSize
 	obj.Look.Editor.ThemeFonts = e.ThemeFonts
 	return obj.save()

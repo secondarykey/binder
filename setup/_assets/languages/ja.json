@@ -183,6 +183,7 @@
         "showLineNumbers" : "行番号の表示",
         "wordWrap" : "テキストの折り返し",
         "showPreview" : "プレビューの表示",
+        "autoComplete" : "入力補助（オートコンプリート）",
         "fontSetting" : "フォント設定",
         "editorArgs" : "エディタ引数",
         "editorArgsError" : "エディタ引数に {file} または {bfile} を含めてください",

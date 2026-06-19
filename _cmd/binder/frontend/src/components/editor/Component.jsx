@@ -370,6 +370,8 @@ function Editor(props) {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   // テキスト折り返しトグル
   const [wordWrap, setWordWrap] = useState(true);
+  // オートコンプリート有効/無効
+  const [autoComplete, setAutoComplete] = useState(true);
   // テキスト検索バーの表示状態
   const [searchOpen, setSearchOpen] = useState(false);
   const [replaceMode, setReplaceMode] = useState(false);
@@ -470,10 +472,9 @@ function Editor(props) {
     });
   }, [mode, id]);
 
-  // オートコンプリート（テンプレートキーワード補完のサンプル設定）
-  const autocompleteTriggers = useMemo(() => [
+  const autocompleteTriggers = useMemo(() => autoComplete ? [
     { trigger: '{{', candidates: ['end', 'if', 'else', 'range', 'with', 'define', 'template', 'block'] },
-  ], []);
+  ] : [], [autoComplete]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
@@ -870,6 +871,7 @@ function Editor(props) {
       setShowLineNumbers(data.showLineNumbers);
       setWordWrap(data.wordWrap);
       setViewer(data.showPreview);
+      if (data.autoComplete !== undefined) setAutoComplete(data.autoComplete);
       // editorSettingRef も更新
       if (editorSettingRef.current) {
         editorSettingRef.current = { ...editorSettingRef.current, ...data };
@@ -1920,6 +1922,7 @@ function Editor(props) {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setViewer(e.showPreview);
+        setAutoComplete(e.autoComplete !== false);
         editorSettingRef.current = e;
       }
     }).catch((err) => {
@@ -1936,6 +1939,7 @@ function Editor(props) {
       showLineNumbers,
       wordWrap,
       showPreview: viewer,
+      autoComplete,
       ...overrides,
     };
     editorSettingRef.current = editor;
@@ -1944,6 +1948,7 @@ function Editor(props) {
         showLineNumbers: editor.showLineNumbers,
         wordWrap: editor.wordWrap,
         showPreview: editor.showPreview,
+        autoComplete: editor.autoComplete,
       });
     }).catch((err) => console.log(err));
   };
