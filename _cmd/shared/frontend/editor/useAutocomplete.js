@@ -44,7 +44,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
   const filterCandidates = useCallback((candidates, filterText) => {
     if (!filterText) return [...candidates];
-    const keyword = filterText.trim().split(/\s+/)[0].toLowerCase();
+    const keyword = filterText.trim().toLowerCase();
     if (!keyword) return [...candidates];
     return candidates.filter(c => {
       const label = typeof c === 'string' ? c : c.label;
@@ -55,7 +55,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
   const openPopup = useCallback((trigger, candidates, filterText, startPos, textarea) => {
     const filtered = filterCandidates(candidates, filterText);
     // 候補が0件、または入力が候補と完全一致（1件のみ）なら閉じる
-    const keyword = (filterText || '').trim().split(/\s+/)[0].toLowerCase();
+    const keyword = (filterText || '').trim().toLowerCase();
     if (filtered.length === 0 || (filtered.length === 1 && keyword && (typeof filtered[0] === 'string' ? filtered[0] : filtered[0].label).toLowerCase() === keyword)) {
       setIsOpen(false);
       triggerInfoRef.current = null;
