@@ -31,8 +31,10 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
     textarea.focus();
+    const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
+    const leadingSpaces = filterText.match(/^(\s*)/)[1];
     textarea.setSelectionRange(replaceStart, replaceEnd);
-    document.execCommand('insertText', false, trigger + selected);
+    document.execCommand('insertText', false, trigger + leadingSpaces + selected);
     requestAnimationFrame(() => {
       onChange(textarea.value);
     });

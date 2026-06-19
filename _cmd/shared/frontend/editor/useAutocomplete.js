@@ -18,6 +18,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
   const [position, setPosition] = useState(null);
 
   const triggerInfoRef = useRef(null);
+  const justSelectedRef = useRef(false);
 
   const getTextarea = useCallback(() => {
     return document.querySelector(textareaSelector);
@@ -32,7 +33,6 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
     const popupHeight = Math.min((itemCount || 8) * 28 + 8, 200);
     let top = caret.top - containerRect.top + lineHeight;
-    // コンテナ下端からはみ出す場合はカーソルの上側に表示
     if (top + popupHeight > containerRect.height) {
       top = caret.top - containerRect.top - popupHeight;
     }
@@ -44,8 +44,6 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
   const filterCandidates = useCallback((candidates, filterText) => {
     if (!filterText) return [...candidates];
-    // 前後の空白を除去し、最初の単語をキーワードとして絞り込む
-    // スペース以降（引数等）は無視する
     const keyword = filterText.trim().split(/\s+/)[0].toLowerCase();
     if (!keyword) return [...candidates];
     return candidates.filter(c => {
@@ -56,7 +54,9 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
   const openPopup = useCallback((trigger, candidates, filterText, startPos, textarea) => {
     const filtered = filterCandidates(candidates, filterText);
-    if (filtered.length === 0) {
+    // 候補が0件、または入力が候補と完全一致（1件のみ）なら閉じる
+    const keyword = (filterText || '').trim().split(/\s+/)[0].toLowerCase();
+    if (filtered.length === 0 || (filtered.length === 1 && keyword && (typeof filtered[0] === 'string' ? filtered[0] : filtered[0].label).toLowerCase() === keyword)) {
       setIsOpen(false);
       triggerInfoRef.current = null;
       return;
@@ -85,6 +85,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const label = typeof item === 'string' ? item : item.label;
     const replaceStart = info.startPos;
     const replaceEnd = textarea.selectionStart;
+    justSelectedRef.current = true;
     dismiss();
     if (onSelect) {
       onSelect(info.trigger, label, replaceStart, replaceEnd);
@@ -124,6 +125,12 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
    * テキスト変更後に呼び出す。トリガー検出と絞り込みを行う。
    */
   const handleInput = useCallback(() => {
+    // 選択直後の入力イベントはスキップ（再検出で再表示されるのを防止）
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
+
     if (composingRef?.current) {
       if (isOpen) dismiss();
       return;
@@ -156,6 +163,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
       if (candidates instanceof Promise) {
         candidates.then((resolved) => {
+          if (justSelectedRef.current) return;
           const filtered = filterCandidates(resolved, filterText);
           if (filtered.length > 0) {
             triggerInfoRef.current = { trigger: t, startPos: absoluteTriggerIdx, candidates: resolved };

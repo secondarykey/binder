@@ -463,8 +463,11 @@ function Editor(props) {
     const textarea = document.querySelector("#editor");
     if (!textarea) return;
     textarea.focus();
+    // トリガーとキーワードの間の空白を保持する（例: "{{ ran" → "{{ range"）
+    const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
+    const leadingSpaces = filterText.match(/^(\s*)/)[1];
     textarea.setSelectionRange(replaceStart, replaceEnd);
-    const insertText = trigger + selected;
+    const insertText = trigger + leadingSpaces + selected;
     document.execCommand('insertText', false, insertText);
     requestAnimationFrame(() => {
       setText(textarea.value);
