@@ -552,9 +552,19 @@ function Editor(props) {
     const cursorPos = textarea.selectionStart;
     const result = detectTemplateFunc(text, cursorPos);
     if (!result || result.argIndex < 0) return [];
-    const candidate = goTemplateCandidates.find(c => c.label === result.name);
-    if (!candidate || !candidate.args) return [];
-    let arg = candidate.args[result.argIndex];
+    let candidate = goTemplateCandidates.find(c => c.label === result.name);
+    if (!candidate) return [];
+    let argIndex = result.argIndex;
+    if (candidate.needsEnd && argIndex >= 1 && result.tokens?.length > 0) {
+      const innerName = result.tokens[0];
+      const innerCandidate = goTemplateCandidates.find(c => c.label === innerName);
+      if (innerCandidate?.args) {
+        candidate = innerCandidate;
+        argIndex = argIndex - 1;
+      }
+    }
+    if (!candidate.args) return [];
+    let arg = candidate.args[argIndex];
     if (!arg || !arg.idType) {
       arg = candidate.args.find(a => a.idType);
       if (!arg) return [];
