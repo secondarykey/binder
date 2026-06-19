@@ -554,8 +554,11 @@ function Editor(props) {
     if (!result || result.argIndex < 0) return [];
     const candidate = goTemplateCandidates.find(c => c.label === result.name);
     if (!candidate || !candidate.args) return [];
-    const arg = candidate.args[result.argIndex];
-    if (!arg || !arg.idType) return [];
+    let arg = candidate.args[result.argIndex];
+    if (!arg || !arg.idType) {
+      arg = candidate.args.find(a => a.idType);
+      if (!arg) return [];
+    }
     const types = arg.idType.split(',');
     return GetBinderTree().then((tree) => {
       const all = flattenStructures(tree.data || []);
