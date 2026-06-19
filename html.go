@@ -158,9 +158,10 @@ func (b *Binder) createDto(w *wrapper, elm string) (interface{}, error) {
 
 	dto := struct {
 		Home   interface{}
+		This   *tempNote
 		Note   *tempNote
 		Marked template.HTML
-	}{home, note, template.HTML(elm)}
+	}{home, note, note, template.HTML(elm)}
 
 	return dto, nil
 }
@@ -364,8 +365,9 @@ func (b *Binder) parseDiagram(diag *json.Diagram, local bool, elm string, ws *[]
 
 	dto := struct {
 		Home    interface{}
+		This    *tempDiagram
 		Diagram *tempDiagram
-	}{home, td}
+	}{home, td, td}
 
 	var builder strings.Builder
 	if err := tmpl.Execute(&builder, dto); err != nil {

@@ -21,7 +21,7 @@ import Autocomplete from "./Autocomplete.jsx";
 import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
-import { goTemplateCandidates, dotTopLevelCandidates, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
+import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
@@ -484,20 +484,28 @@ function Editor(props) {
     [t]
   );
 
-  const resolvedDotTopLevel = useMemo(() =>
-    dotTopLevelCandidates.map(c => ({ ...c, detail: t(c.detail) })), [t]);
-  const resolvedDotHome = useMemo(() =>
-    dotHomeFields.map(c => ({ ...c, detail: t(c.detail) })), [t]);
-  const resolvedDotNote = useMemo(() =>
-    dotNoteFields.map(c => ({ ...c, detail: t(c.detail) })), [t]);
-  const resolvedDotDiagram = useMemo(() =>
-    dotDiagramFields.map(c => ({ ...c, detail: t(c.detail) })), [t]);
+  const resolveDot = useCallback((arr) =>
+    arr.map(c => {
+      const resolved = { ...c, detail: t(c.detail) };
+      if (c.deprecated) resolved.detail = `[Deprecated] ${resolved.detail}`;
+      return resolved;
+    }), [t]);
+
+  const resolvedDotTopLevel = useMemo(() => resolveDot(dotTopLevelCandidates), [resolveDot]);
+  const resolvedDotHome = useMemo(() => resolveDot(dotHomeFields), [resolveDot]);
+  const resolvedDotNote = useMemo(() => resolveDot(dotNoteFields), [resolveDot]);
+  const resolvedDotDiagram = useMemo(() => resolveDot(dotDiagramFields), [resolveDot]);
+  const resolvedDotThisNote = useMemo(() => resolveDot(dotThisNoteFields), [resolveDot]);
+  const resolvedDotThisDiagram = useMemo(() => resolveDot(dotThisDiagramFields), [resolveDot]);
+
+  const resolvedDotThis = mode === Mode.diagram ? resolvedDotThisDiagram : resolvedDotThisNote;
 
   const dotFieldMap = useMemo(() => ({
     Home: resolvedDotHome,
+    This: resolvedDotThis,
     Note: resolvedDotNote,
     Diagram: resolvedDotDiagram,
-  }), [resolvedDotHome, resolvedDotNote, resolvedDotDiagram]);
+  }), [resolvedDotHome, resolvedDotThis, resolvedDotNote, resolvedDotDiagram]);
 
   const getDotCandidates = useCallback(() => {
     const textarea = document.querySelector('#editor');
