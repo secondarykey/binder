@@ -164,14 +164,24 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
       if (/[\n\r]/.test(filterText)) continue;
 
-      const candidates = typeof trigger.candidates === 'function'
+      const rawResult = typeof trigger.candidates === 'function'
         ? trigger.candidates(filterText)
         : trigger.candidates;
+
+      // candidates 関数は配列、Promise、または { items, filterKey } を返せる
+      let candidates, effectiveFilterText;
+      if (rawResult && !Array.isArray(rawResult) && !(rawResult instanceof Promise) && rawResult.items) {
+        candidates = rawResult.items;
+        effectiveFilterText = rawResult.filterKey ?? filterText;
+      } else {
+        candidates = rawResult;
+        effectiveFilterText = filterText;
+      }
 
       if (candidates instanceof Promise) {
         candidates.then((resolved) => {
           if (justSelectedRef.current) return;
-          const filtered = filterCandidates(resolved, filterText);
+          const filtered = filterCandidates(resolved, effectiveFilterText);
           if (filtered.length > 0) {
             triggerInfoRef.current = { trigger: t, startPos: absoluteTriggerIdx, candidates: resolved };
             setItems(filtered);
@@ -186,7 +196,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
       }
 
       if (!bestMatch || absoluteTriggerIdx > bestMatch.absoluteTriggerIdx) {
-        bestMatch = { trigger, absoluteTriggerIdx, filterText, candidates };
+        bestMatch = { trigger, absoluteTriggerIdx, filterText: effectiveFilterText, candidates };
       }
     }
 
