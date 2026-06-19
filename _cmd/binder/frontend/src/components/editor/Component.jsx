@@ -21,7 +21,7 @@ import Autocomplete from "./Autocomplete.jsx";
 import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
-import { goTemplateCandidates } from "@shared/editor/go-template-candidates";
+import { goTemplateCandidates, dotTopLevelCandidates, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
@@ -484,9 +484,43 @@ function Editor(props) {
     [t]
   );
 
+  const resolvedDotTopLevel = useMemo(() =>
+    dotTopLevelCandidates.map(c => ({ ...c, detail: t(c.detail) })), [t]);
+  const resolvedDotHome = useMemo(() =>
+    dotHomeFields.map(c => ({ ...c, detail: t(c.detail) })), [t]);
+  const resolvedDotNote = useMemo(() =>
+    dotNoteFields.map(c => ({ ...c, detail: t(c.detail) })), [t]);
+  const resolvedDotDiagram = useMemo(() =>
+    dotDiagramFields.map(c => ({ ...c, detail: t(c.detail) })), [t]);
+
+  const dotFieldMap = useMemo(() => ({
+    Home: resolvedDotHome,
+    Note: resolvedDotNote,
+    Diagram: resolvedDotDiagram,
+  }), [resolvedDotHome, resolvedDotNote, resolvedDotDiagram]);
+
+  const getDotCandidates = useCallback(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return [];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const before = text.substring(0, cursorPos);
+    const openIdx = before.lastIndexOf('{{');
+    if (openIdx === -1) return [];
+    if (before.substring(openIdx + 2).includes('}}')) return [];
+    const lastDotIdx = before.lastIndexOf('.');
+    if (lastDotIdx <= openIdx) return [];
+    const beforeDot = before.substring(0, lastDotIdx);
+    const prevDotIdx = beforeDot.lastIndexOf('.');
+    if (prevDotIdx <= openIdx) return resolvedDotTopLevel;
+    const parentToken = beforeDot.substring(prevDotIdx + 1).trim();
+    return dotFieldMap[parentToken] || [];
+  }, [resolvedDotTopLevel, dotFieldMap]);
+
   const autocompleteTriggers = useMemo(() => autoComplete ? [
     { trigger: '{{', candidates: resolvedCandidates },
-  ] : [], [autoComplete, resolvedCandidates]);
+    { trigger: '.', candidates: getDotCandidates },
+  ] : [], [autoComplete, resolvedCandidates, getDotCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
