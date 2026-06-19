@@ -32,9 +32,12 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const containerRect = container.getBoundingClientRect();
     const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
     const popupHeight = Math.min((itemCount || 8) * 28 + 8, 200);
-    let top = caret.top - containerRect.top + lineHeight;
+    const margin = 4;
+    // 通常: カーソル行の下端 + マージンに表示
+    let top = caret.top - containerRect.top + lineHeight + margin;
     if (top + popupHeight > containerRect.height) {
-      top = caret.top - containerRect.top - popupHeight;
+      // フリップ: カーソル行の上端 - マージンの上に表示
+      top = caret.top - containerRect.top - popupHeight - margin;
     }
     return {
       top: Math.max(0, top),
