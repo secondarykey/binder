@@ -156,6 +156,9 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     const cs = window.getComputedStyle(textarea);
     const lineHeight = parseFloat(cs.lineHeight) || 20;
     const paddingTop = parseFloat(cs.paddingTop) || 0;
+    const paddingLeft = parseFloat(cs.paddingLeft) || 0;
+    const paddingRight = parseFloat(cs.paddingRight) || 0;
+    const contentWidth = textarea.clientWidth - paddingLeft - paddingRight;
 
     const mirror = document.createElement('div');
     const s = mirror.style;
@@ -163,7 +166,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     s.top = '-9999px';
     s.left = '-9999px';
     s.visibility = 'hidden';
-    s.width = textarea.clientWidth + 'px';
+    s.width = contentWidth + 'px';
     s.height = 'auto';
     s.padding = '0';
     s.border = '0';
