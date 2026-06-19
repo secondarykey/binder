@@ -57,7 +57,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     });
   }, []);
 
-  const openPopup = useCallback((trigger, candidates, filterText, startPos, textarea) => {
+  const openPopup = useCallback((trigger, candidates, filterText, startPos, textarea, replaceStart) => {
     const filtered = filterCandidates(candidates, filterText);
     // 候補が0件、または入力が候補と完全一致（1件のみ）なら閉じる
     const keyword = (filterText || '').trim().toLowerCase();
@@ -67,7 +67,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
       flippedRef.current = false;
       return;
     }
-    triggerInfoRef.current = { trigger: trigger.trigger, startPos, candidates };
+    triggerInfoRef.current = { trigger: trigger.trigger, startPos, candidates, replaceStart: replaceStart ?? startPos };
     setItems(filtered);
     setSelectedIndex(0);
     setPosition(computePosition(textarea, filtered.length));
@@ -90,7 +90,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const item = items[index];
     if (item == null) return;
     const label = typeof item === 'string' ? item : (item.insertText || item.label);
-    const replaceStart = info.startPos;
+    const replaceStart = info.replaceStart ?? info.startPos;
     const replaceEnd = textarea.selectionStart;
     justSelectedRef.current = true;
     dismiss();
@@ -196,12 +196,15 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
       }
 
       if (!bestMatch || absoluteTriggerIdx > bestMatch.absoluteTriggerIdx) {
-        bestMatch = { trigger, absoluteTriggerIdx, filterText: effectiveFilterText, candidates };
+        const replaceStart = (effectiveFilterText !== filterText)
+          ? cursorPos - effectiveFilterText.length
+          : undefined;
+        bestMatch = { trigger, absoluteTriggerIdx, filterText: effectiveFilterText, candidates, replaceStart };
       }
     }
 
     if (bestMatch) {
-      openPopup(bestMatch.trigger, bestMatch.candidates, bestMatch.filterText, bestMatch.absoluteTriggerIdx, textarea);
+      openPopup(bestMatch.trigger, bestMatch.candidates, bestMatch.filterText, bestMatch.absoluteTriggerIdx, textarea, bestMatch.replaceStart);
     } else if (isOpen) {
       dismiss();
     }
