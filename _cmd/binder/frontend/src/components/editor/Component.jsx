@@ -562,11 +562,29 @@ function Editor(props) {
     }).catch(() => []);
   }, []);
 
+  const getBlockArgCandidates = useCallback(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return [];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const before = text.substring(0, cursorPos);
+    const openIdx = before.lastIndexOf('{{');
+    if (openIdx === -1) return [];
+    if (before.substring(openIdx + 2).includes('}}')) return [];
+    const block = before.substring(openIdx + 2).replace(/^\s*[-=]?\s*/, '');
+    const keyword = block.match(/^([a-zA-Z_]\w*)/);
+    if (!keyword) return [];
+    const candidate = goTemplateCandidates.find(c => c.label === keyword[1]);
+    if (!candidate?.needsEnd) return [];
+    return resolvedCandidates.filter(c => !c.needsEnd && c.label !== 'end' && c.label !== 'else' && c.label !== 'else if');
+  }, [resolvedCandidates]);
+
   const autocompleteTriggers = useMemo(() => autoComplete ? [
     { trigger: '{{', candidates: resolvedCandidates },
+    { trigger: ' ', candidates: getBlockArgCandidates },
     { trigger: '.', candidates: getDotCandidates },
     { trigger: '"', candidates: getIdCandidates },
-  ] : [], [autoComplete, resolvedCandidates, getDotCandidates, getIdCandidates]);
+  ] : [], [autoComplete, resolvedCandidates, getBlockArgCandidates, getDotCandidates, getIdCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,

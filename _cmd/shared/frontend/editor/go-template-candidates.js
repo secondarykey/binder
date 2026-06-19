@@ -6,11 +6,11 @@
  */
 export const goTemplateCandidates = [
   // Keywords
-  { label: 'if',       detail: 'autocomplete.if',       category: 'keyword', needsEnd: true },
+  { label: 'if',       detail: 'autocomplete.if',       category: 'keyword', needsEnd: true, args: [{ name: 'pipeline', type: 'bool' }] },
   { label: 'else',     detail: 'autocomplete.else',     category: 'keyword' },
-  { label: 'else if',  detail: 'autocomplete.elseIf',   category: 'keyword' },
-  { label: 'range',    detail: 'autocomplete.range',    category: 'keyword', needsEnd: true },
-  { label: 'with',     detail: 'autocomplete.with',     category: 'keyword', needsEnd: true },
+  { label: 'else if',  detail: 'autocomplete.elseIf',   category: 'keyword', args: [{ name: 'pipeline', type: 'bool' }] },
+  { label: 'range',    detail: 'autocomplete.range',    category: 'keyword', needsEnd: true, args: [{ name: 'collection', type: 'array|map' }] },
+  { label: 'with',     detail: 'autocomplete.with',     category: 'keyword', needsEnd: true, args: [{ name: 'pipeline', type: 'any' }] },
   { label: 'end',      detail: 'autocomplete.end',      category: 'keyword' },
 
   // Control flow
@@ -18,9 +18,9 @@ export const goTemplateCandidates = [
   { label: 'continue', detail: 'autocomplete.continue', category: 'control' },
 
   // Actions
-  { label: 'define',   detail: 'autocomplete.define',   category: 'action', needsEnd: true },
-  { label: 'template', detail: 'autocomplete.template', category: 'action' },
-  { label: 'block',    detail: 'autocomplete.block',    category: 'action', needsEnd: true },
+  { label: 'define',   detail: 'autocomplete.define',   category: 'action', needsEnd: true, args: [{ name: 'name', type: 'string' }] },
+  { label: 'template', detail: 'autocomplete.template', category: 'action', args: [{ name: 'name', type: 'string' }, { name: 'pipeline?', type: 'any' }] },
+  { label: 'block',    detail: 'autocomplete.block',    category: 'action', needsEnd: true, args: [{ name: 'name', type: 'string' }, { name: 'pipeline?', type: 'any' }] },
 
   // Comparison functions
   { label: 'eq', detail: 'autocomplete.eq', category: 'comparison', args: [{ name: 'a', type: 'any' }, { name: 'b', type: 'any' }], returns: 'bool' },
