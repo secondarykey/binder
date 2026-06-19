@@ -479,24 +479,21 @@ function Editor(props) {
     });
   }, [mode, id]);
 
-  const resolvedCandidates = useMemo(() =>
-    goTemplateCandidates.map(c => ({ ...c, detail: t(c.detail) })),
-    [t]
-  );
-
-  const resolveDot = useCallback((arr) =>
+  const resolveI18n = useCallback((arr) =>
     arr.map(c => {
       const resolved = { ...c, detail: t(c.detail) };
       if (c.deprecated) resolved.detail = `[Deprecated] ${resolved.detail}`;
       return resolved;
     }), [t]);
 
-  const resolvedDotTopLevel = useMemo(() => resolveDot(dotTopLevelCandidates), [resolveDot]);
-  const resolvedDotHome = useMemo(() => resolveDot(dotHomeFields), [resolveDot]);
-  const resolvedDotNote = useMemo(() => resolveDot(dotNoteFields), [resolveDot]);
-  const resolvedDotDiagram = useMemo(() => resolveDot(dotDiagramFields), [resolveDot]);
-  const resolvedDotThisNote = useMemo(() => resolveDot(dotThisNoteFields), [resolveDot]);
-  const resolvedDotThisDiagram = useMemo(() => resolveDot(dotThisDiagramFields), [resolveDot]);
+  const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
+
+  const resolvedDotTopLevel = useMemo(() => resolveI18n(dotTopLevelCandidates), [resolveI18n]);
+  const resolvedDotHome = useMemo(() => resolveI18n(dotHomeFields), [resolveI18n]);
+  const resolvedDotNote = useMemo(() => resolveI18n(dotNoteFields), [resolveI18n]);
+  const resolvedDotDiagram = useMemo(() => resolveI18n(dotDiagramFields), [resolveI18n]);
+  const resolvedDotThisNote = useMemo(() => resolveI18n(dotThisNoteFields), [resolveI18n]);
+  const resolvedDotThisDiagram = useMemo(() => resolveI18n(dotThisDiagramFields), [resolveI18n]);
 
   const resolvedDotThis = mode === Mode.diagram ? resolvedDotThisDiagram : resolvedDotThisNote;
 
