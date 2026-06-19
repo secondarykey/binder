@@ -44,14 +44,22 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, func
   const renderFuncHint = () => {
     if (!funcHint) return null;
     const args = funcHint.args || [];
-    const sig = args.length > 0
-      ? `(${args.map(a => a.name).join(', ')})`
-      : '()';
     const ret = funcHint.returns ? ` → ${funcHint.returns}` : '';
     return (
       <>
         <span className="funcHintName">{funcHint.label}</span>
-        <span className="funcHintSig">{sig}{ret}</span>
+        <span className="funcHintSig">
+          {'('}
+          {args.map((a, i) => (
+            <span key={i}>
+              {i > 0 && ', '}
+              <span className="funcHintArgName">{a.name}</span>
+              <span className="funcHintArgType">: {a.type}</span>
+            </span>
+          ))}
+          {')'}
+          {ret}
+        </span>
         <span className="funcHintDetail">{funcHint.detail}</span>
       </>
     );

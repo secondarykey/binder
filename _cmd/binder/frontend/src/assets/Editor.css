@@ -659,6 +659,17 @@ iframe.htmlViewer {
   font-family: monospace;
   color: var(--text-muted);
   margin-right: 8px;
+  font-size: 0.85em;
+}
+
+#idStatusBar .funcHintArgName {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+#idStatusBar .funcHintArgType {
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 #idStatusBar .funcHintDetail {
