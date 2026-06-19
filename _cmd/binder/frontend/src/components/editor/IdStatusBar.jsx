@@ -69,6 +69,7 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, func
           {')'}
           {ret}
         </span>
+        {funcHint.detail && <span className="funcHintDetail">{funcHint.detail}</span>}
       </span>
     );
   };
