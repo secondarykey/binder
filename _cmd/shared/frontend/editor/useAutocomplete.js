@@ -31,13 +31,13 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     if (!container) return caret;
     const containerRect = container.getBoundingClientRect();
     const textareaRect = textarea.getBoundingClientRect();
-    const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
+    const cursorHeight = caret.height || parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
     const popupHeight = Math.min((itemCount || 8) * 28 + 8, 200);
-    let top = caret.top - containerRect.top + lineHeight;
+    let top = caret.top - containerRect.top + cursorHeight;
     if (top + popupHeight > containerRect.height) {
       // getCaretPositionはカーソルがtextarea下端付近だとrect.bottomにクランプするため、
       // フリップ時は実際のカーソル行上端を推定して被りを防ぐ
-      const cursorTop = Math.min(caret.top, textareaRect.bottom - lineHeight);
+      const cursorTop = Math.min(caret.top, textareaRect.bottom - cursorHeight);
       top = cursorTop - containerRect.top - popupHeight;
     }
     return {

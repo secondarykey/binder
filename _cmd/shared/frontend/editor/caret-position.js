@@ -2,7 +2,7 @@
  * textarea のカーソル位置からビューポート座標を取得する
  *
  * @param {HTMLTextAreaElement} textarea
- * @returns {{ top: number, left: number } | null}
+ * @returns {{ top: number, left: number, height: number } | null}
  */
 export function getCaretPosition(textarea) {
   if (!textarea) return null;
@@ -22,7 +22,7 @@ export function getCaretPosition(textarea) {
   const text = textarea.value.substring(0, textarea.selectionStart);
   mirror.textContent = text;
   const span = document.createElement('span');
-  span.textContent = textarea.value.substring(textarea.selectionStart) || '.';
+  span.textContent = '.';
   mirror.appendChild(span);
   document.body.appendChild(mirror);
 
@@ -32,6 +32,7 @@ export function getCaretPosition(textarea) {
 
   const top = rect.top + (spanRect.top - mirrorRect.top) - textarea.scrollTop;
   const left = rect.left + (spanRect.left - mirrorRect.left) - textarea.scrollLeft;
+  const height = spanRect.height;
   document.body.removeChild(mirror);
-  return { top: Math.min(Math.max(top, rect.top), rect.bottom), left: Math.min(Math.max(left, rect.left), rect.right) };
+  return { top: Math.min(Math.max(top, rect.top), rect.bottom), left: Math.min(Math.max(left, rect.left), rect.right), height };
 }
