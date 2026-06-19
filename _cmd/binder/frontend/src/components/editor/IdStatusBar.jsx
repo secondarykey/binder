@@ -14,16 +14,17 @@ function typeToUrlMode(typ) {
 }
 
 /**
- * エディタ下部の ID ステータスバー。
- * カーソル行の UUID に対応するアイテム情報を表示し、クリックで遷移する。
- * 複数の UUID がある場合は ◀ ▶ で切り替え可能。
+ * エディタ下部のステータスバー。
+ * カーソル行の UUID に対応するアイテム情報、またはテンプレート関数ヒントを表示する。
+ * ID情報が優先。ID がない場合に funcHint を表示する。
  *
- * @param {{ structures: object[], currentIndex: number, onIndexChange: (i: number) => void, onNavigate: (mode: string, id: string) => void }} props
+ * @param {{ structures: object[], currentIndex: number, onIndexChange: (i: number) => void, onNavigate: (mode: string, id: string) => void, funcHint: object|null }} props
  */
-function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate }) {
+function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, funcHint }) {
   const { t } = useTranslation();
 
-  const visible = structures.length > 0;
+  const hasId = structures.length > 0;
+  const visible = hasId || !!funcHint;
   const s = structures[currentIndex] || null;
   const hasMultiple = structures.length > 1;
 
@@ -40,9 +41,25 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate }) {
   const label = s ? t(labelKey) : "";
   const urlMode = s ? typeToUrlMode(s.type) : "";
 
+  const renderFuncHint = () => {
+    if (!funcHint) return null;
+    const args = funcHint.args || [];
+    const sig = args.length > 0
+      ? `(${args.map(a => a.name).join(', ')})`
+      : '()';
+    const ret = funcHint.returns ? ` → ${funcHint.returns}` : '';
+    return (
+      <>
+        <span className="funcHintName">{funcHint.label}</span>
+        <span className="funcHintSig">{sig}{ret}</span>
+        <span className="funcHintDetail">{funcHint.detail}</span>
+      </>
+    );
+  };
+
   return (
     <div id="idStatusBar" className={visible ? 'visible' : ''}>
-      {s && (
+      {hasId && s && (
         <>
           {hasMultiple && (
             <span className="idStatusNav">
@@ -60,6 +77,7 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate }) {
           </span>
         </>
       )}
+      {!hasId && funcHint && renderFuncHint()}
     </div>
   );
 }
