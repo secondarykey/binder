@@ -1,9 +1,11 @@
 /**
- * カーソル位置が {{ ... }} 内にある場合、最初のキーワード/関数名を返す。
+ * カーソル位置が {{ ... }} 内にある場合、関数名とカーソルが位置する引数インデックスを返す。
  *
  * @param {string} text - テキスト全体
  * @param {number} cursorPos - カーソル位置（selectionStart）
- * @returns {string|null} 検出された関数名。見つからなければ null
+ * @returns {{ name: string, argIndex: number }|null}
+ *   name: 検出された関数名
+ *   argIndex: カーソルが位置する引数のインデックス（0始まり）。関数名上なら -1
  */
 export function detectTemplateFunc(text, cursorPos) {
   if (!text || cursorPos < 0) return null;
@@ -12,22 +14,86 @@ export function detectTemplateFunc(text, cursorPos) {
   const openIdx = before.lastIndexOf('{{');
   if (openIdx === -1) return null;
 
-  // {{ より後ろに }} があればカーソルはテンプレートブロック外
   const between = before.substring(openIdx + 2);
   if (between.includes('}}')) return null;
 
-  // {{ の後のテキスト + カーソル以降で }} を探してブロック全体を取る
   const after = text.substring(cursorPos);
   const closeIdx = after.indexOf('}}');
   const blockEnd = closeIdx !== -1 ? cursorPos + closeIdx : text.length;
-  const block = text.substring(openIdx + 2, blockEnd).trim();
+  const block = text.substring(openIdx + 2, blockEnd);
 
-  // ブロック先頭のキーワード抽出: "- " や "=" プレフィックスをスキップ
   let content = block;
-  if (content.startsWith('-')) content = content.substring(1).trimStart();
-  if (content.startsWith('=')) content = content.substring(1).trimStart();
+  let prefixLen = 0;
+  const trimmed = content.replace(/^(\s*)/, '');
+  prefixLen += content.length - trimmed.length;
+  content = trimmed;
+  if (content.startsWith('-') || content.startsWith('=')) {
+    content = content.substring(1);
+    prefixLen += 1;
+    const trimmed2 = content.replace(/^(\s*)/, '');
+    prefixLen += content.length - trimmed2.length;
+    content = trimmed2;
+  }
 
-  // 最初のトークン（スペースやドット区切りの前）を関数名として返す
   const match = content.match(/^([a-zA-Z_]\w*)/);
-  return match ? match[1] : null;
+  if (!match) return null;
+
+  const name = match[1];
+  const cursorInBlock = cursorPos - (openIdx + 2) - prefixLen;
+
+  if (cursorInBlock <= match[0].length) {
+    return { name, argIndex: -1 };
+  }
+
+  // 関数名以降の部分でカーソル位置までのテキストからトークン数を数える
+  const afterFunc = content.substring(match[0].length);
+  const cursorInArgs = cursorInBlock - match[0].length;
+  const textBeforeCursor = afterFunc.substring(0, Math.max(0, cursorInArgs));
+
+  return { name, argIndex: countTokens(textBeforeCursor) };
+}
+
+/**
+ * スペース区切りトークン数を数える（引用符内のスペースは無視）。
+ * カーソルまでに完了したトークン数 = 引数インデックス。
+ */
+function countTokens(text) {
+  let count = 0;
+  let inQuote = false;
+  let quoteChar = '';
+  let hasContent = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inQuote) {
+      if (ch === '\\' && i + 1 < text.length) {
+        i++;
+        continue;
+      }
+      if (ch === quoteChar) {
+        inQuote = false;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === '`') {
+      inQuote = true;
+      quoteChar = ch;
+      hasContent = true;
+      continue;
+    }
+
+    if (ch === ' ' || ch === '\t') {
+      if (hasContent) {
+        count++;
+        hasContent = false;
+      }
+      continue;
+    }
+
+    hasContent = true;
+  }
+
+  return count;
 }
