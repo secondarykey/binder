@@ -338,10 +338,6 @@ iframe.htmlViewer {
   resize: none;
 }
 
-#editorWrapper:has(#idStatusBar.visible) #editor {
-  scroll-padding-bottom: 36px;
-}
-
 #editor:focus {
   outline: 1px solid var(--border-input);
 }
@@ -590,7 +586,7 @@ iframe.htmlViewer {
 /* ID ステータスバー（CommitBar の上） */
 #editorWrapper #idStatusBar {
   position: absolute;
-  bottom: 40px;
+  bottom: 12px;
   left: 0;
   right: 0;
   display: flex;
