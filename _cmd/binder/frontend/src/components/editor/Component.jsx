@@ -1375,13 +1375,17 @@ function Editor(props) {
   }, []);
 
   const detectFuncHint = useCallback((text, cursorPos) => {
-    const name = detectTemplateFunc(text, cursorPos);
-    if (!name) {
+    const result = detectTemplateFunc(text, cursorPos);
+    if (!result) {
       setFuncHint(null);
       return;
     }
-    const candidate = resolvedCandidates.find(c => c.label === name);
-    setFuncHint(candidate || null);
+    const candidate = resolvedCandidates.find(c => c.label === result.name);
+    if (!candidate) {
+      setFuncHint(null);
+      return;
+    }
+    setFuncHint({ ...candidate, activeArg: result.argIndex });
   }, [resolvedCandidates]);
 
   /**

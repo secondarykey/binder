@@ -44,6 +44,7 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, func
   const renderFuncHint = () => {
     if (!funcHint) return null;
     const args = funcHint.args || [];
+    const activeArg = funcHint.activeArg ?? -1;
     const ret = funcHint.returns ? ` → ${funcHint.returns}` : '';
     return (
       <>
@@ -53,8 +54,12 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, func
           {args.map((a, i) => {
             const optional = a.name.endsWith('?');
             const name = optional ? a.name.slice(0, -1) : a.name;
+            const active = i === activeArg;
             return (
-              <span key={i} className={optional ? 'funcHintArgOptional' : ''}>
+              <span key={i} className={
+                (optional ? 'funcHintArgOptional' : '') +
+                (active ? ' funcHintArgActive' : '')
+              }>
                 {i > 0 && ', '}
                 <span className="funcHintArgName">{name}</span>
                 <span className="funcHintArgType">: {a.type}</span>
