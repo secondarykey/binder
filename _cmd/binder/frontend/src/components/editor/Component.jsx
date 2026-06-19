@@ -471,7 +471,15 @@ function Editor(props) {
     const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
     const leadingSpaces = filterText.match(/^(\s*)/)[1];
     textarea.setSelectionRange(replaceStart, replaceEnd);
-    const insertText = trigger + leadingSpaces + selected;
+    let insertText = trigger + leadingSpaces + selected;
+    if (trigger === '"') {
+      // ID候補選択時: 閉じ引用符を追加し、既存の閉じ引用符があればスキップ
+      insertText = '"' + selected + '"';
+      const afterEnd = textarea.value.charAt(replaceEnd);
+      if (afterEnd === '"') {
+        textarea.setSelectionRange(replaceStart, replaceEnd + 1);
+      }
+    }
     document.execCommand('insertText', false, insertText);
     requestAnimationFrame(() => {
       setText(textarea.value);
@@ -518,10 +526,34 @@ function Editor(props) {
     return dotFieldMap[parentToken] || [];
   }, [resolvedDotTopLevel, dotFieldMap]);
 
+  const getIdCandidates = useCallback(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return [];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const result = detectTemplateFunc(text, cursorPos);
+    if (!result || result.argIndex < 0) return [];
+    const candidate = goTemplateCandidates.find(c => c.label === result.name);
+    if (!candidate || !candidate.args) return [];
+    const arg = candidate.args[result.argIndex];
+    if (!arg || !arg.idType) return [];
+    const types = arg.idType.split(',');
+    return GetBinderTree().then((tree) => {
+      const all = flattenStructures(tree.data || []);
+      const filtered = all.filter(s => types.includes(s.type));
+      return filtered.map(s => ({
+        label: s.name || s.id,
+        detail: s.type,
+        insertText: s.id,
+      }));
+    }).catch(() => []);
+  }, []);
+
   const autocompleteTriggers = useMemo(() => autoComplete ? [
     { trigger: '{{', candidates: resolvedCandidates },
     { trigger: '.', candidates: getDotCandidates },
-  ] : [], [autoComplete, resolvedCandidates, getDotCandidates]);
+    { trigger: '"', candidates: getIdCandidates },
+  ] : [], [autoComplete, resolvedCandidates, getDotCandidates, getIdCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
