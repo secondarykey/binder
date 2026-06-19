@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -8,7 +8,6 @@ import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSetti
 import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
-import { goTemplateCandidates } from '@shared/editor/go-template-candidates';
 
 import TabBar from './TabBar';
 import EditorPane from './EditorPane';
@@ -49,16 +48,6 @@ function App() {
   const [language, setLanguage_] = useState('en');
   const [settingOpen, setSettingOpen] = useState(false);
   const [editorFont, setEditorFont] = useState(null);
-
-  const resolvedCandidates = useMemo(() =>
-    goTemplateCandidates
-      .filter(c => c.category !== 'binder')
-      .map(c => ({ ...c, detail: t(c.detail) })),
-    [t]
-  );
-  const autocompleteTriggers = useMemo(() => [
-    { trigger: '{{', candidates: resolvedCandidates },
-  ], [resolvedCandidates]);
 
   // フォント設定を読み込む
   const loadFont = useCallback((theme) => {
@@ -434,7 +423,6 @@ function App() {
                 onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
                 font={editorFont}
                 tabSize={tabSize}
-                autocompleteTriggers={autocompleteTriggers}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
