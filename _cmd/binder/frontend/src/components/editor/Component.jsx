@@ -476,7 +476,11 @@ function Editor(props) {
   }, [mode, id]);
 
   const autocompleteTriggers = useMemo(() => autoComplete ? [
-    { trigger: '{{', candidates: ['end', 'if', 'else', 'range', 'with', 'define', 'template', 'block'] },
+    { trigger: '{{', candidates: [
+      'end', 'if', 'else', 'else if', 'range', 'continue', 'break',
+      'with', 'define', 'template', 'block',
+      'eq', 'ne', 'lt', 'le', 'gt', 'ge',
+    ] },
   ] : [], [autoComplete]);
 
   const ac = useAutocomplete({
