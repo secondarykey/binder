@@ -568,6 +568,21 @@ iframe.htmlViewer {
   text-overflow: ellipsis;
 }
 
+.editorAutocompleteItem.deprecated .editorAutocompleteLabel {
+  opacity: 0.6;
+}
+
+.editorAutocompleteDeprecated {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #856d00;
+  background-color: #ffd90033;
+  border: 1px solid #ffd90066;
+  border-radius: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
 /* ID ステータスバー（CommitBar の上） */
 #editorWrapper #idStatusBar {
   position: absolute;
