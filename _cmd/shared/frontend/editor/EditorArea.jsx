@@ -144,66 +144,6 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     }
   };
 
-  /**
-   * カーソルが表示領域外にある場合、スクロールして見える位置に調整する。
-   * React の制御コンポーネント (value={text}) はネイティブの自動スクロールを
-   * 打ち消すことがあるため、onChange 後に明示的に補正する。
-   *
-   * ミラー div でカーソル位置までの高さを実測し、textarea の scrollTop を調整する。
-   */
-  const ensureCursorVisible = useCallback((textarea) => {
-    if (!textarea) return;
-    const cs = window.getComputedStyle(textarea);
-    const lineHeight = parseFloat(cs.lineHeight) || 20;
-    const paddingTop = parseFloat(cs.paddingTop) || 0;
-    const paddingLeft = parseFloat(cs.paddingLeft) || 0;
-    const paddingRight = parseFloat(cs.paddingRight) || 0;
-    const contentWidth = textarea.clientWidth - paddingLeft - paddingRight;
-
-    const mirror = document.createElement('div');
-    const s = mirror.style;
-    s.position = 'absolute';
-    s.top = '-9999px';
-    s.left = '-9999px';
-    s.visibility = 'hidden';
-    s.width = contentWidth + 'px';
-    s.height = 'auto';
-    s.padding = '0';
-    s.border = '0';
-    s.boxSizing = 'content-box';
-    ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
-     'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
-    s.whiteSpace = 'pre-wrap';
-    s.overflowWrap = 'break-word';
-    s.wordBreak = cs.wordBreak;
-
-    const textBefore = textarea.value.substring(0, textarea.selectionStart);
-    mirror.textContent = textBefore;
-    const span = document.createElement('span');
-    span.textContent = '.';
-    mirror.appendChild(span);
-    document.body.appendChild(mirror);
-    const mirrorTop = mirror.getBoundingClientRect().top;
-    const spanTop = span.getBoundingClientRect().top;
-    const cursorOffset = spanTop - mirrorTop + paddingTop;
-    document.body.removeChild(mirror);
-
-    const viewTop = textarea.scrollTop;
-    const viewBottom = viewTop + textarea.clientHeight;
-    if (cursorOffset + lineHeight > viewBottom) {
-      textarea.scrollTop = cursorOffset + lineHeight - textarea.clientHeight;
-    } else if (cursorOffset < viewTop) {
-      textarea.scrollTop = cursorOffset;
-    }
-  }, []);
-
-  const handleChange = useCallback((e) => {
-    if (onChange) onChange(e);
-    requestAnimationFrame(() => {
-      ensureCursorVisible(e.target);
-    });
-  }, [onChange, ensureCursorVisible]);
-
   const textareaStyle = wordWrap
     ? { ...style, whiteSpace: 'pre-wrap' }
     : { ...style, whiteSpace: 'pre', overflowX: 'auto' };
@@ -233,7 +173,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
         wrap={wordWrap ? 'soft' : 'off'}
         value={text}
         onKeyDown={onKeyDown}
-        onChange={handleChange}
+        onChange={onChange}
         onPaste={onPaste}
         onClick={onCursorMove}
         onKeyUp={onCursorMove}
