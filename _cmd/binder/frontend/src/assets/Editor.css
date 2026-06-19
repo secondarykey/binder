@@ -338,6 +338,10 @@ iframe.htmlViewer {
   resize: none;
 }
 
+#editorWrapper:has(#idStatusBar.visible) #editor {
+  padding-bottom: 38px;
+}
+
 #editor:focus {
   outline: 1px solid var(--border-input);
 }
