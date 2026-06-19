@@ -49,8 +49,39 @@ export function detectTemplateFunc(text, cursorPos) {
   const afterFunc = content.substring(match[0].length);
   const cursorInArgs = cursorInBlock - match[0].length;
   const textBeforeCursor = afterFunc.substring(0, Math.max(0, cursorInArgs));
+  const argIndex = countTokens(textBeforeCursor);
 
-  return { name, argIndex: countTokens(textBeforeCursor) };
+  // 引数のトークン一覧を抽出（呼び出し元で内部関数の判定に使用）
+  const tokens = parseTokens(afterFunc.trim());
+
+  return { name, argIndex, tokens };
+}
+
+/**
+ * スペース区切りのトークン文字列を配列として返す（引用符を考慮）。
+ */
+function parseTokens(text) {
+  const tokens = [];
+  let current = '';
+  let inQuote = false;
+  let quoteChar = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuote) {
+      current += ch;
+      if (ch === '\\' && i + 1 < text.length) { current += text[++i]; continue; }
+      if (ch === quoteChar) inQuote = false;
+      continue;
+    }
+    if (ch === '"' || ch === '`') { inQuote = true; quoteChar = ch; current += ch; continue; }
+    if (ch === ' ' || ch === '\t') {
+      if (current) { tokens.push(current); current = ''; }
+      continue;
+    }
+    current += ch;
+  }
+  if (current) tokens.push(current);
+  return tokens;
 }
 
 /**

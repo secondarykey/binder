@@ -1452,6 +1452,15 @@ function Editor(props) {
       setFuncHint(null);
       return;
     }
+    // ブロックキーワード後の内部関数を検出
+    if (candidate.needsEnd && result.argIndex >= 1 && result.tokens?.length > 0) {
+      const innerName = result.tokens[0];
+      const innerCandidate = resolvedCandidates.find(c => c.label === innerName);
+      if (innerCandidate?.args) {
+        setFuncHint({ ...innerCandidate, activeArg: result.argIndex - 1 });
+        return;
+      }
+    }
     setFuncHint({ ...candidate, activeArg: result.argIndex });
   }, [resolvedCandidates]);
 
