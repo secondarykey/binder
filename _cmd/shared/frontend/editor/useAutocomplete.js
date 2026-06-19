@@ -19,6 +19,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
   const triggerInfoRef = useRef(null);
   const justSelectedRef = useRef(false);
+  const flippedRef = useRef(false);
 
   const getTextarea = useCallback(() => {
     return document.querySelector(textareaSelector);
@@ -34,11 +35,11 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const cursorHeight = caret.height || parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
     const popupHeight = Math.min((itemCount || 8) * 28 + 8, 200);
     let top = caret.top - containerRect.top + cursorHeight;
-    if (top + popupHeight > containerRect.height) {
-      // getCaretPositionはカーソルがtextarea下端付近だとrect.bottomにクランプするため、
-      // フリップ時は実際のカーソル行上端を推定して被りを防ぐ
+    const shouldFlip = flippedRef.current || (top + popupHeight > containerRect.height);
+    if (shouldFlip) {
       const cursorTop = Math.min(caret.top, textareaRect.bottom - cursorHeight);
       top = cursorTop - containerRect.top - popupHeight;
+      flippedRef.current = true;
     }
     return {
       top: Math.max(0, top),
@@ -63,6 +64,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     if (filtered.length === 0 || (filtered.length === 1 && keyword && (typeof filtered[0] === 'string' ? filtered[0] : filtered[0].label).toLowerCase() === keyword)) {
       setIsOpen(false);
       triggerInfoRef.current = null;
+      flippedRef.current = false;
       return;
     }
     triggerInfoRef.current = { trigger: trigger.trigger, startPos, candidates };
@@ -78,6 +80,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     setSelectedIndex(0);
     setPosition(null);
     triggerInfoRef.current = null;
+    flippedRef.current = false;
   }, []);
 
   const selectItem = useCallback((index) => {
