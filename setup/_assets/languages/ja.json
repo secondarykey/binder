@@ -707,6 +707,23 @@
         "printf"   : "書式付き出力 (fmt.Sprintf)",
         "html"     : "HTMLエスケープ",
         "js"       : "JSエスケープ",
-        "urlquery" : "URLクエリエスケープ"
+        "urlquery" : "URLクエリエスケープ",
+        "embed"        : "ノート/アセットを埋め込み",
+        "drawDiagram"  : "ダイアグラムSVGを描画",
+        "drawLayer"    : "レイヤーを描画",
+        "assets"       : "アセットURLを取得",
+        "assetsImage"  : "アセット画像タグを生成",
+        "childNotes"   : "子ノート一覧を取得",
+        "latestNotes"  : "最新ノート一覧を取得",
+        "breadcrumb"   : "パンくずリストを取得",
+        "safe"         : "エスケープ無効化",
+        "lit"          : "HTML リテラル出力",
+        "litURL"       : "URL リテラル出力",
+        "replace"      : "文字列置換",
+        "localeDate"   : "ロケール日時表示",
+        "formatDate"   : "日時フォーマット",
+        "lf2br"        : "改行→<br/>",
+        "lf2sp"        : "改行→スペース",
+        "lf2comma"     : "改行→カンマ"
     }
 }

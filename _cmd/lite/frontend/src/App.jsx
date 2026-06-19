@@ -51,7 +51,9 @@ function App() {
   const [editorFont, setEditorFont] = useState(null);
 
   const resolvedCandidates = useMemo(() =>
-    goTemplateCandidates.map(c => ({ ...c, detail: t(c.detail) })),
+    goTemplateCandidates
+      .filter(c => c.category !== 'binder')
+      .map(c => ({ ...c, detail: t(c.detail) })),
     [t]
   );
   const autocompleteTriggers = useMemo(() => [
