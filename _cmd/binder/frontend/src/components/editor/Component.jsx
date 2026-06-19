@@ -22,6 +22,7 @@ import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@s
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
+import { mermaidDiagramCandidates } from "@shared/editor/mermaid-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
@@ -510,6 +511,7 @@ function Editor(props) {
     arr.map(c => ({ ...c, detail: t(c.detail) })), [t]);
 
   const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
+  const resolvedMermaidCandidates = useMemo(() => resolveI18n(mermaidDiagramCandidates), [resolveI18n]);
 
   const resolvedDotTopLevel = useMemo(() => resolveI18n(dotTopLevelCandidates), [resolveI18n]);
   const resolvedDotHome = useMemo(() => resolveI18n(dotHomeFields), [resolveI18n]);
@@ -594,11 +596,17 @@ function Editor(props) {
     return resolvedCandidates;
   }, [resolvedCandidates]);
 
-  const autocompleteTriggers = useMemo(() => autoComplete ? [
-    { trigger: '{{', candidates: getTemplateCandidates },
-    { trigger: '.', candidates: getDotCandidates },
-    { trigger: '"', candidates: getIdCandidates },
-  ] : [], [autoComplete, getTemplateCandidates, getDotCandidates, getIdCandidates]);
+  const autocompleteTriggers = useMemo(() => {
+    if (!autoComplete) return [];
+    if (mode === Mode.diagram) {
+      return [{ trigger: '', lineStart: true, candidates: resolvedMermaidCandidates }];
+    }
+    return [
+      { trigger: '{{', candidates: getTemplateCandidates },
+      { trigger: '.', candidates: getDotCandidates },
+      { trigger: '"', candidates: getIdCandidates },
+    ];
+  }, [autoComplete, mode, resolvedMermaidCandidates, getTemplateCandidates, getDotCandidates, getIdCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
