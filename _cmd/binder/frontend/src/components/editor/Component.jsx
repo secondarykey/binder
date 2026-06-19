@@ -562,29 +562,27 @@ function Editor(props) {
     }).catch(() => []);
   }, []);
 
-  const getBlockArgCandidates = useCallback(() => {
-    const textarea = document.querySelector('#editor');
-    if (!textarea) return [];
-    const text = textarea.value;
-    const cursorPos = textarea.selectionStart;
-    const before = text.substring(0, cursorPos);
-    const openIdx = before.lastIndexOf('{{');
-    if (openIdx === -1) return [];
-    if (before.substring(openIdx + 2).includes('}}')) return [];
-    const block = before.substring(openIdx + 2).replace(/^\s*[-=]?\s*/, '');
-    const keyword = block.match(/^([a-zA-Z_]\w*)/);
-    if (!keyword) return [];
-    const candidate = goTemplateCandidates.find(c => c.label === keyword[1]);
-    if (!candidate?.needsEnd) return [];
-    return resolvedCandidates.filter(c => !c.needsEnd && c.label !== 'end' && c.label !== 'else' && c.label !== 'else if');
+  const getTemplateCandidates = useCallback((filterText) => {
+    const trimmed = (filterText || '').trim();
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      const keyword = parts[0];
+      const isBlock = goTemplateCandidates.some(c => c.label === keyword && c.needsEnd);
+      if (isBlock) {
+        const items = resolvedCandidates.filter(c =>
+          !c.needsEnd && c.label !== 'end' && c.label !== 'else' && c.label !== 'else if'
+        );
+        return { items, filterKey: parts[parts.length - 1] };
+      }
+    }
+    return resolvedCandidates;
   }, [resolvedCandidates]);
 
   const autocompleteTriggers = useMemo(() => autoComplete ? [
-    { trigger: '{{', candidates: resolvedCandidates },
-    { trigger: ' ', candidates: getBlockArgCandidates },
+    { trigger: '{{', candidates: getTemplateCandidates },
     { trigger: '.', candidates: getDotCandidates },
     { trigger: '"', candidates: getIdCandidates },
-  ] : [], [autoComplete, resolvedCandidates, getBlockArgCandidates, getDotCandidates, getIdCandidates]);
+  ] : [], [autoComplete, getTemplateCandidates, getDotCandidates, getIdCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
