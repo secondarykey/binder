@@ -530,6 +530,8 @@ iframe.htmlViewer {
 .editorAutocomplete {
   position: absolute;
   z-index: 40;
+  width: 320px;
+  overflow-x: hidden;
   background-color: color-mix(in srgb, var(--bg-elevated) 75%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-input) 60%, transparent);
   border-radius: 6px;
