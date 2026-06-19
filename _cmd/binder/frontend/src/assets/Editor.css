@@ -672,6 +672,17 @@ iframe.htmlViewer {
   opacity: 0.7;
 }
 
+#idStatusBar .funcHintArgOptional {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+#idStatusBar .funcHintArgQ {
+  color: var(--accent-primary);
+  font-style: normal;
+  font-weight: 600;
+}
+
 #idStatusBar .funcHintDetail {
   color: var(--text-secondary);
   overflow: hidden;
