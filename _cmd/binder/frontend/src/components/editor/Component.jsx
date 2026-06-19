@@ -21,6 +21,7 @@ import Autocomplete from "./Autocomplete.jsx";
 import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
+import { goTemplateCandidates } from "@shared/editor/go-template-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
@@ -475,13 +476,14 @@ function Editor(props) {
     });
   }, [mode, id]);
 
+  const resolvedCandidates = useMemo(() =>
+    goTemplateCandidates.map(c => ({ ...c, detail: t(c.detail) })),
+    [t]
+  );
+
   const autocompleteTriggers = useMemo(() => autoComplete ? [
-    { trigger: '{{', candidates: [
-      'end', 'if', 'else', 'else if', 'range', 'continue', 'break',
-      'with', 'define', 'template', 'block',
-      'eq', 'ne', 'lt', 'le', 'gt', 'ge',
-    ] },
-  ] : [], [autoComplete]);
+    { trigger: '{{', candidates: resolvedCandidates },
+  ] : [], [autoComplete, resolvedCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
