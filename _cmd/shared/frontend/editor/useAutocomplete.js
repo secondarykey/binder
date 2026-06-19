@@ -89,7 +89,7 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const info = triggerInfoRef.current;
     const item = items[index];
     if (item == null) return;
-    const label = typeof item === 'string' ? item : item.label;
+    const label = typeof item === 'string' ? item : (item.insertText || item.label);
     const replaceStart = info.startPos;
     const replaceEnd = textarea.selectionStart;
     justSelectedRef.current = true;
