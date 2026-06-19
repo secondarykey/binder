@@ -64,3 +64,41 @@ export const goTemplateCandidates = [
   { label: 'lf2sp',        detail: 'autocomplete.lf2sp',        category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
   { label: 'lf2comma',     detail: 'autocomplete.lf2comma',     category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
 ];
+
+/**
+ * ドットアクセサのオートコンプリート候補定義。
+ * テンプレートに渡される DTO 構造体のフィールド情報。
+ */
+export const dotTopLevelCandidates = [
+  { label: 'Home',    detail: 'autocomplete.dotHome',    category: 'dotField', returns: 'object' },
+  { label: 'Note',    detail: 'autocomplete.dotNote',    category: 'dotField', returns: 'object' },
+  { label: 'Marked',  detail: 'autocomplete.dotMarked',  category: 'dotField', returns: 'HTML' },
+  { label: 'Diagram', detail: 'autocomplete.dotDiagram', category: 'dotField', returns: 'object' },
+];
+
+export const dotHomeFields = [
+  { label: 'Name',   detail: 'autocomplete.dotHomeName',   category: 'dotField', returns: 'string' },
+  { label: 'Detail', detail: 'autocomplete.dotHomeDetail', category: 'dotField', returns: 'string' },
+  { label: 'Link',   detail: 'autocomplete.dotHomeLink',   category: 'dotField', returns: 'string' },
+];
+
+export const dotNoteFields = [
+  { label: 'Id',      detail: 'autocomplete.dotNoteId',      category: 'dotField', returns: 'string' },
+  { label: 'Name',    detail: 'autocomplete.dotNoteName',    category: 'dotField', returns: 'string' },
+  { label: 'Detail',  detail: 'autocomplete.dotNoteDetail',  category: 'dotField', returns: 'string' },
+  { label: 'Publish', detail: 'autocomplete.dotNotePublish', category: 'dotField', returns: 'string' },
+  { label: 'Updated', detail: 'autocomplete.dotNoteUpdated', category: 'dotField', returns: 'string' },
+  { label: 'Created', detail: 'autocomplete.dotNoteCreated', category: 'dotField', returns: 'string' },
+  { label: 'Link',    detail: 'autocomplete.dotNoteLink',    category: 'dotField', returns: 'string' },
+  { label: 'Image',   detail: 'autocomplete.dotNoteImage',   category: 'dotField', returns: 'URL' },
+];
+
+export const dotDiagramFields = [
+  { label: 'Id',      detail: 'autocomplete.dotDiagramId',      category: 'dotField', returns: 'string' },
+  { label: 'Name',    detail: 'autocomplete.dotDiagramName',    category: 'dotField', returns: 'string' },
+  { label: 'Detail',  detail: 'autocomplete.dotDiagramDetail',  category: 'dotField', returns: 'string' },
+  { label: 'Alias',   detail: 'autocomplete.dotDiagramAlias',   category: 'dotField', returns: 'string' },
+  { label: 'Publish', detail: 'autocomplete.dotDiagramPublish', category: 'dotField', returns: 'string' },
+  { label: 'Created', detail: 'autocomplete.dotDiagramCreated', category: 'dotField', returns: 'string' },
+  { label: 'Updated', detail: 'autocomplete.dotDiagramUpdated', category: 'dotField', returns: 'string' },
+];
