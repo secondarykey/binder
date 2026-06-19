@@ -44,4 +44,23 @@ export const goTemplateCandidates = [
   { label: 'html',     detail: 'autocomplete.html',     category: 'function', args: [{ name: 'text', type: 'string' }], returns: 'string' },
   { label: 'js',       detail: 'autocomplete.js',       category: 'function', args: [{ name: 'text', type: 'string' }], returns: 'string' },
   { label: 'urlquery', detail: 'autocomplete.urlquery', category: 'function', args: [{ name: 'text', type: 'string' }], returns: 'string' },
+
+  // Binder custom functions (defineFuncMap)
+  { label: 'embed',        detail: 'autocomplete.embed',        category: 'binder', args: [{ name: 'id', type: 'string' }], returns: 'HTML' },
+  { label: 'drawDiagram',  detail: 'autocomplete.drawDiagram',  category: 'binder', args: [{ name: 'id', type: 'string' }, { name: 'class?', type: 'string' }], returns: 'HTML' },
+  { label: 'drawLayer',    detail: 'autocomplete.drawLayer',    category: 'binder', args: [{ name: 'id', type: 'string' }, { name: 'class?', type: 'string' }], returns: 'HTML' },
+  { label: 'assets',       detail: 'autocomplete.assets',       category: 'binder', args: [{ name: 'id', type: 'string' }], returns: 'URL' },
+  { label: 'assetsImage',  detail: 'autocomplete.assetsImage',  category: 'binder', args: [{ name: 'id', type: 'string' }, { name: 'class?', type: 'string' }], returns: 'HTML' },
+  { label: 'childNotes',   detail: 'autocomplete.childNotes',   category: 'binder', args: [{ name: 'n?', type: 'int' }, { name: 'id?', type: 'string' }, { name: 'order?', type: 'string' }], returns: '[]Note' },
+  { label: 'latestNotes',  detail: 'autocomplete.latestNotes',  category: 'binder', args: [{ name: 'n', type: 'int' }], returns: '[]Note' },
+  { label: 'breadcrumb',   detail: 'autocomplete.breadcrumb',   category: 'binder', args: [], returns: '[]Note' },
+  { label: 'safe',         detail: 'autocomplete.safe',         category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
+  { label: 'lit',          detail: 'autocomplete.lit',          category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'HTML' },
+  { label: 'litURL',       detail: 'autocomplete.litURL',       category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'URL' },
+  { label: 'replace',      detail: 'autocomplete.replace',      category: 'binder', args: [{ name: 's', type: 'string' }, { name: 'old', type: 'string' }, { name: 'new', type: 'string' }], returns: 'string' },
+  { label: 'localeDate',   detail: 'autocomplete.localeDate',   category: 'binder', args: [{ name: 'date', type: 'string' }], returns: 'HTML' },
+  { label: 'formatDate',   detail: 'autocomplete.formatDate',   category: 'binder', args: [{ name: 'date', type: 'string' }, { name: 'format', type: 'string' }], returns: 'string' },
+  { label: 'lf2br',        detail: 'autocomplete.lf2br',        category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
+  { label: 'lf2sp',        detail: 'autocomplete.lf2sp',        category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
+  { label: 'lf2comma',     detail: 'autocomplete.lf2comma',     category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
 ];

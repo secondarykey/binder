@@ -707,6 +707,23 @@
         "printf"   : "Formatted output (fmt.Sprintf)",
         "html"     : "HTML escape",
         "js"       : "JS escape",
-        "urlquery" : "URL query escape"
+        "urlquery" : "URL query escape",
+        "embed"        : "Embed note/asset inline",
+        "drawDiagram"  : "Render diagram SVG",
+        "drawLayer"    : "Render layer overlay",
+        "assets"       : "Get asset URL",
+        "assetsImage"  : "Generate asset img tag",
+        "childNotes"   : "List child notes",
+        "latestNotes"  : "List latest notes",
+        "breadcrumb"   : "Get breadcrumb chain",
+        "safe"         : "Disable escaping",
+        "lit"          : "HTML literal output",
+        "litURL"       : "URL literal output",
+        "replace"      : "Replace string",
+        "localeDate"   : "Locale date display",
+        "formatDate"   : "Format date string",
+        "lf2br"        : "Newline to <br/>",
+        "lf2sp"        : "Newline to space",
+        "lf2comma"     : "Newline to comma"
     }
 }
