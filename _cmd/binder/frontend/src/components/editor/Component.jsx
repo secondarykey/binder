@@ -480,11 +480,7 @@ function Editor(props) {
   }, [mode, id]);
 
   const resolveI18n = useCallback((arr) =>
-    arr.map(c => {
-      const resolved = { ...c, detail: t(c.detail) };
-      if (c.deprecated) resolved.detail = `[Deprecated] ${resolved.detail}`;
-      return resolved;
-    }), [t]);
+    arr.map(c => ({ ...c, detail: t(c.detail) })), [t]);
 
   const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
 

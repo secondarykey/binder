@@ -47,14 +47,17 @@ function Autocomplete({ isOpen, items, selectedIndex, position, onItemClick, ren
           );
         }
 
+        const deprecated = typeof item !== 'string' && item.deprecated;
+
         return (
           <div
             key={idx}
             ref={el => itemRefs.current[idx] = el}
-            className={`editorAutocompleteItem${isSelected ? ' active' : ''}`}
+            className={`editorAutocompleteItem${isSelected ? ' active' : ''}${deprecated ? ' deprecated' : ''}`}
             onClick={() => onItemClick?.(idx)}
           >
             <span className="editorAutocompleteLabel">{label}</span>
+            {deprecated && <span className="editorAutocompleteDeprecated">Deprecated</span>}
             {detail && <span className="editorAutocompleteDetail">{detail}</span>}
           </div>
         );
