@@ -23,6 +23,7 @@ import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates } from "@shared/editor/go-template-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
+import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
@@ -422,6 +423,8 @@ function Editor(props) {
   const [cursorStructureIndex, setCursorStructureIndex] = useState(0);
   const idDetectTimerRef = useRef(null);
   const lastDetectedUuidsRef = useRef(null);
+  // テンプレート関数ヒント
+  const [funcHint, setFuncHint] = useState(null);
 
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
@@ -1336,6 +1339,16 @@ function Editor(props) {
     }, 200);
   }, []);
 
+  const detectFuncHint = useCallback((text, cursorPos) => {
+    const name = detectTemplateFunc(text, cursorPos);
+    if (!name) {
+      setFuncHint(null);
+      return;
+    }
+    const candidate = resolvedCandidates.find(c => c.label === name);
+    setFuncHint(candidate || null);
+  }, [resolvedCandidates]);
+
   /**
    * カーソル移動時にプレビューのスクロール位置を追従させる + ID 検出
    */
@@ -1352,6 +1365,7 @@ function Editor(props) {
     }
 
     detectIdAtCursor(textarea.value, pos);
+    detectFuncHint(textarea.value, pos);
   }, [detectIdAtCursor]);
 
   /**
@@ -1367,6 +1381,7 @@ function Editor(props) {
     cursorLineRef.current = txt.substring(0, pos).split('\n').length;
     setText(txt);
     detectIdAtCursor(txt, pos);
+    detectFuncHint(txt, pos);
     ac.handleInput();
 
     setUpdated(true);
@@ -2330,6 +2345,7 @@ function Editor(props) {
                 currentIndex={cursorStructureIndex}
                 onIndexChange={setCursorStructureIndex}
                 onNavigate={handleIdNavigate}
+                funcHint={funcHint}
               />
 
               {/** コミットバー */}

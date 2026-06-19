@@ -634,6 +634,25 @@ iframe.htmlViewer {
   font-variant-numeric: tabular-nums;
 }
 
+#idStatusBar .funcHintName {
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-right: 8px;
+}
+
+#idStatusBar .funcHintSig {
+  font-family: monospace;
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+
+#idStatusBar .funcHintDetail {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */
 #editorWrapper #parseStatusBar {
   position: absolute;
