@@ -472,6 +472,7 @@ function Editor(props) {
     const leadingSpaces = filterText.match(/^(\s*)/)[1];
     textarea.setSelectionRange(replaceStart, replaceEnd);
     let insertText = trigger + leadingSpaces + selected;
+    let cursorOffset = 0;
     if (trigger === '"') {
       // ID候補選択時: 閉じ引用符を追加し、既存の閉じ引用符があればスキップ
       insertText = '"' + selected + '"';
@@ -479,8 +480,20 @@ function Editor(props) {
       if (afterEnd === '"') {
         textarea.setSelectionRange(replaceStart, replaceEnd + 1);
       }
+    } else if (trigger === '{{') {
+      // ブロックキーワード選択時: 閉じタグを自動挿入
+      const candidate = goTemplateCandidates.find(c => c.label === selected);
+      if (candidate?.needsEnd) {
+        const closing = ' }} {{end}}';
+        insertText += closing;
+        cursorOffset = -closing.length;
+      }
     }
     document.execCommand('insertText', false, insertText);
+    if (cursorOffset) {
+      const pos = textarea.selectionStart + cursorOffset;
+      textarea.setSelectionRange(pos, pos);
+    }
     requestAnimationFrame(() => {
       setText(textarea.value);
       writeFn(mode, id, textarea.value);

@@ -6,11 +6,11 @@
  */
 export const goTemplateCandidates = [
   // Keywords
-  { label: 'if',       detail: 'autocomplete.if',       category: 'keyword' },
+  { label: 'if',       detail: 'autocomplete.if',       category: 'keyword', needsEnd: true },
   { label: 'else',     detail: 'autocomplete.else',     category: 'keyword' },
   { label: 'else if',  detail: 'autocomplete.elseIf',   category: 'keyword' },
-  { label: 'range',    detail: 'autocomplete.range',    category: 'keyword' },
-  { label: 'with',     detail: 'autocomplete.with',     category: 'keyword' },
+  { label: 'range',    detail: 'autocomplete.range',    category: 'keyword', needsEnd: true },
+  { label: 'with',     detail: 'autocomplete.with',     category: 'keyword', needsEnd: true },
   { label: 'end',      detail: 'autocomplete.end',      category: 'keyword' },
 
   // Control flow
@@ -18,9 +18,9 @@ export const goTemplateCandidates = [
   { label: 'continue', detail: 'autocomplete.continue', category: 'control' },
 
   // Actions
-  { label: 'define',   detail: 'autocomplete.define',   category: 'action' },
+  { label: 'define',   detail: 'autocomplete.define',   category: 'action', needsEnd: true },
   { label: 'template', detail: 'autocomplete.template', category: 'action' },
-  { label: 'block',    detail: 'autocomplete.block',    category: 'action' },
+  { label: 'block',    detail: 'autocomplete.block',    category: 'action', needsEnd: true },
 
   // Comparison functions
   { label: 'eq', detail: 'autocomplete.eq', category: 'comparison', args: [{ name: 'a', type: 'any' }, { name: 'b', type: 'any' }], returns: 'bool' },
