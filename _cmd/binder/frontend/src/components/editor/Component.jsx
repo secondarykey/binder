@@ -2410,22 +2410,22 @@ function Editor(props) {
                 onDrop={handleDrop}
               />
 
-              {/** 下部バー（ステータス + コミット） */}
-              <div id="editorBottomBar">
-                <IdStatusBar
-                  structures={cursorStructures}
-                  currentIndex={cursorStructureIndex}
-                  onIndexChange={setCursorStructureIndex}
-                  onNavigate={handleIdNavigate}
-                  funcHint={funcHint}
-                />
-                <CommitBar
-                  comment={comment}
-                  onCommentChange={setComment}
-                  updated={updated}
-                  onCommit={handleCommit}
-                />
-              </div>
+              {/** ID ステータスバー */}
+              <IdStatusBar
+                structures={cursorStructures}
+                currentIndex={cursorStructureIndex}
+                onIndexChange={setCursorStructureIndex}
+                onNavigate={handleIdNavigate}
+                funcHint={funcHint}
+              />
+
+              {/** コミットバー */}
+              <CommitBar
+                comment={comment}
+                onCommentChange={setComment}
+                updated={updated}
+                onCommit={handleCommit}
+              />
             </div>
           }
 

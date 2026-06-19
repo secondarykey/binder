@@ -285,7 +285,6 @@ iframe.htmlViewer {
   right: 0;
   top: 38px;
   bottom: 48px;
-  transition: bottom 0.2s ease-out;
 
   display: flex;
   flex-direction: row;
@@ -337,6 +336,10 @@ iframe.htmlViewer {
 
   line-height: 1.5;
   resize: none;
+}
+
+#editorWrapper:has(#idStatusBar.visible) #editor {
+  scroll-padding-bottom: 36px;
 }
 
 #editor:focus {
@@ -584,40 +587,31 @@ iframe.htmlViewer {
   flex-shrink: 0;
 }
 
-/* 下部バーラッパー（IdStatusBar + CommitBar） */
-#editorBottomBar {
+/* ID ステータスバー（CommitBar の上） */
+#editorWrapper #idStatusBar {
   position: absolute;
-  bottom: 0;
+  bottom: 40px;
   left: 0;
   right: 0;
-}
-
-/* ID ステータスバー（CommitBar の上、フロー配置） */
-#editorBottomBar #idStatusBar {
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 8px 10px;
   font-size: 0.8rem;
   color: var(--text-secondary);
   background-color: color-mix(in srgb, var(--bg-overlay) 30%, transparent);
   backdrop-filter: blur(4px);
   border-top: 1px solid var(--border-primary);
-  overflow: hidden;
-  max-height: 0;
+  z-index: 1;
   opacity: 0;
-  transition: max-height 0.2s ease-out, opacity 0.2s ease-out, padding 0.2s ease-out;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
-#editorBottomBar #idStatusBar.visible {
-  max-height: 36px;
-  padding: 6px 10px;
+#editorWrapper #idStatusBar.visible {
   opacity: 1;
-}
-
-/* IdStatusBar 表示時にエディタ領域を縮小 */
-#editorWrapper:has(#idStatusBar.visible) .editorArea {
-  bottom: 84px;
-  transition: bottom 0.2s ease-out;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 #idStatusBar .idStatusLink {
@@ -718,13 +712,8 @@ iframe.htmlViewer {
   white-space: nowrap;
 }
 
-/* Note/Diagram エディタ内の CommitBar — editorBottomBar 内ではフロー配置 */
-#editorBottomBar #parseStatusBar {
-  position: relative;
-}
-
-/* editorBottomBar 外の CommitBar は従来通り absolute で下端に固定 */
-#editorWrapper > #parseStatusBar {
+/* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */
+#editorWrapper #parseStatusBar {
   position: absolute;
   bottom: 0;
   left: 0;
