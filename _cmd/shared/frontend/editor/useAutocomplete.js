@@ -30,14 +30,15 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
     const container = textarea.closest('#editorContent') || textarea.parentElement;
     if (!container) return caret;
     const containerRect = container.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
     const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight) || 20;
     const popupHeight = Math.min((itemCount || 8) * 28 + 8, 200);
-    const margin = 4;
-    // 通常: カーソル行の下端 + マージンに表示
-    let top = caret.top - containerRect.top + lineHeight + margin;
+    let top = caret.top - containerRect.top + lineHeight;
     if (top + popupHeight > containerRect.height) {
-      // フリップ: カーソル行の上端 - マージンの上に表示
-      top = caret.top - containerRect.top - popupHeight - margin;
+      // getCaretPositionはカーソルがtextarea下端付近だとrect.bottomにクランプするため、
+      // フリップ時は実際のカーソル行上端を推定して被りを防ぐ
+      const cursorTop = Math.min(caret.top, textareaRect.bottom - lineHeight);
+      top = cursorTop - containerRect.top - popupHeight;
     }
     return {
       top: Math.max(0, top),
