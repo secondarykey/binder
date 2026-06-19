@@ -467,12 +467,18 @@ function Editor(props) {
     const textarea = document.querySelector("#editor");
     if (!textarea) return;
     textarea.focus();
-    // トリガーとキーワードの間の空白を保持する（例: "{{ ran" → "{{ range"）
-    const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
-    const leadingSpaces = filterText.match(/^(\s*)/)[1];
     textarea.setSelectionRange(replaceStart, replaceEnd);
-    let insertText = trigger + leadingSpaces + selected;
+    // replaceStart がトリガー文字列の位置かどうかで挿入テキストを分岐
+    const atTrigger = textarea.value.substring(replaceStart, replaceStart + trigger.length) === trigger;
+    let insertText;
     let cursorOffset = 0;
+    if (atTrigger) {
+      const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
+      const leadingSpaces = filterText.match(/^(\s*)/)[1];
+      insertText = trigger + leadingSpaces + selected;
+    } else {
+      insertText = selected;
+    }
     if (trigger === '"') {
       // ID候補選択時: 閉じ引用符を追加し、既存の閉じ引用符があればスキップ
       insertText = '"' + selected + '"';
@@ -480,7 +486,7 @@ function Editor(props) {
       if (afterEnd === '"') {
         textarea.setSelectionRange(replaceStart, replaceEnd + 1);
       }
-    } else if (trigger === '{{') {
+    } else if (trigger === '{{' && atTrigger) {
       // ブロックキーワード選択時: 閉じタグを自動挿入
       const candidate = goTemplateCandidates.find(c => c.label === selected);
       if (candidate?.needsEnd) {
