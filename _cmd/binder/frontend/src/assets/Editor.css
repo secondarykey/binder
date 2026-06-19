@@ -667,6 +667,14 @@ iframe.htmlViewer {
   transform: translateY(8px);
   pointer-events: none;
   transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#editorWrapper #idStatusBar:hover {
+  white-space: normal;
+  overflow: visible;
+  background-color: color-mix(in srgb, var(--bg-overlay) 80%, transparent);
 }
 
 #editorWrapper #idStatusBar.visible {
@@ -767,17 +775,15 @@ iframe.htmlViewer {
 }
 
 #idStatusBar .funcHintSection {
-  display: flex;
-  align-items: center;
-  min-width: 0;
+  display: inline;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #idStatusBar .idInfoSection {
-  display: flex;
-  align-items: center;
-  min-width: 0;
+  display: inline;
   overflow: hidden;
+  text-overflow: ellipsis;
   margin-left: auto;
   flex-shrink: 1;
 }
