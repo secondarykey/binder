@@ -29,6 +29,7 @@ function EditorSetting() {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [wordWrap, setWordWrap] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
+  const [autoComplete, setAutoComplete] = useState(true);
   const [argsError, setArgsError] = useState(false);
   const editorBaseRef = useRef(null);
 
@@ -44,6 +45,7 @@ function EditorSetting() {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setShowPreview(e.showPreview);
+        setAutoComplete(e.autoComplete !== false);
       }
     }).catch((err) => {
       console.log(err);
@@ -63,6 +65,7 @@ function EditorSetting() {
       if (data.showLineNumbers !== undefined) setShowLineNumbers(data.showLineNumbers);
       if (data.wordWrap !== undefined) setWordWrap(data.wordWrap);
       if (data.showPreview !== undefined) setShowPreview(data.showPreview);
+      if (data.autoComplete !== undefined) setAutoComplete(data.autoComplete);
     });
 
     // エディタ側からのフォント変更を同期
@@ -102,11 +105,12 @@ function EditorSetting() {
       showLineNumbers: showLineNumbers,
       wordWrap: wordWrap,
       showPreview: showPreview,
+      autoComplete: autoComplete,
     };
     SaveEditor(editor).then(() => {
       evt.showSuccessMessage(t("common.updated"));
       // エディタ側のstateを同期
-      Events.Emit('binder:editor:settingChanged', { showLineNumbers, wordWrap, showPreview });
+      Events.Emit('binder:editor:settingChanged', { showLineNumbers, wordWrap, showPreview, autoComplete });
     }).catch((err) => {
       showError(err);
     });
@@ -184,6 +188,19 @@ function EditorSetting() {
                 />
               }
               label={t("setting.showPreview")}
+            />
+          </FormControl>
+
+          {/** オートコンプリート */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={autoComplete}
+                  onChange={(e) => setAutoComplete(e.target.checked)}
+                />
+              }
+              label={t("setting.autoComplete")}
             />
           </FormControl>
 

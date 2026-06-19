@@ -183,6 +183,7 @@
         "showLineNumbers" : "Show Line Numbers",
         "wordWrap" : "Word Wrap",
         "showPreview" : "Show Preview",
+        "autoComplete" : "Auto Complete",
         "fontSetting" : "Font Setting",
         "editorArgs" : "Editor Arguments",
         "editorArgsError" : "Editor arguments must contain {file} or {bfile}",
