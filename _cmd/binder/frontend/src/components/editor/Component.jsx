@@ -564,11 +564,8 @@ function Editor(props) {
       }
     }
     if (!candidate.args) return [];
-    let arg = candidate.args[argIndex];
-    if (!arg || !arg.idType) {
-      arg = candidate.args.find(a => a.idType);
-      if (!arg) return [];
-    }
+    const arg = candidate.args[argIndex];
+    if (!arg || !arg.idType) return [];
     const types = arg.idType.split(',');
     return GetBinderTree().then((tree) => {
       const all = flattenStructures(tree.data || []);
