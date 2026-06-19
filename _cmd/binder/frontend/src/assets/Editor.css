@@ -766,11 +766,28 @@ iframe.htmlViewer {
   opacity: 1;
 }
 
-#idStatusBar .funcHintDetail {
-  color: var(--text-secondary);
+#idStatusBar .funcHintSection {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+#idStatusBar .idInfoSection {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  margin-left: auto;
+  flex-shrink: 1;
+}
+
+#idStatusBar .statusBarDivider {
+  width: 1px;
+  height: 14px;
+  background-color: var(--border-primary);
+  margin: 0 10px;
+  flex-shrink: 0;
 }
 
 /* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */

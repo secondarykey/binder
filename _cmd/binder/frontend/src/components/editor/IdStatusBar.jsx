@@ -15,8 +15,7 @@ function typeToUrlMode(typ) {
 
 /**
  * エディタ下部のステータスバー。
- * カーソル行の UUID に対応するアイテム情報、またはテンプレート関数ヒントを表示する。
- * ID情報が優先。ID がない場合に funcHint を表示する。
+ * 関数ヒント（左）と ID 情報（右）を同時表示可能。
  *
  * @param {{ structures: object[], currentIndex: number, onIndexChange: (i: number) => void, onNavigate: (mode: string, id: string) => void, funcHint: object|null }} props
  */
@@ -47,7 +46,7 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, func
     const activeArg = funcHint.activeArg ?? -1;
     const ret = funcHint.returns ? ` → ${funcHint.returns}` : '';
     return (
-      <>
+      <span className="funcHintSection">
         <span className="funcHintName">{funcHint.label}</span>
         <span className="funcHintSig">
           {'('}
@@ -70,32 +69,37 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, func
           {')'}
           {ret}
         </span>
-        <span className="funcHintDetail">{funcHint.detail}</span>
-      </>
+      </span>
+    );
+  };
+
+  const renderIdInfo = () => {
+    if (!hasId || !s) return null;
+    return (
+      <span className="idInfoSection">
+        {hasMultiple && (
+          <span className="idStatusNav">
+            <span className="idStatusNavBtn" onClick={handlePrev}>◀</span>
+            <span className="idStatusCount">{currentIndex + 1}/{structures.length}</span>
+            <span className="idStatusNavBtn" onClick={handleNext}>▶</span>
+          </span>
+        )}
+        <span
+          className="idStatusLink"
+          onClick={() => onNavigate(urlMode, s.id)}
+          title={s.id}
+        >
+          {label}: {s.name || s.id}
+        </span>
+      </span>
     );
   };
 
   return (
     <div id="idStatusBar" className={visible ? 'visible' : ''}>
-      {hasId && s && (
-        <>
-          {hasMultiple && (
-            <span className="idStatusNav">
-              <span className="idStatusNavBtn" onClick={handlePrev}>◀</span>
-              <span className="idStatusCount">{currentIndex + 1}/{structures.length}</span>
-              <span className="idStatusNavBtn" onClick={handleNext}>▶</span>
-            </span>
-          )}
-          <span
-            className="idStatusLink"
-            onClick={() => onNavigate(urlMode, s.id)}
-            title={s.id}
-          >
-            {label}: {s.name || s.id}
-          </span>
-        </>
-      )}
-      {!hasId && funcHint && renderFuncHint()}
+      {renderFuncHint()}
+      {funcHint && hasId && <span className="statusBarDivider" />}
+      {renderIdInfo()}
     </div>
   );
 }
