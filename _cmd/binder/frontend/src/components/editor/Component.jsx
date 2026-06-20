@@ -373,8 +373,10 @@ function Editor(props) {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   // テキスト折り返しトグル
   const [wordWrap, setWordWrap] = useState(true);
-  // オートコンプリート有効/無効
-  const [autoComplete, setAutoComplete] = useState(true);
+  // オートコンプリート設定
+  const [autoComplete, setAutoComplete] = useState({
+    template: true, idAssist: true, autoClose: true, funcHint: true, mermaid: true,
+  });
   // テキスト検索バーの表示状態
   const [searchOpen, setSearchOpen] = useState(false);
   const [replaceMode, setReplaceMode] = useState(false);
@@ -490,7 +492,7 @@ function Editor(props) {
     } else if (trigger === '{{' && atTrigger) {
       // ブロックキーワード選択時: 閉じタグを自動挿入
       const candidate = goTemplateCandidates.find(c => c.label === selected);
-      if (candidate?.needsEnd) {
+      if (candidate?.needsEnd && autoComplete.autoClose) {
         const closing = ' }} {{end}}';
         insertText += closing;
         cursorOffset = -closing.length;
@@ -505,7 +507,7 @@ function Editor(props) {
       setText(textarea.value);
       writeFn(mode, id, textarea.value);
     });
-  }, [mode, id]);
+  }, [mode, id, autoComplete.autoClose]);
 
   const resolveI18n = useCallback((arr) =>
     arr.map(c => ({ ...c, detail: t(c.detail) })), [t]);
@@ -634,15 +636,19 @@ function Editor(props) {
   }, [resolvedCandidates]);
 
   const autocompleteTriggers = useMemo(() => {
-    if (!autoComplete) return [];
     if (mode === Mode.diagram) {
+      if (!autoComplete.mermaid) return [];
       return [{ trigger: '', lineStart: true, candidates: getMermaidCandidates }];
     }
-    return [
-      { trigger: '{{', candidates: getTemplateCandidates },
-      { trigger: '.', candidates: getDotCandidates },
-      { trigger: '"', candidates: getIdCandidates },
-    ];
+    const triggers = [];
+    if (autoComplete.template) {
+      triggers.push({ trigger: '{{', candidates: getTemplateCandidates });
+      triggers.push({ trigger: '.', candidates: getDotCandidates });
+    }
+    if (autoComplete.idAssist) {
+      triggers.push({ trigger: '"', candidates: getIdCandidates });
+    }
+    return triggers;
   }, [autoComplete, mode, getMermaidCandidates, getTemplateCandidates, getDotCandidates, getIdCandidates]);
 
   const ac = useAutocomplete({
@@ -1040,7 +1046,9 @@ function Editor(props) {
       setShowLineNumbers(data.showLineNumbers);
       setWordWrap(data.wordWrap);
       setViewer(data.showPreview);
-      if (data.autoComplete !== undefined) setAutoComplete(data.autoComplete);
+      if (data.autoComplete !== undefined && typeof data.autoComplete === 'object') {
+        setAutoComplete(data.autoComplete);
+      }
       // editorSettingRef も更新
       if (editorSettingRef.current) {
         editorSettingRef.current = { ...editorSettingRef.current, ...data };
@@ -1469,6 +1477,10 @@ function Editor(props) {
    * カーソル行の UUID を検出し、Structure 情報を取得する（デバウンス付き）
    */
   const detectIdAtCursor = useCallback((text, cursorPos) => {
+    if (!autoComplete.idAssist) {
+      setCursorStructures([]);
+      return;
+    }
     const uuids = extractUuidsOnLine(text, cursorPos);
     const key = uuids.join(',');
     if (key === lastDetectedUuidsRef.current) return;
@@ -1494,9 +1506,13 @@ function Editor(props) {
         setCursorStructureIndex(0);
       });
     }, 200);
-  }, []);
+  }, [autoComplete.idAssist]);
 
   const detectFuncHint = useCallback((text, cursorPos) => {
+    if (!autoComplete.funcHint) {
+      setFuncHint(null);
+      return;
+    }
     const result = detectTemplateFunc(text, cursorPos);
     if (!result) {
       setFuncHint(null);
@@ -1517,7 +1533,7 @@ function Editor(props) {
       }
     }
     setFuncHint({ ...candidate, activeArg: result.argIndex });
-  }, [resolvedCandidates]);
+  }, [resolvedCandidates, autoComplete.funcHint]);
 
   /**
    * カーソル移動時にプレビューのスクロール位置を追従させる + ID 検出
@@ -2116,7 +2132,12 @@ function Editor(props) {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setViewer(e.showPreview);
-        setAutoComplete(e.autoComplete !== false);
+        if (e.autoComplete && typeof e.autoComplete === 'object') {
+          setAutoComplete(e.autoComplete);
+        } else {
+          const v = e.autoComplete !== false;
+          setAutoComplete({ template: v, idAssist: v, autoClose: v, funcHint: v, mermaid: v });
+        }
         editorSettingRef.current = e;
       }
     }).catch((err) => {

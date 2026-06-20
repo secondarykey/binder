@@ -184,6 +184,13 @@
         "wordWrap" : "テキストの折り返し",
         "showPreview" : "プレビューの表示",
         "autoComplete" : "入力補助（オートコンプリート）",
+        "ac" : {
+            "template" : "テンプレート補完",
+            "idAssist" : "ID補助",
+            "autoClose" : "自動閉じタグ",
+            "funcHint" : "関数ヒント",
+            "mermaid" : "Mermaid補完"
+        },
         "fontSetting" : "フォント設定",
         "editorArgs" : "エディタ引数",
         "editorArgsError" : "エディタ引数に {file} または {bfile} を含めてください",

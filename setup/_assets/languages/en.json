@@ -184,6 +184,13 @@
         "wordWrap" : "Word Wrap",
         "showPreview" : "Show Preview",
         "autoComplete" : "Auto Complete",
+        "ac" : {
+            "template" : "Template Completion",
+            "idAssist" : "ID Assist",
+            "autoClose" : "Auto Close Tag",
+            "funcHint" : "Function Hint",
+            "mermaid" : "Mermaid Completion"
+        },
         "fontSetting" : "Font Setting",
         "editorArgs" : "Editor Arguments",
         "editorArgsError" : "Editor arguments must contain {file} or {bfile}",
