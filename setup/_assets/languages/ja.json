@@ -776,7 +776,11 @@
             "c4deployment"       : "C4 デプロイメント図",
             "zenuml"             : "ZenUML シーケンス図",
             "radar"              : "レーダーチャート",
-            "treemap"            : "ツリーマップ"
+            "treemap"            : "ツリーマップ",
+            "treeView"           : "ツリービュー",
+            "wardley"            : "ワードリーマップ",
+            "ishikawa"           : "フィッシュボーン図 (特性要因図)",
+            "venn"               : "ベン図"
         }
     }
 }

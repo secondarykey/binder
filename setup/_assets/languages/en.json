@@ -776,7 +776,11 @@
             "c4deployment"       : "C4 Deployment Diagram",
             "zenuml"             : "ZenUML Sequence Diagram",
             "radar"              : "Radar Chart",
-            "treemap"            : "Treemap"
+            "treemap"            : "Treemap",
+            "treeView"           : "Tree View",
+            "wardley"            : "Wardley Map",
+            "ishikawa"           : "Fishbone Diagram (Ishikawa)",
+            "venn"               : "Venn Diagram"
         }
     }
 }
