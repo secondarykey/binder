@@ -129,22 +129,29 @@ class MermaidScript {
   }
 
   /**
-   * 登録済みダイアグラムのキーワード一覧を返す。
-   * 各エントリの id を detectType に渡し、有効なもののみ返す。
+   * 有効なダイアグラムキーワード一覧を返す。
+   * knownKeywords と getRegisteredDiagramsMetadata() をマージし、
+   * detectType() で実際に有効なもののみ返す。
+   * @param {string[]} knownKeywords - 既知のキーワード候補
    * @returns {Promise<string[]>} ダイアグラムキーワードの配列
    */
-  static async getDiagramTypes() {
+  static async getDiagramTypes(knownKeywords = []) {
     if (!this.isExists()) {
       await this.init(null, DefaultOpts);
     }
     const m = globalThis.mermaid;
-    if (!m?.getRegisteredDiagramsMetadata) return [];
-    const meta = m.getRegisteredDiagramsMetadata();
+    if (!m?.detectType) return [];
+    const candidates = new Set(knownKeywords);
+    if (m.getRegisteredDiagramsMetadata) {
+      for (const o of m.getRegisteredDiagramsMetadata()) {
+        candidates.add(o.id);
+      }
+    }
     const types = [];
-    for (const o of meta) {
+    for (const id of candidates) {
       try {
-        m.detectType(o.id);
-        types.push(o.id);
+        m.detectType(id);
+        types.push(id);
       } catch {
         // detectType が例外を投げる = 無効なキーワード
       }
