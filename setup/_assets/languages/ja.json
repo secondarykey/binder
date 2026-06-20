@@ -774,7 +774,9 @@
             "c4component"        : "C4 コンポーネント図",
             "c4dynamic"          : "C4 動的図",
             "c4deployment"       : "C4 デプロイメント図",
-            "zenuml"             : "ZenUML シーケンス図"
+            "zenuml"             : "ZenUML シーケンス図",
+            "radar"              : "レーダーチャート",
+            "treemap"            : "ツリーマップ"
         }
     }
 }

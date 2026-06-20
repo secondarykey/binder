@@ -774,7 +774,9 @@
             "c4component"        : "C4 Component Diagram",
             "c4dynamic"          : "C4 Dynamic Diagram",
             "c4deployment"       : "C4 Deployment Diagram",
-            "zenuml"             : "ZenUML Sequence Diagram"
+            "zenuml"             : "ZenUML Sequence Diagram",
+            "radar"              : "Radar Chart",
+            "treemap"            : "Treemap"
         }
     }
 }

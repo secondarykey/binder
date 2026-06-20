@@ -8,7 +8,7 @@ export const mermaidKnownKeywords = [
   'quadrantChart', 'xychart-beta', 'sankey-beta', 'block-beta', 'packet-beta',
   'kanban', 'architecture-beta', 'requirementDiagram',
   'C4Context', 'C4Container', 'C4Component', 'C4Dynamic', 'C4Deployment',
-  'zenuml',
+  'zenuml', 'radar-beta', 'treemap-beta',
 ];
 
 const mermaidI18nMap = {
@@ -38,6 +38,8 @@ const mermaidI18nMap = {
   'C4Dynamic':          'autocomplete.mermaid.c4dynamic',
   'C4Deployment':       'autocomplete.mermaid.c4deployment',
   'zenuml':             'autocomplete.mermaid.zenuml',
+  'radar-beta':         'autocomplete.mermaid.radar',
+  'treemap-beta':       'autocomplete.mermaid.treemap',
 };
 
 /**
