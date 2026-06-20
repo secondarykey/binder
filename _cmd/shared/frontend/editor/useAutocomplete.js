@@ -154,15 +154,23 @@ export function useAutocomplete({ triggers = [], textareaSelector = '#editor', c
 
     for (const trigger of triggers) {
       const t = trigger.trigger;
-      const searchStart = Math.max(0, cursorPos - t.length - 100);
-      const searchText = textBeforeCursor.substring(searchStart);
-      const triggerIdx = searchText.lastIndexOf(t);
-      if (triggerIdx === -1) continue;
+      let absoluteTriggerIdx, filterText;
 
-      const absoluteTriggerIdx = searchStart + triggerIdx;
-      const filterText = textBeforeCursor.substring(absoluteTriggerIdx + t.length);
+      if (trigger.lineStart) {
+        const lastNL = textBeforeCursor.lastIndexOf('\n');
+        absoluteTriggerIdx = lastNL + 1;
+        filterText = textBeforeCursor.substring(absoluteTriggerIdx);
+      } else {
+        const searchStart = Math.max(0, cursorPos - t.length - 100);
+        const searchText = textBeforeCursor.substring(searchStart);
+        const triggerIdx = searchText.lastIndexOf(t);
+        if (triggerIdx === -1) continue;
 
-      if (/[\n\r]/.test(filterText)) continue;
+        absoluteTriggerIdx = searchStart + triggerIdx;
+        filterText = textBeforeCursor.substring(absoluteTriggerIdx + t.length);
+
+        if (/[\n\r]/.test(filterText)) continue;
+      }
 
       const rawResult = typeof trigger.candidates === 'function'
         ? trigger.candidates(filterText)

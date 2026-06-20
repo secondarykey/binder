@@ -747,6 +747,34 @@
         "dotDiagramAlias"  : "Alias",
         "dotDiagramPublish": "Publish date",
         "dotDiagramCreated": "Created date",
-        "dotDiagramUpdated": "Updated date"
+        "dotDiagramUpdated": "Updated date",
+        "mermaid" : {
+            "graph"              : "Flowchart (graph)",
+            "flowchart"          : "Flowchart (flowchart)",
+            "sequenceDiagram"    : "Sequence Diagram",
+            "classDiagram"       : "Class Diagram",
+            "stateDiagram"       : "State Diagram",
+            "erDiagram"          : "Entity Relationship Diagram",
+            "gantt"              : "Gantt Chart",
+            "pie"                : "Pie Chart",
+            "gitGraph"           : "Git Graph",
+            "journey"            : "User Journey",
+            "mindmap"            : "Mind Map",
+            "timeline"           : "Timeline",
+            "quadrantChart"      : "Quadrant Chart",
+            "xychart"            : "XY Chart",
+            "sankey"             : "Sankey Diagram",
+            "block"              : "Block Diagram",
+            "packet"             : "Packet Diagram",
+            "kanban"             : "Kanban Board",
+            "architecture"       : "Architecture Diagram",
+            "requirementDiagram" : "Requirement Diagram",
+            "c4context"          : "C4 Context Diagram",
+            "c4container"        : "C4 Container Diagram",
+            "c4component"        : "C4 Component Diagram",
+            "c4dynamic"          : "C4 Dynamic Diagram",
+            "c4deployment"       : "C4 Deployment Diagram",
+            "zenuml"             : "ZenUML Sequence Diagram"
+        }
     }
 }

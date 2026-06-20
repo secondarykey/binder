@@ -747,6 +747,34 @@
         "dotDiagramAlias"  : "エイリアス",
         "dotDiagramPublish": "公開日",
         "dotDiagramCreated": "作成日",
-        "dotDiagramUpdated": "更新日"
+        "dotDiagramUpdated": "更新日",
+        "mermaid" : {
+            "graph"              : "フローチャート (graph)",
+            "flowchart"          : "フローチャート (flowchart)",
+            "sequenceDiagram"    : "シーケンス図",
+            "classDiagram"       : "クラス図",
+            "stateDiagram"       : "状態遷移図",
+            "erDiagram"          : "ER図",
+            "gantt"              : "ガントチャート",
+            "pie"                : "円グラフ",
+            "gitGraph"           : "Gitグラフ",
+            "journey"            : "ユーザージャーニー",
+            "mindmap"            : "マインドマップ",
+            "timeline"           : "タイムライン",
+            "quadrantChart"      : "四象限チャート",
+            "xychart"            : "XYチャート",
+            "sankey"             : "サンキー図",
+            "block"              : "ブロック図",
+            "packet"             : "パケット図",
+            "kanban"             : "カンバンボード",
+            "architecture"       : "アーキテクチャ図",
+            "requirementDiagram" : "要件図",
+            "c4context"          : "C4 コンテキスト図",
+            "c4container"        : "C4 コンテナ図",
+            "c4component"        : "C4 コンポーネント図",
+            "c4dynamic"          : "C4 動的図",
+            "c4deployment"       : "C4 デプロイメント図",
+            "zenuml"             : "ZenUML シーケンス図"
+        }
     }
 }
