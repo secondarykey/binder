@@ -2,6 +2,15 @@
  * Mermaid ダイアグラムタイプの i18n マッピング。
  * キーはダイアグラムキーワード、値は i18n リソースID。
  */
+export const mermaidKnownKeywords = [
+  'graph', 'flowchart', 'sequenceDiagram', 'classDiagram', 'stateDiagram-v2',
+  'erDiagram', 'gantt', 'pie', 'gitGraph', 'journey', 'mindmap', 'timeline',
+  'quadrantChart', 'xychart-beta', 'sankey-beta', 'block-beta', 'packet-beta',
+  'kanban', 'architecture-beta', 'requirementDiagram',
+  'C4Context', 'C4Container', 'C4Component', 'C4Dynamic', 'C4Deployment',
+  'zenuml',
+];
+
 const mermaidI18nMap = {
   'graph':              'autocomplete.mermaid.graph',
   'flowchart':          'autocomplete.mermaid.flowchart',

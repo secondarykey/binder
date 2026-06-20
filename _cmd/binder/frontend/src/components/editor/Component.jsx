@@ -22,7 +22,7 @@ import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@s
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
-import { buildMermaidCandidates } from "@shared/editor/mermaid-candidates";
+import { buildMermaidCandidates, mermaidKnownKeywords } from "@shared/editor/mermaid-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
@@ -513,7 +513,7 @@ function Editor(props) {
   const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
   const [resolvedMermaidCandidates, setResolvedMermaidCandidates] = useState([]);
   useEffect(() => {
-    Mermaid.getDiagramTypes().then(types => {
+    Mermaid.getDiagramTypes(mermaidKnownKeywords).then(types => {
       setResolvedMermaidCandidates(buildMermaidCandidates(types, t));
     }).catch(() => {});
   }, [t]);
