@@ -22,7 +22,7 @@ import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@s
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
-import { buildMermaidCandidates, mermaidKnownKeywords } from "@shared/editor/mermaid-candidates";
+import { buildMermaidCandidates, buildMermaidSyntaxMap, buildMermaidDirections, mermaidKnownKeywords, mermaidDirectionTypes } from "@shared/editor/mermaid-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
@@ -511,12 +511,44 @@ function Editor(props) {
     arr.map(c => ({ ...c, detail: t(c.detail) })), [t]);
 
   const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
-  const [resolvedMermaidCandidates, setResolvedMermaidCandidates] = useState([]);
+  const [mermaidTypeCandidates, setMermaidTypeCandidates] = useState([]);
+  const mermaidSyntaxMapRef = useRef({});
+  const mermaidDirectionsRef = useRef([]);
   useEffect(() => {
+    mermaidSyntaxMapRef.current = buildMermaidSyntaxMap(t);
+    mermaidDirectionsRef.current = buildMermaidDirections(t);
     Mermaid.getDiagramTypes(mermaidKnownKeywords).then(types => {
-      setResolvedMermaidCandidates(buildMermaidCandidates(types, t));
+      setMermaidTypeCandidates(buildMermaidCandidates(types, t));
     }).catch(() => {});
   }, [t]);
+
+  const getMermaidCandidates = useCallback((filterText) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return mermaidTypeCandidates;
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const beforeCursor = text.substring(0, cursorPos);
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const isFirstLine = lineStart === 0;
+
+    if (isFirstLine) {
+      const parts = filterText.split(/\s+/);
+      if (parts.length >= 2) {
+        const diagramType = parts[0];
+        if (mermaidDirectionTypes.has(diagramType)) {
+          return { items: mermaidDirectionsRef.current, filterKey: parts[parts.length - 1] };
+        }
+        return [];
+      }
+      return mermaidTypeCandidates;
+    }
+
+    const firstLine = text.substring(0, text.indexOf('\n') >= 0 ? text.indexOf('\n') : text.length).trim();
+    const diagramType = firstLine.split(/\s+/)[0];
+    const syntaxItems = mermaidSyntaxMapRef.current[diagramType];
+    if (syntaxItems) return syntaxItems;
+    return [];
+  }, [mermaidTypeCandidates]);
 
   const resolvedDotTopLevel = useMemo(() => resolveI18n(dotTopLevelCandidates), [resolveI18n]);
   const resolvedDotHome = useMemo(() => resolveI18n(dotHomeFields), [resolveI18n]);
@@ -604,14 +636,14 @@ function Editor(props) {
   const autocompleteTriggers = useMemo(() => {
     if (!autoComplete) return [];
     if (mode === Mode.diagram) {
-      return [{ trigger: '', lineStart: true, candidates: resolvedMermaidCandidates }];
+      return [{ trigger: '', lineStart: true, candidates: getMermaidCandidates }];
     }
     return [
       { trigger: '{{', candidates: getTemplateCandidates },
       { trigger: '.', candidates: getDotCandidates },
       { trigger: '"', candidates: getIdCandidates },
     ];
-  }, [autoComplete, mode, resolvedMermaidCandidates, getTemplateCandidates, getDotCandidates, getIdCandidates]);
+  }, [autoComplete, mode, getMermaidCandidates, getTemplateCandidates, getDotCandidates, getIdCandidates]);
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
