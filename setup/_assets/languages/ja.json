@@ -215,6 +215,7 @@
         "autoSaveInterval" : "間隔",
         "autoSaveMinutes" : "分",
         "autoSaveOnClose" : "閉じる時に保存",
+        "autoSaveOnLeave" : "一覧に戻る時に保存",
         "autoSaveHint" : "バインダーを開いている間、一定間隔で変更を全体記録します。コメントは「Auto Save」が接頭子になります。",
         "autoSaved" : "自動保存しました（{{num}}件）"
     },

@@ -215,6 +215,7 @@
         "autoSaveInterval" : "Every",
         "autoSaveMinutes" : "min",
         "autoSaveOnClose" : "Save on close",
+        "autoSaveOnLeave" : "Save when leaving a binder",
         "autoSaveHint" : "Periodically record all changes while a binder is open. Commit messages are prefixed with \"Auto Save\".",
         "autoSaved" : "Auto saved ({{num}} items)"
     },

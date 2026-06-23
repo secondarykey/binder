@@ -53,6 +53,7 @@ function Setting({ isModal, ...props }) {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [autoSaveInterval, setAutoSaveInterval] = useState(30);
   const [autoSaveOnClose, setAutoSaveOnClose] = useState(true);
+  const [autoSaveOnLeave, setAutoSaveOnLeave] = useState(false);
 
   useEffect(() => {
 
@@ -94,6 +95,7 @@ function Setting({ isModal, ...props }) {
         setAutoSaveEnabled(!!a.enabled);
         setAutoSaveInterval(a.intervalMinutes > 0 ? a.intervalMinutes : 30);
         setAutoSaveOnClose(!!a.onClose);
+        setAutoSaveOnLeave(!!a.onLeave);
       }
     }).catch(() => {});
   }, []);
@@ -144,7 +146,7 @@ function Setting({ isModal, ...props }) {
     path.openWithItem = pathOpenWith;
 
     const interval = autoSaveInterval > 0 ? autoSaveInterval : 30;
-    const autoSave = { enabled: autoSaveEnabled, intervalMinutes: interval, onClose: autoSaveOnClose };
+    const autoSave = { enabled: autoSaveEnabled, intervalMinutes: interval, onClose: autoSaveOnClose, onLeave: autoSaveOnLeave };
 
     Promise.all([SavePath(path), SaveAutoSave(autoSave)]).then(() => {
       // 自動保存ループの再設定をメインウィンドウへ通知
@@ -410,6 +412,13 @@ function Setting({ isModal, ...props }) {
                         <Switch checked={autoSaveOnClose} onChange={(e) => setAutoSaveOnClose(e.target.checked)} size="small" />
                       }
                       label={t("setting.autoSaveOnClose")}
+                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch checked={autoSaveOnLeave} onChange={(e) => setAutoSaveOnLeave(e.target.checked)} size="small" />
+                      }
+                      label={t("setting.autoSaveOnLeave")}
                       sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
                     />
                   </Box>

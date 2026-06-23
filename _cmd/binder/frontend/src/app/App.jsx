@@ -458,13 +458,27 @@ function App() {
       }
       currentBinderDir = null;
     }
-    CloseBinder().then(() => {
-      setPageTitle("");
-      setBinderName("");
-      nav("/");
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    });
+    // バインダーを閉じる処理（CloseBinder で current が nil になるため、保存は必ずこの前に行う）
+    const closeAndGoHome = () => {
+      CloseBinder().then(() => {
+        setPageTitle("");
+        setBinderName("");
+        nav("/");
+      }).catch((err) => {
+        evt.showErrorMessage(err);
+      });
+    };
+    // 設定「バインダーを離れる時に保存」が有効なら、閉じる前に全体コミットする
+    GetAutoSave().then((a) => {
+      if (a && a.onLeave) {
+        return AutoSave().then((n) => {
+          if (n > 0) {
+            evt.commitDone();
+            evt.showSuccessMessage(t("setting.autoSaved", { num: n }));
+          }
+        }).catch(() => {});
+      }
+    }).finally(closeAndGoHome);
   }
 
   const handlePin = () => {

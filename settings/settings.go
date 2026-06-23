@@ -43,8 +43,11 @@ type AutoSave struct {
 	Enabled bool `json:"enabled"`
 	// IntervalMinutes は自動保存の間隔（分）。デフォルト30。
 	IntervalMinutes int `json:"intervalMinutes"`
-	// OnClose はウィンドウを閉じる時に保存するかどうか（間隔保存とは独立）。
+	// OnClose はアプリを閉じる時に保存するかどうか（間隔保存とは独立）。
 	OnClose bool `json:"onClose"`
+	// OnLeave はバインダーを離れる（一覧に戻る）時に保存するかどうか。
+	// 未記録の編集はディスクに残るため、既定はOFF（記録を先送りしたいケースを尊重）。
+	OnLeave bool `json:"onLeave"`
 }
 
 // DefaultAutoSaveInterval は自動保存間隔のデフォルト値（分）。
@@ -323,11 +326,12 @@ func def() *Setting {
 	// CDNホワイトリストのデフォルト
 	set.AllowedCDNs = defaultAllowedCDNs()
 
-	// 自動保存のデフォルト（間隔30分・閉じる時保存）
+	// 自動保存のデフォルト（間隔30分・閉じる時保存・一覧に戻る時は保存しない）
 	set.AutoSave = &AutoSave{
 		Enabled:         true,
 		IntervalMinutes: DefaultAutoSaveInterval,
 		OnClose:         true,
+		OnLeave:         false,
 	}
 
 	return &set
@@ -494,6 +498,7 @@ func SaveAutoSave(a *AutoSave) error {
 		Enabled:         a.Enabled,
 		IntervalMinutes: interval,
 		OnClose:         a.OnClose,
+		OnLeave:         a.OnLeave,
 	}
 	return obj.save()
 }
