@@ -22,7 +22,6 @@ func (a *App) Setup() (*settings.Setting, error) {
 }
 
 func (a *App) CheckCompat(dir string) (result *setup.CompatResult, err error) {
-	defer log.Timer("api.CheckCompat total")()
 	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
 	defer func() {
 		if r := recover(); r != nil {

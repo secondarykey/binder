@@ -876,9 +876,7 @@ function Editor(props) {
       if (editorSettingRef.current) {
         setViewer(editorSettingRef.current.showPreview);
       }
-      const tNote = performance.now();
       OpenNote(id).then((resp) => {
-        console.debug(`[timing] OpenNote: ${(performance.now() - tNote).toFixed(1)}ms`);
         fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
@@ -886,7 +884,6 @@ function Editor(props) {
       });
 
       GetNote(id).then((resp) => {
-        console.debug(`[timing] GetNote: ${(performance.now() - tNote).toFixed(1)}ms`);
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
@@ -1273,11 +1270,8 @@ function Editor(props) {
         return;
       }
 
-      const tRender = performance.now();
       var result = await createMarked(id, txt, true, true);
-      console.debug(`[timing] viewHTML createMarked: ${(performance.now() - tRender).toFixed(1)}ms`);
       const noteResult = await CreateNoteHTML(id, true, result.html);
-      console.debug(`[timing] viewHTML CreateNoteHTML: ${(performance.now() - tRender).toFixed(1)}ms`);
       const allWarnings = [...(result.warnings || []), ...(noteResult.warnings || [])];
       if (noteResult.error) {
         setParseStatus({ status: "error", err: noteResult.error, warnings: allWarnings });
