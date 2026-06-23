@@ -7,9 +7,17 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"sync"
+	"time"
 
 	"golang.org/x/xerrors"
 )
+
+// saveMu は setting.json への保存（temp 書き込み + rename）を直列化する。
+// Wails のメソッドは別 goroutine で実行されるため、SaveHistory / SaveStartupOk /
+// SaveLastData / SavePosition 等が並行すると rename が競合し、Windows で
+// "Access is denied" になる。プロセス内の保存を直列化してこれを防ぐ。
+var saveMu sync.Mutex
 
 const (
 	DirName          = ".binder"
@@ -92,14 +100,60 @@ type Look struct {
 }
 
 type Editor struct {
-	Program         string       `json:"program"`
-	Args            string       `json:"args"`
-	GitBash         bool         `json:"gitbash"`
-	ShowLineNumbers bool         `json:"showLineNumbers"`
-	WordWrap        bool         `json:"wordWrap"`
-	ShowPreview     bool         `json:"showPreview"`
-	TabSize         int          `json:"tabSize"`
-	ThemeFonts      []*ThemeFont `json:"themeFont"`
+	Program         string              `json:"program"`
+	Args            string              `json:"args"`
+	GitBash         bool                `json:"gitbash"`
+	ShowLineNumbers bool                `json:"showLineNumbers"`
+	WordWrap        bool                `json:"wordWrap"`
+	ShowPreview     bool                `json:"showPreview"`
+	AutoComplete    *AutoCompleteConfig `json:"autoComplete,omitempty"`
+	TabSize         int                 `json:"tabSize"`
+	ThemeFonts      []*ThemeFont        `json:"themeFont"`
+}
+
+type AutoCompleteConfig struct {
+	Template   bool `json:"template"`
+	IdAssist   bool `json:"idAssist"`
+	AutoClose  bool `json:"autoClose"`
+	FuncHint   bool `json:"funcHint"`
+	Mermaid    bool `json:"mermaid"`
+}
+
+func (e *Editor) UnmarshalJSON(data []byte) error {
+	type Alias Editor
+	aux := &struct {
+		*Alias
+		RawAutoComplete json.RawMessage `json:"autoComplete,omitempty"`
+	}{Alias: (*Alias)(e)}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	if len(aux.RawAutoComplete) > 0 {
+		var boolVal bool
+		if err := json.Unmarshal(aux.RawAutoComplete, &boolVal); err == nil {
+			if boolVal {
+				e.AutoComplete = defaultAutoCompleteConfig()
+			} else {
+				e.AutoComplete = &AutoCompleteConfig{}
+			}
+			return nil
+		}
+		var cfg AutoCompleteConfig
+		if err := json.Unmarshal(aux.RawAutoComplete, &cfg); err == nil {
+			e.AutoComplete = &cfg
+		}
+	}
+	return nil
+}
+
+func defaultAutoCompleteConfig() *AutoCompleteConfig {
+	return &AutoCompleteConfig{
+		Template:  true,
+		IdAssist:  true,
+		AutoClose: true,
+		FuncHint:  true,
+		Mermaid:   true,
+	}
 }
 
 type ThemeFont struct {
@@ -140,6 +194,9 @@ func Get() *Setting {
 	}
 	if pSet.Look.Editor.TabSize <= 0 {
 		pSet.Look.Editor.TabSize = 4
+	}
+	if pSet.Look.Editor.AutoComplete == nil {
+		pSet.Look.Editor.AutoComplete = defaultAutoCompleteConfig()
 	}
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
@@ -323,6 +380,13 @@ func SaveStartupOk(ok bool) error {
 	return obj.save()
 }
 
+// MarkStartupOk は StartupOk フラグをメモリ上で true にするだけで保存はしない。
+// 直後に走る別の保存（LoadBinder の SaveHistory 等）に相乗りして永続化させることで、
+// 余計なファイル書き込みを増やさずに済ませるために使う。
+func MarkStartupOk() {
+	Get().Path.StartupOk = true
+}
+
 func SaveLastData(dataType, id string) error {
 	obj := Get()
 	obj.Path.LastDataType = dataType
@@ -349,6 +413,9 @@ func SaveEditor(e *Editor) error {
 	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
 	obj.Look.Editor.WordWrap = e.WordWrap
 	obj.Look.Editor.ShowPreview = e.ShowPreview
+	if e.AutoComplete != nil {
+		obj.Look.Editor.AutoComplete = e.AutoComplete
+	}
 	obj.Look.Editor.TabSize = e.TabSize
 	obj.Look.Editor.ThemeFonts = e.ThemeFonts
 	return obj.save()
@@ -435,6 +502,10 @@ func SavePosition(pos *Position) error {
 
 func (s *Setting) save() error {
 
+	// プロセス内の保存を直列化（並行 rename による Windows "Access is denied" 回避）
+	saveMu.Lock()
+	defer saveMu.Unlock()
+
 	fn := getFilePath()
 
 	data, err := json.Marshal(s)
@@ -459,13 +530,19 @@ func (s *Setting) save() error {
 		return xerrors.Errorf("tmp.Close() error: %w", err)
 	}
 
-	if err := os.Rename(tmpName, fn); err != nil {
-		os.Remove(tmpName)
-		return xerrors.Errorf("os.Rename() error: %w", err)
+	// Windows ではウイルス対策・インデクサ等が対象ファイルを一時的にロックして
+	// rename が Access denied になることがあるため、数回リトライする。
+	var renameErr error
+	for i := 0; i < 5; i++ {
+		if renameErr = os.Rename(tmpName, fn); renameErr == nil {
+			pSet = s
+			return nil
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 
-	pSet = s
-	return nil
+	os.Remove(tmpName)
+	return xerrors.Errorf("os.Rename() error: %w", renameErr)
 }
 
 func load() (*Setting, error) {

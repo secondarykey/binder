@@ -119,12 +119,18 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 func Load(dir string) (*Binder, error) {
 
 	log.Notice("Load Binder:%s", dir)
+	defer log.Timer("binder.Load total")()
+
+	doneFs := log.Timer("binder.Load: fs.Load")
 	bfs, err := fs.Load(dir)
+	doneFs()
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
 	}
 
+	doneCheck := log.Timer("binder.Load: setup.CheckDirectory")
 	err = setup.CheckDirectory(dir, false)
+	doneCheck()
 	if err != nil {
 		return nil, xerrors.Errorf("setup.CheckDirectory() error: %w", err)
 	}
@@ -137,6 +143,7 @@ func Load(dir string) (*Binder, error) {
 		}
 	}
 
+	doneDB := log.Timer("binder.Load: db.New+Open")
 	inst, err := db.New(bfs.DatabaseDir())
 	if err != nil {
 		return nil, xerrors.Errorf("db.New() error: %w", err)
@@ -146,6 +153,7 @@ func Load(dir string) (*Binder, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("db.Open() error: %w", err)
 	}
+	doneDB()
 
 	var b Binder
 	b.dir = dir
@@ -153,6 +161,8 @@ func Load(dir string) (*Binder, error) {
 	b.db = inst
 
 	// バインダーのユーザ情報をコミット署名に設定
+	doneUser := log.Timer("binder.Load: user data")
+	defer doneUser()
 	key, err := setup.GetUserKey()
 	if err != nil {
 		log.Warn("Load: GetUserKey():\n%+v", err)

@@ -14,6 +14,7 @@ import (
 func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
+	defer log.Timer("api.LoadBinder total")()
 
 	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
 	defer func() {
@@ -42,12 +43,24 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	a.SetCurrent(b)
 
+	// バインダーを問題なく開けた = この起動は安全と確定できるので、
+	// クラッシュ検出フラグ StartupOk を true に戻す（次回起動で自動オープンを許可）。
+	// 起動時は StartupOk(false) を書いており、従来は正常終了時のみ true に戻していたが、
+	// 開発モードのホットリロード等で正常終了しないと false のまま残るため、
+	// 最初のバインダーを開けた時点で true にする。
+	// 保存は直後の SaveHistory に相乗りさせ、書き込み回数を増やさない（メモリ上で立てるだけ）。
+	if !a.startupOkSaved {
+		settings.MarkStartupOk()
+		a.startupOkSaved = true
+	}
+
 	address, err := a.Address()
 	if err != nil {
 		return "", xerrors.Errorf("Binder Address() error: %w", err)
 	}
 
-	// 履歴を保存（最近開いたバインダーを先頭にする）
+	// 履歴を保存（最近開いたバインダーを先頭にする）。
+	// 上で立てた StartupOk もこの save() で一緒に永続化される。
 	if err := settings.SaveHistory(dir); err != nil {
 		log.Warn("SaveHistory error:\n%+v", err)
 	}

@@ -77,8 +77,7 @@
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   padding: 6px 8px;
-  min-width: 320px;
-  max-width: 500px;
+  width: 420px;
 }
 
 .editorSearchRow {
@@ -145,6 +144,69 @@
   color: #000;
   border-radius: 2px;
   padding: 0 1px;
+}
+
+.editorSearchReplaceBtn {
+  background: var(--bg-surface, #2a2a2a);
+  color: var(--text-primary, #e0e0e0);
+  border: 1px solid var(--border-input, #555);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.editorSearchReplaceBtn:hover:not(:disabled) {
+  background: var(--hover-overlay, rgba(255,255,255,0.08));
+}
+
+.editorSearchReplaceBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* === オートコンプリートポップアップ === */
+.editorAutocomplete {
+  position: absolute;
+  z-index: 40;
+  background-color: color-mix(in srgb, var(--bg-elevated) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-input) 60%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 140px;
+  padding: 4px 0;
+}
+
+.editorAutocompleteItem {
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.editorAutocompleteItem:hover,
+.editorAutocompleteItem.active {
+  background-color: var(--hover-overlay);
+}
+
+.editorAutocompleteLabel {
+  flex-shrink: 0;
+}
+
+.editorAutocompleteDetail {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* === プレビュー iframe === */

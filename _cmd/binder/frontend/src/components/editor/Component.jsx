@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef, useCallback } from "react"
+import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
@@ -17,8 +17,14 @@ import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
-import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
+import Autocomplete from "./Autocomplete.jsx";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView } from "@shared/editor/markdown-keys";
+import { getCaretPosition } from "@shared/editor/caret-position";
+import { useAutocomplete } from "@shared/editor/useAutocomplete";
+import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
+import { buildMermaidCandidates, buildMermaidSyntaxMap, buildMermaidDirections, mermaidKnownKeywords, mermaidDirectionTypes } from "@shared/editor/mermaid-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
+import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
 import Event, { EventContext } from "../../Event.jsx";
@@ -64,41 +70,6 @@ import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 import LayerEditor from "../../components/LayerEditor.jsx";
 import CommitBar from "../../components/CommitBar.jsx";
-
-/**
- * textarea のカーソル位置からビューポート座標を取得する
- */
-function getCaretPosition(textarea) {
-  if (!textarea) return null;
-  const mirror = document.createElement('div');
-  const style = window.getComputedStyle(textarea);
-  for (const prop of style) {
-    mirror.style.setProperty(prop, style.getPropertyValue(prop));
-  }
-  mirror.style.position = 'absolute';
-  mirror.style.visibility = 'hidden';
-  mirror.style.overflow = 'hidden';
-  mirror.style.whiteSpace = 'pre-wrap';
-  mirror.style.wordWrap = 'break-word';
-  mirror.style.width = textarea.clientWidth + 'px';
-  mirror.style.height = 'auto';
-
-  const text = textarea.value.substring(0, textarea.selectionStart);
-  mirror.textContent = text;
-  const span = document.createElement('span');
-  span.textContent = textarea.value.substring(textarea.selectionStart) || '.';
-  mirror.appendChild(span);
-  document.body.appendChild(mirror);
-
-  const rect = textarea.getBoundingClientRect();
-  const spanRect = span.getBoundingClientRect();
-  const mirrorRect = mirror.getBoundingClientRect();
-
-  const top = rect.top + (spanRect.top - mirrorRect.top) - textarea.scrollTop;
-  const left = rect.left + (spanRect.left - mirrorRect.left) - textarea.scrollLeft;
-  document.body.removeChild(mirror);
-  return { top: Math.min(Math.max(top, rect.top), rect.bottom), left: Math.min(Math.max(left, rect.left), rect.right) };
-}
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -402,8 +373,13 @@ function Editor(props) {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   // テキスト折り返しトグル
   const [wordWrap, setWordWrap] = useState(true);
+  // オートコンプリート設定
+  const [autoComplete, setAutoComplete] = useState({
+    template: true, idAssist: true, autoClose: true, funcHint: true, mermaid: true,
+  });
   // テキスト検索バーの表示状態
   const [searchOpen, setSearchOpen] = useState(false);
+  const [replaceMode, setReplaceMode] = useState(false);
   // 検索でアクティブな行番号（1始まり、null = なし）
   const [activeMatchLine, setActiveMatchLine] = useState(null);
 
@@ -450,6 +426,8 @@ function Editor(props) {
   const [cursorStructureIndex, setCursorStructureIndex] = useState(0);
   const idDetectTimerRef = useRef(null);
   const lastDetectedUuidsRef = useRef(null);
+  // テンプレート関数ヒント
+  const [funcHint, setFuncHint] = useState(null);
 
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
@@ -487,6 +465,199 @@ function Editor(props) {
   const composingRef = useRef(false);
   const [cursorLine, setCursorLine] = useState(1);
 
+  // オートコンプリートの挿入処理
+  const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(replaceStart, replaceEnd);
+    // replaceStart がトリガー文字列の位置かどうかで挿入テキストを分岐
+    const atTrigger = textarea.value.substring(replaceStart, replaceStart + trigger.length) === trigger;
+    let insertText;
+    let cursorOffset = 0;
+    if (atTrigger) {
+      const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
+      const leadingSpaces = filterText.match(/^(\s*)/)[1];
+      insertText = trigger + leadingSpaces + selected;
+    } else {
+      insertText = selected;
+    }
+    if (trigger === '"') {
+      // ID候補選択時: 閉じ引用符を追加し、既存の閉じ引用符があればスキップ
+      insertText = '"' + selected + '"';
+      const afterEnd = textarea.value.charAt(replaceEnd);
+      if (afterEnd === '"') {
+        textarea.setSelectionRange(replaceStart, replaceEnd + 1);
+      }
+    } else if (trigger === '{{' && atTrigger) {
+      // ブロックキーワード選択時: 閉じタグを自動挿入
+      const candidate = goTemplateCandidates.find(c => c.label === selected);
+      if (candidate?.needsEnd && autoComplete.autoClose) {
+        const closing = ' }} {{end}}';
+        insertText += closing;
+        cursorOffset = -closing.length;
+      }
+    }
+    document.execCommand('insertText', false, insertText);
+    if (cursorOffset) {
+      const pos = textarea.selectionStart + cursorOffset;
+      textarea.setSelectionRange(pos, pos);
+    }
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    });
+  }, [mode, id, autoComplete.autoClose]);
+
+  const resolveI18n = useCallback((arr) =>
+    arr.map(c => ({ ...c, detail: t(c.detail) })), [t]);
+
+  const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
+  const [mermaidTypeCandidates, setMermaidTypeCandidates] = useState([]);
+  const mermaidSyntaxMapRef = useRef({});
+  const mermaidDirectionsRef = useRef([]);
+  useEffect(() => {
+    mermaidSyntaxMapRef.current = buildMermaidSyntaxMap(t);
+    mermaidDirectionsRef.current = buildMermaidDirections(t);
+    Mermaid.getDiagramTypes(mermaidKnownKeywords).then(types => {
+      setMermaidTypeCandidates(buildMermaidCandidates(types, t));
+    }).catch(() => {});
+  }, [t]);
+
+  const getMermaidCandidates = useCallback((filterText) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return mermaidTypeCandidates;
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const beforeCursor = text.substring(0, cursorPos);
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const isFirstLine = lineStart === 0;
+
+    if (isFirstLine) {
+      const parts = filterText.split(/\s+/);
+      if (parts.length >= 2) {
+        const diagramType = parts[0];
+        if (mermaidDirectionTypes.has(diagramType)) {
+          return { items: mermaidDirectionsRef.current, filterKey: parts[parts.length - 1] };
+        }
+        return [];
+      }
+      return mermaidTypeCandidates;
+    }
+
+    const firstLine = text.substring(0, text.indexOf('\n') >= 0 ? text.indexOf('\n') : text.length).trim();
+    const diagramType = firstLine.split(/\s+/)[0];
+    const syntaxItems = mermaidSyntaxMapRef.current[diagramType];
+    if (syntaxItems) return syntaxItems;
+    return [];
+  }, [mermaidTypeCandidates]);
+
+  const resolvedDotTopLevel = useMemo(() => resolveI18n(dotTopLevelCandidates), [resolveI18n]);
+  const resolvedDotHome = useMemo(() => resolveI18n(dotHomeFields), [resolveI18n]);
+  const resolvedDotNote = useMemo(() => resolveI18n(dotNoteFields), [resolveI18n]);
+  const resolvedDotDiagram = useMemo(() => resolveI18n(dotDiagramFields), [resolveI18n]);
+  const resolvedDotThisNote = useMemo(() => resolveI18n(dotThisNoteFields), [resolveI18n]);
+  const resolvedDotThisDiagram = useMemo(() => resolveI18n(dotThisDiagramFields), [resolveI18n]);
+
+  const resolvedDotThis = mode === Mode.diagram ? resolvedDotThisDiagram : resolvedDotThisNote;
+
+  const dotFieldMap = useMemo(() => ({
+    Home: resolvedDotHome,
+    This: resolvedDotThis,
+    Note: resolvedDotNote,
+    Diagram: resolvedDotDiagram,
+  }), [resolvedDotHome, resolvedDotThis, resolvedDotNote, resolvedDotDiagram]);
+
+  const getDotCandidates = useCallback(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return [];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const before = text.substring(0, cursorPos);
+    const openIdx = before.lastIndexOf('{{');
+    if (openIdx === -1) return [];
+    if (before.substring(openIdx + 2).includes('}}')) return [];
+    const lastDotIdx = before.lastIndexOf('.');
+    if (lastDotIdx <= openIdx) return [];
+    const beforeDot = before.substring(0, lastDotIdx);
+    const prevDotIdx = beforeDot.lastIndexOf('.');
+    if (prevDotIdx <= openIdx) return resolvedDotTopLevel;
+    const parentToken = beforeDot.substring(prevDotIdx + 1).trim();
+    return dotFieldMap[parentToken] || [];
+  }, [resolvedDotTopLevel, dotFieldMap]);
+
+  const getIdCandidates = useCallback(() => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return [];
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const result = detectTemplateFunc(text, cursorPos);
+    if (!result || result.argIndex < 0) return [];
+    let candidate = goTemplateCandidates.find(c => c.label === result.name);
+    if (!candidate) return [];
+    let argIndex = result.argIndex;
+    if (candidate.needsEnd && argIndex >= 1 && result.tokens?.length > 0) {
+      const innerName = result.tokens[0];
+      const innerCandidate = goTemplateCandidates.find(c => c.label === innerName);
+      if (innerCandidate?.args) {
+        candidate = innerCandidate;
+        argIndex = argIndex - 1;
+      }
+    }
+    if (!candidate.args) return [];
+    const arg = candidate.args[argIndex];
+    if (!arg || !arg.idType) return [];
+    const types = arg.idType.split(',');
+    return GetBinderTree().then((tree) => {
+      const all = flattenStructures(tree.data || []);
+      const filtered = all.filter(s => types.includes(s.type));
+      return filtered.map(s => ({
+        label: s.name || s.id,
+        detail: s.type,
+        insertText: s.id,
+      }));
+    }).catch(() => []);
+  }, []);
+
+  const getTemplateCandidates = useCallback((filterText) => {
+    const trimmed = (filterText || '').trim();
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      const keyword = parts[0];
+      const isBlock = goTemplateCandidates.some(c => c.label === keyword && c.needsEnd);
+      if (isBlock) {
+        const items = resolvedCandidates.filter(c =>
+          !c.needsEnd && c.label !== 'end' && c.label !== 'else' && c.label !== 'else if'
+        );
+        return { items, filterKey: parts[parts.length - 1] };
+      }
+    }
+    return resolvedCandidates;
+  }, [resolvedCandidates]);
+
+  const autocompleteTriggers = useMemo(() => {
+    if (mode === Mode.diagram) {
+      if (!autoComplete.mermaid) return [];
+      return [{ trigger: '', lineStart: true, candidates: getMermaidCandidates }];
+    }
+    const triggers = [];
+    if (autoComplete.template) {
+      triggers.push({ trigger: '{{', candidates: getTemplateCandidates });
+      triggers.push({ trigger: '.', candidates: getDotCandidates });
+    }
+    if (autoComplete.idAssist) {
+      triggers.push({ trigger: '"', candidates: getIdCandidates });
+    }
+    return triggers;
+  }, [autoComplete, mode, getMermaidCandidates, getTemplateCandidates, getDotCandidates, getIdCandidates]);
+
+  const ac = useAutocomplete({
+    triggers: autocompleteTriggers,
+    textareaSelector: '#editor',
+    composingRef,
+    onSelect: handleAutocompleteSelect,
+  });
+
   const [editorFont, setEditorFont] = useState(undefined);
   const [editorStyle, setEditorStyle] = useState({});
   const editorSettingRef = useRef(null);
@@ -521,17 +692,29 @@ function Editor(props) {
   const [previewDiagrams, setPreviewDiagrams] = useState([]);
   const [previewDiagramId, setPreviewDiagramId] = useState("");
 
-  // Ctrl+F で検索バーを開く
+  // Ctrl+F で検索バーを開く、Ctrl+H で置換モードで開く
   useEffect(() => {
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        setSearchOpen(prev => !prev);
+        setSearchOpen(prev => {
+          if (!prev) { setReplaceMode(false); return true; }
+          if (replaceMode) { setReplaceMode(false); return true; }
+          return false;
+        });
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        setSearchOpen(prev => {
+          if (!prev) { setReplaceMode(true); return true; }
+          if (!replaceMode) { setReplaceMode(true); return true; }
+          return false;
+        });
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [replaceMode]);
 
   // Ctrl+Shift+O でスニペット挿入メニューを開く
   // Ctrl+T でID挿入メニューを開く
@@ -606,6 +789,35 @@ function Editor(props) {
     textarea.scrollTop = Math.max(0, linesBefore * lineHeight - textarea.clientHeight / 3);
   }, [text]);
 
+  const handleReplace = useCallback((absoluteStart, absoluteEnd, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(absoluteStart, absoluteEnd);
+    document.execCommand('insertText', false, replacement);
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    });
+  }, [mode, id]);
+
+  const handleReplaceAll = useCallback((matches, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    let newText = text;
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const m = matches[i];
+      newText = newText.substring(0, m.absoluteStart) + replacement + newText.substring(m.absoluteEnd);
+    }
+    textarea.select();
+    document.execCommand('insertText', false, newText);
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(mode, id, textarea.value);
+    });
+  }, [text, mode, id]);
+
   useEffect(() => {
     GetConfig().then((conf) => {
       if (conf.previewColorScheme) {
@@ -670,7 +882,9 @@ function Editor(props) {
       if (editorSettingRef.current) {
         setViewer(editorSettingRef.current.showPreview);
       }
+      const tNote = performance.now();
       OpenNote(id).then((resp) => {
+        console.debug(`[timing] OpenNote: ${(performance.now() - tNote).toFixed(1)}ms`);
         fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
@@ -678,6 +892,7 @@ function Editor(props) {
       });
 
       GetNote(id).then((resp) => {
+        console.debug(`[timing] GetNote: ${(performance.now() - tNote).toFixed(1)}ms`);
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
@@ -834,6 +1049,9 @@ function Editor(props) {
       setShowLineNumbers(data.showLineNumbers);
       setWordWrap(data.wordWrap);
       setViewer(data.showPreview);
+      if (data.autoComplete !== undefined && typeof data.autoComplete === 'object') {
+        setAutoComplete(data.autoComplete);
+      }
       // editorSettingRef も更新
       if (editorSettingRef.current) {
         editorSettingRef.current = { ...editorSettingRef.current, ...data };
@@ -1063,8 +1281,11 @@ function Editor(props) {
         return;
       }
 
+      const tRender = performance.now();
       var result = await createMarked(id, txt, true, true);
+      console.debug(`[timing] viewHTML createMarked: ${(performance.now() - tRender).toFixed(1)}ms`);
       const noteResult = await CreateNoteHTML(id, true, result.html);
+      console.debug(`[timing] viewHTML CreateNoteHTML: ${(performance.now() - tRender).toFixed(1)}ms`);
       const allWarnings = [...(result.warnings || []), ...(noteResult.warnings || [])];
       if (noteResult.error) {
         setParseStatus({ status: "error", err: noteResult.error, warnings: allWarnings });
@@ -1262,6 +1483,10 @@ function Editor(props) {
    * カーソル行の UUID を検出し、Structure 情報を取得する（デバウンス付き）
    */
   const detectIdAtCursor = useCallback((text, cursorPos) => {
+    if (!autoComplete.idAssist) {
+      setCursorStructures([]);
+      return;
+    }
     const uuids = extractUuidsOnLine(text, cursorPos);
     const key = uuids.join(',');
     if (key === lastDetectedUuidsRef.current) return;
@@ -1287,7 +1512,34 @@ function Editor(props) {
         setCursorStructureIndex(0);
       });
     }, 200);
-  }, []);
+  }, [autoComplete.idAssist]);
+
+  const detectFuncHint = useCallback((text, cursorPos) => {
+    if (!autoComplete.funcHint) {
+      setFuncHint(null);
+      return;
+    }
+    const result = detectTemplateFunc(text, cursorPos);
+    if (!result) {
+      setFuncHint(null);
+      return;
+    }
+    const candidate = resolvedCandidates.find(c => c.label === result.name);
+    if (!candidate) {
+      setFuncHint(null);
+      return;
+    }
+    // ブロックキーワード後の内部関数を検出
+    if (candidate.needsEnd && result.argIndex >= 1 && result.tokens?.length > 0) {
+      const innerName = result.tokens[0];
+      const innerCandidate = resolvedCandidates.find(c => c.label === innerName);
+      if (innerCandidate?.args) {
+        setFuncHint({ ...innerCandidate, activeArg: result.argIndex - 1 });
+        return;
+      }
+    }
+    setFuncHint({ ...candidate, activeArg: result.argIndex });
+  }, [resolvedCandidates, autoComplete.funcHint]);
 
   /**
    * カーソル移動時にプレビューのスクロール位置を追従させる + ID 検出
@@ -1305,6 +1557,7 @@ function Editor(props) {
     }
 
     detectIdAtCursor(textarea.value, pos);
+    detectFuncHint(textarea.value, pos);
   }, [detectIdAtCursor]);
 
   /**
@@ -1320,6 +1573,8 @@ function Editor(props) {
     cursorLineRef.current = txt.substring(0, pos).split('\n').length;
     setText(txt);
     detectIdAtCursor(txt, pos);
+    detectFuncHint(txt, pos);
+    ac.handleInput();
 
     setUpdated(true);
     writeFn(mode, id, txt).then(() => {
@@ -1650,6 +1905,8 @@ function Editor(props) {
       return;
     }
 
+    if (ac.handleKeyDown(e)) return;
+
     // Ctrl+Enter: IDステータスバーのアイテムへ遷移
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructures.length > 0) {
       e.preventDefault();
@@ -1676,6 +1933,7 @@ function Editor(props) {
           requestAnimationFrame(() => {
             textarea.selectionStart = result.selectionStart;
             textarea.selectionEnd = result.selectionEnd;
+            scrollCaretIntoView(textarea);
           });
         }
         return;
@@ -1698,6 +1956,7 @@ function Editor(props) {
         requestAnimationFrame(() => {
           textarea.selectionStart = result.selectionStart;
           textarea.selectionEnd = result.selectionEnd;
+          scrollCaretIntoView(textarea);
         });
       }
       return;
@@ -1721,6 +1980,7 @@ function Editor(props) {
       requestAnimationFrame(() => {
         textarea.selectionStart = result.cursor;
         textarea.selectionEnd = result.cursor;
+        scrollCaretIntoView(textarea);
       });
     }
   }
@@ -1881,6 +2141,12 @@ function Editor(props) {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setViewer(e.showPreview);
+        if (e.autoComplete && typeof e.autoComplete === 'object') {
+          setAutoComplete(e.autoComplete);
+        } else {
+          const v = e.autoComplete !== false;
+          setAutoComplete({ template: v, idAssist: v, autoClose: v, funcHint: v, mermaid: v });
+        }
         editorSettingRef.current = e;
       }
     }).catch((err) => {
@@ -1897,6 +2163,7 @@ function Editor(props) {
       showLineNumbers,
       wordWrap,
       showPreview: viewer,
+      autoComplete,
       ...overrides,
     };
     editorSettingRef.current = editor;
@@ -1905,6 +2172,7 @@ function Editor(props) {
         showLineNumbers: editor.showLineNumbers,
         wordWrap: editor.wordWrap,
         showPreview: editor.showPreview,
+        autoComplete: editor.autoComplete,
       });
     }).catch((err) => console.log(err));
   };
@@ -2230,15 +2498,27 @@ function Editor(props) {
                 <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
               </Menu>
 
+              {/** オートコンプリートポップアップ */}
+              <Autocomplete
+                isOpen={ac.isOpen}
+                items={ac.items}
+                selectedIndex={ac.selectedIndex}
+                position={ac.position}
+                onItemClick={(idx) => ac.selectItem(idx)}
+              />
+
               {/** テキスト検索フローティングパネル（Ctrl+F） */}
               {searchOpen && (
                 <SearchBar
                   key={restoredAt}
                   text={text}
-                  onClose={() => { setSearchOpen(false); setActiveMatchLine(null); }}
+                  onClose={() => { setSearchOpen(false); setReplaceMode(false); setActiveMatchLine(null); }}
                   onNavigate={handleSearchNavigate}
                   onClearHighlight={() => setActiveMatchLine(null)}
                   initialQuery={searchQuery}
+                  replaceMode={replaceMode}
+                  onReplace={handleReplace}
+                  onReplaceAll={handleReplaceAll}
                 />
               )}
 
@@ -2265,6 +2545,7 @@ function Editor(props) {
                 currentIndex={cursorStructureIndex}
                 onIndexChange={setCursorStructureIndex}
                 onNavigate={handleIdNavigate}
+                funcHint={funcHint}
               />
 
               {/** コミットバー */}

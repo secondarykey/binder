@@ -424,8 +424,7 @@ iframe.htmlViewer {
 .editorSearchFloat {
   position: absolute;
   z-index: 30;
-  min-width: 320px;
-  max-width: 500px;
+  width: 420px;
   background-color: var(--bg-elevated);
   border: 1px solid var(--border-input);
   border-radius: 6px;
@@ -504,10 +503,155 @@ iframe.htmlViewer {
   padding: 0 1px;
 }
 
+.editorSearchReplaceBtn {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.editorSearchReplaceBtn:hover:not(:disabled) {
+  background: var(--hover-overlay);
+}
+
+.editorSearchReplaceBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* =====================================================================
+ * オートコンプリートポップアップ
+ * ===================================================================== */
+.editorAutocompleteWrapper {
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.editorAutocomplete {
+  width: 320px;
+  overflow-x: hidden;
+  background-color: color-mix(in srgb, var(--bg-elevated) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-input) 60%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 140px;
+  padding: 4px 0;
+}
+
+.editorAutocompleteHelp {
+  width: 260px;
+  background-color: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-input) 60%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.acHelpSig {
+  font-family: monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.acHelpName {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.acHelpArgName {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.acHelpArgType {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.acHelpArgOptional {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.acHelpArgQ {
+  color: var(--accent-primary);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.acHelpReturns {
+  color: var(--text-muted);
+}
+
+.acHelpDetail {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.editorAutocompleteItem {
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.editorAutocompleteItem:hover,
+.editorAutocompleteItem.active {
+  background-color: var(--hover-overlay);
+}
+
+.editorAutocompleteLabel {
+  flex-shrink: 0;
+}
+
+.editorAutocompleteDetail {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editorAutocompleteItem.deprecated .editorAutocompleteLabel {
+  opacity: 0.6;
+}
+
+.editorAutocompleteDeprecated {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #856d00;
+  background-color: #ffd90033;
+  border: 1px solid #ffd90066;
+  border-radius: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
 /* ID ステータスバー（CommitBar の上） */
 #editorWrapper #idStatusBar {
   position: absolute;
-  bottom: 40px;
+  bottom: 12px;
   left: 0;
   right: 0;
   display: flex;
@@ -523,6 +667,14 @@ iframe.htmlViewer {
   transform: translateY(8px);
   pointer-events: none;
   transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#editorWrapper #idStatusBar:hover {
+  white-space: normal;
+  overflow: visible;
+  background-color: color-mix(in srgb, var(--bg-overlay) 80%, transparent);
 }
 
 #editorWrapper #idStatusBar.visible {
@@ -568,6 +720,85 @@ iframe.htmlViewer {
   font-size: 0.7rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+#idStatusBar .funcHintName {
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-right: 8px;
+}
+
+#idStatusBar .funcHintSig {
+  font-family: monospace;
+  color: var(--text-muted);
+  margin-right: 8px;
+  font-size: 0.85em;
+}
+
+#idStatusBar .funcHintArgName {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+#idStatusBar .funcHintArgType {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+#idStatusBar .funcHintArgOptional {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+#idStatusBar .funcHintArgQ {
+  color: var(--accent-primary);
+  font-style: normal;
+  font-weight: 600;
+}
+
+#idStatusBar .funcHintArgActive {
+  opacity: 1;
+  font-style: normal;
+  background-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin: 0 -3px;
+}
+
+#idStatusBar .funcHintArgActive .funcHintArgName {
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+#idStatusBar .funcHintArgActive .funcHintArgType {
+  opacity: 1;
+}
+
+#idStatusBar .funcHintDetail {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+#idStatusBar .funcHintSection {
+  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#idStatusBar .idInfoSection {
+  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: auto;
+  flex-shrink: 1;
+}
+
+#idStatusBar .statusBarDivider {
+  width: 1px;
+  height: 14px;
+  background-color: var(--border-primary);
+  margin: 0 10px;
+  flex-shrink: 0;
 }
 
 /* Note/Diagram エディタ内の CommitBar は absolute で下端に固定 */

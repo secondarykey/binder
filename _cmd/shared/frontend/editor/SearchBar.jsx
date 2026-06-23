@@ -3,27 +3,37 @@ import { IconButton, TextField, InputAdornment } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import FindReplaceIcon from '@mui/icons-material/FindReplace';
 import { useTranslation } from 'react-i18next';
 
 // 閉じても状態を保持するためコンポーネント外で管理
 let savedPosition = null; // null = 未初期化（初回は中央に配置）
 let savedQuery = "";
+let savedReplaceText = "";
 
 /**
- * エディタ内テキスト検索フローティングパネル
+ * エディタ内テキスト検索・置換フローティングパネル
  *
  * Props:
- *   text       - 検索対象のテキスト全体
- *   onClose    - 検索バーを閉じるコールバック
- *   onNavigate - (absoluteStart, absoluteEnd) => void  一致箇所へ移動
+ *   text           - 検索対象のテキスト全体
+ *   onClose        - 検索バーを閉じるコールバック
+ *   onNavigate     - (absoluteStart, absoluteEnd) => void  一致箇所へ移動
+ *   onClearHighlight - ハイライト解除コールバック
+ *   initialQuery   - 初期検索クエリ
+ *   replaceMode    - 置換モードで開くかどうか
+ *   onReplace      - (absoluteStart, absoluteEnd, replacement) => void  単一置換
+ *   onReplaceAll   - (matches, replacement) => void  全置換
  */
-function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }) {
+function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, replaceMode: initialReplaceMode, onReplace, onReplaceAll }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState(() => initialQuery || savedQuery);
   const [matches, setMatches] = useState([]);
   const [searched, setSearched] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [showReplace, setShowReplace] = useState(initialReplaceMode || false);
+  const [replaceText, setReplaceText] = useState(savedReplaceText);
   const inputRef = useRef(null);
+  const replaceInputRef = useRef(null);
   const resultsRef = useRef(null);
   const itemRefs = useRef([]);
 
@@ -34,9 +44,8 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
-  // マウント時に入力欄にフォーカスし、初期位置を算出
+  // マウント時に初期検索・初期位置を算出
   useEffect(() => {
-    inputRef.current?.focus();
     const q = initialQuery || savedQuery;
     if (q) {
       savedQuery = q;
@@ -58,6 +67,26 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
     }
   }, []);
 
+  // パネルが可視になってから入力欄へフォーカスする。
+  // 起動後1回目は savedPosition が無く visible=false（visibility:hidden）でマウントされ、
+  // visibility:hidden の要素は focus できないため、マウント時に focus すると無視される。
+  // visible が確定（true）してから focus することで初回もフォーカスが当たるようにする。
+  useEffect(() => {
+    if (!visible) return;
+    if (showReplace) {
+      replaceInputRef.current?.focus();
+    } else {
+      inputRef.current?.focus();
+    }
+  }, [visible]);
+
+  // 置換モードが開かれたら置換入力にフォーカス
+  useEffect(() => {
+    if (showReplace && replaceInputRef.current) {
+      replaceInputRef.current.focus();
+    }
+  }, [showReplace]);
+
   // ドラッグ処理
   const handleDragStart = useCallback((e) => {
     // テキスト選択を防止
@@ -78,8 +107,8 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
     const newPos = {
-      x: dragStartRef.current.posX + dx,
-      y: dragStartRef.current.posY + dy,
+      x: Math.max(0, dragStartRef.current.posX + dx),
+      y: Math.max(0, dragStartRef.current.posY + dy),
     };
     setPosition(newPos);
     savedPosition = newPos;
@@ -152,7 +181,9 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
     if (e.key === 'Enter') {
       e.preventDefault();
       if (searched && matches.length > 0) {
-        const next = (currentIndex + 1) % matches.length;
+        const next = e.shiftKey
+          ? (currentIndex - 1 + matches.length) % matches.length
+          : (currentIndex + 1) % matches.length;
         setCurrentIndex(next);
         onNavigate(matches[next].absoluteStart, matches[next].absoluteEnd);
       } else {
@@ -162,6 +193,27 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
       e.preventDefault();
       onClose();
     }
+  };
+
+  const handleReplaceKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleReplaceCurrent();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+    }
+  };
+
+  const handleReplaceCurrent = () => {
+    if (!onReplace || currentIndex < 0 || currentIndex >= matches.length) return;
+    const match = matches[currentIndex];
+    onReplace(match.absoluteStart, match.absoluteEnd, replaceText);
+  };
+
+  const handleReplaceAll = () => {
+    if (!onReplaceAll || matches.length === 0) return;
+    onReplaceAll(matches, replaceText);
   };
 
   const handleClickResult = (match, idx) => {
@@ -198,49 +250,119 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery }
       ref={panelRef}
       style={{ left: position.x + 'px', top: position.y + 'px', visibility: visible ? 'visible' : 'hidden' }}
     >
-      {/** ドラッグハンドル + 検索入力行 */}
+      {/** ドラッグハンドル + 入力エリア + 右端ボタン群 */}
       <div className="editorSearchRow">
+        {/** 左: ドラッグハンドル */}
         <span
           className="editorSearchDragHandle"
           onMouseDown={handleDragStart}
         >
           <DragIndicatorIcon sx={{ fontSize: '16px' }} />
         </span>
-        <TextField
-          inputRef={inputRef}
-          size="small"
-          variant="outlined"
-          placeholder={t("editor.searchPlaceholder")}
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; }}
-          onKeyDown={handleKeyDown}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: '28px',
-                fontSize: '0.82rem',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
+
+        {/** 中央: 検索・置換入力欄（縦並び） */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+          <TextField
+            inputRef={inputRef}
+            size="small"
+            variant="outlined"
+            placeholder={t("editor.searchPlaceholder")}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); savedQuery = e.target.value; setSearched(false); }}
+            onKeyDown={handleKeyDown}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  height: '28px',
+                  fontSize: '0.82rem',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                }
               }
-            }
-          }}
-          sx={{ flex: 1, minWidth: 160 }}
-        />
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-          {searched
-            ? (matches.length > 0
-              ? `${currentIndex + 1} / ${matches.length}`
-              : t("editor.searchNoMatches"))
-            : ""}
-        </span>
-        <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)' }}>
-          <CloseIcon sx={{ fontSize: '16px' }} />
-        </IconButton>
+            }}
+            sx={{ width: '100%' }}
+          />
+          {showReplace && (
+            <TextField
+              inputRef={replaceInputRef}
+              size="small"
+              variant="outlined"
+              placeholder={t("editor.replacePlaceholder")}
+              value={replaceText}
+              onChange={(e) => { setReplaceText(e.target.value); savedReplaceText = e.target.value; }}
+              onKeyDown={handleReplaceKeyDown}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FindReplaceIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    height: '28px',
+                    fontSize: '0.82rem',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: 'var(--text-primary)',
+                  }
+                }
+              }}
+              sx={{ width: '100%' }}
+            />
+          )}
+        </div>
+
+        {/** 右: ボタン群（縦並び・固定幅） */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0, alignItems: 'flex-end' }}>
+          {/** 検索行の右側: カウント + 置換トグル + 閉じる */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '28px' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: '48px', textAlign: 'right' }}>
+              {searched
+                ? (matches.length > 0
+                  ? `${currentIndex + 1} / ${matches.length}`
+                  : t("editor.searchNoMatches"))
+                : ""}
+            </span>
+            {onReplace && (
+              <IconButton
+                size="small"
+                onClick={() => setShowReplace(!showReplace)}
+                sx={{ color: showReplace ? 'var(--text-primary)' : 'var(--text-muted)', padding: '4px' }}
+                title={t("editor.replaceToggle")}
+              >
+                <FindReplaceIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            )}
+            <IconButton size="small" onClick={onClose} sx={{ color: 'var(--text-muted)', padding: '4px' }}>
+              <CloseIcon sx={{ fontSize: '16px' }} />
+            </IconButton>
+          </div>
+          {/** 置換行の右側: 置換 + 全置換 */}
+          {showReplace && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '28px' }}>
+              <button
+                className="editorSearchReplaceBtn"
+                onClick={handleReplaceCurrent}
+                disabled={currentIndex < 0}
+                title={t("editor.replaceOne")}
+              >
+                {t("editor.replaceOne")}
+              </button>
+              <button
+                className="editorSearchReplaceBtn"
+                onClick={handleReplaceAll}
+                disabled={matches.length === 0}
+                title={t("editor.replaceAll")}
+              >
+                {t("editor.replaceAll")}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {matches.length > 0 && (

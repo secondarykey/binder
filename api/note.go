@@ -37,6 +37,7 @@ func (a *App) RemoveNote(id string) error {
 func (a *App) GetNote(id string) (*json.Note, error) {
 
 	defer log.PrintTrace(log.Func("GetNote()"))
+	defer log.Timer("api.GetNote total")()
 
 	n, err := a.current.GetNote(id)
 	if err != nil {
@@ -92,6 +93,7 @@ func (a *App) DeleteNoteImage(noteId string) error {
 func (a *App) OpenNote(noteId string) (string, error) {
 
 	defer log.PrintTrace(log.Func("OpenNote()"))
+	defer log.Timer("api.OpenNote total")()
 
 	var w strings.Builder
 

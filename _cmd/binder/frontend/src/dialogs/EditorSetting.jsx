@@ -29,6 +29,9 @@ function EditorSetting() {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [wordWrap, setWordWrap] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
+  const [autoComplete, setAutoComplete] = useState({
+    template: true, idAssist: true, autoClose: true, funcHint: true, mermaid: true,
+  });
   const [argsError, setArgsError] = useState(false);
   const editorBaseRef = useRef(null);
 
@@ -44,6 +47,12 @@ function EditorSetting() {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
         setShowPreview(e.showPreview);
+        if (e.autoComplete && typeof e.autoComplete === 'object') {
+          setAutoComplete(e.autoComplete);
+        } else {
+          const v = e.autoComplete !== false;
+          setAutoComplete({ template: v, idAssist: v, autoClose: v, funcHint: v, mermaid: v });
+        }
       }
     }).catch((err) => {
       console.log(err);
@@ -63,6 +72,11 @@ function EditorSetting() {
       if (data.showLineNumbers !== undefined) setShowLineNumbers(data.showLineNumbers);
       if (data.wordWrap !== undefined) setWordWrap(data.wordWrap);
       if (data.showPreview !== undefined) setShowPreview(data.showPreview);
+      if (data.autoComplete !== undefined) {
+        if (typeof data.autoComplete === 'object') {
+          setAutoComplete(data.autoComplete);
+        }
+      }
     });
 
     // エディタ側からのフォント変更を同期
@@ -102,11 +116,12 @@ function EditorSetting() {
       showLineNumbers: showLineNumbers,
       wordWrap: wordWrap,
       showPreview: showPreview,
+      autoComplete: autoComplete,
     };
     SaveEditor(editor).then(() => {
       evt.showSuccessMessage(t("common.updated"));
       // エディタ側のstateを同期
-      Events.Emit('binder:editor:settingChanged', { showLineNumbers, wordWrap, showPreview });
+      Events.Emit('binder:editor:settingChanged', { showLineNumbers, wordWrap, showPreview, autoComplete });
     }).catch((err) => {
       showError(err);
     });
@@ -153,11 +168,13 @@ function EditorSetting() {
             <FormControlLabel
               control={
                 <Switch
+                  size="small"
                   checked={showLineNumbers}
                   onChange={(e) => setShowLineNumbers(e.target.checked)}
                 />
               }
               label={t("setting.showLineNumbers")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
             />
           </FormControl>
 
@@ -166,11 +183,13 @@ function EditorSetting() {
             <FormControlLabel
               control={
                 <Switch
+                  size="small"
                   checked={wordWrap}
                   onChange={(e) => setWordWrap(e.target.checked)}
                 />
               }
               label={t("setting.wordWrap")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
             />
           </FormControl>
 
@@ -179,12 +198,54 @@ function EditorSetting() {
             <FormControlLabel
               control={
                 <Switch
+                  size="small"
                   checked={showPreview}
                   onChange={(e) => setShowPreview(e.target.checked)}
                 />
               }
               label={t("setting.showPreview")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
             />
+          </FormControl>
+
+          {/** オートコンプリート */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={Object.values(autoComplete).some(v => v)}
+                  onChange={(e) => {
+                    const v = e.target.checked;
+                    setAutoComplete({ template: v, idAssist: v, autoClose: v, funcHint: v, mermaid: v });
+                  }}
+                />
+              }
+              label={t("setting.autoComplete")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+              {[
+                { key: 'template', label: 'setting.ac.template' },
+                { key: 'idAssist', label: 'setting.ac.idAssist' },
+                { key: 'autoClose', label: 'setting.ac.autoClose' },
+                { key: 'funcHint', label: 'setting.ac.funcHint' },
+                { key: 'mermaid', label: 'setting.ac.mermaid' },
+              ].map(({ key, label }) => (
+                <FormControlLabel
+                  key={key}
+                  control={
+                    <Switch
+                      size="small"
+                      checked={autoComplete[key] ?? true}
+                      onChange={(e) => setAutoComplete(prev => ({ ...prev, [key]: e.target.checked }))}
+                    />
+                  }
+                  label={t(label)}
+                  sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+                />
+              ))}
+            </Box>
           </FormControl>
 
           {/** エディタプログラム */}

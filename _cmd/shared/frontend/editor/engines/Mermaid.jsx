@@ -129,6 +129,37 @@ class MermaidScript {
   }
 
   /**
+   * 有効なダイアグラムキーワード一覧を返す。
+   * knownKeywords と getRegisteredDiagramsMetadata() をマージし、
+   * detectType() で実際に有効なもののみ返す。
+   * @param {string[]} knownKeywords - 既知のキーワード候補
+   * @returns {Promise<string[]>} ダイアグラムキーワードの配列
+   */
+  static async getDiagramTypes(knownKeywords = []) {
+    if (!this.isExists()) {
+      await this.init(null, DefaultOpts);
+    }
+    const m = globalThis.mermaid;
+    if (!m?.detectType) return [];
+    const candidates = new Set(knownKeywords);
+    if (m.getRegisteredDiagramsMetadata) {
+      for (const o of m.getRegisteredDiagramsMetadata()) {
+        candidates.add(o.id);
+      }
+    }
+    const types = [];
+    for (const id of candidates) {
+      try {
+        m.detectType(id);
+        types.push(id);
+      } catch {
+        // detectType が例外を投げる = 無効なキーワード
+      }
+    }
+    return types;
+  }
+
+  /**
    * mermaidでパースしてSVGを生成する
    * @param {string} txt
    * @param {string} [styleTemplateId]

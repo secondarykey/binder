@@ -14,16 +14,16 @@ function typeToUrlMode(typ) {
 }
 
 /**
- * エディタ下部の ID ステータスバー。
- * カーソル行の UUID に対応するアイテム情報を表示し、クリックで遷移する。
- * 複数の UUID がある場合は ◀ ▶ で切り替え可能。
+ * エディタ下部のステータスバー。
+ * 関数ヒント（左）と ID 情報（右）を同時表示可能。
  *
- * @param {{ structures: object[], currentIndex: number, onIndexChange: (i: number) => void, onNavigate: (mode: string, id: string) => void }} props
+ * @param {{ structures: object[], currentIndex: number, onIndexChange: (i: number) => void, onNavigate: (mode: string, id: string) => void, funcHint: object|null }} props
  */
-function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate }) {
+function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate, funcHint }) {
   const { t } = useTranslation();
 
-  const visible = structures.length > 0;
+  const hasId = structures.length > 0;
+  const visible = hasId || !!funcHint;
   const s = structures[currentIndex] || null;
   const hasMultiple = structures.length > 1;
 
@@ -40,26 +40,67 @@ function IdStatusBar({ structures, currentIndex, onIndexChange, onNavigate }) {
   const label = s ? t(labelKey) : "";
   const urlMode = s ? typeToUrlMode(s.type) : "";
 
+  const renderFuncHint = () => {
+    if (!funcHint) return null;
+    const args = funcHint.args || [];
+    const activeArg = funcHint.activeArg ?? -1;
+    const ret = funcHint.returns ? ` → ${funcHint.returns}` : '';
+    return (
+      <span className="funcHintSection">
+        <span className="funcHintName">{funcHint.label}</span>
+        <span className="funcHintSig">
+          {'('}
+          {args.map((a, i) => {
+            const optional = a.name.endsWith('?');
+            const name = optional ? a.name.slice(0, -1) : a.name;
+            const active = i === activeArg;
+            return (
+              <span key={i} className={
+                (optional ? 'funcHintArgOptional' : '') +
+                (active ? ' funcHintArgActive' : '')
+              }>
+                {i > 0 && ', '}
+                <span className="funcHintArgName">{name}</span>
+                <span className="funcHintArgType">: {a.type}</span>
+                {optional && <span className="funcHintArgQ">?</span>}
+              </span>
+            );
+          })}
+          {')'}
+          {ret}
+        </span>
+        {funcHint.detail && <span className="funcHintDetail">{funcHint.detail}</span>}
+      </span>
+    );
+  };
+
+  const renderIdInfo = () => {
+    if (!hasId || !s) return null;
+    return (
+      <span className="idInfoSection">
+        {hasMultiple && (
+          <span className="idStatusNav">
+            <span className="idStatusNavBtn" onClick={handlePrev}>◀</span>
+            <span className="idStatusCount">{currentIndex + 1}/{structures.length}</span>
+            <span className="idStatusNavBtn" onClick={handleNext}>▶</span>
+          </span>
+        )}
+        <span
+          className="idStatusLink"
+          onClick={() => onNavigate(urlMode, s.id)}
+          title={s.id}
+        >
+          {label}: {s.name || s.id}
+        </span>
+      </span>
+    );
+  };
+
   return (
     <div id="idStatusBar" className={visible ? 'visible' : ''}>
-      {s && (
-        <>
-          {hasMultiple && (
-            <span className="idStatusNav">
-              <span className="idStatusNavBtn" onClick={handlePrev}>◀</span>
-              <span className="idStatusCount">{currentIndex + 1}/{structures.length}</span>
-              <span className="idStatusNavBtn" onClick={handleNext}>▶</span>
-            </span>
-          )}
-          <span
-            className="idStatusLink"
-            onClick={() => onNavigate(urlMode, s.id)}
-            title={s.id}
-          >
-            {label}: {s.name || s.id}
-          </span>
-        </>
-      )}
+      {renderFuncHint()}
+      {funcHint && hasId && <span className="statusBarDivider" />}
+      {renderIdInfo()}
     </div>
   );
 }

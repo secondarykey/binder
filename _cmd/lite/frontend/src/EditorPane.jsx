@@ -1,10 +1,12 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import EditorArea from '@shared/editor/EditorArea';
 import SearchBar from '@shared/editor/SearchBar';
+import Autocomplete from '@shared/editor/Autocomplete';
 import { handleMarkdownKeyDown } from '@shared/editor/markdown-keys';
+import { useAutocomplete } from '@shared/editor/useAutocomplete';
 import { useScrollbarOffset, useHScrollbarOffset } from './useHasScrollbar';
 import { Events } from '@wailsio/runtime';
 
@@ -15,14 +17,35 @@ import { useTranslation } from 'react-i18next';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4 }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [] }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
   const [showSearch, setShowSearch] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
+  const [replaceMode, setReplaceMode] = useState(false);
   const composingRef = useRef(false);
   const hiddenFocusRef = useRef(null);
+
+  const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
+    const leadingSpaces = filterText.match(/^(\s*)/)[1];
+    textarea.setSelectionRange(replaceStart, replaceEnd);
+    document.execCommand('insertText', false, trigger + leadingSpaces + selected);
+    requestAnimationFrame(() => {
+      onChange(textarea.value);
+    });
+  }, [onChange]);
+
+  const ac = useAutocomplete({
+    triggers: autocompleteTriggers,
+    textareaSelector: '#editor',
+    composingRef,
+    onSelect: handleAutocompleteSelect,
+  });
 
   // ウィンドウフォーカス時の IME リセット
   // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
@@ -45,23 +68,53 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
     return () => cancel();
   }, []);
 
+  // Ctrl+F / Ctrl+H でSearchBarを開閉（document レベルで処理）
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+          if (selected) setSearchInitialQuery(selected);
+        }
+        setShowSearch(prev => {
+          if (!prev) { setReplaceMode(false); return true; }
+          if (replaceMode) { setReplaceMode(false); return true; }
+          return false;
+        });
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        const textarea = document.querySelector('#editor');
+        if (textarea) {
+          const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+          if (selected) setSearchInitialQuery(selected);
+        }
+        setShowSearch(prev => {
+          if (!prev) { setReplaceMode(true); return true; }
+          if (!replaceMode) { setReplaceMode(true); return true; }
+          return false;
+        });
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [replaceMode]);
+
   const handleKeyDown = useCallback((e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      e.preventDefault();
-      const textarea = e.target;
-      const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
-      setSearchInitialQuery(selected || '');
-      setShowSearch(true);
-      return;
-    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) return;
+
+    if (ac.handleKeyDown(e)) return;
 
     // Markdown入力支援（リスト継続・引用継続・Tab/Shift+Tab等）
     handleMarkdownKeyDown(e, composingRef, onChange, tabSize);
-  }, [onChange, tabSize]);
+  }, [onChange, tabSize, ac]);
 
   const handleChange = useCallback((e) => {
     onChange(e.target.value);
-  }, [onChange]);
+    ac.handleInput();
+  }, [onChange, ac]);
 
   const handleCompositionStart = useCallback(() => {
     composingRef.current = true;
@@ -84,8 +137,36 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
 
   const handleSearchClose = useCallback(() => {
     setShowSearch(false);
+    setReplaceMode(false);
     document.querySelector('#editor')?.focus();
   }, []);
+
+  const handleReplace = useCallback((absoluteStart, absoluteEnd, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(absoluteStart, absoluteEnd);
+    document.execCommand('insertText', false, replacement);
+    requestAnimationFrame(() => {
+      onChange(textarea.value);
+    });
+  }, [onChange]);
+
+  const handleReplaceAll = useCallback((matches, replacement) => {
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.focus();
+    let newText = text;
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const m = matches[i];
+      newText = newText.substring(0, m.absoluteStart) + replacement + newText.substring(m.absoluteEnd);
+    }
+    textarea.select();
+    document.execCommand('insertText', false, newText);
+    requestAnimationFrame(() => {
+      onChange(textarea.value);
+    });
+  }, [text, onChange]);
 
   const editorStyle = {
     fontFamily: font?.name || 'monospace',
@@ -105,12 +186,22 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
         style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
         readOnly
       />
+      <Autocomplete
+        isOpen={ac.isOpen}
+        items={ac.items}
+        selectedIndex={ac.selectedIndex}
+        position={ac.position}
+        onItemClick={(idx) => ac.selectItem(idx)}
+      />
       {showSearch && (
         <SearchBar
           text={text}
           onClose={handleSearchClose}
           onNavigate={handleSearchNavigate}
           initialQuery={searchInitialQuery}
+          replaceMode={replaceMode}
+          onReplace={handleReplace}
+          onReplaceAll={handleReplaceAll}
         />
       )}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>

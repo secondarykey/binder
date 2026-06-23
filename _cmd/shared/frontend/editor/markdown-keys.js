@@ -217,6 +217,70 @@ export function handleMarkdownTab(textarea, shiftKey, tabSize) {
 }
 
 /**
+ * textarea のキャレット位置が表示領域外にある場合、キャレットが見えるようスクロールする。
+ *
+ * Enter / Tab / 書式キーは preventDefault でブラウザ標準のキャレット追従スクロールを
+ * 止めてしまうため、手動で value / selection を更新した後にこれを呼んでキャレットを
+ * 可視範囲へ戻す（特に表示上の最終行で改行するとカーソルが画面外へ消える問題への対処）。
+ *
+ * textarea にはキャレット座標を直接取得する API が無いので、同じフォント・幅・折り返し条件の
+ * ミラー要素を作り、キャレット位置にマーカーを挿入して offsetTop を実測する。
+ *
+ * @param {HTMLTextAreaElement} textarea - 対象の textarea 要素
+ */
+export function scrollCaretIntoView(textarea) {
+  const val = textarea.value;
+  const caret = textarea.selectionEnd;
+  const cs = window.getComputedStyle(textarea);
+
+  const paddingLeft = parseFloat(cs.paddingLeft) || 0;
+  const paddingRight = parseFloat(cs.paddingRight) || 0;
+  const paddingTop = parseFloat(cs.paddingTop) || 0;
+  const availWidth = textarea.clientWidth - paddingLeft - paddingRight;
+  if (availWidth <= 0) return;
+
+  const mirror = document.createElement('div');
+  const s = mirror.style;
+  s.position = 'absolute';
+  s.top = '-9999px';
+  s.left = '-9999px';
+  s.visibility = 'hidden';
+  s.boxSizing = 'content-box';
+  s.padding = '0';
+  s.border = '0';
+  s.width = availWidth + 'px';
+  s.height = 'auto';
+  ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
+    'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
+  s.whiteSpace = cs.whiteSpace === 'pre' ? 'pre' : 'pre-wrap';
+  s.overflowWrap = 'break-word';
+  s.wordBreak = cs.wordBreak;
+
+  // キャレット位置にマーカーを置く。前後のテキストも付けることで折り返し計算を再現する。
+  const marker = document.createElement('span');
+  marker.textContent = '​';
+  mirror.appendChild(document.createTextNode(val.substring(0, caret)));
+  mirror.appendChild(marker);
+  mirror.appendChild(document.createTextNode(val.substring(caret) || '​'));
+
+  document.body.appendChild(mirror);
+  const caretTop = marker.offsetTop; // content 座標（padding を含まない）
+  const lineHeight = marker.offsetHeight || (parseFloat(cs.lineHeight) || 16);
+  document.body.removeChild(mirror);
+
+  // ミラーは padding 0 なので textarea のスクロール座標へ paddingTop を足して合わせる。
+  const caretTopInTextarea = caretTop + paddingTop;
+  const viewTop = textarea.scrollTop;
+  const viewBottom = viewTop + textarea.clientHeight;
+
+  if (caretTopInTextarea < viewTop) {
+    textarea.scrollTop = caretTopInTextarea;
+  } else if (caretTopInTextarea + lineHeight > viewBottom) {
+    textarea.scrollTop = caretTopInTextarea + lineHeight - textarea.clientHeight;
+  }
+}
+
+/**
  * textarea の keydown イベントハンドラ。
  * IME 入力中は無視し、Enter キーおよび Ctrl+B/I/K、Tab/Shift+Tab を処理する。
  *
@@ -245,6 +309,7 @@ export function handleMarkdownKeyDown(e, composingRef, onChange, tabSize = 4) {
         requestAnimationFrame(() => {
           textarea.selectionStart = result.selectionStart;
           textarea.selectionEnd = result.selectionEnd;
+          scrollCaretIntoView(textarea);
         });
       }
       return true;
@@ -264,6 +329,7 @@ export function handleMarkdownKeyDown(e, composingRef, onChange, tabSize = 4) {
       requestAnimationFrame(() => {
         textarea.selectionStart = result.selectionStart;
         textarea.selectionEnd = result.selectionEnd;
+        scrollCaretIntoView(textarea);
       });
     }
     return true;
@@ -286,6 +352,7 @@ export function handleMarkdownKeyDown(e, composingRef, onChange, tabSize = 4) {
     requestAnimationFrame(() => {
       textarea.selectionStart = result.cursor;
       textarea.selectionEnd = result.cursor;
+      scrollCaretIntoView(textarea);
     });
   }
 

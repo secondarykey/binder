@@ -376,6 +376,35 @@ plugins/              ← バインダー内（git管理・共有される）
 - `dialogs/RootFileSetting.jsx` — バインダー設定の「ファイル」タブ。一覧 + 追加・リネーム・削除。編集ダイアログは `.md` / `.markdown` でプレビュー切替（`Marked.parse()` 使用）
 - `dialogs/ModifiedMenu.jsx` — `DIR_File` を「File」セクションとして表示。`type === 'file'` はエディタ画面を持たないためダブルクリックで開かない
 
+### オートコンプリート
+
+エディタの入力補助機能。Goテンプレート編集とMermaidダイアグラム編集で異なる候補を提供する。
+
+**設定（5つの個別トグル）**:
+- `AutoCompleteConfig` (`settings/settings.go`) — `template`, `idAssist`, `autoClose`, `funcHint`, `mermaid` の5フラグ
+- 旧形式（`autoComplete: true/false`）との後方互換: Go側は `Editor.UnmarshalJSON` でbool→オブジェクトに変換、フロントエンド側は `typeof e.autoComplete === 'object'` で判定
+- 設定UI: `dialogs/EditorSetting.jsx` の5つの小型Switch
+
+**共有フック・データファイル** (`_cmd/shared/frontend/editor/`):
+- `useAutocomplete.js` — 汎用オートコンプリートフック。2種類のトリガーをサポート:
+  - **文字列トリガー**: `{ trigger: '{{', candidates }` — 特定文字列の入力で発火（Goテンプレート用）
+  - **行頭トリガー**: `{ trigger: '', lineStart: true, candidates }` — 行頭からの入力全体でフィルタ（Mermaid用）
+- `mermaid-candidates.js` — Mermaidオートコンプリートのデータ定義。`buildMermaidCandidates(types, t)`, `buildMermaidSyntaxMap(t)`, `buildMermaidDirections(t)` をエクスポート
+- 候補関数が `{ items, filterKey }` を返すと、`filterKey` でサブトークン置換を行う（例: `flowchart L` → `LR` のみ置換）
+
+**Goテンプレート補完** (`Component.jsx`):
+- `{{` トリガー: キーワード・制御構文・アクション・比較・カスタム関数の候補
+- `.` トリガー: ドット記法のプロパティ候補
+- `"` トリガー: ID補助。`goTemplateCandidates` の `args[argIndex].idType` で厳密に位置判定し、該当引数のみでID一覧を表示。`needsEnd` 付きブロックキーワード（`range` 等）の内側関数も検出
+- `autoClose`: `if`/`range`/`with`/`block` 選択時に `{{end}}` を自動挿入
+- `funcHint`: カーソル位置の関数に応じて引数ヒントを表示
+
+**Mermaid補完** (`Component.jsx` の `getMermaidCandidates`):
+- 1行目: ダイアグラムタイプ候補。ハイブリッド方式（`mermaidKnownKeywords` + `mermaid.getRegisteredDiagramsMetadata()` で動的取得し、`detectType()` で検証）
+- 1行目の2語目以降: `flowchart`/`graph` 等の方向指定キーワード候補（TD, LR 等）
+- 2行目以降: ダイアグラムタイプ別の構文キーワード候補（`participant`, `subgraph`, `section` 等）
+- i18nキー: `autocomplete.mermaid.*`（ダイアグラムタイプ）, `autocomplete.mermaid.dir.*`（方向）, `autocomplete.mermaid.syn.*`（構文）
+
 ## Binder Lite
 
 Binder Lite は軽量版の Markdown/Mermaid エディタ。git管理・DB・ツリー階層・公開機能を持たず、OSの任意ファイルを直接開いて編集する。
