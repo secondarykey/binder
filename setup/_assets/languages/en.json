@@ -216,7 +216,8 @@
         "autoSaveMinutes" : "min",
         "autoSaveOnClose" : "Save on close",
         "autoSaveOnLeave" : "Save when leaving a binder",
-        "autoSaveHint" : "Periodically record all changes while a binder is open. Commit messages are prefixed with \"Auto Save\".",
+        "autoSaveConfirm" : "Confirm before closing / leaving",
+        "autoSaveHint" : "Periodically record all changes while a binder is open. Commit messages are prefixed with \"Auto Save\". When \"Confirm before closing / leaving\" is on, the unrecorded list is shown on the close / home button instead of saving silently (OS-level close such as Alt+F4 or shutdown closes without asking).",
         "autoSaved" : "Auto saved ({{num}} items)"
     },
     "plugin" : {

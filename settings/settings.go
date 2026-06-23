@@ -48,6 +48,11 @@ type AutoSave struct {
 	// OnLeave はバインダーを離れる（一覧に戻る）時に保存するかどうか。
 	// 未記録の編集はディスクに残るため、既定はOFF（記録を先送りしたいケースを尊重）。
 	OnLeave bool `json:"onLeave"`
+	// ConfirmOnClose はアプリを閉じる / 一覧に戻る時に、未記録一覧を出して確認するか。
+	// 有効時はアプリ内の操作（×ボタン・一覧に戻る）でコミットモーダルを表示し、
+	// OnClose/OnLeave の静かな保存より優先する。OSクローズ（Alt+F4・シャットダウン）は
+	// モーダルを出すとシャットダウンをブロックし得るため、確認せず何もせず閉じる。
+	ConfirmOnClose bool `json:"confirmOnClose"`
 }
 
 // DefaultAutoSaveInterval は自動保存間隔のデフォルト値（分）。
@@ -332,6 +337,7 @@ func def() *Setting {
 		IntervalMinutes: DefaultAutoSaveInterval,
 		OnClose:         true,
 		OnLeave:         false,
+		ConfirmOnClose:  false,
 	}
 
 	return &set
@@ -499,6 +505,7 @@ func SaveAutoSave(a *AutoSave) error {
 		IntervalMinutes: interval,
 		OnClose:         a.OnClose,
 		OnLeave:         a.OnLeave,
+		ConfirmOnClose:  a.ConfirmOnClose,
 	}
 	return obj.save()
 }

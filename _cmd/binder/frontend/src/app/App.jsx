@@ -96,6 +96,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [commitModalFilter, setCommitModalFilter] = useState(null);
+  // 閉じる確認モーダル経由で実行する保留中のアクション（'exit' | 'home' | null）
+  const [pendingClose, setPendingClose] = useState(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishModalTemplate, setPublishModalTemplate] = useState(null);
   const [publishModalSubtree, setPublishModalSubtree] = useState(null);
@@ -448,6 +450,17 @@ function App() {
   /**
    * ホームボタンクリック: バインダーを閉じてトップへ移動
    */
+  // バインダーを閉じてトップへ移動する（保存・確認を伴わない実処理）
+  const closeAndGoHome = () => {
+    CloseBinder().then(() => {
+      setPageTitle("");
+      setBinderName("");
+      nav("/");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
   const handleClickHome = () => {
     // ホームに戻る前に現在のバインダーの表示ページをメモリに保存
     if (currentBinderDir) {
@@ -458,27 +471,28 @@ function App() {
       }
       currentBinderDir = null;
     }
-    // バインダーを閉じる処理（CloseBinder で current が nil になるため、保存は必ずこの前に行う）
-    const closeAndGoHome = () => {
-      CloseBinder().then(() => {
-        setPageTitle("");
-        setBinderName("");
-        nav("/");
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      });
-    };
-    // 設定「バインダーを離れる時に保存」が有効なら、閉じる前に全体コミットする
     GetAutoSave().then((a) => {
+      if (a && a.confirmOnClose) {
+        // 確認モード: 未記録一覧（コミットモーダル）を出し、コミット/キャンセル後に一覧へ戻る
+        setPendingClose('home');
+        setCommitModalFilter(null);
+        setCommitModalOpen(true);
+        return;
+      }
       if (a && a.onLeave) {
-        return AutoSave().then((n) => {
+        // 「離れる時に保存」: 閉じる前に全体コミットする（current が nil になる前）
+        AutoSave().then((n) => {
           if (n > 0) {
             evt.commitDone();
             evt.showSuccessMessage(t("setting.autoSaved", { num: n }));
           }
-        }).catch(() => {});
+        }).catch(() => {}).finally(closeAndGoHome);
+        return;
       }
-    }).finally(closeAndGoHome);
+      closeAndGoHome();
+    }).catch(() => {
+      closeAndGoHome();
+    });
   }
 
   const handlePin = () => {
@@ -495,13 +509,26 @@ function App() {
     Window.ToggleMaximise();
   }
 
+  // アプリ終了（Go側で OnClose 等を処理）
+  const doTerminate = () => {
+    Terminate().catch((err) => {
+      console.warn(err);
+    });
+  };
+
   //終了処理
   const handleExit = () => {
-    //TODO 終了処理を入れる
-    Terminate().then(() => {
-      console.log("?")
-    }).catch((err) => {
-      console.warn(err);
+    GetAutoSave().then((a) => {
+      if (a && a.confirmOnClose && currentBinderDir) {
+        // 確認モード（バインダーを開いている時のみ）: 未記録一覧を出してから終了する
+        setPendingClose('exit');
+        setCommitModalFilter(null);
+        setCommitModalOpen(true);
+        return;
+      }
+      doTerminate();
+    }).catch(() => {
+      doTerminate();
     });
   }
 
@@ -613,7 +640,20 @@ function App() {
       </div>
 
       {/** コミットモーダル */}
-      <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => { setCommitModalOpen(false); setCommitModalFilter(null); }} />
+      <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => {
+        setCommitModalOpen(false);
+        setCommitModalFilter(null);
+        // 閉じる確認モーダル経由（コミット成功でもキャンセルでも）保留中のアクションを実行
+        if (pendingClose) {
+          const action = pendingClose;
+          setPendingClose(null);
+          if (action === 'exit') {
+            doTerminate();
+          } else if (action === 'home') {
+            closeAndGoHome();
+          }
+        }
+      }} />
 
       {/** 公開一覧モーダル */}
       <PublishModal open={publishModalOpen} template={publishModalTemplate} filterIds={publishModalSubtree} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); setPublishModalSubtree(null); }} />

@@ -735,7 +735,14 @@ func (win *Window) Terminate() bool {
 // アプリ内の終了ボタン（Terminate）と OS レベルのウィンドウクローズ（WindowClosing）の
 // 両方から呼ばれる。二重に呼ばれても2回目は変更なしで no-op になる。
 func (win *Window) autoSaveOnClose() {
-	if !settings.GetAutoSave().OnClose {
+	as := settings.GetAutoSave()
+	// 確認モード時は静かな保存をしない。
+	// アプリ内の閉じる操作はフロントのコミットモーダルで処理され、
+	// OSクローズ（Alt+F4・シャットダウン等）はモーダルを出せないため何もせず閉じる。
+	if as.ConfirmOnClose {
+		return
+	}
+	if !as.OnClose {
 		return
 	}
 	n, err := win.app.AutoSave()
