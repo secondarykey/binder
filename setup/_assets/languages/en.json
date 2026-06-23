@@ -209,7 +209,13 @@
         "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
         "addDomain" : "Add Domain",
         "domainPlaceholder" : "e.g. cdn.jsdelivr.net",
-        "security" : "Security"
+        "security" : "Security",
+        "autoSave" : "Auto Save",
+        "autoSaveInterval" : "Every",
+        "autoSaveMinutes" : "min",
+        "autoSaveOnClose" : "Save on close",
+        "autoSaveHint" : "Periodically record all changes while a binder is open. Commit messages are prefixed with \"Auto Save\".",
+        "autoSaved" : "Auto saved ({{num}} items)"
     },
     "plugin" : {
         "title" : "Plugins",

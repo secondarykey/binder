@@ -209,7 +209,13 @@
         "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
         "addDomain" : "ドメインを追加",
         "domainPlaceholder" : "例: cdn.jsdelivr.net",
-        "security" : "セキュリティ"
+        "security" : "セキュリティ",
+        "autoSave" : "自動保存",
+        "autoSaveInterval" : "間隔",
+        "autoSaveMinutes" : "分",
+        "autoSaveOnClose" : "閉じる時に保存",
+        "autoSaveHint" : "バインダーを開いている間、一定間隔で変更を全体記録します。コメントは「Auto Save」が接頭子になります。",
+        "autoSaved" : "自動保存しました（{{num}}件）"
     },
     "plugin" : {
         "title" : "プラグイン",

@@ -155,6 +155,24 @@ func main() {
 		win.UpdateWindowTitles()
 	})
 
+	// ウィンドウを閉じる時の自動保存。
+	// 設定で「閉じる時に保存」が有効な場合、終了前に変更のある全エンティティを
+	// 同期コミットする（間隔保存とは独立）。app.AutoSave() は Go 側で完結する同期処理で、
+	// バインダー未オープン時・変更なし時は何もしない。
+	window.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		if !settings.GetAutoSave().OnClose {
+			return
+		}
+		n, err := app.AutoSave()
+		if err != nil {
+			log.Warn("AutoSave on close error:\n%+v", err)
+			return
+		}
+		if n > 0 {
+			log.Info("AutoSave on close: %d files committed", n)
+		}
+	})
+
 	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）
 	// events.Common.WindowFocus は Windows 実装では emit されない（WM_SETFOCUS は
 	// events.Windows.WindowSetFocus を emit する）ため、正しいイベントを使う。

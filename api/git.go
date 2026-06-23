@@ -34,6 +34,20 @@ func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
 	return nil
 }
 
+// AutoSave は変更のある全エンティティを一括コミットする（自動保存）。
+// バインダー未オープン時は何もせず 0 を返す。コミット件数を返す。
+func (a *App) AutoSave() (int, error) {
+	if a.current == nil {
+		return 0, nil
+	}
+	n, err := a.current.AutoSave()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return 0, fmt.Errorf("AutoSave() error: %+v", err)
+	}
+	return n, nil
+}
+
 func (a *App) Commit(mode string, id string, m string) error {
 
 	defer log.PrintTrace(log.Func("Commit()", id, mode))

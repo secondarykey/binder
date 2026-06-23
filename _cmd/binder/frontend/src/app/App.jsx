@@ -22,7 +22,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -57,6 +57,7 @@ export async function copyClipboard(val) {
 }
 
 var intervalId = undefined;
+var autoSaveIntervalId = undefined;
 
 /**
  * バインダーごとの最後に開いたデータをメモリ上で保持する。
@@ -151,6 +152,30 @@ function App() {
     }).catch((err) => {
       evt.showErrorMessage(err);
     });
+  };
+
+  // 自動保存ループを（再）設定する。
+  // 設定が有効な場合のみ、間隔（分）ごとに AutoSave を実行する。
+  // バインダーが開かれている時だけ保存し、保存があればスナックバーで通知する。
+  const setupAutoSave = () => {
+    if (autoSaveIntervalId !== undefined) {
+      clearInterval(autoSaveIntervalId);
+      autoSaveIntervalId = undefined;
+    }
+    GetAutoSave().then((a) => {
+      if (!a || !a.enabled) return;
+      const minutes = a.intervalMinutes > 0 ? a.intervalMinutes : 30;
+      autoSaveIntervalId = setInterval(function () {
+        if (!currentBinderDir) return;
+        AutoSave().then((n) => {
+          if (n > 0) {
+            evt.showSuccessMessage(t("setting.autoSaved", { num: n }));
+          }
+        }).catch(() => {
+          // 自動保存の失敗はユーザ操作を妨げないため通知しない（syslogに記録される）
+        });
+      }, minutes * 60 * 1000);
+    }).catch(() => {});
   };
 
   // LoadBinder を呼んでエディタに遷移する
@@ -359,6 +384,12 @@ function App() {
       SavePosition();
     }, 60 * 1000);
 
+    // 自動保存ループを設定し、設定変更通知で再設定する
+    setupAutoSave();
+    const cleanupAutoSave = Events.On("binder:autosave:changed", () => {
+      setupAutoSave();
+    });
+
     const handleKeyDown = (e) => {
       if (e.key === 'F12') {
         e.preventDefault();
@@ -371,6 +402,11 @@ function App() {
       document.removeEventListener('keydown', handleKeyDown);
       cleanupRestored();
       cleanupSearch();
+      cleanupAutoSave();
+      if (autoSaveIntervalId !== undefined) {
+        clearInterval(autoSaveIntervalId);
+        autoSaveIntervalId = undefined;
+      }
     };
 
     /**

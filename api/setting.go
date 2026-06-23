@@ -105,6 +105,17 @@ func (a *App) SetTreeDisplayMode(mode string) error {
 	return settings.SaveTreeDisplayMode(mode)
 }
 
+// GetAutoSave は自動保存設定を返す。
+func (a *App) GetAutoSave() *settings.AutoSave {
+	return settings.GetAutoSave()
+}
+
+// SaveAutoSave は自動保存設定を保存する。
+func (a *App) SaveAutoSave(s *settings.AutoSave) error {
+	defer log.PrintTrace(log.Func("SaveAutoSave()"))
+	return settings.SaveAutoSave(s)
+}
+
 func (a *App) GetTreeExpandTargets() bool {
 	return settings.GetTreeExpandTargets()
 }

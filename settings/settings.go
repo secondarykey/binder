@@ -30,10 +30,25 @@ type Setting struct {
 	Path        *Path     `json:"path"`
 	Look        *Look     `json:"lookAndFeel"`
 	Git         *Git      `json:"git"`
+	AutoSave    *AutoSave `json:"autoSave,omitempty"`
 	Language    string    `json:"language"`
 	AppVersion  string    `json:"appVersion,omitempty"`
 	AllowedCDNs []string  `json:"allowedCdns"`
 }
+
+// AutoSave はバインダーを開いている間の自動保存（全体コミット）設定。
+// アプリ全体の設定として setting.json に保持する（個人の作業スタイルの設定）。
+type AutoSave struct {
+	// Enabled は一定間隔での自動保存を行うかどうか。
+	Enabled bool `json:"enabled"`
+	// IntervalMinutes は自動保存の間隔（分）。デフォルト30。
+	IntervalMinutes int `json:"intervalMinutes"`
+	// OnClose はウィンドウを閉じる時に保存するかどうか（間隔保存とは独立）。
+	OnClose bool `json:"onClose"`
+}
+
+// DefaultAutoSaveInterval は自動保存間隔のデフォルト値（分）。
+const DefaultAutoSaveInterval = 30
 
 func (s Setting) IsDefault() bool {
 	if s.Position.Left == -9999 && s.Position.Top == -9999 {
@@ -201,6 +216,12 @@ func Get() *Setting {
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
 	}
+	if pSet.AutoSave == nil {
+		pSet.AutoSave = def().AutoSave
+	}
+	if pSet.AutoSave.IntervalMinutes <= 0 {
+		pSet.AutoSave.IntervalMinutes = DefaultAutoSaveInterval
+	}
 	return pSet
 }
 
@@ -301,6 +322,13 @@ func def() *Setting {
 
 	// CDNホワイトリストのデフォルト
 	set.AllowedCDNs = defaultAllowedCDNs()
+
+	// 自動保存のデフォルト（間隔30分・閉じる時保存）
+	set.AutoSave = &AutoSave{
+		Enabled:         true,
+		IntervalMinutes: DefaultAutoSaveInterval,
+		OnClose:         true,
+	}
 
 	return &set
 }
@@ -447,6 +475,26 @@ func GetTreeDisplayMode() string {
 func SaveTreeDisplayMode(mode string) error {
 	obj := Get()
 	obj.Look.TreeDisplayMode = mode
+	return obj.save()
+}
+
+// GetAutoSave は自動保存設定を返す（nil/不正値は Get() 内で補正済み）。
+func GetAutoSave() *AutoSave {
+	return Get().AutoSave
+}
+
+// SaveAutoSave は自動保存設定を保存する。間隔が0以下の場合はデフォルトに丸める。
+func SaveAutoSave(a *AutoSave) error {
+	obj := Get()
+	interval := a.IntervalMinutes
+	if interval <= 0 {
+		interval = DefaultAutoSaveInterval
+	}
+	obj.AutoSave = &AutoSave{
+		Enabled:         a.Enabled,
+		IntervalMinutes: interval,
+		OnClose:         a.OnClose,
+	}
 	return obj.save()
 }
 
