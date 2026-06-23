@@ -9,6 +9,7 @@ import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binde
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
+import { GetModifiedIds } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
@@ -2100,6 +2101,16 @@ function Editor(props) {
     // サイドバートグルでツリーパネルの表示/非表示を切り替える
     evt.register("Editor", Event.ShowMenu, function (flag) {
       setTreeVisible(flag);
+    });
+
+    // コミット完了（自動保存・一括コミット等）時に、開いているファイルの未記録状態を
+    // 再確認してコミットボタンの強調を更新する。idRef で現在開いているIDを参照する。
+    evt.register("Editor", Event.CommitDone, function () {
+      const cur = idRef.current;
+      if (!cur) return;
+      GetModifiedIds().then((ids) => {
+        setUpdated(new Set(ids ?? []).has(cur));
+      }).catch(() => {});
     });
 
     // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）

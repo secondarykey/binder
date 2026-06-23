@@ -169,6 +169,8 @@ function App() {
         if (!currentBinderDir) return;
         AutoSave().then((n) => {
           if (n > 0) {
+            // ツリーの未記録強調・エディタのコミットボタンを更新
+            evt.commitDone();
             evt.showSuccessMessage(t("setting.autoSaved", { num: n }));
           }
         }).catch(() => {
