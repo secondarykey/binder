@@ -336,6 +336,13 @@ func SaveStartupOk(ok bool) error {
 	return obj.save()
 }
 
+// MarkStartupOk は StartupOk フラグをメモリ上で true にするだけで保存はしない。
+// 直後に走る別の保存（LoadBinder の SaveHistory 等）に相乗りして永続化させることで、
+// 余計なファイル書き込みを増やさずに済ませるために使う。
+func MarkStartupOk() {
+	Get().Path.StartupOk = true
+}
+
 func SaveLastData(dataType, id string) error {
 	obj := Get()
 	obj.Path.LastDataType = dataType
