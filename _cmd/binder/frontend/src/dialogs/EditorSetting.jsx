@@ -168,11 +168,13 @@ function EditorSetting() {
             <FormControlLabel
               control={
                 <Switch
+                  size="small"
                   checked={showLineNumbers}
                   onChange={(e) => setShowLineNumbers(e.target.checked)}
                 />
               }
               label={t("setting.showLineNumbers")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
             />
           </FormControl>
 
@@ -181,11 +183,13 @@ function EditorSetting() {
             <FormControlLabel
               control={
                 <Switch
+                  size="small"
                   checked={wordWrap}
                   onChange={(e) => setWordWrap(e.target.checked)}
                 />
               }
               label={t("setting.wordWrap")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
             />
           </FormControl>
 
@@ -194,18 +198,33 @@ function EditorSetting() {
             <FormControlLabel
               control={
                 <Switch
+                  size="small"
                   checked={showPreview}
                   onChange={(e) => setShowPreview(e.target.checked)}
                 />
               }
               label={t("setting.showPreview")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
             />
           </FormControl>
 
           {/** オートコンプリート */}
           <FormControl>
-            <FormLabel sx={{ mb: 0.5 }}>{t("setting.autoComplete")}</FormLabel>
-            <Box sx={{ display: 'flex', flexDirection: 'column', ml: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={Object.values(autoComplete).some(v => v)}
+                  onChange={(e) => {
+                    const v = e.target.checked;
+                    setAutoComplete({ template: v, idAssist: v, autoClose: v, funcHint: v, mermaid: v });
+                  }}
+                />
+              }
+              label={t("setting.autoComplete")}
+              sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
+            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
               {[
                 { key: 'template', label: 'setting.ac.template' },
                 { key: 'idAssist', label: 'setting.ac.idAssist' },
