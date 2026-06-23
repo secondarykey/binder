@@ -42,6 +42,19 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	a.SetCurrent(b)
 
+	// バインダーを問題なく開けた = この起動は安全と確定できるので、
+	// クラッシュ検出フラグ StartupOk を true に戻す（次回起動で自動オープンを許可）。
+	// 起動時は StartupOk(false) を書いており、従来は正常終了時のみ true に戻していたが、
+	// 開発モードのホットリロード等で正常終了しないと false のまま残るため、
+	// 最初のバインダーを開けた時点で一度だけ保存する。
+	if !a.startupOkSaved {
+		if err := settings.SaveStartupOk(true); err != nil {
+			log.Warn("SaveStartupOk(true) error:\n%+v", err)
+		} else {
+			a.startupOkSaved = true
+		}
+	}
+
 	address, err := a.Address()
 	if err != nil {
 		return "", xerrors.Errorf("Binder Address() error: %w", err)

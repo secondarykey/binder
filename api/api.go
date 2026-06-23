@@ -29,6 +29,9 @@ type App struct {
 	searchCancel  context.CancelFunc
 	SearchEmitter SearchEmitter
 	WindowCloser  BinderWindowCloser
+	// startupOkSaved は今セッションで StartupOk(true) を保存済みかどうか。
+	// 最初のバインダーを開けた時点で一度だけ保存するためのガード。
+	startupOkSaved bool
 }
 
 func New(version string) *App {

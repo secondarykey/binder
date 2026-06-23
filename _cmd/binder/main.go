@@ -203,6 +203,8 @@ func main() {
 
 	// wailsApp.Run() が正常リターンした = 正常終了。
 	// 次回起動で自動オープンが動くよう StartupOk を true に戻す。
+	// バインダーを開いた場合は LoadBinder() 内で既に true 保存済みだが、
+	// バインダーを開かずに正常終了したセッションをここでカバーする。
 	if err := settings.SaveStartupOk(true); err != nil {
 		log.Warn("SaveStartupOk(true) error:\n%+v", err)
 	}
