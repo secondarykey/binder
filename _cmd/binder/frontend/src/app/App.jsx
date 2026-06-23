@@ -119,7 +119,10 @@ function App() {
   // バインダーを開く共通処理（CheckCompat付き）
   // openLastData=true の場合、起動後に前回開いたデータに遷移する
   const openBinder = (dir, openLastData = false) => {
+    const t0 = performance.now();
+    window.__binderOpenT0 = t0;
     CheckCompat(dir).then((result) => {
+      console.debug(`[timing] CheckCompat: ${(performance.now() - t0).toFixed(1)}ms`);
       setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
       switch (result.status) {
         case CompatNotBinder:
@@ -169,7 +172,12 @@ function App() {
     MarkedScript.reset();
     MermaidScript.reset();
     editorHistory.clear();
+    const tLoad = performance.now();
     LoadBinder(dir).then((href) => {
+      console.debug(`[timing] LoadBinder: ${(performance.now() - tLoad).toFixed(1)}ms`);
+      if (window.__binderOpenT0 !== undefined) {
+        console.debug(`[timing] openBinder→LoadBinder done (total): ${(performance.now() - window.__binderOpenT0).toFixed(1)}ms`);
+      }
       evt.changeAddress(href);
       currentBinderDir = dir;
 

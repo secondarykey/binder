@@ -14,6 +14,7 @@ import (
 func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
+	defer log.Timer("api.LoadBinder total")()
 
 	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
 	defer func() {

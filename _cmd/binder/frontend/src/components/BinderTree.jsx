@@ -273,7 +273,9 @@ function BinderTree(props) {
   };
 
   const viewTree = (expandTop = false) => {
+    const tTree = performance.now();
     GetBinderTree().then((resp) => {
+      console.debug(`[timing] GetBinderTree: ${(performance.now() - tTree).toFixed(1)}ms`);
       setTree(resp.data);
       if (expandTop) {
         const topIds = (resp.data || []).map(n => n.id);
