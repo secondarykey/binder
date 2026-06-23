@@ -23,6 +23,7 @@
         "name" : "名前",
         "detail" : "詳細",
         "alias" : "エイリアス",
+        "debugInfo" : "デバッグ情報",
         "save" : "保存",
         "cancel" : "キャンセル",
         "delete" : "削除",
@@ -650,7 +651,13 @@
             "noBinderOpen" : "Binderが開かれていません",
             "emitterNotSet" : "検索エミッターが設定されていません",
             "assetsNoteOnly" : "アセットはノートにのみ追加できます",
-            "emptyDirectory" : "ディレクトリを選択してください"
+            "emptyDirectory" : "ディレクトリを選択してください",
+            "unexpected" : "異常が発生しました",
+            "noteHasChildren" : "子要素があるノートは削除できません",
+            "indexNoteUndeletable" : "indexノートは削除できません",
+            "duplicateAlias" : "そのエイリアスは既に使用されています",
+            "duplicateName" : "その名前は既に使用されています",
+            "notBinder" : "このフォルダはバインダーではありません"
         }
     },
     "lite" : {

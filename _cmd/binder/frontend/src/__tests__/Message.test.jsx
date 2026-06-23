@@ -7,14 +7,39 @@ describe('Message', () => {
   it('creates a message object', () => {
     const msg = Message.createMessage('success', 'hello');
     expect(msg.type).toBe('success');
-    expect(msg.message).toBe('hello');
+    expect(msg.body).toBe('hello');
   });
 
-  it('handles error objects with stack', () => {
+  it('handles error objects', () => {
     const err = new Error('test error');
     const msg = Message.createMessage('error', err);
     expect(msg.type).toBe('error');
-    expect(msg.message).toContain('test error');
+    expect(msg.body).toContain('test error');
+  });
+
+  it('extracts body from a Wails structured (cause) error envelope', () => {
+    const envelope = JSON.stringify({
+      message: 'RemoveNote() error',
+      cause: { body: '子要素があるノートは削除できません', detail: 'has children', cause: 'note has children: id' },
+      kind: 'RuntimeError',
+    });
+    const err = new Error(envelope);
+    const msg = Message.createMessage('error', err);
+    expect(msg.body).toBe('子要素があるノートは削除できません');
+    expect(msg.detail).toBe('has children');
+    expect(msg.debug).toContain('note has children: id');
+  });
+
+  it('falls back to first line of message for unconverted Go errors', () => {
+    const envelope = JSON.stringify({
+      message: 'GetNote() error\n stack trace line\n more',
+      cause: {},
+      kind: 'RuntimeError',
+    });
+    const err = new Error(envelope);
+    const msg = Message.createMessage('error', err);
+    expect(msg.body).toBe('GetNote() error');
+    expect(msg.debug).toContain('stack trace line');
   });
 });
 

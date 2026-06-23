@@ -12,6 +12,7 @@ import (
 	"binder/api/lite"
 	"binder/api/shared"
 	"binder/log"
+	"binder/msgerr"
 	"binder/settings"
 	"binder/setup"
 )
@@ -81,6 +82,8 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
 		},
+		// 構造化エラー（msgerr.MessageError）を envelope の cause に載せる
+		MarshalError: msgerr.Marshal,
 	})
 
 	set := settings.GetLite()

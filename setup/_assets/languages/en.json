@@ -23,6 +23,7 @@
         "name" : "Name",
         "detail" : "Detail",
         "alias" : "Alias",
+        "debugInfo" : "Debug info",
         "save" : "Save",
         "cancel" : "Cancel",
         "delete" : "Delete",
@@ -650,7 +651,13 @@
             "noBinderOpen" : "No binder open",
             "emitterNotSet" : "Search emitter is not set",
             "assetsNoteOnly" : "Assets can only be added to notes",
-            "emptyDirectory" : "Please select a directory"
+            "emptyDirectory" : "Please select a directory",
+            "unexpected" : "An unexpected error occurred",
+            "noteHasChildren" : "This note has child items and cannot be deleted",
+            "indexNoteUndeletable" : "The index note cannot be deleted",
+            "duplicateAlias" : "That alias is already in use",
+            "duplicateName" : "That name is already in use",
+            "notBinder" : "This folder is not a binder"
         }
     },
     "lite" : {
