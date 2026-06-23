@@ -148,7 +148,9 @@ function Setting({ isModal, ...props }) {
     path.openWithItem = pathOpenWith;
 
     const interval = autoSaveInterval > 0 ? autoSaveInterval : 30;
-    const autoSave = { enabled: autoSaveEnabled, intervalMinutes: interval, onClose: autoSaveOnClose, onLeave: autoSaveOnLeave, confirmOnClose: autoSaveConfirm };
+    // 確認は終了保存/一覧保存の補足なので、どちらもOFFなら確認もOFFに正規化する
+    const confirm = autoSaveConfirm && (autoSaveOnClose || autoSaveOnLeave);
+    const autoSave = { enabled: autoSaveEnabled, intervalMinutes: interval, onClose: autoSaveOnClose, onLeave: autoSaveOnLeave, confirmOnClose: confirm };
 
     Promise.all([SavePath(path), SaveAutoSave(autoSave)]).then(() => {
       // 自動保存ループの再設定をメインウィンドウへ通知
@@ -411,25 +413,26 @@ function Setting({ isModal, ...props }) {
                     </Box>
                     <FormControlLabel
                       control={
-                        <Switch checked={autoSaveOnClose} disabled={autoSaveConfirm} onChange={(e) => setAutoSaveOnClose(e.target.checked)} size="small" />
+                        <Switch checked={autoSaveOnClose} onChange={(e) => setAutoSaveOnClose(e.target.checked)} size="small" />
                       }
                       label={t("setting.autoSaveOnClose")}
-                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: autoSaveConfirm ? 'var(--text-disabled)' : 'var(--text-primary)' } }}
+                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
                     />
                     <FormControlLabel
                       control={
-                        <Switch checked={autoSaveOnLeave} disabled={autoSaveConfirm} onChange={(e) => setAutoSaveOnLeave(e.target.checked)} size="small" />
+                        <Switch checked={autoSaveOnLeave} onChange={(e) => setAutoSaveOnLeave(e.target.checked)} size="small" />
                       }
                       label={t("setting.autoSaveOnLeave")}
-                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: autoSaveConfirm ? 'var(--text-disabled)' : 'var(--text-primary)' } }}
+                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
                     />
                   </Box>
+                  {/* 確認は終了保存/一覧保存の補足。どちらかがONの時だけ設定できる */}
                   <FormControlLabel
                     control={
-                      <Switch checked={autoSaveConfirm} onChange={(e) => setAutoSaveConfirm(e.target.checked)} size="small" />
+                      <Switch checked={autoSaveConfirm && (autoSaveOnClose || autoSaveOnLeave)} disabled={!(autoSaveOnClose || autoSaveOnLeave)} onChange={(e) => setAutoSaveConfirm(e.target.checked)} size="small" />
                     }
                     label={t("setting.autoSaveConfirm")}
-                    sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: (autoSaveOnClose || autoSaveOnLeave) ? 'var(--text-primary)' : 'var(--text-disabled)' } }}
                   />
                   <FormLabel sx={{ fontSize: '12px', color: 'var(--text-muted)', m: 0 }}>
                     {t("setting.autoSaveHint")}

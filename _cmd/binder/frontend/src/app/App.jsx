@@ -472,8 +472,8 @@ function App() {
       currentBinderDir = null;
     }
     GetAutoSave().then((a) => {
-      if (a && a.confirmOnClose) {
-        // 確認モード: 未記録一覧（コミットモーダル）を出し、コミット/キャンセル後に一覧へ戻る
+      if (a && a.onLeave && a.confirmOnClose) {
+        // 「一覧に戻る時に保存」が確認モード: 未記録一覧を出し、コミット/キャンセル後に一覧へ
         setPendingClose('home');
         setCommitModalFilter(null);
         setCommitModalOpen(true);
@@ -519,8 +519,8 @@ function App() {
   //終了処理
   const handleExit = () => {
     GetAutoSave().then((a) => {
-      if (a && a.confirmOnClose && currentBinderDir) {
-        // 確認モード（バインダーを開いている時のみ）: 未記録一覧を出してから終了する
+      if (a && a.onClose && a.confirmOnClose && currentBinderDir) {
+        // 「終了時に保存」が確認モード（バインダーを開いている時のみ）: 未記録一覧を出してから終了
         setPendingClose('exit');
         setCommitModalFilter(null);
         setCommitModalOpen(true);
