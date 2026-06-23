@@ -14,20 +14,14 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		return nil, EmptyError
 	}
 
-	defer log.Timer("GetBinderTree total")()
-
 	// Structureテーブルのみで全ツリーを構築
-	doneStruct := log.Timer("GetBinderTree: FindStructures")
 	structures, err := b.db.FindStructures()
-	doneStruct()
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindStructures() error: %w", err)
 	}
 
 	// アセットの binary フラグをまとめて取得（画像判定に使用）
-	doneAssets := log.Timer("GetBinderTree: FindAssets")
 	assets, err := b.db.FindAssets()
-	doneAssets()
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
 	}
