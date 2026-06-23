@@ -18,7 +18,7 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 import Autocomplete from "./Autocomplete.jsx";
-import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView } from "@shared/editor/markdown-keys";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
@@ -1911,6 +1911,7 @@ function Editor(props) {
           requestAnimationFrame(() => {
             textarea.selectionStart = result.selectionStart;
             textarea.selectionEnd = result.selectionEnd;
+            scrollCaretIntoView(textarea);
           });
         }
         return;
@@ -1933,6 +1934,7 @@ function Editor(props) {
         requestAnimationFrame(() => {
           textarea.selectionStart = result.selectionStart;
           textarea.selectionEnd = result.selectionEnd;
+          scrollCaretIntoView(textarea);
         });
       }
       return;
@@ -1956,6 +1958,7 @@ function Editor(props) {
       requestAnimationFrame(() => {
         textarea.selectionStart = result.cursor;
         textarea.selectionEnd = result.cursor;
+        scrollCaretIntoView(textarea);
       });
     }
   }
