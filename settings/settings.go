@@ -7,9 +7,17 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"sync"
+	"time"
 
 	"golang.org/x/xerrors"
 )
+
+// saveMu は setting.json への保存（temp 書き込み + rename）を直列化する。
+// Wails のメソッドは別 goroutine で実行されるため、SaveHistory / SaveStartupOk /
+// SaveLastData / SavePosition 等が並行すると rename が競合し、Windows で
+// "Access is denied" になる。プロセス内の保存を直列化してこれを防ぐ。
+var saveMu sync.Mutex
 
 const (
 	DirName          = ".binder"
@@ -441,6 +449,10 @@ func SavePosition(pos *Position) error {
 
 func (s *Setting) save() error {
 
+	// プロセス内の保存を直列化（並行 rename による Windows "Access is denied" 回避）
+	saveMu.Lock()
+	defer saveMu.Unlock()
+
 	fn := getFilePath()
 
 	data, err := json.Marshal(s)
@@ -465,13 +477,19 @@ func (s *Setting) save() error {
 		return xerrors.Errorf("tmp.Close() error: %w", err)
 	}
 
-	if err := os.Rename(tmpName, fn); err != nil {
-		os.Remove(tmpName)
-		return xerrors.Errorf("os.Rename() error: %w", err)
+	// Windows ではウイルス対策・インデクサ等が対象ファイルを一時的にロックして
+	// rename が Access denied になることがあるため、数回リトライする。
+	var renameErr error
+	for i := 0; i < 5; i++ {
+		if renameErr = os.Rename(tmpName, fn); renameErr == nil {
+			pSet = s
+			return nil
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 
-	pSet = s
-	return nil
+	os.Remove(tmpName)
+	return xerrors.Errorf("os.Rename() error: %w", renameErr)
 }
 
 func load() (*Setting, error) {
