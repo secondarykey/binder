@@ -178,6 +178,11 @@ function App() {
       if (window.__binderOpenT0 !== undefined) {
         console.debug(`[timing] openBinder→LoadBinder done (total): ${(performance.now() - window.__binderOpenT0).toFixed(1)}ms`);
       }
+      // marked エンジンを起動直後にバックグラウンドで先読み（ウォームアップ）。
+      // 初回ノート描画のクリティカルパス上で init()（CDN/vendor 読込 + プラグイン適用）を
+      // 走らせると数百ms かかるため、エディタのマウントと並行して温めておく。
+      // バインダーロード後に呼ぶことで GetConfig / GetPlugins が現在のバインダーで解決する。
+      MarkedScript.ensureInit().catch(() => {});
       evt.changeAddress(href);
       currentBinderDir = dir;
 

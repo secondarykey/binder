@@ -11,6 +11,10 @@ const Name = "marked"
 class MarkedScript {
 
     static _vendorUrl = null;
+    // init() の多重実行を防ぐための in-flight Promise。
+    // ウォームアップ（先読み）と初回 parse() が並行しても、同じ初期化を共有して
+    // エンジンを二重ロードしないようにする。
+    static _initPromise = null;
 
     /**
      * ベンダー JS の URL を設定する（アプリ起動時に一度呼ぶ）
@@ -21,6 +25,21 @@ class MarkedScript {
 
     static isExists() {
         return Scripter.isExists(Name)
+    }
+
+    /**
+     * エンジンが未ロードなら init() を一度だけ実行する（多重実行は in-flight Promise で共有）。
+     * 起動時のウォームアップ・初回 parse() のどちらから呼んでも安全。
+     * @returns {Promise<void>}
+     */
+    static ensureInit() {
+        if (this.isExists()) return Promise.resolve();
+        if (!this._initPromise) {
+            this._initPromise = Promise.resolve(this.init()).finally(() => {
+                this._initPromise = null;
+            });
+        }
+        return this._initPromise;
     }
 
     static reset() {
@@ -113,7 +132,7 @@ class MarkedScript {
             if (this.isExists()) {
                 func();
             } else {
-                this.init().then(() => {
+                this.ensureInit().then(() => {
                     func();
                 }).catch((err) => {
                     rej(err);
@@ -154,7 +173,7 @@ class MarkedScript {
             if (this.isExists()) {
                 func();
             } else {
-                this.init().then(func).catch(rej);
+                this.ensureInit().then(func).catch(rej);
             }
         });
     }
