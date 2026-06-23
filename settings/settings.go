@@ -100,15 +100,60 @@ type Look struct {
 }
 
 type Editor struct {
-	Program         string       `json:"program"`
-	Args            string       `json:"args"`
-	GitBash         bool         `json:"gitbash"`
-	ShowLineNumbers bool         `json:"showLineNumbers"`
-	WordWrap        bool         `json:"wordWrap"`
-	ShowPreview     bool         `json:"showPreview"`
-	AutoComplete    *bool        `json:"autoComplete,omitempty"`
-	TabSize         int          `json:"tabSize"`
-	ThemeFonts      []*ThemeFont `json:"themeFont"`
+	Program         string              `json:"program"`
+	Args            string              `json:"args"`
+	GitBash         bool                `json:"gitbash"`
+	ShowLineNumbers bool                `json:"showLineNumbers"`
+	WordWrap        bool                `json:"wordWrap"`
+	ShowPreview     bool                `json:"showPreview"`
+	AutoComplete    *AutoCompleteConfig `json:"autoComplete,omitempty"`
+	TabSize         int                 `json:"tabSize"`
+	ThemeFonts      []*ThemeFont        `json:"themeFont"`
+}
+
+type AutoCompleteConfig struct {
+	Template   bool `json:"template"`
+	IdAssist   bool `json:"idAssist"`
+	AutoClose  bool `json:"autoClose"`
+	FuncHint   bool `json:"funcHint"`
+	Mermaid    bool `json:"mermaid"`
+}
+
+func (e *Editor) UnmarshalJSON(data []byte) error {
+	type Alias Editor
+	aux := &struct {
+		*Alias
+		RawAutoComplete json.RawMessage `json:"autoComplete,omitempty"`
+	}{Alias: (*Alias)(e)}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	if len(aux.RawAutoComplete) > 0 {
+		var boolVal bool
+		if err := json.Unmarshal(aux.RawAutoComplete, &boolVal); err == nil {
+			if boolVal {
+				e.AutoComplete = defaultAutoCompleteConfig()
+			} else {
+				e.AutoComplete = &AutoCompleteConfig{}
+			}
+			return nil
+		}
+		var cfg AutoCompleteConfig
+		if err := json.Unmarshal(aux.RawAutoComplete, &cfg); err == nil {
+			e.AutoComplete = &cfg
+		}
+	}
+	return nil
+}
+
+func defaultAutoCompleteConfig() *AutoCompleteConfig {
+	return &AutoCompleteConfig{
+		Template:  true,
+		IdAssist:  true,
+		AutoClose: true,
+		FuncHint:  true,
+		Mermaid:   true,
+	}
 }
 
 type ThemeFont struct {
@@ -151,8 +196,7 @@ func Get() *Setting {
 		pSet.Look.Editor.TabSize = 4
 	}
 	if pSet.Look.Editor.AutoComplete == nil {
-		t := true
-		pSet.Look.Editor.AutoComplete = &t
+		pSet.Look.Editor.AutoComplete = defaultAutoCompleteConfig()
 	}
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
@@ -369,7 +413,9 @@ func SaveEditor(e *Editor) error {
 	obj.Look.Editor.ShowLineNumbers = e.ShowLineNumbers
 	obj.Look.Editor.WordWrap = e.WordWrap
 	obj.Look.Editor.ShowPreview = e.ShowPreview
-	obj.Look.Editor.AutoComplete = e.AutoComplete
+	if e.AutoComplete != nil {
+		obj.Look.Editor.AutoComplete = e.AutoComplete
+	}
 	obj.Look.Editor.TabSize = e.TabSize
 	obj.Look.Editor.ThemeFonts = e.ThemeFonts
 	return obj.save()
