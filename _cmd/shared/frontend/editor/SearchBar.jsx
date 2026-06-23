@@ -44,9 +44,8 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
-  // マウント時に入力欄にフォーカスし、初期位置を算出
+  // マウント時に初期検索・初期位置を算出
   useEffect(() => {
-    inputRef.current?.focus();
     const q = initialQuery || savedQuery;
     if (q) {
       savedQuery = q;
@@ -67,6 +66,19 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
       setVisible(true);
     }
   }, []);
+
+  // パネルが可視になってから入力欄へフォーカスする。
+  // 起動後1回目は savedPosition が無く visible=false（visibility:hidden）でマウントされ、
+  // visibility:hidden の要素は focus できないため、マウント時に focus すると無視される。
+  // visible が確定（true）してから focus することで初回もフォーカスが当たるようにする。
+  useEffect(() => {
+    if (!visible) return;
+    if (showReplace) {
+      replaceInputRef.current?.focus();
+    } else {
+      inputRef.current?.focus();
+    }
+  }, [visible]);
 
   // 置換モードが開かれたら置換入力にフォーカス
   useEffect(() => {
