@@ -58,6 +58,8 @@ export async function copyClipboard(val) {
 
 var intervalId = undefined;
 var autoSaveIntervalId = undefined;
+// 自動保存ループの世代トークン（非同期セットアップのレース対策）
+var autoSaveGen = 0;
 
 /**
  * バインダーごとの最後に開いたデータをメモリ上で保持する。
@@ -158,13 +160,24 @@ function App() {
   // 設定が有効な場合のみ、間隔（分）ごとに AutoSave を実行する。
   // バインダーが開かれている時だけ保存し、保存があればスナックバーで通知する。
   const setupAutoSave = () => {
+    // 既存タイマーを破棄
     if (autoSaveIntervalId !== undefined) {
       clearInterval(autoSaveIntervalId);
       autoSaveIntervalId = undefined;
     }
+    // 世代トークン。GetAutoSave() が非同期で解決する間に再設定やアンマウントが
+    // 起きた場合（StrictMode の二重マウント等）、古い呼び出しがタイマーを生成して
+    // 追跡外で動き続ける（＝古い間隔が残る）のを防ぐ。
+    const gen = ++autoSaveGen;
     GetAutoSave().then((a) => {
+      // 自分より新しい設定呼び出し・アンマウントで世代が進んでいたら破棄
+      if (gen !== autoSaveGen) return;
       if (!a || !a.enabled) return;
       const minutes = a.intervalMinutes > 0 ? a.intervalMinutes : 30;
+      // 念のため二重生成を防ぐ
+      if (autoSaveIntervalId !== undefined) {
+        clearInterval(autoSaveIntervalId);
+      }
       autoSaveIntervalId = setInterval(function () {
         if (!currentBinderDir) return;
         AutoSave().then((n) => {
@@ -405,6 +418,8 @@ function App() {
       cleanupRestored();
       cleanupSearch();
       cleanupAutoSave();
+      // 世代を進めて、保留中の setupAutoSave().then がタイマーを生成しないようにする
+      autoSaveGen++;
       if (autoSaveIntervalId !== undefined) {
         clearInterval(autoSaveIntervalId);
         autoSaveIntervalId = undefined;
