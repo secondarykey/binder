@@ -52,10 +52,13 @@ type jsonPayload struct {
 }
 
 // MarshalJSON は Wails の cause に載せる構造化 JSON を返す。
+// cause には %+v でフォーマットした原因エラーを入れる。xerrors でラップされたエラーは
+// これによりスタックトレース（関数名・file:line）を含み、フロントの折りたたみ
+// デバッグ情報で技術的詳細を確認できる（Error() は1行のままログ用に保つ）。
 func (e *MessageError) MarshalJSON() ([]byte, error) {
 	p := jsonPayload{Body: e.Body, Detail: e.Detail}
 	if e.Cause != nil {
-		p.Cause = e.Cause.Error()
+		p.Cause = fmt.Sprintf("%+v", e.Cause)
 	}
 	return json.Marshal(p)
 }

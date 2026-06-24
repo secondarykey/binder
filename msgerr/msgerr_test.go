@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"binder/msgerr"
+
+	"golang.org/x/xerrors"
 )
 
 func TestMarshalFindsMessageError(t *testing.T) {
@@ -48,6 +51,28 @@ func TestMarshalUnwrapsThroughChain(t *testing.T) {
 	}
 	if got["body"] != "ユーザ向けメッセージ" {
 		t.Errorf("body = %q, want %q", got["body"], "ユーザ向けメッセージ")
+	}
+}
+
+func TestMarshalCauseIncludesStackTrace(t *testing.T) {
+	// xerrors でラップした原因は %+v でスタック（file:line）を含むため、
+	// cause が複数行になり、メッセージと位置情報の両方を持つこと。
+	cause := xerrors.Errorf("boom at layer")
+	me := msgerr.Wrap(cause, "ユーザ向けメッセージ")
+
+	b := msgerr.Marshal(me)
+	var got map[string]string
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+	if !strings.Contains(got["cause"], "boom at layer") {
+		t.Errorf("cause should contain the message, got %q", got["cause"])
+	}
+	if !strings.Contains(got["cause"], "\n") {
+		t.Errorf("cause should contain a stack trace (multi-line), got %q", got["cause"])
+	}
+	if !strings.Contains(got["cause"], "msgerr_test.go") {
+		t.Errorf("cause should contain file:line of the stack, got %q", got["cause"])
 	}
 }
 
