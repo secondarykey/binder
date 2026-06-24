@@ -81,21 +81,20 @@ func (h ArgHelper[T]) Default(def T) T {
 // 戻り値を string にすると、ローカルプレビューの data URI が
 // html/template の URL サニタイザで href="#ZgotmplZ" に置換され、
 // <link rel="stylesheet" href="{{assets ...}}"> 等でCSSが適用されなくなる。
-func (w *wrapper) assets(id string) template.URL {
+// assetURL はアセットの URL を返す共通コア。
+// Local は data URI で埋め込み（HTTPサーバ非依存）、それ以外は公開パス。
+func (w *wrapper) assetURL(id string) (template.URL, error) {
 	if w.Local {
-		// ローカルプレビューは data URI で埋め込み、HTTPサーバに依存しない
 		uri, err := w.owner.AssetDataURI(id)
 		if err != nil {
-			w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
-			return template.URL("ERROR: assets")
+			return "", err
 		}
-		return template.URL(uri)
+		return template.URL(uri), nil
 	}
 
 	a, err := w.owner.GetAssetWithParent(id)
 	if err != nil {
-		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
-		return template.URL("ERROR: assets/" + id)
+		return "", err
 	}
 
 	if w.deps != nil {
@@ -103,7 +102,17 @@ func (w *wrapper) assets(id string) template.URL {
 	}
 
 	p := fs.PublicAssetFile(a)
-	return template.URL(w.convertURL(p))
+	return template.URL(w.convertURL(p)), nil
+}
+
+// assets はテンプレート関数。エラー時はプレビューに表示する ERROR 文字列を返す。
+func (w *wrapper) assets(id string) template.URL {
+	src, err := w.assetURL(id)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
+		return template.URL(fmt.Sprintf("ERROR: assets(%s): %v", id, err))
+	}
+	return src
 }
 
 // assetsImage はアセットIDから <img> タグを生成するテンプレート関数
@@ -123,7 +132,13 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 		classAttr = classAttr + " " + clazz
 	}
 
-	src := w.assets(id)
+	// エラー時は drawLayer と同様にプレビューへ可視のエラー文字列を返す
+	// （壊れた src の <img> を出さない）
+	src, err := w.assetURL(id)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("assetsImage(%s): %v", id, err))
+		return template.HTML(fmt.Sprintf("ERROR: assetsImage(%s): %v", id, err))
+	}
 
 	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, classAttr))
 }
