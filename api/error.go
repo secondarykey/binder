@@ -27,6 +27,8 @@ func userError(err error) error {
 		return Wrap(err, settings.T("go.error.noteHasChildren"))
 	case errors.Is(err, binder.ErrIndexNoteUndeletable):
 		return Wrap(err, settings.T("go.error.indexNoteUndeletable"))
+	case errors.Is(err, binder.ErrAssetHasLayers):
+		return Wrap(err, settings.T("go.error.assetHasLayers"))
 	case errors.Is(err, db.DuplicateAlias):
 		return Wrap(err, settings.T("go.error.duplicateAlias"))
 	case errors.Is(err, db.DuplicateKey):

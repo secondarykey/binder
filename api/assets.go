@@ -146,7 +146,7 @@ func (a *App) RemoveAsset(id string) error {
 	_, err := a.current.RemoveAsset(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RemoveAsset() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }

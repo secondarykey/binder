@@ -25,6 +25,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// ErrAssetHasLayers は子要素（レイヤー）を持つアセットの削除不可エラー。
+// API 境界で errors.Is により判定し、ユーザ向けメッセージへマッピングする。
+var ErrAssetHasLayers = errors.New("asset has layers and cannot be deleted")
+
 // knownMimeTypes はシステムの MIME データベースに依存しない拡張子→MIMEマッピング。
 var knownMimeTypes = map[string]string{
 	".jpg":  "image/jpeg",
@@ -361,6 +365,15 @@ func (b *Binder) RemoveAsset(id string) (*json.Asset, error) {
 
 	if b == nil {
 		return nil, EmptyError
+	}
+
+	// 子要素（レイヤー）が存在する場合は削除不可（子を持つノートと同様）
+	children, err := b.db.FindStructuresByParent(id)
+	if err != nil {
+		return nil, xerrors.Errorf("db.FindStructuresByParent() error: %w", err)
+	}
+	if len(children) > 0 {
+		return nil, xerrors.Errorf("%w: %s", ErrAssetHasLayers, id)
 	}
 
 	a, err := b.db.GetAssetWithParent(id)

@@ -15,6 +15,7 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 	}{
 		{"noteHasChildren", binder.ErrNoteHasChildren},
 		{"indexNote", binder.ErrIndexNoteUndeletable},
+		{"assetHasLayers", binder.ErrAssetHasLayers},
 		{"duplicateAlias", db.DuplicateAlias},
 		{"duplicateKey", db.DuplicateKey},
 	}

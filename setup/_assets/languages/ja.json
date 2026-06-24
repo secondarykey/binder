@@ -657,6 +657,7 @@
             "unexpected" : "異常が発生しました",
             "noteHasChildren" : "子要素があるノートは削除できません",
             "indexNoteUndeletable" : "indexノートは削除できません",
+            "assetHasLayers" : "レイヤーがあるアセットは削除できません",
             "duplicateAlias" : "そのエイリアスは既に使用されています",
             "duplicateName" : "その名前は既に使用されています",
             "notBinder" : "このフォルダはバインダーではありません"
