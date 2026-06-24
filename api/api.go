@@ -113,7 +113,7 @@ func (a *App) EnsureAddress() (string, error) {
 	addr, err := a.current.EnsureServing()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("EnsureAddress() error\n%+v", err)
+		return "", userError(err)
 	}
 	return fmt.Sprintf("http://%s", addr), nil
 }

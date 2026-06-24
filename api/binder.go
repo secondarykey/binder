@@ -29,7 +29,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	b, err := binder.Load(dir)
 	if err != nil {
-		return "", xerrors.Errorf("Binder Load() error: %w", err)
+		return "", userError(err)
 	}
 
 	// HTTPサーバは起動時には立てず、「ブラウザで開く」などで必要になった時点で
@@ -55,7 +55,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	address, err := a.Address()
 	if err != nil {
-		return "", xerrors.Errorf("Binder Address() error: %w", err)
+		return "", userError(err)
 	}
 
 	// 履歴を保存（最近開いたバインダーを先頭にする）。
@@ -82,7 +82,7 @@ func (a *App) CloseBinder() error {
 
 		if err != nil {
 			log.PrintStackTrace(err)
-			return fmt.Errorf("binder Close() error\n%+v", err)
+			return userError(err)
 		}
 	}
 	return nil
@@ -95,13 +95,13 @@ func (a *App) CreateBinder(dir string, name string, installType string) (string,
 	err := setup.Install(dir, a.version, name, installType)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("setup.Install error\n%+v", err)
+		return "", userError(err)
 	}
 
 	address, err := a.LoadBinder(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("binder load error\n%+v", err)
+		return "", userError(err)
 	}
 
 	return address, nil
@@ -118,13 +118,13 @@ func (a *App) CreateRemoteBinder(url, dir, branch, workBranch string, info *json
 	err := binder.CreateRemote(url, dir, branch, workBranch, info, save, a.version)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("CreateRemote() error\n%+v", err)
+		return "", userError(err)
 	}
 
 	address, err := a.LoadBinder(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("load() error\n%+v", err)
+		return "", userError(err)
 	}
 
 	return address, nil
@@ -166,7 +166,7 @@ func (a *App) Generate(mode string, id string, data string) error {
 	}
 
 	if err != nil {
-		return xerrors.Errorf("Publish() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -182,7 +182,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 		case "note":
 			result, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
-				return xerrors.Errorf("CreateNoteHTML() error: %+v", err)
+				return userError(err)
 			}
 			if result.Error != "" {
 				return xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
@@ -194,25 +194,25 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 			}
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {
-				return xerrors.Errorf("PublishNoteStage() error: %+v", err)
+				return userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		case "diagram":
 			files, _, err := a.current.PublishDiagramStage(item.Id, []byte(item.Data))
 			if err != nil {
-				return xerrors.Errorf("PublishDiagramStage() error: %+v", err)
+				return userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		case "assets":
 			files, _, err := a.current.PublishAssetStage(item.Id)
 			if err != nil {
-				return xerrors.Errorf("PublishAssetStage() error: %+v", err)
+				return userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		case "layer":
 			files, _, err := a.current.PublishLayerStage(item.Id)
 			if err != nil {
-				return xerrors.Errorf("PublishLayerStage() error: %+v", err)
+				return userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		default:
@@ -221,7 +221,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 	}
 
 	if err := a.current.CommitFiles(message, allFiles...); err != nil {
-		return xerrors.Errorf("CommitFiles() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -245,7 +245,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	}
 
 	if err != nil {
-		return xerrors.Errorf("Unpublish() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -255,7 +255,7 @@ func (a *App) UnpublishAll() error {
 	defer log.PrintTrace(log.Func("UnpublishAll()"))
 
 	if err := a.current.UnpublishAll(); err != nil {
-		return xerrors.Errorf("UnpublishAll() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }

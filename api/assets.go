@@ -19,7 +19,7 @@ func (a *App) EditAsset(as *json.Asset, file string) (*json.Asset, error) {
 	rtn, err := a.current.EditAsset(as, file)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("EditData() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	return rtn, nil
@@ -33,7 +33,7 @@ func (a *App) GetAsset(id string) (*json.Asset, error) {
 	rtn, err := a.current.GetAssetWithParent(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetAsset() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	return rtn, nil
@@ -46,7 +46,7 @@ func (a *App) DropAsset(as *json.Asset, filename string, base64data string) (*js
 	rtn, err := a.current.DropAsset(as, filename, base64data)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("DropAsset() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	return rtn, nil
@@ -61,7 +61,7 @@ func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
 	for _, p := range filePaths {
 		data, err := os.ReadFile(p)
 		if err != nil {
-			return fmt.Errorf("ImportLocalFiles() error reading %s\n%+v", p, err)
+			return userError(err)
 		}
 		if len(data) == 0 {
 			return fmt.Errorf("ImportLocalFiles() error: empty file %s", filepath.Base(p))
@@ -77,7 +77,7 @@ func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
 		}
 		if _, err := a.current.DropAsset(as, filename, b64); err != nil {
 			log.PrintStackTrace(err)
-			return fmt.Errorf("ImportLocalFiles() DropAsset error\n%+v", err)
+			return userError(err)
 		}
 	}
 	return nil
@@ -92,7 +92,7 @@ func (a *App) GetAssetContent(id string) (*json.AssetContent, error) {
 	data, meta, err := a.current.ReadAssetBytes(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetAssetContent() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	return &json.AssetContent{
@@ -111,7 +111,7 @@ func (a *App) DetectAssetMime(id string) (string, error) {
 	detected, err := a.current.DetectAssetMimeFromContent(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("DetectAssetMime() error\n%+v", err)
+		return "", userError(err)
 	}
 	return detected, nil
 }
@@ -124,7 +124,7 @@ func (a *App) SaveAssetContent(assetId string, data string) error {
 	err := a.current.SaveAssetContent(assetId, []byte(data))
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("SaveAssetContent() error\n%+v", err)
+		return userError(err)
 	}
 
 	return nil
@@ -136,7 +136,7 @@ func (a *App) AddTextAsset(parentId string, isPrivate bool) (*json.Asset, error)
 	rtn, err := a.current.AddTextAsset(parentId, isPrivate)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("AddTextAsset() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return rtn, nil
 }
@@ -157,7 +157,7 @@ func (a *App) SetAssetAsMetaImage(assetId string, deleteAsset bool) error {
 	err := a.current.SetAssetAsMetaImage(assetId, deleteAsset)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("SetAssetAsMetaImage() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -169,7 +169,7 @@ func (a *App) MigrateAssetToNote(id string, deleteAsset bool) (*json.Note, error
 	n, err := a.current.MigrateAssetToNote(id, deleteAsset)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("MigrateAssetToNote() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return n, nil
 }

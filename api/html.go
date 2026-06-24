@@ -3,7 +3,6 @@ package api
 import (
 	"binder/api/json"
 	"binder/log"
-	"fmt"
 )
 
 func (a *App) CreateNoteHTML(id string, local bool, elm string) (*json.ParseResult, error) {
@@ -13,7 +12,7 @@ func (a *App) CreateNoteHTML(id string, local bool, elm string) (*json.ParseResu
 	n, err := a.current.GetNote(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CreateNoteHTML() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	html, warnings, err := a.current.CreateNoteHTML(n, local, elm)
@@ -30,7 +29,7 @@ func (a *App) ParseNote(id string, local bool, elm string) (*json.ParseResult, e
 	n, err := a.current.GetNote(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("ParseNote() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	html, warnings, err := a.current.ParseNote(n, local, elm)
@@ -58,7 +57,7 @@ func (a *App) ParseDiagram(id string, local bool, elm string) (*json.ParseResult
 	d, err := a.current.GetDiagram(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("ParseDiagram() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	result, warnings, err := a.current.ParseDiagram(d, local, elm)
@@ -75,7 +74,7 @@ func (a *App) CreateTemplateHTML(id string, typ json.TemplateType, oId string, n
 	n, err := a.current.GetNote(noteId)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetNote() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	html, warnings, err := a.current.CreateTemplateHTML(id, typ, oId, n, elm)

@@ -3,7 +3,6 @@ package api
 import (
 	"binder/api/json"
 	"binder/log"
-	"fmt"
 )
 
 // DownloadDocs はdocsディレクトリをZIPファイルとして指定パスに保存する。
@@ -14,7 +13,7 @@ func (a *App) DownloadDocs(savePath string) error {
 	err := a.current.DownloadDocs(savePath)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("DownloadDocs() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -27,7 +26,7 @@ func (a *App) DownloadAll(savePath string) error {
 	err := a.current.DownloadAll(savePath)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("DownloadAll() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -40,7 +39,7 @@ func (a *App) CollectExportDeps(noteId string, text string) (*json.ExportDeps, e
 	deps, err := a.current.CollectExportDeps(noteId, text)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CollectExportDeps() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return deps, nil
 }
@@ -53,7 +52,7 @@ func (a *App) DownloadNote(noteId string, text string, markedHTML string, diagra
 	err := a.current.DownloadNote(noteId, text, markedHTML, diagramSVGs, savePath)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("DownloadNote() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -66,7 +65,7 @@ func (a *App) GetBinderName() (string, error) {
 	name, err := a.current.GetBinderName()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("GetBinderName() error\n%+v", err)
+		return "", userError(err)
 	}
 	return name, nil
 }

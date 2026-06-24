@@ -3,7 +3,6 @@ package api
 import (
 	"binder/api/json"
 	"binder/log"
-	"fmt"
 )
 
 func (a *App) EditConfig(conf *json.Config) (*json.Config, error) {
@@ -13,7 +12,7 @@ func (a *App) EditConfig(conf *json.Config) (*json.Config, error) {
 	err := a.current.EditConfig(conf)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("EditConfig() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return conf, nil
 }
@@ -25,7 +24,7 @@ func (a *App) GetConfig() (*json.Config, error) {
 	conf, err := a.current.GetConfig()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetConfig() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return conf, nil
 }
@@ -37,7 +36,7 @@ func (a *App) GetPublishSettings() (*json.PublishSettings, error) {
 	publishOnly, publishBranch, publishSubDir, err := a.current.GetPublishSettings()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetPublishSettings() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return &json.PublishSettings{
 		PublishOnly:   publishOnly,
@@ -53,7 +52,7 @@ func (a *App) GetUserInfo() (*json.UserInfo, error) {
 	info, err := a.current.GetUserInfo()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetUserInfo() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return info, nil
 }
@@ -65,7 +64,7 @@ func (a *App) EditUserInfo(info *json.UserInfo) (*json.UserInfo, error) {
 	err := a.current.EditUserInfo(info)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("EditUserInfo() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return info, nil
 }
