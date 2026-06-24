@@ -2145,7 +2145,12 @@ function Editor(props) {
       if (e) {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
-        setViewer(e.showPreview);
+        // アセット/レイヤーはプレビューを使わない（dispatch で viewer=false 済み）。
+        // 復元で asset/layer に直接マウントした時、showPreview で viewer=true に
+        // 上書きしてプレビューが表示されてしまうのを防ぐ。
+        if (modeRef.current !== 'assets' && modeRef.current !== 'layer') {
+          setViewer(e.showPreview);
+        }
         if (e.autoComplete && typeof e.autoComplete === 'object') {
           setAutoComplete(e.autoComplete);
         } else {
