@@ -111,6 +111,8 @@ function App() {
   const [tooOldOpen, setTooOldOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
   const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "", minAppVersion: "" });
+  // 起動時の自動オープン判定が終わるまで true。履歴一覧の一瞬の表示（チラつき）を隠す
+  const [booting, setBooting] = useState(true);
   const [devMode, setDevMode] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
@@ -128,13 +130,16 @@ function App() {
       setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
       switch (result.status) {
         case CompatNotBinder:
+          setBooting(false);
           evt.showErrorMessage(t("convert.notBinder"));
           break;
         case CompatNeedConvert:
+          setBooting(false);
           setPendingDir(dir);
           setConvertOpen(true);
           break;
         case CompatNeedUpdate:
+          setBooting(false);
           setPendingDir(dir);
           setNeedUpdateOpen(true);
           break;
@@ -143,10 +148,12 @@ function App() {
           Convert(dir).then(() => {
             loadBinder(dir, openLastData);
           }).catch((err) => {
+            setBooting(false);
             evt.showErrorMessage(err);
           });
           break;
         case CompatTooOld:
+          setBooting(false);
           setTooOldOpen(true);
           break;
         default:
@@ -154,6 +161,7 @@ function App() {
           break;
       }
     }).catch((err) => {
+      setBooting(false);
       evt.showErrorMessage(err);
     });
   };
@@ -220,12 +228,20 @@ function App() {
       evt.changeAddress(href);
       currentBinderDir = dir;
 
+      // エディタ route へ遷移してからスプラッシュを解除する。
+      // 解除を nav より前にすると、openLastData の非同期遷移までの間に
+      // 履歴一覧（"/"）が一瞬見えてしまうため必ず nav の直後に解除する。
+      const navEditor = (p) => {
+        nav(p);
+        setBooting(false);
+      };
+
       // メモリ上の記録を優先し、なければ永続化された記録、それもなければindex
       // ナビゲート先を SaveLastData で同期し、histories[0] と lastNoteId の不整合を防ぐ
       const mem = binderLastData.get(dir);
       if (mem) {
         const urlType = mem.mode === 'asset' ? 'assets' : mem.mode;
-        nav("/editor/" + urlType + "/" + mem.id);
+        navEditor("/editor/" + urlType + "/" + mem.id);
         evt.selectTreeNode(mem.id);
         SaveLastData(mem.mode, mem.id).catch(() => {});
       } else if (openLastData) {
@@ -234,21 +250,22 @@ function App() {
           const dataId = path?.lastNoteId;
           if (dataType && dataId) {
             const urlType = dataType === 'asset' ? 'assets' : dataType;
-            nav("/editor/" + urlType + "/" + dataId);
+            navEditor("/editor/" + urlType + "/" + dataId);
             evt.selectTreeNode(dataId);
           } else {
-            nav("/editor/note/index");
+            navEditor("/editor/note/index");
             SaveLastData("note", "index").catch(() => {});
           }
         }).catch(() => {
-          nav("/editor/note/index");
+          navEditor("/editor/note/index");
           SaveLastData("note", "index").catch(() => {});
         });
       } else {
-        nav("/editor/note/index");
+        navEditor("/editor/note/index");
         SaveLastData("note", "index").catch(() => {});
       }
     }).catch((err) => {
+      setBooting(false);
       evt.showErrorMessage(err);
     });
   };
@@ -384,10 +401,15 @@ function App() {
       if (path?.runWithOpen) {
         const h = path.histories;
         if (h && h.length > 0) {
+          // 自動オープン: openBinder/loadBinder 側で booting を解除する
           openBinder(h[0], !!path.openWithItem);
+          return;
         }
       }
+      // 自動オープンしない場合は履歴一覧を表示する
+      setBooting(false);
     }).catch((err) => {
+      setBooting(false);
       evt.showErrorMessage(err);
     });
 
@@ -635,8 +657,12 @@ function App() {
       <div id="mainArea">
         {/** 左メニュー部 */}
         <Menu />
-        {/** メイン表示 */}
-        <Content />
+        {/** メイン表示。起動時の自動オープン判定中はスプラッシュで覆い、履歴一覧のチラつきを防ぐ */}
+        {booting ? (
+          <div style={{ flex: 1, minWidth: 0, backgroundColor: 'var(--bg-app)' }} />
+        ) : (
+          <Content />
+        )}
       </div>
 
       {/** コミットモーダル */}
