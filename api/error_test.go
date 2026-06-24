@@ -18,6 +18,7 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 		{"assetHasLayers", binder.ErrAssetHasLayers},
 		{"duplicateAlias", db.DuplicateAlias},
 		{"duplicateKey", db.DuplicateKey},
+		{"uncommitted", ErrUncommittedChanges},
 	}
 	for _, c := range cases {
 		got := userError(c.in)

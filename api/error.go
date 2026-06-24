@@ -9,6 +9,14 @@ import (
 	"binder/setup/convert"
 )
 
+// API 層で発生するユーザ向け条件の sentinel。
+// ドメイン層（binder/db/fs）の sentinel と同様に userError でメッセージへマッピングする。
+var (
+	// ErrUncommittedChanges はブランチ切替・マージ・復元などの前に未記録の変更が
+	// 残っている場合のエラー。
+	ErrUncommittedChanges = errors.New("uncommitted changes exist")
+)
+
 // userError は内部 error をユーザ向けの構造化エラー（MessageError）へ変換する。
 //
 // 既知の原因（sentinel error）は翻訳済みのユーザメッセージにマッピングし、
@@ -35,6 +43,8 @@ func userError(err error) error {
 		return Wrap(err, settings.T("go.error.duplicateName"))
 	case errors.Is(err, convert.ErrNotBinder):
 		return Wrap(err, settings.T("go.error.notBinder"))
+	case errors.Is(err, ErrUncommittedChanges):
+		return Wrap(err, settings.T("go.error.uncommitted"))
 	default:
 		return Wrap(err, settings.T("go.error.unexpected"))
 	}

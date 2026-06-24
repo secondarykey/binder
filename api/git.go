@@ -10,7 +10,6 @@ import (
 	"binder/setup/convert"
 
 	"errors"
-	"fmt"
 	"time"
 
 	gogitplumbing "github.com/go-git/go-git/v5/plumbing"
@@ -27,7 +26,7 @@ func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
 	err := a.current.CommitFiles(m, files...)
 	if err != nil {
 		if !errors.Is(err, fs.UpdatedFilesError) {
-			return xerrors.Errorf("Commit() error: %+v", err)
+			return userError(err)
 		}
 		return fs.UpdatedFilesError
 	}
@@ -43,7 +42,7 @@ func (a *App) AutoSave() (int, error) {
 	n, err := a.current.AutoSave()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return 0, fmt.Errorf("AutoSave() error: %+v", err)
+		return 0, userError(err)
 	}
 	return n, nil
 }
@@ -56,7 +55,7 @@ func (a *App) Commit(mode string, id string, m string) error {
 	err := a.current.CommitFiles(m, f)
 	if err != nil {
 		if !errors.Is(err, fs.UpdatedFilesError) {
-			return xerrors.Errorf("Commit() error: %+v", err)
+			return userError(err)
 		}
 		return fs.UpdatedFilesError
 	}
@@ -70,7 +69,7 @@ func (a *App) Remotes() ([]string, error) {
 	remotes, err := a.current.GetRemotes()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetRemotes() error: %+v", err)
+		return nil, userError(err)
 	}
 	return remotes, nil
 }
@@ -82,7 +81,7 @@ func (a *App) AddRemote(name string, url string) error {
 	err := a.current.CreateRemote(name, url)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("CreateRemote() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -94,7 +93,7 @@ func (a *App) CurrentBranch() (string, error) {
 	name, err := a.current.GetCurrentBranch()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("GetCurrentBranch() error: %+v", err)
+		return "", userError(err)
 	}
 	return name, nil
 }
@@ -106,7 +105,7 @@ func (a *App) RemoteList() ([]*json.Remote, error) {
 	remotes, err := a.current.GetRemoteList()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetRemoteList() error: %+v", err)
+		return nil, userError(err)
 	}
 	return remotes, nil
 }
@@ -118,7 +117,7 @@ func (a *App) EditRemote(name string, url string) error {
 	err := a.current.EditRemote(name, url)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("EditRemote() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -130,7 +129,7 @@ func (a *App) DeleteRemote(name string) error {
 	err := a.current.DeleteRemote(name)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("DeleteRemote() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -142,7 +141,7 @@ func (a *App) Push(remoteName string, info *json.UserInfo, save bool) error {
 	err := a.current.Push(remoteName, info, save)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("Push() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -154,7 +153,7 @@ func (a *App) PushDocs(remoteName, publishBranch, subDir string, info *json.User
 	err := a.current.PushDocs(remoteName, publishBranch, subDir, info, save)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("PushDocs() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -179,7 +178,7 @@ func (a *App) ListRemoteBranches(url string, info *json.UserInfo) ([]string, err
 	branches, err := fs.ListRemoteBranches(url, fsInfo)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("ListRemoteBranches() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return branches, nil
 }
@@ -191,10 +190,10 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 	// 1. 未コミット変更のチェック
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	if len(ids) > 0 {
-		return nil, fmt.Errorf("uncommitted changes exist")
+		return nil, userError(ErrUncommittedChanges)
 	}
 
 	// 2. 認証情報を変換
@@ -219,7 +218,7 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 	err = a.current.Fetch(remoteName, remoteBranch, fsInfo)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("Fetch() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// 5. ディレクトリを保存してから Binder を閉じる
@@ -228,7 +227,7 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// 6. リポジトリを直接開く
@@ -331,10 +330,10 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 	// 1. 未コミットチェック
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	if len(ids) > 0 {
-		return nil, fmt.Errorf("uncommitted changes exist")
+		return nil, userError(ErrUncommittedChanges)
 	}
 
 	// 2. Binder を閉じる
@@ -342,7 +341,7 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// 3. リポジトリを直接開く
@@ -565,10 +564,10 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 	// 1. 未コミット変更のチェック
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	if len(ids) > 0 {
-		return nil, fmt.Errorf("uncommitted changes exist")
+		return nil, userError(ErrUncommittedChanges)
 	}
 
 	// 2. ディレクトリを保存してから Binder を閉じる
@@ -577,7 +576,7 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// 3. リポジトリを直接開く
@@ -679,7 +678,7 @@ func (a *App) GetModifiedIds() ([]string, error) {
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	return ids, nil
 }
@@ -691,7 +690,7 @@ func (a *App) GetNowPatch(typ string, id string) (*binder.Patch, error) {
 	p, err := a.current.GetNowPatch(typ, id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetLatestPath() error: %+v", err)
+		return nil, userError(err)
 	}
 	return p, nil
 }
@@ -703,7 +702,7 @@ func (a *App) RestoreHistory(typ string, id string, hash string) error {
 	err := a.current.RestoreHistory(typ, id, hash)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RestoreHistory() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -715,7 +714,7 @@ func (a *App) GetOverallHistory(limit int, offset int) (*json.HistoryPage, error
 	commits, hasMore, err := a.current.GetOverallHistory(limit, offset)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+		return nil, userError(err)
 	}
 	return toHistoryPage(commits, hasMore), nil
 }
@@ -727,7 +726,7 @@ func (a *App) GetCommitFiles(hash string) ([]*json.CommitFileEntry, error) {
 	files, err := a.current.GetCommitFiles(hash)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+		return nil, userError(err)
 	}
 	return toCommitFileEntries(files, a.current), nil
 }
@@ -739,10 +738,10 @@ func (a *App) RestoreToCommit(hash string) (*json.BranchResult, error) {
 	// 未コミット変更のチェック
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	if len(ids) > 0 {
-		return nil, fmt.Errorf("uncommitted changes exist")
+		return nil, userError(ErrUncommittedChanges)
 	}
 
 	// ディレクトリを保存してから Binder を閉じる
@@ -751,7 +750,7 @@ func (a *App) RestoreToCommit(hash string) (*json.BranchResult, error) {
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// リポジトリを直接開いて復元
@@ -800,7 +799,7 @@ func (a *App) GetOverallHistoryByPath(dir string, limit int, offset int) (*json.
 		commits, hasMore, err := b.GetOverallHistory(limit, offset)
 		if err != nil {
 			log.PrintStackTrace(err)
-			return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+			return nil, userError(err)
 		}
 		return toHistoryPage(commits, hasMore), nil
 	}
@@ -810,12 +809,12 @@ func (a *App) GetOverallHistoryByPath(dir string, limit int, offset int) (*json.
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+		return nil, userError(err)
 	}
 	commits, hasMore, err := tmpFs.GetOverallHistory(limit, offset)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetOverallHistory() error: %+v", err)
+		return nil, userError(err)
 	}
 	return toHistoryPage(commits, hasMore), nil
 }
@@ -832,7 +831,7 @@ func (a *App) GetCommitFilesByPath(dir string, hash string) ([]*json.CommitFileE
 		files, err := b.GetCommitFiles(hash)
 		if err != nil {
 			log.PrintStackTrace(err)
-			return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+			return nil, userError(err)
 		}
 		return toCommitFileEntries(files, b), nil
 	}
@@ -842,12 +841,12 @@ func (a *App) GetCommitFilesByPath(dir string, hash string) ([]*json.CommitFileE
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+		return nil, userError(err)
 	}
 	files, err := tmpFs.GetCommitFiles(hash)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetCommitFiles() error: %+v", err)
+		return nil, userError(err)
 	}
 	// 名前解決なし: パスをそのまま名前にする
 	entries := make([]*json.CommitFileEntry, len(files))
@@ -877,7 +876,7 @@ func (a *App) RestoreToCommitByPath(dir string, hash string) (*json.BranchResult
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	err = tmpFs.RestoreToCommit(hash)
@@ -901,13 +900,13 @@ func (a *App) ListBranchesByPath(dir string) ([]string, error) {
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	branches, err := tmpFs.ListBranches()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("ListBranches() error: %+v", err)
+		return nil, userError(err)
 	}
 	return branches, nil
 }
@@ -924,13 +923,13 @@ func (a *App) CurrentBranchByPath(dir string) (string, error) {
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("fs.Load() error: %+v", err)
+		return "", userError(err)
 	}
 
 	name, err := tmpFs.CurrentBranch()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("CurrentBranch() error: %+v", err)
+		return "", userError(err)
 	}
 	return name, nil
 }
@@ -950,7 +949,7 @@ func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, e
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// 未コミット変更がある場合（移行失敗後など）はリセットしてからチェックアウトする。
@@ -958,7 +957,7 @@ func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, e
 	// dirty な変更が切替先ブランチに持ち込まれるのを防ぐ。
 	if err = tmpFs.ResetHard(); err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("ResetHard() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	err = tmpFs.CheckoutBranch(name)
@@ -1018,7 +1017,7 @@ func (a *App) GetHistory(typ string, id string, limit int, offset int) (*json.Hi
 	commits, hasMore, err := a.current.GetHistory(typ, id, limit, offset)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetHistory() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	entries := make([]*json.HistoryEntry, len(commits))
@@ -1039,7 +1038,7 @@ func (a *App) GetHistoryPatch(typ string, id string, hash string) (*binder.Patch
 	p, err := a.current.GetHistoryPatch(typ, id, hash)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetHistoryPatch() error: %+v", err)
+		return nil, userError(err)
 	}
 	return p, nil
 }
@@ -1051,7 +1050,7 @@ func (a *App) ListBranches() ([]string, error) {
 	branches, err := a.current.ListBranches()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("ListBranches() error: %+v", err)
+		return nil, userError(err)
 	}
 	return branches, nil
 }
@@ -1063,10 +1062,10 @@ func (a *App) SwitchBranch(name string) (*json.BranchResult, error) {
 	// 未コミット変更のチェック
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	if len(ids) > 0 {
-		return nil, fmt.Errorf("uncommitted changes exist")
+		return nil, userError(ErrUncommittedChanges)
 	}
 
 	// ディレクトリを保存してから Binder を閉じる
@@ -1075,7 +1074,7 @@ func (a *App) SwitchBranch(name string) (*json.BranchResult, error) {
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// リポジトリを直接開いてチェックアウト
@@ -1121,7 +1120,7 @@ func (a *App) CreateBranch(name string) (*json.BranchResult, error) {
 	err := a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	// リポジトリを直接開いてブランチ作成+チェックアウト
@@ -1162,12 +1161,12 @@ func (a *App) GetCleanupInfo(beforeRFC3339 string) (*json.CleanupInfo, error) {
 
 	before, err := time.Parse(time.RFC3339, beforeRFC3339)
 	if err != nil {
-		return nil, fmt.Errorf("invalid date format: %+v", err)
+		return nil, userError(err)
 	}
 
 	info, err := a.current.GetCleanupInfo(before)
 	if err != nil {
-		return nil, fmt.Errorf("GetCleanupInfo() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	return &json.CleanupInfo{
@@ -1189,16 +1188,16 @@ func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 
 	before, err := time.Parse(time.RFC3339, beforeRFC3339)
 	if err != nil {
-		return nil, fmt.Errorf("invalid date format: %+v", err)
+		return nil, userError(err)
 	}
 
 	// 未コミット変更のチェック
 	ids, err := a.current.GetModifiedIds()
 	if err != nil {
-		return nil, fmt.Errorf("GetModifiedIds() error: %+v", err)
+		return nil, userError(err)
 	}
 	if len(ids) > 0 {
-		return nil, fmt.Errorf("uncommitted changes exist")
+		return nil, userError(ErrUncommittedChanges)
 	}
 
 	dir := a.current.Dir()
@@ -1206,7 +1205,7 @@ func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	tmpFs, err := fs.Load(dir)
@@ -1255,14 +1254,14 @@ func (a *App) RunGC() (*json.GCResult, error) {
 	err := a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CloseBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		a.LoadBinder(dir)
-		return nil, fmt.Errorf("fs.Load() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	result := tmpFs.GC()
@@ -1270,7 +1269,7 @@ func (a *App) RunGC() (*json.GCResult, error) {
 	_, err = a.LoadBinder(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("LoadBinder() error: %+v", err)
+		return nil, userError(err)
 	}
 
 	return &json.GCResult{
@@ -1286,7 +1285,7 @@ func (a *App) RenameBranch(oldName, newName string) error {
 	err := a.current.RenameBranch(oldName, newName)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RenameBranch() error: %+v", err)
+		return userError(err)
 	}
 	return nil
 }

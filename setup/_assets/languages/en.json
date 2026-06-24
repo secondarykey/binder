@@ -660,7 +660,8 @@
             "assetHasLayers" : "This asset has layers and cannot be deleted",
             "duplicateAlias" : "That alias is already in use",
             "duplicateName" : "That name is already in use",
-            "notBinder" : "This folder is not a binder"
+            "notBinder" : "This folder is not a binder",
+            "uncommitted" : "There are unrecorded changes. Please record them first"
         }
     },
     "lite" : {
