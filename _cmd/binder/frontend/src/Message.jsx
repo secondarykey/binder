@@ -1,10 +1,9 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Alert, Box, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Link, Slide, Snackbar } from '@mui/material';
+import { Alert, Box, Collapse, Dialog, DialogContent, DialogContentText, DialogTitle, IconButton, Link, Slide, Snackbar } from '@mui/material';
 
 import CloseIcon from "@mui/icons-material/Close";
 import Event, { EventContext } from "./Event";
-import { ActionButton } from "./dialogs/components/ActionButton";
 import { parseError } from "./error";
 import "./language";
 import { useTranslation } from 'react-i18next';
@@ -102,7 +101,12 @@ export function SystemMessage(props) {
                 keepMounted
                 onClose={closeDialog}
                 aria-describedby="alert-dialog-slide-description" >
-                <DialogTitle>{msgObj.body}</DialogTitle>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'flex-start', pr: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{msgObj.body}</Box>
+                    <IconButton size="small" aria-label="close" onClick={closeDialog} sx={{ ml: 1, color: 'var(--text-muted)' }}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent>
                     {msgObj.detail && (
                         <DialogContentText id="alert-dialog-slide-description" className="messageTxt" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -129,9 +133,6 @@ export function SystemMessage(props) {
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions>
-                    <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={closeDialog} />
-                </DialogActions>
             </Dialog>
         </>
     )
