@@ -22,7 +22,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -483,6 +483,20 @@ function App() {
     });
   };
 
+  // 確認モード: 未記録の変更があれば確認モーダルを出し、無ければそのまま proceed する。
+  // 変更が無いのに空の一覧モーダルを出す（コミットすると「変更なし」エラーになる）煩わしさを避ける。
+  const confirmCloseOrProceed = (pending, proceed) => {
+    GetModifiedIds().then((ids) => {
+      if (ids && ids.length > 0) {
+        setPendingClose(pending);
+        setCommitModalFilter(null);
+        setCommitModalOpen(true);
+      } else {
+        proceed();
+      }
+    }).catch(() => proceed());
+  };
+
   const handleClickHome = () => {
     // ホームに戻る前に現在のバインダーの表示ページをメモリに保存
     if (currentBinderDir) {
@@ -495,10 +509,8 @@ function App() {
     }
     GetAutoSave().then((a) => {
       if (a && a.onLeave && a.confirmOnClose) {
-        // 「一覧に戻る時に保存」が確認モード: 未記録一覧を出し、コミット/キャンセル後に一覧へ
-        setPendingClose('home');
-        setCommitModalFilter(null);
-        setCommitModalOpen(true);
+        // 「一覧に戻る時に保存」が確認モード: 未記録があれば一覧を出し、無ければそのまま一覧へ
+        confirmCloseOrProceed('home', closeAndGoHome);
         return;
       }
       if (a && a.onLeave) {
@@ -542,10 +554,8 @@ function App() {
   const handleExit = () => {
     GetAutoSave().then((a) => {
       if (a && a.onClose && a.confirmOnClose && currentBinderDir) {
-        // 「終了時に保存」が確認モード（バインダーを開いている時のみ）: 未記録一覧を出してから終了
-        setPendingClose('exit');
-        setCommitModalFilter(null);
-        setCommitModalOpen(true);
+        // 「終了時に保存」が確認モード: 未記録があれば一覧を出してから終了、無ければそのまま終了
+        confirmCloseOrProceed('exit', doTerminate);
         return;
       }
       doTerminate();
