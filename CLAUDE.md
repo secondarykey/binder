@@ -317,6 +317,15 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
 - API メソッドは `fmt.Errorf("X() error\n%+v", err)` の代わりに `return userError(err)` を返す。原因が明確な箇所は `userError` の switch にケースを追加して段階的に改善する
 - **MessageError は API 境界（`userError`）でのみ生成する**。fs/db/binder などの下位層は通常の `xerrors` を返し、変換は api 層が担う（だから型も `api` パッケージに置く）
 
+**方針: 新しいエラーをユーザライクにする手順**（2段階。sentinel は「専用メッセージを出したい原因」だけ作ればよい）:
+1. **土台**: 対象 API メソッドの `fmt.Errorf("X() error\n%+v", err)` を `return userError(err)` に置換する。これだけで最低「異常が発生しました」＋折りたたみデバッグになる。`log.PrintStackTrace(err)` は残す
+2. **個別メッセージ（任意）**: 専用メッセージを出したい原因だけ、
+   - 下位層（`binder`/`db`/`fs`）に sentinel を定義（`var ErrXxx = errors.New(...)`）、`xerrors.Errorf("%w: ...", ErrXxx)` で包んで返す。API 層特有の条件は `api/error.go` に置く（例 `ErrUncommittedChanges`）
+   - `userError` の switch に `case errors.Is(err, ErrXxx): return Wrap(err, settings.T("go.error.xxx"))` を追加
+   - `setup/_assets/languages/{en,ja}.json` の `go.error.*` にメッセージを追加
+3. 据え置いてよいもの: `fmt.Errorf("%s", settings.T("go.error.*"))`（既に翻訳済み）、panic 復帰、HTML生成の parse error 等の固有メッセージ。内部ヘルパーの `xerrors(%w)` は伝播用に維持（上位 API が `userError` で包む）
+   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges`
+
 **フロント側**:
 - **`src/error.js` の `parseError(err)`** — `err.message` を `JSON.parse` して envelope を取り出し、`cause` に `body` があれば `{ body, detail, debug }` に正規化（`cause.cause`＝Goスタックは `debug` へ）。`cause` が無い未変換エラーは `message` の先頭行を `body`、残りを `debug` にフォールバック。JSON でない文字列（フロント由来・`t()`）はそのまま `body`
 - `src/Message.jsx`（スナックバー）/ `src/dialogs/components/DialogError.jsx` が `parseError` を使い、**body をスナックバー**、ダブルクリックで **detail**、折りたたみ「デバッグ情報」で **debug**（Goスタック＋JSスタック）を表示
