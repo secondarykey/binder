@@ -276,8 +276,16 @@ function BinderTree(props) {
     GetBinderTree().then((resp) => {
       setTree(resp.data);
       if (expandTop) {
-        const topIds = (resp.data || []).map(n => n.id);
-        setExpand(topIds);
+        const ids = (resp.data || []).map(n => n.id);
+        // 選択中アイテムまでの祖先も展開する。
+        // バインダーを開いた直後は SelectTree がツリーのロード前に届くことがあり、
+        // その時点では祖先を特定できないため、ロード済みの最新データでここで確実に展開する。
+        const sel = selectedIdRef.current;
+        if (sel) {
+          const ancestors = findAncestorIds(resp.data, sel);
+          if (ancestors) ancestors.forEach(a => ids.push(a));
+        }
+        setExpand([...new Set(ids)]);
       }
       // ツリー表示後に非同期でGit変更状態を取得して色を反映
       GetModifiedIds().then((ids) => {
