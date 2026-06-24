@@ -41,6 +41,18 @@ describe('Message', () => {
     expect(msg.body).toBe('GetNote() error');
     expect(msg.debug).toContain('stack trace line');
   });
+
+  it('respects kind from Go side (info overrides error)', () => {
+    const envelope = JSON.stringify({
+      message: 'No changes to record',
+      cause: { body: 'No changes to record', kind: 'info' },
+      kind: 'RuntimeError',
+    });
+    const err = new Error(envelope);
+    const msg = Message.createMessage('error', err);
+    expect(msg.type).toBe('info');
+    expect(msg.body).toBe('No changes to record');
+  });
 });
 
 describe('SystemMessage', () => {

@@ -20,10 +20,10 @@ export function useDialogMessage() {
 
     const showError = useCallback((err) => {
         // インライン Alert はユーザ向けの body のみ表示する。
-        // 元の err は showErrorMessage 側でも parseError されるため、
-        // フォールバック時はそのまま渡してデバッグ情報を失わない。
-        const { body } = parseError(err);
-        if (ctx) ctx.setMsg({ severity: 'error', text: body });
+        // Go 側が kind を指定している場合はそちらを severity に使う。
+        const { body, kind } = parseError(err);
+        const severity = kind || 'error';
+        if (ctx) ctx.setMsg({ severity, text: body });
         else evt.showErrorMessage(err);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ctx, evt]);

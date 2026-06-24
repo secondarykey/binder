@@ -13,14 +13,16 @@ class Message {
     /**
      * 表示用メッセージオブジェクトを生成する。
      * 成功/情報メッセージは文字列、エラーは Error/構造化エラーを受け取り、
-     * parseError で { body, detail, debug } に正規化する。
+     * parseError で { body, detail, debug, kind } に正規化する。
+     * Go 側が kind を指定している場合はそちらを優先する（info / warning）。
      */
     static createMessage(type, msg) {
         if (type === "clear") {
             return { type, body: "", detail: "", debug: "" };
         }
         const parsed = parseError(msg);
-        return { type, body: parsed.body, detail: parsed.detail, debug: parsed.debug };
+        const resolvedType = parsed.kind || type;
+        return { type: resolvedType, body: parsed.body, detail: parsed.detail, debug: parsed.debug };
     }
 }
 

@@ -12,6 +12,18 @@ describe('parseError', () => {
     expect(r.body).toBe('BODY');
     expect(r.detail).toBe('DETAIL');
     expect(r.debug).toContain('low level');
+    expect(r.kind).toBeUndefined();
+  });
+
+  it('extracts kind from structured cause', () => {
+    const env = JSON.stringify({
+      message: 'No changes',
+      cause: { body: 'No changes to record', kind: 'info' },
+      kind: 'RuntimeError',
+    });
+    const r = parseError(new Error(env));
+    expect(r.body).toBe('No changes to record');
+    expect(r.kind).toBe('info');
   });
 
   it('falls back to the first line of message when cause has no body', () => {
@@ -24,12 +36,14 @@ describe('parseError', () => {
     expect(r.body).toBe('GetNote() error');
     expect(r.detail).toContain('stack a');
     expect(r.debug).toContain('stack b');
+    expect(r.kind).toBeUndefined();
   });
 
   it('treats a plain (non-JSON) string as the body', () => {
     const r = parseError('Please record changes before switching branches.');
     expect(r.body).toBe('Please record changes before switching branches.');
     expect(r.detail).toBe('');
+    expect(r.kind).toBeUndefined();
   });
 
   it('handles a plain Error message', () => {
@@ -49,10 +63,8 @@ describe('parseError', () => {
       kind: 'RuntimeError',
     });
     const r = parseError(new Error(env));
-    // panic メッセージはユーザ向けに差し替えられる（i18n キーまたは翻訳テキスト）
     expect(r.body).not.toContain('panic');
     expect(r.body.length).toBeGreaterThan(0);
-    // 元のパニックメッセージは debug に保持
     expect(r.debug).toContain('panic');
     expect(r.debug).toContain('index out of range');
     expect(r.detail).toBe('');

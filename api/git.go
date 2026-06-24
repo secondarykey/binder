@@ -9,7 +9,6 @@ import (
 	"binder/log"
 	"binder/setup/convert"
 
-	"errors"
 	"time"
 
 	gogitplumbing "github.com/go-git/go-git/v5/plumbing"
@@ -25,10 +24,7 @@ func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
 	}
 	err := a.current.CommitFiles(m, files...)
 	if err != nil {
-		if !errors.Is(err, fs.UpdatedFilesError) {
-			return userError(err)
-		}
-		return fs.UpdatedFilesError
+		return userError(err)
 	}
 	return nil
 }
@@ -54,10 +50,7 @@ func (a *App) Commit(mode string, id string, m string) error {
 	f := a.current.ToFile(mode, id)
 	err := a.current.CommitFiles(m, f)
 	if err != nil {
-		if !errors.Is(err, fs.UpdatedFilesError) {
-			return userError(err)
-		}
-		return fs.UpdatedFilesError
+		return userError(err)
 	}
 	return nil
 }

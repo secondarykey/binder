@@ -661,7 +661,8 @@
             "duplicateAlias" : "That alias is already in use",
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",
-            "uncommitted" : "There are unrecorded changes. Please record them first"
+            "uncommitted" : "There are unrecorded changes. Please record them first",
+            "noUpdates" : "No changes to record"
         }
     },
     "lite" : {

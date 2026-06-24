@@ -19,6 +19,7 @@ import (
 type MessageError struct {
 	Body   string // スナックバー等に1行で表示するユーザ向けメッセージ
 	Detail string // 詳細情報（任意。ダブルクリックで表示）
+	Kind   string // メッセージ種別: "error"（既定）, "warning", "info"
 	Cause  error  // 原因となった元 error（任意。デバッグ・errors.Is/As チェーン用）
 }
 
@@ -45,6 +46,7 @@ func (e *MessageError) Unwrap() error {
 type messagePayload struct {
 	Body   string `json:"body"`
 	Detail string `json:"detail,omitempty"`
+	Kind   string `json:"kind,omitempty"`
 	Cause  string `json:"cause,omitempty"`
 }
 
@@ -53,7 +55,7 @@ type messagePayload struct {
 // これによりスタックトレース（関数名・file:line）を含み、フロントの折りたたみ
 // デバッグ情報で技術的詳細を確認できる（Error() は1行のままログ用に保つ）。
 func (e *MessageError) MarshalJSON() ([]byte, error) {
-	p := messagePayload{Body: e.Body, Detail: e.Detail}
+	p := messagePayload{Body: e.Body, Detail: e.Detail, Kind: e.Kind}
 	if e.Cause != nil {
 		p.Cause = fmt.Sprintf("%+v", e.Cause)
 	}
@@ -73,6 +75,16 @@ func Wrapf(cause error, format string, a ...interface{}) *MessageError {
 // WithDetail は body と detail を持つ MessageError を生成する。
 func WithDetail(cause error, body, detail string) *MessageError {
 	return &MessageError{Body: body, Detail: detail, Cause: cause}
+}
+
+// Info は情報レベルの MessageError を生成する。
+func Info(cause error, body string) *MessageError {
+	return &MessageError{Body: body, Kind: "info", Cause: cause}
+}
+
+// Warning は警告レベルの MessageError を生成する。
+func Warning(cause error, body string) *MessageError {
+	return &MessageError{Body: body, Kind: "warning", Cause: cause}
 }
 
 // MarshalError は application.Options.MarshalError に登録する関数。

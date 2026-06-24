@@ -1,11 +1,13 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"binder"
 	"binder/db"
+	"binder/fs"
 )
 
 func TestUserErrorMapsSentinels(t *testing.T) {
@@ -52,5 +54,35 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 	}
 	if !errors.Is(got, unknown) {
 		t.Error("unknown error: cause not preserved")
+	}
+}
+
+func TestUserErrorInfoKind(t *testing.T) {
+	got := userError(fs.UpdatedFilesError)
+	var me *MessageError
+	if !errors.As(got, &me) {
+		t.Fatal("UpdatedFilesError: result is not *MessageError")
+	}
+	if me.Kind != "info" {
+		t.Errorf("UpdatedFilesError: expected kind=info, got %q", me.Kind)
+	}
+	if me.Body == "" {
+		t.Error("UpdatedFilesError: body is empty")
+	}
+	if !errors.Is(got, fs.UpdatedFilesError) {
+		t.Error("UpdatedFilesError: cause not preserved")
+	}
+
+	// MarshalJSON に kind が含まれることを確認
+	b, err := json.Marshal(me)
+	if err != nil {
+		t.Fatalf("MarshalJSON error: %v", err)
+	}
+	var payload map[string]interface{}
+	if err := json.Unmarshal(b, &payload); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+	if payload["kind"] != "info" {
+		t.Errorf("MarshalJSON: expected kind=info in JSON, got %v", payload["kind"])
 	}
 }
