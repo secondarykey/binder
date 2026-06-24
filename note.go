@@ -11,7 +11,7 @@ import (
 )
 
 // ノート操作の sentinel エラー。API 層で errors.Is により判定し、
-// ユーザ向けメッセージ（msgerr.MessageError）へマッピングする。
+// ユーザ向けメッセージ（api.MessageError）へマッピングする。
 var (
 	ErrIndexNoteUndeletable = errors.New("index note cannot be deleted")
 	ErrNoteHasChildren      = errors.New("note has children and cannot be deleted")

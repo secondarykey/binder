@@ -5,12 +5,11 @@ import (
 
 	"binder"
 	"binder/db"
-	"binder/msgerr"
 	"binder/settings"
 	"binder/setup/convert"
 )
 
-// userError は内部 error をユーザ向けの構造化エラー（msgerr.MessageError）へ変換する。
+// userError は内部 error をユーザ向けの構造化エラー（MessageError）へ変換する。
 //
 // 既知の原因（sentinel error）は翻訳済みのユーザメッセージにマッピングし、
 // それ以外は汎用メッセージ「異常が発生しました」で包む。いずれの場合も元 error を
@@ -25,16 +24,16 @@ func userError(err error) error {
 	}
 	switch {
 	case errors.Is(err, binder.ErrNoteHasChildren):
-		return msgerr.Wrap(err, settings.T("go.error.noteHasChildren"))
+		return Wrap(err, settings.T("go.error.noteHasChildren"))
 	case errors.Is(err, binder.ErrIndexNoteUndeletable):
-		return msgerr.Wrap(err, settings.T("go.error.indexNoteUndeletable"))
+		return Wrap(err, settings.T("go.error.indexNoteUndeletable"))
 	case errors.Is(err, db.DuplicateAlias):
-		return msgerr.Wrap(err, settings.T("go.error.duplicateAlias"))
+		return Wrap(err, settings.T("go.error.duplicateAlias"))
 	case errors.Is(err, db.DuplicateKey):
-		return msgerr.Wrap(err, settings.T("go.error.duplicateName"))
+		return Wrap(err, settings.T("go.error.duplicateName"))
 	case errors.Is(err, convert.ErrNotBinder):
-		return msgerr.Wrap(err, settings.T("go.error.notBinder"))
+		return Wrap(err, settings.T("go.error.notBinder"))
 	default:
-		return msgerr.Wrap(err, settings.T("go.error.unexpected"))
+		return Wrap(err, settings.T("go.error.unexpected"))
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"binder/api"
 	"binder/api/shared"
 	"binder/log"
-	"binder/msgerr"
 	"binder/settings"
 )
 
@@ -74,8 +73,8 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
 		},
-		// 構造化エラー（msgerr.MessageError）を envelope の cause に載せる
-		MarshalError: msgerr.Marshal,
+		// 構造化エラー（api.MessageError）を envelope の cause に載せる
+		MarshalError: api.MarshalError,
 	})
 
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）

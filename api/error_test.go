@@ -6,7 +6,6 @@ import (
 
 	"binder"
 	"binder/db"
-	"binder/msgerr"
 )
 
 func TestUserErrorMapsSentinels(t *testing.T) {
@@ -21,7 +20,7 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 	}
 	for _, c := range cases {
 		got := userError(c.in)
-		var me *msgerr.MessageError
+		var me *MessageError
 		if !errors.As(got, &me) {
 			t.Errorf("%s: result is not *MessageError", c.name)
 			continue
@@ -42,7 +41,7 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 	// 未知のエラーは汎用メッセージで包むが Cause は保持する
 	unknown := errors.New("boom")
 	got := userError(unknown)
-	var me *msgerr.MessageError
+	var me *MessageError
 	if !errors.As(got, &me) {
 		t.Fatal("unknown error: result is not *MessageError")
 	}
