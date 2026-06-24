@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 /**
  * Go/Wails から伝搬したエラー、またはフロントエンドのエラーを
  * ユーザ向けの { body, detail, debug } に正規化する。
@@ -10,6 +12,10 @@
  * msgerr.MessageError を返した場合、envelope.cause に {body, detail, cause} が入る。
  * それ以外（未変換の API エラー）は envelope.message の先頭行を body に使う。
  * JSON でない（フロント由来の文字列/t()）場合はそのまま body にする。
+ *
+ * Wails v3 は panic を recover して "<FQN>: panic: <value>" 形式の
+ * RuntimeError にする。userError を経由しないため、ここで検出して
+ * ユーザ向けメッセージに差し替える。
  *
  * @param {Error|string|object} err
  * @returns {{ body: string, detail: string, debug: string }}
@@ -57,6 +63,14 @@ export function parseError(err) {
   }
 
   if (!body) body = 'Unknown error';
+
+  // Wails v3 の panic recovery: "<FQN>: panic: <value>" を検出
+  if (body.includes(': panic:')) {
+    debug = [body, detail, debug].filter(Boolean).join('\n');
+    body = i18n.t('go.error.unexpected');
+    detail = '';
+  }
+
   return { body, detail, debug };
 }
 

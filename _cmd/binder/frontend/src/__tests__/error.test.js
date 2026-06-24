@@ -41,4 +41,20 @@ describe('parseError', () => {
     expect(parseError(null).body).toBe('Unknown error');
     expect(parseError(undefined).body).toBe('Unknown error');
   });
+
+  it('normalizes Wails v3 panic messages to user-friendly body', () => {
+    const env = JSON.stringify({
+      message: 'binder/api.(*App).RemoveNote: panic: runtime error: index out of range',
+      cause: {},
+      kind: 'RuntimeError',
+    });
+    const r = parseError(new Error(env));
+    // panic メッセージはユーザ向けに差し替えられる（i18n キーまたは翻訳テキスト）
+    expect(r.body).not.toContain('panic');
+    expect(r.body.length).toBeGreaterThan(0);
+    // 元のパニックメッセージは debug に保持
+    expect(r.debug).toContain('panic');
+    expect(r.debug).toContain('index out of range');
+    expect(r.detail).toBe('');
+  });
 });
