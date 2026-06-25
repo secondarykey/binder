@@ -10,8 +10,6 @@ import { InputAdornment, TextField } from '@mui/material';
  * @param {{ comment: string, onCommentChange: (v:string)=>void, updated: boolean, onCommit: ()=>void }} props
  */
 function CommitBar({ comment, onCommentChange, updated, onCommit }) {
-  const expanded = comment.includes('\n');
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -35,7 +33,7 @@ function CommitBar({ comment, onCommentChange, updated, onCommit }) {
           inputProps={{ style: { fontSize: '14px' } }}
           InputProps={{
             endAdornment: (
-              <InputAdornment position="end" className="linkBtn" sx={expanded ? { alignSelf: 'flex-end', mb: '7px' } : undefined}>
+              <InputAdornment position="end" className="linkBtn" sx={{ alignSelf: 'flex-end', mb: '7px' }}>
                 <CommitIcon
                   fontSize="small"
                   style={{ color: updated ? 'var(--accent-orange)' : 'var(--text-primary)', cursor: 'pointer' }}

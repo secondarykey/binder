@@ -232,11 +232,11 @@
 
 #parseStatusBar {
   flex-shrink: 0;
-  height: 40px;
+  min-height: 40px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 4px 12px;
   background-color: var(--bg-overlay);
 }
 
