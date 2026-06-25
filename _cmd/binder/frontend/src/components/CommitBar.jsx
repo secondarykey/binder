@@ -30,7 +30,7 @@ function CommitBar({ comment, onCommentChange, updated, onCommit }) {
           minRows={1}
           maxRows={6}
           style={{ width: '100%' }}
-          inputProps={{ style: { fontSize: '14px', padding: '4px' } }}
+          inputProps={{ style: { fontSize: '14px', padding: '4px 14px' } }}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end" className="linkBtn">
