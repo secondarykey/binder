@@ -33,7 +33,7 @@ function CommitBar({ comment, onCommentChange, updated, onCommit }) {
           inputProps={{ style: { fontSize: '14px' } }}
           InputProps={{
             endAdornment: (
-              <InputAdornment position="end" className="linkBtn" sx={{ alignSelf: 'flex-end', mb: '7px' }}>
+              <InputAdornment position="end" className="linkBtn">
                 <CommitIcon
                   fontSize="small"
                   style={{ color: updated ? 'var(--accent-orange)' : 'var(--text-primary)', cursor: 'pointer' }}
