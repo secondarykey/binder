@@ -1638,7 +1638,7 @@ function Editor(props) {
   const handleCommit = () => {
     Commit(mode, id, comment).then(() => {
       setUpdated(false);
-      setComment("");
+      setComment("Updated: " + name);
       evt.commitDone();
       evt.showSuccessMessage("Commit.")
     }).catch((err) => {

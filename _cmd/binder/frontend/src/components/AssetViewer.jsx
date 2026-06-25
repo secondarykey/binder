@@ -333,7 +333,7 @@ function AssetViewer() {
   const handleCommit = () => {
     Commit("assets", id, comment).then(() => {
       setUpdated(false);
-      setComment("");
+      setComment("Updated: " + assetName);
       evt.commitDone();
       evt.showSuccessMessage("Commit.");
     }).catch((e) => {
