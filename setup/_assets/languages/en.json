@@ -23,6 +23,7 @@
         "name" : "Name",
         "detail" : "Detail",
         "alias" : "Alias",
+        "debugInfo" : "Debug info",
         "save" : "Save",
         "cancel" : "Cancel",
         "delete" : "Delete",
@@ -209,7 +210,15 @@
         "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
         "addDomain" : "Add Domain",
         "domainPlaceholder" : "e.g. cdn.jsdelivr.net",
-        "security" : "Security"
+        "security" : "Security",
+        "autoSave" : "Auto Save",
+        "autoSaveInterval" : "Every",
+        "autoSaveMinutes" : "min",
+        "autoSaveOnClose" : "Save on close",
+        "autoSaveOnLeave" : "Save when leaving a binder",
+        "autoSaveConfirm" : "Confirm before closing / leaving",
+        "autoSaveHint" : "Periodically record all changes while a binder is open. Commit messages are prefixed with \"Auto Save\". \"Confirm before closing / leaving\" supplements the two options above: for whichever is enabled, it shows the unrecorded list instead of saving silently. It can only be set when save-on-close or save-on-leave is on. OS-level close (Alt+F4, shutdown) closes without saving.",
+        "autoSaved" : "Auto saved ({{num}} items)"
     },
     "plugin" : {
         "title" : "Plugins",
@@ -644,7 +653,16 @@
             "noBinderOpen" : "No binder open",
             "emitterNotSet" : "Search emitter is not set",
             "assetsNoteOnly" : "Assets can only be added to notes",
-            "emptyDirectory" : "Please select a directory"
+            "emptyDirectory" : "Please select a directory",
+            "unexpected" : "An unexpected error occurred",
+            "noteHasChildren" : "This note has child items and cannot be deleted",
+            "indexNoteUndeletable" : "The index note cannot be deleted",
+            "assetHasLayers" : "This asset has layers and cannot be deleted",
+            "duplicateAlias" : "That alias is already in use",
+            "duplicateName" : "That name is already in use",
+            "notBinder" : "This folder is not a binder",
+            "uncommitted" : "There are unrecorded changes. Please record them first",
+            "noUpdates" : "No changes to record"
         }
     },
     "lite" : {

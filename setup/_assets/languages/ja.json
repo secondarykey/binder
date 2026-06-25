@@ -23,6 +23,7 @@
         "name" : "名前",
         "detail" : "詳細",
         "alias" : "エイリアス",
+        "debugInfo" : "デバッグ情報",
         "save" : "保存",
         "cancel" : "キャンセル",
         "delete" : "削除",
@@ -209,7 +210,15 @@
         "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
         "addDomain" : "ドメインを追加",
         "domainPlaceholder" : "例: cdn.jsdelivr.net",
-        "security" : "セキュリティ"
+        "security" : "セキュリティ",
+        "autoSave" : "自動保存",
+        "autoSaveInterval" : "間隔",
+        "autoSaveMinutes" : "分",
+        "autoSaveOnClose" : "閉じる時に保存",
+        "autoSaveOnLeave" : "一覧に戻る時に保存",
+        "autoSaveConfirm" : "閉じる/一覧に戻る時に確認する",
+        "autoSaveHint" : "バインダーを開いている間、一定間隔で変更を全体記録します。コメントは「Auto Save」が接頭子になります。「閉じる/一覧に戻る時に確認する」は上の2つを補足する設定で、有効にした契機（終了／一覧に戻る）で静かに保存する代わりに未記録一覧を表示します。終了時保存・一覧に戻る時保存のどちらかがONのときだけ設定できます。OSのクローズ（Alt+F4・シャットダウン等）は保存せず閉じます。",
+        "autoSaved" : "自動保存しました（{{num}}件）"
     },
     "plugin" : {
         "title" : "プラグイン",
@@ -644,7 +653,16 @@
             "noBinderOpen" : "Binderが開かれていません",
             "emitterNotSet" : "検索エミッターが設定されていません",
             "assetsNoteOnly" : "アセットはノートにのみ追加できます",
-            "emptyDirectory" : "ディレクトリを選択してください"
+            "emptyDirectory" : "ディレクトリを選択してください",
+            "unexpected" : "異常が発生しました",
+            "noteHasChildren" : "子要素があるノートは削除できません",
+            "indexNoteUndeletable" : "indexノートは削除できません",
+            "assetHasLayers" : "レイヤーがあるアセットは削除できません",
+            "duplicateAlias" : "そのエイリアスは既に使用されています",
+            "duplicateName" : "その名前は既に使用されています",
+            "notBinder" : "このフォルダはバインダーではありません",
+            "uncommitted" : "未記録の変更があります。先に記録してください",
+            "noUpdates" : "記録する変更がありません"
         }
     },
     "lite" : {

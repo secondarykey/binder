@@ -30,7 +30,7 @@ func (a *App) SavePlugin(engine, name, content string) error {
 	}
 	if err := a.current.SavePlugin(engine, name, content); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("SavePlugin() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -42,7 +42,7 @@ func (a *App) RemovePlugin(engine, name string) error {
 	}
 	if err := a.current.RemovePlugin(engine, name); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RemovePlugin() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -54,7 +54,7 @@ func (a *App) RenamePlugin(engine, oldName, newName string) error {
 	}
 	if err := a.current.RenamePlugin(engine, oldName, newName); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RenamePlugin() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }

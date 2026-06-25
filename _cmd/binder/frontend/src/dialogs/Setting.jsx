@@ -3,7 +3,7 @@ import { useEffect, useState, useContext } from "react";
 import { Box, Button, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets } from "../../bindings/binder/api/app";
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets, GetAutoSave, SaveAutoSave } from "../../bindings/binder/api/app";
 import { GetThemeList, GetLanguageList } from "../../bindings/binder/api/shared/shared";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog } from "../../bindings/main/window";
@@ -49,6 +49,13 @@ function Setting({ isModal, ...props }) {
   const [allowedCDNs, setAllowedCDNs] = useState([]);
   const [newDomain, setNewDomain] = useState("");
 
+  // 自動保存
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoSaveInterval, setAutoSaveInterval] = useState(30);
+  const [autoSaveOnClose, setAutoSaveOnClose] = useState(true);
+  const [autoSaveOnLeave, setAutoSaveOnLeave] = useState(false);
+  const [autoSaveConfirm, setAutoSaveConfirm] = useState(false);
+
   useEffect(() => {
 
     if (!isModal) evt.changeTitle(t("setting.title"))
@@ -83,6 +90,15 @@ function Setting({ isModal, ...props }) {
     }).catch(() => {});
     GetTreeExpandTargets().then((v) => {
       setTreeExpandTargets(!!v);
+    }).catch(() => {});
+    GetAutoSave().then((a) => {
+      if (a) {
+        setAutoSaveEnabled(!!a.enabled);
+        setAutoSaveInterval(a.intervalMinutes > 0 ? a.intervalMinutes : 30);
+        setAutoSaveOnClose(!!a.onClose);
+        setAutoSaveOnLeave(!!a.onLeave);
+        setAutoSaveConfirm(!!a.confirmOnClose);
+      }
     }).catch(() => {});
   }, []);
 
@@ -131,7 +147,14 @@ function Setting({ isModal, ...props }) {
     path.runWithOpen = pathRunWith;
     path.openWithItem = pathOpenWith;
 
-    SavePath(path).then((resp) => {
+    const interval = autoSaveInterval > 0 ? autoSaveInterval : 30;
+    // 確認は終了保存/一覧保存の補足なので、どちらもOFFなら確認もOFFに正規化する
+    const confirm = autoSaveConfirm && (autoSaveOnClose || autoSaveOnLeave);
+    const autoSave = { enabled: autoSaveEnabled, intervalMinutes: interval, onClose: autoSaveOnClose, onLeave: autoSaveOnLeave, confirmOnClose: confirm };
+
+    Promise.all([SavePath(path), SaveAutoSave(autoSave)]).then(() => {
+      // 自動保存ループの再設定をメインウィンドウへ通知
+      Events.Emit('binder:autosave:changed', autoSave);
       evt.showSuccessMessage(t("common.updated"));
     }).catch((err) => {
       showError(err);
@@ -353,6 +376,67 @@ function Setting({ isModal, ...props }) {
                       }}
                     />
                   </Box>
+                </Paper>
+
+                {/** 自動保存 */}
+                <Paper variant="outlined" sx={{
+                  p: 2,
+                  backgroundColor: 'var(--bg-overlay)',
+                  borderColor: 'var(--border-primary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <FormControlLabel
+                      control={
+                        <Switch checked={autoSaveEnabled} onChange={(e) => setAutoSaveEnabled(e.target.checked)} size="small" />
+                      }
+                      label={t("setting.autoSave")}
+                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FormLabel sx={{ fontSize: '13px', whiteSpace: 'nowrap', m: 0, color: autoSaveEnabled ? 'var(--text-primary)' : 'var(--text-disabled)' }}>
+                        {t("setting.autoSaveInterval")}
+                      </FormLabel>
+                      <TextField
+                        type="number"
+                        size="small"
+                        value={autoSaveInterval}
+                        disabled={!autoSaveEnabled}
+                        onChange={(e) => setAutoSaveInterval(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        inputProps={{ min: 1, style: { width: 56, textAlign: 'right' } }}
+                      />
+                      <FormLabel sx={{ fontSize: '13px', m: 0, color: autoSaveEnabled ? 'var(--text-primary)' : 'var(--text-disabled)' }}>
+                        {t("setting.autoSaveMinutes")}
+                      </FormLabel>
+                    </Box>
+                    <FormControlLabel
+                      control={
+                        <Switch checked={autoSaveOnClose} onChange={(e) => setAutoSaveOnClose(e.target.checked)} size="small" />
+                      }
+                      label={t("setting.autoSaveOnClose")}
+                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch checked={autoSaveOnLeave} onChange={(e) => setAutoSaveOnLeave(e.target.checked)} size="small" />
+                      }
+                      label={t("setting.autoSaveOnLeave")}
+                      sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                    />
+                  </Box>
+                  {/* 確認は終了保存/一覧保存の補足。どちらかがONの時だけ設定できる */}
+                  <FormControlLabel
+                    control={
+                      <Switch checked={autoSaveConfirm && (autoSaveOnClose || autoSaveOnLeave)} disabled={!(autoSaveOnClose || autoSaveOnLeave)} onChange={(e) => setAutoSaveConfirm(e.target.checked)} size="small" />
+                    }
+                    label={t("setting.autoSaveConfirm")}
+                    sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: (autoSaveOnClose || autoSaveOnLeave) ? 'var(--text-primary)' : 'var(--text-disabled)' } }}
+                  />
+                  <FormLabel sx={{ fontSize: '12px', color: 'var(--text-muted)', m: 0 }}>
+                    {t("setting.autoSaveHint")}
+                  </FormLabel>
                 </Paper>
               </div>
             </div>

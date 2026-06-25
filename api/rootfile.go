@@ -25,7 +25,7 @@ func (a *App) ReadRootFile(name string) (string, error) {
 	content, err := a.current.ReadRootFile(name)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("ReadRootFile() error\n%+v", err)
+		return "", userError(err)
 	}
 	return content, nil
 }
@@ -38,7 +38,7 @@ func (a *App) SaveRootFile(name, content string) error {
 	}
 	if err := a.current.SaveRootFile(name, content); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("SaveRootFile() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func (a *App) RemoveRootFile(name string) error {
 	}
 	if err := a.current.RemoveRootFile(name); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RemoveRootFile() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -64,7 +64,7 @@ func (a *App) RenameRootFile(oldName, newName string) error {
 	}
 	if err := a.current.RenameRootFile(oldName, newName); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RenameRootFile() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }

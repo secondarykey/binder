@@ -164,16 +164,6 @@ func PrintTrace(caller string) {
 	Trace("%s %s", caller, "End")
 }
 
-// Timer は経過時間計測用のヘルパー。返り値の関数を呼ぶと計測開始からの経過時間を出力する。
-// 関数全体を測る場合は defer log.Timer("LoadBinder")() のように使う。
-// Notice レベルなので dev / 本番いずれの既定レベルでも出力される。
-func Timer(label string) func() {
-	start := time.Now()
-	return func() {
-		Notice("[timing] %s: %s", label, time.Since(start))
-	}
-}
-
 func Func(caller string, args ...interface{}) string {
 	Trace("%s %s", caller, "Start")
 	if len(args) > 0 {

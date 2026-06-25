@@ -22,7 +22,7 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext } from "../Event";
@@ -57,6 +57,9 @@ export async function copyClipboard(val) {
 }
 
 var intervalId = undefined;
+var autoSaveIntervalId = undefined;
+// 自動保存ループの世代トークン（非同期セットアップのレース対策）
+var autoSaveGen = 0;
 
 /**
  * バインダーごとの最後に開いたデータをメモリ上で保持する。
@@ -93,6 +96,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [commitModalFilter, setCommitModalFilter] = useState(null);
+  // 閉じる確認モーダル経由で実行する保留中のアクション（'exit' | 'home' | null）
+  const [pendingClose, setPendingClose] = useState(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishModalTemplate, setPublishModalTemplate] = useState(null);
   const [publishModalSubtree, setPublishModalSubtree] = useState(null);
@@ -106,6 +111,8 @@ function App() {
   const [tooOldOpen, setTooOldOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
   const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "", minAppVersion: "" });
+  // 起動時の自動オープン判定が終わるまで true。履歴一覧の一瞬の表示（チラつき）を隠す
+  const [booting, setBooting] = useState(true);
   const [devMode, setDevMode] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
@@ -119,20 +126,20 @@ function App() {
   // バインダーを開く共通処理（CheckCompat付き）
   // openLastData=true の場合、起動後に前回開いたデータに遷移する
   const openBinder = (dir, openLastData = false) => {
-    const t0 = performance.now();
-    window.__binderOpenT0 = t0;
     CheckCompat(dir).then((result) => {
-      console.debug(`[timing] CheckCompat: ${(performance.now() - t0).toFixed(1)}ms`);
       setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
       switch (result.status) {
         case CompatNotBinder:
+          setBooting(false);
           evt.showErrorMessage(t("convert.notBinder"));
           break;
         case CompatNeedConvert:
+          setBooting(false);
           setPendingDir(dir);
           setConvertOpen(true);
           break;
         case CompatNeedUpdate:
+          setBooting(false);
           setPendingDir(dir);
           setNeedUpdateOpen(true);
           break;
@@ -141,10 +148,12 @@ function App() {
           Convert(dir).then(() => {
             loadBinder(dir, openLastData);
           }).catch((err) => {
+            setBooting(false);
             evt.showErrorMessage(err);
           });
           break;
         case CompatTooOld:
+          setBooting(false);
           setTooOldOpen(true);
           break;
         default:
@@ -152,8 +161,46 @@ function App() {
           break;
       }
     }).catch((err) => {
+      setBooting(false);
       evt.showErrorMessage(err);
     });
+  };
+
+  // 自動保存ループを（再）設定する。
+  // 設定が有効な場合のみ、間隔（分）ごとに AutoSave を実行する。
+  // バインダーが開かれている時だけ保存し、保存があればスナックバーで通知する。
+  const setupAutoSave = () => {
+    // 既存タイマーを破棄
+    if (autoSaveIntervalId !== undefined) {
+      clearInterval(autoSaveIntervalId);
+      autoSaveIntervalId = undefined;
+    }
+    // 世代トークン。GetAutoSave() が非同期で解決する間に再設定やアンマウントが
+    // 起きた場合（StrictMode の二重マウント等）、古い呼び出しがタイマーを生成して
+    // 追跡外で動き続ける（＝古い間隔が残る）のを防ぐ。
+    const gen = ++autoSaveGen;
+    GetAutoSave().then((a) => {
+      // 自分より新しい設定呼び出し・アンマウントで世代が進んでいたら破棄
+      if (gen !== autoSaveGen) return;
+      if (!a || !a.enabled) return;
+      const minutes = a.intervalMinutes > 0 ? a.intervalMinutes : 30;
+      // 念のため二重生成を防ぐ
+      if (autoSaveIntervalId !== undefined) {
+        clearInterval(autoSaveIntervalId);
+      }
+      autoSaveIntervalId = setInterval(function () {
+        if (!currentBinderDir) return;
+        AutoSave().then((n) => {
+          if (n > 0) {
+            // ツリーの未記録強調・エディタのコミットボタンを更新
+            evt.commitDone();
+            evt.showSuccessMessage(t("setting.autoSaved", { num: n }));
+          }
+        }).catch(() => {
+          // 自動保存の失敗はユーザ操作を妨げないため通知しない（syslogに記録される）
+        });
+      }, minutes * 60 * 1000);
+    }).catch(() => {});
   };
 
   // LoadBinder を呼んでエディタに遷移する
@@ -172,12 +219,7 @@ function App() {
     MarkedScript.reset();
     MermaidScript.reset();
     editorHistory.clear();
-    const tLoad = performance.now();
     LoadBinder(dir).then((href) => {
-      console.debug(`[timing] LoadBinder: ${(performance.now() - tLoad).toFixed(1)}ms`);
-      if (window.__binderOpenT0 !== undefined) {
-        console.debug(`[timing] openBinder→LoadBinder done (total): ${(performance.now() - window.__binderOpenT0).toFixed(1)}ms`);
-      }
       // marked エンジンを起動直後にバックグラウンドで先読み（ウォームアップ）。
       // 初回ノート描画のクリティカルパス上で init()（CDN/vendor 読込 + プラグイン適用）を
       // 走らせると数百ms かかるため、エディタのマウントと並行して温めておく。
@@ -186,12 +228,20 @@ function App() {
       evt.changeAddress(href);
       currentBinderDir = dir;
 
+      // エディタ route へ遷移してからスプラッシュを解除する。
+      // 解除を nav より前にすると、openLastData の非同期遷移までの間に
+      // 履歴一覧（"/"）が一瞬見えてしまうため必ず nav の直後に解除する。
+      const navEditor = (p) => {
+        nav(p);
+        setBooting(false);
+      };
+
       // メモリ上の記録を優先し、なければ永続化された記録、それもなければindex
       // ナビゲート先を SaveLastData で同期し、histories[0] と lastNoteId の不整合を防ぐ
       const mem = binderLastData.get(dir);
       if (mem) {
         const urlType = mem.mode === 'asset' ? 'assets' : mem.mode;
-        nav("/editor/" + urlType + "/" + mem.id);
+        navEditor("/editor/" + urlType + "/" + mem.id);
         evt.selectTreeNode(mem.id);
         SaveLastData(mem.mode, mem.id).catch(() => {});
       } else if (openLastData) {
@@ -200,21 +250,22 @@ function App() {
           const dataId = path?.lastNoteId;
           if (dataType && dataId) {
             const urlType = dataType === 'asset' ? 'assets' : dataType;
-            nav("/editor/" + urlType + "/" + dataId);
+            navEditor("/editor/" + urlType + "/" + dataId);
             evt.selectTreeNode(dataId);
           } else {
-            nav("/editor/note/index");
+            navEditor("/editor/note/index");
             SaveLastData("note", "index").catch(() => {});
           }
         }).catch(() => {
-          nav("/editor/note/index");
+          navEditor("/editor/note/index");
           SaveLastData("note", "index").catch(() => {});
         });
       } else {
-        nav("/editor/note/index");
+        navEditor("/editor/note/index");
         SaveLastData("note", "index").catch(() => {});
       }
     }).catch((err) => {
+      setBooting(false);
       evt.showErrorMessage(err);
     });
   };
@@ -350,10 +401,15 @@ function App() {
       if (path?.runWithOpen) {
         const h = path.histories;
         if (h && h.length > 0) {
+          // 自動オープン: openBinder/loadBinder 側で booting を解除する
           openBinder(h[0], !!path.openWithItem);
+          return;
         }
       }
+      // 自動オープンしない場合は履歴一覧を表示する
+      setBooting(false);
     }).catch((err) => {
+      setBooting(false);
       evt.showErrorMessage(err);
     });
 
@@ -367,6 +423,12 @@ function App() {
       SavePosition();
     }, 60 * 1000);
 
+    // 自動保存ループを設定し、設定変更通知で再設定する
+    setupAutoSave();
+    const cleanupAutoSave = Events.On("binder:autosave:changed", () => {
+      setupAutoSave();
+    });
+
     const handleKeyDown = (e) => {
       if (e.key === 'F12') {
         e.preventDefault();
@@ -379,6 +441,13 @@ function App() {
       document.removeEventListener('keydown', handleKeyDown);
       cleanupRestored();
       cleanupSearch();
+      cleanupAutoSave();
+      // 世代を進めて、保留中の setupAutoSave().then がタイマーを生成しないようにする
+      autoSaveGen++;
+      if (autoSaveIntervalId !== undefined) {
+        clearInterval(autoSaveIntervalId);
+        autoSaveIntervalId = undefined;
+      }
     };
 
     /**
@@ -403,6 +472,31 @@ function App() {
   /**
    * ホームボタンクリック: バインダーを閉じてトップへ移動
    */
+  // バインダーを閉じてトップへ移動する（保存・確認を伴わない実処理）
+  const closeAndGoHome = () => {
+    CloseBinder().then(() => {
+      setPageTitle("");
+      setBinderName("");
+      nav("/");
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  // 確認モード: 未記録の変更があれば確認モーダルを出し、無ければそのまま proceed する。
+  // 変更が無いのに空の一覧モーダルを出す（コミットすると「変更なし」エラーになる）煩わしさを避ける。
+  const confirmCloseOrProceed = (pending, proceed) => {
+    GetModifiedIds().then((ids) => {
+      if (ids && ids.length > 0) {
+        setPendingClose(pending);
+        setCommitModalFilter(null);
+        setCommitModalOpen(true);
+      } else {
+        proceed();
+      }
+    }).catch(() => proceed());
+  };
+
   const handleClickHome = () => {
     // ホームに戻る前に現在のバインダーの表示ページをメモリに保存
     if (currentBinderDir) {
@@ -413,12 +507,25 @@ function App() {
       }
       currentBinderDir = null;
     }
-    CloseBinder().then(() => {
-      setPageTitle("");
-      setBinderName("");
-      nav("/");
-    }).catch((err) => {
-      evt.showErrorMessage(err);
+    GetAutoSave().then((a) => {
+      if (a && a.onLeave && a.confirmOnClose) {
+        // 「一覧に戻る時に保存」が確認モード: 未記録があれば一覧を出し、無ければそのまま一覧へ
+        confirmCloseOrProceed('home', closeAndGoHome);
+        return;
+      }
+      if (a && a.onLeave) {
+        // 「離れる時に保存」: 閉じる前に全体コミットする（current が nil になる前）
+        AutoSave().then((n) => {
+          if (n > 0) {
+            evt.commitDone();
+            evt.showSuccessMessage(t("setting.autoSaved", { num: n }));
+          }
+        }).catch(() => {}).finally(closeAndGoHome);
+        return;
+      }
+      closeAndGoHome();
+    }).catch(() => {
+      closeAndGoHome();
     });
   }
 
@@ -436,13 +543,24 @@ function App() {
     Window.ToggleMaximise();
   }
 
+  // アプリ終了（Go側で OnClose 等を処理）
+  const doTerminate = () => {
+    Terminate().catch((err) => {
+      console.warn(err);
+    });
+  };
+
   //終了処理
   const handleExit = () => {
-    //TODO 終了処理を入れる
-    Terminate().then(() => {
-      console.log("?")
-    }).catch((err) => {
-      console.warn(err);
+    GetAutoSave().then((a) => {
+      if (a && a.onClose && a.confirmOnClose && currentBinderDir) {
+        // 「終了時に保存」が確認モード: 未記録があれば一覧を出してから終了、無ければそのまま終了
+        confirmCloseOrProceed('exit', doTerminate);
+        return;
+      }
+      doTerminate();
+    }).catch(() => {
+      doTerminate();
     });
   }
 
@@ -549,12 +667,29 @@ function App() {
       <div id="mainArea">
         {/** 左メニュー部 */}
         <Menu />
-        {/** メイン表示 */}
-        <Content />
+        {/** メイン表示。起動時の自動オープン判定中はスプラッシュで覆い、履歴一覧のチラつきを防ぐ */}
+        {booting ? (
+          <div style={{ flex: 1, minWidth: 0, backgroundColor: 'var(--bg-app)' }} />
+        ) : (
+          <Content />
+        )}
       </div>
 
       {/** コミットモーダル */}
-      <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => { setCommitModalOpen(false); setCommitModalFilter(null); }} />
+      <CommitModal open={commitModalOpen} filterIds={commitModalFilter} onClose={() => {
+        setCommitModalOpen(false);
+        setCommitModalFilter(null);
+        // 閉じる確認モーダル経由（コミット成功でもキャンセルでも）保留中のアクションを実行
+        if (pendingClose) {
+          const action = pendingClose;
+          setPendingClose(null);
+          if (action === 'exit') {
+            doTerminate();
+          } else if (action === 'home') {
+            closeAndGoHome();
+          }
+        }
+      }} />
 
       {/** 公開一覧モーダル */}
       <PublishModal open={publishModalOpen} template={publishModalTemplate} filterIds={publishModalSubtree} onClose={() => { setPublishModalOpen(false); setPublishModalTemplate(null); setPublishModalSubtree(null); }} />

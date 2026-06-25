@@ -30,10 +30,33 @@ type Setting struct {
 	Path        *Path     `json:"path"`
 	Look        *Look     `json:"lookAndFeel"`
 	Git         *Git      `json:"git"`
+	AutoSave    *AutoSave `json:"autoSave,omitempty"`
 	Language    string    `json:"language"`
 	AppVersion  string    `json:"appVersion,omitempty"`
 	AllowedCDNs []string  `json:"allowedCdns"`
 }
+
+// AutoSave はバインダーを開いている間の自動保存（全体コミット）設定。
+// アプリ全体の設定として setting.json に保持する（個人の作業スタイルの設定）。
+type AutoSave struct {
+	// Enabled は一定間隔での自動保存を行うかどうか。
+	Enabled bool `json:"enabled"`
+	// IntervalMinutes は自動保存の間隔（分）。デフォルト30。
+	IntervalMinutes int `json:"intervalMinutes"`
+	// OnClose はアプリを閉じる時に保存するかどうか（間隔保存とは独立）。
+	OnClose bool `json:"onClose"`
+	// OnLeave はバインダーを離れる（一覧に戻る）時に保存するかどうか。
+	// 未記録の編集はディスクに残るため、既定はOFF（記録を先送りしたいケースを尊重）。
+	OnLeave bool `json:"onLeave"`
+	// ConfirmOnClose はアプリを閉じる / 一覧に戻る時に、未記録一覧を出して確認するか。
+	// 有効時はアプリ内の操作（×ボタン・一覧に戻る）でコミットモーダルを表示し、
+	// OnClose/OnLeave の静かな保存より優先する。OSクローズ（Alt+F4・シャットダウン）は
+	// モーダルを出すとシャットダウンをブロックし得るため、確認せず何もせず閉じる。
+	ConfirmOnClose bool `json:"confirmOnClose"`
+}
+
+// DefaultAutoSaveInterval は自動保存間隔のデフォルト値（分）。
+const DefaultAutoSaveInterval = 30
 
 func (s Setting) IsDefault() bool {
 	if s.Position.Left == -9999 && s.Position.Top == -9999 {
@@ -201,6 +224,12 @@ func Get() *Setting {
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
 	}
+	if pSet.AutoSave == nil {
+		pSet.AutoSave = def().AutoSave
+	}
+	if pSet.AutoSave.IntervalMinutes <= 0 {
+		pSet.AutoSave.IntervalMinutes = DefaultAutoSaveInterval
+	}
 	return pSet
 }
 
@@ -301,6 +330,15 @@ func def() *Setting {
 
 	// CDNホワイトリストのデフォルト
 	set.AllowedCDNs = defaultAllowedCDNs()
+
+	// 自動保存のデフォルト（間隔30分・閉じる時保存・一覧に戻る時は保存しない）
+	set.AutoSave = &AutoSave{
+		Enabled:         true,
+		IntervalMinutes: DefaultAutoSaveInterval,
+		OnClose:         true,
+		OnLeave:         false,
+		ConfirmOnClose:  false,
+	}
 
 	return &set
 }
@@ -447,6 +485,28 @@ func GetTreeDisplayMode() string {
 func SaveTreeDisplayMode(mode string) error {
 	obj := Get()
 	obj.Look.TreeDisplayMode = mode
+	return obj.save()
+}
+
+// GetAutoSave は自動保存設定を返す（nil/不正値は Get() 内で補正済み）。
+func GetAutoSave() *AutoSave {
+	return Get().AutoSave
+}
+
+// SaveAutoSave は自動保存設定を保存する。間隔が0以下の場合はデフォルトに丸める。
+func SaveAutoSave(a *AutoSave) error {
+	obj := Get()
+	interval := a.IntervalMinutes
+	if interval <= 0 {
+		interval = DefaultAutoSaveInterval
+	}
+	obj.AutoSave = &AutoSave{
+		Enabled:         a.Enabled,
+		IntervalMinutes: interval,
+		OnClose:         a.OnClose,
+		OnLeave:         a.OnLeave,
+		ConfirmOnClose:  a.ConfirmOnClose,
+	}
 	return obj.save()
 }
 

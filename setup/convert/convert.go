@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	. "binder/internal"
 	"binder/log"
@@ -30,6 +31,14 @@ import (
 )
 
 var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097, v0102 *Version
+
+// migrationMu は convert.Run() の同時実行を直列化する。
+// go-git の Worktree/index 操作はスレッドセーフではないため、同一バインダーを
+// 並行して開いた場合（React StrictMode の二重マウント等で Convert が二重発火する等）に
+// .git/index への並行アクセスが起き、Add 時に EOF（インデックスのデコード途中終了）が発生する。
+// Run() 全体をロックで囲み、後続呼び出しは先行処理の完了後に実行する。
+// 2回目以降は binder.json が更新済みのため、移行対象なしの実質no-opになる。
+var migrationMu sync.Mutex
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
@@ -240,6 +249,11 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 		return result, nil
 	}
 
+	// go-git のインデックス操作はスレッドセーフではないため、Run() を直列化する。
+	// 同一バインダーを並行して開いた際の .git/index 競合（Add 時の EOF）を防ぐ。
+	migrationMu.Lock()
+	defer migrationMu.Unlock()
+
 	meta, err := loadMeta(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("loadMeta() error: %w", err)
@@ -255,14 +269,43 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 		return nil, xerrors.Errorf("Load() error: %w", err)
 	}
 
-	// 移行処理が失敗した場合、ワークツリーをHEADの状態にロールバックする。
+	// 移行前の固定点（ロールバック先）を記録する。
+	origHead, err := bfs.HeadHash()
+	if err != nil {
+		return nil, xerrors.Errorf("HeadHash() error: %w", err)
+	}
+	rollbackTarget := origHead.String()
+
+	// 未記録の作業（ノート/ダイアグラム本文・ルートファイル等）がある場合は、移行を始める前に
+	// 安全用スナップショットとしてコミットしておく。go-git の reset --hard は追跡ファイルの
+	// 未コミット変更を区別なく破棄するため、これをしないと移行失敗時のロールバックでユーザーの
+	// 未記録作業まで消えてしまう。スナップショットへ戻すことで未記録作業を保全する。
+	mods, err := bfs.Status()
+	if err != nil {
+		return nil, xerrors.Errorf("Status() error: %w", err)
+	}
+	if len(mods) > 0 {
+		snapMsg := fmt.Sprintf("Pre-migration safety snapshot (%s)", ov.String())
+		if cErr := bfs.CommitAll(fs.M(snapMsg, "Schema")); cErr != nil && !errors.Is(cErr, fs.UpdatedFilesError) {
+			return nil, xerrors.Errorf("CommitAll(snapshot) error: %w", cErr)
+		}
+		snapHead, err := bfs.HeadHash()
+		if err != nil {
+			return nil, xerrors.Errorf("HeadHash(snapshot) error: %w", err)
+		}
+		rollbackTarget = snapHead.String()
+	}
+
+	// 移行処理が失敗した場合、ワークツリーを移行前の固定点にロールバックする。
+	// HEAD ではなく記録した固定点へ戻すことで、部分的に成功した移行コミットへ着地せず、
+	// かつ未記録作業を保全したスナップショットへ確実に戻す。
 	// 中途半端に変更されたCSVや作成されたファイルを残さないことで、
 	// ブランチ切替など後続の操作を安全に行えるようにする。
 	defer func() {
 		if err != nil {
-			log.Warn("convert.Run: migration failed, resetting worktree to HEAD")
-			if resetErr := bfs.ResetHard(); resetErr != nil {
-				log.Warn("convert.Run: ResetHard() failed:\n%+v", resetErr)
+			log.Warn("convert.Run: migration failed, restoring worktree to pre-migration snapshot")
+			if resetErr := bfs.ResetHardTo(rollbackTarget); resetErr != nil {
+				log.Warn("convert.Run: ResetHardTo() failed:\n%+v", resetErr)
 			}
 		}
 	}()

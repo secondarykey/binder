@@ -3,7 +3,6 @@ package api
 import (
 	"binder/api/json"
 	"binder/log"
-	"fmt"
 	"strings"
 )
 
@@ -14,7 +13,7 @@ func (a *App) EditTemplate(t *json.Template) (*json.Template, error) {
 	tmp, err := a.current.EditTemplate(t)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("binder.EditTemplate() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return tmp, nil
 }
@@ -26,7 +25,7 @@ func (a *App) RemoveTemplate(id string) error {
 	_, err := a.current.RemoveTemplate(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("RemoveTemplate() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -38,7 +37,7 @@ func (a *App) GetTemplate(id string) (*json.Template, error) {
 	t, err := a.current.GetTemplate(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetTemplate() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return t, nil
 }
@@ -51,7 +50,7 @@ func (a *App) OpenTemplate(id string) (string, error) {
 	err := a.current.ReadTemplate(&w, id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return "", fmt.Errorf("ReadTemplate() error\n%+v", err)
+		return "", userError(err)
 	}
 	return w.String(), nil
 }
@@ -63,7 +62,7 @@ func (a *App) SaveTemplate(id string, data string) error {
 	err := a.current.SaveTemplate(id, []byte(data))
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("Savetemplate() error\n%+v", err)
+		return userError(err)
 	}
 
 	return nil
@@ -76,7 +75,7 @@ func (a *App) UpdateTemplateSeqs(ids []string) error {
 	err := a.current.UpdateTemplateSeqs(ids)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("UpdateTemplateSeqs() error\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }
@@ -88,7 +87,7 @@ func (a *App) GetPublishedNotesByTemplate(templateId string) ([]*json.Leaf, erro
 	leaves, err := a.current.GetPublishedNotesByTemplate(templateId)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetPublishedNotesByTemplate() error\n%+v", err)
+		return nil, userError(err)
 	}
 	return leaves, nil
 }
@@ -100,7 +99,7 @@ func (a *App) GetHTMLTemplates() (*json.Templates, error) {
 	l, c, d, err := a.current.GetHTMLTemplates()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("CreateTemplateHTML() error\n%+v", err)
+		return nil, userError(err)
 	}
 
 	var tmpls json.Templates

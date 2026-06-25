@@ -3,7 +3,6 @@ package api
 import (
 	"binder/log"
 	"binder/settings"
-	"fmt"
 )
 
 func (app *App) GetSnippets() (*settings.Snippets, error) {
@@ -13,7 +12,7 @@ func (app *App) GetSnippets() (*settings.Snippets, error) {
 	s, err := settings.LoadSnippets()
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, fmt.Errorf("GetSnippets() error:\n%+v", err)
+		return nil, userError(err)
 	}
 	return s, nil
 }
@@ -24,7 +23,7 @@ func (app *App) SaveSnippets(s *settings.Snippets) error {
 
 	if err := settings.SaveSnippets(s); err != nil {
 		log.PrintStackTrace(err)
-		return fmt.Errorf("SaveSnippets() error:\n%+v", err)
+		return userError(err)
 	}
 	return nil
 }

@@ -1,0 +1,103 @@
+package api
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
+// MessageError はユーザに提示する構造化エラー。
+//
+// Wails v3 はバインドメソッドが返した error を
+// CallError{ Message: err.Error(), Cause: MarshalError(err), Kind: "RuntimeError" }
+// として JSON 化しフロントへ送る。フロントは err.message にこの envelope JSON を受け取る。
+// MarshalError を application.Options.MarshalError に登録することで、envelope の cause に
+// {body, detail, cause} の構造化データを載せ、フロント側でユーザフレンドリーに表示できる。
+//
+// MessageError は API 境界（userError）で内部エラーをラップして生成する。
+// fs/db/binder などの下位層は通常の xerrors を返し、その変換はこの api 層が担う。
+type MessageError struct {
+	Body   string // スナックバー等に1行で表示するユーザ向けメッセージ
+	Detail string // 詳細情報（任意。ダブルクリックで表示）
+	Kind   string // メッセージ種別: "error"（既定）, "warning", "info"
+	Cause  error  // 原因となった元 error（任意。デバッグ・errors.Is/As チェーン用）
+}
+
+// Error は人間可読の1行を返す（ログ・envelope.message 用）。Body を優先する。
+func (e *MessageError) Error() string {
+	if e.Body != "" {
+		return e.Body
+	}
+	if e.Detail != "" {
+		return e.Detail
+	}
+	if e.Cause != nil {
+		return e.Cause.Error()
+	}
+	return "error"
+}
+
+// Unwrap は errors.Is/As のチェーンを維持する。
+func (e *MessageError) Unwrap() error {
+	return e.Cause
+}
+
+// messagePayload は cause に載せる構造化 JSON。キーは小文字。
+type messagePayload struct {
+	Body   string `json:"body"`
+	Detail string `json:"detail,omitempty"`
+	Kind   string `json:"kind,omitempty"`
+	Cause  string `json:"cause,omitempty"`
+}
+
+// MarshalJSON は Wails の cause に載せる構造化 JSON を返す。
+// cause には %+v でフォーマットした原因エラーを入れる。xerrors でラップされたエラーは
+// これによりスタックトレース（関数名・file:line）を含み、フロントの折りたたみ
+// デバッグ情報で技術的詳細を確認できる（Error() は1行のままログ用に保つ）。
+func (e *MessageError) MarshalJSON() ([]byte, error) {
+	p := messagePayload{Body: e.Body, Detail: e.Detail, Kind: e.Kind}
+	if e.Cause != nil {
+		p.Cause = fmt.Sprintf("%+v", e.Cause)
+	}
+	return json.Marshal(p)
+}
+
+// Wrap は元 error を Cause に保持しつつ body を付与する。
+func Wrap(cause error, body string) *MessageError {
+	return &MessageError{Body: body, Cause: cause}
+}
+
+// Wrapf は元 error を Cause に保持しつつ body をフォーマットして付与する。
+func Wrapf(cause error, format string, a ...interface{}) *MessageError {
+	return &MessageError{Body: fmt.Sprintf(format, a...), Cause: cause}
+}
+
+// WithDetail は body と detail を持つ MessageError を生成する。
+func WithDetail(cause error, body, detail string) *MessageError {
+	return &MessageError{Body: body, Detail: detail, Cause: cause}
+}
+
+// Info は情報レベルの MessageError を生成する。
+func Info(cause error, body string) *MessageError {
+	return &MessageError{Body: body, Kind: "info", Cause: cause}
+}
+
+// Warning は警告レベルの MessageError を生成する。
+func Warning(cause error, body string) *MessageError {
+	return &MessageError{Body: body, Kind: "warning", Cause: cause}
+}
+
+// MarshalError は application.Options.MarshalError に登録する関数。
+// err のチェーンに *MessageError があればその構造化 JSON を返し、
+// 無ければ nil を返して Wails のデフォルト処理にフォールバックする。
+func MarshalError(err error) []byte {
+	var me *MessageError
+	if errors.As(err, &me) {
+		b, jerr := json.Marshal(me)
+		if jerr != nil {
+			return nil
+		}
+		return b
+	}
+	return nil
+}

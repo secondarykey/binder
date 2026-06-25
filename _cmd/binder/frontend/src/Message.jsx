@@ -1,58 +1,29 @@
-import { useEffect, useState,useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 
-import { Alert, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Slide, Snackbar, Tooltip } from '@mui/material';
+import { Alert, Box, Collapse, Dialog, DialogContent, DialogContentText, DialogTitle, IconButton, Link, Slide, Snackbar } from '@mui/material';
 
 import CloseIcon from "@mui/icons-material/Close";
-import Event,{EventContext} from "./Event";
-import { ActionButton } from "./dialogs/components/ActionButton";
+import Event, { EventContext } from "./Event";
+import { parseError } from "./error";
 import "./language";
 import { useTranslation } from 'react-i18next';
 
 class Message {
 
+    /**
+     * 表示用メッセージオブジェクトを生成する。
+     * 成功/情報メッセージは文字列、エラーは Error/構造化エラーを受け取り、
+     * parseError で { body, detail, debug, kind } に正規化する。
+     * Go 側が kind を指定している場合はそちらを優先する（info / warning）。
+     */
     static createMessage(type, msg) {
-        var wk = "";
-        if (typeof msg === 'object') {
-            if (msg.stack) {
-                wk = msg.stack;
-            } else {
-                wk = "unknown error:" + msg;
-            }
-        } else {
-            wk = msg;
+        if (type === "clear") {
+            return { type, body: "", detail: "", debug: "" };
         }
-        return {
-            type: type,
-            message: wk,
-        }
+        const parsed = parseError(msg);
+        const resolvedType = parsed.kind || type;
+        return { type: resolvedType, body: parsed.body, detail: parsed.detail, debug: parsed.debug };
     }
-}
-
-/**
- * SnackBarに表示するオブジェクトに編集
- * @param {*} obj 
- * @returns 
- */
-const createSlideMessage = (obj) => {
-    var msg = obj.message;
-    var idx = msg.indexOf("\n");
-
-    if (idx === -1) {
-
-        var idx = msg.indexOf(":");
-        if (idx === -1) {
-            obj.title = msg;
-            obj.message = "";
-        } else {
-            obj.title = msg.substring(0, idx);
-            obj.message = msg.substring(idx + 1);
-        }
-    } else {
-        obj.title = msg.substring(0, idx);
-        obj.message = msg.substring(idx + 1);
-    }
-    obj.show = false;
-    return obj;
 }
 
 export function SystemMessage(props) {
@@ -60,11 +31,10 @@ export function SystemMessage(props) {
     const evt = useContext(EventContext)
     const {t} = useTranslation();
 
-    //現在の設定を取得(最初に画面表示を選ぶ)
-    var initMsg = createSlideMessage({ type: "success", message: "" });
-    //メニューの開閉管理
-    const [msgObj, setMessage] = useState(initMsg);
+    //メッセージ状態
+    const [msgObj, setMessage] = useState({ type: "success", body: "", detail: "", debug: "", show: false });
     const [msgDlg, setMessageDialog] = useState(false);
+    const [showDebug, setShowDebug] = useState(false);
 
     useEffect(() => {
         //イベント登録
@@ -83,7 +53,7 @@ export function SystemMessage(props) {
      */
     function hideSlideMessage() {
         if (!msgDlg) {
-            setMessage({ show: false });
+            setMessage((m) => ({ ...m, show: false }));
         }
     }
 
@@ -93,28 +63,27 @@ export function SystemMessage(props) {
             hideSlideMessage();
             return;
         }
-        var obj = createSlideMessage(obj);
-        obj.show = true;
-        obj.key = Date.now();
-        setMessage(obj);
+        setMessage({ ...obj, show: true, key: Date.now() });
     }
 
     function closeDialog(e, reason) {
         if (reason !== 'backdropClick') {
             setMessageDialog(false);
+            setShowDebug(false);
             hideSlideMessage();
         }
     }
 
     function showMessageDialog() {
-        if (msgObj.message !== "") {
+        // 詳細またはデバッグ情報があるときのみダイアログを開く
+        if (msgObj.detail || msgObj.debug) {
             setMessageDialog(true);
         }
     }
 
     return (
         <>
-            {/** ポップアップ表示 */}
+            {/** ポップアップ表示（body のみ） */}
             <Snackbar key={msgObj.key}
                 open={msgObj.show && !msgDlg}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -125,24 +94,47 @@ export function SystemMessage(props) {
                 <Alert severity={msgObj.type}
                     variant="filled"
                     sx={{ width: '100%' }}>
-                    {msgObj.title}
+                    {msgObj.body}
                 </Alert>
             </Snackbar>
 
-            {/*  全体のダイアログ */}
+            {/*  詳細ダイアログ（ダブルクリックで表示） */}
             <Dialog open={msgDlg}
                 keepMounted
                 onClose={closeDialog}
                 aria-describedby="alert-dialog-slide-description" >
-                <DialogTitle>{msgObj.title}</DialogTitle>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'flex-start', pr: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{msgObj.body}</Box>
+                    <IconButton size="small" aria-label="close" onClick={closeDialog} sx={{ ml: 1, color: 'var(--text-muted)' }}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent>
-                    <DialogContentText id="alert-dialog-slide-description" className="messageTxt">
-                        {msgObj.message}
-                    </DialogContentText>
+                    {msgObj.detail && (
+                        <DialogContentText id="alert-dialog-slide-description" className="messageTxt" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {msgObj.detail}
+                        </DialogContentText>
+                    )}
+                    {msgObj.debug && (
+                        <Box sx={{ mt: msgObj.detail ? 2 : 0 }}>
+                            <Link component="button" type="button" underline="hover"
+                                onClick={() => setShowDebug((v) => !v)}
+                                sx={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                {t("common.debugInfo")}
+                            </Link>
+                            <Collapse in={showDebug}>
+                                <Box component="pre" sx={{
+                                    mt: 0.5, p: 1, m: 0,
+                                    fontSize: '11px', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                                    backgroundColor: 'var(--bg-overlay)', borderRadius: '4px',
+                                    maxHeight: 240, overflow: 'auto',
+                                }}>
+                                    {msgObj.debug}
+                                </Box>
+                            </Collapse>
+                        </Box>
+                    )}
                 </DialogContent>
-                <DialogActions>
-                    <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={closeDialog} />
-                </DialogActions>
             </Dialog>
         </>
     )

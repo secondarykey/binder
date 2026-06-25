@@ -718,10 +718,39 @@ func (win *Window) Terminate() bool {
 	if err != nil {
 	}
 
+	// 閉じる時の自動保存はバインダーを閉じる前に行う。
+	// CloseBinder() 後は app.current が nil になり保存できないため順序が重要。
+	win.autoSaveOnClose()
+
 	err = win.app.CloseBinder()
 	if err != nil {
 	}
 
 	win.runtime.Quit()
 	return false
+}
+
+// autoSaveOnClose は設定で「閉じる時に保存」が有効な場合、変更のある全エンティティを
+// 同期コミットする。バインダー未オープン時・変更なし時は何もしない。
+// アプリ内の終了ボタン（Terminate）と OS レベルのウィンドウクローズ（WindowClosing）の
+// 両方から呼ばれる。二重に呼ばれても2回目は変更なしで no-op になる。
+func (win *Window) autoSaveOnClose() {
+	as := settings.GetAutoSave()
+	// 確認モード時は静かな保存をしない。
+	// アプリ内の閉じる操作はフロントのコミットモーダルで処理され、
+	// OSクローズ（Alt+F4・シャットダウン等）はモーダルを出せないため何もせず閉じる。
+	if as.ConfirmOnClose {
+		return
+	}
+	if !as.OnClose {
+		return
+	}
+	n, err := win.app.AutoSave()
+	if err != nil {
+		log.Warn("AutoSave on close error:\n%+v", err)
+		return
+	}
+	if n > 0 {
+		log.Info("AutoSave on close: %d files committed", n)
+	}
 }

@@ -9,6 +9,7 @@ import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binde
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
+import { GetModifiedIds } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
@@ -882,9 +883,7 @@ function Editor(props) {
       if (editorSettingRef.current) {
         setViewer(editorSettingRef.current.showPreview);
       }
-      const tNote = performance.now();
       OpenNote(id).then((resp) => {
-        console.debug(`[timing] OpenNote: ${(performance.now() - tNote).toFixed(1)}ms`);
         fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
@@ -892,7 +891,6 @@ function Editor(props) {
       });
 
       GetNote(id).then((resp) => {
-        console.debug(`[timing] GetNote: ${(performance.now() - tNote).toFixed(1)}ms`);
         if (resp.updatedStatus > 0) {
           setUpdated(true);
         } else {
@@ -1281,11 +1279,8 @@ function Editor(props) {
         return;
       }
 
-      const tRender = performance.now();
       var result = await createMarked(id, txt, true, true);
-      console.debug(`[timing] viewHTML createMarked: ${(performance.now() - tRender).toFixed(1)}ms`);
       const noteResult = await CreateNoteHTML(id, true, result.html);
-      console.debug(`[timing] viewHTML CreateNoteHTML: ${(performance.now() - tRender).toFixed(1)}ms`);
       const allWarnings = [...(result.warnings || []), ...(noteResult.warnings || [])];
       if (noteResult.error) {
         setParseStatus({ status: "error", err: noteResult.error, warnings: allWarnings });
@@ -2108,6 +2103,16 @@ function Editor(props) {
       setTreeVisible(flag);
     });
 
+    // コミット完了（自動保存・一括コミット等）時に、開いているファイルの未記録状態を
+    // 再確認してコミットボタンの強調を更新する。idRef で現在開いているIDを参照する。
+    evt.register("Editor", Event.CommitDone, function () {
+      const cur = idRef.current;
+      if (!cur) return;
+      GetModifiedIds().then((ids) => {
+        setUpdated(new Set(ids ?? []).has(cur));
+      }).catch(() => {});
+    });
+
     // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
     // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
     // 一度 hidden input に移してから textarea に戻す（Tab で別入力を経由するのと同等）。
@@ -2140,7 +2145,12 @@ function Editor(props) {
       if (e) {
         setShowLineNumbers(e.showLineNumbers);
         setWordWrap(e.wordWrap);
-        setViewer(e.showPreview);
+        // アセット/レイヤーはプレビューを使わない（dispatch で viewer=false 済み）。
+        // 復元で asset/layer に直接マウントした時、showPreview で viewer=true に
+        // 上書きしてプレビューが表示されてしまうのを防ぐ。
+        if (modeRef.current !== 'assets' && modeRef.current !== 'layer') {
+          setViewer(e.showPreview);
+        }
         if (e.autoComplete && typeof e.autoComplete === 'object') {
           setAutoComplete(e.autoComplete);
         } else {

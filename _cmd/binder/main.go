@@ -73,6 +73,8 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
 		},
+		// 構造化エラー（api.MessageError）を envelope の cause に載せる
+		MarshalError: api.MarshalError,
 	})
 
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
@@ -153,6 +155,14 @@ func main() {
 	settings.OnLanguageChange(func(code string) {
 		window.SetTitle(settings.T("go.window.main"))
 		win.UpdateWindowTitles()
+	})
+
+	// OS レベルのウィンドウクローズ（Alt+F4・タスクバー等）での自動保存。
+	// アプリ内の終了ボタンは Window.Terminate() が autoSaveOnClose() を呼ぶため、
+	// ここは Terminate を経由しない閉じ方をカバーする。win.autoSaveOnClose() は
+	// バインダー未オープン時・変更なし時は何もしないので二重呼び出しも安全。
+	window.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		win.autoSaveOnClose()
 	})
 
 	// ウィンドウフォーカス取得時にフロントエンドへ通知（IME コンテキストリセット用）

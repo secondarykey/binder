@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext } from "react";
 import { EventContext } from "../../Event";
+import { parseError } from "../../error";
 
 /**
  * ダイアログスコープのエラーコンテキスト
@@ -17,15 +18,13 @@ export function useDialogMessage() {
     const ctx = useContext(DialogErrorContext);
     const evt = useContext(EventContext);
 
-    const normalize = (err) => {
-        if (typeof err === 'object') return err?.stack || String(err) || 'Unknown error';
-        return err || 'Unknown error';
-    };
-
     const showError = useCallback((err) => {
-        const text = normalize(err);
-        if (ctx) ctx.setMsg({ severity: 'error', text });
-        else evt.showErrorMessage(text);
+        // インライン Alert はユーザ向けの body のみ表示する。
+        // Go 側が kind を指定している場合はそちらを severity に使う。
+        const { body, kind } = parseError(err);
+        const severity = kind || 'error';
+        if (ctx) ctx.setMsg({ severity, text: body });
+        else evt.showErrorMessage(err);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ctx, evt]);
 

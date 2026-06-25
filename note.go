@@ -10,6 +10,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// ノート操作の sentinel エラー。API 層で errors.Is により判定し、
+// ユーザ向けメッセージ（api.MessageError）へマッピングする。
+var (
+	ErrIndexNoteUndeletable = errors.New("index note cannot be deleted")
+	ErrNoteHasChildren      = errors.New("note has children and cannot be deleted")
+)
+
 func (b *Binder) GetNote(id string) (*json.Note, error) {
 
 	if b == nil {
@@ -44,7 +51,7 @@ func (b *Binder) RemoveNote(id string) (*json.Note, error) {
 
 	// index ノートは削除不可
 	if id == "index" {
-		return nil, xerrors.Errorf("index note cannot be deleted")
+		return nil, ErrIndexNoteUndeletable
 	}
 
 	// 子要素が存在する場合は削除不可
@@ -53,7 +60,7 @@ func (b *Binder) RemoveNote(id string) (*json.Note, error) {
 		return nil, xerrors.Errorf("db.FindStructuresByParent() error: %w", err)
 	}
 	if len(children) > 0 {
-		return nil, xerrors.Errorf("note has children and cannot be deleted: %s", id)
+		return nil, xerrors.Errorf("%w: %s", ErrNoteHasChildren, id)
 	}
 
 	n, err := b.db.GetNote(id)

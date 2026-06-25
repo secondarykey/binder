@@ -34,7 +34,8 @@ i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
-        common: { cancel: 'Cancel', delete: 'Delete', close: 'Close', private: 'Private' },
+        common: { cancel: 'Cancel', delete: 'Delete', close: 'Close', private: 'Private', debugInfo: 'Debug info' },
+        go: { error: { unexpected: 'An unexpected error occurred' } },
         editor: { searchPlaceholder: 'Search...', searchNoMatches: 'No matches' },
       },
     },
