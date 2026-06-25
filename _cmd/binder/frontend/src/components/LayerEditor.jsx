@@ -902,6 +902,7 @@ function LayerEditor() {
   const handleCommit = () => {
     Commit("layer", id, comment).then(() => {
       setUpdated(false);
+      setComment("");
       evt.commitDone();
       evt.showSuccessMessage("Commit.");
     }).catch((err) => evt.showErrorMessage(String(err)));
