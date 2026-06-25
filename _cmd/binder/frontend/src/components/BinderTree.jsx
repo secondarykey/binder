@@ -688,6 +688,17 @@ function BinderTree(props) {
     if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
       copyClipboard(selectedId);
+      return;
+    }
+
+    if (e.key === 'Delete') {
+      if (renaming) return;
+      const node = findNodeInTree(treeRef.current, selectedId);
+      if (!node) return;
+      const type = node.nodeType || node.type;
+      if (type === 'folder') return;
+      e.preventDefault();
+      setDeleteConfirm({ open: true, node });
     }
   };
 
