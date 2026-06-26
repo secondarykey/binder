@@ -244,7 +244,6 @@ function BinderTree(props) {
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
   const treeRef = useRef([]);
   useEffect(() => { treeRef.current = tree; }, [tree]);
-  const scrollAreaRef = useRef(null);
 
   // 初回自動展開の設定値と実行済みフラグ
   const autoExpandEnabledRef = useRef(false);
@@ -551,7 +550,6 @@ function BinderTree(props) {
     } else {
       nav("/editor/" + type + "/" + node.id);
     }
-    requestAnimationFrame(() => scrollAreaRef.current?.focus());
   };
 
   /** コンテキストメニューを開く */
@@ -929,7 +927,7 @@ function BinderTree(props) {
 
     {/** ツリースクロールエリア（MoreVert ボタンをフローティングで右上に配置） */}
     <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      <div id="treeScrollArea" ref={scrollAreaRef} onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }} onKeyDown={handleKeyDownTree} tabIndex={-1}>
+      <div id="treeScrollArea" onContextMenu={(e) => { e.preventDefault(); openMoreMenuAt(e.clientX, e.clientY); }} onKeyDown={handleKeyDownTree} tabIndex={-1}>
       <div style={{ marginTop: '4px' }}><Tree
         data={treeData}
         selected={selectedId}
