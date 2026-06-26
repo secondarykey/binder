@@ -1187,16 +1187,25 @@ function Editor(props) {
     setParseStatus({ status: "processing", err: null, warnings: [] });
 
     if (mode === Mode.diagram) {
-      viewDiagram(text);
+      viewDiagram(text).catch((err) => {
+        setParseStatus({ status: "error", err, warnings: [] });
+        evt.showErrorMessage(err);
+      });
     } else if (mode === Mode.note) {
       // カーソル行を確定してから描画
       setCursorLine(cursorLineRef.current);
-      viewHTML(text);
+      viewHTML(text).catch((err) => {
+        setParseStatus({ status: "error", err, warnings: [] });
+        evt.showErrorMessage(err);
+      });
     } else if (mode === Mode.template) {
       if (templateType === "diagram") {
         // ダイアグラムテンプレート: 選択中のダイアグラムにテンプレートを適用して描画
         if (!previewDiagramId) return;
-        viewDiagramTemplatePreview(text, previewDiagramId);
+        viewDiagramTemplatePreview(text, previewDiagramId).catch((err) => {
+          setParseStatus({ status: "error", err, warnings: [] });
+          evt.showErrorMessage(err);
+        });
       } else {
         if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
         // テンプレートをファイルに即時保存してからプレビューを生成
