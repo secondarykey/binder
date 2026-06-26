@@ -60,6 +60,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ContrastIcon from '@mui/icons-material/Contrast';
@@ -1182,6 +1183,8 @@ function Editor(props) {
     if (text === "") {
       return;
     }
+
+    setParseStatus({ status: "processing", err: null, warnings: [] });
 
     if (mode === Mode.diagram) {
       viewDiagram(text);
@@ -2726,6 +2729,8 @@ function Editor(props) {
                     ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
                     : parseStatus.status === "warning"
                     ? <><WarningAmberIcon sx={{ fontSize: '16px', color: 'var(--accent-warning, orange)', mr: '6px' }} /><span className="parseStatusText">Warning ({parseStatus.warnings?.length})</span></>
+                    : parseStatus.status === "processing"
+                    ? <><AutorenewIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: '6px', animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /><span className="parseStatusText">Processing...</span></>
                     : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
                   }
                 </div>
