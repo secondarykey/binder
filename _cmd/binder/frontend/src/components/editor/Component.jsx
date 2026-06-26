@@ -1181,11 +1181,17 @@ function Editor(props) {
 
   const parseText = async () => {
     if (text === "") {
+      setParseStatus({ status: "success", err: null, warnings: [] });
+      setHTML("");
+      const mermaidEl = document.querySelector('#mermaidViewer');
+      if (mermaidEl) mermaidEl.innerHTML = '';
       return;
     }
 
     setParseStatus({ status: "processing", err: null, warnings: [] });
     setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
+    const mermaidEl = document.querySelector('#mermaidViewer');
+    if (mermaidEl) mermaidEl.innerHTML = '';
 
     if (mode === Mode.diagram) {
       viewDiagram(text).catch((err) => {
@@ -1330,6 +1336,8 @@ function Editor(props) {
 
     const diagramResult = await ParseDiagram(id, true, txt);
     if (diagramResult.error) {
+      const elm = document.querySelector('#mermaidViewer');
+      if (elm) elm.innerHTML = '';
       setParseStatus({ status: "error", err: diagramResult.error, warnings: diagramResult.warnings || [] });
       return;
     }
@@ -1389,6 +1397,8 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
+      const elm = document.querySelector('#mermaidViewer');
+      if (elm) elm.innerHTML = '';
       setParseStatus({ status: "error", err, warnings: diagWarnings });
     });
   }
