@@ -59,7 +59,7 @@ class HTMLFrame extends React.Component {
 
   view() {
     const html = this.props.html;
-    if (!html) return;
+    if (html == null) return;
 
     // 裏側の iframe を決定
     const backIndex = this.active <= 0 ? 1 : 0;

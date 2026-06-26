@@ -1185,7 +1185,7 @@ function Editor(props) {
     }
 
     setParseStatus({ status: "processing", err: null, warnings: [] });
-    setHTML("");
+    setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
 
     if (mode === Mode.diagram) {
       viewDiagram(text).catch((err) => {
