@@ -15,6 +15,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
+func templateError(msg string) template.HTML {
+	return template.HTML(fmt.Sprintf(`<div class="binderError" style="color:red;">%s</div>`, template.HTMLEscapeString(msg)))
+}
+
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
@@ -123,7 +127,7 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 	id, ok := Arg[string](v, 0).Required()
 	if !ok {
 		w.addWarning("assetsImage: missing id argument")
-		return template.HTML(`ERROR: assetsImage id`)
+		return templateError("ERROR: assetsImage id")
 	}
 	//クラス名指定（空可）。常に "binderAssets" を先頭に付与する。
 	clazz := Arg[string](v, 1).Default("")
@@ -137,7 +141,7 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 	src, err := w.assetURL(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assetsImage(%s): %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: assetsImage(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: assetsImage(%s): %v", id, err))
 	}
 
 	return template.HTML(fmt.Sprintf(`<img src="%s" class="%s">`, src, classAttr))
@@ -266,7 +270,7 @@ func (w *wrapper) drawSVG(v ...any) template.HTML {
 	id, ok := Arg[string](v, 0).Required()
 	if !ok {
 		w.addWarning("drawDiagram: missing id argument")
-		return template.HTML(`ERROR: drawDiagram id`)
+		return templateError("ERROR: drawDiagram id")
 	}
 	clazz := Arg[string](v, 1).Default("")
 	classAttr := "binderSVG"
@@ -279,14 +283,14 @@ func (w *wrapper) drawSVG(v ...any) template.HTML {
 		var d strings.Builder
 		if err := w.owner.ReadDiagram(&d, id); err != nil {
 			w.addWarning(fmt.Sprintf("drawDiagram(%s): ReadDiagram: %v", id, err))
-			return template.HTML(fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err))
+			return templateError(fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err))
 		}
 		code = d.String()
 
 		diag, err := w.owner.GetDiagram(id)
 		if err != nil {
 			w.addWarning(fmt.Sprintf("drawDiagram(%s): GetDiagram: %v", id, err))
-			return template.HTML(fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err))
+			return templateError(fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err))
 		}
 
 		if parsed, err := w.owner.parseDiagram(diag, w.Local, code, w.warnings); err == nil {
@@ -336,7 +340,7 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 	id, ok := Arg[string](v, 0).Required()
 	if !ok {
 		w.addWarning("drawLayer: missing id argument")
-		return template.HTML(`ERROR: drawLayer id`)
+		return templateError("ERROR: drawLayer id")
 	}
 	// クラス名指定（省略可）
 	clazz := Arg[string](v, 1).Default("")
@@ -348,13 +352,13 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		m, err := w.owner.GetLayerWithParent(id)
 		if err != nil {
 			w.addWarning(fmt.Sprintf("drawLayer(%s): GetLayerWithParent: %v", id, err))
-			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
+			return templateError(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 		}
 		if m.Parent != nil {
 			uri, err := w.owner.AssetDataURI(m.Parent.Id)
 			if err != nil {
 				w.addWarning(fmt.Sprintf("drawLayer(%s): AssetDataURI: %v", id, err))
-				return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
+				return templateError(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 			}
 			imageSrc = uri
 		}
@@ -363,7 +367,7 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		m, err := w.owner.GetLayerWithParent(id)
 		if err != nil {
 			w.addWarning(fmt.Sprintf("drawLayer(%s): GetLayerWithParent: %v", id, err))
-			return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
+			return templateError(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 		}
 		if w.deps != nil {
 			w.deps.layers[id] = m
@@ -380,7 +384,7 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 	html, err := w.owner.BuildLayerHTML(id, w.Local, imageSrc, svgSrc, clazz)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("drawLayer(%s): BuildLayerHTML: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 	}
 	return html
 }
@@ -402,13 +406,13 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 func (w *wrapper) embed(id string) template.HTML {
 	if w.visited[id] {
 		w.addWarning(fmt.Sprintf("embed(%s): cycle detected", id))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): cycle detected", id))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): cycle detected", id))
 	}
 
 	s, err := w.owner.db.GetStructure(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): GetStructure: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	switch s.Typ {
@@ -418,7 +422,7 @@ func (w *wrapper) embed(id string) template.HTML {
 		return w.embedTextAsset(id)
 	default:
 		w.addWarning(fmt.Sprintf("embed(%s): unsupported type=%s", id, s.Typ))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): unsupported type=%s", id, s.Typ))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): unsupported type=%s", id, s.Typ))
 	}
 }
 
@@ -427,13 +431,13 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	note, err := w.owner.GetNote(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): GetNote: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	var buf strings.Builder
 	if err := w.owner.ReadNote(&buf, id); err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): ReadNote: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	childWrap := &wrapper{
@@ -450,19 +454,19 @@ func (w *wrapper) embedNote(id string) template.HTML {
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): Parse: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	dto, err := w.owner.createDto(childWrap, content)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): createDto: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	var out strings.Builder
 	if err := tmpl.Execute(&out, dto); err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): Execute: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	return template.HTML(out.String())
@@ -474,17 +478,17 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	a, err := w.owner.db.GetAsset(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): GetAsset: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 	if a.Binary {
 		w.addWarning(fmt.Sprintf("embed(%s): asset is binary", id))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): asset is binary", id))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): asset is binary", id))
 	}
 
 	data, _, err := w.owner.ReadAssetBytes(id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): ReadAssetBytes: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	childWrap := &wrapper{
@@ -501,19 +505,19 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 	tmpl, err := texttemplate.New("").Funcs(texttemplate.FuncMap(defineFuncMap(childWrap))).Parse(content)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): asset Parse: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	dto, err := w.owner.createDto(childWrap, content)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): asset createDto: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	var out strings.Builder
 	if err := tmpl.Execute(&out, dto); err != nil {
 		w.addWarning(fmt.Sprintf("embed(%s): asset Execute: %v", id, err))
-		return template.HTML(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: embed(%s): %v", id, err))
 	}
 
 	return template.HTML(out.String())
