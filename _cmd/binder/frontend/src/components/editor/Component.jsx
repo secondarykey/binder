@@ -1001,20 +1001,6 @@ function Editor(props) {
       })
     }
 
-    // note/diagram/template ではエディタ textarea にフォーカスを移す
-    // カーソル位置を保持してからfocusすることで、focusによるスクロールジャンプを防ぐ
-    if (mode === Mode.note || mode === Mode.diagram || mode === Mode.template) {
-      setTimeout(() => {
-        const textarea = document.querySelector('#editor');
-        if (textarea) {
-          const s = textarea.selectionStart;
-          const e = textarea.selectionEnd;
-          textarea.focus();
-          textarea.setSelectionRange(s, e);
-        }
-      }, 200);
-    }
-
     // レイアウト反映後にtransitionを再有効化（二重rAFでReact再描画完了を待つ）
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
