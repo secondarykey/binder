@@ -835,6 +835,11 @@ function Editor(props) {
     editorContentEl?.classList.add('no-transition');
 
     evt.clearMessage();
+    // モード/ID切替時に前回のデバウンスタイマーをクリア（stale closure 防止）
+    if (parseTimerRef.current) {
+      clearTimeout(parseTimerRef.current);
+      parseTimerRef.current = null;
+    }
     // ツリー選択を同期（画像貼り付け・ツリー展開に必要）
     evt.selectTreeNode(id);
 

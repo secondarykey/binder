@@ -314,6 +314,8 @@ class Event {
     }
 }
 
-export const EventContext = createContext(new Event());
+const defaultEvent = new Event();
+export const EventContext = createContext(defaultEvent);
+export { defaultEvent };
 
 export default Event;
