@@ -1219,7 +1219,7 @@ function Editor(props) {
       // ユーザーが入力中 → 500msデバウンスして描画
       isEditingRef.current = false;
       if (parseTimerRef.current) clearTimeout(parseTimerRef.current);
-      parseTimerRef.current = setTimeout(parseText, 500);
+      parseTimerRef.current = setTimeout(() => { parseText().catch((err) => evt.showErrorMessage(err)); }, 500);
       return () => clearTimeout(parseTimerRef.current);
     }
     // ファイルオープン時（または挿入操作） → 即座に描画
@@ -1239,7 +1239,7 @@ function Editor(props) {
       });
     }
 
-    parseText();
+    parseText().catch((err) => evt.showErrorMessage(err));
   }, [text]);
 
   //データをマークダウンからHTMLに変換
