@@ -843,6 +843,8 @@ function LayerEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [tool, polylinePoints.length]);
 
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
   useEffect(() => {
     if (!selectedId) return;
     if (tool === 'polyline' && polylinePoints.length > 0) return;
@@ -851,8 +853,7 @@ function LayerEditor() {
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       e.preventDefault();
-      setShapes((prev) => prev.filter((s) => s.id !== selectedId));
-      setSelectedId(null);
+      setDeleteConfirm(selectedId);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -873,7 +874,7 @@ function LayerEditor() {
   };
 
   const handleCtxDelete = () => {
-    if (ctxMenu) deleteShape(ctxMenu.shapeId);
+    if (ctxMenu) setDeleteConfirm(ctxMenu.shapeId);
     closeCtxMenu();
   };
 
@@ -1596,6 +1597,15 @@ function LayerEditor() {
           <DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}
         </MenuItem>
       </Menu>
+
+      {/** 図形削除確認ダイアログ */}
+      <Dialog open={deleteConfirm != null} onClose={() => setDeleteConfirm(null)}>
+        <DialogTitle>{t("layer.deleteShapeConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setDeleteConfirm(null)} />
+          <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={() => { deleteShape(deleteConfirm); setDeleteConfirm(null); }} />
+        </DialogActions>
+      </Dialog>
 
       {/** 未公開確認ダイアログ */}
       <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>

@@ -140,6 +140,7 @@
         "fill" : "Fill",
         "fillHint" : "none / color (e.g. #ffff0080)",
         "noSelection" : "Select a shape",
+        "deleteShapeConfirm" : "Delete this shape?",
         "publishSuccess" : "Layer published.",
         "toolSelect" : "Select",
         "toolLine" : "Line",
