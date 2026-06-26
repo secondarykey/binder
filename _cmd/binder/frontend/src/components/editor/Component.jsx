@@ -1191,7 +1191,7 @@ function Editor(props) {
     setParseStatus({ status: "processing", err: null, warnings: [] });
     setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
     const mermaidEl = document.querySelector('#mermaidViewer');
-    if (mermaidEl) mermaidEl.innerHTML = '';
+    if (mermaidEl) mermaidEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>';
 
     if (mode === Mode.diagram) {
       viewDiagram(text).catch((err) => {
