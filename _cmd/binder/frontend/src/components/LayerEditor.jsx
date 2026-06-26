@@ -843,6 +843,21 @@ function LayerEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [tool, polylinePoints.length]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    if (tool === 'polyline' && polylinePoints.length > 0) return;
+    const onKey = (e) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      setShapes((prev) => prev.filter((s) => s.id !== selectedId));
+      setSelectedId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedId, tool, polylinePoints.length]);
+
   const handleShapeContextMenu = (e, shapeId) => {
     e.preventDefault();
     e.stopPropagation();
