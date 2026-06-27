@@ -415,11 +415,16 @@ function LayerEditor() {
 
   // imageUrl が変わったとき（親アセットが異なるレイヤーへ切り替え）のみリセット。
   // 同一 imageUrl ならリセット不要（onLoad が再発火しないため transform を維持する）。
+  // data URI の場合 onLoad が useEffect より先に発火するため、リセット後に
+  // imgNaturalRef が既知なら fitToCanvas を再実行して正しい倍率にする。
   useEffect(() => {
-    imgNaturalRef.current = { w: 0, h: 0 };
     tfRef.current = { left: 0, top: 0, scale: 1 };
     if (wrapperRef.current) wrapperRef.current.style.transform = '';
     setZoomScale(1);
+    const { w, h } = imgNaturalRef.current;
+    if (w > 0 && h > 0) {
+      fitToCanvas();
+    }
   }, [imageUrl]);
 
   // ホイールズーム。ブラウザのデフォルトスクロールを抑制するため passive: false。
