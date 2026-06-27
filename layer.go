@@ -407,11 +407,13 @@ func (b *Binder) UnpublishLayer(id string) error {
 // BuildLayerSVG は shapes JSON 文字列から viewBox="0 0 aspect 1" の SVG を生成する。
 // エディタプレビューと公開SVG書き出しの両方で使用する。
 // imgAspect は画像の width/height（未知なら 0、その場合は 1 として扱う）。
-// imgHeightPx は画像の自然ピクセル高さ（fontSize の px → viewBox 変換に使う。
+// imgHeightPx は画像の自然ピクセル高さ（fontSize・strokeWidth の px → viewBox 変換に使う。
 //   0 なら fallback 値を使用）。
 // viewBox を画像アスペクト比に合わせることで viewBox→表示が等比スケールとなり、
 // ストロークの太さが方向で変わらず、テキストの字形も自然な縦横比で表示される。
 // shape データは正規化 (0-1) で保存されているため、出力時に x 方向のみ aspect 倍する。
+// ストロークは viewBox 単位で指定し、画像の表示サイズに比例してスケールされる。
+// エディタ側は vector-effect="non-scaling-stroke" + CSS transform で同じ比率を実現する。
 func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (string, error) {
 	aspect := imgAspect
 	if aspect <= 0 {
@@ -438,11 +440,12 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 		if color == "" {
 			color = "#ff0000"
 		}
-		// stroke-width はピクセル単位（vector-effect="non-scaling-stroke" により
-		// 画像の表示サイズに関わらず常に同じ太さで描画される）。
-		// 既存ファイルが正規化値（< 1.0）で保存されている場合は、0.005 を 2px
-		// 相当（旧デフォルト ≒ 新デフォルト）と見なしスケールする。
-		sw := normalizeStrokeWidth(s.StrokeWidth)
+		// stroke-width: まず px 単位に正規化し、次に viewBox 単位に変換する。
+		// 出力 SVG では vector-effect="non-scaling-stroke" を使わず、画像の
+		// 表示サイズに比例してストロークがスケールされるようにする。
+		// エディタ側は non-scaling-stroke + CSS transform で同じ比率を実現する。
+		swPx := normalizeStrokeWidth(s.StrokeWidth)
+		sw := strokeWidthViewBox(swPx, imgHeightPx)
 		// 回転指定があれば <g transform="rotate(angle cx cy)"> でラップする
 		if s.Rotation != 0 {
 			cx, cy := shapeCenterViewBox(s, aspect, imgHeightPx)
@@ -451,7 +454,7 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 		switch s.Type {
 		case "line":
 			fmt.Fprintf(&b,
-				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+				`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round"/>`,
 				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2, color, sw)
 			writeShapeArrowheads(&b, s,
 				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2,
@@ -467,7 +470,7 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 					fmt.Fprintf(&b, "%g,%g", p.X*aspect, p.Y)
 				}
 				fmt.Fprintf(&b,
-					`" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`,
+					`" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
 					color, sw)
 				first := s.Points[0]
 				second := s.Points[1]
@@ -480,7 +483,7 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 			}
 		case "curve":
 			fmt.Fprintf(&b,
-				`<path d="M %g %g Q %g %g %g %g" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+				`<path d="M %g %g Q %g %g %g %g" stroke="%s" stroke-width="%g" fill="none" stroke-linecap="round"/>`,
 				s.X1*aspect, s.Y1, s.Cpx*aspect, s.Cpy, s.X2*aspect, s.Y2, color, sw)
 			writeShapeArrowheads(&b, s,
 				s.X1*aspect, s.Y1, s.X2*aspect, s.Y2,
@@ -488,11 +491,11 @@ func BuildLayerSVG(shapesJSON string, imgAspect float64, imgHeightPx int) (strin
 				color, sw, imgHeightPx)
 		case "rect":
 			fmt.Fprintf(&b,
-				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
+				`<rect x="%g" y="%g" width="%g" height="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
 				s.X*aspect, s.Y, s.Width*aspect, s.Height, color, sw, fill)
 		case "ellipse":
 			fmt.Fprintf(&b,
-				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s" vector-effect="non-scaling-stroke"/>`,
+				`<ellipse cx="%g" cy="%g" rx="%g" ry="%g" stroke="%s" stroke-width="%g" fill="%s"/>`,
 				s.Cx*aspect, s.Cy, s.Rx*aspect, s.Ry, color, sw, fill)
 		case "text":
 			// fontSize は px 単位で保存。viewBox 単位 (0-1) へ変換して描画する。
@@ -615,8 +618,8 @@ func textTotalHeight(s LayerShape, imgHeightPx int) float64 {
 }
 
 // normalizeStrokeWidth は stored strokeWidth をピクセル単位に正規化する。
-// 仕様: vector-effect="non-scaling-stroke" 付きで描画するため、stroke-width は
-// 表示ピクセル値として解釈される（デフォルト 2px）。
+// エディタでは vector-effect="non-scaling-stroke" 付きで描画するため、
+// stroke-width は表示ピクセル値として解釈される（デフォルト 2px）。
 // 過去の正規化座標 (0.005 等) で保存された値は legacy とみなして 400 倍する
 // ことで旧 0.005 ≒ 2px にマップし、見た目の継続性を維持する。
 func normalizeStrokeWidth(sw float64) float64 {
@@ -628,6 +631,18 @@ func normalizeStrokeWidth(sw float64) float64 {
 		return sw * 400
 	}
 	return sw
+}
+
+// strokeWidthViewBox はピクセル単位の stroke-width を viewBox 単位に変換する。
+// 出力 SVG では vector-effect="non-scaling-stroke" を使わず、viewBox 座標系で
+// ストロークを指定する。画像を自然サイズで表示したとき元のピクセル値と一致し、
+// 拡大縮小時は画像に比例してスケールされる。
+func strokeWidthViewBox(swPx float64, imgHeightPx int) float64 {
+	h := imgHeightPx
+	if h <= 0 {
+		h = defaultReferenceHeightPx
+	}
+	return swPx / float64(h)
 }
 
 // defaultArrowWingFactor は矢印ヘッドの翼のデフォルト大きさ係数。
@@ -647,6 +662,7 @@ func effectiveArrowFactor(arrowSize float64) float64 {
 // writeArrowhead は矢印ヘッドを2本の <line> で書き出す。
 // tipX,tipY: 矢先 (viewBox座標、x は aspect 倍済み)
 // fromX,fromY: 矢先に向かう方向を決める参照点 (viewBox座標)
+// sw は viewBox 単位のストローク幅。
 func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color string, sw float64, arrowSize float64, imgHeightPx int) {
 	dx := tipX - fromX
 	dy := tipY - fromY
@@ -654,12 +670,9 @@ func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color 
 	if dist < 1e-9 {
 		return
 	}
-	h := imgHeightPx
-	if h <= 0 {
-		h = defaultReferenceHeightPx
-	}
+	// wingLen: sw は既に viewBox 単位なので、factor 倍するだけでよい。
 	factor := effectiveArrowFactor(arrowSize)
-	wingLen := (sw * factor) / float64(h)
+	wingLen := sw * factor
 
 	angle := math.Atan2(dy, dx)
 	for _, sign := range []float64{1, -1} {
@@ -667,7 +680,7 @@ func writeArrowhead(b *strings.Builder, tipX, tipY, fromX, fromY float64, color 
 		wx := tipX + wingLen*math.Cos(a)
 		wy := tipY + wingLen*math.Sin(a)
 		fmt.Fprintf(b,
-			`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`,
+			`<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="%g" stroke-linecap="round"/>`,
 			tipX, tipY, wx, wy, color, sw)
 	}
 }
