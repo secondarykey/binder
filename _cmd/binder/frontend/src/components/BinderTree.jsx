@@ -1043,11 +1043,11 @@ function BinderTree(props) {
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       slotProps={{ paper: { sx: { minWidth: 120 } } }}
     >
-      <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadAll(); }}>
-        {t("tree.downloadAll")}
-      </MenuItem>
       <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadDocs(); }}>
         {t("tree.downloadDocs")}
+      </MenuItem>
+      <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadAll(); }}>
+        {t("tree.downloadAll")}
       </MenuItem>
     </Menu>
 
