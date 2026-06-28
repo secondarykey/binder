@@ -64,10 +64,15 @@ func main() {
 		}
 	}
 
-	// シングルインスタンス: 既存プロセスがあればファイルパスを送って終了
+	// ファイル指定ありの場合: 既存プロセスがあればそちらで開いて終了
+	if !newWindow && len(filePaths) > 0 && trySendToExisting(filePaths) {
+		os.Exit(0)
+	}
+
+	// パイプサーバー起動: 他プロセスからのファイル受信を待機
 	var wailsApp *application.App
 	win := new(Window)
-	if !newWindow && !tryAcquireSingleInstance(filePaths, func(files []string) {
+	listenForFiles(func(files []string) {
 		if wailsApp == nil {
 			return
 		}
@@ -78,9 +83,7 @@ func main() {
 			win.window.Restore()
 			win.window.Focus()
 		}
-	}) {
-		os.Exit(0)
-	}
+	})
 
 	app := lite.New(version)
 	app.SetInitialFiles(filePaths)
