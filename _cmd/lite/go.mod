@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	binder v0.0.0-00010101000000-000000000000
-	github.com/wailsapp/wails/v3 v3.0.0-alpha2.105
+	github.com/wailsapp/wails/v3 v3.0.0-alpha2.108
 )
 
 require (
@@ -42,7 +42,7 @@ require (
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
-	github.com/wailsapp/wails/webview2 v1.0.24 // indirect
+	github.com/wailsapp/wails/webview2 v1.0.27 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/zalando/go-keyring v0.2.7 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
