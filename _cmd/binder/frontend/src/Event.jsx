@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
 import Message from "./Message";
 /**
  * イベント
@@ -144,35 +144,44 @@ class Event {
     static PublishProgress = "publish.progress"
 
     /**
-     * 管理イベント
+     * 管理イベント: key -> Set<handler>
      */
     eventMap = new Map();
 
     /**
-     * イベント登録
-     * @param {*} key 
-     * @param {*} func 
+     * イベント購読。解除関数を返す。
+     * React コンポーネントからは useEventListener フックの利用を推奨。
+     * @param {string} key イベントキー
+     * @param {Function} handler ハンドラ
+     * @returns {Function} 購読解除関数
      */
-    register(component,key,func) {
-
-        var e = this.eventMap.get(key);
-        if ( e === undefined || e === null ) {
-            e = [];
+    on(key, handler) {
+        let set = this.eventMap.get(key);
+        if (!set) {
+            set = new Set();
+            this.eventMap.set(key, set);
         }
-
-        var newE = [];
-        e.forEach( (obj) => {
-            if ( obj.key !== component ) {
-                newE.push(obj);
+        set.add(handler);
+        return () => {
+            const s = this.eventMap.get(key);
+            if (s) {
+                s.delete(handler);
+                if (s.size === 0) {
+                    this.eventMap.delete(key);
+                }
             }
-        })
+        };
+    }
 
-        var obj = {};
-        obj.key = component;
-        obj.func = func;
-
-        newE.push(obj);
-        this.eventMap.set(key,newE);
+    /**
+     * イベント登録（後方互換シム）。
+     * 旧 register(component, key, func) のシグネチャを維持するが、
+     * 内部は on() に委譲する。component 引数は無視される。
+     * 解除は useEventListener / on() の戻り値で行うこと。
+     * @deprecated useEventListener フックまたは on() を使用すること
+     */
+    register(component, key, func) {
+        return this.on(key, func);
     }
 
     showMenu(flag) {
@@ -295,27 +304,45 @@ class Event {
     }
 
     /**
-     * 登録されている関数を呼び出す
-     * @param {*} key 
-     * @param {*} obj 
-     * @returns 
+     * 購読中のハンドラを呼び出す（発火）
+     * @param {string} key イベントキー
+     * @param {*} obj ペイロード
      */
-    raise(key,obj) {
-
-        var evts = this.eventMap.get(key);
-        if ( !evts ) {
-            console.warn(key + " is not found.");
+    raise(key, obj) {
+        const set = this.eventMap.get(key);
+        if (!set) {
             return;
         }
-
-        evts.forEach( wk => {
-            wk.func(obj);
-        })
+        // 反復中のSet変更（解除）に備えてコピーしてから呼ぶ
+        [...set].forEach((handler) => handler(obj));
     }
 }
 
 const defaultEvent = new Event();
 export const EventContext = createContext(defaultEvent);
 export { defaultEvent };
+
+/**
+ * イベント購読フック。
+ * - unmount 時に自動で購読解除する
+ * - 最新の handler クロージャを常に参照する（stale closure を回避）
+ * @param {string} key Event.* の静的キー
+ * @param {Function} handler ペイロードを受け取るハンドラ
+ */
+export function useEventListener(key, handler) {
+    const evt = useContext(EventContext);
+    const handlerRef = useRef(handler);
+
+    // レンダーごとに最新の handler を保持
+    useEffect(() => {
+        handlerRef.current = handler;
+    });
+
+    // 購読は key / evt が変わったときのみ張り直す
+    useEffect(() => {
+        const off = evt.on(key, (obj) => handlerRef.current(obj));
+        return off;
+    }, [evt, key]);
+}
 
 export default Event;

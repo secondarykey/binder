@@ -1,8 +1,8 @@
-import { useEffect, useState, useContext } from "react";
+import { useState, useContext } from "react";
 import { Grid, TextField, FormControl, FormLabel, LinearProgress, Typography } from "@mui/material";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 
-import Event, { EventContext } from '../Event';
+import Event, { EventContext, useEventListener } from '../Event';
 import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -20,14 +20,12 @@ function GenerateForm({ date, template }) {
   const [comment, setComment] = useState("Generate:");
   const [progress, setProgress] = useState({ running: false, current: 0, total: 0 });
 
-  useEffect(() => {
-    evt.register("GenerateForm", Event.PublishComment, function (c) {
-      setComment(c);
-    });
-    evt.register("GenerateForm", Event.PublishProgress, function (p) {
-      setProgress(p);
-    });
-  }, [date]);
+  useEventListener(Event.PublishComment, (c) => {
+    setComment(c);
+  });
+  useEventListener(Event.PublishProgress, (p) => {
+    setProgress(p);
+  });
 
   const handleGenerate = () => {
     evt.raise(Event.PublishGenerate, comment);

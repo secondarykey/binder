@@ -8,7 +8,7 @@ import {
 
 import { GetModifiedTree, CommitFiles } from '../../bindings/binder/api/app';
 
-import Event, { EventContext } from '../Event';
+import Event, { EventContext, useEventListener } from '../Event';
 import { useDialogMessage } from './components/DialogError';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -68,36 +68,36 @@ function ModifiedMenu({ date: dateProp, currentId: currentIdProp, onNavigate, on
   const templateRef = useRef(null);
   const rootFileRef = useRef(null);
 
+  //コミットの登録
+  useEventListener(Event.ModifiedCommit, (comment) => {
+
+    var files = [];
+    files.push(...noteRef.current.checked());
+    files.push(...diagramRef.current.checked());
+    files.push(...assetRef.current.checked());
+    files.push(...layerRef.current.checked());
+    files.push(...templateRef.current.checked());
+    files.push(...rootFileRef.current.checked());
+
+    evt.raise(Event.ModifiedProgress, { running: true });
+    CommitFiles(files, comment).then(() => {
+      evt.showSuccessMessage(t("commitModal.commitSuccess"));
+      evt.commitDone();
+      if (onClose) {
+        onClose();
+      } else {
+        setTimeout(function () {
+          nav("/status/modified/" + (new Date()).toISOString());
+        }, 1000);
+      }
+    }).catch((err) => {
+      showError(err);
+    }).finally(() => {
+      evt.raise(Event.ModifiedProgress, { running: false });
+    })
+  });
+
   useEffect(() => {
-
-    //コミットの登録
-    evt.register("ModifiedMenu", Event.ModifiedCommit, function (comment) {
-
-      var files = [];
-      files.push(...noteRef.current.checked());
-      files.push(...diagramRef.current.checked());
-      files.push(...assetRef.current.checked());
-      files.push(...layerRef.current.checked());
-      files.push(...templateRef.current.checked());
-      files.push(...rootFileRef.current.checked());
-
-      evt.raise(Event.ModifiedProgress, { running: true });
-      CommitFiles(files, comment).then(() => {
-        evt.showSuccessMessage(t("commitModal.commitSuccess"));
-        evt.commitDone();
-        if (onClose) {
-          onClose();
-        } else {
-          setTimeout(function () {
-            nav("/status/modified/" + (new Date()).toISOString());
-          }, 1000);
-        }
-      }).catch((err) => {
-        showError(err);
-      }).finally(() => {
-        evt.raise(Event.ModifiedProgress, { running: false });
-      })
-    });
 
     //更新一覧を取得
     GetModifiedTree().then((tree) => {

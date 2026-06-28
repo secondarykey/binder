@@ -17,7 +17,7 @@ import { OpenHistoryWindow } from '../../bindings/main/window';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
-import Event, { EventContext } from '../Event';
+import Event, { EventContext, useEventListener } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 
@@ -114,10 +114,11 @@ function TemplateTree(props) {
     });
   };
 
+  useEventListener(Event.ReloadTree, () => {
+    viewTree();
+  });
+
   useEffect(() => {
-    evt.register("TemplateTree", Event.ReloadTree, () => {
-      viewTree();
-    });
     viewTree();
   }, []);
 

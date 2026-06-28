@@ -25,7 +25,7 @@ import { Events, Window } from '@wailsio/runtime';
 import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
-import Event, { EventContext } from "../Event";
+import Event, { EventContext, useEventListener } from "../Event";
 import { SystemMessage } from '../Message';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
@@ -297,70 +297,55 @@ function App() {
     });
   };
 
+  //文書名（ページタイトル）変更イベント
+  useEventListener(Event.ReloadTitle, (obj) => setPageTitle(obj));
+
+  //Binder名を編集保存したときのイベント
+  useEventListener(Event.ReloadBinderTitle, (obj) => setBinderName(obj));
+
+  //サイドバーの開閉状態を同期
+  useEventListener(Event.ShowMenu, (flag) => setSidebarOpen(flag));
+
+  //コミットモーダルを開く
+  useEventListener(Event.OpenCommitModal, (data) => {
+    setCommitModalFilter(data ?? null);
+    setCommitModalOpen(true);
+  });
+
+  //設定モーダルを開く
+  useEventListener(Event.OpenSettingModal, () => setSettingModalOpen(true));
+
+  //バインダー編集モーダルを開く
+  useEventListener(Event.OpenBinderModal, () => setBinderModalOpen(true));
+
+  //公開一覧モーダルを開く
+  useEventListener(Event.OpenPublishModal, (data) => {
+    setPublishModalTemplate(data ?? null);
+    setPublishModalOpen(true);
+  });
+
+  //サブツリー公開モーダルを開く
+  useEventListener(Event.OpenPublishSubtreeModal, (data) => {
+    setPublishModalSubtree(data ?? null);
+    setPublishModalOpen(true);
+  });
+
+  //Pushモーダルを開く
+  useEventListener(Event.OpenPushModal, () => setPushModalOpen(true));
+
+  //Mergeモーダルを開く
+  useEventListener(Event.OpenMergeModal, () => setMergeModalOpen(true));
+
+  //ブランチ変更モーダルを開く
+  useEventListener(Event.OpenBranchModal, () => setBranchModalOpen(true));
+
+  //バインダーを開く（CheckCompat付き）
+  useEventListener(Event.OpenBinder, (dir) => openBinder(dir));
+
+  //バインダーを開いたとき（アドレス変更時）にBinder名を再取得
+  useEventListener(Event.ChangeAddress, () => loadBinderName());
+
   useEffect(() => {
-
-    //文書名（ページタイトル）変更イベント
-    evt.register("App", Event.ReloadTitle, function (obj) {
-      setPageTitle(obj);
-    });
-
-    //Binder名を編集保存したときのイベント
-    evt.register("App", Event.ReloadBinderTitle, function (obj) {
-      setBinderName(obj);
-    });
-
-    //サイドバーの開閉状態を同期
-    evt.register("App", Event.ShowMenu, function (flag) {
-      setSidebarOpen(flag);
-    });
-
-    //コミットモーダルを開く
-    evt.register("App", Event.OpenCommitModal, function (data) {
-      setCommitModalFilter(data ?? null);
-      setCommitModalOpen(true);
-    });
-
-    //設定モーダルを開く
-    evt.register("App", Event.OpenSettingModal, function () {
-      setSettingModalOpen(true);
-    });
-
-    //バインダー編集モーダルを開く
-    evt.register("App", Event.OpenBinderModal, function () {
-      setBinderModalOpen(true);
-    });
-
-    //公開一覧モーダルを開く
-    evt.register("App", Event.OpenPublishModal, function (data) {
-      setPublishModalTemplate(data ?? null);
-      setPublishModalOpen(true);
-    });
-
-    //サブツリー公開モーダルを開く
-    evt.register("App", Event.OpenPublishSubtreeModal, function (data) {
-      setPublishModalSubtree(data ?? null);
-      setPublishModalOpen(true);
-    });
-
-    //Pushモーダルを開く
-    evt.register("App", Event.OpenPushModal, function () {
-      setPushModalOpen(true);
-    });
-
-    //Mergeモーダルを開く
-    evt.register("App", Event.OpenMergeModal, function () {
-      setMergeModalOpen(true);
-    });
-
-    //ブランチ変更モーダルを開く
-    evt.register("App", Event.OpenBranchModal, function () {
-      setBranchModalOpen(true);
-    });
-
-    //バインダーを開く（CheckCompat付き）
-    evt.register("App", Event.OpenBinder, function (dir) {
-      openBinder(dir);
-    });
 
     // 履歴ウィンドウでの復元完了通知: 対象ファイルをエディタで開き直す
     // 同じURLにいる場合でも強制再読み込みするため、state に restoredAt タイムスタンプを付与する
@@ -379,11 +364,6 @@ function App() {
         nav(`/editor/${typ}/${id}`, { state: { restoredAt: Date.now(), searchQuery: query || "" } });
         evt.selectTreeNode(id);
       }
-    });
-
-    //バインダーを開いたとき（アドレス変更時）にBinder名を再取得
-    evt.register("App", Event.ChangeAddress, function () {
-      loadBinderName();
     });
 
     //アプリバージョンを取得してタイトル用ラベルを生成

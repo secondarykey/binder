@@ -1,9 +1,9 @@
-import { useEffect, useState,useContext } from "react";
+import { useState, useContext } from "react";
 import { useParams } from "react-router";
 import { Grid, TextField, FormControl, FormLabel, IconButton, LinearProgress, Tooltip } from "@mui/material";
 import CheckIcon from '@mui/icons-material/Check';
 
-import Event,{EventContext} from '../Event';
+import Event,{EventContext, useEventListener} from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -22,14 +22,12 @@ function Commit({ date: dateProp, ...props }) {
   const { date: paramDate } = useParams();
   const date = dateProp ?? paramDate;
 
-  useEffect(() => {
-    evt.register("Commit",Event.ModifiedComment,function(comment) {
-      setComment(comment);
-    })
-    evt.register("Commit", Event.ModifiedProgress, function(progress) {
-      setRunning(progress.running);
-    })
-  }, [date])
+  useEventListener(Event.ModifiedComment, (comment) => {
+    setComment(comment);
+  });
+  useEventListener(Event.ModifiedProgress, (progress) => {
+    setRunning(progress.running);
+  });
 
   //保存
   const handleCommit = () => {

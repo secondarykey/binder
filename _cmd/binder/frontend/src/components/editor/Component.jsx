@@ -28,7 +28,7 @@ import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
-import Event, { EventContext } from "../../Event.jsx";
+import Event, { EventContext, useEventListener } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
 import "../../language";
 import { useTranslation } from 'react-i18next';
@@ -1138,23 +1138,21 @@ function Editor(props) {
 
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
-  useEffect(() => {
-    evt.register('Editor', Event.InsertText, (text) => {
-      const textarea = document.querySelector("#editor");
-      if (!textarea) return;
+  useEventListener(Event.InsertText, (text) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
 
-      textarea.focus();
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      textarea.setSelectionRange(start, end);
-      document.execCommand('insertText', false, text);
+    textarea.focus();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, text);
 
-      requestAnimationFrame(() => {
-        setText(textarea.value);
-        writeFn(modeRef.current, idRef.current, textarea.value);
-      });
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(modeRef.current, idRef.current, textarea.value);
     });
-  }, []);
+  });
 
   //名称が変更になった場合の処理
   useEffect(() => {
@@ -2111,25 +2109,25 @@ function Editor(props) {
     }
   }
 
+  // サイドバートグルでツリーパネルの表示/非表示を切り替える
+  useEventListener(Event.ShowMenu, (flag) => {
+    setTreeVisible(flag);
+  });
+
+  // コミット完了（自動保存・一括コミット等）時に、開いているファイルの未記録状態を
+  // 再確認してコミットボタンの強調を更新する。idRef で現在開いているIDを参照する。
+  useEventListener(Event.CommitDone, () => {
+    const cur = idRef.current;
+    if (!cur) return;
+    GetModifiedIds().then((ids) => {
+      setUpdated(new Set(ids ?? []).has(cur));
+    }).catch(() => {});
+  });
+
   /**
    * 初回起動のみのエフェクト
    */
   useEffect(() => {
-    // サイドバートグルでツリーパネルの表示/非表示を切り替える
-    evt.register("Editor", Event.ShowMenu, function (flag) {
-      setTreeVisible(flag);
-    });
-
-    // コミット完了（自動保存・一括コミット等）時に、開いているファイルの未記録状態を
-    // 再確認してコミットボタンの強調を更新する。idRef で現在開いているIDを参照する。
-    evt.register("Editor", Event.CommitDone, function () {
-      const cur = idRef.current;
-      if (!cur) return;
-      GetModifiedIds().then((ids) => {
-        setUpdated(new Set(ids ?? []).has(cur));
-      }).catch(() => {});
-    });
-
     // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
     // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
     // 一度 hidden input に移してから textarea に戻す（Tab で別入力を経由するのと同等）。
