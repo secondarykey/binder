@@ -2,6 +2,8 @@
 
 package main
 
-func tryAcquireSingleInstance(files []string, onFilesReceived func([]string)) bool {
-	return true
+func trySendToExisting(files []string) bool {
+	return false
 }
+
+func listenForFiles(onFilesReceived func([]string)) {}
