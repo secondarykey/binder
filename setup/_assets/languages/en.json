@@ -702,6 +702,8 @@
         "license" : "License",
         "thirdPartyLicense" : "Third Party Licenses",
         "openNewWindow" : "Open in New Window",
+        "cutTab" : "Cut Tab",
+        "pasteTab" : "Paste Tab",
         "closeTab" : "Close Tab"
     },
     "autocomplete" : {

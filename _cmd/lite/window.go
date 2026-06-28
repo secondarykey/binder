@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -102,6 +103,26 @@ func (w *Window) SavePosition() error {
 		Width:  width,
 		Height: height,
 	})
+}
+
+// CopyToClipboard はテキストをクリップボードにコピーする。
+func (w *Window) CopyToClipboard(text string) {
+	w.runtime.Clipboard.SetText(text)
+}
+
+// PasteFilePath はクリップボードから有効なファイルパスを取得して返す。
+// クリップボードの内容がファイルパスでない場合は空文字を返す。
+func (w *Window) PasteFilePath() string {
+	text, ok := w.runtime.Clipboard.Text()
+	if !ok || text == "" {
+		return ""
+	}
+	text = strings.TrimSpace(text)
+	info, err := os.Stat(text)
+	if err != nil || info.IsDir() {
+		return ""
+	}
+	return text
 }
 
 // OpenInNewWindow は指定ファイルを新しい binder-lite プロセスで開く。
