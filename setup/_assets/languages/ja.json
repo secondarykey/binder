@@ -703,6 +703,8 @@
         "license" : "ライセンス",
         "thirdPartyLicense" : "サードパーティライセンス",
         "openNewWindow" : "新しいウィンドウで開く",
+        "cutTab" : "切り取り",
+        "pasteTab" : "貼り付け",
         "closeTab" : "タブを閉じる"
     },
     "autocomplete" : {
