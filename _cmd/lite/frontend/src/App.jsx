@@ -405,7 +405,6 @@ function App() {
           const tab = tabs.find(t => t.id === tabId);
           if (tab?.path) {
             await OpenInNewWindow(tab.path);
-            removeTab(tabId);
           }
         }}
         onCopyTab={async (tabId) => {
