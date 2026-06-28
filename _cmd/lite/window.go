@@ -6,6 +6,7 @@ import (
 	"binder/settings"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -101,6 +102,20 @@ func (w *Window) SavePosition() error {
 		Width:  width,
 		Height: height,
 	})
+}
+
+// OpenInNewWindow は指定ファイルを新しい binder-lite プロセスで開く。
+func (w *Window) OpenInNewWindow(path string) error {
+	defer log.PrintTrace(log.Func("OpenInNewWindow()", path))
+
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("os.Executable() error\n%+v", err)
+	}
+	cmd := exec.Command(exe, "--new-window", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Start()
 }
 
 // Terminate はアプリ終了時に呼ばれる。

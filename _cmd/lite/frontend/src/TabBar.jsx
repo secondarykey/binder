@@ -1,9 +1,12 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import './language';
+import { useTranslation } from 'react-i18next';
 
 const SCROLL_AMOUNT = 150;
 
@@ -12,12 +15,14 @@ const SCROLL_AMOUNT = 150;
  * タブ表示 + 未保存マーク + 閉じるボタン
  * オーバーフロー時は左右スクロールボタンを表示
  */
-function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder }) {
+function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder, onOpenNewWindow }) {
+  const { t } = useTranslation();
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [dragTabId, setDragTabId] = useState(null);
   const [dropTargetId, setDropTargetId] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   // スクロール状態を更新
   const updateScrollState = useCallback(() => {
@@ -166,6 +171,10 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder }) {
                 setDropTargetId(null);
               }}
               onClick={() => onSelect(tab.id)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ mouseX: e.clientX, mouseY: e.clientY, tabId: tab.id });
+              }}
               title={tab.path || tab.filename}
               sx={{
                 display: 'flex',
@@ -219,6 +228,47 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder }) {
           <ChevronRightIcon sx={{ fontSize: '18px' }} />
         </IconButton>
       )}
+
+      {/* タブ右クリックメニュー */}
+      <Menu
+        open={contextMenu !== null}
+        onClose={() => setContextMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined
+        }
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-primary)',
+              boxShadow: 'var(--shadow-lg)',
+              '& .MuiMenuItem-root:hover': {
+                backgroundColor: 'var(--bg-overlay)',
+              },
+            },
+          },
+        }}
+      >
+        {contextMenu && tabs.find(t => t.id === contextMenu.tabId)?.path && (
+          <MenuItem onClick={() => {
+            const tab = tabs.find(t => t.id === contextMenu.tabId);
+            if (tab?.path) onOpenNewWindow(tab.path);
+            setContextMenu(null);
+          }}>
+            <ListItemIcon><OpenInNewIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
+            <ListItemText>{t('lite.openNewWindow')}</ListItemText>
+          </MenuItem>
+        )}
+        <MenuItem onClick={() => {
+          onClose(contextMenu.tabId);
+          setContextMenu(null);
+        }}>
+          <ListItemIcon><CloseIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
+          <ListItemText>{t('lite.closeTab')}</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
