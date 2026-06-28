@@ -701,7 +701,9 @@
         "tabAppearance" : "外観",
         "tabLicense" : "ライセンス",
         "license" : "ライセンス",
-        "thirdPartyLicense" : "サードパーティライセンス"
+        "thirdPartyLicense" : "サードパーティライセンス",
+        "openNewWindow" : "新しいウィンドウで開く",
+        "closeTab" : "タブを閉じる"
     },
     "autocomplete" : {
         "if"       : "条件分岐",

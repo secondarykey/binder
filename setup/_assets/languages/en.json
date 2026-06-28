@@ -701,7 +701,9 @@
         "tabAppearance" : "Appearance",
         "tabLicense" : "License",
         "license" : "License",
-        "thirdPartyLicense" : "Third Party Licenses"
+        "thirdPartyLicense" : "Third Party Licenses",
+        "openNewWindow" : "Open in New Window",
+        "closeTab" : "Close Tab"
     },
     "autocomplete" : {
         "if"       : "Conditional branch",

@@ -5,11 +5,11 @@ go 1.25.0
 require (
 	binder v0.0.0-00010101000000-000000000000
 	github.com/wailsapp/wails/v3 v3.0.0-alpha2.108
+	github.com/Microsoft/go-winio v0.6.2
 )
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/chai2010/webp v1.4.0 // indirect
