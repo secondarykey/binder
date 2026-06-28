@@ -1165,7 +1165,7 @@ function Editor(props) {
     }
   }, [name]);
 
-  const parseText = async () => {
+  const parseText = async (showLoading = false) => {
     if (text === "") {
       setParseStatus({ status: "success", err: null, warnings: [] });
       setHTML("");
@@ -1175,9 +1175,11 @@ function Editor(props) {
     }
 
     setParseStatus({ status: "processing", err: null, warnings: [] });
-    setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
-    const mermaidEl = document.querySelector('#mermaidViewer');
-    if (mermaidEl) mermaidEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>';
+    if (showLoading) {
+      setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
+      const mermaidEl = document.querySelector('#mermaidViewer');
+      if (mermaidEl) mermaidEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>';
+    }
 
     if (mode === Mode.diagram) {
       viewDiagram(text).catch((err) => {
@@ -1249,7 +1251,7 @@ function Editor(props) {
       });
     }
 
-    parseText().catch((err) => evt.showErrorMessage(err));
+    parseText(true).catch((err) => evt.showErrorMessage(err));
   }, [text]);
 
   //データをマークダウンからHTMLに変換
