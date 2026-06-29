@@ -324,9 +324,7 @@ func (w *wrapper) drawSVG(v ...any) template.HTML {
 	}
 
 	return template.HTML(fmt.Sprintf(`
-<div class="%s" id="%s">
-%s
-</div>`, classAttr, id, code))
+<div class="%s" id="%s"><pre>%s</pre></div>`, classAttr, id, code))
 }
 
 // drawLayer はレイヤーIDから画像 + SVG オーバーレイの合成HTMLを返す。
