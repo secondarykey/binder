@@ -76,13 +76,18 @@ jobs:
 
       - name: Commit and Pull Request
         run: |
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes detected, skipping."
+            exit 0
+          fi
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           BRANCH="chore/version-${{env.NEW_VERSION}}"
 
           git checkout -b $BRANCH
-          git add .
           git commit -m "chore: version ${{env.NEW_VERSION}}"
           git push origin $BRANCH
 
