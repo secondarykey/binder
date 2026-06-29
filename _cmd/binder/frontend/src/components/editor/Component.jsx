@@ -1260,7 +1260,7 @@ function Editor(props) {
     var warnings = [];
     const result = await ParseNote(id, local, txt);
     if (result.error) {
-      setParseStatus({ status: "error", err: result.error, warnings: result.warnings || [] });
+      setParseStatus({ status: "error", err: result.error, errorLine: result.errorLine || 0, warnings: result.warnings || [] });
       parseError = true;
       p = txt;
     } else {
@@ -1326,7 +1326,7 @@ function Editor(props) {
     if (diagramResult.error) {
       const elm = document.querySelector('#mermaidViewer');
       if (elm) elm.innerHTML = '';
-      setParseStatus({ status: "error", err: diagramResult.error, warnings: diagramResult.warnings || [] });
+      setParseStatus({ status: "error", err: diagramResult.error, errorLine: diagramResult.errorLine || 0, warnings: diagramResult.warnings || [] });
       return;
     }
     let parsedTxt = diagramResult.html;
@@ -2556,6 +2556,7 @@ function Editor(props) {
                 showLineNumbers={showLineNumbers}
                 wordWrap={wordWrap}
                 activeLine={activeMatchLine}
+                errorLine={parseStatus.status === "error" && parseStatus.errorLine ? parseStatus.errorLine : null}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onPaste={handlePaste}

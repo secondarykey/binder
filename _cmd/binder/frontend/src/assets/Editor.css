@@ -318,6 +318,11 @@ iframe.htmlViewer {
   border-radius: 3px;
 }
 
+.editorLineNumber.error {
+  color: var(--accent-red, #f44336);
+  font-weight: bold;
+}
+
 #editor {
   --wails-draggable: no-drag;
 
