@@ -1,5 +1,6 @@
 testing_work
 .*
+!.github
 work
 *.exe
 *.db
