@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import ContentCutIcon from '@mui/icons-material/ContentCut';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import './language';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,7 @@ const SCROLL_AMOUNT = 150;
  * タブ表示 + 未保存マーク + 閉じるボタン
  * オーバーフロー時は左右スクロールボタンを表示
  */
-function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder, onOpenNewWindow, onCutTab, onPasteTab }) {
+function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder, onOpenNewWindow, onCopyTab, onPasteTab }) {
   const { t } = useTranslation();
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -128,6 +128,12 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder, onOpen
         ref={scrollRef}
         onWheel={handleWheel}
         onScroll={updateScrollState}
+        onContextMenu={(e) => {
+          if (e.target === scrollRef.current) {
+            e.preventDefault();
+            setContextMenu({ mouseX: e.clientX, mouseY: e.clientY, tabId: null });
+          }
+        }}
         sx={{
           display: 'flex',
           flex: 1,
@@ -231,7 +237,7 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder, onOpen
         </IconButton>
       )}
 
-      {/* タブ右クリックメニュー */}
+      {/* 右クリックメニュー */}
       <Menu
         open={contextMenu !== null}
         onClose={() => setContextMenu(null)}
@@ -253,36 +259,41 @@ function TabBar({ tabs, activeTabId, onSelect, onClose, onNew, onReorder, onOpen
           },
         }}
       >
-        {contextMenu && tabs.find(t => t.id === contextMenu.tabId)?.path && ([
-          <MenuItem key="new-window" onClick={() => {
-            onOpenNewWindow(contextMenu.tabId);
+        {contextMenu?.tabId ? [
+          // タブ上の右クリック
+          ...(tabs.find(t => t.id === contextMenu.tabId)?.path ? [
+            <MenuItem key="new-window" onClick={() => {
+              onOpenNewWindow(contextMenu.tabId);
+              setContextMenu(null);
+            }}>
+              <ListItemIcon><OpenInNewIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
+              <ListItemText>{t('lite.openNewWindow')}</ListItemText>
+            </MenuItem>,
+            <MenuItem key="copy" onClick={() => {
+              onCopyTab(contextMenu.tabId);
+              setContextMenu(null);
+            }}>
+              <ListItemIcon><ContentCopyIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
+              <ListItemText>{t('lite.copyTab')}</ListItemText>
+            </MenuItem>,
+          ] : []),
+          <MenuItem key="close" onClick={() => {
+            onClose(contextMenu.tabId);
             setContextMenu(null);
           }}>
-            <ListItemIcon><OpenInNewIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
-            <ListItemText>{t('lite.openNewWindow')}</ListItemText>
+            <ListItemIcon><CloseIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
+            <ListItemText>{t('lite.closeTab')}</ListItemText>
           </MenuItem>,
-          <MenuItem key="cut" onClick={() => {
-            onCutTab(contextMenu.tabId);
+        ] : [
+          // 空きスペースの右クリック
+          <MenuItem key="paste" onClick={() => {
+            onPasteTab();
             setContextMenu(null);
           }}>
-            <ListItemIcon><ContentCutIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
-            <ListItemText>{t('lite.cutTab')}</ListItemText>
+            <ListItemIcon><ContentPasteIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
+            <ListItemText>{t('lite.pasteTab')}</ListItemText>
           </MenuItem>,
-        ])}
-        <MenuItem onClick={() => {
-          onPasteTab();
-          setContextMenu(null);
-        }}>
-          <ListItemIcon><ContentPasteIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
-          <ListItemText>{t('lite.pasteTab')}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => {
-          onClose(contextMenu.tabId);
-          setContextMenu(null);
-        }}>
-          <ListItemIcon><CloseIcon sx={{ color: 'var(--text-secondary)', fontSize: '18px' }} /></ListItemIcon>
-          <ListItemText>{t('lite.closeTab')}</ListItemText>
-        </MenuItem>
+        ]}
       </Menu>
     </Box>
   );

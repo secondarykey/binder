@@ -405,14 +405,12 @@ function App() {
           const tab = tabs.find(t => t.id === tabId);
           if (tab?.path) {
             await OpenInNewWindow(tab.path);
-            removeTab(tabId);
           }
         }}
-        onCutTab={async (tabId) => {
+        onCopyTab={async (tabId) => {
           const tab = tabs.find(t => t.id === tabId);
           if (tab?.path) {
             await CopyToClipboard(tab.path);
-            removeTab(tabId);
           }
         }}
         onPasteTab={async () => {
