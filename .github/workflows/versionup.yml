@@ -103,7 +103,6 @@ jobs:
           GH_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
       - name: Tag
-        if: env.SKIP_TAG != 'true'
         run: |
           NEW_TAG="v${{env.NEW_VERSION}}"
           git tag $NEW_TAG
