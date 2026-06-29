@@ -78,8 +78,7 @@ jobs:
         run: |
           git add .
           if git diff --cached --quiet; then
-            echo "No version changes detected, skipping."
-            echo "SKIP_TAG=true" >> $GITHUB_ENV
+            echo "No changes detected, skipping."
             exit 0
           fi
 
