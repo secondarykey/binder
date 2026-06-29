@@ -226,7 +226,8 @@ class HTMLFrame extends React.Component {
         this.attachPanZoom(elm);
         return Promise.resolve();
       }
-      const txt = elm.textContent;
+      const raw = elm.dataset.mermaid;
+      const txt = raw ? atob(raw) : elm.textContent;
       return Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
