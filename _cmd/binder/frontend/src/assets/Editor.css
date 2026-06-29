@@ -319,8 +319,9 @@ iframe.htmlViewer {
 }
 
 .editorLineNumber.error {
-  color: var(--accent-red, #f44336);
-  font-weight: bold;
+  background-color: var(--accent-red, #f44336);
+  color: var(--bg-app, #050505);
+  border-radius: 3px;
 }
 
 #editor {
