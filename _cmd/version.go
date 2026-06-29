@@ -103,12 +103,26 @@ func (v *ver) isError() bool {
 	return false
 }
 
-var bump bool
+var (
+	bump     bool
+	printVer bool
+)
 
 func main() {
 
 	flag.BoolVar(&bump, "bump", false, "対話的にバージョンを選択して更新")
+	flag.BoolVar(&printVer, "print", false, "現在のバージョンを表示")
 	flag.Parse()
+
+	if printVer {
+		v, err := parseVersion()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %+v", err)
+			os.Exit(1)
+		}
+		fmt.Println(v)
+		return
+	}
 
 	args := flag.Args()
 
