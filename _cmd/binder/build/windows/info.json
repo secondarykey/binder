@@ -1,10 +1,10 @@
 {
 	"fixed": {
-		"file_version": "0.12.5"
+		"file_version": "0.12.6"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.12.5",
+			"ProductVersion": "0.12.6",
 			"CompanyName": "secondarykey",
 			"FileDescription": "A desktop Markdown editor for technical documents",
 			"LegalCopyright": "(c)2026, secondarykey",
