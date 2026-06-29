@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"strings"
@@ -323,8 +324,13 @@ func (w *wrapper) drawSVG(v ...any) template.HTML {
 		}
 	}
 
-	return template.HTML(fmt.Sprintf(`
-<div class="%s" id="%s"><pre>%s</pre></div>`, classAttr, id, code))
+	if w.Local {
+		encoded := base64.StdEncoding.EncodeToString([]byte(code))
+		return template.HTML(fmt.Sprintf(
+			"\n<div class=\"%s\" id=\"%s\" data-mermaid=\"%s\"></div>", classAttr, id, encoded))
+	}
+	return template.HTML(fmt.Sprintf(
+		"\n<div class=\"%s\" id=\"%s\">%s</div>", classAttr, id, code))
 }
 
 // drawLayer はレイヤーIDから画像 + SVG オーバーレイの合成HTMLを返す。
