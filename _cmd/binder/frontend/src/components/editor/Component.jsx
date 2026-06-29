@@ -1276,6 +1276,7 @@ function Editor(props) {
    * HTMLの表示
    */
   const viewHTML = async (txt, embNoteElm) => {
+    const _start = Date.now();
 
     if (mode === "note") {
 
@@ -1300,7 +1301,7 @@ function Editor(props) {
           if (allWarnings.length > 0) {
             setParseStatus({ status: "warning", err: null, warnings: allWarnings });
           } else {
-            setParseStatus({ status: "success", err: null, warnings: [] });
+            setParseStatus({ status: "success", err: null, warnings: [], ms: Date.now() - _start });
           }
         }
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: noteResult.html });
@@ -1319,6 +1320,7 @@ function Editor(props) {
    * ダイアグラムの表示
    */
   const viewDiagram = async (txt) => {
+    const _start = Date.now();
 
     const diagramResult = await ParseDiagram(id, true, txt);
     if (diagramResult.error) {
@@ -1338,7 +1340,7 @@ function Editor(props) {
       if (diagWarnings.length > 0) {
         setParseStatus({ status: "warning", err: null, warnings: diagWarnings });
       } else {
-        setParseStatus({ status: "success", err: null, warnings: [] });
+        setParseStatus({ status: "success", err: null, warnings: [], ms: Date.now() - _start });
       }
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
 
@@ -2737,7 +2739,7 @@ function Editor(props) {
                     ? <><WarningAmberIcon sx={{ fontSize: '16px', color: 'var(--accent-warning, orange)', mr: '6px' }} /><span className="parseStatusText">Warning ({parseStatus.warnings?.length})</span></>
                     : parseStatus.status === "processing"
                     ? <><AutorenewIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: '6px', animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /><span className="parseStatusText">Processing...</span></>
-                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
+                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success{parseStatus.ms != null ? ` (${parseStatus.ms}ms)` : ''}</span></>
                   }
                 </div>
               </div>
