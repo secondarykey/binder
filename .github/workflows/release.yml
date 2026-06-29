@@ -63,8 +63,12 @@ jobs:
           node -v
           npm -v
 
+      - name: Load variables
+        shell: bash
+        run: cat .github/variables >> $GITHUB_ENV
+
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
 
       - name: Wails doctor
         run: |
