@@ -159,7 +159,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
             return Array.from({ length: wraps }, (_, r) => (
               <div
                 key={`${i}_${r}`}
-                className={`editorLineNumber${r === 0 && activeLine === i + 1 ? ' active' : ''}${r === 0 && errorLine === i + 1 ? ' error' : ''}`}
+                className={`editorLineNumber${r === 0 && activeLine === i + 1 ? ' active' : ''}${errorLine === i + 1 ? ' error' : ''}`}
               >
                 {r === 0 ? i + 1 : ' '}
               </div>
