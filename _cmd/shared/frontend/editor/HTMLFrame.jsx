@@ -227,7 +227,9 @@ class HTMLFrame extends React.Component {
         return Promise.resolve();
       }
       const raw = elm.dataset.mermaid;
-      const txt = raw ? atob(raw) : elm.textContent;
+      const txt = raw
+        ? new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
+        : elm.textContent;
       return Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
