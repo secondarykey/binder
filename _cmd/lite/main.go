@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -23,9 +24,11 @@ var assets embed.FS
 var ver string
 
 var debug bool
+var newWindow bool
 
 func init() {
 	flag.BoolVar(&debug, "debug", false, "Launch DevTools")
+	flag.BoolVar(&newWindow, "new-window", false, "Skip single-instance check")
 }
 
 func main() {
@@ -46,21 +49,44 @@ func main() {
 	}
 
 	version := strings.TrimSpace(ver)
-	app := lite.New(version)
 
-	// 引数にファイルが指定されていれば起動時に開く（存在しないパスは無視）
+	// 引数にファイルが指定されていれば絶対パスに変換
+	var filePaths []string
 	if args := flag.Args(); len(args) > 0 {
-		paths := make([]string, 0, len(args))
+		filePaths = make([]string, 0, len(args))
 		for _, arg := range args {
 			absPath, err := filepath.Abs(arg)
 			if err == nil {
-				paths = append(paths, absPath)
+				filePaths = append(filePaths, absPath)
 			} else {
-				paths = append(paths, arg)
+				filePaths = append(filePaths, arg)
 			}
 		}
-		app.SetInitialFiles(paths)
 	}
+
+	// ファイル指定ありの場合: 既存プロセスがあればそちらで開いて終了
+	if !newWindow && len(filePaths) > 0 && trySendToExisting(filePaths) {
+		os.Exit(0)
+	}
+
+	// パイプサーバー起動: 他プロセスからのファイル受信を待機
+	var wailsApp *application.App
+	win := new(Window)
+	listenForFiles(func(files []string) {
+		if wailsApp == nil {
+			return
+		}
+		for _, f := range files {
+			wailsApp.Event.Emit("lite:file:dropped", f)
+		}
+		if win.window != nil {
+			win.window.Restore()
+			win.window.Focus()
+		}
+	})
+
+	app := lite.New(version)
+	app.SetInitialFiles(filePaths)
 
 	// i18n 初期化（ウィンドウ作成前に実行）
 	liteLang := settings.GetLite().Language
@@ -68,9 +94,9 @@ func main() {
 		log.Warn("settings.InitI18n() error:\n%+v", err)
 	}
 
-	win := NewWindow(app)
+	win.app = app
 
-	wailsApp := application.New(application.Options{
+	wailsApp = application.New(application.Options{
 		Name:   settings.T("go.window.lite"),
 		Logger: logger,
 		Services: []application.Service{

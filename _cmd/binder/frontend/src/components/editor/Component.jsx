@@ -28,7 +28,7 @@ import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
-import Event, { EventContext } from "../../Event.jsx";
+import Event, { EventContext, useEventListener } from "../../Event.jsx";
 import { ActionButton } from "../../dialogs/components/ActionButton";
 import "../../language";
 import { useTranslation } from 'react-i18next';
@@ -60,6 +60,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ContrastIcon from '@mui/icons-material/Contrast';
@@ -835,6 +836,11 @@ function Editor(props) {
     editorContentEl?.classList.add('no-transition');
 
     evt.clearMessage();
+    // モード/ID切替時に前回のデバウンスタイマーをクリア（stale closure 防止）
+    if (parseTimerRef.current) {
+      clearTimeout(parseTimerRef.current);
+      parseTimerRef.current = null;
+    }
     // ツリー選択を同期（画像貼り付け・ツリー展開に必要）
     evt.selectTreeNode(id);
 
@@ -995,20 +1001,6 @@ function Editor(props) {
       })
     }
 
-    // note/diagram/template ではエディタ textarea にフォーカスを移す
-    // カーソル位置を保持してからfocusすることで、focusによるスクロールジャンプを防ぐ
-    if (mode === Mode.note || mode === Mode.diagram || mode === Mode.template) {
-      setTimeout(() => {
-        const textarea = document.querySelector('#editor');
-        if (textarea) {
-          const s = textarea.selectionStart;
-          const e = textarea.selectionEnd;
-          textarea.focus();
-          textarea.setSelectionRange(s, e);
-        }
-      }, 200);
-    }
-
     // レイアウト反映後にtransitionを再有効化（二重rAFでReact再描画完了を待つ）
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -1146,23 +1138,21 @@ function Editor(props) {
 
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
-  useEffect(() => {
-    evt.register('Editor', Event.InsertText, (text) => {
-      const textarea = document.querySelector("#editor");
-      if (!textarea) return;
+  useEventListener(Event.InsertText, (text) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
 
-      textarea.focus();
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      textarea.setSelectionRange(start, end);
-      document.execCommand('insertText', false, text);
+    textarea.focus();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, text);
 
-      requestAnimationFrame(() => {
-        setText(textarea.value);
-        writeFn(modeRef.current, idRef.current, textarea.value);
-      });
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      writeFn(modeRef.current, idRef.current, textarea.value);
     });
-  }, []);
+  });
 
   //名称が変更になった場合の処理
   useEffect(() => {
@@ -1173,22 +1163,42 @@ function Editor(props) {
     }
   }, [name]);
 
-  const parseText = async () => {
+  const parseText = async (showLoading = false) => {
     if (text === "") {
+      setParseStatus({ status: "success", err: null, warnings: [] });
+      setHTML("");
+      const mermaidEl = document.querySelector('#mermaidViewer');
+      if (mermaidEl) mermaidEl.innerHTML = '';
       return;
     }
 
+    setParseStatus({ status: "processing", err: null, warnings: [] });
+    if (showLoading) {
+      setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
+      const mermaidEl = document.querySelector('#mermaidViewer');
+      if (mermaidEl) mermaidEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>';
+    }
+
     if (mode === Mode.diagram) {
-      viewDiagram(text);
+      viewDiagram(text).catch((err) => {
+        setParseStatus({ status: "error", err, warnings: [] });
+        evt.showErrorMessage(err);
+      });
     } else if (mode === Mode.note) {
       // カーソル行を確定してから描画
       setCursorLine(cursorLineRef.current);
-      viewHTML(text);
+      viewHTML(text).catch((err) => {
+        setParseStatus({ status: "error", err, warnings: [] });
+        evt.showErrorMessage(err);
+      });
     } else if (mode === Mode.template) {
       if (templateType === "diagram") {
         // ダイアグラムテンプレート: 選択中のダイアグラムにテンプレートを適用して描画
         if (!previewDiagramId) return;
-        viewDiagramTemplatePreview(text, previewDiagramId);
+        viewDiagramTemplatePreview(text, previewDiagramId).catch((err) => {
+          setParseStatus({ status: "error", err, warnings: [] });
+          evt.showErrorMessage(err);
+        });
       } else {
         if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
         // テンプレートをファイルに即時保存してからプレビューを生成
@@ -1219,7 +1229,7 @@ function Editor(props) {
       // ユーザーが入力中 → 500msデバウンスして描画
       isEditingRef.current = false;
       if (parseTimerRef.current) clearTimeout(parseTimerRef.current);
-      parseTimerRef.current = setTimeout(parseText, 500);
+      parseTimerRef.current = setTimeout(() => { parseText().catch((err) => evt.showErrorMessage(err)); }, 500);
       return () => clearTimeout(parseTimerRef.current);
     }
     // ファイルオープン時（または挿入操作） → 即座に描画
@@ -1239,7 +1249,7 @@ function Editor(props) {
       });
     }
 
-    parseText();
+    parseText(true).catch((err) => evt.showErrorMessage(err));
   }, [text]);
 
   //データをマークダウンからHTMLに変換
@@ -1266,6 +1276,7 @@ function Editor(props) {
    * HTMLの表示
    */
   const viewHTML = async (txt, embNoteElm) => {
+    const _start = Date.now();
 
     if (mode === "note") {
 
@@ -1290,7 +1301,7 @@ function Editor(props) {
           if (allWarnings.length > 0) {
             setParseStatus({ status: "warning", err: null, warnings: allWarnings });
           } else {
-            setParseStatus({ status: "success", err: null, warnings: [] });
+            setParseStatus({ status: "success", err: null, warnings: [], ms: Date.now() - _start });
           }
         }
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: noteResult.html });
@@ -1309,9 +1320,12 @@ function Editor(props) {
    * ダイアグラムの表示
    */
   const viewDiagram = async (txt) => {
+    const _start = Date.now();
 
     const diagramResult = await ParseDiagram(id, true, txt);
     if (diagramResult.error) {
+      const elm = document.querySelector('#mermaidViewer');
+      if (elm) elm.innerHTML = '';
       setParseStatus({ status: "error", err: diagramResult.error, warnings: diagramResult.warnings || [] });
       return;
     }
@@ -1326,7 +1340,7 @@ function Editor(props) {
       if (diagWarnings.length > 0) {
         setParseStatus({ status: "warning", err: null, warnings: diagWarnings });
       } else {
-        setParseStatus({ status: "success", err: null, warnings: [] });
+        setParseStatus({ status: "success", err: null, warnings: [], ms: Date.now() - _start });
       }
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
 
@@ -1371,6 +1385,8 @@ function Editor(props) {
       transform();
 
     }).catch((err) => {
+      const elm = document.querySelector('#mermaidViewer');
+      if (elm) elm.innerHTML = '';
       setParseStatus({ status: "error", err, warnings: diagWarnings });
     });
   }
@@ -1638,6 +1654,7 @@ function Editor(props) {
   const handleCommit = () => {
     Commit(mode, id, comment).then(() => {
       setUpdated(false);
+      setComment("Updated: " + name);
       evt.commitDone();
       evt.showSuccessMessage("Commit.")
     }).catch((err) => {
@@ -2094,25 +2111,25 @@ function Editor(props) {
     }
   }
 
+  // サイドバートグルでツリーパネルの表示/非表示を切り替える
+  useEventListener(Event.ShowMenu, (flag) => {
+    setTreeVisible(flag);
+  });
+
+  // コミット完了（自動保存・一括コミット等）時に、開いているファイルの未記録状態を
+  // 再確認してコミットボタンの強調を更新する。idRef で現在開いているIDを参照する。
+  useEventListener(Event.CommitDone, () => {
+    const cur = idRef.current;
+    if (!cur) return;
+    GetModifiedIds().then((ids) => {
+      setUpdated(new Set(ids ?? []).has(cur));
+    }).catch(() => {});
+  });
+
   /**
    * 初回起動のみのエフェクト
    */
   useEffect(() => {
-    // サイドバートグルでツリーパネルの表示/非表示を切り替える
-    evt.register("Editor", Event.ShowMenu, function (flag) {
-      setTreeVisible(flag);
-    });
-
-    // コミット完了（自動保存・一括コミット等）時に、開いているファイルの未記録状態を
-    // 再確認してコミットボタンの強調を更新する。idRef で現在開いているIDを参照する。
-    evt.register("Editor", Event.CommitDone, function () {
-      const cur = idRef.current;
-      if (!cur) return;
-      GetModifiedIds().then((ids) => {
-        setUpdated(new Set(ids ?? []).has(cur));
-      }).catch(() => {});
-    });
-
     // ウィンドウ再アクティブ時に IME コンテキストをリセット（Windows WebView2 対策）
     // 同一要素の blur/focus では TSF コンテキストがリセットされないため、
     // 一度 hidden input に移してから textarea に戻す（Tab で別入力を経由するのと同等）。
@@ -2720,7 +2737,9 @@ function Editor(props) {
                     ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
                     : parseStatus.status === "warning"
                     ? <><WarningAmberIcon sx={{ fontSize: '16px', color: 'var(--accent-warning, orange)', mr: '6px' }} /><span className="parseStatusText">Warning ({parseStatus.warnings?.length})</span></>
-                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success</span></>
+                    : parseStatus.status === "processing"
+                    ? <><AutorenewIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: '6px', animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /><span className="parseStatusText">Processing...</span></>
+                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success{parseStatus.ms != null ? ` (${parseStatus.ms}ms)` : ''}</span></>
                   }
                 </div>
               </div>

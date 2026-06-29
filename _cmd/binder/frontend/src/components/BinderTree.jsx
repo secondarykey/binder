@@ -39,7 +39,7 @@ import { useTranslation } from 'react-i18next';
 
 import { copyClipboard } from '../app/App';
 
-import Event, { EventContext } from '../Event';
+import Event, { EventContext, useEventListener } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
@@ -300,53 +300,67 @@ function BinderTree(props) {
     });
   }
 
+  // ツリー内容変更時の再描画（展開状態は維持）
+  useEventListener(Event.ReloadTree, () => {
+    viewTree();
+  });
+  // バインダーを開いたとき（LoadBinder 成功後）に再取得。
+  // アドレスが変わった（別バインダー）ときだけトップ展開リセット。
+  // 同じバインダーの再ロードや画面遷移では展開状態を維持する。
+  useEventListener(Event.ChangeAddress, (addr) => {
+    const isNewBinder = addr !== currentAddressRef.current;
+    currentAddressRef.current = addr;
+    setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
+    setLocalPublishDirtyIds(new Set()); // バインダー切替時にローカル未公開ダーティをクリア
+    autoExpandDoneRef.current = false;  // バインダー切替時に自動展開を再有効化
+    setModifiedIds(null);               // 旧バインダーの未コミットIDをクリア（GetModifiedIds 完了まで非表示）
+    viewTree(isNewBinder);
+  });
+  // 未コミットIDのみ再取得（ツリー全体は再描画しない）
+  useEventListener(Event.ReloadModified, () => {
+    GetModifiedIds().then((ids) => {
+      setModifiedIds(new Set(ids ?? []));
+    }).catch((err) => {
+      console.error('[BinderTree] GetModifiedIds error:', err);
+    });
+  });
+  // 自動コミット操作後のローカルダーティマーク
+  useEventListener(Event.MarkModified, (id) => {
+    if (id) setLocalDirtyIds(prev => new Set([...prev, id]));
+  });
+  // コミット完了 — localDirtyIds をクリアして git 状態を再取得
+  useEventListener(Event.CommitDone, () => {
+    setLocalDirtyIds(new Set());
+    GetModifiedIds().then((ids) => {
+      setModifiedIds(new Set(ids ?? []));
+    }).catch((err) => {
+      console.warn("GetModifiedIds failed:", err);
+    });
+  });
+  // 公開/非公開完了 — localPublishDirtyIds をクリアして未公開マップを再取得
+  useEventListener(Event.ReloadUnpublished, () => {
+    setLocalPublishDirtyIds(new Set());
+    loadUnpublished();
+  });
+  // テキスト編集後のローカル未公開ダーティマーク
+  useEventListener(Event.MarkPublishDirty, (id) => {
+    if (id) setLocalPublishDirtyIds(prev => new Set([...prev, id]));
+  });
+  // 履歴復元などでツリーのノード選択を外部から更新する
+  useEventListener(Event.SelectTree, (id) => {
+    setSelectedId(id);
+    // 対象ノードまでの祖先を展開する
+    const ancestors = findAncestorIds(treeRef.current, id);
+    if (ancestors && ancestors.length > 0) {
+      setExpand(prev => {
+        const set = new Set(prev);
+        ancestors.forEach(a => set.add(a));
+        return [...set];
+      });
+    }
+  });
+
   useEffect(() => {
-    // ツリー内容変更時の再描画（展開状態は維持）
-    evt.register("BinderTree", Event.ReloadTree, () => {
-      viewTree();
-    });
-    // バインダーを開いたとき（LoadBinder 成功後）に再取得。
-    // アドレスが変わった（別バインダー）ときだけトップ展開リセット。
-    // 同じバインダーの再ロードや画面遷移では展開状態を維持する。
-    evt.register("BinderTree", Event.ChangeAddress, (addr) => {
-      const isNewBinder = addr !== currentAddressRef.current;
-      currentAddressRef.current = addr;
-      setLocalDirtyIds(new Set());        // バインダー切替時にローカルダーティをクリア
-      setLocalPublishDirtyIds(new Set()); // バインダー切替時にローカル未公開ダーティをクリア
-      autoExpandDoneRef.current = false;  // バインダー切替時に自動展開を再有効化
-      setModifiedIds(null);               // 旧バインダーの未コミットIDをクリア（GetModifiedIds 完了まで非表示）
-      viewTree(isNewBinder);
-    });
-    // 未コミットIDのみ再取得（ツリー全体は再描画しない）
-    evt.register("BinderTree", Event.ReloadModified, () => {
-      GetModifiedIds().then((ids) => {
-        setModifiedIds(new Set(ids ?? []));
-      }).catch((err) => {
-        console.error('[BinderTree] GetModifiedIds error:', err);
-      });
-    });
-    // 自動コミット操作後のローカルダーティマーク
-    evt.register("BinderTree", Event.MarkModified, (id) => {
-      if (id) setLocalDirtyIds(prev => new Set([...prev, id]));
-    });
-    // コミット完了 — localDirtyIds をクリアして git 状態を再取得
-    evt.register("BinderTree", Event.CommitDone, () => {
-      setLocalDirtyIds(new Set());
-      GetModifiedIds().then((ids) => {
-        setModifiedIds(new Set(ids ?? []));
-      }).catch((err) => {
-        console.warn("GetModifiedIds failed:", err);
-      });
-    });
-    // 公開/非公開完了 — localPublishDirtyIds をクリアして未公開マップを再取得
-    evt.register("BinderTree", Event.ReloadUnpublished, () => {
-      setLocalPublishDirtyIds(new Set());
-      loadUnpublished();
-    });
-    // テキスト編集後のローカル未公開ダーティマーク
-    evt.register("BinderTree", Event.MarkPublishDirty, (id) => {
-      if (id) setLocalPublishDirtyIds(prev => new Set([...prev, id]));
-    });
     // 設定からツリー初期表示モードと自動展開設定を取得
     GetTreeDisplayMode().then((mode) => {
       const m = mode || 'commit';
@@ -359,19 +373,6 @@ function BinderTree(props) {
     GetTreeExpandTargets().then((v) => {
       autoExpandEnabledRef.current = !!v;
     }).catch(() => {});
-    // 履歴復元などでツリーのノード選択を外部から更新する
-    evt.register("BinderTree", Event.SelectTree, (id) => {
-      setSelectedId(id);
-      // 対象ノードまでの祖先を展開する
-      const ancestors = findAncestorIds(treeRef.current, id);
-      if (ancestors && ancestors.length > 0) {
-        setExpand(prev => {
-          const set = new Set(prev);
-          ancestors.forEach(a => set.add(a));
-          return [...set];
-        });
-      }
-    });
     // 初回表示時もトップ階層を展開
     viewTree(true);
   }, []);
@@ -546,7 +547,6 @@ function BinderTree(props) {
     const type = node.nodeType || node.type;
     SaveLastData(type, node.id).catch(() => {});
     if (type === 'asset') {
-      // エディタルート経由で表示し、BinderTree インスタンスを editor と統一する
       nav("/editor/assets/" + node.id);
     } else {
       nav("/editor/" + type + "/" + node.id);
@@ -688,6 +688,17 @@ function BinderTree(props) {
     if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
       copyClipboard(selectedId);
+      return;
+    }
+
+    if (e.key === 'Delete') {
+      if (renaming) return;
+      const node = findNodeInTree(treeRef.current, selectedId);
+      if (!node) return;
+      const type = node.nodeType || node.type;
+      if (type === 'folder') return;
+      e.preventDefault();
+      setDeleteConfirm({ open: true, node });
     }
   };
 
@@ -1033,11 +1044,11 @@ function BinderTree(props) {
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       slotProps={{ paper: { sx: { minWidth: 120 } } }}
     >
-      <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadAll(); }}>
-        {t("tree.downloadAll")}
-      </MenuItem>
       <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadDocs(); }}>
         {t("tree.downloadDocs")}
+      </MenuItem>
+      <MenuItem onClick={() => { setDownloadMenuAnchor(null); closeMoreMenu(); DownloadAll(); }}>
+        {t("tree.downloadAll")}
       </MenuItem>
     </Menu>
 

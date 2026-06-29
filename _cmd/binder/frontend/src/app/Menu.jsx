@@ -14,7 +14,7 @@ import { OpenSearchWindow } from '../../bindings/main/window';
 import { Events } from '@wailsio/runtime';
 import TemplateTree from './TemplateTree';
 
-import Event, { EventContext } from '../Event';
+import Event, { EventContext, useEventListener } from '../Event';
 
 import "../language";
 import { useTranslation } from 'react-i18next'
@@ -102,21 +102,19 @@ function Menu(props) {
   /**
    * 初期処理
    */
+  // サイドバー開閉トグル
+  useEventListener(Event.ToggleSidebar, () => {
+    if (menuOpenRef.current) {
+      handleMenuClose();
+    } else {
+      handleMenuOpen();
+    }
+  });
+
   useEffect(() => {
-
-    // サイドバー開閉トグル
-    evt.register("Menu", Event.ToggleSidebar, function () {
-      if (menuOpenRef.current) {
-        handleMenuClose();
-      } else {
-        handleMenuOpen();
-      }
-    });
-
     const offOpen = Events.On("binder:search:open", () => setSearchOpen(true));
     const offClose = Events.On("binder:search:close", () => setSearchOpen(false));
     return () => { offOpen(); offClose(); };
-
   }, []);
 
   const handleClickTree = () => {

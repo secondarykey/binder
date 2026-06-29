@@ -59,7 +59,7 @@ class HTMLFrame extends React.Component {
 
   view() {
     const html = this.props.html;
-    if (!html) return;
+    if (html == null) return;
 
     // 裏側の iframe を決定
     const backIndex = this.active <= 0 ? 1 : 0;
@@ -226,7 +226,10 @@ class HTMLFrame extends React.Component {
         this.attachPanZoom(elm);
         return Promise.resolve();
       }
-      const txt = elm.textContent;
+      const raw = elm.dataset.mermaid;
+      const txt = raw
+        ? new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
+        : elm.textContent;
       return Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {

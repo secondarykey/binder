@@ -19,7 +19,7 @@ import {
 import Marked from '../components/editor/engines/Marked';
 import Mermaid from '../components/editor/engines/Mermaid';
 
-import Event, { EventContext } from '../Event';
+import Event, { EventContext, useEventListener } from '../Event';
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
 import "../language";
@@ -210,85 +210,83 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
     });
   };
 
+  // GenerateForm からの Generate 実行イベント
+  useEventListener(Event.PublishGenerate, async (comment) => {
+
+    const selected = [
+      ...(noteRef.current?.checked() ?? []),
+      ...(diagramRef.current?.checked() ?? []),
+      ...(assetRef.current?.checked() ?? []),
+      ...(layerRef.current?.checked() ?? []),
+    ];
+
+    if (selected.length === 0) {
+      showWarning(t("publishModal.noFilesSelected"));
+      return;
+    }
+
+    const total = selected.length;
+    evt.raise(Event.PublishProgress, { running: true, current: 0, total });
+
+    // 各アイテムをレンダリングして items 配列に積む（レンダリング失敗分は errors に記録）
+    const items = [];
+    const errors = [];
+    for (let i = 0; i < selected.length; i++) {
+      const leaf = selected[i];
+      evt.raise(Event.PublishProgress, { running: true, current: i, total });
+      try {
+        if (leaf.type === "note") {
+          const text = await OpenNote(leaf.id);
+          const parseResult = await ParseNote(leaf.id, false, text);
+          if (parseResult.error) throw new Error(parseResult.error);
+          const html = await Marked.parse(parseResult.html);
+          items.push({ mode: "note", id: leaf.id, data: html });
+        } else if (leaf.type === "diagram") {
+          const text = await OpenDiagram(leaf.id);
+          const diagResult = await ParseDiagram(leaf.id, false, text);
+          if (diagResult.error) throw new Error(diagResult.error);
+          const obj = await Mermaid.parse(diagResult.html);
+          items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
+        } else if (leaf.type === "layer") {
+          items.push({ mode: "layer", id: leaf.id, data: "" });
+        } else {
+          // asset
+          items.push({ mode: "assets", id: leaf.id, data: "" });
+        }
+      } catch (err) {
+        errors.push(leaf.name);
+      }
+    }
+
+    // レンダリングに成功したアイテムを1回のコミットにまとめて公開
+    let generateOk = true;
+    if (items.length > 0) {
+      try {
+        await GenerateAll(items, comment);
+      } catch (err) {
+        generateOk = false;
+        evt.showErrorMessage(err);
+      }
+    }
+
+    evt.raise(Event.PublishProgress, { running: false, current: total, total });
+
+    if (errors.length > 0) {
+      setErrorDlg({ open: true, names: errors });
+      setTimeout(() => { loadTree(); }, 800);
+    } else if (!generateOk) {
+      setTimeout(() => { loadTree(); }, 800);
+    } else if (onClose) {
+      evt.showSuccessMessage(t("publishModal.generateSuccess"));
+      onClose();
+    } else {
+      evt.showSuccessMessage(t("publishModal.generateSuccess"));
+      setTimeout(() => { loadTree(); }, 800);
+    }
+  });
+
   useEffect(() => {
-
-    // GenerateForm からの Generate 実行イベント
-    evt.register("UnpublishedMenu", Event.PublishGenerate, async function (comment) {
-
-      const selected = [
-        ...(noteRef.current?.checked() ?? []),
-        ...(diagramRef.current?.checked() ?? []),
-        ...(assetRef.current?.checked() ?? []),
-        ...(layerRef.current?.checked() ?? []),
-      ];
-
-      if (selected.length === 0) {
-        showWarning(t("publishModal.noFilesSelected"));
-        return;
-      }
-
-      const total = selected.length;
-      evt.raise(Event.PublishProgress, { running: true, current: 0, total });
-
-      // 各アイテムをレンダリングして items 配列に積む（レンダリング失敗分は errors に記録）
-      const items = [];
-      const errors = [];
-      for (let i = 0; i < selected.length; i++) {
-        const leaf = selected[i];
-        evt.raise(Event.PublishProgress, { running: true, current: i, total });
-        try {
-          if (leaf.type === "note") {
-            const text = await OpenNote(leaf.id);
-            const parseResult = await ParseNote(leaf.id, false, text);
-            if (parseResult.error) throw new Error(parseResult.error);
-            const html = await Marked.parse(parseResult.html);
-            items.push({ mode: "note", id: leaf.id, data: html });
-          } else if (leaf.type === "diagram") {
-            const text = await OpenDiagram(leaf.id);
-            const diagResult = await ParseDiagram(leaf.id, false, text);
-            if (diagResult.error) throw new Error(diagResult.error);
-            const obj = await Mermaid.parse(diagResult.html);
-            items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
-          } else if (leaf.type === "layer") {
-            items.push({ mode: "layer", id: leaf.id, data: "" });
-          } else {
-            // asset
-            items.push({ mode: "assets", id: leaf.id, data: "" });
-          }
-        } catch (err) {
-          errors.push(leaf.name);
-        }
-      }
-
-      // レンダリングに成功したアイテムを1回のコミットにまとめて公開
-      let generateOk = true;
-      if (items.length > 0) {
-        try {
-          await GenerateAll(items, comment);
-        } catch (err) {
-          generateOk = false;
-          evt.showErrorMessage(err);
-        }
-      }
-
-      evt.raise(Event.PublishProgress, { running: false, current: total, total });
-
-      if (errors.length > 0) {
-        setErrorDlg({ open: true, names: errors });
-        setTimeout(() => { loadTree(); }, 800);
-      } else if (!generateOk) {
-        setTimeout(() => { loadTree(); }, 800);
-      } else if (onClose) {
-        evt.showSuccessMessage(t("publishModal.generateSuccess"));
-        onClose();
-      } else {
-        evt.showSuccessMessage(t("publishModal.generateSuccess"));
-        setTimeout(() => { loadTree(); }, 800);
-      }
-    });
-
     loadTree();
-
   }, [dateProp]);
 
   return (<>

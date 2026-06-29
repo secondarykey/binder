@@ -1,9 +1,9 @@
-import { useEffect, useState, useContext } from "react";
+import { useState } from "react";
 
 import { Alert, Box, Collapse, Dialog, DialogContent, DialogContentText, DialogTitle, IconButton, Link, Slide, Snackbar } from '@mui/material';
 
 import CloseIcon from "@mui/icons-material/Close";
-import Event, { EventContext } from "./Event";
+import Event, { useEventListener } from "./Event";
 import { parseError } from "./error";
 import "./language";
 import { useTranslation } from 'react-i18next';
@@ -28,7 +28,6 @@ class Message {
 
 export function SystemMessage(props) {
 
-    const evt = useContext(EventContext)
     const {t} = useTranslation();
 
     //メッセージ状態
@@ -36,12 +35,10 @@ export function SystemMessage(props) {
     const [msgDlg, setMessageDialog] = useState(false);
     const [showDebug, setShowDebug] = useState(false);
 
-    useEffect(() => {
-        //イベント登録
-        evt.register("SystemMessage",Event.ShowMessage, (obj) => {
-            showSlideMessage(obj);
-        })
-    }, []);
+    //イベント登録
+    useEventListener(Event.ShowMessage, (obj) => {
+        showSlideMessage(obj);
+    });
 
     //ポップアップ処理
     function SlideTransition(props) {

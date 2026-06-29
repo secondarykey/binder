@@ -415,11 +415,16 @@ function LayerEditor() {
 
   // imageUrl が変わったとき（親アセットが異なるレイヤーへ切り替え）のみリセット。
   // 同一 imageUrl ならリセット不要（onLoad が再発火しないため transform を維持する）。
+  // data URI の場合 onLoad が useEffect より先に発火するため、リセット後に
+  // imgNaturalRef が既知なら fitToCanvas を再実行して正しい倍率にする。
   useEffect(() => {
-    imgNaturalRef.current = { w: 0, h: 0 };
     tfRef.current = { left: 0, top: 0, scale: 1 };
     if (wrapperRef.current) wrapperRef.current.style.transform = '';
     setZoomScale(1);
+    const { w, h } = imgNaturalRef.current;
+    if (w > 0 && h > 0) {
+      fitToCanvas();
+    }
   }, [imageUrl]);
 
   // ホイールズーム。ブラウザのデフォルトスクロールを抑制するため passive: false。
@@ -843,6 +848,22 @@ function LayerEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [tool, polylinePoints.length]);
 
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    if (tool === 'polyline' && polylinePoints.length > 0) return;
+    const onKey = (e) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      setDeleteConfirm(selectedId);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedId, tool, polylinePoints.length]);
+
   const handleShapeContextMenu = (e, shapeId) => {
     e.preventDefault();
     e.stopPropagation();
@@ -858,7 +879,7 @@ function LayerEditor() {
   };
 
   const handleCtxDelete = () => {
-    if (ctxMenu) deleteShape(ctxMenu.shapeId);
+    if (ctxMenu) setDeleteConfirm(ctxMenu.shapeId);
     closeCtxMenu();
   };
 
@@ -902,6 +923,7 @@ function LayerEditor() {
   const handleCommit = () => {
     Commit("layer", id, comment).then(() => {
       setUpdated(false);
+      setComment("Updated: " + (layer?.name || ""));
       evt.commitDone();
       evt.showSuccessMessage("Commit.");
     }).catch((err) => evt.showErrorMessage(String(err)));
@@ -1580,6 +1602,15 @@ function LayerEditor() {
           <DeleteIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("common.delete")}
         </MenuItem>
       </Menu>
+
+      {/** 図形削除確認ダイアログ */}
+      <Dialog open={deleteConfirm != null} onClose={() => setDeleteConfirm(null)}>
+        <DialogTitle>{t("layer.deleteShapeConfirm")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setDeleteConfirm(null)} />
+          <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={() => { deleteShape(deleteConfirm); setDeleteConfirm(null); }} />
+        </DialogActions>
+      </Dialog>
 
       {/** 未公開確認ダイアログ */}
       <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>

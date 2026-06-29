@@ -63,8 +63,8 @@
         "deleteConfirm" : "Delete \"{{name}}\"?",
         "clipboardEmpty" : "Clipboard image data is empty.",
         "download" : "Download",
-        "downloadAll" : "All",
-        "downloadDocs" : "Docs",
+        "downloadAll" : "All Binder Files",
+        "downloadDocs" : "Site Files Only",
         "downloadText" : "Download Text",
         "downloadExpanded" : "Download Expanded Text",
         "expandAll" : "Expand All",
@@ -140,6 +140,7 @@
         "fill" : "Fill",
         "fillHint" : "none / color (e.g. #ffff0080)",
         "noSelection" : "Select a shape",
+        "deleteShapeConfirm" : "Delete this shape?",
         "publishSuccess" : "Layer published.",
         "toolSelect" : "Select",
         "toolLine" : "Line",
@@ -700,7 +701,11 @@
         "tabAppearance" : "Appearance",
         "tabLicense" : "License",
         "license" : "License",
-        "thirdPartyLicense" : "Third Party Licenses"
+        "thirdPartyLicense" : "Third Party Licenses",
+        "openNewWindow" : "Open in New Window",
+        "copyTab" : "Copy Tab",
+        "pasteTab" : "Paste Tab",
+        "closeTab" : "Close Tab"
     },
     "autocomplete" : {
         "if"       : "Conditional branch",

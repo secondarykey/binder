@@ -63,8 +63,8 @@
         "deleteConfirm" : "「{{name}}」を削除しますか？",
         "clipboardEmpty" : "クリップボード画像のデータが空です",
         "download" : "ダウンロード",
-        "downloadAll" : "全体",
-        "downloadDocs" : "docs",
+        "downloadDocs" : "サイトファイルのみ",
+        "downloadAll" : "バインダー全て",
         "downloadText" : "テキストをダウンロード",
         "downloadExpanded" : "展開済みテキストをダウンロード",
         "expandAll" : "すべて展開",
@@ -140,6 +140,7 @@
         "fill" : "塗りつぶし",
         "fillHint" : "none / 色指定（例: #ffff0080）",
         "noSelection" : "図形を選択してください",
+        "deleteShapeConfirm" : "この図形を削除しますか？",
         "publishSuccess" : "レイヤーを公開しました",
         "toolSelect" : "選択",
         "toolLine" : "線",
@@ -700,7 +701,11 @@
         "tabAppearance" : "外観",
         "tabLicense" : "ライセンス",
         "license" : "ライセンス",
-        "thirdPartyLicense" : "サードパーティライセンス"
+        "thirdPartyLicense" : "サードパーティライセンス",
+        "openNewWindow" : "新しいウィンドウで開く",
+        "copyTab" : "コピー",
+        "pasteTab" : "貼り付け",
+        "closeTab" : "タブを閉じる"
     },
     "autocomplete" : {
         "if"       : "条件分岐",

@@ -5,7 +5,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
 import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, GetFont } from '../bindings/binder/api/lite/app';
-import { OpenFileDialog, SaveFileDialog, Terminate } from '../bindings/main/window';
+import { OpenFileDialog, SaveFileDialog, Terminate, OpenInNewWindow, CopyToClipboard, PasteFilePath } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
 
@@ -401,6 +401,22 @@ function App() {
         onClose={closeTab}
         onNew={newFile}
         onReorder={reorderTabs}
+        onOpenNewWindow={async (tabId) => {
+          const tab = tabs.find(t => t.id === tabId);
+          if (tab?.path) {
+            await OpenInNewWindow(tab.path);
+          }
+        }}
+        onCopyTab={async (tabId) => {
+          const tab = tabs.find(t => t.id === tabId);
+          if (tab?.path) {
+            await CopyToClipboard(tab.path);
+          }
+        }}
+        onPasteTab={async () => {
+          const path = await PasteFilePath();
+          if (path) openFilePath(path);
+        }}
       />
 
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden', margin: '0px 4px 4px 4px' }}>

@@ -83,6 +83,12 @@ Mermaid.init = async function(url, opts) {
   await origMermaidInit(cdnUrl, opts)
 }
 
+// 未捕捉の Promise rejection をスナックバーに表示する安全ネット
+import { defaultEvent } from './Event'
+window.addEventListener('unhandledrejection', (e) => {
+  defaultEvent.showErrorMessage(e.reason);
+});
+
 const container = document.getElementById('root')
 const root = createRoot(container)
 

@@ -6,7 +6,9 @@ import (
 	"binder/settings"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -101,6 +103,40 @@ func (w *Window) SavePosition() error {
 		Width:  width,
 		Height: height,
 	})
+}
+
+// CopyToClipboard はテキストをクリップボードにコピーする。
+func (w *Window) CopyToClipboard(text string) {
+	w.runtime.Clipboard.SetText(text)
+}
+
+// PasteFilePath はクリップボードから有効なファイルパスを取得して返す。
+// クリップボードの内容がファイルパスでない場合は空文字を返す。
+func (w *Window) PasteFilePath() string {
+	text, ok := w.runtime.Clipboard.Text()
+	if !ok || text == "" {
+		return ""
+	}
+	text = strings.TrimSpace(text)
+	info, err := os.Stat(text)
+	if err != nil || info.IsDir() {
+		return ""
+	}
+	return text
+}
+
+// OpenInNewWindow は指定ファイルを新しい binder-lite プロセスで開く。
+func (w *Window) OpenInNewWindow(path string) error {
+	defer log.PrintTrace(log.Func("OpenInNewWindow()", path))
+
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("os.Executable() error\n%+v", err)
+	}
+	cmd := exec.Command(exe, "--new-window", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Start()
 }
 
 // Terminate はアプリ終了時に呼ばれる。
