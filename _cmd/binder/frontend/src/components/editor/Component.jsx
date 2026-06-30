@@ -1175,7 +1175,7 @@ function Editor(props) {
 
   const parseText = async (showLoading = false) => {
     if (text === "") {
-      setParseStatus({ status: "error", err: t("preview.emptyContent"), warnings: [] });
+      setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
       setHTML("");
       const mermaidEl = document.querySelector('#mermaidViewer');
       if (mermaidEl) mermaidEl.innerHTML = '';
