@@ -453,6 +453,8 @@ function Editor(props) {
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
   const fileOpeningRef = useRef(false);
+  // 非同期ロード前のリセット中フラグ（空テキストでのparseText発火を抑制）
+  const loadingRef = useRef(false);
   useEffect(() => {
     modeRef.current = mode;
     setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
@@ -863,6 +865,7 @@ function Editor(props) {
       }
       // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
+      loadingRef.current = true;
       setParseStatus({ status: "processing", err: null, warnings: [] });
       setText("");
 
@@ -887,6 +890,7 @@ function Editor(props) {
       });
 
       Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        loadingRef.current = false;
         fileOpeningRef.current = true;
         setText(diagramText);
       }).catch((err) => {
@@ -929,6 +933,7 @@ function Editor(props) {
       }
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
+      loadingRef.current = true;
       setParseStatus({ status: "processing", err: null, warnings: [] });
       setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
       setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
@@ -937,6 +942,7 @@ function Editor(props) {
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
+        loadingRef.current = false;
         fileOpeningRef.current = true;
         setText(resp);
       }).catch((err) => {
@@ -1177,10 +1183,7 @@ function Editor(props) {
 
   const parseText = async (showLoading = false) => {
     if (text === "") {
-      setParseStatus((prev) => {
-        if (prev.status === "processing") return prev;
-        return { status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] };
-      });
+      setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
       setHTML("");
       const mermaidEl = document.querySelector('#mermaidViewer');
       if (mermaidEl) mermaidEl.innerHTML = '';
@@ -1247,6 +1250,8 @@ function Editor(props) {
       parseTimerRef.current = setTimeout(() => { parseText().catch((err) => evt.showErrorMessage(err)); }, 500);
       return () => clearTimeout(parseTimerRef.current);
     }
+    // 非同期ロード前のリセット中は parseText を呼ばない（フラッシュ防止）
+    if (loadingRef.current) return;
     // ファイルオープン時（または挿入操作） → 即座に描画
     // 空テキストでも parseText を通してプレビューをクリアする
     // （ダイアグラム等で前の表示が残る問題の防止）
