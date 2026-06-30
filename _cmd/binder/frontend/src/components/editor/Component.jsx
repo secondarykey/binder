@@ -892,6 +892,11 @@ function Editor(props) {
       Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
         loadingRef.current = false;
         fileOpeningRef.current = true;
+        if (diagramText === "") {
+          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+          const mermaidEl = document.querySelector('#mermaidViewer');
+          if (mermaidEl) mermaidEl.innerHTML = '';
+        }
         setText(diagramText);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -944,6 +949,9 @@ function Editor(props) {
       OpenTemplate(id).then((resp) => {
         loadingRef.current = false;
         fileOpeningRef.current = true;
+        if (resp === "") {
+          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+        }
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
