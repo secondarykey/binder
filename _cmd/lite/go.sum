@@ -107,8 +107,6 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/wailsapp/wails/v3 v3.0.0-alpha2.108 h1:XKm31tberFlcYLRVzDYSHa8f+4CZDKRSN3vfQhS1Mkk=
-github.com/wailsapp/wails/v3 v3.0.0-alpha2.108/go.mod h1:wrdvmyeCsB/K3YqJDoH8E3MwcN8NXAMnEFaDTW46w60=
 github.com/wailsapp/wails/v3 v3.0.0-alpha2.109 h1:I2LX0NEzFn/p5yLJj53V3HzZ+5IWTNIEfU1BoWWGQWk=
 github.com/wailsapp/wails/v3 v3.0.0-alpha2.109/go.mod h1:wrdvmyeCsB/K3YqJDoH8E3MwcN8NXAMnEFaDTW46w60=
 github.com/wailsapp/wails/webview2 v1.0.27 h1:wjgAi/I8BBZ7kUGU8um3XF3ILEfzr96Q2Q1G4GPjMns=
