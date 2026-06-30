@@ -1241,7 +1241,8 @@ function Editor(props) {
       return () => clearTimeout(parseTimerRef.current);
     }
     // ファイルオープン時（または挿入操作） → 即座に描画
-    if (text === "") return;
+    // 空テキストでも parseText を通してプレビューをクリアする
+    // （ダイアグラム等で前の表示が残る問題の防止）
 
     // ファイルオープン時: カーソルを先頭に戻しスクロール位置をリセット
     // React の controlled textarea は value 更新時にカーソルを末尾に移動するため、
