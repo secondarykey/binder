@@ -298,6 +298,14 @@ function buildConflictHTML(text, bannerText) {
   </body></html>`;
 }
 
+const mermaidErrorLineRe = /on line (\d+)/i;
+
+function extractMermaidErrorLine(err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  const m = mermaidErrorLineRe.exec(msg);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 /**
  * テンプレートプレビューHTMLを生成する
  */
@@ -1387,7 +1395,7 @@ function Editor(props) {
     }).catch((err) => {
       const elm = document.querySelector('#mermaidViewer');
       if (elm) elm.innerHTML = '';
-      setParseStatus({ status: "error", err, warnings: diagWarnings });
+      setParseStatus({ status: "error", err, errorLine: extractMermaidErrorLine(err), warnings: diagWarnings });
     });
   }
 
