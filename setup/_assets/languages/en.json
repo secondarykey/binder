@@ -508,6 +508,7 @@
         "downloadZip" : "Download as ZIP",
         "windowTitle" : "Preview",
         "parseError" : "Parse Error",
+        "emptyContent" : "Content is empty",
         "alwaysOnTop" : "Always on Top",
         "notSupported" : "Assets are not displayed",
         "colorScheme" : "Color Scheme"

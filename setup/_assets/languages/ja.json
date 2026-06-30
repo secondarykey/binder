@@ -508,6 +508,7 @@
         "downloadZip" : "ZIPでダウンロード",
         "windowTitle" : "プレビュー",
         "parseError" : "解析エラー",
+        "emptyContent" : "コンテンツが空です",
         "alwaysOnTop" : "最前面に固定",
         "notSupported" : "アセットは表示していません",
         "colorScheme" : "カラースキーム"
