@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var templateErrorLineRe = regexp.MustCompile(`template: .*?:(\d+):\d+:`)
+var templateErrorLineRe = regexp.MustCompile(`template: .*?:(\d+)(?::\d+)?:`)
 
 // extractErrorLine はテンプレートエラーメッセージから行番号を抽出する。
 func extractErrorLine(err error) int {
