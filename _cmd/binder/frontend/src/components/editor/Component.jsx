@@ -303,7 +303,9 @@ const mermaidErrorLineRe = /on line (\d+)/i;
 function extractMermaidErrorLine(err) {
   const msg = err instanceof Error ? err.message : String(err);
   const m = mermaidErrorLineRe.exec(msg);
-  return m ? parseInt(m[1], 10) : 0;
+  if (m) return parseInt(m[1], 10);
+  if (/UnknownDiagramError|No diagram type detected/i.test(msg)) return 1;
+  return 0;
 }
 
 /**
