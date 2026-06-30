@@ -863,6 +863,7 @@ function Editor(props) {
       }
       // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
+      setParseStatus({ status: "processing", err: null, warnings: [] });
       setText("");
 
       // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
@@ -928,6 +929,7 @@ function Editor(props) {
       }
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
+      setParseStatus({ status: "processing", err: null, warnings: [] });
       setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
       setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
       setPreviewOtherTemplateId(""); // 同上
@@ -1175,7 +1177,10 @@ function Editor(props) {
 
   const parseText = async (showLoading = false) => {
     if (text === "") {
-      setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+      setParseStatus((prev) => {
+        if (prev.status === "processing") return prev;
+        return { status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] };
+      });
       setHTML("");
       const mermaidEl = document.querySelector('#mermaidViewer');
       if (mermaidEl) mermaidEl.innerHTML = '';
