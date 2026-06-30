@@ -13,7 +13,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
  *   onDragOver      - ドラッグオーバーハンドラ
  *   onDrop          - ドロップハンドラ
  */
-function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onErrorLineDoubleClick, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
   const lineNumbersRef = useRef(null);
   // 各論理行が折り返しで何 visual 行になるか（折り返し行数）。
   const [lineWraps, setLineWraps] = useState([]);
@@ -160,6 +160,7 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
               <div
                 key={`${i}_${r}`}
                 className={`editorLineNumber${r === 0 && activeLine === i + 1 ? ' active' : ''}${errorLine === i + 1 ? ' error' : ''}`}
+                onDoubleClick={errorLine === i + 1 && onErrorLineDoubleClick ? onErrorLineDoubleClick : undefined}
               >
                 {r === 0 ? i + 1 : ' '}
               </div>

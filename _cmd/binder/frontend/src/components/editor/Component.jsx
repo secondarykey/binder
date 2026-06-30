@@ -2568,6 +2568,7 @@ function Editor(props) {
                 wordWrap={wordWrap}
                 activeLine={activeMatchLine}
                 errorLine={parseStatus.status === "error" && parseStatus.errorLine ? parseStatus.errorLine : null}
+                onErrorLineDoubleClick={parseStatus.err ? () => setParseErrorDlg(true) : undefined}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onPaste={handlePaste}
