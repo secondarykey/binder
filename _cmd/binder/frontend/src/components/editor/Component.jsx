@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useContext, useRef, useCallback, useMemo, memo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
@@ -72,6 +72,15 @@ import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 import LayerEditor from "../../components/LayerEditor.jsx";
 import CommitBar from "../../components/CommitBar.jsx";
+
+// 打鍵ごとの text 更新による再レンダリングから遮断する。
+// ツリーは props を受け取らず内部 state + イベントバスで更新されるため、
+// memo 化で数百 TreeItem の再描画がキー入力のたびに走るのを防げる
+const MemoBinderTree = memo(BinderTree);
+const MemoTemplateTree = memo(TemplateTree);
+const MemoAutocomplete = memo(Autocomplete);
+const MemoIdStatusBar = memo(IdStatusBar);
+const MemoCommitBar = memo(CommitBar);
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -1524,7 +1533,8 @@ function Editor(props) {
    */
   const detectIdAtCursor = useCallback((text, cursorPos) => {
     if (!autoComplete.idAssist) {
-      setCursorStructures([]);
+      // 毎キーストロークで新しい空配列を set すると不要な再レンダリングになる
+      setCursorStructures((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     const uuids = extractUuidsOnLine(text, cursorPos);
@@ -1680,7 +1690,8 @@ function Editor(props) {
   };
 
   //個別コミットを行う
-  const handleCommit = () => {
+  // memo 化した CommitBar に渡すため参照を安定させる
+  const handleCommit = useCallback(() => {
     Commit(mode, id, comment).then(() => {
       setUpdated(false);
       setComment("Updated: " + name);
@@ -1689,7 +1700,7 @@ function Editor(props) {
     }).catch((err) => {
       evt.showErrorMessage(err);
     })
-  }
+  }, [mode, id, comment, name, evt]);
 
   //SVG のダウンロードを行う
   const handleDownload = async () => {
@@ -2244,7 +2255,7 @@ function Editor(props) {
         {/** ツリーパネル */}
         {showTree && (
           <div id="editorTreePanel" className={!treeVisible ? 'hidden' : ''} style={{ width: treeWidth + 'px' }}>
-            {mode === Mode.template ? <TemplateTree /> : <BinderTree />}
+            {mode === Mode.template ? <MemoTemplateTree /> : <MemoBinderTree />}
           </div>
         )}
 
@@ -2555,12 +2566,12 @@ function Editor(props) {
               </Menu>
 
               {/** オートコンプリートポップアップ */}
-              <Autocomplete
+              <MemoAutocomplete
                 isOpen={ac.isOpen}
                 items={ac.items}
                 selectedIndex={ac.selectedIndex}
                 position={ac.position}
-                onItemClick={(idx) => ac.selectItem(idx)}
+                onItemClick={ac.selectItem}
               />
 
               {/** テキスト検索フローティングパネル（Ctrl+F） */}
@@ -2598,7 +2609,7 @@ function Editor(props) {
               />
 
               {/** ID ステータスバー */}
-              <IdStatusBar
+              <MemoIdStatusBar
                 structures={cursorStructures}
                 currentIndex={cursorStructureIndex}
                 onIndexChange={setCursorStructureIndex}
@@ -2607,7 +2618,7 @@ function Editor(props) {
               />
 
               {/** コミットバー */}
-              <CommitBar
+              <MemoCommitBar
                 comment={comment}
                 onCommentChange={setComment}
                 updated={updated}
