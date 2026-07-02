@@ -891,8 +891,16 @@ function Editor(props) {
         setName(resp.name);
         setStyleTemplateId(resp.styleTemplate || "");
         if (resp.styleTemplate) {
-          const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
-          Mermaid.setStyleTemplate(resp.styleTemplate, content);
+          if (Mermaid.hasStyleTemplate(resp.styleTemplate)) {
+            // キャッシュ済みなら描画をブロックせずバックグラウンドで最新内容に更新する
+            OpenTemplate(resp.styleTemplate).then((content) => {
+              Mermaid.setStyleTemplate(resp.styleTemplate, content);
+            }).catch(() => {});
+          } else {
+            // 初回はスタイル欠落した描画を防ぐため取得完了を待つ
+            const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
+            Mermaid.setStyleTemplate(resp.styleTemplate, content);
+          }
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -1629,6 +1637,10 @@ function Editor(props) {
     setUpdated(true);
     writeFn(mode, id, txt).then(() => {
       console.debug("Write!");
+      // ダイアグラムスタイルテンプレートの保存時はエンジン側キャッシュも同期する
+      if (mode === Mode.template && templateType === "diagram") {
+        Mermaid.setStyleTemplate(id, txt);
+      }
       evt.markModified(id);
       evt.markPublishDirty(id);
     }).catch((err) => {;

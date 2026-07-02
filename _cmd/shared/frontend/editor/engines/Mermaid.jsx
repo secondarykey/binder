@@ -119,6 +119,13 @@ class MermaidScript {
   }
 
   /**
+   * スタイルテンプレートがキャッシュ済みかを返す
+   */
+  static hasStyleTemplate(id) {
+    return !!(id && _styleCache[id]);
+  }
+
+  /**
    * キャッシュからスタイルテンプレート内容を取得し、%%{init:...}%% でラップして返す
    */
   static getStylePrefix(id) {
