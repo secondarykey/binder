@@ -19,6 +19,11 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
   const [lineWraps, setLineWraps] = useState([]);
   // エディタがまだサイズ未確定（幅0）で計測できない時のリトライ回数
   const retryRef = useRef(0);
+  // 行テキスト → 折り返し行数のキャッシュ。同じ幅・フォントなら同じ行テキストは
+  // 同じ折り返し数になるため、テキスト変更時は未計測の行だけ実測すればよい
+  // （通常の入力では編集中の 1 行のみ）。envKey は計測条件が変わった検出用
+  const wrapCacheRef = useRef(new Map());
+  const envKeyRef = useRef('');
 
   /**
    * 各論理行の折り返し行数を算出する。
@@ -56,42 +61,68 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     }
     retryRef.current = 0;
 
-    // textarea の内容幅・折り返し条件を再現するミラー
-    const mirror = document.createElement('div');
-    const s = mirror.style;
-    s.position = 'absolute';
-    s.top = '-9999px';
-    s.left = '-9999px';
-    s.visibility = 'hidden';
-    s.boxSizing = 'content-box';
-    s.padding = '0';
-    s.border = '0';
-    s.width = availWidth + 'px';
-    s.height = 'auto';
-    ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
-      'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
-    s.whiteSpace = 'pre-wrap';
-    s.overflowWrap = 'break-word'; // textarea(wrap=soft) と同様に長い単語も折り返す
-    s.wordBreak = cs.wordBreak;
+    // 計測条件（幅・フォント・折り返し設定）が変わったらキャッシュを破棄
+    const cache = wrapCacheRef.current;
+    const envKey = [availWidth, cs.fontFamily, cs.fontSize, cs.fontWeight, cs.fontStyle,
+      cs.lineHeight, cs.letterSpacing, cs.textTransform, cs.tabSize, cs.wordBreak].join('|');
+    if (envKey !== envKeyRef.current) {
+      envKeyRef.current = envKey;
+      cache.clear();
+    }
+    // 肥大化の保険（巨大ファイルの編集を長時間続けた場合）
+    if (cache.size > 20000) {
+      cache.clear();
+    }
 
     const lines = text.split('\n');
-    // 1 visual 行の高さ基準（プローブ）と各行要素を一括追加し reflow を 1 回にする
-    const probe = document.createElement('div');
-    probe.textContent = 'X';
-    mirror.appendChild(probe);
-    const lineEls = lines.map((line) => {
-      const d = document.createElement('div');
-      d.textContent = line === '' ? '​' : line; // 空行も 1 行分の高さを確保
-      mirror.appendChild(d);
-      return d;
-    });
+    // キャッシュに無いユニーク行だけ実測する（空行は常に 1）
+    const missing = [];
+    const missingSet = new Set();
+    for (const line of lines) {
+      if (line === '' || cache.has(line) || missingSet.has(line)) continue;
+      missingSet.add(line);
+      missing.push(line);
+    }
 
-    document.body.appendChild(mirror);
-    const unit = probe.offsetHeight || 1;
-    const wraps = lineEls.map((d) => Math.max(1, Math.round(d.offsetHeight / unit)));
-    document.body.removeChild(mirror);
+    if (missing.length > 0) {
+      // textarea の内容幅・折り返し条件を再現するミラー
+      const mirror = document.createElement('div');
+      const s = mirror.style;
+      s.position = 'absolute';
+      s.top = '-9999px';
+      s.left = '-9999px';
+      s.visibility = 'hidden';
+      s.boxSizing = 'content-box';
+      s.padding = '0';
+      s.border = '0';
+      s.width = availWidth + 'px';
+      s.height = 'auto';
+      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
+        'letterSpacing', 'textTransform', 'tabSize'].forEach((p) => { s[p] = cs[p]; });
+      s.whiteSpace = 'pre-wrap';
+      s.overflowWrap = 'break-word'; // textarea(wrap=soft) と同様に長い単語も折り返す
+      s.wordBreak = cs.wordBreak;
 
-    setLineWraps(wraps);
+      // 1 visual 行の高さ基準（プローブ）と各行要素を一括追加し reflow を 1 回にする
+      const probe = document.createElement('div');
+      probe.textContent = 'X';
+      mirror.appendChild(probe);
+      const lineEls = missing.map((line) => {
+        const d = document.createElement('div');
+        d.textContent = line;
+        mirror.appendChild(d);
+        return d;
+      });
+
+      document.body.appendChild(mirror);
+      const unit = probe.offsetHeight || 1;
+      missing.forEach((line, i) => {
+        cache.set(line, Math.max(1, Math.round(lineEls[i].offsetHeight / unit)));
+      });
+      document.body.removeChild(mirror);
+    }
+
+    setLineWraps(lines.map((line) => (line === '' ? 1 : cache.get(line) ?? 1)));
   }, [text, style, wordWrap]);
 
   // 計測は重いため、連続入力・連続リサイズでは rAF で 1 フレーム 1 回に間引く。
