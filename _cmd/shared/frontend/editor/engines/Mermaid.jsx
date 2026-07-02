@@ -6,6 +6,19 @@ const DefaultOpts = { startOnLoad: false };
 // ダイアグラムスタイルテンプレートのキャッシュ（テンプレートID → 内容文字列）
 const _styleCache = {};
 
+// レンダリング済み SVG のキャッシュ（テキスト全文 → mermaid.render の結果）。
+// プレビュー更新のたびに変更のない図まで再レンダリングされるのを防ぐ。
+// スタイルテンプレートの内容は fullTxt（キー）に含まれるため個別の無効化は不要。
+// initialize（テーマ等）が変わると同じテキストでも結果が変わるため世代番号で無効化する
+const _svgCache = new Map();
+const SVG_CACHE_LIMIT = 50;
+let _generation = 0;
+
+function invalidateSvgCache() {
+  _generation++;
+  _svgCache.clear();
+}
+
 /**
  * mermaid を利用してパースするクラス
  *
@@ -29,6 +42,7 @@ class MermaidScript {
 
   static reset() {
     delete globalThis.mermaid;
+    invalidateSvgCache();
   }
 
   /**
@@ -54,6 +68,7 @@ class MermaidScript {
 
     mermaid.initialize(opts || DefaultOpts);
     globalThis.mermaid = mermaid;
+    invalidateSvgCache();
   }
 
   /**
@@ -92,6 +107,7 @@ class MermaidScript {
     }
     mermaid.initialize(DefaultOpts);
     globalThis.mermaid = mermaid;
+    invalidateSvgCache();
     return { success };
   }
 
@@ -168,11 +184,24 @@ class MermaidScript {
     const prefix = this.getStylePrefix(styleTemplateId);
     const fullTxt = prefix ? prefix + txt : txt;
 
+    const cacheKey = _generation + ':' + fullTxt;
+    const cached = _svgCache.get(cacheKey);
+    if (cached) {
+      // ヒットしたエントリを最新に繰り上げる（挿入順 Map による簡易 LRU）
+      _svgCache.delete(cacheKey);
+      _svgCache.set(cacheKey, cached);
+      return cached;
+    }
+
     return new Promise((res, rej) => {
       const renderId = 'mermaid-render-' + Date.now();
       var func = function () {
         mermaid.parse(fullTxt).then(() => {
           mermaid.render(renderId, fullTxt).then((data) => {
+            _svgCache.set(cacheKey, data);
+            if (_svgCache.size > SVG_CACHE_LIMIT) {
+              _svgCache.delete(_svgCache.keys().next().value);
+            }
             res(data);
           }).catch((err) => {
             rej(err);
