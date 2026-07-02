@@ -122,5 +122,6 @@ func (f *FileSystem) StagePublishDirRemovals() error {
 			_, _ = w.Remove(path)
 		}
 	}
+	f.invalidateStatus()
 	return nil
 }

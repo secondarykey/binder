@@ -512,6 +512,7 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 	if err != nil {
 		return nil, xerrors.Errorf("merge Commit() error: %w", err)
 	}
+	f.invalidateStatus()
 
 	mergeLog := &MergeLog{
 		AutoFiles:  analysis.AutoFiles,

@@ -266,6 +266,7 @@ func (f *FileSystem) MergeFFOnly(remoteName, branchName string) (string, error) 
 		return "", xerrors.Errorf("SetReference() error: %w", err)
 	}
 
+	f.invalidateStatus()
 	return "success", nil
 }
 
@@ -331,6 +332,7 @@ func (f *FileSystem) MergeFFOnlyLocal(branchName string) (string, error) {
 		return "", xerrors.Errorf("SetReference() error: %w", err)
 	}
 
+	f.invalidateStatus()
 	return "success", nil
 }
 
@@ -397,6 +399,7 @@ func (f *FileSystem) CheckoutDetached(hash plumbing.Hash) error {
 	if err = wt.Checkout(&git.CheckoutOptions{Hash: hash, Force: true}); err != nil {
 		return xerrors.Errorf("Checkout(detached) error: %w", err)
 	}
+	f.invalidateStatus()
 	return nil
 }
 
@@ -686,6 +689,7 @@ func (f *FileSystem) Branch(name string) error {
 	if err != nil {
 		return xerrors.Errorf("Checkout() error: %w", err)
 	}
+	f.invalidateStatus()
 	return nil
 }
 
@@ -731,6 +735,7 @@ func (f *FileSystem) ResetHardTo(hash string) error {
 	if err != nil {
 		return xerrors.Errorf("Reset(hard) error: %w", err)
 	}
+	f.invalidateStatus()
 	return nil
 }
 
@@ -747,6 +752,7 @@ func (f *FileSystem) CheckoutBranch(name string) error {
 	if err != nil {
 		return xerrors.Errorf("Checkout() error: %w", err)
 	}
+	f.invalidateStatus()
 	return nil
 }
 
@@ -889,7 +895,30 @@ func (f *FileSystem) modified(files ...string) ([]string, error) {
 	return names, nil
 }
 
+// statusCacheTTL は Status() キャッシュの有効期間。
+// アプリ外での git 操作による不整合はこの時間で自然解消する
+const statusCacheTTL = 2 * time.Second
+
+// invalidateStatus は Status() のキャッシュを破棄する。
+// ワークツリー・インデックスを変更する操作の後に呼ぶ
+func (f *FileSystem) invalidateStatus() {
+	f.statusMu.Lock()
+	f.statusCache = nil
+	f.statusAt = time.Time{}
+	f.statusMu.Unlock()
+}
+
 func (f *FileSystem) Status() (ModifiedFiles, error) {
+
+	// フル git status + blob ハッシュ比較は重いため短TTLでキャッシュする
+	f.statusMu.Lock()
+	if !f.statusAt.IsZero() && time.Since(f.statusAt) < statusCacheTTL {
+		cached := make(ModifiedFiles, len(f.statusCache))
+		copy(cached, f.statusCache)
+		f.statusMu.Unlock()
+		return cached, nil
+	}
+	f.statusMu.Unlock()
 
 	w, err := f.repo.Worktree()
 	if err != nil {
@@ -907,7 +936,7 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 	// blobハッシュで全エントリの実際の変更有無を確認する。
 	headTree := f.getHeadTree()
 
-	var rtn []*Modified
+	var rtn ModifiedFiles
 	for path, s := range status {
 		if headTree != nil {
 			changed, err := f.isActuallyModifiedWithTree(headTree, path)
@@ -925,6 +954,11 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 			rtn = append(rtn, mod)
 		}
 	}
+
+	f.statusMu.Lock()
+	f.statusCache = rtn
+	f.statusAt = time.Now()
+	f.statusMu.Unlock()
 
 	return rtn, nil
 }
@@ -1096,6 +1130,7 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 	if err != nil {
 		return xerrors.Errorf("Commit() error: %w", err)
 	}
+	f.invalidateStatus()
 
 	return nil
 }
@@ -1110,6 +1145,7 @@ func (f *FileSystem) remove(files ...string) error {
 	for _, f := range files {
 		w.Remove(f)
 	}
+	f.invalidateStatus()
 	return nil
 }
 
@@ -1127,6 +1163,7 @@ func (f *FileSystem) add(files ...string) error {
 			return xerrors.Errorf("Add(%s) error: %w", n, err)
 		}
 	}
+	f.invalidateStatus()
 	return nil
 }
 
@@ -1183,6 +1220,7 @@ func (f *FileSystem) RestoreToCommit(hash string) error {
 	if err != nil {
 		return xerrors.Errorf("restoreToCommit() error: %w", err)
 	}
+	f.invalidateStatus()
 	return nil
 }
 
