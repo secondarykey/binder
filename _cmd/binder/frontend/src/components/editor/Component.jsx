@@ -926,8 +926,21 @@ function Editor(props) {
       if (editorSettingRef.current) {
         setViewer(editorSettingRef.current.showPreview);
       }
+      // ダイアグラム/テンプレートと同じリセットパターン。
+      // これが無いと、マウント直後の parseText("") による空コンテンツエラーや
+      // 前ファイルのエラー行ハイライトが、ロード完了までの間ガターに赤く残る
+      loadingRef.current = true;
+      setParseStatus({ status: "processing", err: null, warnings: [] });
+      setText("");
+
       OpenNote(id).then((resp) => {
+        loadingRef.current = false;
         fileOpeningRef.current = true;
+        if (resp === "") {
+          // ""→"" では useEffect([text]) が発火しないため、ここで直接確定する
+          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+          setHTML("");
+        }
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
