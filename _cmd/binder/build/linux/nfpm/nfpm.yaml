@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "Binder"
+name: ""
 arch: ${GOARCH}
 platform: "linux"
-version: "0.12.6"
+version: "0.1.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A desktop Markdown editor for technical documents"
-vendor: "secondarykey"
+description: "My Product Description"
+vendor: "My Company"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/Binder"
-    dst: "/usr/local/bin/Binder"
+  - src: "./bin/"
+    dst: "/usr/local/bin/"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/Binder.png"
-  - src: "./build/linux/Binder.desktop"
-    dst: "/usr/share/applications/Binder.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/.png"
+  - src: "./build/linux/.desktop"
+    dst: "/usr/share/applications/.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

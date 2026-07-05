@@ -273,6 +273,12 @@ function BinderTree(props) {
   };
 
   const viewTree = (expandTop = false) => {
+    // Git変更状態はツリー取得の完了を待たず同時に取得する（色は後追いで反映）
+    GetModifiedIds().then((ids) => {
+      setModifiedIds(new Set(ids ?? []));
+    }).catch((err) => {
+      console.error('[BinderTree] GetModifiedIds error:', err);
+    });
     GetBinderTree().then((resp) => {
       setTree(resp.data);
       if (expandTop) {
@@ -287,12 +293,6 @@ function BinderTree(props) {
         }
         setExpand([...new Set(ids)]);
       }
-      // ツリー表示後に非同期でGit変更状態を取得して色を反映
-      GetModifiedIds().then((ids) => {
-        setModifiedIds(new Set(ids ?? []));
-      }).catch((err) => {
-        console.error('[BinderTree] GetModifiedIds error:', err);
-      });
       // 未公開表示ONの場合は未公開データも再取得
       if (displayModeRef.current === 'publish') loadUnpublished();
     }).catch((err) => {
@@ -712,7 +712,13 @@ function BinderTree(props) {
     navAfterRenameRef.current = null;
     setRenaming(null);
 
-    const doNav = () => { if (pendingUrl) nav(pendingUrl); };
+    const doNav = () => {
+      if (pendingUrl) {
+        nav(pendingUrl, { state: { autoFocus: true } });
+      } else {
+        evt.focusEditor();
+      }
+    };
 
     if (!node) { doNav(); return; }
     const newName = renamingValue.trim();
@@ -750,7 +756,7 @@ function BinderTree(props) {
     setRenaming(null);
     const pendingUrl = navAfterRenameRef.current;
     navAfterRenameRef.current = null;
-    if (pendingUrl) nav(pendingUrl);
+    if (pendingUrl) nav(pendingUrl, { state: { autoFocus: true } });
   };
 
   /** ノートをデフォルト値で作成 → インラインリネーム → エディタへ */

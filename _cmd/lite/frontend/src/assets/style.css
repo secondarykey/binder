@@ -67,6 +67,13 @@
   font-weight: bold;
 }
 
+.editorLineNumber.error {
+  background-color: var(--accent-red, #f44336);
+  color: var(--bg-app, #050505);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
 /* === 検索バー === */
 
 .editorSearchFloat {

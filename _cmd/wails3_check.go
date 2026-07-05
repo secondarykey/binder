@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,7 +19,10 @@ var checks = []moduleCheck{
 	{name: "Binder Lite", dir: "./_cmd/lite", module: "github.com/wailsapp/wails/v3"},
 }
 
-const wailsModule = "github.com/wailsapp/wails/v3"
+const (
+	wailsModule   = "github.com/wailsapp/wails/v3"
+	variablesFile = "./.github/variables"
+)
 
 func main() {
 
@@ -28,6 +32,13 @@ func main() {
 	hasError := false
 	var mismatches []string
 
+	ciVersion, err := loadCIVersion()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%-14s %v\n", "CI Build:", err)
+	} else {
+		fmt.Printf("%-14s %s\n", "CI Build:", ciVersion)
+	}
+
 	cliVersion, err := getCLIVersion()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%-14s %v\n", "wails3 CLI:", err)
@@ -36,18 +47,32 @@ func main() {
 		fmt.Printf("%-14s %s\n", "wails3 CLI:", cliVersion)
 	}
 
+	if ciVersion != "" && cliVersion != "" && ciVersion != cliVersion {
+		fmt.Println()
+		fmt.Printf("  WARNING: CI Build version (%s) != local CLI (%s)\n", ciVersion, cliVersion)
+		fmt.Printf("  To match CI:  go install %s/cmd/wails3@%s\n", wailsModule, ciVersion)
+		fmt.Printf("  To update CI: edit %s\n", variablesFile)
+		hasError = true
+	}
+
 	latestVersion, err := getLatestVersion(checks[0].dir, wailsModule)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "latest version: %v\n", err)
 	} else {
 		fmt.Printf("%-14s %s\n", "latest:", latestVersion)
-		if cliVersion != "" && cliVersion != latestVersion {
+		if ciVersion != "" && ciVersion != latestVersion {
 			fmt.Println()
-			fmt.Println("CLI update:")
-			fmt.Printf("  go install %s/cmd/wails3@latest\n", wailsModule)
+			fmt.Println("CI update:")
+			fmt.Printf("  1. edit %s -> WAILS_VERSION=%s\n", variablesFile, latestVersion)
+			fmt.Printf("  2. go install %s/cmd/wails3@%s\n", wailsModule, latestVersion)
 		}
 	}
 	fmt.Println()
+
+	baseVersion := ciVersion
+	if baseVersion == "" {
+		baseVersion = cliVersion
+	}
 
 	for _, c := range checks {
 		modVersion, err := getModuleVersion(c.dir, c.module)
@@ -57,9 +82,9 @@ func main() {
 			continue
 		}
 		label := fmt.Sprintf("  %s:", c.name)
-		if cliVersion != "" && modVersion != cliVersion {
+		if baseVersion != "" && modVersion != baseVersion {
 			fmt.Printf("%-14s %s ** MISMATCH **\n", label, modVersion)
-			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, cliVersion))
+			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, baseVersion))
 			hasError = true
 		} else {
 			fmt.Printf("%-14s %s\n", label, modVersion)
@@ -100,6 +125,27 @@ func getLatestVersion(dir, module string) (string, error) {
 		return "", fmt.Errorf("no versions found")
 	}
 	return parts[len(parts)-1], nil
+}
+
+func loadCIVersion() (string, error) {
+	f, err := os.Open(variablesFile)
+	if err != nil {
+		return "", fmt.Errorf("cannot open %s: %w", variablesFile, err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		k, v, ok := strings.Cut(line, "=")
+		if ok && strings.TrimSpace(k) == "WAILS_VERSION" {
+			return strings.TrimSpace(v), nil
+		}
+	}
+	return "", fmt.Errorf("WAILS_VERSION not found in %s", variablesFile)
 }
 
 func getModuleVersion(dir, module string) (string, error) {

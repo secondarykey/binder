@@ -3,7 +3,24 @@ package api
 import (
 	"binder/api/json"
 	"binder/log"
+	"regexp"
+	"strconv"
 )
+
+var templateErrorLineRe = regexp.MustCompile(`template: .*?:(\d+)(?::\d+)?:`)
+
+// extractErrorLine はテンプレートエラーメッセージから行番号を抽出する。
+func extractErrorLine(err error) int {
+	m := templateErrorLineRe.FindStringSubmatch(err.Error())
+	if len(m) < 2 {
+		return 0
+	}
+	line, e := strconv.Atoi(m[1])
+	if e != nil {
+		return 0
+	}
+	return line
+}
 
 func (a *App) CreateNoteHTML(id string, local bool, elm string) (*json.ParseResult, error) {
 
@@ -34,7 +51,7 @@ func (a *App) ParseNote(id string, local bool, elm string) (*json.ParseResult, e
 
 	html, warnings, err := a.current.ParseNote(n, local, elm)
 	if err != nil {
-		return &json.ParseResult{Error: err.Error(), Warnings: warnings}, nil
+		return &json.ParseResult{Error: err.Error(), ErrorLine: extractErrorLine(err), Warnings: warnings}, nil
 	}
 	return &json.ParseResult{HTML: html, Warnings: warnings}, nil
 }
@@ -45,7 +62,7 @@ func (a *App) ParseAsset(id string, local bool, elm string) (*json.ParseResult, 
 
 	result, warnings, err := a.current.ParseAsset(local, elm)
 	if err != nil {
-		return &json.ParseResult{Error: err.Error(), Warnings: warnings}, nil
+		return &json.ParseResult{Error: err.Error(), ErrorLine: extractErrorLine(err), Warnings: warnings}, nil
 	}
 	return &json.ParseResult{HTML: result, Warnings: warnings}, nil
 }
@@ -62,7 +79,7 @@ func (a *App) ParseDiagram(id string, local bool, elm string) (*json.ParseResult
 
 	result, warnings, err := a.current.ParseDiagram(d, local, elm)
 	if err != nil {
-		return &json.ParseResult{Error: err.Error(), Warnings: warnings}, nil
+		return &json.ParseResult{Error: err.Error(), ErrorLine: extractErrorLine(err), Warnings: warnings}, nil
 	}
 	return &json.ParseResult{HTML: result, Warnings: warnings}, nil
 }

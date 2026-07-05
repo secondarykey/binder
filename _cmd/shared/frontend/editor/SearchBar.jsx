@@ -128,21 +128,17 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
     };
   }, [handleDragMove, handleDragEnd]);
 
-  // テキスト（ファイル内容）が更新されたら現在のクエリで再検索
+  // テキスト（ファイル内容）が更新されたら現在のクエリで再検索。
+  // 毎キーストロークの全文スキャンを避けるためデバウンスし、
+  // カーソルを奪わない refreshMatches で一致リストだけ更新する
   useEffect(() => {
-    if (query && searched) {
-      doSearchWith(query);
-    }
+    if (!(query && searched)) return;
+    const timer = setTimeout(() => refreshMatches(query), 300);
+    return () => clearTimeout(timer);
   }, [text]);
 
-  // 検索実行（引数指定で任意のクエリで検索可能）
-  const doSearchWith = (searchText) => {
-    if (!searchText) {
-      setMatches([]);
-      setSearched(false);
-      return;
-    }
-    setSearched(true);
+  // 全文スキャンして一致リストを返す
+  const scanMatches = (searchText) => {
     const q = searchText.toLowerCase();
     const lines = text.split('\n');
     const results = [];
@@ -167,10 +163,34 @@ function SearchBar({ text, onClose, onNavigate, onClearHighlight, initialQuery, 
       }
       offset += line.length + 1;
     }
+    return results;
+  };
+
+  // 検索実行（引数指定で任意のクエリで検索可能）。ユーザー操作起点で先頭一致へ移動する
+  const doSearchWith = (searchText) => {
+    if (!searchText) {
+      setMatches([]);
+      setSearched(false);
+      return;
+    }
+    setSearched(true);
+    const results = scanMatches(searchText);
     setMatches(results);
     if (results.length > 0) {
       setCurrentIndex(0);
       onNavigate(results[0].absoluteStart, results[0].absoluteEnd);
+    } else {
+      setCurrentIndex(-1);
+      onClearHighlight?.();
+    }
+  };
+
+  // 本文変更起点の再検索。一致リストのみ更新し、カーソルは移動しない
+  const refreshMatches = (searchText) => {
+    const results = scanMatches(searchText);
+    setMatches(results);
+    if (results.length > 0) {
+      setCurrentIndex((prev) => Math.max(0, Math.min(prev, results.length - 1)));
     } else {
       setCurrentIndex(-1);
       onClearHighlight?.();

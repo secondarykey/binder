@@ -3,28 +3,28 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleExecutable</key>
-		<string>Binder</string>
+		<string/>
 		<key>CFBundleGetInfoString</key>
-		<string>Binder - Markdown Editor</string>
+		<string>This is a comment</string>
 		<key>CFBundleIconFile</key>
 		<string>icons</string>
 		<key>CFBundleIconName</key>
 		<string>appicon</string>
 		<key>CFBundleIdentifier</key>
-		<string>com.github.secondarykey.binder</string>
+		<string/>
 		<key>CFBundleName</key>
-		<string>Binder</string>
+		<string>My Product</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
-		<string>0.12.6</string>
+		<string>0.1.0</string>
 		<key>CFBundleVersion</key>
-		<string>0.12.6</string>
+		<string>0.1.0</string>
 		<key>LSMinimumSystemVersion</key>
 		<string>12.0.0</string>
 		<key>NSHighResolutionCapable</key>
 		<string>true</string>
 		<key>NSHumanReadableCopyright</key>
-		<string>(c)2026, secondarykey</string>
+		<string>© now, My Company</string>
 	</dict>
 </plist>

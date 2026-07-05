@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-billy/v5"
@@ -30,6 +31,14 @@ type FileSystem struct {
 	remote  string
 	base    string
 	userSig *UserInfo // バインダーごとのユーザ署名（nil の場合はアプリ設定を使用）
+
+	// Status() の短TTLキャッシュ。ツリー再読込やコミット直後は複数箇所から
+	// 連続で Status() が呼ばれるため、フル git status + blob ハッシュ比較の
+	// 重複実行を防ぐ。アプリ内の変更操作は invalidateStatus() で即時無効化し、
+	// アプリ外での git 操作との不整合は TTL 経過で自然解消する
+	statusMu    sync.Mutex
+	statusCache ModifiedFiles
+	statusAt    time.Time
 }
 
 // TODO 早めに設定しておく必要あり
@@ -175,6 +184,8 @@ func (f *FileSystem) Create(n string) (*File, error) {
 // ファイルを作成し、Addする
 func (f *FileSystem) create(n string) (*File, bool, error) {
 
+	f.invalidateStatus()
+
 	index := true
 	if f.isExist(n) {
 		index = false
@@ -210,6 +221,7 @@ func (f *FileSystem) DeprecatedRemove(n string) error {
 	if err != nil {
 		return xerrors.Errorf("Remove() error: %w", err)
 	}
+	f.invalidateStatus()
 
 	//TODO インデックスを削除
 
@@ -243,6 +255,9 @@ func (f *FileSystem) writeFile(n string, r io.Reader) error {
 	if err != nil {
 		return xerrors.Errorf("io.Copy() error: %w", err)
 	}
+	// 内容の書き込み完了後にも無効化する（create 時点のキャッシュ再生成で
+	// 書き込み途中の状態が保持されるのを防ぐ）
+	f.invalidateStatus()
 	return nil
 }
 

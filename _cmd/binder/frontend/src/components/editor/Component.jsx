@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useContext, useRef, useCallback, useMemo, memo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
@@ -72,6 +72,15 @@ import TemplateTree from "../../app/TemplateTree.jsx";
 import AssetViewer from "../../components/AssetViewer.jsx";
 import LayerEditor from "../../components/LayerEditor.jsx";
 import CommitBar from "../../components/CommitBar.jsx";
+
+// 打鍵ごとの text 更新による再レンダリングから遮断する。
+// ツリーは props を受け取らず内部 state + イベントバスで更新されるため、
+// memo 化で数百 TreeItem の再描画がキー入力のたびに走るのを防げる
+const MemoBinderTree = memo(BinderTree);
+const MemoTemplateTree = memo(TemplateTree);
+const MemoAutocomplete = memo(Autocomplete);
+const MemoIdStatusBar = memo(IdStatusBar);
+const MemoCommitBar = memo(CommitBar);
 
 /**
  * ツリーからノートのみを再帰的に抽出する
@@ -298,6 +307,16 @@ function buildConflictHTML(text, bannerText) {
   </body></html>`;
 }
 
+const mermaidErrorLineRe = /on line (\d+)/i;
+
+function extractMermaidErrorLine(err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  const m = mermaidErrorLineRe.exec(msg);
+  if (m) return parseInt(m[1], 10);
+  if (/UnknownDiagramError|No diagram type detected/i.test(msg)) return 1;
+  return 0;
+}
+
 /**
  * テンプレートプレビューHTMLを生成する
  */
@@ -360,6 +379,7 @@ function Editor(props) {
   const nav = useNavigate();
   const restoredAt = location.state?.restoredAt;
   const searchQuery = location.state?.searchQuery;
+  const autoFocus = location.state?.autoFocus;
   const evt = useContext(EventContext)
   const {t} = useTranslation();
 
@@ -443,6 +463,8 @@ function Editor(props) {
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
   const fileOpeningRef = useRef(false);
+  // 非同期ロード前のリセット中フラグ（空テキストでのparseText発火を抑制）
+  const loadingRef = useRef(false);
   useEffect(() => {
     modeRef.current = mode;
     setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
@@ -853,6 +875,8 @@ function Editor(props) {
       }
       // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
+      loadingRef.current = true;
+      setParseStatus({ status: "processing", err: null, warnings: [] });
       setText("");
 
       // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
@@ -868,15 +892,29 @@ function Editor(props) {
         setName(resp.name);
         setStyleTemplateId(resp.styleTemplate || "");
         if (resp.styleTemplate) {
-          const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
-          Mermaid.setStyleTemplate(resp.styleTemplate, content);
+          if (Mermaid.hasStyleTemplate(resp.styleTemplate)) {
+            // キャッシュ済みなら描画をブロックせずバックグラウンドで最新内容に更新する
+            OpenTemplate(resp.styleTemplate).then((content) => {
+              Mermaid.setStyleTemplate(resp.styleTemplate, content);
+            }).catch(() => {});
+          } else {
+            // 初回はスタイル欠落した描画を防ぐため取得完了を待つ
+            const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
+            Mermaid.setStyleTemplate(resp.styleTemplate, content);
+          }
         }
       }).catch((err) => {
         evt.showErrorMessage(err);
       });
 
       Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        loadingRef.current = false;
         fileOpeningRef.current = true;
+        if (diagramText === "") {
+          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+          const mermaidEl = document.querySelector('#mermaidViewer');
+          if (mermaidEl) mermaidEl.innerHTML = '';
+        }
         setText(diagramText);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -889,8 +927,21 @@ function Editor(props) {
       if (editorSettingRef.current) {
         setViewer(editorSettingRef.current.showPreview);
       }
+      // ダイアグラム/テンプレートと同じリセットパターン。
+      // これが無いと、マウント直後の parseText("") による空コンテンツエラーや
+      // 前ファイルのエラー行ハイライトが、ロード完了までの間ガターに赤く残る
+      loadingRef.current = true;
+      setParseStatus({ status: "processing", err: null, warnings: [] });
+      setText("");
+
       OpenNote(id).then((resp) => {
+        loadingRef.current = false;
         fileOpeningRef.current = true;
+        if (resp === "") {
+          // ""→"" では useEffect([text]) が発火しないため、ここで直接確定する
+          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+          setHTML("");
+        }
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -918,6 +969,8 @@ function Editor(props) {
       }
       // プレビュー設定を初期化（前回の選択があれば復元）
       setHTML("");
+      loadingRef.current = true;
+      setParseStatus({ status: "processing", err: null, warnings: [] });
       setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
       setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
       setPreviewOtherTemplateId(""); // 同上
@@ -925,7 +978,11 @@ function Editor(props) {
 
       //テンプレートを開く
       OpenTemplate(id).then((resp) => {
+        loadingRef.current = false;
         fileOpeningRef.current = true;
+        if (resp === "") {
+          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+        }
         setText(resp);
       }).catch((err) => {
         evt.showErrorMessage(err);
@@ -1016,6 +1073,14 @@ function Editor(props) {
       setSearchOpen(true);
     }
   }, [searchQuery, restoredAt]);
+
+  // ツリーでの名称決定後の遷移: autoFocus があればエディタへカーソルを当てる
+  useEffect(() => {
+    if (!autoFocus) return;
+    requestAnimationFrame(() => {
+      document.querySelector("#editor")?.focus();
+    });
+  }, [autoFocus, id]);
 
   // ノートが切り替わったら行ハイライトをリセット
   useEffect(() => {
@@ -1154,6 +1219,12 @@ function Editor(props) {
     });
   });
 
+  // エディタへフォーカスを移すイベントを購読
+  // BinderTree でのリネーム確定など、ナビゲーションを伴わないケースで使う
+  useEventListener(Event.FocusEditor, () => {
+    document.querySelector("#editor")?.focus();
+  });
+
   //名称が変更になった場合の処理
   useEffect(() => {
     evt.changeTitle(name)
@@ -1165,7 +1236,7 @@ function Editor(props) {
 
   const parseText = async (showLoading = false) => {
     if (text === "") {
-      setParseStatus({ status: "success", err: null, warnings: [] });
+      setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
       setHTML("");
       const mermaidEl = document.querySelector('#mermaidViewer');
       if (mermaidEl) mermaidEl.innerHTML = '';
@@ -1232,8 +1303,11 @@ function Editor(props) {
       parseTimerRef.current = setTimeout(() => { parseText().catch((err) => evt.showErrorMessage(err)); }, 500);
       return () => clearTimeout(parseTimerRef.current);
     }
+    // 非同期ロード前のリセット中は parseText を呼ばない（フラッシュ防止）
+    if (loadingRef.current) return;
     // ファイルオープン時（または挿入操作） → 即座に描画
-    if (text === "") return;
+    // 空テキストでも parseText を通してプレビューをクリアする
+    // （ダイアグラム等で前の表示が残る問題の防止）
 
     // ファイルオープン時: カーソルを先頭に戻しスクロール位置をリセット
     // React の controlled textarea は value 更新時にカーソルを末尾に移動するため、
@@ -1260,7 +1334,7 @@ function Editor(props) {
     var warnings = [];
     const result = await ParseNote(id, local, txt);
     if (result.error) {
-      setParseStatus({ status: "error", err: result.error, warnings: result.warnings || [] });
+      setParseStatus({ status: "error", err: result.error, errorLine: result.errorLine || 0, warnings: result.warnings || [] });
       parseError = true;
       p = txt;
     } else {
@@ -1326,7 +1400,7 @@ function Editor(props) {
     if (diagramResult.error) {
       const elm = document.querySelector('#mermaidViewer');
       if (elm) elm.innerHTML = '';
-      setParseStatus({ status: "error", err: diagramResult.error, warnings: diagramResult.warnings || [] });
+      setParseStatus({ status: "error", err: diagramResult.error, errorLine: diagramResult.errorLine || 0, warnings: diagramResult.warnings || [] });
       return;
     }
     let parsedTxt = diagramResult.html;
@@ -1387,7 +1461,7 @@ function Editor(props) {
     }).catch((err) => {
       const elm = document.querySelector('#mermaidViewer');
       if (elm) elm.innerHTML = '';
-      setParseStatus({ status: "error", err, warnings: diagWarnings });
+      setParseStatus({ status: "error", err, errorLine: extractMermaidErrorLine(err), warnings: diagWarnings });
     });
   }
 
@@ -1495,7 +1569,8 @@ function Editor(props) {
    */
   const detectIdAtCursor = useCallback((text, cursorPos) => {
     if (!autoComplete.idAssist) {
-      setCursorStructures([]);
+      // 毎キーストロークで新しい空配列を set すると不要な再レンダリングになる
+      setCursorStructures((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     const uuids = extractUuidsOnLine(text, cursorPos);
@@ -1590,6 +1665,10 @@ function Editor(props) {
     setUpdated(true);
     writeFn(mode, id, txt).then(() => {
       console.debug("Write!");
+      // ダイアグラムスタイルテンプレートの保存時はエンジン側キャッシュも同期する
+      if (mode === Mode.template && templateType === "diagram") {
+        Mermaid.setStyleTemplate(id, txt);
+      }
       evt.markModified(id);
       evt.markPublishDirty(id);
     }).catch((err) => {;
@@ -1651,7 +1730,8 @@ function Editor(props) {
   };
 
   //個別コミットを行う
-  const handleCommit = () => {
+  // memo 化した CommitBar に渡すため参照を安定させる
+  const handleCommit = useCallback(() => {
     Commit(mode, id, comment).then(() => {
       setUpdated(false);
       setComment("Updated: " + name);
@@ -1660,7 +1740,7 @@ function Editor(props) {
     }).catch((err) => {
       evt.showErrorMessage(err);
     })
-  }
+  }, [mode, id, comment, name, evt]);
 
   //SVG のダウンロードを行う
   const handleDownload = async () => {
@@ -2215,7 +2295,7 @@ function Editor(props) {
         {/** ツリーパネル */}
         {showTree && (
           <div id="editorTreePanel" className={!treeVisible ? 'hidden' : ''} style={{ width: treeWidth + 'px' }}>
-            {mode === Mode.template ? <TemplateTree /> : <BinderTree />}
+            {mode === Mode.template ? <MemoTemplateTree /> : <MemoBinderTree />}
           </div>
         )}
 
@@ -2526,12 +2606,12 @@ function Editor(props) {
               </Menu>
 
               {/** オートコンプリートポップアップ */}
-              <Autocomplete
+              <MemoAutocomplete
                 isOpen={ac.isOpen}
                 items={ac.items}
                 selectedIndex={ac.selectedIndex}
                 position={ac.position}
-                onItemClick={(idx) => ac.selectItem(idx)}
+                onItemClick={ac.selectItem}
               />
 
               {/** テキスト検索フローティングパネル（Ctrl+F） */}
@@ -2556,6 +2636,8 @@ function Editor(props) {
                 showLineNumbers={showLineNumbers}
                 wordWrap={wordWrap}
                 activeLine={activeMatchLine}
+                errorLine={parseStatus.status === "error" && parseStatus.errorLine ? parseStatus.errorLine : null}
+                onErrorLineDoubleClick={parseStatus.err ? () => setParseErrorDlg(true) : undefined}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
                 onPaste={handlePaste}
@@ -2567,7 +2649,7 @@ function Editor(props) {
               />
 
               {/** ID ステータスバー */}
-              <IdStatusBar
+              <MemoIdStatusBar
                 structures={cursorStructures}
                 currentIndex={cursorStructureIndex}
                 onIndexChange={setCursorStructureIndex}
@@ -2576,7 +2658,7 @@ function Editor(props) {
               />
 
               {/** コミットバー */}
-              <CommitBar
+              <MemoCommitBar
                 comment={comment}
                 onCommentChange={setComment}
                 updated={updated}

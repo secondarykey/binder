@@ -27,18 +27,15 @@ Mermaid.setVendorUrl(mermaidVendorUrl)
 const origMarkedInit = Marked.init.bind(Marked)
 Marked.init = async function() {
   let cdnUrl = null
-  try {
-    const conf = await GetConfig()
-    if (conf && conf.markedUrl) cdnUrl = conf.markedUrl
-  } catch (e) {}
-  if (cdnUrl) {
-    try {
-      const allowedDomains = await GetAllowedCDNs() || []
-      if (!Scripter.isAllowedUrl(cdnUrl, allowedDomains)) {
-        console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl)
-        cdnUrl = null
-      }
-    } catch (e) {}
+  // 設定と許可 CDN 一覧は互いに依存しないため並列で取得する
+  const [conf, allowedDomains] = await Promise.all([
+    GetConfig().catch(() => null),
+    GetAllowedCDNs().catch(() => []),
+  ])
+  if (conf && conf.markedUrl) cdnUrl = conf.markedUrl
+  if (cdnUrl && !Scripter.isAllowedUrl(cdnUrl, allowedDomains || [])) {
+    console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl)
+    cdnUrl = null
   }
   if (cdnUrl) {
     if (await Marked.tryLoadUrl(cdnUrl)) {
@@ -66,18 +63,15 @@ Mermaid.init = async function(url, opts) {
   if (globalThis.mermaid !== undefined) return
   let cdnUrl = url
   if (!cdnUrl) {
-    try {
-      const conf = await GetConfig()
-      if (conf && conf.mermaidUrl) cdnUrl = conf.mermaidUrl
-    } catch (e) {}
-    if (cdnUrl) {
-      try {
-        const allowedDomains = await GetAllowedCDNs() || []
-        if (!Scripter.isAllowedUrl(cdnUrl, allowedDomains)) {
-          console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl)
-          cdnUrl = null
-        }
-      } catch (e) {}
+    // 設定と許可 CDN 一覧は互いに依存しないため並列で取得する
+    const [conf, allowedDomains] = await Promise.all([
+      GetConfig().catch(() => null),
+      GetAllowedCDNs().catch(() => []),
+    ])
+    if (conf && conf.mermaidUrl) cdnUrl = conf.mermaidUrl
+    if (cdnUrl && !Scripter.isAllowedUrl(cdnUrl, allowedDomains || [])) {
+      console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl)
+      cdnUrl = null
     }
   }
   await origMermaidInit(cdnUrl, opts)
@@ -112,4 +106,16 @@ Promise.all([
         </HashRouter>
       </React.StrictMode>
   )
+
+  // メインウィンドウではアイドル時にエンジンを先読み初期化し、
+  // 初回プレビュー時のベンダー JS ロード + 設定取得の待ちをなくす
+  const isMainWindow = !isCommitWindow && !isHistoryWindow && !isOverallHistoryWindow
+    && !isPreviewWindow && !isSyslogWindow && !isSearchWindow;
+  if (isMainWindow) {
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 0));
+    idle(() => {
+      Marked.ensureInit().catch(() => {});
+      Mermaid.init().catch(() => {});
+    });
+  }
 });

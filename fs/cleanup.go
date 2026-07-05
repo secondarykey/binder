@@ -110,6 +110,7 @@ func (f *FileSystem) SquashHistory(before time.Time) (*SquashResult, error) {
 		if err := f.updateBranchRef(orphanHash); err != nil {
 			return nil, xerrors.Errorf("updateBranchRef() error: %w", err)
 		}
+		f.invalidateStatus()
 		gcResult := f.GC()
 		return &SquashResult{BeforeSize: beforeSize, AfterSize: gcResult.AfterSize}, nil
 	}
@@ -130,6 +131,7 @@ func (f *FileSystem) SquashHistory(before time.Time) (*SquashResult, error) {
 	if err := f.updateBranchRef(prevHash); err != nil {
 		return nil, xerrors.Errorf("updateBranchRef() error: %w", err)
 	}
+	f.invalidateStatus()
 
 	// 不要オブジェクトの削除
 	gcResult := f.GC()
