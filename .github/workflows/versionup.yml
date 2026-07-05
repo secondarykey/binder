@@ -98,7 +98,7 @@ jobs:
             --title "chore: version ${{env.NEW_VERSION}}" \
             --body "Auto version bump to ${{env.NEW_VERSION}}
 
-Triggered by #${{ github.event.pull_request.number }}" \
+          Triggered by #${{ github.event.pull_request.number }}" \
             --base main \
             --head $BRANCH
 
