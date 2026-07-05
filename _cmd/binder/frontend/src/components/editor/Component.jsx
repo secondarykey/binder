@@ -379,6 +379,7 @@ function Editor(props) {
   const nav = useNavigate();
   const restoredAt = location.state?.restoredAt;
   const searchQuery = location.state?.searchQuery;
+  const autoFocus = location.state?.autoFocus;
   const evt = useContext(EventContext)
   const {t} = useTranslation();
 
@@ -1073,6 +1074,14 @@ function Editor(props) {
     }
   }, [searchQuery, restoredAt]);
 
+  // ツリーでの名称決定後の遷移: autoFocus があればエディタへカーソルを当てる
+  useEffect(() => {
+    if (!autoFocus) return;
+    requestAnimationFrame(() => {
+      document.querySelector("#editor")?.focus();
+    });
+  }, [autoFocus, id]);
+
   // ノートが切り替わったら行ハイライトをリセット
   useEffect(() => {
     setActiveMatchLine(null);
@@ -1208,6 +1217,12 @@ function Editor(props) {
       setText(textarea.value);
       writeFn(modeRef.current, idRef.current, textarea.value);
     });
+  });
+
+  // エディタへフォーカスを移すイベントを購読
+  // BinderTree でのリネーム確定など、ナビゲーションを伴わないケースで使う
+  useEventListener(Event.FocusEditor, () => {
+    document.querySelector("#editor")?.focus();
   });
 
   //名称が変更になった場合の処理

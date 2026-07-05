@@ -63,6 +63,11 @@ class Event {
     static InsertText = "editor.insert.text"
 
     /**
+     * エディタへフォーカスを移す（ツリーでの名称決定後など）
+     */
+    static FocusEditor = "editor.focus"
+
+    /**
      * ツリーのノード選択
      */
     static SelectTree = "tree.select"
@@ -230,6 +235,10 @@ class Event {
 
     insertText(text) {
         this.raise(Event.InsertText, text);
+    }
+
+    focusEditor() {
+        this.raise(Event.FocusEditor);
     }
 
     selectTreeNode(id) {

@@ -712,7 +712,13 @@ function BinderTree(props) {
     navAfterRenameRef.current = null;
     setRenaming(null);
 
-    const doNav = () => { if (pendingUrl) nav(pendingUrl); };
+    const doNav = () => {
+      if (pendingUrl) {
+        nav(pendingUrl, { state: { autoFocus: true } });
+      } else {
+        evt.focusEditor();
+      }
+    };
 
     if (!node) { doNav(); return; }
     const newName = renamingValue.trim();
@@ -750,7 +756,7 @@ function BinderTree(props) {
     setRenaming(null);
     const pendingUrl = navAfterRenameRef.current;
     navAfterRenameRef.current = null;
-    if (pendingUrl) nav(pendingUrl);
+    if (pendingUrl) nav(pendingUrl, { state: { autoFocus: true } });
   };
 
   /** ノートをデフォルト値で作成 → インラインリネーム → エディタへ */
