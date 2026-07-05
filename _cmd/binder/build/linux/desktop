@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=Binder
-Comment=A desktop Markdown editor for technical documents
+Name=My Product
+Comment=My Product Description
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/Binder %u
+Exec=/usr/local/bin/ %u
 Terminal=false
 Type=Application
-Icon=Binder
+Icon=
 Categories=Utility;
-StartupWMClass=Binder
+StartupWMClass=
 
  
