@@ -15,6 +15,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | トピック | 参照先 |
 |---|---|
 | DB・ドメインエンティティ・マイグレーション・DAO生成 | `db/CLAUDE.md` |
+| fsパッケージ（パス規約・コミット/署名・Status・マージ） | `fs/CLAUDE.md` |
 | バインダーレベルマイグレーションの追加方法・各バージョンの移行内容 | `setup/convert/CLAUDE.md` |
 | Binderフロントエンド構成・テスト構成 | `_cmd/binder/frontend/CLAUDE.md` |
 | Binder Lite（アーキテクチャ・機能・タブ構造） | `_cmd/lite/CLAUDE.md` |
