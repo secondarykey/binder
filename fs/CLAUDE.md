@@ -66,6 +66,23 @@ docs/layers/{layer_alias}.svg
 - **cleanup.go** — 履歴圧縮: `GetCleanupInfo`（統計）→ squash 実行で `.git/objects` を削減
 - **search.go** — 未実装スタブ
 
+## トラブルシュート: gitインデックス破損（index file corrupt）
+
+- **症状**: バインダーの全操作が「An unexpected error occurred」になる。git CLI では
+  `error: index uses <文字化け> extension, which we do not understand` /
+  `fatal: index file corrupt` と表示される
+- **原因**: go-git はインデックス（`.git/index`）を lock ファイルや一時ファイル経由の
+  リネームを使わず truncate + 直接書き込みで更新するため、書き込みの交錯・中断で壊れる。
+  アプリ内の並行書き込みは `lockedStorage`（storage.go）と `gitMu`（fs.go）で防いでいるが、
+  **書き込み中の電源断・プロセス強制終了・外部ツールの干渉では今後も起こりうる**
+- **復旧手順**: インデックスは HEAD から再構築できる派生物であり、削除してもコンテンツは失われない
+  1. Binder を終了し、バインダーのディレクトリで `.git/index` を削除する（念のためコピーを取っておく）
+  2. `git reset` を実行する（HEAD からインデックスを再構築。ワークツリーのファイルはそのまま）
+  3. 破損時に書き込まれかけたファイルが未記録として残るため、アプリを開き未記録一覧から記録する
+  4. 二重操作が原因だった場合は作りかけのゴミデータ（ノート等）が残ることがあるので、確認して削除する
+- 破損検出に使える go-git の sentinel: `plumbing/format/index` の `ErrMalformedSignature` /
+  `ErrInvalidChecksum` / `ErrUnknownExtension` / `ErrMalformedIndexFile`（アプリ内自動復旧を実装する場合の入口）
+
 ## エラー sentinel
 
 - `UpdatedFilesError`（更新ファイルなし）— API層で Info 扱い（Skill: `binder-user-error` 参照）
