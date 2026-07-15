@@ -65,6 +65,7 @@ docs/layers/{layer_alias}.svg
 - **diff.go** — 差分・パッチ生成ヘルパー
 - **cleanup.go** — 履歴圧縮: `GetCleanupInfo`（統計）→ squash 実行で `.git/objects` を削減
 - **search.go** — 未実装スタブ
+- **index_recovery.go** — `Load()` 時の gitインデックス破損検出・自動復旧（詳細下記トラブルシュート節）
 
 ## トラブルシュート: gitインデックス破損（index file corrupt）
 
@@ -75,13 +76,20 @@ docs/layers/{layer_alias}.svg
   リネームを使わず truncate + 直接書き込みで更新するため、書き込みの交錯・中断で壊れる。
   アプリ内の並行書き込みは `lockedStorage`（storage.go）と `gitMu`（fs.go）で防いでいるが、
   **書き込み中の電源断・プロセス強制終了・外部ツールの干渉では今後も起こりうる**
-- **復旧手順**: インデックスは HEAD から再構築できる派生物であり、削除してもコンテンツは失われない
+- **自動復旧（index_recovery.go）**: `Load()` 直後に一度だけ `repo.Storer.Index()` を読み、
+  エラーが `plumbing/format/index` の sentinel（`ErrMalformedSignature` / `ErrInvalidChecksum` /
+  `ErrUnknownExtension` / `ErrMalformedIndexFile`）に該当する場合のみ復旧する（それ以外の
+  エラーでは何もしない）。壊れた `.git/index` は `.git/index.broken` に退避したうえで、
+  空インデックスへ置換 → HEAD があれば `worktree.Reset(MixedReset)` で再構築する。
+  HEAD が無い新規リポジトリ（unborn branch）では空インデックスのまま終える。
+  処置ごとに `log.Warn` で記録し、復旧に失敗してもロード自体は継続する
+  （doctor と同じ「Load 時一回だけ検査・修復」パターン。毎回自動修復するとバグを覆い隠すため不可）
+- **手動復旧手順**（自動復旧が効かない場合のフォールバック）:
+  インデックスは HEAD から再構築できる派生物であり、削除してもコンテンツは失われない
   1. Binder を終了し、バインダーのディレクトリで `.git/index` を削除する（念のためコピーを取っておく）
   2. `git reset` を実行する（HEAD からインデックスを再構築。ワークツリーのファイルはそのまま）
   3. 破損時に書き込まれかけたファイルが未記録として残るため、アプリを開き未記録一覧から記録する
   4. 二重操作が原因だった場合は作りかけのゴミデータ（ノート等）が残ることがあるので、確認して削除する
-- 破損検出に使える go-git の sentinel: `plumbing/format/index` の `ErrMalformedSignature` /
-  `ErrInvalidChecksum` / `ErrUnknownExtension` / `ErrMalformedIndexFile`（アプリ内自動復旧を実装する場合の入口）
 
 ## エラー sentinel
 

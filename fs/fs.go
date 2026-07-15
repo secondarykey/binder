@@ -90,6 +90,10 @@ func Load(dir string) (*FileSystem, error) {
 	b.fs = fs
 	b.base = dir
 
+	// gitインデックス破損（電源断・強制終了・外部ツール干渉等）を検出した場合のみ
+	// 自動復旧する。Load() 時の一回限りのチェックに限定する（詳細は index_recovery.go）
+	b.repairIndexIfCorrupt()
+
 	return &b, nil
 }
 
