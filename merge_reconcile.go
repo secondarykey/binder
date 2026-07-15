@@ -29,89 +29,9 @@ func (b *Binder) ReconcileMergedTree() ([]fs.RestoredEntity, error) {
 		return nil, EmptyError
 	}
 
-	// 既存の structure 行 ID 集合（orphan 判定用）
-	structures, err := b.db.FindStructures()
+	restored, changed, err := b.restoreOrphanEntities()
 	if err != nil {
-		return nil, xerrors.Errorf("db.FindStructures() error: %w", err)
-	}
-	known := make(map[string]bool, len(structures))
-	for _, s := range structures {
-		known[s.Id] = true
-	}
-
-	var restored []fs.RestoredEntity
-	changed := make(map[string]bool)
-
-	// note: notes/<id>.md
-	noteIds, err := b.orphanContentIds(fs.NoteDir, ".md", known)
-	if err != nil {
-		return nil, xerrors.Errorf("orphanContentIds(note) error: %w", err)
-	}
-	if len(noteIds) > 0 {
-		layout, content := b.defaultNoteTemplates()
-		for _, id := range noteIds {
-			m := &model.Note{Id: id, LayoutTemplate: layout, ContentTemplate: content}
-			if err := ignoreDup(b.db.InsertNote(m, b.op)); err != nil {
-				return nil, xerrors.Errorf("InsertNote(%s) error: %w", id, err)
-			}
-			if err := b.createStructure(id, "index", "note", id, "", id); err != nil {
-				return nil, xerrors.Errorf("createStructure(note %s) error: %w", id, err)
-			}
-			restored = append(restored, fs.RestoredEntity{Id: id, Typ: "note", Name: id})
-			changed[fs.NoteTableFile()] = true
-		}
-	}
-
-	// diagram: diagrams/<id>.md
-	diagramIds, err := b.orphanContentIds(fs.DiagramDir, ".md", known)
-	if err != nil {
-		return nil, xerrors.Errorf("orphanContentIds(diagram) error: %w", err)
-	}
-	for _, id := range diagramIds {
-		m := &model.Diagram{Id: id}
-		if err := ignoreDup(b.db.InsertDiagram(m, b.op)); err != nil {
-			return nil, xerrors.Errorf("InsertDiagram(%s) error: %w", id, err)
-		}
-		if err := b.createStructure(id, "index", "diagram", id, "", id); err != nil {
-			return nil, xerrors.Errorf("createStructure(diagram %s) error: %w", id, err)
-		}
-		restored = append(restored, fs.RestoredEntity{Id: id, Typ: "diagram", Name: id})
-		changed[fs.DiagramTableFile()] = true
-	}
-
-	// layer: layers/<id>.json
-	layerIds, err := b.orphanContentIds(fs.LayerDir, ".json", known)
-	if err != nil {
-		return nil, xerrors.Errorf("orphanContentIds(layer) error: %w", err)
-	}
-	for _, id := range layerIds {
-		m := &model.Layer{Id: id}
-		if err := ignoreDup(b.db.InsertLayer(m, b.op)); err != nil {
-			return nil, xerrors.Errorf("InsertLayer(%s) error: %w", id, err)
-		}
-		if err := b.createStructure(id, "index", "layer", id, "", id); err != nil {
-			return nil, xerrors.Errorf("createStructure(layer %s) error: %w", id, err)
-		}
-		restored = append(restored, fs.RestoredEntity{Id: id, Typ: "layer", Name: id})
-		changed[fs.LayerTableFile()] = true
-	}
-
-	// asset: assets/<id>（meta サブディレクトリは除外。ファイル名そのものが id）
-	assetIds, err := b.orphanContentIds(fs.AssetDir, "", known)
-	if err != nil {
-		return nil, xerrors.Errorf("orphanContentIds(asset) error: %w", err)
-	}
-	for _, id := range assetIds {
-		binary := b.detectAssetBinary(id)
-		m := &model.Asset{Id: id, Binary: binary, Mime: detectMime(id, binary)}
-		if err := ignoreDup(b.db.InsertAsset(m, b.op)); err != nil {
-			return nil, xerrors.Errorf("InsertAsset(%s) error: %w", id, err)
-		}
-		if err := b.createStructure(id, "index", "asset", id, "", id); err != nil {
-			return nil, xerrors.Errorf("createStructure(asset %s) error: %w", id, err)
-		}
-		restored = append(restored, fs.RestoredEntity{Id: id, Typ: "asset", Name: id})
-		changed[fs.AssetTableFile()] = true
+		return nil, err
 	}
 
 	if len(restored) == 0 {
@@ -131,6 +51,101 @@ func (b *Binder) ReconcileMergedTree() ([]fs.RestoredEntity, error) {
 	}
 
 	return restored, nil
+}
+
+// restoreOrphanEntities は実体ファイルは存在するが structure 行が失われた
+// orphan エンティティを検出し、structure 行＋実体テーブル行を最小メタデータで
+// 復元して index 直下へ復帰させる（コミットは行わない）。
+// 復元した一覧と、変更した実体テーブルファイルの集合を返す。
+// ReconcileMergedTree（マージ後）と RunDoctor（バインダーオープン時）が共用する。
+func (b *Binder) restoreOrphanEntities() ([]fs.RestoredEntity, map[string]bool, error) {
+
+	// 既存の structure 行 ID 集合（orphan 判定用）
+	structures, err := b.db.FindStructures()
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.FindStructures() error: %w", err)
+	}
+	known := make(map[string]bool, len(structures))
+	for _, s := range structures {
+		known[s.Id] = true
+	}
+
+	var restored []fs.RestoredEntity
+	changed := make(map[string]bool)
+
+	// note: notes/<id>.md
+	noteIds, err := b.orphanContentIds(fs.NoteDir, ".md", known)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("orphanContentIds(note) error: %w", err)
+	}
+	if len(noteIds) > 0 {
+		layout, content := b.defaultNoteTemplates()
+		for _, id := range noteIds {
+			m := &model.Note{Id: id, LayoutTemplate: layout, ContentTemplate: content}
+			if err := ignoreDup(b.db.InsertNote(m, b.op)); err != nil {
+				return nil, nil, xerrors.Errorf("InsertNote(%s) error: %w", id, err)
+			}
+			if err := b.createStructure(id, "index", "note", id, "", id); err != nil {
+				return nil, nil, xerrors.Errorf("createStructure(note %s) error: %w", id, err)
+			}
+			restored = append(restored, fs.RestoredEntity{Id: id, Typ: "note", Name: id})
+			changed[fs.NoteTableFile()] = true
+		}
+	}
+
+	// diagram: diagrams/<id>.md
+	diagramIds, err := b.orphanContentIds(fs.DiagramDir, ".md", known)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("orphanContentIds(diagram) error: %w", err)
+	}
+	for _, id := range diagramIds {
+		m := &model.Diagram{Id: id}
+		if err := ignoreDup(b.db.InsertDiagram(m, b.op)); err != nil {
+			return nil, nil, xerrors.Errorf("InsertDiagram(%s) error: %w", id, err)
+		}
+		if err := b.createStructure(id, "index", "diagram", id, "", id); err != nil {
+			return nil, nil, xerrors.Errorf("createStructure(diagram %s) error: %w", id, err)
+		}
+		restored = append(restored, fs.RestoredEntity{Id: id, Typ: "diagram", Name: id})
+		changed[fs.DiagramTableFile()] = true
+	}
+
+	// layer: layers/<id>.json
+	layerIds, err := b.orphanContentIds(fs.LayerDir, ".json", known)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("orphanContentIds(layer) error: %w", err)
+	}
+	for _, id := range layerIds {
+		m := &model.Layer{Id: id}
+		if err := ignoreDup(b.db.InsertLayer(m, b.op)); err != nil {
+			return nil, nil, xerrors.Errorf("InsertLayer(%s) error: %w", id, err)
+		}
+		if err := b.createStructure(id, "index", "layer", id, "", id); err != nil {
+			return nil, nil, xerrors.Errorf("createStructure(layer %s) error: %w", id, err)
+		}
+		restored = append(restored, fs.RestoredEntity{Id: id, Typ: "layer", Name: id})
+		changed[fs.LayerTableFile()] = true
+	}
+
+	// asset: assets/<id>（meta サブディレクトリは除外。ファイル名そのものが id）
+	assetIds, err := b.orphanContentIds(fs.AssetDir, "", known)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("orphanContentIds(asset) error: %w", err)
+	}
+	for _, id := range assetIds {
+		binary := b.detectAssetBinary(id)
+		m := &model.Asset{Id: id, Binary: binary, Mime: detectMime(id, binary)}
+		if err := ignoreDup(b.db.InsertAsset(m, b.op)); err != nil {
+			return nil, nil, xerrors.Errorf("InsertAsset(%s) error: %w", id, err)
+		}
+		if err := b.createStructure(id, "index", "asset", id, "", id); err != nil {
+			return nil, nil, xerrors.Errorf("createStructure(asset %s) error: %w", id, err)
+		}
+		restored = append(restored, fs.RestoredEntity{Id: id, Typ: "asset", Name: id})
+		changed[fs.AssetTableFile()] = true
+	}
+
+	return restored, changed, nil
 }
 
 // orphanContentIds は dir 直下のファイルのうち、ext を持ち（ext="" なら全ファイル）、
