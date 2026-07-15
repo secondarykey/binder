@@ -4,6 +4,7 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"binder/log"
 
 	"errors"
 	"fmt"
@@ -110,6 +111,7 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 			if err := b.recreateFile(fileFn, defaultContent); err != nil {
 				return rep, xerrors.Errorf("recreateFile(%s) error: %w", fileFn, err)
 			}
+			log.Warn("Doctor: recreated missing %s file: %s (%s)", s.Typ, fileFn, s.Name)
 			newFiles = append(newFiles, fileFn)
 			rep.FilesRecreated = append(rep.FilesRecreated, fs.RestoredEntity{Id: s.Id, Typ: s.Typ, Name: s.Name})
 		}
@@ -119,6 +121,7 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 			if err := b.restoreEntityRow(s.Typ, s.Id); err != nil {
 				return rep, err
 			}
+			log.Warn("Doctor: restored missing %s row: %s (%s)", s.Typ, s.Id, s.Name)
 			changedTables[tableFn] = true
 			rep.RowsRestored = append(rep.RowsRestored, fs.RestoredEntity{Id: s.Id, Typ: s.Typ, Name: s.Name})
 		}
@@ -126,10 +129,12 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 		// 親が存在しない・自己参照の場合は index 直下へ付け替える
 		// （ルートの index 行は ParentId="" のため対象外）
 		if s.ParentId != "" && (!known[s.ParentId] || s.ParentId == s.Id) {
+			oldParent := s.ParentId
 			s.ParentId = "index"
 			if err := b.db.UpdateStructure(s, b.op); err != nil {
 				return rep, xerrors.Errorf("UpdateStructure(%s) error: %w", s.Id, err)
 			}
+			log.Warn("Doctor: reparented dangling structure: %s (%s -> index)", s.Id, oldParent)
 			structureChanged = true
 			rep.Reparented = append(rep.Reparented, s.Id)
 		}
@@ -141,6 +146,9 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 		return rep, err
 	}
 	rep.OrphanRestored = restored
+	for _, e := range restored {
+		log.Warn("Doctor: restored orphan %s: %s", e.Typ, e.Id)
+	}
 	for f := range changed {
 		changedTables[f] = true
 	}

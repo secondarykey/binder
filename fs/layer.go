@@ -2,6 +2,7 @@ package fs
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"bytes"
 	"fmt"
 	"io"
@@ -31,11 +32,12 @@ func (f *FileSystem) DeleteLayer(l *json.Layer) ([]string, error) {
 	}
 
 	fn = LayerFile(l.Id)
-	if f.isExist(fn) {
-		files = append(files, fn)
-	} else {
-		return nil, xerrors.Errorf("layer file not exist: %s", fn)
+	if !f.isExist(fn) {
+		// 実体ファイルが欠損していても削除は継続する（欠損状態で削除不能になる
+		// 詰みを防ぐ）。git 側に残っていれば remove() が index からの削除を行う
+		log.Warn("DeleteLayer: layer file not exist, continue deletion: %s", fn)
 	}
+	files = append(files, fn)
 
 	err := f.remove(files...)
 	if err != nil {

@@ -150,6 +150,28 @@ func TestDoctorRestoresOrphanFile(t *testing.T) {
 	}
 }
 
+// doctor を介さなくても、実体ファイルが欠損したままのノートを削除できることを
+// 検証する（バインダーを開いている最中にズレが発生したケースの詰み防止）。
+func TestRemoveNoteWithMissingFile(t *testing.T) {
+	const work = "doctor_delete_lenient"
+	b := test.CreateBinder(t, work)
+	defer b.Close()
+
+	id := createDoctorNote(t, b, "lenient-delete")
+
+	mdPath := filepath.Join(test.Dir, work, "notes", id+".md")
+	if err := os.Remove(mdPath); err != nil {
+		t.Fatalf("os.Remove() error: %v", err)
+	}
+
+	if _, err := b.RemoveNote(id); err != nil {
+		t.Fatalf("欠損ファイルのままの RemoveNote() error: %v", err)
+	}
+	if _, err := b.GetNote(id); err == nil {
+		t.Error("削除後も GetNote() が成功している")
+	}
+}
+
 // 整合の取れたバインダーでは doctor が何も修復しないことを検証する。
 func TestDoctorCleanBinder(t *testing.T) {
 	b := test.CreateBinder(t, "doctor_clean")
