@@ -1065,6 +1065,11 @@ func getModelType(f string) (*Modified, error) {
 
 func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...string) error {
 
+	// 並行するバインディング呼び出し（例: ノート追加の二度押し）で
+	// コミット同士がステージ内容・HEAD 更新を取り合わないよう直列化する
+	f.gitMu.Lock()
+	defer f.gitMu.Unlock()
+
 	w, err := f.repo.Worktree()
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
@@ -1137,6 +1142,9 @@ func (f *FileSystem) commit(m string, sig *object.Signature, all bool, files ...
 
 func (f *FileSystem) remove(files ...string) error {
 
+	f.gitMu.Lock()
+	defer f.gitMu.Unlock()
+
 	w, err := f.repo.Worktree()
 	if err != nil {
 		return xerrors.Errorf("Worktree() error: %w", err)
@@ -1151,6 +1159,13 @@ func (f *FileSystem) remove(files ...string) error {
 
 // 存在するファイルをadd()する
 func (f *FileSystem) add(files ...string) error {
+	f.gitMu.Lock()
+	defer f.gitMu.Unlock()
+	return f.addLocked(files...)
+}
+
+// addLocked は gitMu を保持した状態で呼び出すこと
+func (f *FileSystem) addLocked(files ...string) error {
 
 	w, err := f.repo.Worktree()
 	if err != nil {

@@ -16,8 +16,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/cache"
-	"github.com/go-git/go-git/v5/storage/filesystem"
 	"golang.org/x/xerrors"
 )
 
@@ -39,6 +37,12 @@ type FileSystem struct {
 	statusMu    sync.Mutex
 	statusCache ModifiedFiles
 	statusAt    time.Time
+
+	// ワークツリー・インデックスを変更する操作（create/add/remove/commit）の
+	// 直列化。Wails のバインディング呼び出しは並行実行されるため、同時に
+	// 走った変更操作同士でステージ内容や HEAD 更新が競合するのを防ぐ
+	// （ファイルレベルの排他は lockedStorage が担う。storage.go 参照）
+	gitMu sync.Mutex
 }
 
 // TODO 早めに設定しておく必要あり
@@ -69,13 +73,20 @@ func NewMemory() (*FileSystem, error) {
 
 func Load(dir string) (*FileSystem, error) {
 
-	r, err := git.PlainOpen(dir)
+	fs := osfs.New(dir)
+	dot, err := fs.Chroot(git.GitDirName)
+	if err != nil {
+		return nil, xerrors.Errorf("Chroot() error: %w", err)
+	}
+
+	// git.PlainOpen 相当だが、インデックス書き込みを直列化したストレージを使う
+	r, err := git.Open(newStorage(dot), fs)
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}
+
 	var b FileSystem
 	b.repo = r
-	fs := osfs.New(dir)
 	b.fs = fs
 	b.base = dir
 
@@ -100,8 +111,27 @@ func Clone(dir string, url string, branch string, info *UserInfo) (*FileSystem, 
 		opts.Auth = auth
 	}
 
-	r, err := git.PlainClone(dir, false, opts)
+	// git.PlainClone 相当だが、インデックス書き込みを直列化したストレージを使う。
+	// PlainClone と同様、このクローンでディレクトリを作った場合は失敗時に削除する
+	created := false
+	if _, serr := os.Stat(dir); os.IsNotExist(serr) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, xerrors.Errorf("MkdirAll() error: %w", err)
+		}
+		created = true
+	}
+
+	fs := osfs.New(dir)
+	dot, err := fs.Chroot(git.GitDirName)
 	if err != nil {
+		return nil, xerrors.Errorf("Chroot() error: %w", err)
+	}
+
+	r, err := git.Clone(newStorage(dot), fs, opts)
+	if err != nil {
+		if created {
+			os.RemoveAll(dir) //nolint: errcheck
+		}
 		return nil, xerrors.Errorf("error: %w", err)
 	}
 
@@ -124,7 +154,6 @@ func Clone(dir string, url string, branch string, info *UserInfo) (*FileSystem, 
 	var b FileSystem
 	b.repo = r
 	b.remote = url
-	fs := osfs.New(dir)
 	b.fs = fs
 	b.base = dir
 	return &b, nil
@@ -132,11 +161,11 @@ func Clone(dir string, url string, branch string, info *UserInfo) (*FileSystem, 
 
 func newFileSystem(fs billy.Filesystem, defaultBranch string) (*FileSystem, error) {
 
-	dot, err := fs.Chroot(".git")
+	dot, err := fs.Chroot(git.GitDirName)
 	if err != nil {
 		return nil, xerrors.Errorf("error: %w", err)
 	}
-	s := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
+	s := newStorage(dot)
 
 	opts := git.InitOptions{}
 	if defaultBranch != "" {
@@ -186,6 +215,9 @@ func (f *FileSystem) create(n string) (*File, bool, error) {
 
 	f.invalidateStatus()
 
+	f.gitMu.Lock()
+	defer f.gitMu.Unlock()
+
 	index := true
 	if f.isExist(n) {
 		index = false
@@ -197,7 +229,7 @@ func (f *FileSystem) create(n string) (*File, bool, error) {
 	}
 
 	if index {
-		err = f.add(n)
+		err = f.addLocked(n)
 		if err != nil {
 			return nil, index, xerrors.Errorf("Add() error: %w", err)
 		}
