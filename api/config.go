@@ -21,6 +21,14 @@ func (a *App) GetConfig() (*json.Config, error) {
 
 	defer log.PrintTrace(log.Func("GetConfig()"))
 
+	// バインダー未オープン時は null を返す（エラーにしない）。
+	// 起動時のエンジン先読み（main.jsx のウォームアップ）が LoadBinder の完了前に
+	// 呼ぶことがあり、エラーを返すと起動のたびにエラーログが記録されるため。
+	// フロントの呼び出し箇所はいずれも null 許容（GetPlugins と同じパターン）
+	if a.current == nil {
+		return nil, nil
+	}
+
 	conf, err := a.current.GetConfig()
 	if err != nil {
 		log.PrintStackTrace(err)

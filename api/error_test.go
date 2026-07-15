@@ -21,6 +21,7 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 		{"duplicateAlias", db.DuplicateAlias},
 		{"duplicateKey", db.DuplicateKey},
 		{"uncommitted", ErrUncommittedChanges},
+		{"binderNotOpened", binder.EmptyError},
 	}
 	for _, c := range cases {
 		got := userError(c.in)
@@ -54,6 +55,19 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 	}
 	if !errors.Is(got, unknown) {
 		t.Error("unknown error: cause not preserved")
+	}
+}
+
+// バインダー未オープン時の GetConfig はエラーではなく null（設定なし）を返す。
+// 起動時のエンジン先読みが LoadBinder 完了前に呼ぶことがあるため
+func TestGetConfigWithoutBinder(t *testing.T) {
+	a := &App{}
+	conf, err := a.GetConfig()
+	if err != nil {
+		t.Errorf("GetConfig() without binder should not return error, got: %v", err)
+	}
+	if conf != nil {
+		t.Errorf("GetConfig() without binder should return nil, got: %+v", conf)
 	}
 }
 
