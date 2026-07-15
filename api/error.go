@@ -48,6 +48,10 @@ func userError(err error) error {
 		return Wrap(err, settings.T("go.error.uncommitted"))
 	case errors.Is(err, fs.UpdatedFilesError):
 		return Info(err, settings.T("go.error.noUpdates"))
+	case errors.Is(err, binder.EmptyError):
+		// バインダー未オープンで API が呼ばれた場合。汎用メッセージ
+		//（go.error.unexpected）より状況が分かるメッセージにする
+		return Wrap(err, settings.T("go.error.binderNotOpened"))
 	default:
 		return Wrap(err, settings.T("go.error.unexpected"))
 	}
