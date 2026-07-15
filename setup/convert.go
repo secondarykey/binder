@@ -31,6 +31,10 @@ const (
 	CompatTooOld
 	// CompatNotBinder はディレクトリがバインダーではない。
 	CompatNotBinder
+	// CompatBinderTooOld はバインダーが古すぎて移行できない
+	//（convert.MinSupportedBinderVersion 未満。旧移行コードは削除済みのため、
+	// 旧バージョンのアプリで一度開いて移行する必要がある）。
+	CompatBinderTooOld
 )
 
 // CompatResult はバインダーとアプリのバージョン比較結果を返す。
@@ -39,6 +43,9 @@ type CompatResult struct {
 	AppVersion    string       `json:"appVersion"`
 	BinderVersion string       `json:"binderVersion"`
 	MinAppVersion string       `json:"minAppVersion,omitempty"`
+	// MinBinderVersion はこのアプリが移行できる最小のバインダーバージョン
+	//（CompatBinderTooOld の場合に設定される）。
+	MinBinderVersion string `json:"minBinderVersion,omitempty"`
 }
 
 // CheckCompat はバインダーとアプリのバージョン互換性を判定する。
@@ -77,6 +84,14 @@ func CheckCompat(dir string, ver *Version) (*CompatResult, error) {
 
 	switch {
 	case ov.Lt(ver):
+		// 最小サポートバージョン未満のバインダーは移行できない
+		//（旧移行コードは削除済み。NeedsMigration 判定より先にチェックする）
+		minVer, minErr := NewVersion(convert.MinSupportedBinderVersion)
+		if minErr == nil && ov.Lt(minVer) {
+			result.Status = CompatBinderTooOld
+			result.MinBinderVersion = convert.MinSupportedBinderVersion
+			break
+		}
 		if convert.NeedsMigration(ov) {
 			result.Status = CompatNeedConvert
 		} else {

@@ -7,8 +7,10 @@ import (
 	"binder/api/json"
 	"binder/fs"
 	"binder/log"
+	"binder/settings"
 	"binder/setup/convert"
 
+	"fmt"
 	"time"
 
 	gogitplumbing "github.com/go-git/go-git/v5/plumbing"
@@ -475,6 +477,14 @@ func (a *App) checkMergeSourceVersion(dir string, tmpFs *fs.FileSystem, sourceHa
 	// 移行が不要な場合はそのまま返す
 	if !convert.NeedsMigration(sourceVer) {
 		return sourceHash, false, nil
+	}
+
+	// 最小サポートバージョン未満のマージ元は移行できない（旧移行コードは削除済み）。
+	// このエラーは MergeResult.Message として err.Error() がそのまま表示されるため、
+	// 翻訳済みメッセージを直接返す。
+	minVer, minErr := NewVersion(convert.MinSupportedBinderVersion)
+	if minErr == nil && sourceVer.Lt(minVer) {
+		return sourceHash, false, fmt.Errorf("%s", settings.T("go.error.mergeSourceTooOld"))
 	}
 
 	// 移行が必要: インプレースで実行してハッシュを返す

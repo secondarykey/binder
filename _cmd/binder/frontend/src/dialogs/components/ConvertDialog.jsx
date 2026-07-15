@@ -119,4 +119,33 @@ export function TooOldDialog({ open, appVersion, minAppVersion, onClose }) {
   );
 }
 
+/**
+ * バインダーのデータ形式が古すぎて移行できない場合のダイアログ
+ * @param {{ open: boolean, binderVersion: string, minBinderVersion: string, onClose: () => void }} props
+ */
+export function BinderTooOldDialog({ open, binderVersion, minBinderVersion, onClose }) {
+  const {t} = useTranslation();
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <ErrorOutlineIcon color="error" />
+        {t("convert.binderTooOldTitle")}
+      </DialogTitle>
+      <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        {t("convert.binderTooOldMessage")}
+      </DialogContentText>
+      <Typography variant="body2" style={{ padding: "0 24px 8px", color: "var(--text-secondary)" }}>
+        {t("convert.binderTooOldVersionInfo", { binderVersion, minBinderVersion })}
+      </Typography>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t("common.ok")} icon={<CloseIcon />} onClick={onClose} />
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 export default ConvertDialog;

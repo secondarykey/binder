@@ -167,35 +167,6 @@ func createTableFile(file string, clm string) error {
 	return nil
 }
 
-func CreateSchemaFile(dir string, ver *Version) error {
-
-	//既存バージョンがないか確認
-
-	//あった場合エラー
-	err := createSchemaFile(dir, ver)
-	if err != nil {
-		return xerrors.Errorf("os.Create() error: %w", err)
-	}
-	return nil
-}
-
-func createSchemaFile(dir string, ver *Version) error {
-
-	f := filepath.Join(dir, SchemaFile)
-
-	fp, err := os.Create(f)
-	if err != nil {
-		return xerrors.Errorf("os.Create() error: %w", err)
-	}
-	defer fp.Close()
-
-	_, err = fp.Write([]byte(ver.String()))
-	if err != nil {
-		return xerrors.Errorf("os.Write() error: %w", err)
-	}
-	return nil
-}
-
 // スキーマファイルからバージョンを取得
 func loadSchemaFile(dir string) string {
 

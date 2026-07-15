@@ -27,7 +27,7 @@ import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/w
 
 import Event, { EventContext, useEventListener } from "../Event";
 import { SystemMessage } from '../Message';
-import ConvertDialog, { NeedUpdateDialog, TooOldDialog } from '../dialogs/components/ConvertDialog';
+import ConvertDialog, { NeedUpdateDialog, TooOldDialog, BinderTooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
 import { editorHistory } from '../components/editor/Component';
 import MermaidScript from '../components/editor/engines/Mermaid';
@@ -109,8 +109,9 @@ function App() {
   const [convertOpen, setConvertOpen] = useState(false);
   const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
   const [tooOldOpen, setTooOldOpen] = useState(false);
+  const [binderTooOldOpen, setBinderTooOldOpen] = useState(false);
   const [pendingDir, setPendingDir] = useState("");
-  const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "", minAppVersion: "" });
+  const [compatVersions, setCompatVersions] = useState({ appVersion: "", binderVersion: "", minAppVersion: "", minBinderVersion: "" });
   // 起動時の自動オープン判定が終わるまで true。履歴一覧の一瞬の表示（チラつき）を隠す
   const [booting, setBooting] = useState(true);
   const [devMode, setDevMode] = useState(false);
@@ -122,12 +123,13 @@ function App() {
   const CompatVersionOnly = 3;
   const CompatTooOld = 4;
   const CompatNotBinder = 5;
+  const CompatBinderTooOld = 6;
 
   // バインダーを開く共通処理（CheckCompat付き）
   // openLastData=true の場合、起動後に前回開いたデータに遷移する
   const openBinder = (dir, openLastData = false) => {
     CheckCompat(dir).then((result) => {
-      setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "" });
+      setCompatVersions({ appVersion: result.appVersion, binderVersion: result.binderVersion, minAppVersion: result.minAppVersion || "", minBinderVersion: result.minBinderVersion || "" });
       switch (result.status) {
         case CompatNotBinder:
           setBooting(false);
@@ -155,6 +157,10 @@ function App() {
         case CompatTooOld:
           setBooting(false);
           setTooOldOpen(true);
+          break;
+        case CompatBinderTooOld:
+          setBooting(false);
+          setBinderTooOldOpen(true);
           break;
         default:
           loadBinder(dir, openLastData);
@@ -718,6 +724,14 @@ function App() {
         appVersion={compatVersions.appVersion}
         minAppVersion={compatVersions.minAppVersion}
         onClose={() => setTooOldOpen(false)}
+      />
+
+      {/** バインダーの形式が古すぎて開けないダイアログ */}
+      <BinderTooOldDialog
+        open={binderTooOldOpen}
+        binderVersion={compatVersions.binderVersion}
+        minBinderVersion={compatVersions.minBinderVersion}
+        onClose={() => setBinderTooOldOpen(false)}
       />
 
       {/** 別コンポーネントメッセージ */}
