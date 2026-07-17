@@ -13,24 +13,14 @@ import (
 	"binder/db"
 	"binder/fs"
 	dbconvert "binder/setup/convert/db"
-	convert010 "binder/setup/convert/db/010"
 	convert0102 "binder/setup/convert/db/0102"
-	convert020 "binder/setup/convert/db/020"
-	convert021 "binder/setup/convert/db/021"
-	convert022 "binder/setup/convert/db/022"
-	convert033 "binder/setup/convert/db/033"
-	convert034 "binder/setup/convert/db/034"
-	convert045 "binder/setup/convert/db/045"
-	convert047 "binder/setup/convert/db/047"
-	convert048 "binder/setup/convert/db/048"
 	convert092 "binder/setup/convert/db/092"
 	convert097 "binder/setup/convert/db/097"
-	fsconvert "binder/setup/convert/fs"
 
 	"golang.org/x/xerrors"
 )
 
-var v010, v020, v021, v022, v033, v034, v045, v047, v048, v072, v092, v097, v0102 *Version
+var v072, v092, v097, v0102 *Version
 
 // migrationMu は convert.Run() の同時実行を直列化する。
 // go-git の Worktree/index 操作はスレッドセーフではないため、同一バインダーを
@@ -42,10 +32,6 @@ var migrationMu sync.Mutex
 
 // migrateState は移行処理中の内部状態を保持する
 type migrateState struct {
-	configMigrated       bool
-	configName           string
-	configDetail         string
-	docsMigrated         bool
 	gitignorCreated      bool
 	diagramStyleMigrated bool
 }
@@ -64,42 +50,6 @@ var migrations []migration
 func init() {
 	var err error
 
-	v010, err = NewVersion("0.1.0")
-	if err != nil {
-		panic("v010 version parse error: " + err.Error())
-	}
-	v020, err = NewVersion("0.2.0")
-	if err != nil {
-		panic("v020 version parse error: " + err.Error())
-	}
-	v021, err = NewVersion("0.2.1")
-	if err != nil {
-		panic("v021 version parse error: " + err.Error())
-	}
-	v022, err = NewVersion("0.2.2")
-	if err != nil {
-		panic("v022 version parse error: " + err.Error())
-	}
-	v033, err = NewVersion("0.3.3")
-	if err != nil {
-		panic("v033 version parse error: " + err.Error())
-	}
-	v034, err = NewVersion("0.3.4")
-	if err != nil {
-		panic("v034 version parse error: " + err.Error())
-	}
-	v045, err = NewVersion("0.4.5")
-	if err != nil {
-		panic("v045 version parse error: " + err.Error())
-	}
-	v047, err = NewVersion("0.4.7")
-	if err != nil {
-		panic("v047 version parse error: " + err.Error())
-	}
-	v048, err = NewVersion("0.4.8")
-	if err != nil {
-		panic("v048 version parse error: " + err.Error())
-	}
 	v072, err = NewVersion("0.7.2")
 	if err != nil {
 		panic("v072 version parse error: " + err.Error())
@@ -117,56 +67,6 @@ func init() {
 		panic("v0102 version parse error: " + err.Error())
 	}
 	migrations = []migration{
-		// 0.1.0: assets.csv に binary 列を追加
-		{v010, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert010.Convert010)
-		}},
-		// 0.2.0: structures.csv を新規作成し、各テーブルから parent_id/name/detail を分離
-		{v020, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert020.Convert020)
-		}},
-		// 0.2.1: alias を各テーブルから structures.csv に集約
-		{v021, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert021.Convert021)
-		}},
-		// 0.2.2: CSV変換（変更なし）後、assets ディレクトリをフラット化
-		{v022, func(dir, dbDir string, _ *migrateState) error {
-			if err := applyDB(dbDir, convert022.Convert022); err != nil {
-				return err
-			}
-			return fsconvert.MigrateV022(dir)
-		}},
-		// 0.3.3: templates.csv からsnippet型を削除し型名をリネーム
-		{v033, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert033.Convert033)
-		}},
-		// 0.3.4: templates.csv に seq 列を追加
-		{v034, func(_, dbDir string, _ *migrateState) error {
-			return applyDB(dbDir, convert034.Convert034)
-		}},
-		// 0.4.5: config.csv を削除し、name/detail を binder.json へ移行
-		// Apply で config.csv が削除される前に値を読み込む
-		{v045, func(_, dbDir string, state *migrateState) error {
-			state.configMigrated = true
-			state.configName, state.configDetail = readConfigCSV(dbDir)
-			return applyDB(dbDir, convert045.Convert045)
-		}},
-		// 0.4.7: publish_date/republish_date を structures に移動し、
-		// notes/diagrams から publish_date を削除。docs ディレクトリをクリア。
-		{v047, func(dir, dbDir string, state *migrateState) error {
-			if err := applyDB(dbDir, convert047.Convert047); err != nil {
-				return err
-			}
-			state.docsMigrated = true
-			return fsconvert.MigrateV047(dir)
-		}},
-		// 0.4.8: メタファイルのパスを assets/{noteId}-meta → assets/meta/{noteId} に変更
-		{v048, func(dir, dbDir string, _ *migrateState) error {
-			if err := applyDB(dbDir, convert048.Convert048); err != nil {
-				return err
-			}
-			return fsconvert.MigrateV048(dir)
-		}},
 		// 0.7.2: .gitignore を作成（user_data.enc を除外）
 		{v072, func(dir, _ string, state *migrateState) error {
 			ignorePath := filepath.Join(dir, fs.GitIgnoreFile)
@@ -225,6 +125,13 @@ type MigrateResult struct {
 // スキーマ変更・JSON設定移行・アプリの互換性に影響する変更があった際に手動で更新する。
 const MinRequiredAppVersion = "0.10.2"
 
+// MinSupportedBinderVersion はこのアプリが移行できる最小のバインダーバージョン。
+// これ未満のバインダーは旧移行コードが削除済みのため移行できず、
+// 旧バージョンのアプリで一度開いて移行する必要がある。
+// 移行エントリを将来削除する際は、HISTORY.md に手法を記録したうえで
+// この値を「削除後に残る最古の移行が前提とするバージョン」へ更新する。
+const MinSupportedBinderVersion = "0.4.8"
+
 // NeedsMigration は指定バージョンから現在のスキーマへの移行処理が必要かを返す。
 // ov が全ての migration エントリより新しい（または同じ）場合は false を返す。
 func NeedsMigration(ov *Version) bool {
@@ -262,6 +169,17 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 	ov, err := NewVersion(meta.Version)
 	if err != nil {
 		return nil, xerrors.Errorf("NewVersion() error: %w", err)
+	}
+
+	// 最小サポートバージョン未満のバインダーは移行できない（旧移行コードは削除済み）。
+	// 通常は CheckCompat（CompatBinderTooOld）で先に弾かれるが、
+	// 移行をサイレントにスキップしてデータを壊さないよう、ここでも防衛する。
+	minVer, err := NewVersion(MinSupportedBinderVersion)
+	if err != nil {
+		return nil, xerrors.Errorf("NewVersion(MinSupportedBinderVersion) error: %w", err)
+	}
+	if ov.Lt(minVer) {
+		return nil, xerrors.Errorf("binder version %s is older than minimum supported %s: open it with an older app version to migrate first", ov.String(), MinSupportedBinderVersion)
 	}
 
 	bfs, err := fs.Load(dir)
@@ -322,15 +240,10 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 	}
 
 	// binder.jsonを更新（スキーマ変換後、または初回作成）
-	// 0.3.2マイグレーション: schemaフィールドを空にしてappバージョンのみで管理する。
-	// 0.4.5マイグレーション: config.csvのname/detailをbinder.jsonに移行する。
+	// Schema は 0.3.2 未満との後方互換用フィールド。空にして version のみで管理する。
 	meta.Schema = ""
 	meta.Version = ver.String()
 	meta.MinAppVersion = MinRequiredAppVersion
-	if state.configMigrated && meta.Name == "" {
-		meta.Name = state.configName
-		meta.Detail = state.configDetail
-	}
 	if err = fs.SaveMeta(dir, meta); err != nil {
 		return nil, xerrors.Errorf("fs.SaveMeta() error: %w", err)
 	}
@@ -350,47 +263,6 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 		target := filepath.Join(dir, d)
 		if err = os.MkdirAll(target, 0755); err != nil {
 			return nil, xerrors.Errorf("MkdirAll(%s) error: %w", d, err)
-		}
-	}
-
-	// 0.4.5マイグレーション: config.csv削除とbinder.json更新をgitにコミット
-	// config.csvの削除を明示的にステージし、binder.jsonの更新と合わせてコミットする。
-	// 変更がない場合（新規インストール等）はUpdatedFilesErrorを無視する。
-	if state.configMigrated {
-		// config.csv が追跡済みの場合は削除をステージ（未追跡の場合は無視）
-		_ = bfs.RemoveFile(fs.DBDir + "/" + db.ConfigTableName + ".csv")
-		// binder.json をステージ
-		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
-			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
-		}
-		commitMsg := fmt.Sprintf("Migrate Config to binder.json (%s -> %s)", ov.String(), ver.String())
-		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
-		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-			return nil, xerrors.Errorf("AutoCommit(migrate) error: %w", commitErr)
-		}
-	}
-
-	// 0.4.7マイグレーション: CSVスキーマ変更・docs削除・binder.json更新をgitにコミット
-	// CSV変更（structures/notes/diagrams）をステージし、docs/配下の削除済みファイルも
-	// ステージしてbinder.jsonと合わせてコミットする。
-	// docs/にコンテンツがない場合（未公開状態等）はUpdatedFilesErrorを無視する。
-	if state.docsMigrated {
-		// 変更されたCSVファイルをステージ
-		if err = bfs.AddDBFiles(); err != nil {
-			return nil, xerrors.Errorf("AddDBFiles() error: %w", err)
-		}
-		// docs/ 配下の削除済みファイルをステージ（追跡済みのもののみ）
-		if err = bfs.StagePublishDirRemovals(); err != nil {
-			return nil, xerrors.Errorf("StagePublishDirRemovals() error: %w", err)
-		}
-		// binder.json をステージ
-		if err = bfs.AddFile(fs.BinderMetaFile); err != nil {
-			return nil, xerrors.Errorf("AddFile(binder.json) error: %w", err)
-		}
-		commitMsg := fmt.Sprintf("Migrate schema 0.4.7: move publish dates to structures, clear docs/ (%s -> %s)", ov.String(), ver.String())
-		commitErr := bfs.AutoCommit(fs.M(commitMsg, "Schema"), fs.BinderMetaFile)
-		if commitErr != nil && !errors.Is(commitErr, fs.UpdatedFilesError) {
-			return nil, xerrors.Errorf("AutoCommit(migrate 047) error: %w", commitErr)
 		}
 	}
 

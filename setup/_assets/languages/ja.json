@@ -527,6 +527,9 @@
         "tooOldTitle" : "アプリのバージョンが古すぎます",
         "tooOldMessage" : "このBinderを開くには、より新しいアプリが必要です。アプリを更新してください。",
         "tooOldVersionInfo" : "アプリバージョン: {{appVersion}} / 必要な最低バージョン: {{minAppVersion}}",
+        "binderTooOldTitle" : "Binderの形式が古すぎます",
+        "binderTooOldMessage" : "このBinderのデータ形式が古すぎるため、このバージョンのアプリでは移行できません。以前のバージョンのアプリで一度開いて移行してから、再度開いてください。",
+        "binderTooOldVersionInfo" : "Binderバージョン: {{binderVersion}} / 移行可能な最低バージョン: {{minBinderVersion}}",
         "notBinder" : "選択されたディレクトリはBinderではありません"
     },
     "syslog" : {
@@ -664,7 +667,8 @@
             "duplicateName" : "その名前は既に使用されています",
             "notBinder" : "このフォルダはバインダーではありません",
             "uncommitted" : "未記録の変更があります。先に記録してください",
-            "noUpdates" : "記録する変更がありません"
+            "noUpdates" : "記録する変更がありません",
+            "mergeSourceTooOld" : "マージ元のデータ形式が古すぎるため移行できません。以前のバージョンのアプリで開いて移行してください"
         }
     },
     "lite" : {

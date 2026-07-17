@@ -527,6 +527,9 @@
         "tooOldTitle" : "App Version Too Old",
         "tooOldMessage" : "A newer version of the app is required to open this Binder. Please update the app.",
         "tooOldVersionInfo" : "App version: {{appVersion}} / Required version: {{minAppVersion}}",
+        "binderTooOldTitle" : "Binder Format Too Old",
+        "binderTooOldMessage" : "This Binder uses a data format that is too old to migrate with this version of the app. Please open it once with an older version of the app to migrate it, then try again.",
+        "binderTooOldVersionInfo" : "Binder version: {{binderVersion}} / Minimum supported version: {{minBinderVersion}}",
         "notBinder" : "The selected directory is not a Binder"
     },
     "syslog" : {
@@ -664,7 +667,8 @@
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",
             "uncommitted" : "There are unrecorded changes. Please record them first",
-            "noUpdates" : "No changes to record"
+            "noUpdates" : "No changes to record",
+            "mergeSourceTooOld" : "The merge source uses a data format that is too old to migrate. Please open it with an older version of the app first"
         }
     },
     "lite" : {

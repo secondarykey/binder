@@ -16,6 +16,7 @@ vi.mock('../dialogs/components/ConvertDialog', () => ({
   default: () => null,
   NeedUpdateDialog: () => null,
   TooOldDialog: () => null,
+  BinderTooOldDialog: () => null,
 }));
 vi.mock('../../bindings/binder/api/app', () => ({
   GetPath: vi.fn(() => Promise.resolve({})),

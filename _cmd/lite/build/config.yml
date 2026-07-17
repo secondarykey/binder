@@ -4,11 +4,15 @@ info:
   companyName: "secondarykey"
   productName: "Binder Lite"
   productIdentifier: "com.github.secondarykey.binder-lite"
-  description: "A lightweight Markdown editor with preview"
+  # NOTE: Windowsのタスクバー/タスクマネージャの表示名（FileDescription）になるため、
+  # 説明文ではなく「表示名 + 短い説明」を入れる（Linuxではメニューのツールチップ兼deb/rpm説明文）。
+  description: "Binder Lite - Markdown Editor"
   copyright: "(c)2026, secondarykey"
+  # NOTE: wails3 update build-assets overwrites nfpm.yaml homepage with "https://wails.io".
+  # If you change this value, also update build/linux/nfpm/nfpm.yaml manually.
   homepage: "https://github.com/secondarykey/binder"
   comments: "Binder Lite - Lightweight Markdown Editor"
-  version: "0.12.8"
+  version: "0.13.0"
 
 dev_mode:
   root_path: .

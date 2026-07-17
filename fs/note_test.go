@@ -72,13 +72,18 @@ func TestDeleteNote(t *testing.T) {
 	}
 }
 
+// 実体ファイルが欠損していても削除は継続する（欠損状態で削除不能になる詰みを防ぐ）。
 func TestDeleteNote_NotExist(t *testing.T) {
 	f := createFileSystem(t, "note_delete_ne")
 
 	n := newNote("ghost", "ghost-alias")
-	_, err := f.DeleteNote(n)
-	if err == nil {
-		t.Errorf("DeleteNote() expected error for nonexistent note, got nil")
+	files, err := f.DeleteNote(n)
+	if err != nil {
+		t.Errorf("DeleteNote() should continue for missing file, got error: %v", err)
+	}
+	// git 側の削除処理（index からの除去）のため欠損ファイルもリストに含める
+	if len(files) != 1 {
+		t.Errorf("files = %v, want 1 entry", files)
 	}
 }
 

@@ -72,13 +72,18 @@ func TestDeleteDiagram(t *testing.T) {
 	}
 }
 
+// 実体ファイルが欠損していても削除は継続する（欠損状態で削除不能になる詰みを防ぐ）。
 func TestDeleteDiagram_NotExist(t *testing.T) {
 	f := createFileSystem(t, "diagram_delete_ne")
 
 	d := newDiagram("ghost-diag", "ghost-alias")
-	_, err := f.DeleteDiagram(d)
-	if err == nil {
-		t.Errorf("DeleteDiagram() expected error for nonexistent diagram, got nil")
+	files, err := f.DeleteDiagram(d)
+	if err != nil {
+		t.Errorf("DeleteDiagram() should continue for missing file, got error: %v", err)
+	}
+	// git 側の削除処理（index からの除去）のため欠損ファイルもリストに含める
+	if len(files) != 1 {
+		t.Errorf("files = %v, want 1 entry", files)
 	}
 }
 

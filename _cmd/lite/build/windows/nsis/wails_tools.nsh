@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "Binder Lite"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "0.12.8"
+    !define INFO_PRODUCTVERSION "0.13.0"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "(c)2026, secondarykey"

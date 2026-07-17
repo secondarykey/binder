@@ -178,6 +178,15 @@ func Load(dir string) (*Binder, error) {
 
 	b.op = createUserOp(bfs.UserName())
 
+	// 整合性チェック＆修復（doctor）。クラッシュ・電源断等で生じた
+	// structures ↔ 実体テーブル ↔ 実体ファイルのズレを修復する。
+	// 修復に失敗してもバインダーのロード自体は継続する
+	if rep, err := b.RunDoctor(); err != nil {
+		log.Warn("RunDoctor() error:\n%+v", err)
+	} else if rep.Repaired() {
+		log.Notice("Doctor repaired: %s", rep.Summary())
+	}
+
 	return &b, nil
 }
 

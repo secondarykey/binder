@@ -1,12 +1,12 @@
 {
 	"fixed": {
-		"file_version": "0.12.8"
+		"file_version": "0.13.0"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.12.8",
+			"ProductVersion": "0.13.0",
 			"CompanyName": "secondarykey",
-			"FileDescription": "A desktop Markdown editor for technical documents",
+			"FileDescription": "Binder - Markdown Editor",
 			"LegalCopyright": "(c)2026, secondarykey",
 			"ProductName": "Binder",
 			"Comments": "Binder - Markdown Editor"

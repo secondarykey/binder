@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Name=Binder Lite
-Comment=A lightweight Markdown editor with preview
+Comment=Binder Lite - Markdown Editor
 # The Exec line includes %u to pass the URL to the application
 Exec=/usr/local/bin/binder-lite %u
 Terminal=false

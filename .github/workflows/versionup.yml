@@ -71,11 +71,15 @@ jobs:
         run: |
           cd _cmd/binder
           wails3 update build-assets -name "Binder" -binaryname "Binder" -config build/config.yml -dir build
+          # nfpm.yaml の homepage はテンプレートにハードコードされており config.yml から設定できないため後処理で修正
+          sed -i 's|homepage: "https://wails.io"|homepage: "https://github.com/secondarykey/binder"|' build/linux/nfpm/nfpm.yaml
 
       - name: Update Build Assets (Binder Lite)
         run: |
           cd _cmd/lite
           wails3 update build-assets -name "Binder Lite" -binaryname "binder-lite" -config build/config.yml -dir build
+          # nfpm.yaml の homepage はテンプレートにハードコードされており config.yml から設定できないため後処理で修正
+          sed -i 's|homepage: "https://wails.io"|homepage: "https://github.com/secondarykey/binder"|' build/linux/nfpm/nfpm.yaml
 
       - name: Commit and Pull Request
         run: |
