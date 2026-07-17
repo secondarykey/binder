@@ -4,7 +4,9 @@ info:
   companyName: "secondarykey"
   productName: "Binder"
   productIdentifier: "com.github.secondarykey.binder"
-  description: "A desktop Markdown editor for technical documents"
+  # NOTE: Windowsのタスクバー/タスクマネージャの表示名（FileDescription）になるため、
+  # 説明文ではなく「表示名 + 短い説明」を入れる（Linuxではメニューのツールチップ兼deb/rpm説明文）。
+  description: "Binder - Markdown Editor"
   copyright: "(c)2026, secondarykey"
   # NOTE: wails3 update build-assets overwrites nfpm.yaml homepage with "https://wails.io".
   # If you change this value, also update build/linux/nfpm/nfpm.yaml manually.
