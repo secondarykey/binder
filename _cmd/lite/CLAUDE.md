@@ -73,7 +73,7 @@ setup/, settings/（Binder と共有）
   filename,      // 表示名
   work,          // ワーク名（Untitled / Untitled-2 ...）。ファイルタブは null
   content,       // 現在のエディタ内容
-  savedContent,  // 最後に保存した内容（ワークタブはワークへ書き出した内容）
+  savedContent,  // 最後にファイルへ保存した内容（ワークへの書き出しでは更新しない）
   mermaidMode,   // Mermaid プレビューモード
 }
 ```
@@ -83,17 +83,21 @@ setup/, settings/（Binder と共有）
 `+` ボタンや Ctrl+N で作る Untitled タブは、`~/.binder/lite/works/<名前>.md` に
 実ファイルとして保存される。アプリを閉じても内容は残る。
 
+**ワークはあくまで裏側のバックアップ**であり「保存」ではない。ワークへ書き出しても
+`savedContent` は更新せず、タブの未保存マーク（`*Untitled`）や終了確認の挙動は
+ワーク導入前と変わらない。復元したワークも `savedContent: ''` で未保存扱いのまま開く。
+
 - **名前の割り当て**: `CreateWork()`（Go側）が `Untitled`, `Untitled-2`, ... のうち
   未使用の名前を選び、空ファイルを `O_EXCL` で作って予約する。既存のワークを上書きしない
-- **自動保存**: 編集内容は 400ms のデバウンスで `SaveWork()` に書き出す。
+- **書き出し間隔**: `WORK_SAVE_INTERVAL`（60秒）に1回。タイマー稼働中は保留内容を
+  差し替えるだけで再スケジュールしないため、連続入力中でも最大1分に1回に収まる。
   終了時（TitleBar の閉じるボタン）は `flushWorkSaves()` で保留分を書き出してから終了する
-- **消えるタイミング**: ファイルとして保存した時（`applySavedPath`）と、
-  ワークタブを閉じた時（確認あり）。それ以外では残る
+- **消えるタイミング**: ファイルとして保存した時（`applySavedPath`）と、タブを閉じた時。
+  それ以外では残る
 - **起動時の挙動**:
   - 引数なし（単独起動）→ 残っているワークを全て復元する。無ければ新規ワークを1つ作る
   - ファイル指定で起動 → ワークは開かない。`+` を押すと未使用の名前（例: `Untitled-2`）が使われ、
     既存のワークは残ったままになる
-- ワークタブは内容がワークとして保持されるため、終了確認（未保存警告）の対象外
 
 Go 側の実体は `settings/lite_work.go`（`ListLiteWorks` / `CreateLiteWork` /
 `SaveLiteWork` / `DeleteLiteWork`）。名前は `^Untitled(-[1-9][0-9]*)?$` で検証し、

@@ -22,6 +22,9 @@ import { useTranslation } from 'react-i18next';
 
 const MERMAID_EXTENSIONS = ['.mmd', '.mermaid'];
 
+// ワーク（Untitled タブのバックアップ）を書き出す間隔
+const WORK_SAVE_INTERVAL = 60 * 1000;
+
 function isMermaidFile(filename) {
   if (!filename) return false;
   const lower = filename.toLowerCase();
@@ -94,7 +97,8 @@ function App() {
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
 
-  // --- ワーク（保存前の Untitled タブ）の自動保存 ---
+  // --- ワーク（保存前の Untitled タブ）のバックアップ ---
+  // あくまで裏側のバックアップなので、書き出してもタブの未保存表示は変えない。
   // 保留中の { ワーク名: 内容 } と、まとめて書き出すためのタイマー
   const pendingWorks = useRef(new Map());
   const workTimer = useRef(null);
@@ -107,23 +111,21 @@ function App() {
     const entries = [...pendingWorks.current.entries()];
     pendingWorks.current.clear();
     await Promise.all(entries.map(([name, content]) =>
-      SaveWork(name, content).then(() => {
-        setTabs(prev => prev.map(tab =>
-          tab.work === name ? { ...tab, savedContent: content } : tab
-        ));
-      }).catch((err) => {
+      SaveWork(name, content).catch((err) => {
         console.error('SaveWork error:', err);
       })
     ));
   }, []);
 
+  // 打鍵ごとではなく WORK_SAVE_INTERVAL に1回だけ書き出す。
+  // タイマーが動いている間は内容の差し替えのみ行い、再スケジュールしない
   const scheduleWorkSave = useCallback((name, content) => {
     pendingWorks.current.set(name, content);
-    if (workTimer.current) clearTimeout(workTimer.current);
+    if (workTimer.current) return;
     workTimer.current = setTimeout(() => {
       workTimer.current = null;
       flushWorkSaves();
-    }, 400);
+    }, WORK_SAVE_INTERVAL);
   }, [flushWorkSaves]);
 
   // エディタのスクロールバー検出（展開ボタンの位置調整用）
@@ -300,21 +302,21 @@ function App() {
     const tab = tabs.find(t => t.id === tabId);
     if (!tab) return;
 
-    // ワークタブを閉じるとワーク自体が消えるため、内容があれば確認する
+    // 未保存の変更がある場合は確認（新規タブで内容がある場合も含む）
+    const isDirty = tab.path ? tab.content !== tab.savedContent : tab.content !== '';
+    if (isDirty) {
+      const ok = await showConfirm(t('lite.unsavedConfirm'));
+      if (!ok) return;
+    }
+
+    // タブを閉じたらバックアップも破棄する
     if (tab.work) {
-      if (tab.content !== '') {
-        const ok = await showConfirm(t('lite.discardWorkConfirm'));
-        if (!ok) return;
-      }
       pendingWorks.current.delete(tab.work);
       try {
         await DeleteWork(tab.work);
       } catch (err) {
         console.error('DeleteWork error:', err);
       }
-    } else if (tab.content !== tab.savedContent) {
-      const ok = await showConfirm(t('lite.unsavedConfirm'));
-      if (!ok) return;
     }
 
     removeTab(tabId);
@@ -361,7 +363,8 @@ function App() {
       filename: w.name,
       work: w.name,
       content: w.content ?? '',
-      savedContent: w.content ?? '',
+      // ワークは保存ではないので未保存（*付き）のまま復元する
+      savedContent: '',
       mermaidMode: w.content ? await Mermaid.detectType(w.content) : false,
     })));
     if (restored.length === 0) return false;
@@ -460,26 +463,26 @@ function App() {
 
   // --- 終了処理 ---
 
-  // ワークタブは内容がワークとして残るため未保存扱いしない
-  const hasDirtyFiles = tabs.some(t => !t.work && t.content !== t.savedContent);
+  // ワークはバックアップなので未保存判定には影響させない（元のまま）
+  const hasDirty = tabs.some(t => t.path ? t.content !== t.savedContent : t.content !== '');
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (hasDirtyFiles) {
+      if (hasDirty) {
         e.preventDefault();
         e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasDirtyFiles]);
+  }, [hasDirty]);
 
   return (
     <Box data-file-drop-target="" sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-app)' }}>
 
       <TitleBar
         onClose={async () => {
-          if (hasDirtyFiles) {
+          if (hasDirty) {
             const ok = await showConfirm(t('lite.unsavedConfirm'));
             if (!ok) return;
           }
