@@ -7,7 +7,7 @@ import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import ContrastIcon from '@mui/icons-material/Contrast';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetConfig } from '../../bindings/binder/api/app';
+import { GetConfig, GetPreviewScrollbar } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
 import HTMLFrame from '../components/editor/HTMLFrame';
@@ -35,6 +35,17 @@ function PreviewApp() {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [colorSchemeConfig, setColorSchemeConfig] = useState(null);
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
+  // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
+  const [previewScrollbar, setPreviewScrollbar] = useState(true);
+
+  useEffect(() => {
+    GetPreviewScrollbar().then((v) => setPreviewScrollbar(!!v)).catch(() => {});
+    const cleanup = Events.On('binder:preview:scrollbarChanged', (event) => {
+      const data = event.data?.[0] ?? event.data;
+      setPreviewScrollbar(!!data);
+    });
+    return () => { cleanup(); };
+  }, []);
 
   useEffect(() => {
     // プレビュー内容の更新イベント
@@ -132,7 +143,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{

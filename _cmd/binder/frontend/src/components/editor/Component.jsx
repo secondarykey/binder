@@ -10,7 +10,7 @@ import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bi
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
-import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -504,6 +504,9 @@ function Editor(props) {
   const cursorLineRef = useRef(1);
   const composingRef = useRef(false);
   const [cursorLine, setCursorLine] = useState(1);
+
+  // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
+  const [previewScrollbar, setPreviewScrollbar] = useState(true);
 
   // オートコンプリートの挿入処理
   const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
@@ -1142,6 +1145,16 @@ function Editor(props) {
   // スニペットを一度だけロード
   useEffect(() => {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
+  }, []);
+
+  // プレビューのスクロールバー設定（デフォルトON）を取得し、設定画面からの変更を同期
+  useEffect(() => {
+    GetPreviewScrollbar().then((v) => setPreviewScrollbar(!!v)).catch(() => { });
+    const cleanup = Events.On('binder:preview:scrollbarChanged', (event) => {
+      const data = event.data?.[0] ?? event.data;
+      setPreviewScrollbar(!!data);
+    });
+    return () => { cleanup(); };
   }, []);
 
   // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定（前回選択があれば復元）
@@ -2809,7 +2822,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2818,7 +2831,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
                 }
               </div>
 

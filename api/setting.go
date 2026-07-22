@@ -124,6 +124,15 @@ func (a *App) SetTreeExpandTargets(v bool) error {
 	return settings.SaveTreeExpandTargets(v)
 }
 
+// GetPreviewScrollbar はプレビューのスクロールバーをエディタと同じ見た目にするかを返す。
+func (a *App) GetPreviewScrollbar() bool {
+	return settings.GetPreviewScrollbar()
+}
+
+func (a *App) SetPreviewScrollbar(v bool) error {
+	return settings.SavePreviewScrollbar(v)
+}
+
 func (a *App) SaveLastData(dataType, id string) error {
 	return settings.SaveLastData(dataType, id)
 }

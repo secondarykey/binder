@@ -3,7 +3,7 @@ import { useEffect, useState, useContext } from "react";
 import { Box, Button, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets, GetAutoSave, SaveAutoSave } from "../../bindings/binder/api/app";
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets, GetAutoSave, SaveAutoSave, GetPreviewScrollbar, SetPreviewScrollbar } from "../../bindings/binder/api/app";
 import { GetThemeList, GetLanguageList } from "../../bindings/binder/api/shared/shared";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog } from "../../bindings/main/window";
@@ -46,6 +46,7 @@ function Setting({ isModal, ...props }) {
   const [langList, setLangList] = useState([]);
   const [treeDisplayMode, setTreeDisplayMode] = useState("commit");
   const [treeExpandTargets, setTreeExpandTargets] = useState(false);
+  const [previewScrollbar, setPreviewScrollbar] = useState(true);
   const [allowedCDNs, setAllowedCDNs] = useState([]);
   const [newDomain, setNewDomain] = useState("");
 
@@ -91,6 +92,9 @@ function Setting({ isModal, ...props }) {
     GetTreeExpandTargets().then((v) => {
       setTreeExpandTargets(!!v);
     }).catch(() => {});
+    GetPreviewScrollbar().then((v) => {
+      setPreviewScrollbar(!!v);
+    }).catch(() => {});
     GetAutoSave().then((a) => {
       if (a) {
         setAutoSaveEnabled(!!a.enabled);
@@ -128,6 +132,17 @@ function Setting({ isModal, ...props }) {
     const v = e.target.checked;
     setTreeExpandTargets(v);
     SetTreeExpandTargets(v).catch((err) => {
+      showError(err);
+    });
+  };
+
+  const handlePreviewScrollbarChange = (e) => {
+    const v = e.target.checked;
+    setPreviewScrollbar(v);
+    SetPreviewScrollbar(v).then(() => {
+      // 開いているエディタ／プレビューウィンドウへ即時反映を通知
+      Events.Emit('binder:preview:scrollbarChanged', v);
+    }).catch((err) => {
       showError(err);
     });
   };
@@ -376,6 +391,14 @@ function Setting({ isModal, ...props }) {
                       }}
                     />
                   </Box>
+                  {/** プレビュー画面のスクロールバー */}
+                  <FormControlLabel
+                    control={
+                      <Switch checked={previewScrollbar} onChange={handlePreviewScrollbarChange} size="small" />
+                    }
+                    label={t("setting.previewScrollbar")}
+                    sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' } }}
+                  />
                 </Paper>
 
                 {/** 自動保存 */}

@@ -19,6 +19,8 @@ vi.mock('../../bindings/binder/api/app', () => ({
   SetTreeExpandTargets: vi.fn(() => Promise.resolve()),
   GetAutoSave: vi.fn(() => Promise.resolve({ enabled: true, intervalMinutes: 30, onClose: true })),
   SaveAutoSave: vi.fn(() => Promise.resolve()),
+  GetPreviewScrollbar: vi.fn(() => Promise.resolve(true)),
+  SetPreviewScrollbar: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../../bindings/binder/api/shared/shared', () => ({
   GetThemeList: vi.fn(() => Promise.resolve([])),
