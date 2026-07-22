@@ -84,6 +84,32 @@ func (a *App) SaveFile(path, content string) error {
 	return nil
 }
 
+// --- ワーク（保存前の Untitled タブ） ---
+
+// ListWorks は保存されているワークを連番順に返す。
+func (a *App) ListWorks() ([]*settings.LiteWork, error) {
+	defer log.PrintTrace(log.Func("ListWorks()"))
+	return settings.ListLiteWorks()
+}
+
+// CreateWork は未使用の名前でワークを作成し、その名前（Untitled / Untitled-2 ...）を返す。
+func (a *App) CreateWork() (string, error) {
+	defer log.PrintTrace(log.Func("CreateWork()"))
+	return settings.CreateLiteWork()
+}
+
+// SaveWork はワークの内容を保存する。
+func (a *App) SaveWork(name, content string) error {
+	defer log.PrintTrace(log.Func("SaveWork()", name))
+	return settings.SaveLiteWork(name, content)
+}
+
+// DeleteWork はワークを削除する。ファイルとして保存した場合や破棄した場合に呼ぶ。
+func (a *App) DeleteWork(name string) error {
+	defer log.PrintTrace(log.Func("DeleteWork()", name))
+	return settings.DeleteLiteWork(name)
+}
+
 // --- lite 固有設定（setting-lite.json） ---
 
 // GetTheme は現在のテーマIDを返す。

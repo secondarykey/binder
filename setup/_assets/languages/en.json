@@ -675,6 +675,7 @@
     "lite" : {
         "openFileHint" : "Press Ctrl+O to open a file, or Ctrl+N to create a new file",
         "unsavedConfirm" : "There are unsaved changes. Discard them?",
+        "discardWorkConfirm" : "Closing this tab deletes the work. Discard it?",
         "confirmTitle" : "Confirm",
         "discard" : "Discard",
         "showPreview" : "Show Preview",
