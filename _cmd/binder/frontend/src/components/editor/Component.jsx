@@ -120,12 +120,28 @@ function flattenDiagrams(nodes) {
 function flattenStructures(nodes) {
   const result = [];
   for (const node of nodes) {
-    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId });
+    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId, updated: node.updated });
     if (node.children && node.children.length > 0) {
       result.push(...flattenStructures(node.children));
     }
   }
   return result;
+}
+
+/**
+ * ID一覧の並び順を作る。
+ * 基本は更新日付の降順。currentId の子は上位グループとして先頭にまとめる。
+ * 自分自身（currentId）は除外する。
+ */
+function sortIdCandidates(list, currentId) {
+  const byUpdated = (a, b) => {
+    const ta = a.updated ? Date.parse(a.updated) : 0;
+    const tb = b.updated ? Date.parse(b.updated) : 0;
+    return (tb || 0) - (ta || 0);
+  };
+  const children = list.filter((s) => s.id !== currentId && s.parentId === currentId).sort(byUpdated);
+  const others = list.filter((s) => s.id !== currentId && s.parentId !== currentId).sort(byUpdated);
+  return [...children, ...others];
 }
 
 /**
@@ -635,13 +651,14 @@ function Editor(props) {
     return GetBinderTree().then((tree) => {
       const all = flattenStructures(tree.data || []);
       const filtered = all.filter(s => types.includes(s.type));
-      return filtered.map(s => ({
+      // ID挿入メニューと同じ並び（子を優先し、更新日付の降順）
+      return sortIdCandidates(filtered, id).map(s => ({
         label: s.name || s.id,
         detail: s.type,
         insertText: s.id,
       }));
     }).catch(() => []);
-  }, []);
+  }, [id]);
 
   const getTemplateCandidates = useCallback((filterText) => {
     const trimmed = (filterText || '').trim();
@@ -761,9 +778,7 @@ function Editor(props) {
         const pos = getCaretPosition(textarea);
         GetBinderTree().then((tree) => {
           const all = flattenStructures(tree.data || []);
-          const children = all.filter((s) => s.parentId === id);
-          const others = all.filter((s) => s.parentId !== id && s.id !== id);
-          setIdList([...children, ...others]);
+          setIdList(sortIdCandidates(all, id));
           if (pos) {
             setIdListPos(pos);
             setIdListAnchor(null);
@@ -2413,9 +2428,7 @@ function Editor(props) {
                         const anchor = e.currentTarget;
                         GetBinderTree().then((tree) => {
                           const all = flattenStructures(tree.data || []);
-                          const children = all.filter((s) => s.parentId === id);
-                          const others = all.filter((s) => s.parentId !== id && s.id !== id);
-                          setIdList([...children, ...others]);
+                          setIdList(sortIdCandidates(all, id));
                           setIdListAnchor(anchor);
                           setIdListPos(null);
                         }).catch((err) => evt.showErrorMessage(err));
