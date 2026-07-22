@@ -42,6 +42,8 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.25'
+          # クローズ済みPRトリガーではキャッシュスコープが読み取り専用になり保存が必ず失敗するため無効化
+          cache: false
 
       - name: Load variables
         run: cat .github/variables >> $GITHUB_ENV

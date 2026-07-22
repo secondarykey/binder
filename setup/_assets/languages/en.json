@@ -207,6 +207,7 @@
         "treeDisplayMode_commit" : "Unrecorded",
         "treeDisplayMode_publish" : "Unpublished",
         "treeExpandTargets" : "Expand targets on initial display",
+        "previewScrollbar" : "Style the preview scrollbar like the editor",
         "allowedCDNs" : "Allowed CDN Domains",
         "allowedCDNsHint" : "Domains allowed for loading external scripts (marked.js / mermaid.js).",
         "addDomain" : "Add Domain",
@@ -816,6 +817,8 @@
             "wardley"            : "Wardley Map",
             "ishikawa"           : "Fishbone Diagram (Ishikawa)",
             "venn"               : "Venn Diagram",
+            "eventmodeling"      : "Event Modeling Diagram",
+            "cynefin"            : "Cynefin Framework Diagram",
             "dir" : {
                 "TD" : "Top → Down",
                 "TB" : "Top → Bottom",

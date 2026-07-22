@@ -10,6 +10,8 @@ export const mermaidKnownKeywords = [
   'C4Context', 'C4Container', 'C4Component', 'C4Dynamic', 'C4Deployment',
   'zenuml', 'radar-beta', 'treemap-beta', 'treeView-beta', 'wardley-beta',
   'ishikawa', 'venn',
+  // mermaid 11.15/11.16 で追加
+  'eventmodeling', 'cynefin-beta',
 ];
 
 const mermaidI18nMap = {
@@ -45,6 +47,8 @@ const mermaidI18nMap = {
   'wardley-beta':       'autocomplete.mermaid.wardley',
   'ishikawa':           'autocomplete.mermaid.ishikawa',
   'venn':               'autocomplete.mermaid.venn',
+  'eventmodeling':      'autocomplete.mermaid.eventmodeling',
+  'cynefin-beta':       'autocomplete.mermaid.cynefin',
 };
 
 /**

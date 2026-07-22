@@ -1,6 +1,9 @@
 package json
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Tree struct {
 	Data []*Leaf `json:"data"`
@@ -16,7 +19,9 @@ type Leaf struct {
 	PublishStatus int     `json:"publishStatus"` // 0:最新 1:未公開(新規) 2:更新あり
 	Private       bool    `json:"private"`
 	Binary        bool    `json:"binary"` // type=="asset" の場合のみ意味を持つ（画像アセットかどうか）
-	Children      []*Leaf `json:"children"`
+	// Updated は Structure の更新日付。ID一覧の並び替えに使用する
+	Updated  time.Time `json:"updated"`
+	Children []*Leaf   `json:"children"`
 }
 
 func NewLeaf(id, name string) *Leaf {

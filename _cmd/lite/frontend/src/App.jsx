@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, GetFont } from '../bindings/binder/api/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, GetFont, ListWorks, CreateWork, SaveWork, DeleteWork } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, SaveFileDialog, Terminate, OpenInNewWindow, CopyToClipboard, PasteFilePath } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
@@ -21,6 +21,9 @@ import './language';
 import { useTranslation } from 'react-i18next';
 
 const MERMAID_EXTENSIONS = ['.mmd', '.mermaid'];
+
+// ワーク（Untitled タブのバックアップ）を書き出す間隔
+const WORK_SAVE_INTERVAL = 60 * 1000;
 
 function isMermaidFile(filename) {
   if (!filename) return false;
@@ -90,6 +93,41 @@ function App() {
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) || null;
 
+  // コールバック内から最新のタブ一覧を参照するためのミラー
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
+
+  // --- ワーク（保存前の Untitled タブ）のバックアップ ---
+  // あくまで裏側のバックアップなので、書き出してもタブの未保存表示は変えない。
+  // 保留中の { ワーク名: 内容 } と、まとめて書き出すためのタイマー
+  const pendingWorks = useRef(new Map());
+  const workTimer = useRef(null);
+
+  const flushWorkSaves = useCallback(async () => {
+    if (workTimer.current) {
+      clearTimeout(workTimer.current);
+      workTimer.current = null;
+    }
+    const entries = [...pendingWorks.current.entries()];
+    pendingWorks.current.clear();
+    await Promise.all(entries.map(([name, content]) =>
+      SaveWork(name, content).catch((err) => {
+        console.error('SaveWork error:', err);
+      })
+    ));
+  }, []);
+
+  // 打鍵ごとではなく WORK_SAVE_INTERVAL に1回だけ書き出す。
+  // タイマーが動いている間は内容の差し替えのみ行い、再スケジュールしない
+  const scheduleWorkSave = useCallback((name, content) => {
+    pendingWorks.current.set(name, content);
+    if (workTimer.current) return;
+    workTimer.current = setTimeout(() => {
+      workTimer.current = null;
+      flushWorkSaves();
+    }, WORK_SAVE_INTERVAL);
+  }, [flushWorkSaves]);
+
   // エディタのスクロールバー検出（展開ボタンの位置調整用）
   const expandBtnRight = useScrollbarOffset('#editor', 6, activeTab?.content);
 
@@ -140,6 +178,7 @@ function App() {
         id,
         path,
         filename,
+        work: null,
         content,
         savedContent: content,
         mermaidMode,
@@ -155,21 +194,47 @@ function App() {
     openFilePath(path);
   }, [openFilePath]);
 
-  let untitledCount = useRef(0);
-
-  const newFile = useCallback(() => {
-    untitledCount.current++;
-    const name = untitledCount.current === 1 ? 'Untitled' : `Untitled-${untitledCount.current}`;
+  // 新規タブはワークとして即座にファイル化する。
+  // 名前（Untitled / Untitled-2 ...）は Go 側が未使用のものを選んで予約するため、
+  // 既存のワークを上書きすることはない。
+  const newFile = useCallback(async () => {
+    let name;
+    try {
+      name = await CreateWork();
+    } catch (err) {
+      console.error('CreateWork error:', err);
+      return;
+    }
     const id = nextTabId++;
     setTabs(prev => [...prev, {
       id,
       path: null,
       filename: name,
+      work: name,
       content: '',
       savedContent: '',
       mermaidMode: false,
     }]);
     setActiveTabId(id);
+  }, []);
+
+  // ファイルとして保存できたらワークは不要になるので削除する
+  const applySavedPath = useCallback(async (tab, savePath) => {
+    const filename = savePath.split(/[/\\]/).pop();
+    const content = tab.content;
+    if (tab.work) {
+      pendingWorks.current.delete(tab.work);
+      try {
+        await DeleteWork(tab.work);
+      } catch (err) {
+        console.error('DeleteWork error:', err);
+      }
+    }
+    setTabs(prev => prev.map(t =>
+      t.id === tab.id
+        ? { ...t, path: savePath, filename, work: null, savedContent: content }
+        : t
+    ));
   }, []);
 
   const saveActiveTab = useCallback(async () => {
@@ -193,16 +258,11 @@ function App() {
 
     try {
       await SaveFile(savePath, activeTab.content);
-      const filename = savePath.split(/[/\\]/).pop();
-      setTabs(prev => prev.map(tab =>
-        tab.id === activeTab.id
-          ? { ...tab, path: savePath, filename, savedContent: tab.content }
-          : tab
-      ));
+      await applySavedPath(activeTab, savePath);
     } catch (err) {
       console.error('Save error:', err);
     }
-  }, [activeTab]);
+  }, [activeTab, applySavedPath]);
 
   const saveAsActiveTab = useCallback(async () => {
     if (!activeTab) return;
@@ -220,16 +280,11 @@ function App() {
 
     try {
       await SaveFile(savePath, activeTab.content);
-      const filename = savePath.split(/[/\\]/).pop();
-      setTabs(prev => prev.map(tab =>
-        tab.id === activeTab.id
-          ? { ...tab, path: savePath, filename, savedContent: tab.content }
-          : tab
-      ));
+      await applySavedPath(activeTab, savePath);
     } catch (err) {
       console.error('Save error:', err);
     }
-  }, [activeTab]);
+  }, [activeTab, applySavedPath]);
 
   const removeTab = useCallback((tabId) => {
     setTabs(prev => {
@@ -254,6 +309,16 @@ function App() {
       if (!ok) return;
     }
 
+    // タブを閉じたらバックアップも破棄する
+    if (tab.work) {
+      pendingWorks.current.delete(tab.work);
+      try {
+        await DeleteWork(tab.work);
+      } catch (err) {
+        console.error('DeleteWork error:', err);
+      }
+    }
+
     removeTab(tabId);
   }, [tabs, t, showConfirm, removeTab]);
 
@@ -263,7 +328,10 @@ function App() {
         ? { ...tab, content: newContent }
         : tab
     ));
-  }, [activeTabId]);
+    // ワークタブは編集内容をそのままワークへ書き戻す
+    const tab = tabsRef.current.find(t => t.id === activeTabId);
+    if (tab?.work) scheduleWorkSave(tab.work, newContent);
+  }, [activeTabId, scheduleWorkSave]);
 
   const reorderTabs = useCallback((dragId, dropId) => {
     setTabs(prev => {
@@ -287,16 +355,47 @@ function App() {
 
   // --- 起動時の初期ファイル ---
 
+  // 保存されているワークをタブとして復元する
+  const restoreWorks = useCallback(async (works) => {
+    const restored = await Promise.all(works.map(async (w) => ({
+      id: nextTabId++,
+      path: null,
+      filename: w.name,
+      work: w.name,
+      content: w.content ?? '',
+      // ワークは保存ではないので未保存（*付き）のまま復元する
+      savedContent: '',
+      mermaidMode: w.content ? await Mermaid.detectType(w.content) : false,
+    })));
+    if (restored.length === 0) return false;
+    setTabs(prev => [...prev, ...restored]);
+    setActiveTabId(restored[0].id);
+    return true;
+  }, []);
+
+  // StrictMode の二重実行でワークが余計に作られないよう一度だけ走らせる
+  const bootedRef = useRef(false);
+
   useEffect(() => {
-    InitialFiles().then(paths => {
+    if (bootedRef.current) return;
+    bootedRef.current = true;
+    InitialFiles().then(async (paths) => {
       if (paths && paths.length > 0) {
+        // ファイル指定で起動した場合はワークを開かない（＋ を押した時は未使用の名前が使われる）
         for (const path of paths) {
           openFilePath(path);
         }
-      } else {
-        // 引数なしの場合は Untitled タブを開く
-        newFile();
+        return;
       }
+      // 単独起動時は残っているワークを全て復元する。無ければ新規ワークを1つ作る
+      let works = [];
+      try {
+        works = await ListWorks();
+      } catch (err) {
+        console.error('ListWorks error:', err);
+      }
+      const ok = await restoreWorks(works || []);
+      if (!ok) newFile();
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -364,9 +463,11 @@ function App() {
 
   // --- 終了処理 ---
 
+  // ワークはバックアップなので未保存判定には影響させない（元のまま）
+  const hasDirty = tabs.some(t => t.path ? t.content !== t.savedContent : t.content !== '');
+
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      const hasDirty = tabs.some(t => t.path ? t.content !== t.savedContent : t.content !== '');
       if (hasDirty) {
         e.preventDefault();
         e.returnValue = '';
@@ -374,18 +475,19 @@ function App() {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [tabs]);
+  }, [hasDirty]);
 
   return (
     <Box data-file-drop-target="" sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-app)' }}>
 
       <TitleBar
         onClose={async () => {
-          const hasDirty = tabs.some(t => t.path ? t.content !== t.savedContent : t.content !== '');
           if (hasDirty) {
             const ok = await showConfirm(t('lite.unsavedConfirm'));
             if (!ok) return;
           }
+          // 保留中のワークを書き出してから終了する
+          await flushWorkSaves();
           Terminate();
         }}
         onOpen={openFile}

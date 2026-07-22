@@ -10,7 +10,7 @@ import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bi
 import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
-import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -120,12 +120,28 @@ function flattenDiagrams(nodes) {
 function flattenStructures(nodes) {
   const result = [];
   for (const node of nodes) {
-    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId });
+    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId, updated: node.updated });
     if (node.children && node.children.length > 0) {
       result.push(...flattenStructures(node.children));
     }
   }
   return result;
+}
+
+/**
+ * ID一覧の並び順を作る。
+ * 基本は更新日付の降順。currentId の子は上位グループとして先頭にまとめる。
+ * 自分自身（currentId）は除外する。
+ */
+function sortIdCandidates(list, currentId) {
+  const byUpdated = (a, b) => {
+    const ta = a.updated ? Date.parse(a.updated) : 0;
+    const tb = b.updated ? Date.parse(b.updated) : 0;
+    return (tb || 0) - (ta || 0);
+  };
+  const children = list.filter((s) => s.id !== currentId && s.parentId === currentId).sort(byUpdated);
+  const others = list.filter((s) => s.id !== currentId && s.parentId !== currentId).sort(byUpdated);
+  return [...children, ...others];
 }
 
 /**
@@ -489,6 +505,9 @@ function Editor(props) {
   const composingRef = useRef(false);
   const [cursorLine, setCursorLine] = useState(1);
 
+  // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
+  const [previewScrollbar, setPreviewScrollbar] = useState(true);
+
   // オートコンプリートの挿入処理
   const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
     const textarea = document.querySelector("#editor");
@@ -635,13 +654,14 @@ function Editor(props) {
     return GetBinderTree().then((tree) => {
       const all = flattenStructures(tree.data || []);
       const filtered = all.filter(s => types.includes(s.type));
-      return filtered.map(s => ({
+      // ID挿入メニューと同じ並び（子を優先し、更新日付の降順）
+      return sortIdCandidates(filtered, id).map(s => ({
         label: s.name || s.id,
         detail: s.type,
         insertText: s.id,
       }));
     }).catch(() => []);
-  }, []);
+  }, [id]);
 
   const getTemplateCandidates = useCallback((filterText) => {
     const trimmed = (filterText || '').trim();
@@ -761,9 +781,7 @@ function Editor(props) {
         const pos = getCaretPosition(textarea);
         GetBinderTree().then((tree) => {
           const all = flattenStructures(tree.data || []);
-          const children = all.filter((s) => s.parentId === id);
-          const others = all.filter((s) => s.parentId !== id && s.id !== id);
-          setIdList([...children, ...others]);
+          setIdList(sortIdCandidates(all, id));
           if (pos) {
             setIdListPos(pos);
             setIdListAnchor(null);
@@ -1127,6 +1145,16 @@ function Editor(props) {
   // スニペットを一度だけロード
   useEffect(() => {
     GetSnippets().then((s) => setSnippets(s)).catch(() => { });
+  }, []);
+
+  // プレビューのスクロールバー設定（デフォルトON）を取得し、設定画面からの変更を同期
+  useEffect(() => {
+    GetPreviewScrollbar().then((v) => setPreviewScrollbar(!!v)).catch(() => { });
+    const cleanup = Events.On('binder:preview:scrollbarChanged', (event) => {
+      const data = event.data?.[0] ?? event.data;
+      setPreviewScrollbar(!!data);
+    });
+    return () => { cleanup(); };
   }, []);
 
   // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定（前回選択があれば復元）
@@ -2413,9 +2441,7 @@ function Editor(props) {
                         const anchor = e.currentTarget;
                         GetBinderTree().then((tree) => {
                           const all = flattenStructures(tree.data || []);
-                          const children = all.filter((s) => s.parentId === id);
-                          const others = all.filter((s) => s.parentId !== id && s.id !== id);
-                          setIdList([...children, ...others]);
+                          setIdList(sortIdCandidates(all, id));
                           setIdListAnchor(anchor);
                           setIdListPos(null);
                         }).catch((err) => evt.showErrorMessage(err));
@@ -2796,7 +2822,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2805,7 +2831,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
                 }
               </div>
 

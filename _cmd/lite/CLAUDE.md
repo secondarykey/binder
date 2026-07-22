@@ -32,7 +32,7 @@ setup/, settings/（Binder と共有）
 
 ## Go バックエンド
 
-- **`lite.App`** (api/lite/api.go) — Wails v3 Service。`ReadFile`, `SaveFile`（アトミック書き込み）、テーマ・言語は `settings` パッケージに委譲。起動引数ファイルの管理（`SetInitialFiles` / `InitialFiles`）
+- **`lite.App`** (api/lite/api.go) — Wails v3 Service。`ReadFile`, `SaveFile`（アトミック書き込み）、テーマ・言語は `settings` パッケージに委譲。起動引数ファイルの管理（`SetInitialFiles` / `InitialFiles`）、ワーク管理（`ListWorks` / `CreateWork` / `SaveWork` / `DeleteWork`）
 - **`Window`** (_cmd/lite/window.go) — 第2 Service。ファイルダイアログ（Open/Save）、新規ファイル作成、ウィンドウ操作
 - Binder の `fs/`, `db/`, `api/` には一切依存しない
 - Lite は `binder/api` を import できないため `MarshalError` を登録していない（`MessageError` を生成しないので実害なし。共有が必要になったら lite が import できるパッケージへ切り出す）
@@ -69,10 +69,36 @@ setup/, settings/（Binder と共有）
 ```js
 {
   id,            // タブID
-  path,          // ファイルパス
+  path,          // ファイルパス（ワークタブは null）
   filename,      // 表示名
+  work,          // ワーク名（Untitled / Untitled-2 ...）。ファイルタブは null
   content,       // 現在のエディタ内容
-  savedContent,  // 最後に保存した内容
+  savedContent,  // 最後にファイルへ保存した内容（ワークへの書き出しでは更新しない）
   mermaidMode,   // Mermaid プレビューモード
 }
 ```
+
+## ワーク（保存前の Untitled タブ）
+
+`+` ボタンや Ctrl+N で作る Untitled タブは、`~/.binder/lite/works/<名前>.md` に
+実ファイルとして保存される。アプリを閉じても内容は残る。
+
+**ワークはあくまで裏側のバックアップ**であり「保存」ではない。ワークへ書き出しても
+`savedContent` は更新せず、タブの未保存マーク（`*Untitled`）や終了確認の挙動は
+ワーク導入前と変わらない。復元したワークも `savedContent: ''` で未保存扱いのまま開く。
+
+- **名前の割り当て**: `CreateWork()`（Go側）が `Untitled`, `Untitled-2`, ... のうち
+  未使用の名前を選び、空ファイルを `O_EXCL` で作って予約する。既存のワークを上書きしない
+- **書き出し間隔**: `WORK_SAVE_INTERVAL`（60秒）に1回。タイマー稼働中は保留内容を
+  差し替えるだけで再スケジュールしないため、連続入力中でも最大1分に1回に収まる。
+  終了時（TitleBar の閉じるボタン）は `flushWorkSaves()` で保留分を書き出してから終了する
+- **消えるタイミング**: ファイルとして保存した時（`applySavedPath`）と、タブを閉じた時。
+  それ以外では残る
+- **起動時の挙動**:
+  - 引数なし（単独起動）→ 残っているワークを全て復元する。無ければ新規ワークを1つ作る
+  - ファイル指定で起動 → ワークは開かない。`+` を押すと未使用の名前（例: `Untitled-2`）が使われ、
+    既存のワークは残ったままになる
+
+Go 側の実体は `settings/lite_work.go`（`ListLiteWorks` / `CreateLiteWork` /
+`SaveLiteWork` / `DeleteLiteWork`）。名前は `^Untitled(-[1-9][0-9]*)?$` で検証し、
+パストラバーサルを防いでいる。

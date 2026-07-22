@@ -12,7 +12,12 @@ import Mermaid from "./engines/Mermaid";
  *   cursorLine      - エディタのカーソル行（1始まり）。プレビューのスクロール位置に使用
  *   colorSchemeAttr - カラースキーム属性名（例: "data-theme"）
  *   colorSchemeValue - カラースキーム値（例: "dark"）
+ *   customScrollbar - true で iframe 内のスクロールバーをアプリ側と同じ見た目にする
  */
+
+// iframe に注入するスクロールバー用 <style> のID
+const SCROLLBAR_STYLE_ID = 'binder-scrollbar-style';
+
 class HTMLFrame extends React.Component {
 
   constructor(props) {
@@ -22,20 +27,44 @@ class HTMLFrame extends React.Component {
     // 現在表示中の iframe インデックス (0 or 1)
     this.active = -1;
     this.view = this.view.bind(this);
+    this.themeObserver = null;
   }
 
   componentDidMount() {
     this.view();
+    // アプリのテーマ切り替え（data-theme の変化）に追従してスクロールバー色を更新する
+    if (typeof MutationObserver !== 'undefined') {
+      this.themeObserver = new MutationObserver(() => {
+        const iframe = this.getIframe(this.active);
+        if (iframe?.contentDocument) this.applyScrollbarStyle(iframe.contentDocument);
+      });
+      this.themeObserver.observe(window.document.documentElement, {
+        attributes: true, attributeFilter: ['data-theme'],
+      });
+    }
+  }
+
+  componentWillUnmount() {
+    this.themeObserver?.disconnect();
+    this.themeObserver = null;
   }
 
   shouldComponentUpdate(nextProps) {
     return nextProps.html !== this.props.html
       || nextProps.cursorLine !== this.props.cursorLine
       || nextProps.colorSchemeAttr !== this.props.colorSchemeAttr
-      || nextProps.colorSchemeValue !== this.props.colorSchemeValue;
+      || nextProps.colorSchemeValue !== this.props.colorSchemeValue
+      || nextProps.customScrollbar !== this.props.customScrollbar;
   }
 
   componentDidUpdate(prevProps) {
+    if (prevProps.customScrollbar !== this.props.customScrollbar) {
+      // 設定の切り替えは再描画せず表示中の iframe に即反映する
+      const activeIframe = this.getIframe(this.active);
+      if (activeIframe?.contentDocument) {
+        this.applyScrollbarStyle(activeIframe.contentDocument);
+      }
+    }
     if (prevProps.html !== this.props.html) {
       this.view();
     } else if (prevProps.cursorLine !== this.props.cursorLine) {
@@ -150,6 +179,45 @@ class HTMLFrame extends React.Component {
   }
 
   /**
+   * iframe 内のスクロールバーをアプリ側（エディタ画面）と同じ見た目にする。
+   * iframe にはテーマCSSが読み込まれないため、親ドキュメントで解決済みの
+   * CSS変数の値を取り出して実値として注入する。
+   * customScrollbar が false の場合は注入済みのスタイルを取り除く。
+   */
+  applyScrollbarStyle(doc) {
+    const head = doc?.head || doc?.documentElement;
+    if (!head) return;
+
+    const exist = doc.getElementById?.(SCROLLBAR_STYLE_ID);
+    if (!this.props.customScrollbar) {
+      exist?.remove();
+      return;
+    }
+
+    const cs = window.getComputedStyle(window.document.documentElement);
+    const track = cs.getPropertyValue('--scrollbar-track').trim();
+    const thumb = cs.getPropertyValue('--scrollbar-thumb').trim();
+    const hover = cs.getPropertyValue('--scrollbar-hover').trim();
+    // テーマ未適用などで値が取れない場合は既定のスクロールバーのままにする
+    if (!track && !thumb && !hover) {
+      exist?.remove();
+      return;
+    }
+
+    const css = [
+      '::-webkit-scrollbar { cursor: auto; width: 14px; }',
+      `::-webkit-scrollbar-track { background: ${track}; }`,
+      `::-webkit-scrollbar-thumb { cursor: auto; background: ${thumb}; }`,
+      `::-webkit-scrollbar-thumb:hover { background: ${hover}; }`,
+    ].join('\n');
+
+    const style = exist || doc.createElement('style');
+    style.id = SCROLLBAR_STYLE_ID;
+    style.textContent = css;
+    if (!exist) head.appendChild(style);
+  }
+
+  /**
    * SVG にホイールズーム + 中ボタンドラッグのパン操作を付与する
    */
   attachPanZoom(container) {
@@ -195,6 +263,7 @@ class HTMLFrame extends React.Component {
     if (!doc) { onComplete?.(); return; }
 
     this.applyColorScheme(doc);
+    this.applyScrollbarStyle(doc);
 
     // クリックを禁止
     doc.addEventListener('click', (e) => e.preventDefault());

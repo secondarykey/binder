@@ -119,7 +119,10 @@ type Look struct {
 	TreeNoteNum     int     `json:"treeNoteNum"`
 	TreeDisplayMode    string  `json:"treeDisplayMode"`
 	TreeExpandTargets bool    `json:"treeExpandTargets"`
-	Editor             *Editor `json:"editor"`
+	// PreviewScrollbar はプレビュー画面のスクロールバーをエディタ画面と同じ見た目にするか。
+	// 未設定（既存の setting.json）はデフォルトONとして扱うためポインタで保持する
+	PreviewScrollbar *bool   `json:"previewScrollbar,omitempty"`
+	Editor           *Editor `json:"editor"`
 }
 
 type Editor struct {
@@ -221,6 +224,9 @@ func Get() *Setting {
 	if pSet.Look.Editor.AutoComplete == nil {
 		pSet.Look.Editor.AutoComplete = defaultAutoCompleteConfig()
 	}
+	if pSet.Look.PreviewScrollbar == nil {
+		pSet.Look.PreviewScrollbar = boolPtr(true)
+	}
 	if pSet.AllowedCDNs == nil {
 		pSet.AllowedCDNs = defaultAllowedCDNs()
 	}
@@ -268,6 +274,7 @@ func def() *Setting {
 	look.DarkMode = true
 	look.Theme = "dark"
 	look.TreeDisplayMode = "commit"
+	look.PreviewScrollbar = boolPtr(true)
 
 	var darkf Font
 
@@ -518,6 +525,26 @@ func GetTreeExpandTargets() bool {
 func SaveTreeExpandTargets(v bool) error {
 	obj := Get()
 	obj.Look.TreeExpandTargets = v
+	return obj.save()
+}
+
+func boolPtr(v bool) *bool {
+	return &v
+}
+
+// GetPreviewScrollbar はプレビューのスクロールバーをエディタと同じ見た目にするかを返す。
+// 未設定はデフォルトON。
+func GetPreviewScrollbar() bool {
+	obj := Get()
+	if obj.Look.PreviewScrollbar == nil {
+		return true
+	}
+	return *obj.Look.PreviewScrollbar
+}
+
+func SavePreviewScrollbar(v bool) error {
+	obj := Get()
+	obj.Look.PreviewScrollbar = boolPtr(v)
 	return obj.save()
 }
 

@@ -207,6 +207,7 @@
         "treeDisplayMode_commit" : "未記録",
         "treeDisplayMode_publish" : "未公開",
         "treeExpandTargets" : "初回表示に対象を展開する",
+        "previewScrollbar" : "プレビュー画面のスクロールバーを変更",
         "allowedCDNs" : "許可するCDNドメイン",
         "allowedCDNsHint" : "外部スクリプト（marked.js / mermaid.js）の読み込みを許可するドメインです。",
         "addDomain" : "ドメインを追加",
@@ -816,6 +817,8 @@
             "wardley"            : "ワードリーマップ",
             "ishikawa"           : "フィッシュボーン図 (特性要因図)",
             "venn"               : "ベン図",
+            "eventmodeling"      : "イベントモデリング図",
+            "cynefin"            : "クネビンフレームワーク図",
             "dir" : {
                 "TD" : "上→下",
                 "TB" : "上→下",
