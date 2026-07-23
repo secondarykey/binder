@@ -22,9 +22,12 @@ import markedVendorUrl from './assets/vendor/marked.min.js?url'
 import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
 // バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
 const MARKED_VENDOR_VERSION = '14.1.4'
+// バンドルした mermaid のバージョン（vendor 差し替え時にここも更新する）
+const MERMAID_VENDOR_VERSION = '11.16.0'
 Marked.setVendorUrl(markedVendorUrl)
 Marked.setVendorVersion(MARKED_VENDOR_VERSION)
 Mermaid.setVendorUrl(mermaidVendorUrl)
+Mermaid.setVendorVersion(MERMAID_VENDOR_VERSION)
 
 // プラグインを取得し、現在の marked バージョンに応じて適用する
 async function applyMarkedPlugins(cdnUrl) {

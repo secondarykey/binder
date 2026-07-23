@@ -41,6 +41,27 @@ function Binder({ isModal, ...props }) {
   const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
+  // CDN URL から "pkg@x.y.z" のバージョンを読み取る（読み取れなければ null）
+  const cdnVersion = (url, pkg) => {
+    const m = String(url || "").match(new RegExp(pkg + "@(\\d+\\.\\d+\\.\\d+)"));
+    return m ? m[1] : null;
+  };
+
+  // バンドル版（未指定時に動作する版）と、CDN指定時のバージョン表記を出す。
+  // 注意: marked はランタイムにバージョンを公開しないため、CDN 指定時の版は
+  // URL から読み取った値であり検証済みではない（読み取れない場合は「自動判定」）。
+  const renderVersionInfo = (bundled, url, pkg) => {
+    const cdn = url ? cdnVersion(url, pkg) : null;
+    return (
+      <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '11px', mt: 0.5, textAlign: 'left' }}>
+        {t("binder.versionDefault", { version: bundled || "?" })}
+        {url && (cdn
+          ? " / " + t("binder.versionCdn", { version: cdn })
+          : " / " + t("binder.versionCdnUnknown"))}
+      </Typography>
+    );
+  };
+
   const [activeSection, setActiveSection] = useState("basic");
 
   const [name, setName] = useState("");
@@ -390,6 +411,7 @@ function Binder({ isModal, ...props }) {
                 focused={markedStatus === "ok"}
                 FormHelperTextProps={{ sx: markedStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
+              {renderVersionInfo(MarkedScript.getVendorVersion(), markedUrl, "marked")}
             </FormControl>
 
             <FormControl>
@@ -409,6 +431,7 @@ function Binder({ isModal, ...props }) {
                 focused={mermaidStatus === "ok"}
                 FormHelperTextProps={{ sx: mermaidStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
+              {renderVersionInfo(MermaidScript.getVendorVersion(), mermaidUrl, "mermaid")}
             </FormControl>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>

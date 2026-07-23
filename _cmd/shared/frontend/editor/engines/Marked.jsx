@@ -52,6 +52,13 @@ class MarkedScript {
         MarkedScript._vendorVersion = version;
     }
 
+    /**
+     * バンドルした marked のバージョン（未指定時に動作する版）を返す。
+     */
+    static getVendorVersion() {
+        return MarkedScript._vendorVersion;
+    }
+
     static isExists() {
         return Scripter.isExists(Name)
     }
