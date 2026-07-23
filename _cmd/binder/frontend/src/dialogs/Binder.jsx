@@ -48,16 +48,29 @@ function Binder({ isModal, ...props }) {
   };
 
   // バンドル版（未指定時に動作する版）と、CDN指定時のバージョン表記を出す。
-  // 注意: marked はランタイムにバージョンを公開しないため、CDN 指定時の版は
-  // URL から読み取った値であり検証済みではない（読み取れない場合は「自動判定」）。
-  const renderVersionInfo = (bundled, url, pkg) => {
+  // CDN指定時は次の優先順で表示する:
+  //   1. URL から x.y.z を読み取れればその版
+  //   2. 読み取れないが判定結果（機能プローブ）があれば「vN と判断（自動判定）」
+  //      — marked はランタイムに version を公開しないため、これがプラグイン互換判定に
+  //        実際に使われている版。プラグインもこの版で互換判定される
+  //   3. どちらも無ければ「読込時に自動判定」
+  // determined は「現在動作中でソースがCDN」かつ「編集中URLが保存済みURLと一致」する時のみ渡す。
+  const renderVersionInfo = (bundled, url, pkg, determined) => {
     const cdn = url ? cdnVersion(url, pkg) : null;
+    let cdnText = null;
+    if (url) {
+      if (cdn) {
+        cdnText = t("binder.versionCdn", { version: cdn });
+      } else if (determined && determined.major != null) {
+        cdnText = t("binder.versionCdnDetected", { version: "v" + determined.major });
+      } else {
+        cdnText = t("binder.versionCdnUnknown");
+      }
+    }
     return (
       <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '11px', mt: 0.5, textAlign: 'left' }}>
         {t("binder.versionDefault", { version: bundled || "?" })}
-        {url && (cdn
-          ? " / " + t("binder.versionCdn", { version: cdn })
-          : " / " + t("binder.versionCdnUnknown"))}
+        {cdnText && " / " + cdnText}
       </Typography>
     );
   };
@@ -68,6 +81,10 @@ function Binder({ isModal, ...props }) {
   const [detail, setDetail] = useState("");
   const [markedUrl, setMarkedUrl] = useState("");
   const [mermaidUrl, setMermaidUrl] = useState("");
+  // 現在動作している marked の判定結果（機能プローブ含む）と、開いた時点の保存済みURL。
+  // 編集中の未保存URLに対して古い判定を表示しないよう savedMarkedUrl と一致する時だけ使う。
+  const [markedInfo, setMarkedInfo] = useState(null);
+  const [savedMarkedUrl, setSavedMarkedUrl] = useState("");
   const [optimizeImage, setOptimizeImage] = useState(true);
   const [colorSchemeAttr, setColorSchemeAttr] = useState("");
   const [colorSchemeValues, setColorSchemeValues] = useState("");
@@ -118,6 +135,7 @@ function Binder({ isModal, ...props }) {
       setDetail(conf.detail);
       setMarkedUrl(conf.markedUrl || "");
       setMermaidUrl(conf.mermaidUrl || "");
+      setSavedMarkedUrl(conf.markedUrl || "");
       setOptimizeImage(conf.optimizeImage !== false);
       if (conf.previewColorScheme) {
         setColorSchemeAttr(conf.previewColorScheme.attribute || "");
@@ -149,6 +167,16 @@ function Binder({ isModal, ...props }) {
       showError(err);
     });
     getRemoteList();
+  }, []);
+
+  // marked を初期化し、現在動作している版（機能プローブ含む）を取得する。
+  // CDN 指定で URL からバージョンが読み取れない場合の「vN と判断」表示に使う。
+  useEffect(() => {
+    let alive = true;
+    MarkedScript.ensureInit()
+      .then(() => { if (alive) setMarkedInfo(MarkedScript.getMarkedInfo()); })
+      .catch(() => {});
+    return () => { alive = false; };
   }, []);
 
   const handleSave = () => {
@@ -411,7 +439,12 @@ function Binder({ isModal, ...props }) {
                 focused={markedStatus === "ok"}
                 FormHelperTextProps={{ sx: markedStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
-              {renderVersionInfo(MarkedScript.getVendorVersion(), markedUrl, "marked")}
+              {renderVersionInfo(
+                MarkedScript.getVendorVersion(),
+                markedUrl,
+                "marked",
+                (markedUrl === savedMarkedUrl && markedInfo && markedInfo.source === "cdn") ? markedInfo : null,
+              )}
             </FormControl>
 
             <FormControl>
@@ -431,7 +464,7 @@ function Binder({ isModal, ...props }) {
                 focused={mermaidStatus === "ok"}
                 FormHelperTextProps={{ sx: mermaidStatus === "" ? { color: 'var(--text-muted)' } : {} }}
               />
-              {renderVersionInfo(MermaidScript.getVendorVersion(), mermaidUrl, "mermaid")}
+              {renderVersionInfo(MermaidScript.getVendorVersion(), mermaidUrl, "mermaid", null)}
             </FormControl>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
