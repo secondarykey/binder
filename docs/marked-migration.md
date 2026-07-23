@@ -188,24 +188,48 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
    unverified はセカンダリラベルも出す。marked 情報は `Marked.ensureInit()` →
    `getMarkedInfo()`、判定は `pluginCompatStatus`。i18n: `plugin.compat.*`。
 
+### vendor バンドル差し替えチェックリスト（0.15.0 / 0.16.0 共通）
+
+新しいセッションでもこの手順どおりに進めれば完了できる。
+
+1. `npm i marked@<version>` して `node_modules/marked/lib/marked.esm.js` を取得。
+   v16 以降このファイルは minify 済みなので、そのまま
+   `_cmd/binder/frontend/src/assets/vendor/marked.min.js` と
+   `_cmd/lite/frontend/src/assets/vendor/marked.min.js` に上書きコピーする（2箇所）。
+   現行バンドルの構造（ESM。`Scripter.import` で読み `globalThis.marked` に代入）に合う。
+2. **バージョン定数を更新（忘れやすい）**:
+   - `_cmd/binder/frontend/src/main.jsx` の `MARKED_VENDOR_VERSION`
+   - `_cmd/lite/frontend/src/main.jsx` の `Marked.setVendorVersion('...')`
+3. `_cmd/binder/frontend/src/dialogs/Binder.jsx` の CDN URL プレースホルダの
+   `marked@x.y.z` を更新。
+4. **同梱プラグインが新バージョンで無傷か回帰テストで確認**:
+   `cd _cmd/binder/frontend && npx vitest run src/__tests__/bundledPlugins.test.jsx`
+   （バンドル実体を読むので、差し替え後の marked に対して検証される）。
+5. 影響調査は throwaway スクリプトで再現可能（このセッションでは scratchpad で実施）。
+   `npm i marked@14 marked@17 marked@18` を並べ、代表 Markdown と全15プラグインの
+   出力を版間で diff する方式。commit 済みの回帰テストがあるので必須ではない。
+6. `vite build`（binder / lite 両方）+ `npx vitest run`（全体）+ `task dev` で
+   プレビュー描画と公開 HTML を目視確認（自動テストで拾えない領域）。
+7. ライセンスは **変更不要**（下記参照）。
+
 ### 0.15.0 — marked 17.0.5
 
-- vendor バンドル差し替え×2（binder / lite）。v16 以降 `lib/marked.esm.js` は minify
-  済みなので約 92KB → 約 42KB に減る
-- v15/v16 は alt 属性リグレッションのため素通りして直接 17 へ
+- 上記チェックリストに従い vendor を 17.0.5 へ差し替え。約 92KB → 約 42KB に減る。
+- v15/v16 は alt 属性リグレッションのため素通りして直接 17 へ。
 - **ライセンスは変更不要**（実測確認済み）: marked の LICENSE の著作権表記は v14/v17/v18 で
   同一（`## Marked`: MarkedJS + Christopher Jeffrey / `## Markdown`: John Gruber 2004）。
   なお `## Markdown`（John Gruber, BSD系）ブロックは v14 時点で既に存在しており、
   当初 `THIRD_PARTY_LICENSES` に欠けていたため 0.14.0 で補完済み。ミニファイ版ヘッダの
-  年号（v14=2011-2024 / v17+=2018-2026）は表記が違うが正典の LICENSE は一致
-- `Binder.jsx` の CDN URL プレースホルダを更新
-- 0.14.0 の回帰テストで v17 の list トークン変更の影響を確認
+  年号（v14=2011-2024 / v17+=2018-2026）は表記が違うが正典の LICENSE は一致。
+- v17 の list トークン構造変更（checkbox 子トークン追加・loose list が paragraph 型）は
+  同梱15本の出力に影響しないことを実測済み。回帰テストで再確認する。
 
 ### 0.16.0 — marked 18.0.7
 
-- vendor バンドル差し替えのみ（実測上コード変更は不要な見込み）
+- 上記チェックリストに従い vendor を 18.0.7 へ差し替え。実測上、追加のコード変更は不要な見込み。
 - v18 の「末尾空行トリム」は `parseWithSourceLines` の行マッピングに影響しないことを
-  実測済み（`token.raw` の round-trip は v18 でも一致）
+  実測済み（`token.raw` の round-trip は v18 でも一致）。
+- ライセンス変更不要（v18 の LICENSE も v14/v17 と同一）。
 
 ---
 

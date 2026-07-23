@@ -17,6 +17,7 @@ import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
 Marked.setVendorUrl(markedVendorUrl)
 Marked.setVendorVersion('14.1.4')
 Mermaid.setVendorUrl(mermaidVendorUrl)
+Mermaid.setVendorVersion('11.16.0')
 
 const container = document.getElementById('root')
 const root = createRoot(container)
