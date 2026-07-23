@@ -129,11 +129,14 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
      （`^`/`~` は非対応）
    - `pluginCompatStatus` が compatible / incompatible / undeclared / unverified / unknown を返す
 
-3. ⬜ **検証時メジャーの記録と差異警告** — 未宣言プラグインの扱い
-   - プラグイン追加・更新時点の marked メジャーを設定側に記録（ファイルは書き換えない）
-   - **判定ロジックは実装済み**（`pluginCompatStatus` が `verifiedMajor` を受け取る）。
-     残るのは**永続化**（app プラグインは settings、binder プラグインは git 外の
-     サイドカー等）と、保存時に現在メジャーを記録する配線。
+3. ✅ **検証時メジャーの記録と差異警告** — 未宣言プラグインの扱い
+   - 永続化: `settings.PluginVerified`（`setting.json`）にバインダーのディレクトリパスで
+     スコープして `{ "engine/name": major }` を保持（git 管理外・ローカル観測値）。
+     `settings/plugin_verified.go`、`binder.go` の `Get/SetPluginVerified`、
+     `api/plugin.go` の `GetPluginVerifiedMajors`/`SetPluginVerifiedMajor`
+   - 記録タイミング: `PluginSetting.jsx` で追加・更新・インストール成功時に、その時の
+     marked メジャー（`Marked.getMarkedInfo().major`）を記録。削除・リネームは Go 側で追随
+   - 適用時: `main.jsx` が `GetPluginVerifiedMajors` を取得し `applyPlugins` の第3引数へ渡す
 
    | 状況 | 挙動 |
    |---|---|
@@ -170,15 +173,20 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
    互換層の単体テスト（`pluginMeta.test.jsx`）と、ゲート・エラー隔離・コンテキスト注入の
    統合テスト（`markedCompat.test.jsx`）。
 
-7. ⬜ **配布済みプラグインの更新機構** — `InstallSamplePlugins()`（`setup/externals.go`）は
-   既存ファイルがあればスキップするため、`~/.binder/plugins/marked/*.js` は 0.12.0 で
-   配ったきり更新されない。**配布各版のハッシュを持ち、ユーザ未編集（既知ハッシュと
-   一致）のファイルだけ上書き**する方式にする。これがないと、同梱プラグインを直しても
-   既存ユーザに届かない。**アプリ階層（`~/.binder/plugins/marked/`）のみが対象**で、
-   バインダー内プラグイン（git 管理）は決定事項どおり触らない。
+7. ✅ **配布済みプラグインの更新機構** — `setup/plugin_sync.go` の `SyncSamplePlugins()`。
+   各同梱プラグインについて、ユーザの `~/.binder/plugins/marked/<file>` のハッシュが
+   **Binder が配布した既知ハッシュ集合（過去バージョン + 現行同梱版）に一致する場合のみ**
+   最新版で上書きする。ユーザ編集ファイル・削除済みファイルは触らない。既知ハッシュは
+   `shippedPluginHashes`（過去分をハードコード）+ 実行時算出の現行ハッシュ。
+   `migrateApp` の `needUpdate` 時に毎回実行。**アプリ階層のみが対象**で、バインダー内
+   プラグイン（git 管理）は決定事項どおり触らない。
+   - 同梱プラグインを更新するたびに、直前バージョンの sha256 を `shippedPluginHashes` に
+     追記すること（これを忘れると、その版を持つユーザが「編集済み」扱いになり更新されない）
 
-8. ⬜ **設定画面での互換状態表示** — `PluginSetting.jsx` / `AppPluginSetting.jsx` に
-   「対応marked / 現在のmarked / 状態」を表示（`Marked.getPluginStatus()` を利用）。
+8. ✅ **設定画面での互換状態表示** — `PluginSetting.jsx` にプラグインごとの状態ドット
+   （色）+ ツールチップ（状態 / 対応marked / 現在のmarked）を表示。incompatible /
+   unverified はセカンダリラベルも出す。marked 情報は `Marked.ensureInit()` →
+   `getMarkedInfo()`、判定は `pluginCompatStatus`。i18n: `plugin.compat.*`。
 
 ### 0.15.0 — marked 17.0.5
 

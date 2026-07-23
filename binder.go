@@ -223,7 +223,27 @@ func (b *Binder) RemovePlugin(engine, name string) error {
 	if err != nil {
 		return xerrors.Errorf("fs.DeletePlugin() error: %w", err)
 	}
+	// 検証時メジャーの記録も破棄する（失敗は警告のみ）
+	if err := settings.DeletePluginVerified(b.dir, engine, name); err != nil {
+		log.Warn("DeletePluginVerified(%s) error: %+v", name, err)
+	}
 	return b.fileSystem.Commit(fs.M("Remove Plugin", name), fn)
+}
+
+// GetPluginVerified は開いているバインダーのプラグイン検証時 marked メジャーを返す。
+func (b *Binder) GetPluginVerified(engine string) map[string]int {
+	if b == nil {
+		return map[string]int{}
+	}
+	return settings.GetPluginVerified(b.dir, engine)
+}
+
+// SetPluginVerified はプラグインの検証時 marked メジャーを記録する。
+func (b *Binder) SetPluginVerified(engine, name string, major int) error {
+	if b == nil {
+		return EmptyError
+	}
+	return settings.SetPluginVerified(b.dir, engine, name, major)
 }
 
 func (b *Binder) InstallAppPlugin(engine, name string) error {
@@ -248,6 +268,9 @@ func (b *Binder) RenamePlugin(engine, oldName, newName string) error {
 	files, err := b.fileSystem.RenamePlugin(engine, oldName, newName)
 	if err != nil {
 		return xerrors.Errorf("fs.RenamePlugin() error: %w", err)
+	}
+	if err := settings.RenamePluginVerified(b.dir, engine, oldName, newName); err != nil {
+		log.Warn("RenamePluginVerified(%s -> %s) error: %+v", oldName, newName, err)
 	}
 	return b.fileSystem.Commit(fs.M("Rename Plugin", oldName+" -> "+newName), files...)
 }

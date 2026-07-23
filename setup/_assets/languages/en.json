@@ -245,7 +245,18 @@
         "appPluginsEmpty" : "No app plugins registered",
         "install" : "Install",
         "installSuccess" : "Plugin installed",
-        "alreadyInstalled" : "Installed"
+        "alreadyInstalled" : "Installed",
+        "compat" : {
+            "compatible" : "Compatibility: OK",
+            "incompatible" : "Compatibility: incompatible (not applied)",
+            "undeclared" : "Compatibility: undeclared",
+            "unverified" : "Compatibility: unverified",
+            "unknown" : "Compatibility: unknown",
+            "incompatibleShort" : "incompatible",
+            "unverifiedShort" : "unverified",
+            "undeclaredRange" : "Supported marked: undeclared",
+            "current" : "Current marked"
+        }
     },
     "binder" : {
         "editTitle" : "Edit Binder",

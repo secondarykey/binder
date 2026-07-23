@@ -10,7 +10,7 @@ import PreviewApp from './app/PreviewApp'
 import SyslogApp from './app/SyslogApp'
 import SearchApp from './app/SearchApp'
 
-import { GetTheme, GetLanguage, GetConfig, GetAllowedCDNs, GetPlugins } from '../bindings/binder/api/app'
+import { GetTheme, GetLanguage, GetConfig, GetAllowedCDNs, GetPlugins, GetPluginVerifiedMajors } from '../bindings/binder/api/app'
 import { applyTheme } from './theme'
 import { loadLanguage } from './language'
 
@@ -30,8 +30,11 @@ Mermaid.setVendorUrl(mermaidVendorUrl)
 async function applyMarkedPlugins(cdnUrl) {
   try {
     const info = Marked.resolveMarkedInfo(cdnUrl)
-    const plugins = await GetPlugins("marked")
-    Marked.applyPlugins(plugins, info)
+    const [plugins, verified] = await Promise.all([
+      GetPlugins("marked"),
+      GetPluginVerifiedMajors("marked").catch(() => ({})),
+    ])
+    Marked.applyPlugins(plugins, info, verified || {})
   } catch (e) {
     console.warn("[Binder] Plugin load failed:", e)
   }

@@ -12,9 +12,10 @@ import UploadIcon from '@mui/icons-material/Upload';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 
-import { ListPlugins, SavePlugin, RemovePlugin, RenamePlugin, ListAppPlugins, InstallAppPlugin } from "../../bindings/binder/api/app";
+import { GetPlugins, SavePlugin, RemovePlugin, RenamePlugin, ListAppPlugins, InstallAppPlugin, SetPluginVerifiedMajor, GetPluginVerifiedMajors } from "../../bindings/binder/api/app";
 import { SelectJSFile } from "../../bindings/main/window";
 import Marked from "../components/editor/engines/Marked";
+import { parsePluginMeta, pluginCompatStatus } from "@shared/editor/pluginMeta";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
@@ -37,6 +38,9 @@ function PluginSetting() {
   const [plugins, setPlugins] = useState([]);
   const [selectedName, setSelectedName] = useState(null);
   const [appPlugins, setAppPlugins] = useState([]);
+  // 互換状態表示用: 現在の marked 情報とプラグイン検証時メジャー
+  const [markedInfo, setMarkedInfo] = useState(null);
+  const [verified, setVerified] = useState({});
 
   // 追加ダイアログ
   const [addDialog, setAddDialog] = useState(false);
@@ -55,9 +59,11 @@ function PluginSetting() {
   const [deleteTarget, setDeleteTarget] = useState("");
 
   const loadPlugins = () => {
-    ListPlugins(engine).then((list) => {
+    // 互換状態を判定するため内容込みで取得する
+    GetPlugins(engine).then((list) => {
       setPlugins(list || []);
     }).catch((err) => showError(err));
+    GetPluginVerifiedMajors(engine).then((v) => setVerified(v || {})).catch(() => setVerified({}));
   };
 
   const loadAppPlugins = () => {
@@ -71,6 +77,40 @@ function PluginSetting() {
     loadAppPlugins();
     setSelectedName(null);
   }, [engine]);
+
+  // marked を初期化して現在のバージョン情報を取得する（互換状態表示用）
+  useEffect(() => {
+    let alive = true;
+    Marked.ensureInit()
+      .then(() => { if (alive) setMarkedInfo(Marked.getMarkedInfo()); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  // 現在動作している marked のメジャー（記録用）
+  const currentMajor = () => (Marked.getMarkedInfo() || markedInfo || {}).major ?? null;
+
+  // 保存したプラグインの検証時メジャーを記録する
+  const recordVerified = (name) => {
+    const major = currentMajor();
+    if (major == null) return Promise.resolve();
+    return SetPluginVerifiedMajor(engine, name, major).catch(() => {});
+  };
+
+  // プラグインの互換状態（compatible / incompatible / undeclared / unverified / unknown）
+  const statusOf = (plugin) => {
+    const meta = parsePluginMeta(plugin.content || "");
+    return { meta, status: pluginCompatStatus(meta, markedInfo, verified[plugin.name]) };
+  };
+
+  // 状態 → 表示色（テーマ変数）
+  const STATUS_COLOR = {
+    compatible: 'var(--accent-green)',
+    incompatible: 'var(--accent-red)',
+    unverified: 'var(--accent-orange, #d18616)',
+    unknown: 'var(--text-muted)',
+    undeclared: 'var(--text-muted)',
+  };
 
   // --- 追加 ---
   const handleOpenAddDialog = () => {
@@ -95,10 +135,12 @@ function PluginSetting() {
     const err = validateName(addName);
     if (err) { setAddNameError(err); return; }
     SavePlugin(engine, addName, addContent).then(() => {
-      evt.showSuccessMessage(t("plugin.addSuccess"));
-      setAddDialog(false);
-      loadPlugins();
-      Marked.reset();
+      recordVerified(addName).finally(() => {
+        evt.showSuccessMessage(t("plugin.addSuccess"));
+        setAddDialog(false);
+        loadPlugins();
+        Marked.reset();
+      });
     }).catch((err) => showError(err));
   };
 
@@ -107,9 +149,11 @@ function PluginSetting() {
     SelectJSFile().then((info) => {
       if (!info) return;
       SavePlugin(engine, name, info.content).then(() => {
-        evt.showSuccessMessage(t("plugin.updateSuccess"));
-        loadPlugins();
-        Marked.reset();
+        recordVerified(name).finally(() => {
+          evt.showSuccessMessage(t("plugin.updateSuccess"));
+          loadPlugins();
+          Marked.reset();
+        });
       }).catch((err) => showError(err));
     }).catch((err) => showError(err));
   };
@@ -152,9 +196,11 @@ function PluginSetting() {
 
   const handleInstall = (name) => {
     InstallAppPlugin(engine, name).then(() => {
-      evt.showSuccessMessage(t("plugin.installSuccess"));
-      loadPlugins();
-      Marked.reset();
+      recordVerified(name).finally(() => {
+        evt.showSuccessMessage(t("plugin.installSuccess"));
+        loadPlugins();
+        Marked.reset();
+      });
     }).catch((err) => showError(err));
   };
 
@@ -200,7 +246,11 @@ function PluginSetting() {
             </Typography>
           ) : (
             <List dense disablePadding>
-              {plugins.map((p) => (
+              {plugins.map((p) => {
+                const { meta, status } = statusOf(p);
+                const rangeText = meta.marked ? `marked ${meta.marked}` : t("plugin.compat.undeclaredRange");
+                const tip = `${t("plugin.compat." + status)}${markedInfo ? ` / ${t("plugin.compat.current")}: ${markedInfo.version || markedInfo.major || '?'}` : ''}\n${rangeText}`;
+                return (
                 <ListItemButton
                   key={p.name}
                   selected={selectedName === p.name}
@@ -213,10 +263,18 @@ function PluginSetting() {
                     '&:hover': { backgroundColor: 'var(--bg-elevated)' },
                   }}
                 >
-                  <ListItemText
-                    primary={p.name}
-                    primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
-                  />
+                  <Box title={tip} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, flex: 1 }}>
+                    <Box component="span" sx={{
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                      backgroundColor: STATUS_COLOR[status] || 'var(--text-muted)',
+                    }} />
+                    <ListItemText
+                      primary={p.name}
+                      secondary={status === 'incompatible' ? t("plugin.compat.incompatibleShort") : (status === 'unverified' ? t("plugin.compat.unverifiedShort") : undefined)}
+                      primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
+                      secondaryTypographyProps={{ fontSize: '11px', sx: { color: STATUS_COLOR[status] } }}
+                    />
+                  </Box>
                   <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
                     <IconButton
                       size="small"
@@ -244,7 +302,8 @@ function PluginSetting() {
                     </IconButton>
                   </ListItemIcon>
                 </ListItemButton>
-              ))}
+                );
+              })}
             </List>
           )}
         </FormControl>
