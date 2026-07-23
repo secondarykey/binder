@@ -193,7 +193,11 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
 - vendor バンドル差し替え×2（binder / lite）。v16 以降 `lib/marked.esm.js` は minify
   済みなので約 92KB → 約 42KB に減る
 - v15/v16 は alt 属性リグレッションのため素通りして直接 17 へ
-- ライセンスヘッダの著作権表記が変わっているので `THIRD_PARTY_LICENSES` を更新
+- **ライセンスは変更不要**（実測確認済み）: marked の LICENSE の著作権表記は v14/v17/v18 で
+  同一（`## Marked`: MarkedJS + Christopher Jeffrey / `## Markdown`: John Gruber 2004）。
+  なお `## Markdown`（John Gruber, BSD系）ブロックは v14 時点で既に存在しており、
+  当初 `THIRD_PARTY_LICENSES` に欠けていたため 0.14.0 で補完済み。ミニファイ版ヘッダの
+  年号（v14=2011-2024 / v17+=2018-2026）は表記が違うが正典の LICENSE は一致
 - `Binder.jsx` の CDN URL プレースホルダを更新
 - 0.14.0 の回帰テストで v17 の list トークン変更の影響を確認
 
