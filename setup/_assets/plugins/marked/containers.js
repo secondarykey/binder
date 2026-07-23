@@ -1,4 +1,5 @@
 /* @plugin-name: Custom Containers (:::type) */
+/* @marked: >=14 <19 */
 //
 // ::: で囲んだブロックを汎用コンテナに変換する。
 // GitHub Alerts より汎用的で、任意のタイプとタイトルを指定できる。

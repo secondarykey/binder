@@ -117,6 +117,14 @@ func migrateApp(ver *Version, devMode bool) error {
 		}
 	}
 
+	// バージョン変更のたびに、ユーザ未編集の同梱プラグインを最新の同梱版へ同期する。
+	// 0.14.0 のエスケープ修正などを既存ユーザへ届けるための仕組み。
+	if needUpdate {
+		if err := SyncSamplePlugins(); err != nil {
+			log.Warn("migrateApp: SyncSamplePlugins:\n%+v", err)
+		}
+	}
+
 	// EnsureExists 終了時点で常に現在のバージョンを記録する
 	if !prevVer.Eq(ver) {
 		if err := settings.SaveAppVersion(ver.String()); err != nil {

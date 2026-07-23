@@ -1,4 +1,5 @@
 /* @plugin-name: Footnotes */
+/* @marked: >=14 <19 */
 //
 // 脚注記法を追加する。
 //

@@ -1,4 +1,5 @@
 /* @plugin-name: Table of Contents ([TOC]) */
+/* @marked: >=14 <19 */
 //
 // [TOC] を見出しの目次（Table of Contents）に変換する。
 // 見出し（# h1 〜 ###### h6）に自動でアンカーIDを付与する。
