@@ -20,8 +20,22 @@ import Mermaid from '@shared/editor/engines/Mermaid'
 import Scripter from '@shared/editor/engines/Scripter'
 import markedVendorUrl from './assets/vendor/marked.min.js?url'
 import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
+// バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
+const MARKED_VENDOR_VERSION = '14.1.4'
 Marked.setVendorUrl(markedVendorUrl)
+Marked.setVendorVersion(MARKED_VENDOR_VERSION)
 Mermaid.setVendorUrl(mermaidVendorUrl)
+
+// プラグインを取得し、現在の marked バージョンに応じて適用する
+async function applyMarkedPlugins(cdnUrl) {
+  try {
+    const info = Marked.resolveMarkedInfo(cdnUrl)
+    const plugins = await GetPlugins("marked")
+    Marked.applyPlugins(plugins, info)
+  } catch (e) {
+    console.warn("[Binder] Plugin load failed:", e)
+  }
+}
 
 // Binder固有: CDN対応の init を上書き
 const origMarkedInit = Marked.init.bind(Marked)
@@ -39,23 +53,13 @@ Marked.init = async function() {
   }
   if (cdnUrl) {
     if (await Marked.tryLoadUrl(cdnUrl)) {
-      try {
-        const plugins = await GetPlugins("marked")
-        Marked.applyPlugins(plugins)
-      } catch (e) {
-        console.warn("[Binder] Plugin load failed:", e)
-      }
+      await applyMarkedPlugins(cdnUrl)
       return
     }
     console.warn("CDN URL failed, falling back to vendor")
   }
   await origMarkedInit()
-  try {
-    const plugins = await GetPlugins("marked")
-    Marked.applyPlugins(plugins)
-  } catch (e) {
-    console.warn("[Binder] Plugin load failed:", e)
-  }
+  await applyMarkedPlugins(null)
 }
 
 const origMermaidInit = Mermaid.init.bind(Mermaid)

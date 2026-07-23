@@ -1,4 +1,5 @@
 /* @plugin-name: Abbreviations (*[ABBR]: definition) */
+/* @marked: >=14 <19 */
 //
 // 略語定義を登録し、本文中の一致箇所を <abbr> タグに変換する。
 // ホバーすると定義が表示される。
