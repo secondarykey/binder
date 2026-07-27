@@ -26,6 +26,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | バージョン変更手順 | Skill: `binder-version-up` |
 | プラグイン（marked拡張）・ルートファイル（README等） | Skill: `binder-plugin-rootfile` |
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `docs/marked-migration.md` |
+| macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `docs/macos-signing.md` |
 | Wails v3 一般（セットアップ・移行・ログ・Bindings） | Skill: `wails3` |
 
 ## ビルド・開発コマンド

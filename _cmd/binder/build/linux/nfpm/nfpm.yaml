@@ -3,7 +3,7 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "Binder"
+name: "binder"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.13.1"
@@ -17,12 +17,12 @@ license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/Binder"
-    dst: "/usr/local/bin/Binder"
+  - src: "./bin/binder"
+    dst: "/usr/local/bin/binder"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/Binder.png"
-  - src: "./build/linux/Binder.desktop"
-    dst: "/usr/share/applications/Binder.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/binder.png"
+  - src: "./build/linux/binder.desktop"
+    dst: "/usr/share/applications/binder.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

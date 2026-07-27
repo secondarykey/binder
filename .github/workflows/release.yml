@@ -7,6 +7,8 @@ on:
 env:
 
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  # notarytool の資格情報プロファイル名（CI 内でのみ使う一時的な名前）
+  KEYCHAIN_PROFILE: 'binder-notarize'
 
 jobs:
 
@@ -76,24 +78,102 @@ jobs:
           wails3 version
           wails3 doctor
 
+      # macOS 配布物は ad-hoc 署名（codesign --sign -）のままだと、ダウンロード時に付与される
+      # com.apple.quarantine と組み合わさって Gatekeeper に「壊れているため開けません」と拒否される。
+      # Developer ID の Secrets が揃っている場合のみ、署名 + notarize + staple を行う。
+      - name: Check macOS signing secrets
+        id: macos_signing
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          MACOS_NOTARY_APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
+          MACOS_NOTARY_TEAM_ID: ${{ secrets.MACOS_NOTARY_TEAM_ID }}
+          MACOS_NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+        run: |
+          if [ -n "$MACOS_CERT_P12" ] && [ -n "$MACOS_CERT_PASSWORD" ] \
+            && [ -n "$MACOS_SIGN_IDENTITY" ] && [ -n "$MACOS_NOTARY_APPLE_ID" ] \
+            && [ -n "$MACOS_NOTARY_TEAM_ID" ] && [ -n "$MACOS_NOTARY_PASSWORD" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=macOS signing skipped::Developer ID の Secrets が未設定のため ad-hoc 署名でビルドします。配布物は実機で「壊れているため開けません」と表示されます（README の回避手順を参照）。"
+          fi
+
+      - name: Setup signing keychain
+        if: runner.os == 'macOS' && steps.macos_signing.outputs.enabled == 'true'
+        shell: bash
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MACOS_NOTARY_APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
+          MACOS_NOTARY_TEAM_ID: ${{ secrets.MACOS_NOTARY_TEAM_ID }}
+          MACOS_NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/binder-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+
+          echo "$MACOS_CERT_P12" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          # ジョブ中にロックされないよう自動ロックを無効化する
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          # codesign と notarytool の双方が参照できるよう既定キーチェーン兼検索対象にする
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$MACOS_CERT_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          # codesign がパスワード入力なしで秘密鍵を使えるようにする
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" > /dev/null
+          rm -f "$CERT_PATH"
+
+          # store-credentials / submit が同じキーチェーンを見るよう --keychain は指定しない
+          xcrun notarytool store-credentials "$KEYCHAIN_PROFILE" \
+            --apple-id "$MACOS_NOTARY_APPLE_ID" \
+            --team-id "$MACOS_NOTARY_TEAM_ID" \
+            --password "$MACOS_NOTARY_PASSWORD"
+
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
       - name: Build or Package (Binder)
         working-directory: ./_cmd/binder
         shell: bash
+        env:
+          SIGN_ENABLED: ${{ steps.macos_signing.outputs.enabled }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
         run: |
-          if [ "${{ runner.os }}" = "macOS" ]; then
-            wails3 package
-          else
+          if [ "${{ runner.os }}" != "macOS" ]; then
             wails3 build
+          elif [ "$SIGN_ENABLED" = "true" ]; then
+            # package → Developer ID 署名（hardened runtime）→ notarize → staple
+            wails3 task darwin:sign:notarize \
+              SIGN_IDENTITY="$MACOS_SIGN_IDENTITY" \
+              KEYCHAIN_PROFILE="$KEYCHAIN_PROFILE"
+          else
+            wails3 package
           fi
 
       - name: Build or Package (Binder Lite)
         working-directory: ./_cmd/lite
         shell: bash
+        env:
+          SIGN_ENABLED: ${{ steps.macos_signing.outputs.enabled }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
         run: |
-          if [ "${{ runner.os }}" = "macOS" ]; then
-            wails3 package
-          else
+          if [ "${{ runner.os }}" != "macOS" ]; then
             wails3 build
+          elif [ "$SIGN_ENABLED" = "true" ]; then
+            wails3 task darwin:sign:notarize \
+              SIGN_IDENTITY="$MACOS_SIGN_IDENTITY" \
+              KEYCHAIN_PROFILE="$KEYCHAIN_PROFILE"
+          else
+            wails3 package
           fi
 
       - name: Archive Build Results
@@ -105,14 +185,21 @@ jobs:
 
           # 一時ディレクトリに成果物を集約
           mkdir -p _archive
-          cp -r ./_cmd/binder/bin/* _archive/
-          cp -r ./_cmd/lite/bin/* _archive/
-
-          cd _archive
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            7z a ../${ZIP_NAME} ./*
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            # .app バンドルは拡張属性・シンボリックリンク・署名を保持する必要があるため
+            # cp/zip ではなく ditto を使う（zip だと署名検証が壊れる可能性がある）
+            ditto ./_cmd/binder/bin _archive
+            ditto ./_cmd/lite/bin _archive
+            ditto -c -k --sequesterRsrc _archive "${ZIP_NAME}"
           else
-            zip -r ../${ZIP_NAME} ./*
+            cp -r ./_cmd/binder/bin/* _archive/
+            cp -r ./_cmd/lite/bin/* _archive/
+            cd _archive
+            if [ "${{ runner.os }}" = "Windows" ]; then
+              7z a ../${ZIP_NAME} ./*
+            else
+              zip -r ../${ZIP_NAME} ./*
+            fi
           fi
           echo "ZIP_PATH=${ZIP_NAME}" >> $GITHUB_ENV
 
@@ -121,6 +208,15 @@ jobs:
         with:
           name: ${{ matrix.os }}-asset
           path: ${{ env.ZIP_PATH }}
+
+      - name: Cleanup signing keychain
+        if: always() && runner.os == 'macOS' && steps.macos_signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          security list-keychains -d user -s login.keychain-db
+          security default-keychain -s login.keychain-db
+          security delete-keychain "$RUNNER_TEMP/binder-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/certificate.p12"
 
   release:
 

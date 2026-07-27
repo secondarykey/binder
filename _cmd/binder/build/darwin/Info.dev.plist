@@ -3,7 +3,7 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleExecutable</key>
-		<string>Binder</string>
+		<string>binder</string>
 		<key>CFBundleGetInfoString</key>
 		<string>Binder - Markdown Editor</string>
 		<key>CFBundleIconFile</key>
