@@ -146,6 +146,14 @@ func Convert(dir string, ver *Version) error {
 	return nil
 }
 
+// RepairSchema は db ディレクトリのCSVスキーマを検査し、欠損カラムを補う。
+// バージョン判定に依存しないため、移行ラベルの取りこぼしで
+// カラムが欠けたまま新しいバージョンとして記録されたバインダーも修復できる。
+// 返り値は変更されたファイルのgitパス。
+func RepairSchema(dir, dbDir string) ([]string, error) {
+	return convert.RepairSchema(dir, dbDir)
+}
+
 // loadBinderMeta は binder.json を読み込む。
 // 存在しない場合は旧 db/schema.version からフォールバックする。
 func loadBinderMeta(dir string) (*fs.BinderMeta, error) {

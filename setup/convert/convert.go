@@ -20,7 +20,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var v072, v092, v097, v0102 *Version
+var v072, v094, v097, v0102 *Version
 
 // migrationMu は convert.Run() の同時実行を直列化する。
 // go-git の Worktree/index 操作はスレッドセーフではないため、同一バインダーを
@@ -54,9 +54,12 @@ func init() {
 	if err != nil {
 		panic("v072 version parse error: " + err.Error())
 	}
-	v092, err = NewVersion("0.9.2")
+	// assets.mime の移行ラベル。当初 0.8.3 で実装され、後に 0.9.2 へ修正されたが、
+	// 修正が実際に出荷されたのは v0.9.4 であり 0.9.2/0.9.3 のバインダーを取りこぼしていた。
+	// 移行ラベルは「修正が出荷されるリリースのバージョン」を指定する。
+	v094, err = NewVersion("0.9.4")
 	if err != nil {
-		panic("v092 version parse error: " + err.Error())
+		panic("v094 version parse error: " + err.Error())
 	}
 	v097, err = NewVersion("0.9.7")
 	if err != nil {
@@ -78,8 +81,8 @@ func init() {
 			state.gitignorCreated = true
 			return nil
 		}},
-		// 0.9.2: assets.csv に mime 列を追加（ファイル名の拡張子からMIMEタイプを判定）
-		{v092, func(_, dbDir string, _ *migrateState) error {
+		// 0.9.4: assets.csv に mime 列を追加（ファイル名の拡張子からMIMEタイプを判定）
+		{v094, func(_, dbDir string, _ *migrateState) error {
 			return applyDB(dbDir, convert092.Convert092)
 		}},
 		// 0.9.7: structures.csv に private 列を追加（デフォルト値: false）
@@ -91,16 +94,11 @@ func init() {
 				return err
 			}
 			// diagram_style テンプレートファイルを作成（冪等）
-			tmplPath := filepath.Join(dir, fs.TemplateDir, "diagram_style.tmpl")
-			if _, statErr := os.Stat(tmplPath); os.IsNotExist(statErr) {
-				if err := os.MkdirAll(filepath.Dir(tmplPath), 0755); err != nil {
-					return xerrors.Errorf("MkdirAll(templates) error: %w", err)
-				}
-				if err := os.WriteFile(tmplPath, []byte("{'theme':'base'}"), 0644); err != nil {
-					return xerrors.Errorf("os.WriteFile(diagram_style.tmpl) error: %w", err)
-				}
-				state.diagramStyleMigrated = true
+			created, err := ensureDiagramStyleTemplate(dir)
+			if err != nil {
+				return err
 			}
+			state.diagramStyleMigrated = created
 			return nil
 		}},
 		// 0.10.2: layers.csv を新規テーブルとして追加（db.EnsureTableFiles で作成）
@@ -268,7 +266,7 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 
 	// 0.9.7マイグレーション: diagram_style.tmpl をステージする
 	if state.diagramStyleMigrated {
-		if err = bfs.AddFile(fs.TemplateFile("diagram_style")); err != nil {
+		if err = bfs.AddFile(fs.TemplateFile(DiagramStyleTemplate)); err != nil {
 			return nil, xerrors.Errorf("AddFile(diagram_style.tmpl) error: %w", err)
 		}
 	}

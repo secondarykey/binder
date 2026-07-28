@@ -11,6 +11,7 @@ import (
 	"binder/settings"
 	"binder/setup"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -134,6 +135,21 @@ func Load(dir string) (*Binder, error) {
 	if _, err := os.Stat(docsDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(docsDir, 0755); err != nil {
 			return nil, xerrors.Errorf("os.MkdirAll(docs) error: %w", err)
+		}
+	}
+
+	// スキーマ自動修復。過去の移行ラベルの取りこぼしでカラムが欠けたまま
+	// 新しいバージョンとして記録されたバインダー（0.9.2/0.9.3 の assets.mime 等）を
+	// バージョン判定に依存せず修復する。csvq はカラム欠損時にクエリ自体が失敗するため、
+	// db を開く前に実行する。修復に失敗してもロード自体は継続する。
+	if repaired, rErr := setup.RepairSchema(dir, bfs.DatabaseDir()); rErr != nil {
+		log.Warn("RepairSchema() error:\n%+v", rErr)
+	} else if len(repaired) > 0 {
+		log.Notice("Schema repaired: %v", repaired)
+		if cErr := bfs.AutoCommit(fs.M("Schema", "repair columns"), repaired...); cErr != nil {
+			if !errors.Is(cErr, fs.UpdatedFilesError) {
+				log.Warn("RepairSchema AutoCommit() error:\n%+v", cErr)
+			}
 		}
 	}
 
