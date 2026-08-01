@@ -28,12 +28,27 @@ function invalidateSvgCache() {
 class MermaidScript {
 
   static _vendorUrl = null;
+  static _vendorVersion = null;
 
   /**
    * ベンダー JS の URL を設定する（アプリ起動時に一度呼ぶ）
    */
   static setVendorUrl(url) {
     MermaidScript._vendorUrl = url;
+  }
+
+  /**
+   * バンドルした mermaid のバージョンを設定する（各アプリの main.jsx で一度呼ぶ）
+   */
+  static setVendorVersion(version) {
+    MermaidScript._vendorVersion = version;
+  }
+
+  /**
+   * バンドルした mermaid のバージョン（未指定時に動作する版）を返す。
+   */
+  static getVendorVersion() {
+    return MermaidScript._vendorVersion;
   }
 
   static isExists() {

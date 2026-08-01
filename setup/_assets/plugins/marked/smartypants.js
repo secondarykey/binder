@@ -1,4 +1,5 @@
 /* @plugin-name: SmartPants (Typography) */
+/* @marked: >=14 <19 */
 //
 // 文章中の記号をタイポグラフィ的に美しい文字に変換する。
 //

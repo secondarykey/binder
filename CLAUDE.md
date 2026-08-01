@@ -37,6 +37,20 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 - Wails v3 CLI (`go install github.com/wailsapp/wails/v3/cmd/wails3@latest`)
 - Task (`go install github.com/go-task/task/v3/cmd/task@latest`)
 
+OS固有のビルド依存（Wails v3 は cgo で各OSのネイティブWebViewをリンクする）。
+`wails3 doctor` で不足を確認できる。ユーザ向けの記載は README.md にある。
+
+| OS | ビルドに必要なもの |
+|---|---|
+| Linux | `build-essential` `pkg-config` `libgtk-4-dev` `libwebkitgtk-6.0-dev` `libayatana-appindicator3-dev` `librsvg2-dev`（Ubuntu 24.04 / Debian 13以降。CIと同じ構成 → `.github/workflows/release.yml`） |
+| macOS | macOS 12.0+ と Xcode Command Line Tools（`xcode-select --install`）。署名・notarize には `xcrun notarytool` |
+| Windows | WebView2 ランタイム（Windows 11 はプリインストール） |
+
+実行時（配布物を動かすだけ）に必要なものは別。Linux は `libgtk-4-1` `libwebkitgtk-6.0-4`、
+macOS は 12.0+、Windows は WebView2 ランタイム。
+**リリースzipは `wails3 build` の素のバイナリを固めているだけで deb/rpm ではないため、
+`build/linux/nfpm/nfpm.yaml` の `depends` は配布物に効かない**（実行時依存の告知先は README.md のみ）。
+
 ### 開発・ビルド
 ```bash
 # 開発モードで起動（_cmd/binder/ から実行。Lite は _cmd/lite/ から同じコマンド）

@@ -47,6 +47,30 @@ func (a *App) RemovePlugin(engine, name string) error {
 	return nil
 }
 
+// GetPluginVerifiedMajors は開いているバインダーのプラグイン検証時 marked メジャーを
+// { プラグイン名: メジャー } で返す。未オープン時は空。
+func (a *App) GetPluginVerifiedMajors(engine string) map[string]int {
+	defer log.PrintTrace(log.Func("GetPluginVerifiedMajors()"))
+	if a.current == nil {
+		return map[string]int{}
+	}
+	return a.current.GetPluginVerified(engine)
+}
+
+// SetPluginVerifiedMajor はプラグインの検証時 marked メジャーを記録する。
+// フロントエンドがプラグイン保存後、そのとき動作している marked のメジャーを渡す。
+func (a *App) SetPluginVerifiedMajor(engine, name string, major int) error {
+	defer log.PrintTrace(log.Func("SetPluginVerifiedMajor()"))
+	if a.current == nil {
+		return nil
+	}
+	if err := a.current.SetPluginVerified(engine, name, major); err != nil {
+		log.PrintStackTrace(err)
+		return userError(err)
+	}
+	return nil
+}
+
 func (a *App) RenamePlugin(engine, oldName, newName string) error {
 	defer log.PrintTrace(log.Func("RenamePlugin()"))
 	if a.current == nil {

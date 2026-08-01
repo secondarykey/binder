@@ -245,7 +245,18 @@
         "appPluginsEmpty" : "アプリにプラグインが登録されていません",
         "install" : "インストール",
         "installSuccess" : "プラグインをインストールしました",
-        "alreadyInstalled" : "インストール済み"
+        "alreadyInstalled" : "インストール済み",
+        "compat" : {
+            "compatible" : "互換: 対応",
+            "incompatible" : "互換: 非対応（適用しません）",
+            "undeclared" : "互換: 未宣言",
+            "unverified" : "互換: 動作未確認",
+            "unknown" : "互換: 不明",
+            "incompatibleShort" : "非対応",
+            "unverifiedShort" : "動作未確認",
+            "undeclaredRange" : "対応marked: 未宣言",
+            "current" : "現在のmarked"
+        }
     },
     "binder" : {
         "editTitle" : "Binder編集",
@@ -268,6 +279,10 @@
         "cdnHint" : "空欄の場合は内蔵バージョンを使用します。",
         "cdnOk" : "指定URLから正常に読み込みました。",
         "cdnLoadError" : "指定URLからの読み込みに失敗しました。内蔵バージョンを使用します。",
+        "versionDefault" : "内蔵版: {{version}}",
+        "versionCdn" : "指定URL: {{version}}",
+        "versionCdnDetected" : "指定URL: {{version}} と判断（URLから特定不可・自動判定）",
+        "versionCdnUnknown" : "指定URL: 読込時に自動判定します",
         "gcLabel" : "リポジトリメンテナンス",
         "gcButton" : "GC（不要オブジェクト削除）",
         "gcTitle" : "GCの実行",

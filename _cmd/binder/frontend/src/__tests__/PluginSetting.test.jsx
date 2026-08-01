@@ -4,12 +4,14 @@ import Event, { EventContext } from '../Event';
 import { DialogErrorContext } from '../dialogs/components/DialogError';
 
 vi.mock('../../bindings/binder/api/app', () => ({
-  ListPlugins: vi.fn(() => Promise.resolve([])),
+  GetPlugins: vi.fn(() => Promise.resolve([])),
   SavePlugin: vi.fn(() => Promise.resolve()),
-  DeletePlugin: vi.fn(() => Promise.resolve()),
+  RemovePlugin: vi.fn(() => Promise.resolve()),
   RenamePlugin: vi.fn(() => Promise.resolve()),
   ListAppPlugins: vi.fn(() => Promise.resolve([])),
   InstallAppPlugin: vi.fn(() => Promise.resolve()),
+  SetPluginVerifiedMajor: vi.fn(() => Promise.resolve()),
+  GetPluginVerifiedMajors: vi.fn(() => Promise.resolve({})),
 }));
 
 import PluginSetting from '../dialogs/PluginSetting';

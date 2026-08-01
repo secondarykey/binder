@@ -245,7 +245,18 @@
         "appPluginsEmpty" : "No app plugins registered",
         "install" : "Install",
         "installSuccess" : "Plugin installed",
-        "alreadyInstalled" : "Installed"
+        "alreadyInstalled" : "Installed",
+        "compat" : {
+            "compatible" : "Compatibility: OK",
+            "incompatible" : "Compatibility: incompatible (not applied)",
+            "undeclared" : "Compatibility: undeclared",
+            "unverified" : "Compatibility: unverified",
+            "unknown" : "Compatibility: unknown",
+            "incompatibleShort" : "incompatible",
+            "unverifiedShort" : "unverified",
+            "undeclaredRange" : "Supported marked: undeclared",
+            "current" : "Current marked"
+        }
     },
     "binder" : {
         "editTitle" : "Edit Binder",
@@ -267,6 +278,10 @@
         "mermaidUrl" : "Mermaid.js CDN URL",
         "cdnHint" : "Leave empty to use the bundled version.",
         "cdnOk" : "Loaded successfully from specified URL.",
+        "versionDefault" : "Bundled: {{version}}",
+        "versionCdn" : "Specified URL: {{version}}",
+        "versionCdnDetected" : "Specified URL: judged {{version}} (not in URL; auto-detected)",
+        "versionCdnUnknown" : "Specified URL: auto-detected on load",
         "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used.",
         "gcLabel" : "Repository Maintenance",
         "gcButton" : "GC (Remove unused objects)",
