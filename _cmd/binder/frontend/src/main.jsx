@@ -53,7 +53,14 @@ Marked.init = async function() {
     GetAllowedCDNs().catch(() => []),
   ])
   if (conf && conf.markedUrl) cdnUrl = conf.markedUrl
-  if (cdnUrl && !Scripter.isAllowedUrl(cdnUrl, allowedDomains || [])) {
+
+  // 「何を読もうとしたか」を記録する。ベンダー版へ黙って落ちた場合に
+  // Marked.getEngineWarnings() が検出できるようにするため（CDN 指定は
+  // バージョン固定の手段として使われるので、落ちたことに気付けないと困る）。
+  const blocked = !!cdnUrl && !Scripter.isAllowedUrl(cdnUrl, allowedDomains || [])
+  Marked.setEngineRequest({ url: cdnUrl, blocked })
+
+  if (blocked) {
     console.warn("CDN URL not in allowed domains, falling back to vendor:", cdnUrl)
     cdnUrl = null
   }

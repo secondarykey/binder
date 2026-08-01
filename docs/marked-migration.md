@@ -9,6 +9,9 @@ marked.js のバンドルバージョンを段階的に更新するための計�
 
 作成時点の状態: バンドル marked **14.1.4** / mermaid 11.16.0、アプリバージョン **0.13.1**。
 
+現在の状況: **0.14.0（互換基盤）は実装完了**。バンドルは 14.1.4 のまま。
+残るのは 0.15.0（marked 17.0.5）と 0.16.0（marked 18.0.7）の vendor 差し替え。
+
 ---
 
 ## 背景と問題
@@ -86,6 +89,10 @@ marked('![a"x](u)').includes('&quot;')
 | 検証時メジャーの記録 | 未宣言プラグインが黙って環境変化にさらされること |
 | **回帰テスト** | **同梱プラグインの silent breakage（唯一これだけが実証できる）** |
 
+エラー隔離には裏がある。**握り潰した事実を表に出さない限り、隔離は「壊れていることを
+隠す仕組み」になる**。そのため隔離と可視化（プレビューの警告バー・設定画面の状態表示・
+出力時の警告）は必ずセットで入れる。0.14.0 の item 4 と item 9 以降がその対。
+
 silent breakage を本当に捕まえられるのは回帰テストだけ。同梱プラグインについては
 テストで「動作保証」と呼べる状態を作り、ユーザ自作プラグインについては同じ
 テストの書き方をドキュメント化する。
@@ -148,9 +155,10 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
    | 未宣言・記録なし | 有効（undeclared） |
 
 4. ✅ **プラグイン実行エラーの隔離** — `applyPlugins` → `_isolateExt`
-   - extension の `tokenizer`（→ undefined）/`renderer`（→ 空文字）/`walkTokens`、
+   - extension の `tokenizer`（→ undefined）/`renderer`（→ `token.raw`）/`walkTokens`、
      トップレベル `renderer.*` を try/catch でラップ。投げたプラグインは名指しで
      `getPluginStatus()` に `runtimeError` を記録し、プレビュー全体は落とさない。
+   - 隔離は単体では検知性を下げるため、可視化（item 9 以降）とセットで入れる。
 
 5. ✅ **同梱プラグインの修正**（`setup/_assets/plugins/marked/`）
    - 全15本に `@marked: >=14 <19` を付与
@@ -187,6 +195,86 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
    （色）+ ツールチップ（状態 / 対応marked / 現在のmarked）を表示。incompatible /
    unverified はセカンダリラベルも出す。marked 情報は `Marked.ensureInit()` →
    `getMarkedInfo()`、判定は `pluginCompatStatus`。i18n: `plugin.compat.*`。
+
+#### 失敗の可視化（エラー隔離とセットで入れる）
+
+エラー隔離（item 4）は**単体で入れると検知性を下げる**。握り潰す仕組みだけあって、
+握り潰した事実をユーザに見せる経路が無いと、0.13.2 より気付きにくくなる:
+
+| | 0.13.2（隔離なし） | 隔離のみ入れた場合 |
+|---|---|---|
+| プラグインが実行時に例外 | `marked.marked()` から伝播 → プレビューがエラー表示 / 出力時にエラー | `_isolateExt` が捕捉 → 記法が黙って消え、プレビューは "Success" |
+| 出力（publish） | エラーで止まる | 成功し、劣化した HTML が git に記録される |
+
+`Marked.getPluginStatus()` は `applied` / `loadError` / `runtimeError` を保持しているが、
+UI から参照しなければ意味を持たない。`console.warn` は Syslog ウィンドウにも出ない
+（あれは Go の slog を tail するだけで JS → Go のログ橋渡しは無い）ため、
+F12 を開かない限り気付く手段が無くなる。
+
+**0.15.0/0.16.0 でバンドルを上げる前に、この経路を塞いでおく必要がある**ため、
+item 9 以降を同じリリースに含める。
+
+9. ✅ **プラグイン警告をプレビューの警告バーへ出す** — `Marked.getPluginWarnings(t)` を新設し
+   （`_cmd/shared/frontend/editor/engines/Marked.jsx`）、`Component.jsx` の `createMarked` が
+   返す `warnings` に連結する。既存の parseStatusBar（「Warning (n)」＋一覧ダイアログ）に
+   そのまま乗るため、**ノートを開いているだけで気付ける**。
+   拾う状態は loadError / incompatible / notApplied / runtimeError。
+   i18n: `plugin.warn.*`。翻訳関数を渡さない場合・キー未定義時は英語の既定文言に落ちる
+   （Lite など i18n を持たない呼び出し元でも使えるようにするため）。
+
+10. ✅ **renderer 失敗時のフォールバックを `''` → `token.raw`（エスケープ済み）に変更** —
+   空文字だと記法もろとも消えて異常と分からないが、生ソースが残れば目視で気付ける。
+   tokenizer 側は元から `undefined`（＝マッチせず素のテキストが残る）で同じ性質だったため、
+   renderer だけが非対称だった。
+
+11. ✅ **設定画面の状態表示に実測を反映** — `PluginSetting.jsx` の状態判定に
+   `Marked.getPluginStatus()` を重ね、`loadError` / `runtimeError` / `notApplied` を
+   赤ドット＋セカンダリラベルで出す。従来は宣言（`@marked`）と検証記録だけで判定しており、
+   「設定画面は緑なのに動いていない」状態が表現できなかった。
+
+12. ✅ **出力時の警告** — publish（`handlePublish` / `UnpublishedMenu` の一括出力）で
+   プラグイン警告がある場合、成功スナックバーではなく警告を出す。
+   出力 HTML は git に記録されるため、劣化したまま記録したことに気付ける必要がある。
+
+13. ✅ **CDN 差し替え時にプラグインが落ちるバグの修正** — `Binder.jsx` の `handleSaveScript` は
+   `loadAndValidate()` でエンジン実体を差し替えるだけで、`resolveMarkedInfo` も
+   `applyPlugins` も呼んでいなかった。`isExists()` が true になるため `ensureInit()` も
+   素通りし、**バインダー設定で marked URL を保存した瞬間からプラグインが一本も効かない**
+   状態がアプリ再起動まで続いていた（その間に出力すると劣化 HTML が記録される）。
+   検証後に `reset()` → `ensureInit()` で init 経路をやり直す。
+   併せて `_pluginsApplied` フラグを持たせ、「エンジンを差し替えたまま再適用していない」
+   状態自体を `getPluginWarnings` が検出できるようにした（同種の再発に対する保険）。
+
+14. ✅ **バージョン判定の精度改善** — CDN URL の正規表現が `marked@x.y.z` 固定で、
+   `marked@18` / `marked@18.0`（CDN で有効な形）を読み取れず機能プローブに落ちていた。
+   1〜3 要素を許容し、パッチまで揃っている時だけ `version` として扱う
+   （部分指定はメジャーのみ確定させ `version` は null のままにし、`>=18.1` 等の誤判定を防ぐ）。
+   また `probeMajor` が v18 を 17 と判定していたため、v18 判別プローブを追加した
+   （v18 は見出し直後の空行が独立した `space` トークンになる。v14/17/18 実測で確認）。
+
+15. ✅ **CDN 読込失敗（ベンダー版へのフォールバック）を可視化** — CDN 指定は
+   「バンドルを上げても壊したくないユーザがバージョンを固定する手段」として機能するが
+   （`markedUrl` は `binder.json` = git 管理なのでチーム全員に効く）、読み込めなかった場合は
+   `console.warn` だけでベンダー版へ落ちていた。**固定したつもりで新しい marked が動く**
+   状態になり、しかも設定画面は URL 由来の版を表示し続けるため成功したように見えていた。
+   - `Marked.setEngineRequest({url, blocked})` で「何を読もうとしたか」を記録し、
+     `getEngineWarnings()` が「指定あり かつ 実際は vendor」を検出する。
+     許可CDN外で弾いた場合は別文言（`marked.warn.cdnBlocked`）。
+   - プレビュー・出力は `getWarnings()`（エンジン + プラグイン）を使う。
+   - `Binder.jsx` の `renderVersionInfo` を URL 文字列ベースから **実際の解決結果ベース**へ
+     変更。失敗時は「読み込めず内蔵版で動作中」を赤字で出す。未保存の編集中 URL は
+     「未保存・保存時に読み込みます」と区別する。
+
+**既知の制限（未対応）**: `tryLoadUrl` は ESM を先に試すが、UMD ファイルは import/export を
+持たないため `import()` が**構文エラーにならず成功してしまう**。marked の UMD ラッパーは
+`globalThis.marked` を正しく作るのに、直後に `globalThis.marked = m`（空の名前空間）で
+上書きして壊す。`import()` が投げないので UMD 用の `Scripter.loadScript` へは到達しない。
+**CDN 指定は `.esm.js` を使うこと**（`lib/marked.umd.js` は動かない）。
+
+テスト: `_cmd/binder/frontend/src/__tests__/pluginVisibility.test.jsx`（警告の発生条件・
+raw フォールバック・CDN フォールバック検出・URL バージョン解決）、
+`PluginSetting.test.jsx`（実行結果の表示）、`Binder.test.jsx`（バージョン表示が
+URL ではなく実際の解決結果に従うこと）。
 
 ### vendor バンドル差し替えチェックリスト（0.15.0 / 0.16.0 共通）
 
@@ -300,13 +388,21 @@ renderer: function(token) { return '<kbd>' + token.text + '</kbd>'; }
 - `fs/plugin.go` — `PluginInfo` に `Version`/`MarkedRange`、`ReadPlugins` でヘッダパース
 - `internal/version.go` — semver レンジ判定（既存 `Version` を利用）
 - `_cmd/shared/frontend/editor/engines/Marked.jsx` — `applyPlugins` にバージョン注入・
-  互換ゲート・エラー隔離、`binder.escape` 提供
-- `_cmd/binder/frontend/src/main.jsx` — `GetPlugins` 適用時に marked バージョンを解決
-- `setup/_assets/plugins/marked/*.js` — `@marked` 付与、エスケープ問題4本の修正
-- `setup/externals.go` — `InstallSamplePlugins` をハッシュ一致時のみ上書きに
+  互換ゲート・エラー隔離、`binder.escape` 提供、`getWarnings`/`getPluginWarnings`/
+  `getEngineWarnings`（可視化の入口）、`setEngineRequest`
+- `_cmd/binder/frontend/src/main.jsx` — `GetPlugins` 適用時に marked バージョンを解決、
+  `setEngineRequest` で要求 URL を記録
+- `_cmd/binder/frontend/src/components/editor/Component.jsx` — `createMarked` が
+  `getWarnings()` を warnings に連結（プレビューの警告バー）、出力時の警告
+- `_cmd/binder/frontend/src/dialogs/Binder.jsx` — CDN 保存後の再初期化、
+  バージョン表示を実際の解決結果ベースに
+- `setup/_assets/plugins/marked/*.js` — `@marked` 付与、エスケープ問題5本の修正
+- `setup/externals.go` / `setup/plugin_sync.go` — 配布済みプラグインをハッシュ一致時のみ上書き
 - `_cmd/binder/frontend/src/dialogs/PluginSetting.jsx` / `AppPluginSetting.jsx` —
-  対応marked / 現在のmarked / 状態の表示
-- テスト — 同梱プラグイン回帰テスト（vitest）
+  対応marked / 現在のmarked / 状態の表示（実行結果込み）
+- 言語ファイル — `plugin.compat.*` / `plugin.warn.*` / `marked.warn.*` / `binder.version*`
+- テスト — `bundledPlugins` / `markedCompat` / `pluginMeta` / `pluginVisibility` /
+  `PluginSetting` / `Binder`（vitest）
 
 詳細なプラグイン実装マップは Skill: `binder-plugin-rootfile` を参照。
 
@@ -320,7 +416,10 @@ renderer: function(token) { return '<kbd>' + token.text + '</kbd>'; }
    同梱プラグインの更新機構（item 7）が触るのはアプリ階層（`~/.binder/plugins/marked/`）のみ。
 2. **`@marked` 未宣言プラグインは警告付きで適用** — 後方互換優先。検証時メジャーを記録し、
    現在の marked と不一致なら「動作未確認」と警告表示する（スキップはしない）。
-3. **同梱4本のエスケープ修正（kbd/sub/sup/underline）は 0.14.0 に含める** — XSS のため。
-   回帰テストも同時に入れる。
+3. **同梱5本のエスケープ修正（kbd/subscript/superscript/underline/highlight）は 0.14.0 に
+   含める** — XSS のため。回帰テストも同時に入れる。
 4. メタデータ書式は既存の `/* @key: value */` 行並びを踏襲（`@plugin-name` は既に存在）。
 5. 「検証時メジャーの記録」は入れる（item 3）。
+6. **エラー隔離と可視化はセットで入れる（分割リリースしない）** — 隔離だけを出すと
+   0.13.2 より検知性が下がる期間ができる。当初 0.14.1 として切り出す案もあったが、
+   0.14.0 が未リリースだったため同一リリースへ統合した。

@@ -48,29 +48,41 @@ function Binder({ isModal, ...props }) {
   };
 
   // バンドル版（未指定時に動作する版）と、CDN指定時のバージョン表記を出す。
-  // CDN指定時は次の優先順で表示する:
-  //   1. URL から x.y.z を読み取れればその版
-  //   2. 読み取れないが判定結果（機能プローブ）があれば「vN と判断（自動判定）」
-  //      — marked はランタイムに version を公開しないため、これがプラグイン互換判定に
-  //        実際に使われている版。プラグインもこの版で互換判定される
-  //   3. どちらも無ければ「読込時に自動判定」
-  // determined は「現在動作中でソースがCDN」かつ「編集中URLが保存済みURLと一致」する時のみ渡す。
-  const renderVersionInfo = (bundled, url, pkg, determined) => {
-    const cdn = url ? cdnVersion(url, pkg) : null;
+  //
+  // 表示は「URL に何と書いてあるか」ではなく「実際に何が動いているか」を優先する。
+  // CDN 指定はバージョン固定の手段として使われるため、読み込みに失敗してベンダー版へ
+  // 落ちているのに URL 由来の版を表示すると、固定できているように見えてしまう。
+  //
+  // applied は現在動作中の解決結果（保存済みURLに対するもののみ渡す）。
+  //   - applied.source === 'cdn' … 実際に読めている。version があればそれ、無ければ
+  //     機能プローブの判定（marked はランタイムに version を公開しないため）
+  //   - applied.source === 'vendor' … 読めずにベンダー版で動作中（失敗として赤字で出す）
+  //   - applied なし（未保存の編集中など）… URL の記載から読み取れる版を参考表示する
+  const renderVersionInfo = (bundled, url, pkg, applied) => {
     let cdnText = null;
+    let failed = false;
+
     if (url) {
-      if (cdn) {
-        cdnText = t("binder.versionCdn", { version: cdn });
-      } else if (determined && determined.major != null) {
-        cdnText = t("binder.versionCdnDetected", { version: "v" + determined.major });
+      if (applied && applied.source === 'vendor') {
+        cdnText = t("binder.versionCdnFallback");
+        failed = true;
+      } else if (applied && applied.version) {
+        cdnText = t("binder.versionCdn", { version: applied.version });
+      } else if (applied && applied.major != null) {
+        cdnText = t("binder.versionCdnDetected", { version: "v" + applied.major });
       } else {
-        cdnText = t("binder.versionCdnUnknown");
+        const cdn = cdnVersion(url, pkg);
+        cdnText = cdn
+          ? t("binder.versionCdnPending", { version: cdn })
+          : t("binder.versionCdnUnknown");
       }
     }
+
     return (
       <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '11px', mt: 0.5, textAlign: 'left' }}>
         {t("binder.versionDefault", { version: bundled || "?" })}
-        {cdnText && " / " + cdnText}
+        {cdnText && " / "}
+        {cdnText && <Box component="span" sx={failed ? { color: 'var(--accent-red)' } : undefined}>{cdnText}</Box>}
       </Typography>
     );
   };
@@ -237,8 +249,13 @@ function Binder({ isModal, ...props }) {
         : null;
       const config = { name, detail, markedUrl, mermaidUrl, previewColorScheme };
       await EditConfig(config);
+      // 保存済みURLを更新し、直後のバージョン表示が「判定結果」を反映できるようにする
+      setSavedMarkedUrl(markedUrl);
 
-      // marked の検証と差し替え
+      // marked の検証と差し替え。
+      // loadAndValidate はエンジン実体を差し替えるだけでプラグインを再適用しないため、
+      // 検証後に必ず reset() → ensureInit() で init 経路（バージョン解決 + プラグイン適用）を
+      // やり直す。これを省くとプラグインが一本も効かないままプレビュー・出力が動いてしまう。
       if (markedUrl) {
         if (!Scripter.isAllowedUrl(markedUrl, allowedDomains)) {
           setMarkedStatus("error");
@@ -247,9 +264,11 @@ function Binder({ isModal, ...props }) {
           setMarkedStatus(result.success ? "ok" : "error");
         }
       } else {
-        MarkedScript.reset();
         setMarkedStatus("");
       }
+      MarkedScript.reset();
+      await MarkedScript.ensureInit().catch(() => {});
+      setMarkedInfo(MarkedScript.getMarkedInfo());
 
       // mermaid の検証と差し替え
       if (mermaidUrl) {
@@ -443,7 +462,8 @@ function Binder({ isModal, ...props }) {
                 MarkedScript.getVendorVersion(),
                 markedUrl,
                 "marked",
-                (markedUrl === savedMarkedUrl && markedInfo && markedInfo.source === "cdn") ? markedInfo : null,
+                // 編集中で未保存の URL には現在の解決結果は対応しないため渡さない
+                (markedUrl === savedMarkedUrl) ? markedInfo : null,
               )}
             </FormControl>
 
