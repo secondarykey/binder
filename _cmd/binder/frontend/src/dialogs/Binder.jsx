@@ -237,8 +237,13 @@ function Binder({ isModal, ...props }) {
         : null;
       const config = { name, detail, markedUrl, mermaidUrl, previewColorScheme };
       await EditConfig(config);
+      // 保存済みURLを更新し、直後のバージョン表示が「判定結果」を反映できるようにする
+      setSavedMarkedUrl(markedUrl);
 
-      // marked の検証と差し替え
+      // marked の検証と差し替え。
+      // loadAndValidate はエンジン実体を差し替えるだけでプラグインを再適用しないため、
+      // 検証後に必ず reset() → ensureInit() で init 経路（バージョン解決 + プラグイン適用）を
+      // やり直す。これを省くとプラグインが一本も効かないままプレビュー・出力が動いてしまう。
       if (markedUrl) {
         if (!Scripter.isAllowedUrl(markedUrl, allowedDomains)) {
           setMarkedStatus("error");
@@ -247,9 +252,11 @@ function Binder({ isModal, ...props }) {
           setMarkedStatus(result.success ? "ok" : "error");
         }
       } else {
-        MarkedScript.reset();
         setMarkedStatus("");
       }
+      MarkedScript.reset();
+      await MarkedScript.ensureInit().catch(() => {});
+      setMarkedInfo(MarkedScript.getMarkedInfo());
 
       // mermaid の検証と差し替え
       if (mermaidUrl) {

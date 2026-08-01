@@ -252,10 +252,24 @@
             "undeclared" : "Compatibility: undeclared",
             "unverified" : "Compatibility: unverified",
             "unknown" : "Compatibility: unknown",
+            "loadError" : "State: failed to load (not running)",
+            "runtimeError" : "State: runtime error (output was dropped)",
+            "notApplied" : "State: not applied",
             "incompatibleShort" : "incompatible",
             "unverifiedShort" : "unverified",
+            "loadErrorShort" : "load failed",
+            "runtimeErrorShort" : "runtime error",
+            "notAppliedShort" : "not applied",
             "undeclaredRange" : "Supported marked: undeclared",
             "current" : "Current marked"
+        },
+        "warn" : {
+            "loadError" : "Plugin \"{{name}}\" failed to load: {{error}}",
+            "incompatible" : "Plugin \"{{name}}\" was not applied (supported marked: {{range}} / current: {{current}})",
+            "notApplied" : "Plugin \"{{name}}\" was not applied",
+            "runtimeError" : "Plugin \"{{name}}\" threw at runtime and its output was dropped: {{error}}",
+            "neverApplied" : "No plugins are applied to the current marked engine (reopen the binder or restart the app)",
+            "published" : "Recorded while plugins are failing ({{count}} warning(s)). Check the preview warnings."
         }
     },
     "binder" : {

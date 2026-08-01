@@ -4,6 +4,18 @@ import { parsePluginMeta, parseVersion, satisfiesRange, pluginCompatStatus, shou
 const Name = "marked"
 
 /**
+ * プラグイン警告の既定文言（英語）。
+ * Lite など i18n を持たない呼び出し元、翻訳キー未定義時のフォールバックに使う。
+ */
+const DEFAULT_PLUGIN_WARNINGS = {
+    'plugin.warn.loadError': (p) => `Plugin "${p.name}" failed to load: ${p.error}`,
+    'plugin.warn.incompatible': (p) => `Plugin "${p.name}" was skipped: requires marked ${p.range}, current is ${p.current}`,
+    'plugin.warn.notApplied': (p) => `Plugin "${p.name}" was not applied`,
+    'plugin.warn.runtimeError': (p) => `Plugin "${p.name}" threw at runtime and its output was dropped: ${p.error}`,
+    'plugin.warn.neverApplied': () => 'Plugins have not been applied to the current marked engine (reopen the binder or restart)',
+}
+
+/**
  * marked のバージョンに依存しない HTML エスケープ。
  * marked 15 以降、カスタム拡張トークンのエスケープはプラグイン側の責任になったため、
  * プラグイン作者が使えるよう globalThis.binder.escape として提供する。
@@ -33,6 +45,9 @@ class MarkedScript {
     static _markedInfo = null;
     // プラグイン名 → { status, meta, applied } の互換判定結果
     static _pluginStatus = {};
+    // 現在ロードされているエンジンに対して applyPlugins() を通したか。
+    // エンジンを差し替えたのにプラグインを再適用し忘れた状態を検出するために持つ。
+    static _pluginsApplied = false;
     // init() の多重実行を防ぐための in-flight Promise。
     // ウォームアップ（先読み）と初回 parse() が並行しても、同じ初期化を共有して
     // エンジンを二重ロードしないようにする。
@@ -78,6 +93,15 @@ class MarkedScript {
         return this._initPromise;
     }
 
+    /**
+     * エンジン実体を差し替えた（＝これまで use() したプラグインが失われた）ことを記録する。
+     * 再度 applyPlugins() を通すまで、プラグインは一本も効いていない状態になる。
+     */
+    static _markEngineSwapped() {
+        this._pluginsApplied = false;
+        this._pluginStatus = {};
+    }
+
     static reset() {
         // ESM動的importはブラウザにキャッシュされるため、
         // globalThis.marked を削除するだけでは marked の内部状態（use()で追加したextensions等）が残る。
@@ -88,6 +112,7 @@ class MarkedScript {
             } catch (e) {}
         }
         delete globalThis.marked;
+        MarkedScript._markEngineSwapped();
     }
 
     /**
@@ -95,6 +120,7 @@ class MarkedScript {
      * サブクラスやラッパーで上書き可能。
      */
     static async init() {
+        MarkedScript._markEngineSwapped();
         var m = await Scripter.import(MarkedScript._vendorUrl);
         globalThis.marked = m;
     }
@@ -106,6 +132,7 @@ class MarkedScript {
      */
     static async tryLoadUrl(url) {
         delete globalThis.marked;
+        MarkedScript._markEngineSwapped();
         try {
             var m = await Scripter.import(url);
             globalThis.marked = m;
@@ -122,11 +149,17 @@ class MarkedScript {
 
     /**
      * 指定URLでmarkedを読み込み、失敗時はベンダー版にフォールバック。
+     *
+     * 注意: このメソッドはエンジン実体を差し替えるだけで、プラグインの再適用は行わない。
+     * 呼び出し元は成否に関わらず、続けてプラグインを適用し直すこと
+     * （Binder では reset() → ensureInit() で init 経路をやり直す）。
+     *
      * @param {string} url 検証するURL
      * @returns {{ success: boolean }}
      */
     static async loadAndValidate(url) {
         delete globalThis.marked;
+        MarkedScript._markEngineSwapped();
         if (url) {
             if (await MarkedScript.tryLoadUrl(url)) {
                 return { success: true };
@@ -149,7 +182,14 @@ class MarkedScript {
         try {
             // v17 以降は list_item の子に checkbox トークンが生成される
             const items = M.Lexer.lex('- [ ] a\n')[0]?.items;
-            if (items?.[0]?.tokens?.[0]?.type === 'checkbox') return 17;
+            if (items?.[0]?.tokens?.[0]?.type === 'checkbox') {
+                // v18 以降は見出し直後の空行が独立した space トークンになる
+                // （v17 までは heading.raw に "# h\n\n" と含まれる）
+                try {
+                    if (M.Lexer.lex('# h\n\nx\n')[0]?.raw === '# h') return 18;
+                } catch { /* noop */ }
+                return 17;
+            }
         } catch { /* noop */ }
         try {
             // v14 と v17+ は alt 属性をエスケープする。ここは checkbox 無し確定なので
@@ -168,9 +208,19 @@ class MarkedScript {
     static resolveMarkedInfo(cdnUrl) {
         let info;
         if (cdnUrl) {
-            const m = String(cdnUrl).match(/marked@(\d+\.\d+\.\d+)/);
+            // "marked@18" / "marked@18.0" のようにパッチ以下を省いた URL も CDN では有効なため、
+            // x.y.z 固定にせず 1〜3 要素を許容する（parseVersion が 0 で埋める）。
+            const m = String(cdnUrl).match(/marked@(\d+(?:\.\d+){0,2})/);
             if (m) {
-                info = { version: m[1], major: parseVersion(m[1])[0], source: 'cdn' };
+                // パッチまで揃っている時だけ version として扱う。
+                // "marked@18" を 18.0.0 と見なすと ">=18.1" 等を誤判定するため、
+                // 部分指定はメジャーのみ確定させ version は不明のままにする。
+                const full = /^\d+\.\d+\.\d+$/.test(m[1]);
+                info = {
+                    version: full ? m[1] : null,
+                    major: parseVersion(m[1])[0],
+                    source: 'cdn',
+                };
             } else {
                 info = { version: null, major: this.probeMajor(), source: 'cdn' };
             }
@@ -198,6 +248,58 @@ class MarkedScript {
      */
     static getPluginStatus() {
         return this._pluginStatus;
+    }
+
+    /**
+     * プラグインが「意図どおり動いていない」状態を警告メッセージの配列で返す。
+     *
+     * 互換層はプレビューを落とさないために失敗を握り潰すため、これを UI に出さないと
+     * ユーザは記法が消えたことにしか気付けない。プレビューの警告バーへ流すために使う。
+     *
+     * @param {(key:string, params?:Object) => string} [t] 翻訳関数。省略時は英語の既定文言
+     * @returns {string[]}
+     */
+    static getPluginWarnings(t) {
+        const tr = (key, params) => {
+            if (typeof t === 'function') {
+                const s = t(key, params);
+                // キーがそのまま返る（未定義）場合は既定文言にフォールバックする
+                if (s && s !== key) return s;
+            }
+            return DEFAULT_PLUGIN_WARNINGS[key](params || {});
+        };
+
+        const info = this._markedInfo || {};
+        const current = info.version || (info.major != null ? String(info.major) : '?');
+        const out = [];
+
+        // エンジンを差し替えたまま再適用されていない＝プラグインが一本も効いていない
+        if (this.isExists() && !this._pluginsApplied) {
+            out.push(tr('plugin.warn.neverApplied', {}));
+            return out;
+        }
+
+        for (const [name, st] of Object.entries(this._pluginStatus || {})) {
+            if (st.loadError) {
+                out.push(tr('plugin.warn.loadError', { name, error: st.loadError }));
+                continue;
+            }
+            if (st.status === 'incompatible') {
+                out.push(tr('plugin.warn.incompatible', {
+                    name, range: (st.meta && st.meta.marked) || '?', current,
+                }));
+                continue;
+            }
+            if (!st.applied) {
+                out.push(tr('plugin.warn.notApplied', { name }));
+                continue;
+            }
+            if (st.runtimeError) {
+                out.push(tr('plugin.warn.runtimeError', { name, error: st.runtimeError }));
+            }
+        }
+
+        return out;
     }
 
     /**
@@ -241,15 +343,23 @@ class MarkedScript {
             };
         };
 
+        // renderer が投げた場合はトークンの元ソースをエスケープして返す。
+        // 空文字を返すと記法もろとも消えてしまい、ユーザは異常に気付けない。
+        // 生ソースが残れば「変換されていない」ことが目視で分かる。
+        const rawFallback = (args) => {
+            const raw = args && args[0] && args[0].raw;
+            return typeof raw === 'string' ? htmlEscape(raw) : '';
+        };
+
         const clone = { ...ext };
 
         if (Array.isArray(ext.extensions)) {
             clone.extensions = ext.extensions.map((e) => {
                 const ec = { ...e };
-                // tokenizer が投げたら undefined を返す（＝この記法にマッチしない扱い）
+                // tokenizer が投げたら undefined を返す（＝この記法にマッチしない扱い。
+                // 素のテキストとして残るので、これ自体が目視のシグナルになる）
                 ec.tokenizer = wrapFn(e.tokenizer, 'tokenizer', undefined);
-                // renderer が投げたら空文字を返す（＝出力しない）
-                ec.renderer = wrapFn(e.renderer, 'renderer', '');
+                ec.renderer = wrapFn(e.renderer, 'renderer', rawFallback);
                 return ec;
             });
         }
@@ -257,7 +367,7 @@ class MarkedScript {
         if (ext.renderer && typeof ext.renderer === 'object') {
             const r = {};
             for (const [k, fn] of Object.entries(ext.renderer)) {
-                r[k] = typeof fn === 'function' ? wrapFn(fn, `renderer.${k}`, '') : fn;
+                r[k] = typeof fn === 'function' ? wrapFn(fn, `renderer.${k}`, rawFallback) : fn;
             }
             clone.renderer = r;
         }
@@ -279,6 +389,9 @@ class MarkedScript {
      */
     static applyPlugins(plugins, markedInfo, verifiedMajors) {
         this._pluginStatus = {};
+        // 0本でも「現在のエンジンに対して適用処理を通した」とみなす。
+        // 未適用（エンジン差し替え後の再適用漏れ）と 0本設定を区別するため。
+        this._pluginsApplied = true;
 
         // プラグインの有無に関わらず現在の marked 情報でコンテキストを更新する
         const info = markedInfo || this._markedInfo || {};

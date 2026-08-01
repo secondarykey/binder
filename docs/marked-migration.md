@@ -86,6 +86,10 @@ marked('![a"x](u)').includes('&quot;')
 | 検証時メジャーの記録 | 未宣言プラグインが黙って環境変化にさらされること |
 | **回帰テスト** | **同梱プラグインの silent breakage（唯一これだけが実証できる）** |
 
+エラー隔離には裏がある。**握り潰した事実を表に出さない限り、隔離は「壊れていることを
+隠す仕組み」になる**。0.14.0 は隔離だけを入れて表示経路を欠いていたため、0.14.1 で
+可視化を追加した（後述）。
+
 silent breakage を本当に捕まえられるのは回帰テストだけ。同梱プラグインについては
 テストで「動作保証」と呼べる状態を作り、ユーザ自作プラグインについては同じ
 テストの書き方をドキュメント化する。
@@ -187,6 +191,64 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
    （色）+ ツールチップ（状態 / 対応marked / 現在のmarked）を表示。incompatible /
    unverified はセカンダリラベルも出す。marked 情報は `Marked.ensureInit()` →
    `getMarkedInfo()`、判定は `pluginCompatStatus`。i18n: `plugin.compat.*`。
+
+### 0.14.1 — 失敗の可視化（**バンドルは 14.1.4 のまま**）
+
+0.14.0 の互換基盤には穴があった。**失敗を握り潰す仕組みだけ入れて、握り潰した事実を
+ユーザに見せる経路が無かった**。`Marked.getPluginStatus()` に `applied` / `loadError` /
+`runtimeError` を溜めていたが、参照していたのはテストだけで UI からの参照がゼロだった。
+
+結果として 0.13.2 より**検知性が下がっていた**:
+
+| | 0.13.2 | 0.14.0 |
+|---|---|---|
+| プラグインが実行時に例外 | `marked.marked()` から伝播 → プレビューがエラー表示 / 出力時にエラー | `_isolateExt` が捕捉 → 記法が黙って消え、プレビューは "Success" |
+| 出力（publish） | エラーで止まる | 成功し、劣化した HTML が git に記録される |
+
+`console.warn` は Syslog ウィンドウにも出ない（あれは Go の slog を tail するだけで
+JS → Go のログ橋渡しは無い）ため、F12 を開かない限り気付く手段が無かった。
+0.15.0/0.16.0 でバンドルを上げる前に、この経路を先に塞ぐ。
+
+1. ✅ **プラグイン警告をプレビューの警告バーへ出す** — `Marked.getPluginWarnings(t)` を新設し
+   （`_cmd/shared/frontend/editor/engines/Marked.jsx`）、`Component.jsx` の `createMarked` が
+   返す `warnings` に連結する。既存の parseStatusBar（「Warning (n)」＋一覧ダイアログ）に
+   そのまま乗るため、**ノートを開いているだけで気付ける**。
+   拾う状態は loadError / incompatible / notApplied / runtimeError。
+   i18n: `plugin.warn.*`。翻訳関数を渡さない場合・キー未定義時は英語の既定文言に落ちる
+   （Lite など i18n を持たない呼び出し元でも使えるようにするため）。
+
+2. ✅ **renderer 失敗時のフォールバックを `''` → `token.raw`（エスケープ済み）に変更** —
+   空文字だと記法もろとも消えて異常と分からないが、生ソースが残れば目視で気付ける。
+   tokenizer 側は元から `undefined`（＝マッチせず素のテキストが残る）で同じ性質だったため、
+   renderer だけが非対称だった。
+
+3. ✅ **設定画面の状態表示に実測を反映** — `PluginSetting.jsx` の状態判定に
+   `Marked.getPluginStatus()` を重ね、`loadError` / `runtimeError` / `notApplied` を
+   赤ドット＋セカンダリラベルで出す。従来は宣言（`@marked`）と検証記録だけで判定しており、
+   「設定画面は緑なのに動いていない」状態が表現できなかった。
+
+4. ✅ **出力時の警告** — publish（`handlePublish` / `UnpublishedMenu` の一括出力）で
+   プラグイン警告がある場合、成功スナックバーではなく警告を出す。
+   出力 HTML は git に記録されるため、劣化したまま記録したことに気付ける必要がある。
+
+5. ✅ **CDN 差し替え時にプラグインが落ちるバグの修正** — `Binder.jsx` の `handleSaveScript` は
+   `loadAndValidate()` でエンジン実体を差し替えるだけで、`resolveMarkedInfo` も
+   `applyPlugins` も呼んでいなかった。`isExists()` が true になるため `ensureInit()` も
+   素通りし、**バインダー設定で marked URL を保存した瞬間からプラグインが一本も効かない**
+   状態がアプリ再起動まで続いていた（その間に出力すると劣化 HTML が記録される）。
+   検証後に `reset()` → `ensureInit()` で init 経路をやり直す。
+   併せて `_pluginsApplied` フラグを持たせ、「エンジンを差し替えたまま再適用していない」
+   状態自体を `getPluginWarnings` が検出できるようにした（同種の再発に対する保険）。
+
+6. ✅ **バージョン判定の精度改善** — CDN URL の正規表現が `marked@x.y.z` 固定で、
+   `marked@18` / `marked@18.0`（CDN で有効な形）を読み取れず機能プローブに落ちていた。
+   1〜3 要素を許容し、パッチまで揃っている時だけ `version` として扱う
+   （部分指定はメジャーのみ確定させ `version` は null のままにし、`>=18.1` 等の誤判定を防ぐ）。
+   また `probeMajor` が v18 を 17 と判定していたため、v18 判別プローブを追加した
+   （v18 は見出し直後の空行が独立した `space` トークンになる。v14/17/18 実測で確認）。
+
+テスト: `_cmd/binder/frontend/src/__tests__/pluginVisibility.test.jsx`（警告の発生条件・
+raw フォールバック・URL バージョン解決）、`PluginSetting.test.jsx`（実行結果の表示）。
 
 ### vendor バンドル差し替えチェックリスト（0.15.0 / 0.16.0 共通）
 

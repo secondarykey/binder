@@ -41,6 +41,8 @@ function PluginSetting() {
   // 互換状態表示用: 現在の marked 情報とプラグイン検証時メジャー
   const [markedInfo, setMarkedInfo] = useState(null);
   const [verified, setVerified] = useState({});
+  // 直近の適用結果（名前 → { applied, loadError, runtimeError }）。宣言だけでなく実測を表示するため
+  const [runtime, setRuntime] = useState({});
 
   // 追加ダイアログ
   const [addDialog, setAddDialog] = useState(false);
@@ -82,7 +84,11 @@ function PluginSetting() {
   useEffect(() => {
     let alive = true;
     Marked.ensureInit()
-      .then(() => { if (alive) setMarkedInfo(Marked.getMarkedInfo()); })
+      .then(() => {
+        if (!alive) return;
+        setMarkedInfo(Marked.getMarkedInfo());
+        setRuntime({ ...Marked.getPluginStatus() });
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -97,19 +103,41 @@ function PluginSetting() {
     return SetPluginVerifiedMajor(engine, name, major).catch(() => {});
   };
 
-  // プラグインの互換状態（compatible / incompatible / undeclared / unverified / unknown）
+  // プラグインの互換状態。
+  // 宣言（@marked）と検証記録から求めた互換判定に、直近の実行結果を上書きする。
+  // 宣言上は問題なくても実際には読み込めていない／例外を投げている場合があり、
+  // それを表示しないと「設定画面は緑なのに動いていない」状態になる。
   const statusOf = (plugin) => {
     const meta = parsePluginMeta(plugin.content || "");
-    return { meta, status: pluginCompatStatus(meta, markedInfo, verified[plugin.name]) };
+    const compat = pluginCompatStatus(meta, markedInfo, verified[plugin.name]);
+    const rt = runtime[plugin.name];
+    if (rt) {
+      if (rt.loadError) return { meta, status: 'loadError', detail: rt.loadError };
+      if (rt.runtimeError) return { meta, status: 'runtimeError', detail: rt.runtimeError };
+      if (!rt.applied && compat !== 'incompatible') return { meta, status: 'notApplied' };
+    }
+    return { meta, status: compat };
   };
 
   // 状態 → 表示色（テーマ変数）
   const STATUS_COLOR = {
     compatible: 'var(--accent-green)',
     incompatible: 'var(--accent-red)',
+    loadError: 'var(--accent-red)',
+    runtimeError: 'var(--accent-red)',
+    notApplied: 'var(--accent-red)',
     unverified: 'var(--accent-orange, #d18616)',
     unknown: 'var(--text-muted)',
     undeclared: 'var(--text-muted)',
+  };
+
+  // セカンダリラベルを出す（＝一覧を見ただけで異常と分かるべき）状態
+  const SECONDARY_LABEL = {
+    incompatible: "plugin.compat.incompatibleShort",
+    loadError: "plugin.compat.loadErrorShort",
+    runtimeError: "plugin.compat.runtimeErrorShort",
+    notApplied: "plugin.compat.notAppliedShort",
+    unverified: "plugin.compat.unverifiedShort",
   };
 
   // --- 追加 ---
@@ -247,9 +275,9 @@ function PluginSetting() {
           ) : (
             <List dense disablePadding>
               {plugins.map((p) => {
-                const { meta, status } = statusOf(p);
+                const { meta, status, detail } = statusOf(p);
                 const rangeText = meta.marked ? `marked ${meta.marked}` : t("plugin.compat.undeclaredRange");
-                const tip = `${t("plugin.compat." + status)}${markedInfo ? ` / ${t("plugin.compat.current")}: ${markedInfo.version || markedInfo.major || '?'}` : ''}\n${rangeText}`;
+                const tip = `${t("plugin.compat." + status)}${markedInfo ? ` / ${t("plugin.compat.current")}: ${markedInfo.version || markedInfo.major || '?'}` : ''}\n${rangeText}${detail ? `\n${detail}` : ''}`;
                 return (
                 <ListItemButton
                   key={p.name}
@@ -270,7 +298,7 @@ function PluginSetting() {
                     }} />
                     <ListItemText
                       primary={p.name}
-                      secondary={status === 'incompatible' ? t("plugin.compat.incompatibleShort") : (status === 'unverified' ? t("plugin.compat.unverifiedShort") : undefined)}
+                      secondary={SECONDARY_LABEL[status] ? t(SECONDARY_LABEL[status]) : undefined}
                       primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
                       secondaryTypographyProps={{ fontSize: '11px', sx: { color: STATUS_COLOR[status] } }}
                     />
