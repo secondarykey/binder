@@ -131,6 +131,58 @@ describe('renderer 失敗時のフォールバック', () => {
   });
 });
 
+describe('getEngineWarnings', () => {
+  // CDN 指定はバージョン固定の手段として使われるため、読めずにベンダー版へ落ちた
+  // ことに気付けないと「固定したつもりで別バージョンが動く」状態になる
+  const CDN = 'https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.esm.js';
+
+  it('CDN 未指定なら警告しない', () => {
+    Marked.setEngineRequest({ url: null });
+    Marked.resolveMarkedInfo(null);
+    expect(Marked.getEngineWarnings()).toEqual([]);
+  });
+
+  it('指定した CDN で動いていれば警告しない', () => {
+    Marked.setEngineRequest({ url: CDN });
+    Marked.resolveMarkedInfo(CDN);
+    expect(Marked.getEngineWarnings()).toEqual([]);
+  });
+
+  it('指定したのにベンダー版で動いていれば警告する', () => {
+    Marked.setEngineRequest({ url: CDN });
+    Marked.resolveMarkedInfo(null); // 読み込み失敗 → ベンダーへフォールバック
+    const warns = Marked.getEngineWarnings();
+    expect(warns).toHaveLength(1);
+    expect(warns[0]).toContain(CDN);
+    expect(warns[0]).toContain('14.1.4');
+  });
+
+  it('許可CDN外で弾かれた場合は別の文言で警告する', () => {
+    Marked.setEngineRequest({ url: 'https://evil.example.com/marked.esm.js', blocked: true });
+    Marked.resolveMarkedInfo(null);
+    const blocked = Marked.getEngineWarnings((key) => `k:${key}`);
+    expect(blocked[0]).toBe('k:marked.warn.cdnBlocked');
+
+    Marked.setEngineRequest({ url: CDN, blocked: false });
+    Marked.resolveMarkedInfo(null);
+    const fell = Marked.getEngineWarnings((key) => `k:${key}`);
+    expect(fell[0]).toBe('k:marked.warn.cdnFallback');
+  });
+
+  it('getWarnings はエンジンとプラグインの警告を両方返す', () => {
+    Marked.setEngineRequest({ url: CDN });
+    Marked.resolveMarkedInfo(null);
+    Marked.applyPlugins([{ name: 'broken', content: BROKEN_PLUGIN }], VENDOR_INFO);
+
+    const all = Marked.getWarnings();
+    expect(all).toHaveLength(2);
+    expect(all[0]).toContain(CDN);
+    expect(all[1]).toContain('broken');
+
+    Marked.setEngineRequest({ url: null });
+  });
+});
+
 describe('resolveMarkedInfo', () => {
   it('CDN URL の x.y.z を読み取る', () => {
     const info = Marked.resolveMarkedInfo('https://cdn.jsdelivr.net/npm/marked@18.0.7/lib/marked.esm.js');

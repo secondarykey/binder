@@ -272,6 +272,12 @@
             "published" : "プラグインに問題がある状態で記録しました（警告 {{count}} 件）。プレビューの警告を確認してください"
         }
     },
+    "marked" : {
+        "warn" : {
+            "cdnFallback" : "指定した marked のURLを読み込めなかったため、内蔵版（{{bundled}}）で動作しています: {{url}}",
+            "cdnBlocked" : "指定した marked のURLが許可CDN一覧に含まれないため、内蔵版（{{bundled}}）で動作しています: {{url}}"
+        }
+    },
     "binder" : {
         "editTitle" : "Binder編集",
         "git" : "Git",
@@ -297,6 +303,8 @@
         "versionCdn" : "指定URL: {{version}}",
         "versionCdnDetected" : "指定URL: {{version}} と判断（URLから特定不可・自動判定）",
         "versionCdnUnknown" : "指定URL: 読込時に自動判定します",
+        "versionCdnPending" : "指定URL: {{version}}（未保存・保存時に読み込みます）",
+        "versionCdnFallback" : "指定URL: 読み込めず内蔵版で動作中",
         "gcLabel" : "リポジトリメンテナンス",
         "gcButton" : "GC（不要オブジェクト削除）",
         "gcTitle" : "GCの実行",

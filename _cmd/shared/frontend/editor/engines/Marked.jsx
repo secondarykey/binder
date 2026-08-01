@@ -13,6 +13,8 @@ const DEFAULT_PLUGIN_WARNINGS = {
     'plugin.warn.notApplied': (p) => `Plugin "${p.name}" was not applied`,
     'plugin.warn.runtimeError': (p) => `Plugin "${p.name}" threw at runtime and its output was dropped: ${p.error}`,
     'plugin.warn.neverApplied': () => 'Plugins have not been applied to the current marked engine (reopen the binder or restart)',
+    'marked.warn.cdnFallback': (p) => `Could not load the specified marked URL (${p.url}); running on the bundled ${p.bundled} instead`,
+    'marked.warn.cdnBlocked': (p) => `The specified marked URL (${p.url}) is not in the allowed CDN list; running on the bundled ${p.bundled} instead`,
 }
 
 /**
@@ -48,6 +50,10 @@ class MarkedScript {
     // 現在ロードされているエンジンに対して applyPlugins() を通したか。
     // エンジンを差し替えたのにプラグインを再適用し忘れた状態を検出するために持つ。
     static _pluginsApplied = false;
+    // 「どの URL を読もうとしたか」。_markedInfo は実際に読めた結果しか持たないため、
+    // 指定したのにベンダー版で動いている（＝黙ってフォールバックした）状態を
+    // 検出するには要求側の情報が要る。{ url, blocked } を各アプリの init が設定する。
+    static _engineRequest = null;
     // init() の多重実行を防ぐための in-flight Promise。
     // ウォームアップ（先読み）と初回 parse() が並行しても、同じ初期化を共有して
     // エンジンを二重ロードしないようにする。
@@ -259,15 +265,58 @@ class MarkedScript {
      * @param {(key:string, params?:Object) => string} [t] 翻訳関数。省略時は英語の既定文言
      * @returns {string[]}
      */
+    /**
+     * エンジン読み込みの要求内容を記録する。CDN 指定を持つアプリの init から呼ぶ。
+     * @param {{url: string|null, blocked?: boolean}} req
+     *        url: 設定された CDN URL（未指定なら null） / blocked: 許可ドメイン外で弾いたか
+     */
+    static setEngineRequest(req) {
+        this._engineRequest = req || null;
+    }
+
+    /**
+     * エンジンが「指定どおりに読めていない」状態を警告メッセージの配列で返す。
+     *
+     * CDN 指定はバージョン固定の手段として使われるため、読めずにベンダー版へ
+     * 落ちたことに気付けないと、固定したつもりで別バージョンが動く。
+     *
+     * @param {(key:string, params?:Object) => string} [t] 翻訳関数
+     * @returns {string[]}
+     */
+    static getEngineWarnings(t) {
+        const req = this._engineRequest;
+        if (!req || !req.url) return [];
+        // まだ一度も解決していない（init 前）は判断材料が無いので黙る
+        if (!this._markedInfo) return [];
+        if (this._markedInfo.source !== 'vendor') return [];
+
+        const params = { url: req.url, bundled: this._vendorVersion || '?' };
+        return [this._translate(t, req.blocked ? 'marked.warn.cdnBlocked' : 'marked.warn.cdnFallback', params)];
+    }
+
+    /**
+     * エンジンとプラグインの警告をまとめて返す。プレビュー・出力はこれを使う。
+     * @param {(key:string, params?:Object) => string} [t] 翻訳関数
+     * @returns {string[]}
+     */
+    static getWarnings(t) {
+        return [...this.getEngineWarnings(t), ...this.getPluginWarnings(t)];
+    }
+
+    /**
+     * 翻訳関数があればそれを使い、無い／キー未定義なら英語の既定文言に落とす。
+     */
+    static _translate(t, key, params) {
+        if (typeof t === 'function') {
+            const s = t(key, params);
+            // i18next はキー未定義時にキーそのものを返す
+            if (s && s !== key) return s;
+        }
+        return DEFAULT_PLUGIN_WARNINGS[key](params || {});
+    }
+
     static getPluginWarnings(t) {
-        const tr = (key, params) => {
-            if (typeof t === 'function') {
-                const s = t(key, params);
-                // キーがそのまま返る（未定義）場合は既定文言にフォールバックする
-                if (s && s !== key) return s;
-            }
-            return DEFAULT_PLUGIN_WARNINGS[key](params || {});
-        };
+        const tr = (key, params) => this._translate(t, key, params);
 
         const info = this._markedInfo || {};
         const current = info.version || (info.major != null ? String(info.major) : '?');

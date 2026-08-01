@@ -247,8 +247,29 @@ JS → Go のログ橋渡しは無い）ため、F12 を開かない限り気付
    また `probeMajor` が v18 を 17 と判定していたため、v18 判別プローブを追加した
    （v18 は見出し直後の空行が独立した `space` トークンになる。v14/17/18 実測で確認）。
 
+7. ✅ **CDN 読込失敗（ベンダー版へのフォールバック）を可視化** — CDN 指定は
+   「バンドルを上げても壊したくないユーザがバージョンを固定する手段」として機能するが
+   （`markedUrl` は `binder.json` = git 管理なのでチーム全員に効く）、読み込めなかった場合は
+   `console.warn` だけでベンダー版へ落ちていた。**固定したつもりで新しい marked が動く**
+   状態になり、しかも設定画面は URL 由来の版を表示し続けるため成功したように見えていた。
+   - `Marked.setEngineRequest({url, blocked})` で「何を読もうとしたか」を記録し、
+     `getEngineWarnings()` が「指定あり かつ 実際は vendor」を検出する。
+     許可CDN外で弾いた場合は別文言（`marked.warn.cdnBlocked`）。
+   - プレビュー・出力は `getWarnings()`（エンジン + プラグイン）を使う。
+   - `Binder.jsx` の `renderVersionInfo` を URL 文字列ベースから **実際の解決結果ベース**へ
+     変更。失敗時は「読み込めず内蔵版で動作中」を赤字で出す。未保存の編集中 URL は
+     「未保存・保存時に読み込みます」と区別する。
+
+**既知の制限（未対応）**: `tryLoadUrl` は ESM を先に試すが、UMD ファイルは import/export を
+持たないため `import()` が**構文エラーにならず成功してしまう**。marked の UMD ラッパーは
+`globalThis.marked` を正しく作るのに、直後に `globalThis.marked = m`（空の名前空間）で
+上書きして壊す。`import()` が投げないので UMD 用の `Scripter.loadScript` へは到達しない。
+**CDN 指定は `.esm.js` を使うこと**（`lib/marked.umd.js` は動かない）。
+
 テスト: `_cmd/binder/frontend/src/__tests__/pluginVisibility.test.jsx`（警告の発生条件・
-raw フォールバック・URL バージョン解決）、`PluginSetting.test.jsx`（実行結果の表示）。
+raw フォールバック・CDN フォールバック検出・URL バージョン解決）、
+`PluginSetting.test.jsx`（実行結果の表示）、`Binder.test.jsx`（バージョン表示が
+URL ではなく実際の解決結果に従うこと）。
 
 ### vendor バンドル差し替えチェックリスト（0.15.0 / 0.16.0 共通）
 

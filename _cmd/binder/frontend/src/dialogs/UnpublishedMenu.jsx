@@ -141,9 +141,9 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
 
     evt.raise(Event.PublishProgress, { running: false, current: all.length, total: all.length });
 
-    // 一括出力もノート分は marked を通すため、プラグインが効いていない状態で
+    // 一括出力もノート分は marked を通すため、エンジン／プラグインが効いていない状態で
     // 記録してしまったことに気付けるようにする。
-    const pluginWarnings = items.some(i => i.mode === "note") ? Marked.getPluginWarnings(t) : [];
+    const pluginWarnings = items.some(i => i.mode === "note") ? Marked.getWarnings(t) : [];
 
     if (errors.length > 0) {
       setErrorDlg({ open: true, names: errors });

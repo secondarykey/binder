@@ -1372,11 +1372,11 @@ function Editor(props) {
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
 
-    // プラグインの失敗（読込エラー・実行時例外・互換スキップ・未適用）を警告として拾う。
-    // 互換層はプレビューを落とさないために失敗を握り潰すため、ここで出さないと
-    // ユーザは記法が黙って消えたことにしか気付けない。
+    // エンジンとプラグインの失敗（CDN読込失敗・読込エラー・実行時例外・互換スキップ・
+    // 未適用）を警告として拾う。互換層はプレビューを落とさないために失敗を握り潰すため、
+    // ここで出さないとユーザは記法が黙って消えたことにしか気付けない。
     // parse 後に取るのは、実行時例外が parse 中に記録されるため。
-    warnings = warnings.concat(Marked.getPluginWarnings(t));
+    warnings = warnings.concat(Marked.getWarnings(t));
 
     return { html: val || "", parseError, warnings };
   }
@@ -1734,9 +1734,9 @@ function Editor(props) {
       if (mode === Mode.note) {
         const markedResult = await createMarked(id, text, false);
         elm = markedResult.html;
-        // 出力した HTML は git に記録されるため、プラグインが効いていないまま
+        // 出力した HTML は git に記録されるため、エンジン／プラグインが効いていないまま
         // 出力したことに気付けるよう明示する（出力自体は止めない）。
-        pluginWarnings = Marked.getPluginWarnings(t);
+        pluginWarnings = Marked.getWarnings(t);
       } else if (mode === Mode.diagram) {
         const diagResult = await ParseDiagram(id, false, text);
         if (diagResult.error) throw new Error(diagResult.error);

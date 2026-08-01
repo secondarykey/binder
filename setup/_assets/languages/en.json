@@ -272,6 +272,12 @@
             "published" : "Recorded while plugins are failing ({{count}} warning(s)). Check the preview warnings."
         }
     },
+    "marked" : {
+        "warn" : {
+            "cdnFallback" : "Could not load the specified marked URL, running on the bundled version ({{bundled}}): {{url}}",
+            "cdnBlocked" : "The specified marked URL is not in the allowed CDN list, running on the bundled version ({{bundled}}): {{url}}"
+        }
+    },
     "binder" : {
         "editTitle" : "Edit Binder",
         "git" : "Git",
@@ -296,6 +302,8 @@
         "versionCdn" : "Specified URL: {{version}}",
         "versionCdnDetected" : "Specified URL: judged {{version}} (not in URL; auto-detected)",
         "versionCdnUnknown" : "Specified URL: auto-detected on load",
+        "versionCdnPending" : "Specified URL: {{version}} (unsaved; loaded when you save)",
+        "versionCdnFallback" : "Specified URL: could not be loaded; running on the bundled version",
         "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used.",
         "gcLabel" : "Repository Maintenance",
         "gcButton" : "GC (Remove unused objects)",
