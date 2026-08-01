@@ -1,6 +1,9 @@
 /* @plugin-name: Superscript (^text^) */
+/* @plugin-version: 1.1.0 */
+/* @marked: >=14 <19 */
 //
 // ^テキスト^ を <sup> タグに変換する。
+// 中身は inline トークンとして解釈し、特殊文字を自動エスケープする。
 //
 // 使い方:
 //   x^2^ + y^2^ = r^2^
@@ -19,15 +22,18 @@
         tokenizer: function(src) {
           var match = src.match(/^\^([^\^\s][^\^]*)\^/);
           if (match) {
-            return {
+            var token = {
               type: 'superscript',
               raw: match[0],
               text: match[1],
+              tokens: [],
             };
+            this.lexer.inline(token.text, token.tokens);
+            return token;
           }
         },
         renderer: function(token) {
-          return '<sup>' + token.text + '</sup>';
+          return '<sup>' + this.parser.parseInline(token.tokens) + '</sup>';
         }
       }
     ]

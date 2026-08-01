@@ -1,4 +1,5 @@
 /* @plugin-name: Definition List */
+/* @marked: >=14 <19 */
 //
 // 定義リスト記法を追加する。
 // 用語の直後の行に `: 定義` と書くと <dl><dt><dd> に変換される。

@@ -1,4 +1,5 @@
 /* @plugin-name: Marked Info (@info) */
+/* @marked: >=14 <19 */
 //
 // @info を marked.js の情報表示ブロックに変換する。
 // ロード中の拡張機能・renderer オーバーライド・hooks・オプション設定を確認できる。

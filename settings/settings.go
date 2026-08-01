@@ -34,6 +34,10 @@ type Setting struct {
 	Language    string    `json:"language"`
 	AppVersion  string    `json:"appVersion,omitempty"`
 	AllowedCDNs []string  `json:"allowedCdns"`
+	// PluginVerified はプラグイン追加・更新時点の marked メジャーを記録する。
+	// キー: バインダーのディレクトリパス → "engine/name" → marked メジャー。
+	// git 管理外のローカル観測値（@marked 未宣言プラグインの差異警告に使う）。
+	PluginVerified map[string]map[string]int `json:"pluginVerified,omitempty"`
 }
 
 // AutoSave はバインダーを開いている間の自動保存（全体コミット）設定。
