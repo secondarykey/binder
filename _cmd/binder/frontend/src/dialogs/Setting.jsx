@@ -261,8 +261,9 @@ function Setting({ isModal, ...props }) {
       <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
 
         {activeSection === "basic" && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            {/** 設定部分のみスクロールさせ、保存ボタンは常に見える位置に固定する */}
+            <div className="formGrid" style={{ padding: '20px 24px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
               <div className="formContainer">
                 {/** 言語選択 */}
                 <FormControl>
@@ -464,8 +465,15 @@ function Setting({ isModal, ...props }) {
               </div>
             </div>
 
-            {/** 保存 */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+            {/** 保存（下部に固定） */}
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              p: 2,
+              flexShrink: 0,
+              borderTop: '1px solid var(--border-primary)',
+              backgroundColor: 'var(--bg-dialog)',
+            }}>
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
           </Box>
