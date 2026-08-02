@@ -2,13 +2,15 @@ import { useState, useEffect, useContext } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary,
   Box, FormControl, FormLabel, TextField, Select, MenuItem,
-  FormControlLabel, Checkbox, Typography,
+  FormControlLabel, Checkbox, Typography, IconButton,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import ModalWrapper from './components/ModalWrapper';
 import AuthFields from '../components/AuthFields';
+import RemoteSetting from './RemoteSetting';
 import { GetUserInfo, RemoteList, Push, PushDocs, CurrentBranch, GetPublishSettings } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
@@ -38,6 +40,7 @@ function PushModal({ open, onClose }) {
   const [save, setSave] = useState(false);
   const [pushing, setPushing] = useState(false);
   const [authExpanded, setAuthExpanded] = useState(true);
+  const [remoteSettingOpen, setRemoteSettingOpen] = useState(false);
 
   // 公開設定
   const [publishOnly, setPublishOnly] = useState(false);
@@ -51,12 +54,7 @@ function PushModal({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
 
-    // リモート一覧を取得
-    RemoteList().then((res) => {
-      const list = res || [];
-      setRemotes(list);
-      if (list.length > 0) setRemoteName(list[0].name);
-    }).catch((err) => showError(err));
+    loadRemotes();
 
     // 現在のブランチ名を取得
     CurrentBranch().then((name) => {
@@ -99,6 +97,15 @@ function PushModal({ open, onClose }) {
     }).catch((err) => showError(err));
 
   }, [open]);
+
+  // リモート一覧を取得する。選択中のリモートが消えていた場合のみ先頭へ寄せる
+  const loadRemotes = () => {
+    RemoteList().then((res) => {
+      const list = res || [];
+      setRemotes(list);
+      setRemoteName((prev) => (list.some((r) => r.name === prev) ? prev : (list[0]?.name ?? '')));
+    }).catch((err) => showError(err));
+  };
 
   const handlePush = () => {
     if (!remoteName) return;
@@ -146,7 +153,14 @@ function PushModal({ open, onClose }) {
 
         {/* リモート選択 */}
         <FormControl size="small">
-          <FormLabel>{t('push.remote')}</FormLabel>
+          <FormLabel sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {t('push.remote')}
+            {/** リモートの追加・編集・削除はここから行う */}
+            <IconButton size="small" onClick={() => setRemoteSettingOpen(true)}
+              title={t('binder.settingRemote')} aria-label="remote-setting">
+              <SettingsIcon sx={{ fontSize: '16px' }} />
+            </IconButton>
+          </FormLabel>
           <Select
             value={remoteName}
             onChange={(e) => setRemoteName(e.target.value)}
@@ -241,6 +255,13 @@ function PushModal({ open, onClose }) {
             />
           </AccordionDetails>
         </Accordion>
+
+        {/** リモート設定（追加・編集・削除） */}
+        <RemoteSetting
+          open={remoteSettingOpen}
+          onClose={() => setRemoteSettingOpen(false)}
+          onChanged={loadRemotes}
+        />
 
       </Box>
     </ModalWrapper>
