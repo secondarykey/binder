@@ -168,7 +168,8 @@ func InstallSamplePlugins() error {
 		if err != nil {
 			return xerrors.Errorf("embFs.ReadFile(%s) error: %w", e.Name(), err)
 		}
-		if err := os.WriteFile(p, data, 0644); err != nil {
+		// SyncSamplePlugins の突き合わせと揃えるため LF で置く（normalizeNewlines 参照）
+		if err := os.WriteFile(p, normalizeNewlines(data), 0644); err != nil {
 			return xerrors.Errorf("os.WriteFile(%s) error: %w", p, err)
 		}
 	}

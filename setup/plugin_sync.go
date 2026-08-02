@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
@@ -22,8 +23,10 @@ import (
 // 同梱プラグインを更新するたびに、直前バージョンの sha256 をここへ追記すること
 // （現行の同梱版ハッシュは実行時に算出して自動的に既知集合へ加わる）。
 // 各要素は配布順（[0] が最も古い）。
-//   1つめ: 0.12.0〜0.13.1 で配布したバージョン（0.14.0 で inline 委譲・@marked 付与に更新）
-//   2つめ: 0.14.0 で配布したバージョン（0.15.0 で @plugin-version 付与・marked-info は Version 行追加に更新）
+//
+//	1つめ: 0.12.0〜0.13.1 で配布したバージョン（0.14.0 で inline 委譲・@marked 付与に更新）
+//	2つめ: 0.14.0 で配布したバージョン（0.15.0 で @plugin-version 付与・marked-info は Version 行追加に更新）
+//
 // 0.14.0 で @plugin-version を持っていた5本（highlight / kbd / subscript / superscript /
 // underline）は 0.15.0 で内容が変わらないため 2つめが無い。
 var shippedPluginHashes = map[string][]string{
@@ -74,8 +77,22 @@ var shippedPluginHashes = map[string][]string{
 	"underline.js": {"fd7f977c4ba884ef05b9d2116575f8415038fc17139fab498aaeb52b400ab20c"},
 }
 
+// normalizeNewlines は CRLF を LF に揃える。
+//
+// 同梱プラグインの実体は //go:embed が読むワークツリーのファイルであり、その改行は
+// ビルド環境の git 設定（core.autocrlf）で変わる。ユーザ環境に置かれたファイルの改行も
+// 「どのビルドが書いたか」で変わる。生バイトのまま突き合わせると、内容が同一でも
+// 改行違いでハッシュが一致せず、全プラグインが「ユーザ編集済み」と判定されて
+// 更新が永久に届かなくなる（実際に Windows 環境で発生した）。
+//
+// shippedPluginHashes は LF 基準で記録する。
+func normalizeNewlines(data []byte) []byte {
+	return bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
+}
+
+// sha256Hex は改行を LF に揃えたうえでハッシュを取る。
 func sha256Hex(data []byte) string {
-	sum := sha256.Sum256(data)
+	sum := sha256.Sum256(normalizeNewlines(data))
 	return hex.EncodeToString(sum[:])
 }
 
@@ -127,7 +144,9 @@ func SyncSamplePlugins() error {
 			continue
 		}
 
-		if err := os.WriteFile(userPath, bundled, 0644); err != nil {
+		// 改行を LF に揃えて書く。ビルド環境によって置かれる内容が変わると、
+		// 次回以降の突き合わせが再び環境依存になるため
+		if err := os.WriteFile(userPath, normalizeNewlines(bundled), 0644); err != nil {
 			return xerrors.Errorf("os.WriteFile(%s) error: %w", userPath, err)
 		}
 		log.Info("SyncSamplePlugins: updated %s", name)

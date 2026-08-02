@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -192,5 +193,71 @@ func TestShippedPluginHashesExcludesCurrent(t *testing.T) {
 				t.Errorf("%s: 現行版のハッシュが過去分として登録されている", name)
 			}
 		}
+	}
+}
+
+// ユーザ環境のファイルの改行は「どのビルドが書いたか」で変わる（//go:embed が読む
+// ワークツリーの改行がビルド環境の core.autocrlf に依存するため）。
+// 生バイトで突き合わせると、内容が同一でも改行違いで「ユーザ編集済み」と判定され、
+// 更新が永久に届かなくなる。実際に Windows 環境で全プラグインが更新されなかった。
+func TestSyncSamplePluginsUpdatesCRLFInstall(t *testing.T) {
+	setupSyncHome(t)
+	dir := settings.PluginsEngineDirPath("marked")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("MkdirAll error: %v", err)
+	}
+
+	// 過去に配布した版を CRLF で置いた状態を作る
+	old := []byte("/* @plugin-name: SmartPants (Typography) */\n/* @marked: >=14 <19 */\n(function(){})();\n")
+	crlf := bytes.ReplaceAll(old, []byte("\n"), []byte("\r\n"))
+	path := filepath.Join(dir, "smartypants.js")
+	if err := os.WriteFile(path, crlf, 0644); err != nil {
+		t.Fatalf("WriteFile error: %v", err)
+	}
+
+	// その版を既知配布ハッシュ（LF 基準）として登録する
+	orig := shippedPluginHashes["smartypants.js"]
+	shippedPluginHashes["smartypants.js"] = append([]string{sha256Hex(old)}, orig...)
+	t.Cleanup(func() { shippedPluginHashes["smartypants.js"] = orig })
+
+	if err := SyncSamplePlugins(); err != nil {
+		t.Fatalf("SyncSamplePlugins error: %v", err)
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile error: %v", err)
+	}
+	want := normalizeNewlines(bundledPlugin(t, "smartypants.js"))
+	if !bytes.Equal(got, want) {
+		t.Errorf("CRLF で置かれた配布版が更新されていない")
+	}
+	if bytes.Contains(got, []byte("\r\n")) {
+		t.Errorf("書き出した内容に CRLF が残っている（次回の突き合わせが環境依存になる）")
+	}
+}
+
+// 改行だけが違う同一内容は「更新済み」として扱い、書き込みを起こさない
+func TestSyncSamplePluginsTreatsCRLFCurrentAsUpToDate(t *testing.T) {
+	setupSyncHome(t)
+	dir := settings.PluginsEngineDirPath("marked")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("MkdirAll error: %v", err)
+	}
+
+	cur := bundledPlugin(t, "kbd.js")
+	crlf := bytes.ReplaceAll(normalizeNewlines(cur), []byte("\n"), []byte("\r\n"))
+	path := filepath.Join(dir, "kbd.js")
+	if err := os.WriteFile(path, crlf, 0644); err != nil {
+		t.Fatalf("WriteFile error: %v", err)
+	}
+
+	if err := SyncSamplePlugins(); err != nil {
+		t.Fatalf("SyncSamplePlugins error: %v", err)
+	}
+
+	got, _ := os.ReadFile(path)
+	if !bytes.Equal(got, crlf) {
+		t.Errorf("改行違いだけの同一内容が書き換えられた")
 	}
 }
