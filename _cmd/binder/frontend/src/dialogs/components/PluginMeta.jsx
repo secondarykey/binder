@@ -39,8 +39,10 @@ export const STATUS_LABEL = {
   undeclared: "plugin.compat.undeclaredShort",
 };
 
-// メタ行の列定義（4等幅）。ヘッダと本体で同じ値を使う
-const COLUMNS = 'repeat(4, minmax(0, 1fr))';
+// メタ行の列定義。表示名は長さがまちまちなので広く取り、値の3列は内容の
+// 最大幅（"marked >=14 <19" / "動作未確認" / "v10.10.10"）に合わせて詰める。
+// 対応marked だけは他の2列より長くなるため広めにする。
+const COLUMNS = 'minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 0.9fr)';
 
 // 未宣言のプレースホルダ。列が何かは位置で分かるため項目名は繰り返さない。
 // 翻訳対象にならない記号なので言語ファイルには置かない
@@ -52,6 +54,9 @@ const cellSx = {
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 };
+
+// 値の3列は中央寄せ。列が詰まっているぶん、左寄せより縦の並びが読みやすい
+const valueCellSx = { ...cellSx, textAlign: 'center' };
 
 /**
  * 現在の marked のバージョンを表示用の文字列にする。
@@ -68,7 +73,7 @@ export function formatMarkedVersion(markedInfo) {
 
 /**
  * プラグイン一覧の各行に出すメタ情報。表示名 / バージョン / 対応marked / 状態を
- * 4 等幅の列に並べる。未宣言の項目も「未宣言」と明示する
+ * 列に並べる。値の3列は中央寄せ。未宣言の項目も "-" で埋める
  * （空欄だと宣言漏れなのか表示漏れなのか分からないため）。
  *
  * @param {{name: string|null, version: string|null, marked: string|null}} meta parsePluginMeta の結果
@@ -89,9 +94,9 @@ export function PluginMetaLine({ meta, fileName, status, t }) {
       sx={{ display: 'grid', gridTemplateColumns: COLUMNS, gap: 1, alignItems: 'baseline' }}
     >
       <Box component="span" title={name} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{name}</Box>
-      <Box component="span" title={version} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{version}</Box>
-      <Box component="span" title={range} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{range}</Box>
-      <Box component="span" title={label} sx={{ ...cellSx, color: STATUS_COLOR[status] || 'var(--text-muted)' }}>{label}</Box>
+      <Box component="span" title={version} sx={{ ...valueCellSx, color: 'var(--text-muted)' }}>{version}</Box>
+      <Box component="span" title={range} sx={{ ...valueCellSx, color: 'var(--text-muted)' }}>{range}</Box>
+      <Box component="span" title={label} sx={{ ...valueCellSx, color: STATUS_COLOR[status] || 'var(--text-muted)' }}>{label}</Box>
     </Box>
   );
 }
