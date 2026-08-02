@@ -24,10 +24,11 @@ import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
+// スクリプトとプラグインは関連が近いため隣り合わせにする
 const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
-  { key: "script", labelKey: "binder.script" },
   { key: "git", labelKey: "binder.git" },
+  { key: "script", labelKey: "binder.script" },
   { key: "plugin", labelKey: "plugin.title" },
   { key: "rootfile", labelKey: "rootFile.title" },
 ];
