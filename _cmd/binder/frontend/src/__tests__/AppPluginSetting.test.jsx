@@ -51,9 +51,9 @@ describe('AppPluginSetting', () => {
     renderSetting();
 
     await waitFor(() => expect(screen.getByText('kbd')).toBeTruthy());
-    await waitFor(() => expect(
-      screen.getByText('Keyboard Tag · v1.2.0 · marked >=14 <19')
-    ).toBeTruthy());
+    expect(screen.getByText('Keyboard Tag')).toBeTruthy();
+    expect(screen.getByText('v1.2.0')).toBeTruthy();
+    expect(screen.getByText('marked >=14 <19')).toBeTruthy();
   });
 
   // 宣言が無いことも表示する。空欄だと宣言漏れか表示漏れか区別できない
@@ -62,9 +62,9 @@ describe('AppPluginSetting', () => {
 
     renderSetting();
 
-    await waitFor(() => expect(
-      screen.getByText('plugin.meta.versionUndeclared · plugin.meta.rangeUndeclared')
-    ).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('plugin.meta.versionUndeclared')).toBeTruthy());
+    expect(screen.getByText('plugin.meta.rangeUndeclared')).toBeTruthy();
+    expect(screen.getByText('plugin.compat.undeclaredShort')).toBeTruthy();
   });
 
   // 対応レンジは「今の marked が何か」と並べて初めて判断できる

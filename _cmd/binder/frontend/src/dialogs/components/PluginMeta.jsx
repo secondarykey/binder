@@ -6,6 +6,9 @@
  * marked のバージョンを一覧上に出す。これらは従来 title 属性のツールチップにしか
  * 出ておらず、「どのプラグインがどの marked 向けなのか」を一覧で比較できなかった。
  *
+ * メタ行は 4 等幅（各25%）の列に揃える。プラグイン間で同じ項目が縦に並ぶため、
+ * 一覧を縦に眺めるだけでバージョンや対応レンジを比較できる。
+ *
  * メタデータの解析自体は @shared/editor/pluginMeta に一元化しており、ここは表示だけを持つ。
  */
 
@@ -23,13 +26,27 @@ export const STATUS_COLOR = {
   undeclared: 'var(--text-muted)',
 };
 
-// セカンダリラベルを出す（＝一覧を見ただけで異常と分かるべき）状態
-export const SECONDARY_LABEL = {
+// 状態 → 列に出す短いラベル。
+// 正常系も含めて全状態を持つ（列が空になると「表示漏れ」と区別が付かないため）。
+export const STATUS_LABEL = {
+  compatible: "plugin.compat.compatibleShort",
   incompatible: "plugin.compat.incompatibleShort",
   loadError: "plugin.compat.loadErrorShort",
   runtimeError: "plugin.compat.runtimeErrorShort",
   notApplied: "plugin.compat.notAppliedShort",
   unverified: "plugin.compat.unverifiedShort",
+  unknown: "plugin.compat.unknownShort",
+  undeclared: "plugin.compat.undeclaredShort",
+};
+
+// メタ行の列定義（4等幅）。ヘッダと本体で同じ値を使う
+const COLUMNS = 'repeat(4, minmax(0, 1fr))';
+
+const cellSx = {
+  fontSize: '11px',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 };
 
 /**
@@ -46,33 +63,31 @@ export function formatMarkedVersion(markedInfo) {
 }
 
 /**
- * プラグイン一覧の各行に出すメタ情報（表示名 / バージョン / 対応marked）。
- * 未宣言の項目も「未宣言」と明示する（空欄だと宣言漏れなのか表示漏れなのか分からないため）。
+ * プラグイン一覧の各行に出すメタ情報。表示名 / バージョン / 対応marked / 状態を
+ * 4 等幅の列に並べる。未宣言の項目も「未宣言」と明示する
+ * （空欄だと宣言漏れなのか表示漏れなのか分からないため）。
  *
  * @param {{name: string|null, version: string|null, marked: string|null}} meta parsePluginMeta の結果
- * @param {string} fileName ファイル名（＝一覧の primary）。表示名が同じなら重複表示しない
- * @param {string} [status] 互換状態。異常時のみ先頭に色付きラベルを出す
+ * @param {string} fileName ファイル名。@plugin-name が無い場合の表示名として使う
+ * @param {string} status 互換状態
  * @param {Function} t 翻訳関数
  */
 export function PluginMetaLine({ meta, fileName, status, t }) {
-  const parts = [];
-
-  if (meta.name && meta.name !== fileName) parts.push(meta.name);
-  parts.push(meta.version ? `v${meta.version}` : t("plugin.meta.versionUndeclared"));
-  parts.push(meta.marked ? `marked ${meta.marked}` : t("plugin.meta.rangeUndeclared"));
-
-  const labelKey = status ? SECONDARY_LABEL[status] : null;
+  // @plugin-name が無ければ表示名はファイル名（従来からの名前の由来）
+  const name = meta.name || fileName;
+  const version = meta.version ? `v${meta.version}` : t("plugin.meta.versionUndeclared");
+  const range = meta.marked ? `marked ${meta.marked}` : t("plugin.meta.rangeUndeclared");
+  const label = STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : status;
 
   return (
-    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-      {labelKey && (
-        <Box component="span" sx={{ fontSize: '11px', color: STATUS_COLOR[status] }}>
-          {t(labelKey)}
-        </Box>
-      )}
-      <Box component="span" sx={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-        {parts.join(' · ')}
-      </Box>
+    <Box
+      component="span"
+      sx={{ display: 'grid', gridTemplateColumns: COLUMNS, gap: 1, alignItems: 'baseline' }}
+    >
+      <Box component="span" title={name} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{name}</Box>
+      <Box component="span" title={version} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{version}</Box>
+      <Box component="span" title={range} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{range}</Box>
+      <Box component="span" title={label} sx={{ ...cellSx, color: STATUS_COLOR[status] || 'var(--text-muted)' }}>{label}</Box>
     </Box>
   );
 }

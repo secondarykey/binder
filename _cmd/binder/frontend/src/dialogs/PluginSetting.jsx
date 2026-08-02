@@ -352,7 +352,8 @@ function PluginSetting() {
                       }}
                       secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                     />
-                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                    {/* インストール済み表示とボタンで幅が変わるとメタ行の列がずれるため固定する */}
+                    <ListItemIcon sx={{ minWidth: 'auto', width: 96, justifyContent: 'flex-end' }}>
                       {installed ? (
                         <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '11px', px: 1 }}>
                           {t("plugin.alreadyInstalled")}

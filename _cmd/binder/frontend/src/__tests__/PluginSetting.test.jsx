@@ -57,7 +57,8 @@ describe('PluginSetting', () => {
 
     renderSetting();
 
-    await waitFor(() => expect(screen.getByText('boom')).toBeTruthy());
+    // ファイル名は primary と表示名の列の2箇所に出る（@plugin-name 未宣言のため）
+    await waitFor(() => expect(screen.getAllByText('boom').length).toBe(2));
     await waitFor(() => expect(screen.getByText('plugin.compat.runtimeErrorShort')).toBeTruthy());
   });
 
@@ -82,21 +83,33 @@ describe('PluginSetting', () => {
 
     renderSetting();
 
-    await waitFor(() => expect(
-      screen.getByText('Keyboard Tag · v1.2.0 · marked >=14 <19')
-    ).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Keyboard Tag')).toBeTruthy());
+    expect(screen.getByText('v1.2.0')).toBeTruthy();
+    expect(screen.getByText('marked >=14 <19')).toBeTruthy();
   });
 
-  // 表示名がファイル名と同じなら重複させない
-  it('@plugin-name がファイル名と同じ場合は重ねて表示しない', async () => {
+  // 状態列は正常系も含めて常に埋める（空欄だと表示漏れと区別が付かない）
+  it('正常なプラグインにも状態ラベルを出す', async () => {
+    listedPlugins.mockResolvedValueOnce([{ name: 'kbd', content: '/* @marked: >=14 <19 */' }]);
+    pluginStatus.mockReturnValueOnce({ kbd: { applied: true } });
+
+    renderSetting();
+
+    await waitFor(() => expect(screen.getByText('plugin.compat.compatibleShort')).toBeTruthy());
+  });
+
+  // @plugin-name が無いプラグインでも表示名の列は埋まる（名前はファイル名由来）
+  it('@plugin-name が無ければファイル名を表示名として出す', async () => {
     listedPlugins.mockResolvedValueOnce([{
       name: 'kbd',
-      content: '/* @plugin-name: kbd */\n/* @plugin-version: 1.0.0 */\n/* @marked: >=14 <19 */',
+      content: '/* @plugin-version: 1.0.0 */\n/* @marked: >=14 <19 */',
     }]);
 
     renderSetting();
 
-    await waitFor(() => expect(screen.getByText('v1.0.0 · marked >=14 <19')).toBeTruthy());
+    // primary（ファイル名）と表示名の列で2箇所に出る
+    await waitFor(() => expect(screen.getAllByText('kbd').length).toBe(2));
+    expect(screen.getByText('v1.0.0')).toBeTruthy();
   });
 
   it('現在の marked のバージョンを表示する', async () => {
