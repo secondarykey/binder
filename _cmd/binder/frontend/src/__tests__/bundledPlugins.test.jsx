@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -74,5 +74,38 @@ describe('bundled marked plugins', () => {
   it('kbd renders inline emphasis inside the tag', () => {
     const out = renderWith('kbd.js', '[[**Enter**]]');
     expect(out).toContain('<kbd><strong>Enter</strong></kbd>');
+  });
+
+  // marked 本体は版を公開していない（marked.version は v14〜v18 すべて undefined）ため、
+  // marked-info は Binder が注入する globalThis.binder.marked を読む。
+  // 注入経路が壊れると静かに "unknown" になるだけなので明示的に検証する。
+  describe('marked-info の Version 行', () => {
+    const versionRow = (html) => {
+      const m = html.match(/<td[^>]*>Version<\/td><td[^>]*>(.*?)<\/td>/);
+      return m ? m[1] : null;
+    };
+
+    afterEach(() => { delete globalThis.binder; });
+
+    it('注入されたバージョンと取得元を出す', () => {
+      globalThis.binder = { marked: { version: '17.0.5', major: 17, source: 'vendor' } };
+      const row = versionRow(renderWith('marked-info.js', '@info\n'));
+      expect(row).toContain('17.0.5');
+      expect(row).toContain('vendor');
+    });
+
+    // CDN で "marked@18" のようにパッチを省いた指定はメジャーしか確定しない
+    it('パッチ不明ならメジャーのみを x 付きで出す', () => {
+      globalThis.binder = { marked: { version: null, major: 18, source: 'cdn' } };
+      const row = versionRow(renderWith('marked-info.js', '@info\n'));
+      expect(row).toContain('18.x');
+      expect(row).toContain('cdn');
+    });
+
+    // Binder 外（コンテキスト注入なし）でも例外にせず unknown に落とす
+    it('コンテキストが無ければ unknown に落とす', () => {
+      const row = versionRow(renderWith('marked-info.js', '@info\n'));
+      expect(row).toContain('unknown');
+    });
   });
 });

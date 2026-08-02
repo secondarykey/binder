@@ -32,7 +32,11 @@ var shippedPluginHashes = map[string][]string{
 	"github-alerts.js":  {"610b07964dda65c23684417c5b9968808f923565af74f180f8487686361bd709"},
 	"highlight.js":      {"e4ccb846deb793dcb6be29e380fca99a2ec593cc63091bcf1ff104782c2dbf2b"},
 	"kbd.js":            {"f716c2a6f86156296aa38678c82910e5645d3edb25a8b225a9dd114ff1be130b"},
-	"marked-info.js":    {"beed61584295c9916b230c3b9a2f96e434a710dcdfd0cb34954a38b57e4460ab"},
+	// 2つめは 0.14.0 で配布したバージョン（0.15.0 で Version 行の追加により更新）
+	"marked-info.js": {
+		"beed61584295c9916b230c3b9a2f96e434a710dcdfd0cb34954a38b57e4460ab",
+		"f33b86057537a3a1d11fb275f552fc605c8c5f2989776e6548d22ccf7f036645",
+	},
 	"smartypants.js":    {"86656e9856087d37a554af1bf956df4111480c3ddf436ba53a0a9ff216f4becb"},
 	"subscript.js":      {"1253b01aed774475bae4c93e056b8c3e7e4e839f97f91dafac605b4f3ab5cbf6"},
 	"superscript.js":    {"8a132e963a5bcf6574fb8a7739869360626c7551e16c8cd28735af5b2f0fb7b0"},

@@ -1,8 +1,13 @@
 /* @plugin-name: Marked Info (@info) */
+/* @plugin-version: 1.1.0 */
 /* @marked: >=14 <19 */
 //
 // @info を marked.js の情報表示ブロックに変換する。
-// ロード中の拡張機能・renderer オーバーライド・hooks・オプション設定を確認できる。
+// 動作中の marked のバージョン・ロード中の拡張機能・renderer オーバーライド・
+// hooks・オプション設定を確認できる。
+//
+// バージョンは marked 本体からは取得できない（marked.version は v14〜v18 すべて
+// undefined）。Binder が globalThis.binder.marked に注入した値を読む。
 //
 // 使い方:
 //   @info
@@ -28,6 +33,32 @@
           var markedFn = m && m.marked;
           var defaults = (markedFn && markedFn.defaults) || {};
           var ext = defaults.extensions;
+
+          // Binder が注入するバージョン情報（Binder 外で動かした場合は undefined）
+          var b = globalThis.binder || {};
+          var bi = b.marked || {};
+
+          // 属性値には出さないが、注入元（CDN URL 由来）を素で埋めないようにする
+          function esc(v) {
+            if (typeof b.escape === 'function') return b.escape(v);
+            return String(v)
+              .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          }
+
+          // version が取れない場合（CDN でパッチまで不明）はメジャーのみを "17.x" で示す
+          var versionText;
+          if (bi.version) {
+            versionText = esc(bi.version);
+          } else if (bi.major != null) {
+            versionText = esc(bi.major) + '.x';
+          } else {
+            versionText = '<span style="color:var(--text-muted,#888)">unknown</span>';
+          }
+          if (bi.source) {
+            versionText += ' <span style="color:var(--text-muted,#888)">('
+                        + esc(bi.source) + ')</span>';
+          }
 
           // 拡張機能名（extensions.renderers のキー）
           var extNames = Object.keys((ext && ext.renderers) || {});
@@ -76,6 +107,7 @@
           }
 
           var rows = [
+            ['Version',            versionText],
             ['GFM',                yesno(defaults.gfm !== false)],
             ['Breaks',             yesno(defaults.breaks)],
             ['Async',              yesno(defaults.async)],
