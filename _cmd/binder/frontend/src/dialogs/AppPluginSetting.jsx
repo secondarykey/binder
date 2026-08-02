@@ -188,7 +188,13 @@ function AppPluginSetting() {
                   selected={selectedName === p.name}
                   onClick={() => setSelectedName(p.name)}
                   sx={{
+                    // MUI 既定の px=16px は中身だけを字下げしてしまい、同じ枠内の
+                    // ラベルや「現在のmarked」と揃わない。負マージンで打ち消して
+                    // 中身を左端に合わせ、ハイライトだけ 8px 外へ広げる
                     py: 0.5,
+                    px: 1,
+                    mx: -1,
+                    width: 'auto',
                     textAlign: 'left',
                     '&.Mui-selected': { backgroundColor: 'var(--selected-menu)', color: 'var(--selected-text)' },
                     '&.Mui-selected:hover': { backgroundColor: 'var(--selected-menu)' },
