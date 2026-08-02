@@ -42,6 +42,10 @@ export const STATUS_LABEL = {
 // メタ行の列定義（4等幅）。ヘッダと本体で同じ値を使う
 const COLUMNS = 'repeat(4, minmax(0, 1fr))';
 
+// 未宣言のプレースホルダ。列が何かは位置で分かるため項目名は繰り返さない。
+// 翻訳対象にならない記号なので言語ファイルには置かない
+const UNDECLARED = '-';
+
 const cellSx = {
   fontSize: '11px',
   overflow: 'hidden',
@@ -75,9 +79,8 @@ export function formatMarkedVersion(markedInfo) {
 export function PluginMetaLine({ meta, fileName, status, t }) {
   // @plugin-name が無ければ表示名はファイル名（従来からの名前の由来）
   const name = meta.name || fileName;
-  // 列が何かは位置で分かるため、未宣言は項目名を繰り返さず「未宣言」だけを出す
-  const version = meta.version ? `v${meta.version}` : t("plugin.meta.undeclared");
-  const range = meta.marked ? `marked ${meta.marked}` : t("plugin.meta.undeclared");
+  const version = meta.version ? `v${meta.version}` : UNDECLARED;
+  const range = meta.marked ? `marked ${meta.marked}` : UNDECLARED;
   const label = STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : status;
 
   return (

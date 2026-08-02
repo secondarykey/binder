@@ -56,14 +56,14 @@ describe('AppPluginSetting', () => {
     expect(screen.getByText('marked >=14 <19')).toBeTruthy();
   });
 
-  // 宣言が無いことも表示する。空欄だと宣言漏れか表示漏れか区別できない
-  it('未宣言のバージョン・対応marked を「未宣言」と明示する', async () => {
+  // 宣言が無い列も埋める。空欄だと宣言漏れか表示漏れか区別できない
+  it('未宣言のバージョン・対応marked を "-" で埋める', async () => {
     listedPlugins.mockResolvedValueOnce([{ name: 'bare', content: '(function(){})();' }]);
 
     renderSetting();
 
-    // バージョン列と対応marked列の2箇所が「未宣言」になる
-    await waitFor(() => expect(screen.getAllByText('plugin.meta.undeclared').length).toBe(2));
+    // バージョン列と対応marked列の2箇所が "-" になる
+    await waitFor(() => expect(screen.getAllByText('-').length).toBe(2));
     expect(screen.getByText('plugin.compat.undeclaredShort')).toBeTruthy();
   });
 
