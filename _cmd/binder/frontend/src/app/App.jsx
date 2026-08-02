@@ -6,8 +6,7 @@ import CommitModal from '../dialogs/CommitModal.jsx';
 import PublishModal from '../dialogs/PublishModal.jsx';
 import SettingModal from '../dialogs/SettingModal.jsx';
 import BinderModal from '../dialogs/BinderModal.jsx';
-import PushModal from '../dialogs/PushModal.jsx';
-import MergeModal from '../dialogs/MergeModal.jsx';
+import ShareModal from '../dialogs/ShareModal.jsx';
 import BranchHistoryModal from './BranchHistoryModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
@@ -103,8 +102,7 @@ function App() {
   const [publishModalSubtree, setPublishModalSubtree] = useState(null);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
   const [binderModalOpen, setBinderModalOpen] = useState(false);
-  const [pushModalOpen, setPushModalOpen] = useState(false);
-  const [mergeModalOpen, setMergeModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [needUpdateOpen, setNeedUpdateOpen] = useState(false);
@@ -336,11 +334,8 @@ function App() {
     setPublishModalOpen(true);
   });
 
-  //Pushモーダルを開く
-  useEventListener(Event.OpenPushModal, () => setPushModalOpen(true));
-
-  //Mergeモーダルを開く
-  useEventListener(Event.OpenMergeModal, () => setMergeModalOpen(true));
+  //共有モーダルを開く
+  useEventListener(Event.OpenShareModal, () => setShareModalOpen(true));
 
   //ブランチ変更モーダルを開く
   useEventListener(Event.OpenBranchModal, () => setBranchModalOpen(true));
@@ -686,11 +681,8 @@ function App() {
       {/** バインダー編集モーダル */}
       <BinderModal open={binderModalOpen} onClose={() => setBinderModalOpen(false)} />
 
-      {/** Pushモーダル */}
-      <PushModal open={pushModalOpen} onClose={() => setPushModalOpen(false)} />
-
-      {/** Mergeモーダル */}
-      <MergeModal open={mergeModalOpen} onClose={() => setMergeModalOpen(false)} />
+      {/** 共有モーダル（取り込み・送信） */}
+      <ShareModal open={shareModalOpen} onClose={() => setShareModalOpen(false)} />
 
       {/** ブランチ変更 + 全体履歴モーダル */}
       <BranchHistoryModal open={branchModalOpen} onClose={() => setBranchModalOpen(false)} />

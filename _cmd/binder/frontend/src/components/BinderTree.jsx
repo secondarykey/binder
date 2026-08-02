@@ -9,8 +9,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import LayersIcon from '@mui/icons-material/Layers';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import ShareIcon from '@mui/icons-material/Share';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -1030,14 +1029,9 @@ function BinderTree(props) {
       <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
         <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
       </MenuItem>
-      {/** マージ */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openMergeModal(); }}>
-        <CloudDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.mergeRemote")}
-      </MenuItem>
-      <Divider />
-      {/** リモートにPush */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openPushModal(); }}>
-        <CloudUploadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.pushRemote")}
+      {/** 共有（取り込み・送信） */}
+      <MenuItem onClick={() => { closeMoreMenu(); evt.openShareModal(); }}>
+        <ShareIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.share")}
       </MenuItem>
     </Menu>
 

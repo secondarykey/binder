@@ -94,14 +94,9 @@ class Event {
     static OpenPublishSubtreeModal = "publish.modal.subtree.open"
 
     /**
-     * Pushモーダルを開く
+     * 共有モーダルを開く（取り込み・送信）
      */
-    static OpenPushModal = "push.modal.open"
-
-    /**
-     * Mergeモーダルを開く
-     */
-    static OpenMergeModal = "merge.modal.open"
+    static OpenShareModal = "share.modal.open"
 
     /**
      * ブランチ変更モーダルを開く
@@ -265,12 +260,8 @@ class Event {
         this.raise(Event.OpenPublishSubtreeModal, data);
     }
 
-    openPushModal() {
-        this.raise(Event.OpenPushModal);
-    }
-
-    openMergeModal() {
-        this.raise(Event.OpenMergeModal);
+    openShareModal() {
+        this.raise(Event.OpenShareModal);
     }
 
     openBranchModal() {

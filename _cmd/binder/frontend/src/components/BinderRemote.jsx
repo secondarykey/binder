@@ -218,7 +218,7 @@ function BinderRemote(props) {
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-secondary)' }} />}>
           <Typography sx={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            {t('push.authType')}
+            {t('share.authType')}
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0 }}>
@@ -234,7 +234,7 @@ function BinderRemote(props) {
           {/* 保存チェックボックス */}
           <FormControlLabel
             control={<Checkbox checked={save} onChange={(e) => setSave(e.target.checked)} size="small" />}
-            label={t('push.saveCredentials')}
+            label={t('share.saveCredentials')}
             sx={{ '& .MuiFormControlLabel-label': { fontSize: '13px' } }}
           />
         </AccordionDetails>

@@ -6,10 +6,10 @@ import "../language";
 import { useTranslation } from 'react-i18next';
 
 const AUTH_TYPES = [
-  { value: 'basic', labelKey: 'push.authBasic' },
-  { value: 'token', labelKey: 'push.authToken' },
-  { value: 'ssh_key', labelKey: 'push.authSSHKey' },
-  { value: 'ssh_agent', labelKey: 'push.authSSHAgent' },
+  { value: 'basic', labelKey: 'share.authBasic' },
+  { value: 'token', labelKey: 'share.authToken' },
+  { value: 'ssh_key', labelKey: 'share.authSSHKey' },
+  { value: 'ssh_agent', labelKey: 'share.authSSHAgent' },
 ];
 
 /**
@@ -43,7 +43,7 @@ function AuthFields({
 
   return (<>
     <FormControl size="small">
-      <FormLabel>{t("push.authType")}</FormLabel>
+      <FormLabel>{t("share.authType")}</FormLabel>
       <Select
         value={authType}
         onChange={(e) => onAuthTypeChange(e.target.value)}
@@ -60,11 +60,11 @@ function AuthFields({
     {authType === 'basic' && (
       <>
         <FormControl size="small">
-          <FormLabel>{t('push.username')}</FormLabel>
+          <FormLabel>{t('share.username')}</FormLabel>
           <TextField size="small" value={username} onChange={(e) => onUsernameChange(e.target.value)} />
         </FormControl>
         <FormControl size="small">
-          <FormLabel>{t('push.password')}</FormLabel>
+          <FormLabel>{t('share.password')}</FormLabel>
           <TextField size="small" type="password" value={password} onChange={(e) => onPasswordChange(e.target.value)} />
         </FormControl>
       </>
@@ -73,7 +73,7 @@ function AuthFields({
     {/* トークン認証フィールド */}
     {authType === 'token' && (
       <FormControl size="small">
-        <FormLabel>{t('push.token')}</FormLabel>
+        <FormLabel>{t('share.token')}</FormLabel>
         <TextField size="small" type="password" value={token} onChange={(e) => onTokenChange(e.target.value)} />
       </FormControl>
     )}
@@ -83,8 +83,8 @@ function AuthFields({
       <>
         <FormControl size="small">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FormLabel sx={{ mb: 0 }}>{t('push.sshKey')}</FormLabel>
-            <ActionButton variant="cancel" label={t('push.loadFromFile')} icon={<FileOpenIcon />}
+            <FormLabel sx={{ mb: 0 }}>{t('share.sshKey')}</FormLabel>
+            <ActionButton variant="cancel" label={t('share.loadFromFile')} icon={<FileOpenIcon />}
               onClick={handleLoadKeyFile} size="small" />
           </Box>
           <TextField
@@ -99,7 +99,7 @@ function AuthFields({
           />
         </FormControl>
         <FormControl size="small">
-          <FormLabel>{t('push.passphrase')}</FormLabel>
+          <FormLabel>{t('share.passphrase')}</FormLabel>
           <TextField size="small" type="password" value={passphrase} onChange={(e) => onPassphraseChange(e.target.value)} />
         </FormControl>
       </>
