@@ -14,12 +14,11 @@ import CheckIcon from '@mui/icons-material/Check';
 
 import { ListAppPlugins, SaveAppPlugin, RemoveAppPlugin, RenameAppPlugin } from "../../bindings/binder/api/app";
 import { SelectJSFile } from "../../bindings/main/window";
-import Marked from "../components/editor/engines/Marked";
-import { parsePluginMeta, pluginCompatStatus } from "@shared/editor/pluginMeta";
+import { parsePluginMeta } from "@shared/editor/pluginMeta";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
-import { PluginMetaLine, MarkedVersionLine, StatusDot } from './components/PluginMeta';
+import { PluginMetaLine } from './components/PluginMeta';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -38,8 +37,6 @@ function AppPluginSetting() {
   const [engine, setEngine] = useState("marked");
   const [plugins, setPlugins] = useState([]);
   const [selectedName, setSelectedName] = useState(null);
-  // 互換状態表示用: 現在の marked 情報
-  const [markedInfo, setMarkedInfo] = useState(null);
 
   const [addDialog, setAddDialog] = useState(false);
   const [addName, setAddName] = useState("");
@@ -65,19 +62,11 @@ function AppPluginSetting() {
     setSelectedName(null);
   }, [engine]);
 
-  // marked を初期化して現在のバージョン情報を取得する（互換状態表示用）。
-  // アプリプラグインは実行時に適用されない（バインダーへインストールして初めて効く）ため、
-  // ここで出せるのは宣言（@marked）に基づく判定までで、実行結果は扱わない。
-  useEffect(() => {
-    let alive = true;
-    Marked.ensureInit()
-      .then(() => {
-        if (!alive) return;
-        setMarkedInfo(Marked.getMarkedInfo());
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
+  // ここでは互換判定（現在の marked との突き合わせ）を行わない。
+  // marked のバージョンはバインダーごとの設定（binder.json の markedUrl）で決まるため、
+  // アプリ設定に出せるのは「今たまたま開いているバインダーの値」にしかならない。
+  // アプリ階層のプラグインは実行時に適用されず、インストール先のバインダーで初めて効く。
+  // 突き合わせはバインダー設定側（PluginSetting のインストール一覧）が行う。
 
   const validateName = (name, excludeName = null) => {
     if (!name.trim()) return t("plugin.nameRequired");
@@ -185,7 +174,6 @@ function AppPluginSetting() {
 
         {/** プラグイン一覧 */}
         <FormControl>
-          <MarkedVersionLine markedInfo={markedInfo} t={t} />
           {plugins.length === 0 ? (
             <Typography variant="body2" sx={{ color: 'var(--text-muted)', mt: 1, fontSize: '13px', textAlign: 'left' }}>
               {t("plugin.empty")}
@@ -194,9 +182,6 @@ function AppPluginSetting() {
             <List dense disablePadding>
               {plugins.map((p) => {
                 const meta = parsePluginMeta(p.content || "");
-                const status = pluginCompatStatus(meta, markedInfo);
-                const rangeText = meta.marked ? `marked ${meta.marked}` : t("plugin.compat.undeclaredRange");
-                const tip = `${t("plugin.compat." + status)}\n${rangeText}`;
                 return (
                 <ListItemButton
                   key={p.name}
@@ -210,15 +195,12 @@ function AppPluginSetting() {
                     '&:hover': { backgroundColor: 'var(--bg-elevated)' },
                   }}
                 >
-                  <Box title={tip} sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
-                    <StatusDot status={status} />
-                    <ListItemText
-                      primary={p.name}
-                      secondary={<PluginMetaLine meta={meta} fileName={p.name} />}
-                      primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
-                      secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
-                    />
-                  </Box>
+                  <ListItemText
+                    primary={p.name}
+                    secondary={<PluginMetaLine meta={meta} fileName={p.name} />}
+                    primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
+                    secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
+                  />
                   <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
                     <IconButton
                       size="small"

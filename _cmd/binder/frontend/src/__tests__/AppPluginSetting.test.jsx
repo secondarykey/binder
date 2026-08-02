@@ -12,13 +12,6 @@ vi.mock('../../bindings/binder/api/app', () => ({
   RenameAppPlugin: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('../components/editor/engines/Marked', () => ({
-  default: {
-    ensureInit: vi.fn(() => Promise.resolve()),
-    getMarkedInfo: vi.fn(() => ({ version: '17.0.5', major: 17, source: 'vendor' })),
-  },
-}));
-
 import AppPluginSetting from '../dialogs/AppPluginSetting';
 
 function renderSetting() {
@@ -66,15 +59,10 @@ describe('AppPluginSetting', () => {
     await waitFor(() => expect(screen.getAllByText('-').length).toBe(2));
   });
 
-  // 対応レンジは「今の marked が何か」と並べて初めて判断できる
-  it('現在の marked のバージョンを表示する', async () => {
-    renderSetting();
-    await waitFor(() => expect(screen.getByText('plugin.meta.currentMarked')).toBeTruthy());
-  });
-
-  // アプリ階層は実行時に適用されないため、判定できるのは宣言までだが、
-  // 非対応であることは配る前に分かるべき。状態は色とツールチップで示す
-  it('現在の marked に非対応なプラグインをツールチップで明示する', async () => {
+  // marked のバージョンはバインダーごとの設定（binder.json の markedUrl）で決まるため、
+  // アプリ設定で出せるのは「今たまたま開いているバインダーの値」にしかならない。
+  // 突き合わせはインストール先（PluginSetting）が行う。
+  it('現在の marked との突き合わせは行わない', async () => {
     listedPlugins.mockResolvedValueOnce([{
       name: 'old',
       content: '/* @plugin-version: 0.9.0 */\n/* @marked: <15 */',
@@ -83,6 +71,9 @@ describe('AppPluginSetting', () => {
     const { container } = renderSetting();
 
     await waitFor(() => expect(screen.getByText('v0.9.0')).toBeTruthy());
-    expect(container.querySelector('[title^="plugin.compat.incompatible"]')).toBeTruthy();
+    // 宣言（対応marked）は出すが、互換状態のドット・ツールチップは出さない
+    expect(screen.getByText('marked <15')).toBeTruthy();
+    expect(screen.queryByText('plugin.meta.currentMarked')).toBeNull();
+    expect(container.querySelector('[title^="plugin.compat."]')).toBeNull();
   });
 });
