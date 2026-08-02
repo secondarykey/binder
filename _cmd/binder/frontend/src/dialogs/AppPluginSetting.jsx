@@ -14,9 +14,11 @@ import CheckIcon from '@mui/icons-material/Check';
 
 import { ListAppPlugins, SaveAppPlugin, RemoveAppPlugin, RenameAppPlugin } from "../../bindings/binder/api/app";
 import { SelectJSFile } from "../../bindings/main/window";
+import { parsePluginMeta } from "@shared/editor/pluginMeta";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
+import { PluginMetaLine } from './components/PluginMeta';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -59,6 +61,12 @@ function AppPluginSetting() {
     loadPlugins();
     setSelectedName(null);
   }, [engine]);
+
+  // ここでは互換判定（現在の marked との突き合わせ）を行わない。
+  // marked のバージョンはバインダーごとの設定（binder.json の markedUrl）で決まるため、
+  // アプリ設定に出せるのは「今たまたま開いているバインダーの値」にしかならない。
+  // アプリ階層のプラグインは実行時に適用されず、インストール先のバインダーで初めて効く。
+  // 突き合わせはバインダー設定側（PluginSetting のインストール一覧）が行う。
 
   const validateName = (name, excludeName = null) => {
     if (!name.trim()) return t("plugin.nameRequired");
@@ -172,13 +180,21 @@ function AppPluginSetting() {
             </Typography>
           ) : (
             <List dense disablePadding>
-              {plugins.map((p) => (
+              {plugins.map((p) => {
+                const meta = parsePluginMeta(p.content || "");
+                return (
                 <ListItemButton
                   key={p.name}
                   selected={selectedName === p.name}
                   onClick={() => setSelectedName(p.name)}
                   sx={{
+                    // MUI 既定の px=16px は中身だけを字下げしてしまい、同じ枠内の
+                    // ラベルや「現在のmarked」と揃わない。負マージンで打ち消して
+                    // 中身を左端に合わせ、ハイライトだけ 8px 外へ広げる
                     py: 0.5,
+                    px: 1,
+                    mx: -1,
+                    width: 'auto',
                     textAlign: 'left',
                     '&.Mui-selected': { backgroundColor: 'var(--selected-menu)', color: 'var(--selected-text)' },
                     '&.Mui-selected:hover': { backgroundColor: 'var(--selected-menu)' },
@@ -187,7 +203,9 @@ function AppPluginSetting() {
                 >
                   <ListItemText
                     primary={p.name}
+                    secondary={<PluginMetaLine meta={meta} fileName={p.name} />}
                     primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
+                    secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                   />
                   <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
                     <IconButton
@@ -216,7 +234,8 @@ function AppPluginSetting() {
                     </IconButton>
                   </ListItemIcon>
                 </ListItemButton>
-              ))}
+                );
+              })}
             </List>
           )}
         </FormControl>

@@ -3,8 +3,7 @@ import { Box, Dialog, IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 import OverallHistoryMenu from './OverallHistoryMenu';
-import OverallHistoryDetail from './OverallHistoryDetail';
-import { BranchPanel } from '../dialogs/BranchModal';
+import OverallHistoryRight from './OverallHistoryRight';
 
 import '../language';
 import { useTranslation } from 'react-i18next';
@@ -132,13 +131,15 @@ function BranchHistoryModal({ open, onClose }) {
           )}
         </Box>
 
-        {/** 右ペイン: ブランチ管理（初期）/ コミット詳細（選択時） */}
-        <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-          {selectedHash
-            ? <OverallHistoryDetail binderPath="" hash={selectedHash}
-                onBack={() => setSelectedHash(null)} />
-            : open && <BranchPanel onClose={handleClose} />
-          }
+        {/** 右ペイン: ブランチ・取り込み（初期）/ コミット詳細（選択時） */}
+        <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          {open && (
+            <OverallHistoryRight
+              hash={selectedHash}
+              onBack={() => setSelectedHash(null)}
+              onClose={handleClose}
+            />
+          )}
         </Box>
 
       </Box>

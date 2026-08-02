@@ -8,8 +8,7 @@ import { Window } from '@wailsio/runtime';
 import { EventContext } from '../Event';
 import { SystemMessage } from '../Message';
 import OverallHistoryMenu from './OverallHistoryMenu';
-import OverallHistoryDetail from './OverallHistoryDetail';
-import { BranchPanel } from '../dialogs/BranchModal';
+import OverallHistoryRight from './OverallHistoryRight';
 
 import '../assets/App.css';
 import '../assets/OverallHistoryApp.css';
@@ -65,11 +64,12 @@ function OverallHistoryApp() {
         </div>
 
         <div id="overallHistoryRight">
-          {selectedHash
-            ? <OverallHistoryDetail binderPath={binderPath} hash={selectedHash}
-                onBack={() => setSelectedHash(null)} />
-            : <BranchPanel binderPath={binderPath} onClose={handleClose} />
-          }
+          <OverallHistoryRight
+            binderPath={binderPath}
+            hash={selectedHash}
+            onBack={() => setSelectedHash(null)}
+            onClose={handleClose}
+          />
         </div>
 
       </div>

@@ -1,4 +1,5 @@
 /* @plugin-name: Table of Contents ([TOC]) */
+/* @plugin-version: 1.0.1 */
 /* @marked: >=14 <19 */
 //
 // [TOC] を見出しの目次（Table of Contents）に変換する。

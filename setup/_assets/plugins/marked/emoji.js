@@ -1,4 +1,5 @@
 /* @plugin-name: Emoji (:name:) */
+/* @plugin-version: 1.0.1 */
 /* @marked: >=14 <19 */
 //
 // :絵文字名: を絵文字文字に変換する。

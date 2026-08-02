@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { Grid, TextField, FormControl, FormLabel, LinearProgress, Typography } from "@mui/material";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import PublishedWithChangesIcon from "@mui/icons-material/PublishedWithChanges";
 
 import Event, { EventContext, useEventListener } from '../Event';
 import { ActionButton } from './components/ActionButton';
@@ -62,7 +62,7 @@ function GenerateForm({ date, template }) {
       )}
 
       <FormControl style={{ display: "flex", flexFlow: "row", margin: "10px", justifyContent: "flex-end" }}>
-        <ActionButton variant="confirm" label={t("publishModal.generate")} icon={<AutoFixHighIcon />} onClick={handleGenerate} disabled={progress.running} />
+        <ActionButton variant="confirm" label={t("publishModal.generate")} icon={<PublishedWithChangesIcon />} onClick={handleGenerate} disabled={progress.running} />
       </FormControl>
 
     </Grid>

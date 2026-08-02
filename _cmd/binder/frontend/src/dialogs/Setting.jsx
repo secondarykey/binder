@@ -1,9 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { Box, Button, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Switch, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, FormControl, FormLabel, FormControlLabel, IconButton, InputAdornment, List, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Switch, TextField, Typography } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets, GetAutoSave, SaveAutoSave, GetPreviewScrollbar, SetPreviewScrollbar } from "../../bindings/binder/api/app";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { GetPath, SavePath, GetTheme, SetTheme, GetLanguage, SetLanguage, GetFont, GetAllowedCDNs, SaveAllowedCDNs, GetTreeDisplayMode, SetTreeDisplayMode, GetTreeExpandTargets, SetTreeExpandTargets, GetAutoSave, SaveAutoSave, GetPreviewScrollbar, SetPreviewScrollbar, GetGit, SaveGit } from "../../bindings/binder/api/app";
 import { GetThemeList, GetLanguageList } from "../../bindings/binder/api/shared/shared";
 import { Events } from '@wailsio/runtime';
 import { OpenFileDialog } from "../../bindings/main/window";
@@ -14,7 +15,6 @@ import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import SnippetSetting from "./SnippetSetting";
 import EditorSetting from "./EditorSetting";
-import GitSetting from "./GitSetting";
 import LicenseSetting from "./LicenseSetting";
 import AppPluginSetting from "./AppPluginSetting";
 import { ActionButton } from './components/ActionButton';
@@ -56,6 +56,13 @@ function Setting({ isModal, ...props }) {
   const [autoSaveOnClose, setAutoSaveOnClose] = useState(true);
   const [autoSaveOnLeave, setAutoSaveOnLeave] = useState(false);
   const [autoSaveConfirm, setAutoSaveConfirm] = useState(false);
+
+  // 新規バインダーの既定値（Git）。普段は折りたたんでおく
+  const [binderDefaultsOpen, setBinderDefaultsOpen] = useState(false);
+  const [gitBranch, setGitBranch] = useState("");
+  const [gitWorkBranch, setGitWorkBranch] = useState("");
+  const [gitName, setGitName] = useState("");
+  const [gitMail, setGitMail] = useState("");
 
   useEffect(() => {
 
@@ -102,6 +109,14 @@ function Setting({ isModal, ...props }) {
         setAutoSaveOnClose(!!a.onClose);
         setAutoSaveOnLeave(!!a.onLeave);
         setAutoSaveConfirm(!!a.confirmOnClose);
+      }
+    }).catch(() => {});
+    GetGit().then((git) => {
+      if (git) {
+        setGitBranch(git.branch || "");
+        setGitWorkBranch(git.workBranch || "");
+        setGitName(git.name || "");
+        setGitMail(git.mail || "");
       }
     }).catch(() => {});
   }, []);
@@ -167,7 +182,9 @@ function Setting({ isModal, ...props }) {
     const confirm = autoSaveConfirm && (autoSaveOnClose || autoSaveOnLeave);
     const autoSave = { enabled: autoSaveEnabled, intervalMinutes: interval, onClose: autoSaveOnClose, onLeave: autoSaveOnLeave, confirmOnClose: confirm };
 
-    Promise.all([SavePath(path), SaveAutoSave(autoSave)]).then(() => {
+    const git = { branch: gitBranch, workBranch: gitWorkBranch, name: gitName, mail: gitMail };
+
+    Promise.all([SavePath(path), SaveAutoSave(autoSave), SaveGit(git)]).then(() => {
       // 自動保存ループの再設定をメインウィンドウへ通知
       Events.Emit('binder:autosave:changed', autoSave);
       evt.showSuccessMessage(t("common.updated"));
@@ -211,7 +228,6 @@ function Setting({ isModal, ...props }) {
     { key: "basic", label: t("setting.basic") },
     { key: "editor", label: t("setting.editor") },
     { key: "snippet", label: t("setting.snippet") },
-    { key: "git", label: t("setting.git") },
     { key: "plugin", label: t("plugin.title") },
     { key: "security", label: t("setting.security") },
     { key: "license", label: t("setting.license") },
@@ -261,8 +277,9 @@ function Setting({ isModal, ...props }) {
       <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
 
         {activeSection === "basic" && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="formGrid" style={{ margin: '20px 24px', flex: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            {/** 設定部分のみスクロールさせ、保存ボタンは常に見える位置に固定する */}
+            <div className="formGrid" style={{ padding: '20px 24px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
               <div className="formContainer">
                 {/** 言語選択 */}
                 <FormControl>
@@ -461,11 +478,62 @@ function Setting({ isModal, ...props }) {
                     {t("setting.autoSaveHint")}
                   </FormLabel>
                 </Paper>
+
+                {/** 新規バインダーの既定値（Git）。頻繁に触る設定ではないため折りたたむ */}
+                <Accordion
+                  expanded={binderDefaultsOpen}
+                  onChange={(_, expanded) => setBinderDefaultsOpen(expanded)}
+                  disableGutters
+                  sx={{
+                    backgroundColor: 'transparent',
+                    boxShadow: 'none',
+                    border: '1px solid var(--border-primary)',
+                    '&::before': { display: 'none' },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'var(--text-secondary)' }} />}>
+                    <Typography sx={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      {t("setting.binderDefaults")}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0 }}>
+                    <FormLabel sx={{ fontSize: '12px', color: 'var(--text-muted)', m: 0 }}>
+                      {t("setting.binderDefaultsHint")}
+                    </FormLabel>
+                    {/** デフォルトのブランチ名 */}
+                    <FormControl>
+                      <FormLabel>{t("setting.defaultBranch")}</FormLabel>
+                      <TextField size="small" value={gitBranch} onChange={(e) => setGitBranch(e.target.value)} />
+                    </FormControl>
+                    {/** 作業ブランチ名 */}
+                    <FormControl>
+                      <FormLabel>{t("setting.workBranch")}</FormLabel>
+                      <TextField size="small" value={gitWorkBranch} onChange={(e) => setGitWorkBranch(e.target.value)} />
+                    </FormControl>
+                    {/** ユーザ名 */}
+                    <FormControl>
+                      <FormLabel>{t("setting.gitName")}</FormLabel>
+                      <TextField size="small" value={gitName} onChange={(e) => setGitName(e.target.value)} />
+                    </FormControl>
+                    {/** メールアドレス */}
+                    <FormControl>
+                      <FormLabel>{t("setting.gitMail")}</FormLabel>
+                      <TextField size="small" value={gitMail} onChange={(e) => setGitMail(e.target.value)} />
+                    </FormControl>
+                  </AccordionDetails>
+                </Accordion>
               </div>
             </div>
 
-            {/** 保存 */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+            {/** 保存（下部に固定） */}
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              p: 2,
+              flexShrink: 0,
+              borderTop: '1px solid var(--border-primary)',
+              backgroundColor: 'var(--bg-dialog)',
+            }}>
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
             </Box>
           </Box>
@@ -473,10 +541,6 @@ function Setting({ isModal, ...props }) {
 
         {activeSection === "editor" && (
           <EditorSetting />
-        )}
-
-        {activeSection === "git" && (
-          <GitSetting />
         )}
 
         {activeSection === "snippet" && (

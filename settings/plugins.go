@@ -28,8 +28,11 @@ func PluginsEngineDirPath(engine string) string {
 }
 
 // AppPluginInfo はアプリレベルプラグインの情報を保持する。
+// Content は設定画面がメタデータ（@plugin-version / @marked 等）を解析するために持つ。
+// 解析はフロントエンド（pluginMeta.js）で一元化しているため Go 側では解釈しない。
 type AppPluginInfo struct {
-	Name string `json:"name"`
+	Name    string `json:"name"`
+	Content string `json:"content"`
 }
 
 func appPluginEngineDirPath(engine string) string {
@@ -40,7 +43,8 @@ func appPluginFilePath(engine, name string) string {
 	return filepath.Join(appPluginEngineDirPath(engine), name+".js")
 }
 
-// ListAppPlugins は ~/.binder/plugins/{engine}/ 内のプラグイン名一覧を返す。
+// ListAppPlugins は ~/.binder/plugins/{engine}/ 内のプラグイン一覧を内容込みで返す。
+// 読めなかったファイルは Content を空にして一覧には残す（存在自体は見せる）。
 func ListAppPlugins(engine string) ([]AppPluginInfo, error) {
 	dir := appPluginEngineDirPath(engine)
 	entries, err := os.ReadDir(dir)
@@ -56,8 +60,14 @@ func ListAppPlugins(engine string) ([]AppPluginInfo, error) {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".js") {
 			continue
 		}
+		name := strings.TrimSuffix(e.Name(), ".js")
+		content, err := ReadAppPlugin(engine, name)
+		if err != nil {
+			content = ""
+		}
 		result = append(result, AppPluginInfo{
-			Name: strings.TrimSuffix(e.Name(), ".js"),
+			Name:    name,
+			Content: content,
 		})
 	}
 	sort.Slice(result, func(i, j int) bool {

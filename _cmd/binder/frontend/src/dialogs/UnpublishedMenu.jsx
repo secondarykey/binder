@@ -29,8 +29,11 @@ import { useTranslation } from 'react-i18next';
  * 未公開一覧
  * ModifiedMenu と同じ構造で Note/Diagram/Asset を表示し、
  * PublishGenerate イベントを受け取ったら選択済みファイルを順次 Generate する。
+ *
+ * onGenerated が指定された場合は Generate 完了時に閉じずにそれを呼ぶ。
+ * 生成した公開データを続けて送信できるようにするため（PublishModal の送信タブへの誘導）。
  */
-function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onClose, ...props }) {
+function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onClose, onGenerated, ...props }) {
 
   const evt = useContext(EventContext);
   const { showError, showWarning } = useDialogMessage();
@@ -284,6 +287,11 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       setTimeout(() => { loadTree(); }, 800);
     } else if (!generateOk) {
       setTimeout(() => { loadTree(); }, 800);
+    } else if (onGenerated) {
+      // 続けて送信できるよう閉じずに残す。一覧は空になるので取り直す
+      evt.showSuccessMessage(t("publishModal.generateSuccess"));
+      setTimeout(() => { loadTree(); }, 800);
+      onGenerated();
     } else if (onClose) {
       evt.showSuccessMessage(t("publishModal.generateSuccess"));
       onClose();

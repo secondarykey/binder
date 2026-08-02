@@ -12,12 +12,13 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RestoreIcon from '@mui/icons-material/Restore';
 import CloseIcon from '@mui/icons-material/Close';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
 import { ActionButton } from '../dialogs/components/ActionButton';
 
 import { Events, Window } from '@wailsio/runtime';
 
-import { GetOverallHistory, GetOverallHistoryByPath, GetModifiedIds, RestoreToCommit, RestoreToCommitByPath, GetCleanupInfo, SquashHistory } from '../../bindings/binder/api/app';
+import { GetOverallHistory, GetOverallHistoryByPath, GetModifiedIds, RestoreToCommit, RestoreToCommitByPath, GetCleanupInfo, SquashHistory, RunGC } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
 import "../language";
@@ -56,6 +57,10 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
   const [cleanupDate, setCleanupDate] = useState('');
   const [cleanupInfo, setCleanupInfo] = useState(null);
   const [cleanupLoading, setCleanupLoading] = useState(false);
+
+  // GC（リポジトリメンテナンス）用
+  const [gcConfirmOpen, setGcConfirmOpen] = useState(false);
+  const [gcLoading, setGcLoading] = useState(false);
 
   // 初回読み込み
   useEffect(() => {
@@ -204,6 +209,22 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
     });
   };
 
+  // --- GC（不要オブジェクト削除）---
+  // 履歴を書き換えないため、クリーンアップと違いウィンドウを閉じる必要はない
+  const handleRunGC = () => {
+    setGcConfirmOpen(false);
+    setGcLoading(true);
+    RunGC().then((result) => {
+      const before = formatSize(result.beforeSize);
+      const after = formatSize(result.afterSize);
+      evt.showSuccessMessage(t('overallHistory.gcComplete', { before, after }));
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    }).finally(() => {
+      setGcLoading(false);
+    });
+  };
+
   const handleCleanupDateChange = (e) => {
     const val = e.target.value;
     setCleanupDate(val);
@@ -322,9 +343,9 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
 
     </List>
 
-    {/* クリーンアップボタン（ByPath モードでは非表示・下部固定） */}
+    {/* リポジトリメンテナンス（ByPath モードでは非表示・下部固定） */}
     {!binderPath && !loading && entries.length > 0 && (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, py: 1, borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
         <Button
           startIcon={<CleaningServicesIcon fontSize="small" />}
           onClick={handleOpenCleanup}
@@ -332,6 +353,15 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
           sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
         >
           {t('overallHistory.cleanup')}
+        </Button>
+        <Button
+          startIcon={gcLoading ? <CircularProgress size={14} /> : <DeleteSweepIcon fontSize="small" />}
+          onClick={() => setGcConfirmOpen(true)}
+          disabled={gcLoading}
+          size="small"
+          sx={{ color: 'var(--text-disabled)', '&:hover': { color: 'var(--text-primary)' } }}
+        >
+          {t('overallHistory.gc')}
         </Button>
       </Box>
     )}
@@ -415,6 +445,20 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
       </DialogContent>
       <DialogActions>
         <ActionButton variant="confirm" label={t('overallHistory.cleanupConfirm')} icon={<CleaningServicesIcon />} onClick={doSquashHistory} disabled={cleanupLoading || !cleanupInfo || cleanupInfo.squashTarget === 0} />
+      </DialogActions>
+    </Dialog>
+
+    {/* GC確認ダイアログ */}
+    <Dialog open={gcConfirmOpen} onClose={() => setGcConfirmOpen(false)}>
+      <DialogTitle>{t('overallHistory.gcTitle')}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          {t('overallHistory.gcConfirmMessage')}
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <ActionButton variant="cancel" label={t('common.cancel')} icon={<CloseIcon />} onClick={() => setGcConfirmOpen(false)} />
+        <ActionButton variant="confirm" label={t('overallHistory.gcRun')} icon={<DeleteSweepIcon />} onClick={handleRunGC} />
       </DialogActions>
     </Dialog>
     </Box>

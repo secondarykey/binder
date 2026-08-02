@@ -3,9 +3,10 @@ import { Routes, Route, useNavigate, useLocation } from "react-router";
 
 import { IconButton, Paper, Divider, Tooltip } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CommitIcon from '@mui/icons-material/Commit';
 import PublishIcon from '@mui/icons-material/Publish';
+import HistoryIcon from '@mui/icons-material/History';
 import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
@@ -143,6 +144,13 @@ function Menu(props) {
   }
 
   /**
+   * 全体履歴（ブランチ・取り込み含む）をモーダルで開く
+   */
+  const handleClickHistory = () => {
+    evt.openBranchModal();
+  }
+
+  /**
    * テンプレート設定
    */
   const handleClickTemplate = () => {
@@ -183,7 +191,7 @@ function Menu(props) {
         <Tooltip title={t("menu.template")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}
             sx={{ backgroundColor: isTemplateActive ? 'var(--bg-button)' : 'transparent', '& svg': { color: isTemplateActive ? 'var(--accent-primary)' : 'inherit' } }}>
-            <ContentPasteIcon fill="white" className="leftIcon" />
+            <ViewQuiltIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
@@ -206,6 +214,13 @@ function Menu(props) {
 
         {/** Divider */}
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
+
+        {/** History（全体履歴・ブランチ・取り込み） */}
+        <Tooltip title={t("menu.history")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="history" onClick={handleClickHistory}>
+            <HistoryIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
 
         {/** Binder Setting */}
         <Tooltip title={t("menu.config")} placement="right">

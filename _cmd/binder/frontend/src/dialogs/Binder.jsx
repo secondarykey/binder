@@ -1,17 +1,12 @@
 import { useEffect, useState, useContext } from "react";
 
 import {
-  Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  FormControl, FormControlLabel, FormLabel, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Switch, TextField, Tooltip, Typography,
+  Box, FormControl, FormControlLabel, FormLabel, List, ListItemButton, ListItemText, Switch, TextField, Typography,
 } from "@mui/material";
-import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
 import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
-import { GetConfig, EditConfig, RemoteList, AddRemote, EditRemote, DeleteRemote, GetUserInfo, EditUserInfo, CurrentBranch, GetAllowedCDNs, RunGC } from "../../bindings/binder/api/app";
+import { GetConfig, EditConfig, GetUserInfo, EditUserInfo, GetAllowedCDNs } from "../../bindings/binder/api/app";
 import PluginSetting from "./PluginSetting";
 import RootFileSetting from "./RootFileSetting";
 import MarkedScript from "../components/editor/engines/Marked";
@@ -24,10 +19,11 @@ import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
+// スクリプトとプラグインは関連が近いため隣り合わせにする
 const MENU_ITEMS_KEYS = [
   { key: "basic", labelKey: "setting.basic" },
+  { key: "userinfo", labelKey: "binder.userInfo" },
   { key: "script", labelKey: "binder.script" },
-  { key: "git", labelKey: "binder.git" },
   { key: "plugin", labelKey: "plugin.title" },
   { key: "rootfile", labelKey: "rootFile.title" },
 ];
@@ -107,9 +103,6 @@ function Binder({ isModal, ...props }) {
   const [gitName, setGitName] = useState("");
   const [gitMail, setGitMail] = useState("");
 
-  const [branchName, setBranchName] = useState("");
-  const [remoteList, setRemoteList] = useState([]);
-
   // 認証情報
   const [authType, setAuthType] = useState("");
   const [authUsername, setAuthUsername] = useState("");
@@ -117,28 +110,6 @@ function Binder({ isModal, ...props }) {
   const [authToken, setAuthToken] = useState("");
   const [authPassphrase, setAuthPassphrase] = useState("");
   const [authSSHKey, setAuthSSHKey] = useState("");
-
-  // リモートダイアログ（追加・編集兼用）
-  const [remoteDialog, showRemoteDialog] = useState(false);
-  const [remoteDialogMode, setRemoteDialogMode] = useState("add"); // "add" or "edit"
-  const [remoteName, setRemoteName] = useState("");
-  const [remoteURL, setRemoteURL] = useState("");
-
-  // 削除確認ダイアログ
-  const [deleteDialog, showDeleteDialog] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState("");
-
-  // GC
-  const [gcConfirmOpen, setGcConfirmOpen] = useState(false);
-  const [gcLoading, setGcLoading] = useState(false);
-
-  const getRemoteList = () => {
-    RemoteList().then((res) => {
-      setRemoteList(res || []);
-    }).catch((err) => {
-      showError(err);
-    });
-  };
 
   useEffect(() => {
     if (!isModal) evt.changeTitle(t("binder.editTitle"));
@@ -173,12 +144,6 @@ function Binder({ isModal, ...props }) {
     }).catch((err) => {
       showError(err);
     });
-    CurrentBranch().then((name) => {
-      setBranchName(name || "");
-    }).catch((err) => {
-      showError(err);
-    });
-    getRemoteList();
   }, []);
 
   // marked を初期化し、現在動作している版（機能プローブ含む）を取得する。
@@ -202,33 +167,6 @@ function Binder({ isModal, ...props }) {
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
       showError(err);
-    });
-  };
-
-  // --- GC ---
-  const formatSize = (bytes) => {
-    if (bytes == null || bytes === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let i = 0;
-    let size = bytes;
-    while (size >= 1024 && i < units.length - 1) {
-      size /= 1024;
-      i++;
-    }
-    return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
-  };
-
-  const handleRunGC = () => {
-    setGcConfirmOpen(false);
-    setGcLoading(true);
-    RunGC().then((result) => {
-      const before = formatSize(result.beforeSize);
-      const after = formatSize(result.afterSize);
-      evt.showSuccessMessage(t("binder.gcComplete", { before, after }));
-    }).catch((err) => {
-      showError(err);
-    }).finally(() => {
-      setGcLoading(false);
     });
   };
 
@@ -299,54 +237,6 @@ function Binder({ isModal, ...props }) {
       bytes: Array.from(new TextEncoder().encode(authSSHKey)),
     }).then(() => {
       evt.showSuccessMessage(t("binder.updateSuccess"));
-    }).catch((err) => {
-      showError(err);
-    });
-  };
-
-  // リモート追加ダイアログを開く
-  const openAddRemoteDialog = () => {
-    setRemoteDialogMode("add");
-    setRemoteName("origin");
-    setRemoteURL("");
-    showRemoteDialog(true);
-  };
-
-  // リモート編集ダイアログを開く
-  const openEditRemoteDialog = (remote) => {
-    setRemoteDialogMode("edit");
-    setRemoteName(remote.name);
-    setRemoteURL(remote.url);
-    showRemoteDialog(true);
-  };
-
-  const handleRemoteDialogClose = () => showRemoteDialog(false);
-
-  const handleRemoteDialogSubmit = (event) => {
-    event.preventDefault();
-    const action = remoteDialogMode === "add"
-      ? AddRemote(remoteName, remoteURL)
-      : EditRemote(remoteName, remoteURL);
-    action.then(() => {
-      getRemoteList();
-      handleRemoteDialogClose();
-    }).catch((err) => {
-      showError(err);
-    });
-  };
-
-  // 削除確認ダイアログを開く
-  const openDeleteDialog = (name) => {
-    setDeleteTarget(name);
-    showDeleteDialog(true);
-  };
-
-  const handleDeleteDialogClose = () => showDeleteDialog(false);
-
-  const handleDeleteRemote = () => {
-    DeleteRemote(deleteTarget).then(() => {
-      getRemoteList();
-      handleDeleteDialogClose();
     }).catch((err) => {
       showError(err);
     });
@@ -447,7 +337,7 @@ function Binder({ isModal, ...props }) {
                 size="small"
                 value={markedUrl}
                 onChange={(e) => { setMarkedUrl(e.target.value); setMarkedStatus(""); }}
-                placeholder="https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.esm.js"
+                placeholder="https://cdn.jsdelivr.net/npm/marked@17.0.5/lib/marked.esm.js"
                 helperText={
                   markedStatus === "ok" ? t("binder.cdnOk") :
                   markedStatus === "error" ? t("binder.cdnLoadError") :
@@ -503,14 +393,13 @@ function Binder({ isModal, ...props }) {
           <RootFileSetting />
         )}
 
-        {activeSection === "git" && (
+        {activeSection === "userinfo" && (
           <div className="formGrid" style={{ margin: '20px 24px', padding: '8px' }}>
 
-            {/** ブランチ */}
-            <FormControl>
-              <FormLabel>{t("binder.currentBranch")}</FormLabel>
-              <TextField size="small" value={branchName} InputProps={{ readOnly: true }} />
-            </FormControl>
+            {/** 記録者として残す情報。バインダーごとに保持する */}
+            <Typography variant="caption" sx={{ color: 'var(--text-muted)', display: 'block', mb: 1 }}>
+              {t("binder.userInfoHint")}
+            </Typography>
 
             {/** ユーザ情報 */}
             <FormControl>
@@ -537,126 +426,10 @@ function Binder({ isModal, ...props }) {
               <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
             </Box>
 
-            {/** リポジトリメンテナンス */}
-            <Box sx={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <FormLabel>
-                {t("binder.gcLabel")}
-                <ActionButton variant="cancel" label={t("binder.gcButton")}
-                  icon={gcLoading ? <CircularProgress size={16} /> : <CleaningServicesIcon />}
-                  onClick={() => setGcConfirmOpen(true)} disabled={gcLoading} size="small" />
-              </FormLabel>
-            </Box>
-
-            {/** リモート一覧 */}
-            <FormControl>
-              <FormLabel>
-                {t("binder.settingRemote")}
-                <IconButton size="small" onClick={openAddRemoteDialog}><AddIcon fontSize="small" /></IconButton>
-              </FormLabel>
-              <List dense disablePadding>
-                {remoteList.map((r) => (
-                  <ListItemButton
-                    key={r.name}
-                    onClick={() => openEditRemoteDialog(r)}
-                    sx={{
-                      py: 0.5,
-                      '&:hover': { backgroundColor: 'var(--bg-elevated)' },
-                    }}
-                  >
-                    <ListItemText
-                      primary={r.name}
-                      secondary={r.url}
-                      primaryTypographyProps={{ fontSize: '13px' }}
-                      secondaryTypographyProps={{ fontSize: '11px', color: 'var(--text-secondary)' }}
-                    />
-                    <ListItemIcon sx={{ minWidth: 'auto' }}>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
-                        sx={{ '& svg': { fill: 'var(--accent-red)' } }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </ListItemIcon>
-                  </ListItemButton>
-                ))}
-              </List>
-            </FormControl>
-
           </div>
         )}
 
       </Box>
-
-      {/** リモート追加・編集ダイアログ */}
-      <Dialog
-        open={remoteDialog}
-        onClose={handleRemoteDialogClose}
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleRemoteDialogSubmit,
-          style: { backgroundColor: "var(--bg-button)" },
-        }}
-      >
-        <DialogTitle style={{ color: "var(--text-secondary)" }}>
-          {remoteDialogMode === "add" ? t("binder.settingRemote") : t("binder.editRemote")}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            required margin="dense" label={t("binder.remoteName")}
-            value={remoteName}
-            onChange={(e) => setRemoteName(e.target.value)}
-            fullWidth variant="standard"
-            disabled={remoteDialogMode === "edit"}
-          />
-          <TextField
-            autoFocus required margin="dense" label={t("binder.remoteUrl")}
-            value={remoteURL}
-            onChange={(e) => setRemoteURL(e.target.value)}
-            fullWidth variant="standard"
-          />
-        </DialogContent>
-        <DialogActions>
-          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleRemoteDialogClose} />
-          <ActionButton variant="save" label={t("common.set")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} type="submit" />
-        </DialogActions>
-      </Dialog>
-
-      {/** リモート削除確認ダイアログ */}
-      <Dialog
-        open={deleteDialog}
-        onClose={handleDeleteDialogClose}
-        PaperProps={{ style: { backgroundColor: "var(--bg-button)" } }}
-      >
-        <DialogTitle style={{ color: "var(--text-secondary)" }}>{t("binder.deleteRemoteTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText style={{ color: "var(--text-secondary)" }}>
-            {t("binder.deleteRemoteConfirm", { name: deleteTarget })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteDialogClose} />
-          <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteRemote} />
-        </DialogActions>
-      </Dialog>
-
-      {/** GC確認ダイアログ */}
-      <Dialog
-        open={gcConfirmOpen}
-        onClose={() => setGcConfirmOpen(false)}
-        PaperProps={{ style: { backgroundColor: "var(--bg-button)" } }}
-      >
-        <DialogTitle style={{ color: "var(--text-secondary)" }}>{t("binder.gcTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText style={{ color: "var(--text-secondary)" }}>
-            {t("binder.gcConfirmMessage")}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setGcConfirmOpen(false)} />
-          <ActionButton variant="confirm" label={t("binder.gcRun")} icon={<CleaningServicesIcon />} onClick={handleRunGC} />
-        </DialogActions>
-      </Dialog>
 
     </Box>
   );

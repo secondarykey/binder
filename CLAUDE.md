@@ -137,9 +137,24 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 
 ## UI用語
 
-UIではGit用語を隠蔽し、ユーザーフレンドリーな表現を使用する:
-- **コミット → 記録**（英語: Record）。コード内部の変数名・イベント名・ファイル名は `commit` のまま維持し、言語ファイル（`setup/_assets/languages/`）の表示ラベルのみ「記録」を使用する
-- **未コミット → 未記録**（英語: Unrecorded）
+UIではGit用語を隠蔽し、ユーザーフレンドリーな表現を使用する。
+コード内部の変数名・イベント名・ファイル名は元の語（`commit` / `merge` / `push` 等）のまま維持し、
+言語ファイル（`setup/_assets/languages/`）の表示ラベルのみ置き換える:
+
+- **コミット → 記録**（Record） / **未コミット → 未記録**（Unrecorded）
+- **マージ → 取り込み**（Bring In）。`share.*` 配下
+- **Push → 送信**（Send）。全体送信と公開データ（docs/）のみ送信の2種
+- **GC → 不要データの削除**。`overallHistory.gc*` 配下
+
+「Git」というラベル自体もUIには出さない（バインダー設定のタブは「個人情報設定」= `binder.userInfo`）。
+
+## 主要な操作の導線
+
+- **左メニュー**（`app/Menu.jsx`）— Binder表示 / 検索 / テンプレート設定 ｜ 未記録一覧 / 未公開一覧(Publish) ｜ 履歴 / バインダー設定
+- **履歴** — 全体履歴・ブランチ操作・取り込みをまとめた画面。アプリ内モーダル（`BranchHistoryModal`）と別ウィンドウ（`OverallHistoryApp`）があり、右ペインは `OverallHistoryRight` で共用する。
+  バインダー未オープン（`binderPath` 指定）では取り込みタブを出さない — `MergeFromLocal` / `MergeFromRemote` / `RemoteList` に `ByPath` 版が無いため
+- **未公開一覧(Publish)** — 公開データの生成（`GenerateForm`）と送信（`SendForm`）をタブで並べる。生成後は閉じずに送信タブへ切り替わる。
+  テンプレート一括公開・下層公開で開いた場合は生成のみが目的のため送信タブを出さない
 
 ## ワークツリー開発の必須手順
 
