@@ -4,6 +4,7 @@ import Event, { EventContext } from '../Event';
 
 vi.mock('../dialogs/UnpublishedMenu', () => ({ default: () => <div>UnpublishedMenu</div> }));
 vi.mock('../dialogs/GenerateForm', () => ({ default: () => <div>GenerateForm</div> }));
+vi.mock('../dialogs/SendForm', () => ({ default: () => <div>SendForm</div> }));
 vi.mock('../dialogs/components/DialogError', () => ({
   DialogErrorContext: { Provider: ({ children }) => children, Consumer: ({ children }) => children(null) },
   useDialogMessage: () => ({ showError: vi.fn(), showWarning: vi.fn() }),

@@ -6,6 +6,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CommitIcon from '@mui/icons-material/Commit';
 import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
+import HistoryIcon from '@mui/icons-material/History';
 import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
@@ -143,6 +144,13 @@ function Menu(props) {
   }
 
   /**
+   * 全体履歴（ブランチ・取り込み含む）をモーダルで開く
+   */
+  const handleClickHistory = () => {
+    evt.openBranchModal();
+  }
+
+  /**
    * テンプレート設定
    */
   const handleClickTemplate = () => {
@@ -201,6 +209,13 @@ function Menu(props) {
         <Tooltip title={t("menu.publish")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
             <PublishedWithChangesIcon fill="white" className="leftIcon" />
+          </IconButton>
+        </Tooltip>
+
+        {/** History（全体履歴・ブランチ・取り込み） */}
+        <Tooltip title={t("menu.history")} placement="right">
+          <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="history" onClick={handleClickHistory}>
+            <HistoryIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 

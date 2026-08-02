@@ -9,7 +9,6 @@ vi.mock('../dialogs/CommitModal', () => ({ default: () => null }));
 vi.mock('../dialogs/PublishModal', () => ({ default: () => null }));
 vi.mock('../dialogs/SettingModal', () => ({ default: () => null }));
 vi.mock('../dialogs/BinderModal', () => ({ default: () => null }));
-vi.mock('../dialogs/ShareModal', () => ({ default: () => null }));
 vi.mock('../app/BranchHistoryModal', () => ({ default: () => null }));
 vi.mock('../dialogs/components/ConvertDialog', () => ({
   default: () => null,
@@ -45,7 +44,6 @@ describe('App', () => {
     evt.register('test', Event.OpenSettingModal, () => {});
     evt.register('test', Event.OpenBinderModal, () => {});
     evt.register('test', Event.OpenPublishModal, () => {});
-    evt.register('test', Event.OpenShareModal, () => {});
     evt.register('test', Event.OpenBranchModal, () => {});
     const { container } = render(
       <EventContext.Provider value={evt}>

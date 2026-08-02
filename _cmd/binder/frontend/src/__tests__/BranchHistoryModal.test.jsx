@@ -3,8 +3,7 @@ import { render, screen } from '@testing-library/react';
 import Event, { EventContext } from '../Event';
 
 vi.mock('../app/OverallHistoryMenu', () => ({ default: () => <div>HistoryMenu</div> }));
-vi.mock('../app/OverallHistoryDetail', () => ({ default: () => <div>HistoryDetail</div> }));
-vi.mock('../dialogs/BranchModal', () => ({ BranchPanel: () => <div>BranchPanel</div> }));
+vi.mock('../app/OverallHistoryRight', () => ({ default: () => <div>HistoryRight</div> }));
 vi.mock('../dialogs/components/DialogError', () => ({
   DialogErrorContext: { Provider: ({ children }) => children, Consumer: ({ children }) => children(null) },
   useDialogMessage: () => ({ showError: vi.fn(), showWarning: vi.fn() }),

@@ -7,6 +7,7 @@
         "binder" : "Binder Tree",
         "commit" : "Unrecorded Notes",
         "publish" : "Unpublished Notes",
+        "history" : "History",
         "template" : "Template Settings",
         "config" : "Binder Settings",
         "setting" : "App Settings",
@@ -49,8 +50,6 @@
     "tree" : {
         "menu" : "Menu",
         "openBrowser" : "Open Browser",
-        "changeBranch" : "Overall History",
-        "share" : "Share",
         "none" : "No Display",
         "commit" : "Unrecorded",
         "publish" : "Unpublished",
@@ -318,9 +317,9 @@
     },
     "share" : {
         "title" : "Share",
+        "importTab" : "Import",
         "modeLocal" : "From Branch",
         "modeRemote" : "From Remote",
-        "modePush" : "To Remote",
         "sourceBranch" : "Source Branch",
         "targetBranch" : "Target Branch (Current)",
         "remote" : "Remote",
@@ -399,6 +398,8 @@
     },
     "publishModal" : {
         "title" : "Unpublished Files",
+        "tabGenerate" : "Generate",
+        "tabSend" : "Send",
         "generateComment" : "Generate Comment",
         "generate" : "Generate",
         "generateSuccess" : "Generated.",
