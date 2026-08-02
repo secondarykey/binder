@@ -212,15 +212,15 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
+        {/** Divider */}
+        <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
+
         {/** History（全体履歴・ブランチ・取り込み） */}
         <Tooltip title={t("menu.history")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="history" onClick={handleClickHistory}>
             <HistoryIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
-
-        {/** Divider */}
-        <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
 
         {/** Binder Setting */}
         <Tooltip title={t("menu.config")} placement="right">
