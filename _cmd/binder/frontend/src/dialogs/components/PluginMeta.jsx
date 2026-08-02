@@ -56,8 +56,8 @@ export function StatusDot({ status }) {
     <Box
       component="span"
       sx={{
-        width: '8px',
-        height: '8px',
+        width: '12px',
+        height: '12px',
         marginRight: '8px',
         borderRadius: '50%',
         flexShrink: 0,
