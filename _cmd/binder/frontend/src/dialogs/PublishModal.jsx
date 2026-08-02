@@ -43,7 +43,9 @@ function PublishModal({ open, template, filterIds, onClose }) {
     >
       <div id="commitArea">
         <div id="commitLeft">
-          <UnpublishedMenu date={date} template={template} filterIds={filterIds} onClose={onClose} />
+          {/** 送信タブがある時は生成後に閉じず、そのまま送信できるようタブを切り替える */}
+          <UnpublishedMenu date={date} template={template} filterIds={filterIds} onClose={onClose}
+            onGenerated={showSend ? () => setTab('send') : undefined} />
         </div>
         <div id="commitRight">
           {showSend ? (
