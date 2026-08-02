@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from "react-router";
 
 import { IconButton, Paper, Divider, Tooltip } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CommitIcon from '@mui/icons-material/Commit';
 import PublishIcon from '@mui/icons-material/Publish';
 import HistoryIcon from '@mui/icons-material/History';
@@ -191,7 +191,7 @@ function Menu(props) {
         <Tooltip title={t("menu.template")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}
             sx={{ backgroundColor: isTemplateActive ? 'var(--bg-button)' : 'transparent', '& svg': { color: isTemplateActive ? 'var(--accent-primary)' : 'inherit' } }}>
-            <ContentPasteIcon fill="white" className="leftIcon" />
+            <ViewQuiltIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
