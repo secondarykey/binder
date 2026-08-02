@@ -14,6 +14,9 @@ vi.mock('../../bindings/binder/api/app', () => ({
   MergeFromLocal: vi.fn(() => Promise.resolve({})),
   ApplyMergeResolution: vi.fn(() => Promise.resolve()),
   GetHistoryPatch: vi.fn(() => Promise.resolve('')),
+  AddRemote: vi.fn(() => Promise.resolve()),
+  EditRemote: vi.fn(() => Promise.resolve()),
+  DeleteRemote: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../../bindings/main/window', () => ({
   SelectFileContent: vi.fn(() => Promise.resolve('')),

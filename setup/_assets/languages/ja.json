@@ -281,7 +281,8 @@
     },
     "binder" : {
         "editTitle" : "Binder編集",
-        "git" : "Git",
+        "userInfo" : "個人情報設定",
+        "userInfoHint" : "記録の作成者としてこのバインダーに残す情報と、リモートへの接続に使う認証情報です。",
         "remoteName" : "リモート名",
         "branchName" : "ブランチ名",
         "currentBranch" : "ブランチ",
@@ -306,12 +307,6 @@
         "versionCdnUnknown" : "指定URL: 読込時に自動判定します",
         "versionCdnPending" : "指定URL: {{version}}（未保存・保存時に読み込みます）",
         "versionCdnFallback" : "指定URL: 読み込めず内蔵版で動作中",
-        "gcLabel" : "リポジトリメンテナンス",
-        "gcButton" : "GC（不要オブジェクト削除）",
-        "gcTitle" : "GCの実行",
-        "gcConfirmMessage" : "不要なオブジェクトを削除しますか？",
-        "gcRun" : "実行",
-        "gcComplete" : "GC完了: {{before}} → {{after}}",
         "optimizeImage" : "画像を軽量化する（WebPに変換）",
         "previewColorScheme" : "プレビュー カラースキーム",
         "previewColorSchemeHint" : "プレビューiframeの<html>タグに指定した属性を設定します。テンプレートのダーク/ライトモードのテストに使用します。値に「default」を含めると、Binderの表示テーマ設定（dark/light）が反映されます。",
@@ -502,7 +497,12 @@
         "cleanupCurrentSize" : "現在のオブジェクトサイズ: {{size}}",
         "cleanupWarning" : "この操作は元に戻せません。リモートリポジトリがある場合、force pushが必要になります。",
         "cleanupConfirm" : "クリーンアップ実行",
-        "cleanupComplete" : "クリーンアップ完了: {{before}} → {{after}}"
+        "cleanupComplete" : "クリーンアップ完了: {{before}} → {{after}}",
+        "gc" : "不要データの削除",
+        "gcTitle" : "不要データの削除",
+        "gcConfirmMessage" : "どの記録からも参照されていない不要なデータを削除します。履歴やファイルの内容は変更されません。",
+        "gcRun" : "実行",
+        "gcComplete" : "削除完了: {{before}} → {{after}}"
     },
     "assetViewer" : {
         "loadError" : "ファイルの内容を読み込めませんでした。ファイルがディスク上に存在しない可能性があります。",

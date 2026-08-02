@@ -11,6 +11,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
   RestoreToCommitByPath: vi.fn(() => Promise.resolve()),
   GetCleanupInfo: vi.fn(() => Promise.resolve({})),
   SquashHistory: vi.fn(() => Promise.resolve()),
+  RunGC: vi.fn(() => Promise.resolve({})),
 }));
 
 import OverallHistoryMenu from '../app/OverallHistoryMenu';

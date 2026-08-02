@@ -8,15 +8,9 @@ const config = vi.fn(() => Promise.resolve({}));
 vi.mock('../../bindings/binder/api/app', () => ({
   GetConfig: vi.fn(() => config()),
   EditConfig: vi.fn(() => Promise.resolve()),
-  RemoteList: vi.fn(() => Promise.resolve([])),
-  AddRemote: vi.fn(() => Promise.resolve()),
-  EditRemote: vi.fn(() => Promise.resolve()),
-  DeleteRemote: vi.fn(() => Promise.resolve()),
   GetUserInfo: vi.fn(() => Promise.resolve({})),
   EditUserInfo: vi.fn(() => Promise.resolve()),
-  CurrentBranch: vi.fn(() => Promise.resolve('')),
   GetAllowedCDNs: vi.fn(() => Promise.resolve([])),
-  RunGC: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../../bindings/main/window', () => ({
   SelectFileContent: vi.fn(() => Promise.resolve('')),
