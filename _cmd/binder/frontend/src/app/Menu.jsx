@@ -5,7 +5,7 @@ import { IconButton, Paper, Divider, Tooltip } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CommitIcon from '@mui/icons-material/Commit';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
 import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
@@ -200,7 +200,7 @@ function Menu(props) {
         {/** Publish  */}
         <Tooltip title={t("menu.publish")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="setting" onClick={handleClickPublish}>
-            <AutoFixHighIcon fill="white" className="leftIcon" />
+            <PublishedWithChangesIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
 
