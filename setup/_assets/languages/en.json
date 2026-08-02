@@ -282,7 +282,8 @@
     },
     "binder" : {
         "editTitle" : "Edit Binder",
-        "git" : "Git",
+        "userInfo" : "Personal Information",
+        "userInfoHint" : "The information recorded in this binder as the author of each record, and the credentials used to connect to remotes.",
         "remoteName" : "Remote Name",
         "branchName" : "Branch Name",
         "currentBranch" : "Branch",
@@ -307,12 +308,6 @@
         "versionCdnPending" : "Specified URL: {{version}} (unsaved; loaded when you save)",
         "versionCdnFallback" : "Specified URL: could not be loaded; running on the bundled version",
         "cdnLoadError" : "Failed to load from specified URL. The bundled version will be used.",
-        "gcLabel" : "Repository Maintenance",
-        "gcButton" : "GC (Remove unused objects)",
-        "gcTitle" : "Run GC",
-        "gcConfirmMessage" : "Remove unused objects?",
-        "gcRun" : "Run",
-        "gcComplete" : "GC complete: {{before}} → {{after}}",
         "optimizeImage" : "Optimize Images (convert to WebP)",
         "previewColorScheme" : "Preview Color Scheme",
         "previewColorSchemeHint" : "Sets the specified attribute on the <html> tag in the preview iframe. Use this to test dark/light mode in your templates. If you include 'default' as a value, it will use Binder's own theme setting (dark/light).",
@@ -503,7 +498,12 @@
         "cleanupCurrentSize" : "Current objects size: {{size}}",
         "cleanupWarning" : "This action cannot be undone. If a remote repository is configured, force push will be required.",
         "cleanupConfirm" : "Run Cleanup",
-        "cleanupComplete" : "Cleanup complete: {{before}} → {{after}}"
+        "cleanupComplete" : "Cleanup complete: {{before}} → {{after}}",
+        "gc" : "Remove Unused Data",
+        "gcTitle" : "Remove Unused Data",
+        "gcConfirmMessage" : "Remove data that is no longer referenced by any record. History and file contents will not change.",
+        "gcRun" : "Run",
+        "gcComplete" : "Removal complete: {{before}} → {{after}}"
     },
     "assetViewer" : {
         "loadError" : "Could not load file content. The file may not exist on disk.",

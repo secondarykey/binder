@@ -2,11 +2,12 @@ import { useState, useEffect, useContext } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary,
   Alert, Box, Collapse, FormControl, FormLabel, TextField, Select, MenuItem,
-  FormControlLabel, Checkbox, Typography, CircularProgress,
+  FormControlLabel, Checkbox, Typography, CircularProgress, IconButton,
   List, ListItemButton, ListItemText, ListSubheader, Divider,
   ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
+import SettingsIcon from '@mui/icons-material/Settings';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import MergeIcon from '@mui/icons-material/Merge';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -15,6 +16,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import ModalWrapper from './components/ModalWrapper';
 import AuthFields from '../components/AuthFields';
+import RemoteSetting from './RemoteSetting';
 import { GetUserInfo, RemoteList, GetModifiedIds, CurrentBranch, ListBranches, ListRemoteBranches, MergeFromRemote, MergeFromLocal, ApplyMergeResolution, GetHistoryPatch } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
@@ -64,6 +66,7 @@ function MergeModal({ open, onClose }) {
   const [authExpanded, setAuthExpanded] = useState(true);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [remoteSettingOpen, setRemoteSettingOpen] = useState(false);
 
   // conflicts フェーズの状態
   const [conflicts, setConflicts] = useState([]);
@@ -102,12 +105,7 @@ function MergeModal({ open, onClose }) {
       setLocalBranches(branches || []);
     }).catch((err) => showError(err));
 
-    // リモート一覧を取得
-    RemoteList().then((res) => {
-      const list = res || [];
-      setRemotes(list);
-      if (list.length > 0) setRemoteName(list[0].name);
-    }).catch((err) => showError(err));
+    loadRemotes();
 
     GetUserInfo().then((info) => {
       setUserName(info.name || '');
@@ -135,6 +133,15 @@ function MergeModal({ open, onClose }) {
     setRemoteBranches([]);
     setLoadingBranches(false);
   }, [open]);
+
+  // リモート一覧を取得する。選択中のリモートが消えていた場合のみ先頭へ寄せる
+  const loadRemotes = () => {
+    RemoteList().then((res) => {
+      const list = res || [];
+      setRemotes(list);
+      setRemoteName((prev) => (list.some((r) => r.name === prev) ? prev : (list[0]?.name ?? '')));
+    }).catch((err) => showError(err));
+  };
 
   // ローカルブランチ一覧から現在のブランチを除いたもの
   const selectableBranches = localBranches.filter((b) => b !== localBranch);
@@ -385,7 +392,14 @@ function MergeModal({ open, onClose }) {
             <Collapse in={mergeMode === 'remote'} timeout={150} unmountOnExit>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <FormControl size="small">
-                  <FormLabel>{t('merge.remote')}</FormLabel>
+                  <FormLabel sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {t('merge.remote')}
+                    {/** リモートの追加・編集・削除はここから行う */}
+                    <IconButton size="small" onClick={() => setRemoteSettingOpen(true)}
+                      title={t('binder.settingRemote')} aria-label="remote-setting">
+                      <SettingsIcon sx={{ fontSize: '16px' }} />
+                    </IconButton>
+                  </FormLabel>
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', minWidth: 0 }}>
                     <Select
                       value={remoteName}
@@ -458,6 +472,13 @@ function MergeModal({ open, onClose }) {
               </AccordionDetails>
             </Accordion>
           </Collapse>
+
+          {/** リモート設定（追加・編集・削除） */}
+          <RemoteSetting
+            open={remoteSettingOpen}
+            onClose={() => setRemoteSettingOpen(false)}
+            onChanged={loadRemotes}
+          />
         </Box>
       )}
 
