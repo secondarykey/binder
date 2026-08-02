@@ -19,7 +19,7 @@ import { parsePluginMeta, pluginCompatStatus } from "@shared/editor/pluginMeta";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
-import { PluginMetaLine, MarkedVersionLine, STATUS_COLOR } from './components/PluginMeta';
+import { PluginMetaLine, MarkedVersionLine, StatusDot } from './components/PluginMeta';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -210,11 +210,8 @@ function AppPluginSetting() {
                     '&:hover': { backgroundColor: 'var(--bg-elevated)' },
                   }}
                 >
-                  <Box title={tip} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, flex: 1 }}>
-                    <Box component="span" sx={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                      backgroundColor: STATUS_COLOR[status] || 'var(--text-muted)',
-                    }} />
+                  <Box title={tip} sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                    <StatusDot status={status} />
                     <ListItemText
                       primary={p.name}
                       secondary={<PluginMetaLine meta={meta} fileName={p.name} />}

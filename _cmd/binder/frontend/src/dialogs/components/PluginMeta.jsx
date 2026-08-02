@@ -46,6 +46,28 @@ const cellSx = {
 const valueCellSx = { ...cellSx, textAlign: 'center' };
 
 /**
+ * 互換状態を示すドット。状態は文字列では出さないため、これと行のツールチップが
+ * 唯一の手掛かりになる。3つの一覧で見た目を揃えるためここに置く。
+ *
+ * @param {string} status 互換状態
+ */
+export function StatusDot({ status }) {
+  return (
+    <Box
+      component="span"
+      sx={{
+        width: '8px',
+        height: '8px',
+        marginRight: '8px',
+        borderRadius: '50%',
+        flexShrink: 0,
+        backgroundColor: STATUS_COLOR[status] || 'var(--text-muted)',
+      }}
+    />
+  );
+}
+
+/**
  * 現在の marked のバージョンを表示用の文字列にする。
  * パッチまで判明していない場合（CDN の部分指定など）はメジャーのみを "17.x" で示す。
  * @param {{version: string|null, major: number|null}|null} markedInfo
