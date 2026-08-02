@@ -267,8 +267,7 @@
             "current" : "Current marked"
         },
         "meta" : {
-            "versionUndeclared" : "version undeclared",
-            "rangeUndeclared" : "marked undeclared",
+            "undeclared" : "undeclared",
             "currentMarked" : "Current marked: {{version}} ({{source}})",
             "currentMarkedUnknown" : "Current marked: unknown",
             "sourceVendor" : "bundled",

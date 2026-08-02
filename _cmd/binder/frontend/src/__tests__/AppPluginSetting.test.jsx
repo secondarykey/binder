@@ -62,8 +62,8 @@ describe('AppPluginSetting', () => {
 
     renderSetting();
 
-    await waitFor(() => expect(screen.getByText('plugin.meta.versionUndeclared')).toBeTruthy());
-    expect(screen.getByText('plugin.meta.rangeUndeclared')).toBeTruthy();
+    // バージョン列と対応marked列の2箇所が「未宣言」になる
+    await waitFor(() => expect(screen.getAllByText('plugin.meta.undeclared').length).toBe(2));
     expect(screen.getByText('plugin.compat.undeclaredShort')).toBeTruthy();
   });
 

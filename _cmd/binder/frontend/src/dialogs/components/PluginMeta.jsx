@@ -75,8 +75,9 @@ export function formatMarkedVersion(markedInfo) {
 export function PluginMetaLine({ meta, fileName, status, t }) {
   // @plugin-name が無ければ表示名はファイル名（従来からの名前の由来）
   const name = meta.name || fileName;
-  const version = meta.version ? `v${meta.version}` : t("plugin.meta.versionUndeclared");
-  const range = meta.marked ? `marked ${meta.marked}` : t("plugin.meta.rangeUndeclared");
+  // 列が何かは位置で分かるため、未宣言は項目名を繰り返さず「未宣言」だけを出す
+  const version = meta.version ? `v${meta.version}` : t("plugin.meta.undeclared");
+  const range = meta.marked ? `marked ${meta.marked}` : t("plugin.meta.undeclared");
   const label = STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : status;
 
   return (

@@ -267,8 +267,7 @@
             "current" : "現在のmarked"
         },
         "meta" : {
-            "versionUndeclared" : "バージョン未宣言",
-            "rangeUndeclared" : "対応marked 未宣言",
+            "undeclared" : "未宣言",
             "currentMarked" : "現在のmarked: {{version}}（{{source}}）",
             "currentMarkedUnknown" : "現在のmarked: 不明",
             "sourceVendor" : "内蔵",
