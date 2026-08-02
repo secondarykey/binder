@@ -263,6 +263,14 @@
             "undeclaredRange" : "対応marked: 未宣言",
             "current" : "現在のmarked"
         },
+        "meta" : {
+            "versionUndeclared" : "バージョン未宣言",
+            "rangeUndeclared" : "対応marked 未宣言",
+            "currentMarked" : "現在のmarked: {{version}}（{{source}}）",
+            "currentMarkedUnknown" : "現在のmarked: 不明",
+            "sourceVendor" : "内蔵",
+            "sourceCdn" : "CDN"
+        },
         "warn" : {
             "loadError" : "プラグイン「{{name}}」を読み込めませんでした: {{error}}",
             "incompatible" : "プラグイン「{{name}}」は適用されていません（対応marked: {{range}} / 現在: {{current}}）",

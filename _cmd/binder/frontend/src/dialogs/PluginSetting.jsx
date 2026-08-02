@@ -19,6 +19,7 @@ import { parsePluginMeta, pluginCompatStatus } from "@shared/editor/pluginMeta";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
+import { PluginMetaLine, MarkedVersionLine, STATUS_COLOR, formatMarkedVersion } from './components/PluginMeta';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -117,27 +118,6 @@ function PluginSetting() {
       if (!rt.applied && compat !== 'incompatible') return { meta, status: 'notApplied' };
     }
     return { meta, status: compat };
-  };
-
-  // 状態 → 表示色（テーマ変数）
-  const STATUS_COLOR = {
-    compatible: 'var(--accent-green)',
-    incompatible: 'var(--accent-red)',
-    loadError: 'var(--accent-red)',
-    runtimeError: 'var(--accent-red)',
-    notApplied: 'var(--accent-red)',
-    unverified: 'var(--accent-orange, #d18616)',
-    unknown: 'var(--text-muted)',
-    undeclared: 'var(--text-muted)',
-  };
-
-  // セカンダリラベルを出す（＝一覧を見ただけで異常と分かるべき）状態
-  const SECONDARY_LABEL = {
-    incompatible: "plugin.compat.incompatibleShort",
-    loadError: "plugin.compat.loadErrorShort",
-    runtimeError: "plugin.compat.runtimeErrorShort",
-    notApplied: "plugin.compat.notAppliedShort",
-    unverified: "plugin.compat.unverifiedShort",
   };
 
   // --- 追加 ---
@@ -268,6 +248,7 @@ function PluginSetting() {
 
         {/** プラグイン一覧 */}
         <FormControl>
+          <MarkedVersionLine markedInfo={markedInfo} t={t} />
           {plugins.length === 0 ? (
             <Typography variant="body2" sx={{ color: 'var(--text-muted)', mt: 1, fontSize: '13px', textAlign: 'left' }}>
               {t("plugin.empty")}
@@ -277,7 +258,7 @@ function PluginSetting() {
               {plugins.map((p) => {
                 const { meta, status, detail } = statusOf(p);
                 const rangeText = meta.marked ? `marked ${meta.marked}` : t("plugin.compat.undeclaredRange");
-                const tip = `${t("plugin.compat." + status)}${markedInfo ? ` / ${t("plugin.compat.current")}: ${markedInfo.version || markedInfo.major || '?'}` : ''}\n${rangeText}${detail ? `\n${detail}` : ''}`;
+                const tip = `${t("plugin.compat." + status)}${markedInfo ? ` / ${t("plugin.compat.current")}: ${formatMarkedVersion(markedInfo) || '?'}` : ''}\n${rangeText}${detail ? `\n${detail}` : ''}`;
                 return (
                 <ListItemButton
                   key={p.name}
@@ -298,9 +279,9 @@ function PluginSetting() {
                     }} />
                     <ListItemText
                       primary={p.name}
-                      secondary={SECONDARY_LABEL[status] ? t(SECONDARY_LABEL[status]) : undefined}
+                      secondary={<PluginMetaLine meta={meta} fileName={p.name} status={status} t={t} />}
                       primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
-                      secondaryTypographyProps={{ fontSize: '11px', sx: { color: STATUS_COLOR[status] } }}
+                      secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                     />
                   </Box>
                   <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
@@ -343,6 +324,10 @@ function PluginSetting() {
             <List dense disablePadding>
               {appPlugins.map((p) => {
                 const installed = plugins.some((bp) => bp.name === p.name);
+                // インストール前に「今の marked に対応しているか」を出す。
+                // 検証記録はバインダー側の概念なので宣言のみで判定する。
+                const meta = parsePluginMeta(p.content || "");
+                const status = pluginCompatStatus(meta, markedInfo);
                 return (
                   <ListItemButton
                     key={p.name}
@@ -354,12 +339,18 @@ function PluginSetting() {
                       '&:hover': { backgroundColor: 'transparent' },
                     }}
                   >
+                    <Box component="span" sx={{
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0, mr: 0.75,
+                      backgroundColor: STATUS_COLOR[status] || 'var(--text-muted)',
+                    }} />
                     <ListItemText
                       primary={p.name}
+                      secondary={<PluginMetaLine meta={meta} fileName={p.name} status={status} t={t} />}
                       primaryTypographyProps={{
                         fontSize: '13px',
                         color: installed ? 'var(--text-muted)' : 'var(--text-primary)',
                       }}
+                      secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                     />
                     <ListItemIcon sx={{ minWidth: 'auto' }}>
                       {installed ? (

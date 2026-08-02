@@ -71,4 +71,36 @@ describe('PluginSetting', () => {
 
     await waitFor(() => expect(screen.getByText('plugin.compat.notAppliedShort')).toBeTruthy());
   });
+
+  // どのプラグインがどの marked 向けなのかを一覧で比較できる必要がある
+  // （従来は title 属性のツールチップにしか出ていなかった）
+  it('プラグインのバージョンと対応marked を一覧に表示する', async () => {
+    listedPlugins.mockResolvedValueOnce([{
+      name: 'kbd',
+      content: '/* @plugin-name: Keyboard Tag */\n/* @plugin-version: 1.2.0 */\n/* @marked: >=14 <19 */',
+    }]);
+
+    renderSetting();
+
+    await waitFor(() => expect(
+      screen.getByText('Keyboard Tag · v1.2.0 · marked >=14 <19')
+    ).toBeTruthy());
+  });
+
+  // 表示名がファイル名と同じなら重複させない
+  it('@plugin-name がファイル名と同じ場合は重ねて表示しない', async () => {
+    listedPlugins.mockResolvedValueOnce([{
+      name: 'kbd',
+      content: '/* @plugin-name: kbd */\n/* @plugin-version: 1.0.0 */\n/* @marked: >=14 <19 */',
+    }]);
+
+    renderSetting();
+
+    await waitFor(() => expect(screen.getByText('v1.0.0 · marked >=14 <19')).toBeTruthy());
+  });
+
+  it('現在の marked のバージョンを表示する', async () => {
+    renderSetting();
+    await waitFor(() => expect(screen.getByText('plugin.meta.currentMarked')).toBeTruthy());
+  });
 });

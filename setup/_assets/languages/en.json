@@ -263,6 +263,14 @@
             "undeclaredRange" : "Supported marked: undeclared",
             "current" : "Current marked"
         },
+        "meta" : {
+            "versionUndeclared" : "version undeclared",
+            "rangeUndeclared" : "marked undeclared",
+            "currentMarked" : "Current marked: {{version}} ({{source}})",
+            "currentMarkedUnknown" : "Current marked: unknown",
+            "sourceVendor" : "bundled",
+            "sourceCdn" : "CDN"
+        },
         "warn" : {
             "loadError" : "Plugin \"{{name}}\" failed to load: {{error}}",
             "incompatible" : "Plugin \"{{name}}\" was not applied (supported marked: {{range}} / current: {{current}})",
