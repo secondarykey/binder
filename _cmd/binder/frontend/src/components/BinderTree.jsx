@@ -1027,7 +1027,7 @@ function BinderTree(props) {
       <Divider />
       {/** ブランチ変更 + 全体履歴 */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
-        <AccountTreeIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
+        <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
       </MenuItem>
       {/** 共有（取り込み・送信） */}
       <MenuItem onClick={() => { closeMoreMenu(); evt.openShareModal(); }}>
