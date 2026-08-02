@@ -10,6 +10,9 @@ vi.mock('../../bindings/binder/api/app', () => ({
   PushDocs: vi.fn(() => Promise.resolve()),
   CurrentBranch: vi.fn(() => Promise.resolve('')),
   GetPublishSettings: vi.fn(() => Promise.resolve({})),
+  AddRemote: vi.fn(() => Promise.resolve()),
+  EditRemote: vi.fn(() => Promise.resolve()),
+  DeleteRemote: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../../bindings/main/window', () => ({
   SelectFileContent: vi.fn(() => Promise.resolve('')),
