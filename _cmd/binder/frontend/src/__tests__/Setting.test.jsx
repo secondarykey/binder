@@ -21,6 +21,8 @@ vi.mock('../../bindings/binder/api/app', () => ({
   SaveAutoSave: vi.fn(() => Promise.resolve()),
   GetPreviewScrollbar: vi.fn(() => Promise.resolve(true)),
   SetPreviewScrollbar: vi.fn(() => Promise.resolve()),
+  GetGit: vi.fn(() => Promise.resolve({})),
+  SaveGit: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../../bindings/binder/api/shared/shared', () => ({
   GetThemeList: vi.fn(() => Promise.resolve([])),
@@ -31,7 +33,6 @@ vi.mock('../../bindings/main/window', () => ({
 }));
 vi.mock('../dialogs/SnippetSetting', () => ({ default: () => <div>Snippets</div> }));
 vi.mock('../dialogs/EditorSetting', () => ({ default: () => <div>Editor</div> }));
-vi.mock('../dialogs/GitSetting', () => ({ default: () => <div>Git</div> }));
 vi.mock('../dialogs/LicenseSetting', () => ({ default: () => <div>License</div> }));
 vi.mock('../dialogs/AppPluginSetting', () => ({ default: () => <div>AppPlugin</div> }));
 vi.mock('../theme', () => ({ applyTheme: vi.fn() }));
