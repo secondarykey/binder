@@ -4,6 +4,7 @@ import (
 	"binder/log"
 	"binder/settings"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -857,6 +858,48 @@ func (f *FileSystem) autoCommit(m string, all bool, files ...string) error {
 
 func (f *FileSystem) CommitAll(m string) error {
 	return f.autoCommit(m, true)
+}
+
+// CommitSnapshot は作業ツリーの現在の状態を丸ごと（**未追跡ファイルを含めて**）
+// システム署名でコミットする。更新が無い場合は UpdatedFilesError を返す。
+//
+// CommitAll との違いは未追跡ファイルを含める点。go-git の CommitOptions{All:true} は
+// 本家 git の `commit -a` と同じく追跡ファイルの変更しか拾わないため、未追跡ファイル
+// （記録前のルートファイル等）はコミットされない。
+//
+// 一方 go-git の reset --hard は本家 git と異なり**未追跡ファイルも削除する**。
+// そのため「移行前に現状を保全して、失敗したらそこへ戻す」用途では、未追跡ファイルまで
+// 含めてコミットしておかないとユーザの未記録作業が失われる。
+// Status() が未追跡ファイルを変更として数える一方 CommitAll がそれをコミットできず、
+// 空コミットで移行が中断する不整合もこれで解消する。
+func (f *FileSystem) CommitSnapshot(m string) error {
+
+	f.gitMu.Lock()
+	defer f.gitMu.Unlock()
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	// add -A 相当。.gitignore 対象（user_data.enc 等）は go-git 側で除外される
+	if err := w.AddWithOptions(&git.AddOptions{All: true}); err != nil {
+		return xerrors.Errorf("AddWithOptions(All) error: %w", err)
+	}
+
+	_, err = w.Commit(m, &git.CommitOptions{Author: SystemSig()})
+	if err != nil {
+		if errors.Is(err, git.ErrEmptyCommit) {
+			// ステージした結果ツリーが変わらなかった（Status() の誤検知など）。
+			// 保全すべきものが無いだけなので呼び出し元が続行できるようにする
+			f.invalidateStatus()
+			return UpdatedFilesError
+		}
+		return xerrors.Errorf("Commit() error: %w", err)
+	}
+	f.invalidateStatus()
+
+	return nil
 }
 
 func (f *FileSystem) modified(files ...string) ([]string, error) {

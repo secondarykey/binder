@@ -42,6 +42,12 @@ docs/layers/{layer_alias}.svg
 
 - `Commit(m, files...)` — **ユーザ署名**でコミット。バインダー固有署名（`SetUserSig`）> アプリ設定（`settings.Get().Git`）の優先順
 - `AutoCommit(m, files...)` / `CommitAll(m)` — **システム署名**（"Binder System" <binder@localhost>）。自動処理・マイグレーション用
+- `CommitSnapshot(m)` — システム署名で作業ツリーを丸ごと（**未追跡ファイル込み**、`add -A` 相当）コミット。更新なしなら `UpdatedFilesError`。
+  `CommitAll` は go-git の `commit -a` 相当で**未追跡ファイルを拾わない**一方、
+  go-git の `reset --hard` は本家 git と違い**未追跡ファイルも削除する**。
+  「現状を保全して失敗したら戻す」用途（移行前スナップショット）では必ずこちらを使うこと。
+  `CommitAll` を使うと、未記録のルートファイルだけがある状態で
+  「`Status()` は変更ありなのにコミットするものが無い」→ 空コミットエラーになる
 - `M(header, name)` — "DB {header} : {name}" 形式のコミットメッセージ生成
 - ステージング: `AddFile` / `RemoveFile` / `AddDBFiles`（全CSVテーブル）/ `SchemaCommit`（スキーマ変更＋全テーブルコミット）
 
