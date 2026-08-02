@@ -1,4 +1,5 @@
 /* @plugin-name: Custom Containers (:::type) */
+/* @plugin-version: 1.0.1 */
 /* @marked: >=14 <19 */
 //
 // ::: で囲んだブロックを汎用コンテナに変換する。

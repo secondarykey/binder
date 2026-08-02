@@ -1,4 +1,5 @@
 /* @plugin-name: GitHub Alerts */
+/* @plugin-version: 1.0.1 */
 /* @marked: >=14 <19 */
 //
 // GitHub style alert blockquotes (Note, Tip, Important, Warning, Caution)

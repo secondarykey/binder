@@ -1,4 +1,5 @@
 /* @plugin-name: Definition List */
+/* @plugin-version: 1.0.1 */
 /* @marked: >=14 <19 */
 //
 // 定義リスト記法を追加する。

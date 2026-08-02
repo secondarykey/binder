@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parsePluginMeta } from '@shared/editor/pluginMeta';
 
 /**
  * 同梱 marked プラグインの回帰テスト。
@@ -50,6 +51,15 @@ describe('bundled marked plugins', () => {
   it('all bundled plugins are present', () => {
     // 15本（この数が変わったらテストのサンプルも見直す）
     expect(allPlugins.length).toBe(15);
+  });
+
+  // 設定画面がメタ列（表示名 / バージョン / 対応marked）を埋められる状態を保つ。
+  // 宣言が無いと "-" 表示になり、同梱版なのに素性が分からないプラグインができる
+  it.each(allPlugins)('%s declares name / version / marked range', (file) => {
+    const meta = parsePluginMeta(fs.readFileSync(path.join(pluginDir, file), 'utf8'));
+    expect(meta.name).toBeTruthy();
+    expect(meta.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(meta.marked).toBeTruthy();
   });
 
   it.each(allPlugins)('%s loads and renders without throwing', (file) => {

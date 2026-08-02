@@ -1,4 +1,5 @@
 /* @plugin-name: Example Plugin */
+/* @plugin-version: 1.0.1 */
 /* @marked: >=14 <19 */
 //
 // Binder Marked Plugin Template

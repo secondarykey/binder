@@ -154,3 +154,43 @@ func TestSyncSamplePluginsIdempotentOnCurrent(t *testing.T) {
 		t.Errorf("current kbd.js changed unexpectedly")
 	}
 }
+
+// 同梱プラグインを更新したのに shippedPluginHashes へ追記し忘れると、
+// 直前版を持つユーザが「編集済み」扱いになり配布更新が届かなくなる。
+// 追記漏れそのものは後から検出できないが、ファイルの追加漏れは検出できる。
+func TestShippedPluginHashesCoversAllBundled(t *testing.T) {
+	entries, err := embFs.ReadDir("_assets/plugins/marked")
+	if err != nil {
+		t.Fatalf("embFs.ReadDir error: %v", err)
+	}
+
+	bundled := map[string]bool{}
+	for _, e := range entries {
+		if e.IsDir() || filepath.Ext(e.Name()) != ".js" {
+			continue
+		}
+		bundled[e.Name()] = true
+		if len(shippedPluginHashes[e.Name()]) == 0 {
+			t.Errorf("shippedPluginHashes に %s のエントリが無い", e.Name())
+		}
+	}
+
+	for name := range shippedPluginHashes {
+		if !bundled[name] {
+			t.Errorf("shippedPluginHashes の %s は同梱プラグインに存在しない", name)
+		}
+	}
+}
+
+// 現行の同梱版ハッシュは実行時に算出されるため、過去分として重複登録してはいけない
+// （登録すると「更新前と同じ内容」を過去版と誤認する余地が残る）。
+func TestShippedPluginHashesExcludesCurrent(t *testing.T) {
+	for name, hashes := range shippedPluginHashes {
+		cur := sha256Hex(bundledPlugin(t, name))
+		for _, h := range hashes {
+			if h == cur {
+				t.Errorf("%s: 現行版のハッシュが過去分として登録されている", name)
+			}
+		}
+	}
+}
