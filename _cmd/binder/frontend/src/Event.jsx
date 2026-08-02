@@ -94,11 +94,6 @@ class Event {
     static OpenPublishSubtreeModal = "publish.modal.subtree.open"
 
     /**
-     * 共有モーダルを開く（取り込み・送信）
-     */
-    static OpenShareModal = "share.modal.open"
-
-    /**
      * ブランチ変更モーダルを開く
      */
     static OpenBranchModal = "branch.modal.open"
@@ -258,10 +253,6 @@ class Event {
 
     openPublishSubtreeModal(data) {
         this.raise(Event.OpenPublishSubtreeModal, data);
-    }
-
-    openShareModal() {
-        this.raise(Event.OpenShareModal);
     }
 
     openBranchModal() {

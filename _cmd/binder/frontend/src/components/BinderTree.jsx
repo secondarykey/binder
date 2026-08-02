@@ -9,7 +9,6 @@ import FolderIcon from '@mui/icons-material/Folder';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import LayersIcon from '@mui/icons-material/Layers';
 import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
-import ShareIcon from '@mui/icons-material/Share';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -1023,15 +1022,6 @@ function BinderTree(props) {
       {/** ダウンロード */}
       <MenuItem onClick={(e) => { setDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
-      </MenuItem>
-      <Divider />
-      {/** ブランチ変更 + 全体履歴 */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openBranchModal(); }}>
-        <HistoryIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.changeBranch")}
-      </MenuItem>
-      {/** 共有（取り込み・送信） */}
-      <MenuItem onClick={() => { closeMoreMenu(); evt.openShareModal(); }}>
-        <ShareIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.share")}
       </MenuItem>
     </Menu>
 

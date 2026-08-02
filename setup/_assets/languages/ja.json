@@ -7,6 +7,7 @@
         "binder" : "Binder表示",
         "commit" : "未記録一覧",
         "publish" : "未公開一覧",
+        "history" : "履歴",
         "template" : "テンプレート設定",
         "config" : "バインダー設定",
         "setting" : "アプリ設定",
@@ -49,8 +50,6 @@
     "tree" : {
         "menu" : "メニュー",
         "openBrowser" : "ブラウザで開く",
-        "changeBranch" : "全体履歴",
-        "share" : "共有",
         "none" : "表示なし",
         "commit" : "未記録",
         "publish" : "未公開",
@@ -317,9 +316,9 @@
     },
     "share" : {
         "title" : "共有",
+        "importTab" : "取り込み",
         "modeLocal" : "ブランチから取込",
         "modeRemote" : "リモートから取込",
-        "modePush" : "リモートへ送信",
         "sourceBranch" : "取込元ブランチ",
         "targetBranch" : "取込先ブランチ（現在）",
         "remote" : "リモート",
@@ -398,6 +397,8 @@
     },
     "publishModal" : {
         "title" : "未公開ファイル",
+        "tabGenerate" : "生成",
+        "tabSend" : "送信",
         "generateComment" : "Generateコメント",
         "generate" : "Generate",
         "generateSuccess" : "Generate完了",
