@@ -9,8 +9,8 @@ marked.js のバンドルバージョンを段階的に更新するための計�
 
 作成時点の状態: バンドル marked **14.1.4** / mermaid 11.16.0、アプリバージョン **0.13.1**。
 
-現在の状況: **0.14.0（互換基盤）は実装完了**。バンドルは 14.1.4 のまま。
-残るのは 0.15.0（marked 17.0.5）と 0.16.0（marked 18.0.7）の vendor 差し替え。
+現在の状況: **0.14.0（互換基盤）と 0.15.0（marked 17.0.5 への差し替え）は実装完了**。
+バンドルは 17.0.5。残るのは 0.16.0（marked 18.0.7）の vendor 差し替え。
 
 ---
 
@@ -300,17 +300,31 @@ URL ではなく実際の解決結果に従うこと）。
    プレビュー描画と公開 HTML を目視確認（自動テストで拾えない領域）。
 7. ライセンスは **変更不要**（下記参照）。
 
-### 0.15.0 — marked 17.0.5
+### 0.15.0 — marked 17.0.5（✅ 実装済み）
 
-- 上記チェックリストに従い vendor を 17.0.5 へ差し替え。約 92KB → 約 42KB に減る。
+- 上記チェックリストに従い vendor を 17.0.5 へ差し替え済み（92,815B → 41,622B）。
+  binder / lite 両方の `src/assets/vendor/marked.min.js` を `lib/marked.esm.js` で上書きし、
+  バージョン定数（`MARKED_VENDOR_VERSION` / `setVendorVersion`）と `Binder.jsx` の
+  CDN プレースホルダも 17.0.5 に更新。
+  なお v17 の `marked.esm.js` は末尾に `//# sourceMappingURL=marked.esm.js.map` を持つが、
+  `.map` は同梱しないため 1 行だけ除去してある（残すと devtools が 404 を引く）。
 - v15/v16 は alt 属性リグレッションのため素通りして直接 17 へ。
+- 差し替え後の実測（バンドル実体に対して確認済み）:
+  ```
+  Lexer.lex('- [ ] a\n')[0].items[0].tokens[0].type === 'checkbox'   // >=17
+  marked('![a"x](u)').includes('&quot;') === true                     // v15/16 ではない
+  Lexer.lex('# h\n\ntext\n').map(t => t.type) === ['heading','paragraph'] // v18 ではない
+  ```
+  `probeMajor` が 17 と判定できる状態（CDN 版が不明なユーザ経路の保険）。
 - **ライセンスは変更不要**（実測確認済み）: marked の LICENSE の著作権表記は v14/v17/v18 で
   同一（`## Marked`: MarkedJS + Christopher Jeffrey / `## Markdown`: John Gruber 2004）。
   なお `## Markdown`（John Gruber, BSD系）ブロックは v14 時点で既に存在しており、
   当初 `THIRD_PARTY_LICENSES` に欠けていたため 0.14.0 で補完済み。ミニファイ版ヘッダの
   年号（v14=2011-2024 / v17+=2018-2026）は表記が違うが正典の LICENSE は一致。
 - v17 の list トークン構造変更（checkbox 子トークン追加・loose list が paragraph 型）は
-  同梱15本の出力に影響しないことを実測済み。回帰テストで再確認する。
+  同梱15本の出力に影響しないことを実測済み。差し替え後に `bundledPlugins.test.jsx`（23件）が
+  全てパスすることで再確認した。フロントエンド全体（76ファイル・217件）もパス。
+- **コード変更は vendor とバージョン定数のみ**。エンジン層・プラグイン本体には手を入れていない。
 
 ### 0.16.0 — marked 18.0.7
 

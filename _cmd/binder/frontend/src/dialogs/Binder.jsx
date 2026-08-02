@@ -447,7 +447,7 @@ function Binder({ isModal, ...props }) {
                 size="small"
                 value={markedUrl}
                 onChange={(e) => { setMarkedUrl(e.target.value); setMarkedStatus(""); }}
-                placeholder="https://cdn.jsdelivr.net/npm/marked@14.1.4/lib/marked.esm.js"
+                placeholder="https://cdn.jsdelivr.net/npm/marked@17.0.5/lib/marked.esm.js"
                 helperText={
                   markedStatus === "ok" ? t("binder.cdnOk") :
                   markedStatus === "error" ? t("binder.cdnLoadError") :

@@ -15,7 +15,7 @@ import markedVendorUrl from './assets/vendor/marked.min.js?url'
 import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
 // バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
 Marked.setVendorUrl(markedVendorUrl)
-Marked.setVendorVersion('14.1.4')
+Marked.setVendorVersion('17.0.5')
 Mermaid.setVendorUrl(mermaidVendorUrl)
 Mermaid.setVendorVersion('11.16.0')
 

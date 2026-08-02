@@ -21,7 +21,7 @@ import Scripter from '@shared/editor/engines/Scripter'
 import markedVendorUrl from './assets/vendor/marked.min.js?url'
 import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
 // バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
-const MARKED_VENDOR_VERSION = '14.1.4'
+const MARKED_VENDOR_VERSION = '17.0.5'
 // バンドルした mermaid のバージョン（vendor 差し替え時にここも更新する）
 const MERMAID_VENDOR_VERSION = '11.16.0'
 Marked.setVendorUrl(markedVendorUrl)
