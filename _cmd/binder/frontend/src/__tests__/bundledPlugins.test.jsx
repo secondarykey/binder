@@ -86,6 +86,37 @@ describe('bundled marked plugins', () => {
     expect(out).toContain('<kbd><strong>Enter</strong></kbd>');
   });
 
+  // smartypants は hooks.preprocess で本文全体を書き換えるため、生 HTML の
+  // 属性値まで巻き込むと描画が壊れる。drawLayer（html_func.go）が出力する SVG が
+  // viewBox=”0 0 1.5 1” になり "Expected number" で描画に失敗していた。
+  describe('smartypants と生 HTML', () => {
+    it('タグの属性値のクォートを変換しない', () => {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1.5 1" preserveAspectRatio="none"></svg>';
+      const out = renderWith('smartypants.js', svg);
+      expect(out).toContain('viewBox="0 0 1.5 1"');
+      expect(out).not.toContain('”');
+    });
+
+    // 同じ理由で style 属性の var(--x) がエンダッシュ化していた
+    it('属性値の CSS カスタムプロパティをエンダッシュにしない', () => {
+      const out = renderWith('smartypants.js', '<div style="color:var(--text-primary)">a</div>');
+      expect(out).toContain('var(--text-primary)');
+    });
+
+    it('タグの中身のテキストは従来どおり変換する', () => {
+      const out = renderWith('smartypants.js', '<div>He said "hi"</div>');
+      expect(out).toContain('“hi”');
+    });
+
+    it('通常の文章は従来どおり変換する', () => {
+      const out = renderWith('smartypants.js', 'He said "hello" -- it\'s fine...');
+      expect(out).toContain('“hello”');
+      expect(out).toContain('–');
+      expect(out).toContain('…');
+      expect(out).toContain('it’s');
+    });
+  });
+
   // marked 本体は版を公開していない（marked.version は v14〜v18 すべて undefined）ため、
   // marked-info は Binder が注入する globalThis.binder.marked を読む。
   // 注入経路が壊れると静かに "unknown" になるだけなので明示的に検証する。
