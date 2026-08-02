@@ -194,16 +194,22 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 
 	// 未記録の作業（ノート/ダイアグラム本文・ルートファイル等）がある場合は、移行を始める前に
 	// 安全用スナップショットとしてコミットしておく。go-git の reset --hard は追跡ファイルの
-	// 未コミット変更を区別なく破棄するため、これをしないと移行失敗時のロールバックでユーザーの
-	// 未記録作業まで消えてしまう。スナップショットへ戻すことで未記録作業を保全する。
+	// 未コミット変更だけでなく**未追跡ファイルも削除する**（本家 git と異なる）ため、
+	// これをしないと移行失敗時のロールバックでユーザーの未記録作業まで消えてしまう。
+	// スナップショットへ戻すことで未記録作業を保全する。
+	//
+	// CommitAll ではなく CommitSnapshot を使うこと。CommitAll（go-git の commit -a 相当）は
+	// 未追跡ファイルを拾わないため、未記録のルートファイルしか無いバインダーでは
+	// 「Status() は変更ありと言うのにコミットするものが無い」状態になり、
+	// 空コミットエラーで移行が中断する（＝バインダーが開けなくなる）。
 	mods, err := bfs.Status()
 	if err != nil {
 		return nil, xerrors.Errorf("Status() error: %w", err)
 	}
 	if len(mods) > 0 {
 		snapMsg := fmt.Sprintf("Pre-migration safety snapshot (%s)", ov.String())
-		if cErr := bfs.CommitAll(fs.M(snapMsg, "Schema")); cErr != nil && !errors.Is(cErr, fs.UpdatedFilesError) {
-			return nil, xerrors.Errorf("CommitAll(snapshot) error: %w", cErr)
+		if cErr := bfs.CommitSnapshot(fs.M(snapMsg, "Schema")); cErr != nil && !errors.Is(cErr, fs.UpdatedFilesError) {
+			return nil, xerrors.Errorf("CommitSnapshot(snapshot) error: %w", cErr)
 		}
 		snapHead, err := bfs.HeadHash()
 		if err != nil {
