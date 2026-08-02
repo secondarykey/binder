@@ -26,23 +26,10 @@ export const STATUS_COLOR = {
   undeclared: 'var(--text-muted)',
 };
 
-// 状態 → 列に出す短いラベル。
-// 正常系も含めて全状態を持つ（列が空になると「表示漏れ」と区別が付かないため）。
-export const STATUS_LABEL = {
-  compatible: "plugin.compat.compatibleShort",
-  incompatible: "plugin.compat.incompatibleShort",
-  loadError: "plugin.compat.loadErrorShort",
-  runtimeError: "plugin.compat.runtimeErrorShort",
-  notApplied: "plugin.compat.notAppliedShort",
-  unverified: "plugin.compat.unverifiedShort",
-  unknown: "plugin.compat.unknownShort",
-  undeclared: "plugin.compat.undeclaredShort",
-};
-
-// メタ行の列定義。表示名は長さがまちまちなので広く取り、値の3列は内容の
-// 最大幅（"marked >=14 <19" / "動作未確認" / "v10.10.10"）に合わせて詰める。
-// 対応marked だけは他の2列より長くなるため広めにする。
-const COLUMNS = 'minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 0.9fr)';
+// メタ行の列定義。表示名は長さがまちまちなので広く取り、値の2列は内容の
+// 最大幅（"v10.10.10" / "marked >=14 <19"）に合わせて詰める。
+// 状態は列に出さず、ドットの色と行のツールチップで示す。
+const COLUMNS = 'minmax(0, 1.8fr) minmax(0, 0.6fr) minmax(0, 1.1fr)';
 
 // 未宣言のプレースホルダ。列が何かは位置で分かるため項目名は繰り返さない。
 // 翻訳対象にならない記号なので言語ファイルには置かない
@@ -72,21 +59,21 @@ export function formatMarkedVersion(markedInfo) {
 }
 
 /**
- * プラグイン一覧の各行に出すメタ情報。表示名 / バージョン / 対応marked / 状態を
- * 列に並べる。値の3列は中央寄せ。未宣言の項目も "-" で埋める
+ * プラグイン一覧の各行に出すメタ情報。表示名 / バージョン / 対応marked を列に並べる。
+ * 値の2列は中央寄せ。未宣言の項目も "-" で埋める
  * （空欄だと宣言漏れなのか表示漏れなのか分からないため）。
+ *
+ * 互換状態はここには出さない。ドットの色と行のツールチップで足りるため、
+ * 文字でも繰り返すと同じ情報が3重になる。
  *
  * @param {{name: string|null, version: string|null, marked: string|null}} meta parsePluginMeta の結果
  * @param {string} fileName ファイル名。@plugin-name が無い場合の表示名として使う
- * @param {string} status 互換状態
- * @param {Function} t 翻訳関数
  */
-export function PluginMetaLine({ meta, fileName, status, t }) {
+export function PluginMetaLine({ meta, fileName }) {
   // @plugin-name が無ければ表示名はファイル名（従来からの名前の由来）
   const name = meta.name || fileName;
   const version = meta.version ? `v${meta.version}` : UNDECLARED;
   const range = meta.marked ? `marked ${meta.marked}` : UNDECLARED;
-  const label = STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : status;
 
   return (
     <Box
@@ -96,7 +83,6 @@ export function PluginMetaLine({ meta, fileName, status, t }) {
       <Box component="span" title={name} sx={{ ...cellSx, color: 'var(--text-muted)' }}>{name}</Box>
       <Box component="span" title={version} sx={{ ...valueCellSx, color: 'var(--text-muted)' }}>{version}</Box>
       <Box component="span" title={range} sx={{ ...valueCellSx, color: 'var(--text-muted)' }}>{range}</Box>
-      <Box component="span" title={label} sx={{ ...valueCellSx, color: STATUS_COLOR[status] || 'var(--text-muted)' }}>{label}</Box>
     </Box>
   );
 }

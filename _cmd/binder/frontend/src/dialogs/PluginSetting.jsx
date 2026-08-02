@@ -279,7 +279,7 @@ function PluginSetting() {
                     }} />
                     <ListItemText
                       primary={p.name}
-                      secondary={<PluginMetaLine meta={meta} fileName={p.name} status={status} t={t} />}
+                      secondary={<PluginMetaLine meta={meta} fileName={p.name} />}
                       primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
                       secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                     />
@@ -328,10 +328,14 @@ function PluginSetting() {
                 // 検証記録はバインダー側の概念なので宣言のみで判定する。
                 const meta = parsePluginMeta(p.content || "");
                 const status = pluginCompatStatus(meta, markedInfo);
+                // 状態は色とツールチップだけで示すため、ツールチップは必ず付ける
+                const rangeText = meta.marked ? `marked ${meta.marked}` : t("plugin.compat.undeclaredRange");
+                const tip = `${t("plugin.compat." + status)}\n${rangeText}`;
                 return (
                   <ListItemButton
                     key={p.name}
                     disableRipple
+                    title={tip}
                     sx={{
                       py: 0.5,
                       textAlign: 'left',
@@ -345,7 +349,7 @@ function PluginSetting() {
                     }} />
                     <ListItemText
                       primary={p.name}
-                      secondary={<PluginMetaLine meta={meta} fileName={p.name} status={status} t={t} />}
+                      secondary={<PluginMetaLine meta={meta} fileName={p.name} />}
                       primaryTypographyProps={{
                         fontSize: '13px',
                         color: installed ? 'var(--text-muted)' : 'var(--text-primary)',

@@ -64,7 +64,6 @@ describe('AppPluginSetting', () => {
 
     // バージョン列と対応marked列の2箇所が "-" になる
     await waitFor(() => expect(screen.getAllByText('-').length).toBe(2));
-    expect(screen.getByText('plugin.compat.undeclaredShort')).toBeTruthy();
   });
 
   // 対応レンジは「今の marked が何か」と並べて初めて判断できる
@@ -74,15 +73,16 @@ describe('AppPluginSetting', () => {
   });
 
   // アプリ階層は実行時に適用されないため、判定できるのは宣言までだが、
-  // 非対応であることは配る前に分かるべき
-  it('現在の marked に非対応なプラグインを明示する', async () => {
+  // 非対応であることは配る前に分かるべき。状態は色とツールチップで示す
+  it('現在の marked に非対応なプラグインをツールチップで明示する', async () => {
     listedPlugins.mockResolvedValueOnce([{
       name: 'old',
       content: '/* @plugin-version: 0.9.0 */\n/* @marked: <15 */',
     }]);
 
-    renderSetting();
+    const { container } = renderSetting();
 
-    await waitFor(() => expect(screen.getByText('plugin.compat.incompatibleShort')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('v0.9.0')).toBeTruthy());
+    expect(container.querySelector('[title^="plugin.compat.incompatible"]')).toBeTruthy();
   });
 });

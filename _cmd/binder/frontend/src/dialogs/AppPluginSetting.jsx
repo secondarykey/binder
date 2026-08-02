@@ -217,7 +217,7 @@ function AppPluginSetting() {
                     }} />
                     <ListItemText
                       primary={p.name}
-                      secondary={<PluginMetaLine meta={meta} fileName={p.name} status={status} t={t} />}
+                      secondary={<PluginMetaLine meta={meta} fileName={p.name} />}
                       primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
                       secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                     />
