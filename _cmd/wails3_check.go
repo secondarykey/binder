@@ -3,26 +3,34 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-type moduleCheck struct {
-	name   string
-	dir    string
-	module string
-}
-
-var checks = []moduleCheck{
-	{name: "Binder", dir: "./_cmd/binder", module: "github.com/wailsapp/wails/v3"},
-	{name: "Binder Lite", dir: "./_cmd/lite", module: "github.com/wailsapp/wails/v3"},
-}
-
 const (
-	wailsModule   = "github.com/wailsapp/wails/v3"
-	variablesFile = "./.github/variables"
+	wailsModule      = "github.com/wailsapp/wails/v3"
+	variablesRelPath = ".github/variables"
 )
+
+// 走査対象から除外するディレクトリ名。
+// .claude はワークツリー（.claude/worktrees/）配下の go.mod を拾わないために必須。
+var skipDirs = map[string]bool{
+	".git":         true,
+	".claude":      true,
+	"node_modules": true,
+	"vendor":       true,
+	"testdata":     true,
+	"dist":         true,
+	"build":        true,
+}
+
+type moduleCheck struct {
+	name string // 実行位置からの相対パス
+	dir  string
+}
 
 func main() {
 
@@ -32,11 +40,29 @@ func main() {
 	hasError := false
 	var mismatches []string
 
-	ciVersion, err := loadCIVersion()
+	checks, err := findModules(".", wailsModule)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "module scan: %v\n", err)
+		os.Exit(1)
+	}
+	if len(checks) == 0 {
+		fmt.Fprintf(os.Stderr, "no go.mod requiring %s found under current directory\n", wailsModule)
+		os.Exit(1)
+	}
+
+	variablesFile, err := findVariablesFile()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%-14s %v\n", "CI Build:", err)
-	} else {
-		fmt.Printf("%-14s %s\n", "CI Build:", ciVersion)
+	}
+
+	var ciVersion string
+	if variablesFile != "" {
+		ciVersion, err = loadCIVersion(variablesFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%-14s %v\n", "CI Build:", err)
+		} else {
+			fmt.Printf("%-14s %s\n", "CI Build:", ciVersion)
+		}
 	}
 
 	cliVersion, err := getCLIVersion()
@@ -74,20 +100,21 @@ func main() {
 		baseVersion = cliVersion
 	}
 
+	width := labelWidth(checks)
 	for _, c := range checks {
-		modVersion, err := getModuleVersion(c.dir, c.module)
+		modVersion, err := getModuleVersion(c.dir, wailsModule)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s (%s): %v\n", c.name, c.module, err)
+			fmt.Fprintf(os.Stderr, "%s (%s): %v\n", c.name, wailsModule, err)
 			hasError = true
 			continue
 		}
 		label := fmt.Sprintf("  %s:", c.name)
 		if baseVersion != "" && modVersion != baseVersion {
-			fmt.Printf("%-14s %s ** MISMATCH **\n", label, modVersion)
-			mismatches = append(mismatches, fmt.Sprintf("  cd %s && go get -u %s@%s && cd ../..", c.dir, c.module, baseVersion))
+			fmt.Printf("%-*s %s ** MISMATCH **\n", width, label, modVersion)
+			mismatches = append(mismatches, fmt.Sprintf("  go -C %s get %s@%s", c.dir, wailsModule, baseVersion))
 			hasError = true
 		} else {
-			fmt.Printf("%-14s %s\n", label, modVersion)
+			fmt.Printf("%-*s %s\n", width, label, modVersion)
 		}
 	}
 
@@ -103,6 +130,118 @@ func main() {
 		fmt.Println()
 		os.Exit(1)
 	}
+}
+
+// findModules は root 配下を走査し、module を直接 require している go.mod を集める。
+func findModules(root, module string) ([]moduleCheck, error) {
+	var mods []moduleCheck
+
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if path != root && skipDirs[d.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.Name() != "go.mod" {
+			return nil
+		}
+
+		ok, err := requiresModule(path, module)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+
+		dir := filepath.Dir(path)
+		mods = append(mods, moduleCheck{
+			name: filepath.ToSlash(filepath.Clean(dir)),
+			dir:  dir,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mods, nil
+}
+
+// requiresModule は go.mod が module を直接（非 indirect）require しているかを返す。
+func requiresModule(goMod, module string) (bool, error) {
+	f, err := os.Open(goMod)
+	if err != nil {
+		return false, fmt.Errorf("cannot open %s: %w", goMod, err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+		if strings.Contains(line, "// indirect") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		// "require mod ver"（単一行）と "mod ver"（require ブロック内）の両方を受ける
+		if fields[0] == "require" {
+			fields = fields[1:]
+		}
+		// replace / exclude 行はここで弾かれる
+		if len(fields) >= 2 && fields[0] == module {
+			return true, nil
+		}
+	}
+	return false, scanner.Err()
+}
+
+// findVariablesFile は実行位置から上位へ .github/variables を探す。
+func findVariablesFile() (string, error) {
+	dir, err := filepath.Abs(".")
+	if err != nil {
+		return "", err
+	}
+	for {
+		p := filepath.Join(dir, variablesRelPath)
+		if _, err := os.Stat(p); err == nil {
+			rel, err := filepath.Rel(mustAbs("."), p)
+			if err != nil {
+				return p, nil
+			}
+			return filepath.ToSlash(rel), nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("%s not found (searched upward from current directory)", variablesRelPath)
+		}
+		dir = parent
+	}
+}
+
+func mustAbs(p string) string {
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return p
+	}
+	return abs
+}
+
+func labelWidth(checks []moduleCheck) int {
+	width := 14
+	for _, c := range checks {
+		// "  " + name + ":"
+		if n := len(c.name) + 3; n > width {
+			width = n
+		}
+	}
+	return width
 }
 
 func getCLIVersion() (string, error) {
@@ -127,7 +266,7 @@ func getLatestVersion(dir, module string) (string, error) {
 	return parts[len(parts)-1], nil
 }
 
-func loadCIVersion() (string, error) {
+func loadCIVersion(variablesFile string) (string, error) {
 	f, err := os.Open(variablesFile)
 	if err != nil {
 		return "", fmt.Errorf("cannot open %s: %w", variablesFile, err)
