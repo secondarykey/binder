@@ -37,6 +37,10 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
     copied: t('lite.copiedCode'),
   }), [t, i18n.language]);
 
+  // 図の拡大・移動操作の説明（title 属性）。ホイールの扱いがモードで違う
+  const panZoomHint = t('lite.panZoomHint');
+  const inlinePanZoomHint = t('lite.inlinePanZoomHint');
+
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
   const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
 
@@ -91,6 +95,8 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}
         cursorLine={mermaidMode ? null : cursorLine}
+        panZoomHint={panZoomHint}
+        inlinePanZoomHint={inlinePanZoomHint}
       />
 
       {/* 切り替えボタン（右上に重ねて配置） */}

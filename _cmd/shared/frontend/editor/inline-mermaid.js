@@ -1,4 +1,5 @@
 import Mermaid from './engines/Mermaid';
+import { attachPanZoom } from './pan-zoom';
 
 /**
  * Markdown プレビュー内の ```mermaid コードブロックを図として描画する。
@@ -51,9 +52,11 @@ export function applyInlineMermaidStyle(doc) {
  * 図が消えるより、書きかけのテキストが見えている方が状態が分かりやすい。
  *
  * @param {Document} doc 対象ドキュメント（iframe の contentDocument）
+ * @param {Object}   [options]
+ * @param {string}   [options.panZoomHint] 図に付ける操作説明（title 属性）
  * @returns {Promise<number>} 図に置き換えたブロック数
  */
-export async function renderInlineMermaid(doc) {
+export async function renderInlineMermaid(doc, options = {}) {
   if (!doc?.body) return 0;
 
   const codes = Array.from(doc.querySelectorAll('pre > code')).filter(isMermaidCode);
@@ -80,6 +83,9 @@ export async function renderInlineMermaid(doc) {
       div.dataset.copyText = src.replace(/\n$/, '');
       div.innerHTML = data.svg;
       pre.parentNode.replaceChild(div, pre);
+      // 文章中の図なので、ホイールは Ctrl 併用時だけ拡大に使う
+      // （そのままだと図の上でページをスクロールできなくなる）
+      attachPanZoom(div, { wheelModifier: true, hint: options.panZoomHint });
       count++;
     } catch (err) {
       console.warn('[Binder] mermaid render failed:', err);

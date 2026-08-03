@@ -748,7 +748,9 @@
         "pasteTab" : "貼り付け",
         "closeTab" : "タブを閉じる",
         "copyCode" : "コピー",
-        "copiedCode" : "コピーしました"
+        "copiedCode" : "コピーしました",
+        "panZoomHint" : "ホイールで拡大縮小 / ドラッグで移動 / ダブルクリックで元に戻す",
+        "inlinePanZoomHint" : "Ctrl+ホイールで拡大縮小 / ドラッグで移動 / ダブルクリックで元に戻す"
     },
     "autocomplete" : {
         "if"       : "条件分岐",
