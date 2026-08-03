@@ -21,6 +21,7 @@ import { attachPanZoom } from "./pan-zoom";
  *   inlineMermaid   - true で ```mermaid のコードブロックを図として描画する
  *   panZoomHint     - 図（div.binderSVG）に付ける操作説明（title 属性）
  *   inlinePanZoomHint - 文章中の図（```mermaid 由来）に付ける操作説明
+ *   panZoomLabels   - 指定すると図の左上に操作ボタンを置く { zoomIn, zoomOut, reset, pan }
  */
 
 // iframe に注入するスクロールバー用 <style> のID
@@ -275,8 +276,10 @@ class HTMLFrame extends React.Component {
     // ```mermaid のコードブロックを図として描画する（inlineMermaid を指定したアプリのみ）
     if (this.props.inlineMermaid) {
       tasks.push(
-        renderInlineMermaid(doc, { panZoomHint: this.props.inlinePanZoomHint })
-          .catch((err) => console.error(err))
+        renderInlineMermaid(doc, {
+          panZoomHint: this.props.inlinePanZoomHint,
+          panZoomLabels: this.props.panZoomLabels,
+        }).catch((err) => console.error(err))
       );
     }
 
@@ -286,7 +289,11 @@ class HTMLFrame extends React.Component {
       // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用。
       // ペイン全体が1つの図なので、ホイールは修飾キー無しで拡大に使う
       if (elm.querySelector('svg')) {
-        attachPanZoom(elm, { hint: this.props.panZoomHint });
+        attachPanZoom(elm, {
+          hint: this.props.panZoomHint,
+          controls: !!this.props.panZoomLabels,
+          labels: this.props.panZoomLabels,
+        });
         continue;
       }
       const raw = elm.dataset.mermaid;

@@ -75,14 +75,17 @@ Markdown 中の ```mermaid コードブロックを図に置き換える。`HTML
 
 ## 図の拡大・移動（pan-zoom.js）
 
-`attachPanZoom(container, { wheelModifier, hint })` — container 内の SVG に
+`attachPanZoom(container, { wheelModifier, hint, controls, labels })` — container 内の SVG に
 ホイール拡大縮小・ドラッグ移動・ダブルクリックで初期状態に戻す操作を付ける。
 
 - 拡大はカーソル位置基準（`transform-origin: 0 0` + オフセット補正）。
   倍率は 0.1〜8 倍に収める
 - `wheelModifier: true` はホイール拡大に Ctrl/⌘ を要求する。文章中の図で使う
   （そのままだと図の上でページをスクロールできなくなる）
-- ボタン（コピーボタン）上での操作はドラッグ・リセットの対象外にする
+- `controls: true`（Lite は `panZoomLabels` を渡すと有効）で左上に操作ボタンを置く。
+  3列グリッドに 縮小 / ▲ / 拡大 ・ ◀ / リセット / ▶ ・ ▼ を配置し、ホバーで表示する。
+  ボタンの拡大は表示領域の中心基準（ホイールはカーソル位置基準）
+- ボタン（コピーボタン・操作ボタン）上での操作はドラッグ・リセットの対象外にする
 - 適用先: `div.binderSVG`（Lite の Mermaid モード。修飾キー無し）と
   `div.binderMermaid`（```mermaid 由来。Ctrl 併用）。
   Binder のノート内ダイアグラム（`data-mermaid` からパースするもの）は従来どおり対象外

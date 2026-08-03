@@ -87,6 +87,52 @@ describe('attachPanZoom', () => {
     expect(svg.style.transform).toBe('translate(0px, 0px) scale(1)');
   });
 
+  it('adds control buttons when controls is set', () => {
+    const el = setBody('<div><svg></svg></div>');
+    attachPanZoom(el, {
+      controls: true,
+      labels: { zoomIn: '拡大', zoomOut: '縮小', reset: '元に戻す', pan: '移動' },
+    });
+
+    const buttons = el.querySelectorAll('.binderPanZoomBtn');
+    // 拡大・縮小・リセット + 上下左右
+    expect(buttons).toHaveLength(7);
+    expect(el.querySelector('[aria-label="拡大"]')).not.toBeNull();
+  });
+
+  it('zooms and pans from the buttons', () => {
+    const el = setBody('<div><svg></svg></div>');
+    attachPanZoom(el, { controls: true });
+    const svg = el.querySelector('svg');
+    const byLabel = (label) => el.querySelector(`[aria-label="${label}"]`);
+
+    byLabel('Zoom in').click();
+    expect(svg.style.transform).toMatch(/scale\(1\.25\)/);
+
+    byLabel('Zoom out').click();
+    expect(svg.style.transform).toMatch(/scale\(1\)/);
+
+    // 上ボタン: 図を下へ動かして上の内容を見せる
+    byLabel('Pan').click();
+    expect(svg.style.transform).toContain('translate(0px, 40px)');
+
+    byLabel('Reset').click();
+    expect(svg.style.transform).toBe('translate(0px, 0px) scale(1)');
+  });
+
+  it('does not start a drag from a control button', () => {
+    const el = setBody('<div><svg></svg></div>');
+    attachPanZoom(el, { controls: true });
+    const svg = el.querySelector('svg');
+
+    el.querySelector('.binderPanZoomBtn').dispatchEvent(
+      pointer('pointerdown', { button: 0, clientX: 10, clientY: 10 })
+    );
+    el.dispatchEvent(pointer('pointermove', { clientX: 60, clientY: 60 }));
+
+    expect(svg.style.transform).not.toContain('translate(50px, 50px)');
+  });
+
   it('puts the hint in the title attribute', () => {
     const el = setBody('<div><svg></svg></div>');
     attachPanZoom(el, { hint: 'ホイールで拡大縮小' });

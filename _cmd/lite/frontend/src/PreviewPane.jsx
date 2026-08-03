@@ -41,6 +41,14 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
   const panZoomHint = t('lite.panZoomHint');
   const inlinePanZoomHint = t('lite.inlinePanZoomHint');
 
+  // 図の操作ボタンのラベル（渡すとボタンが表示される）
+  const panZoomLabels = useMemo(() => ({
+    zoomIn: t('lite.zoomIn'),
+    zoomOut: t('lite.zoomOut'),
+    reset: t('lite.resetView'),
+    pan: t('lite.pan'),
+  }), [t, i18n.language]);
+
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
   const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
 
@@ -97,6 +105,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
         cursorLine={mermaidMode ? null : cursorLine}
         panZoomHint={panZoomHint}
         inlinePanZoomHint={inlinePanZoomHint}
+        panZoomLabels={panZoomLabels}
       />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
