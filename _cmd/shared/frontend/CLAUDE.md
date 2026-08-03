@@ -12,6 +12,7 @@ _cmd/shared/frontend/editor/
   FontDialog.jsx       フォント設定ダイアログ
   code-copy.js         プレビュー内コードブロックのコピーボタン付与
   inline-mermaid.js    ```mermaid コードブロックの図としての描画
+  pan-zoom.js          SVG（図）の拡大・移動操作
   markdown-keys.js     Markdown 入力支援（リスト継続・引用継続等）
   useAutocomplete.js   汎用オートコンプリートフック
   mermaid-candidates.js Mermaidオートコンプリートのデータ定義
@@ -71,6 +72,20 @@ Markdown 中の ```mermaid コードブロックを図に置き換える。`HTML
 
 `HTMLFrame.postProcess` の実行順は「Mermaid 描画 → コピーボタン付与」。
 図に変わらなかったコードブロックにだけコピーボタンが付く。
+
+## 図の拡大・移動（pan-zoom.js）
+
+`attachPanZoom(container, { wheelModifier, hint })` — container 内の SVG に
+ホイール拡大縮小・ドラッグ移動・ダブルクリックで初期状態に戻す操作を付ける。
+
+- 拡大はカーソル位置基準（`transform-origin: 0 0` + オフセット補正）。
+  倍率は 0.1〜8 倍に収める
+- `wheelModifier: true` はホイール拡大に Ctrl/⌘ を要求する。文章中の図で使う
+  （そのままだと図の上でページをスクロールできなくなる）
+- ボタン（コピーボタン）上での操作はドラッグ・リセットの対象外にする
+- 適用先: `div.binderSVG`（Lite の Mermaid モード。修飾キー無し）と
+  `div.binderMermaid`（```mermaid 由来。Ctrl 併用）。
+  Binder のノート内ダイアグラム（`data-mermaid` からパースするもの）は従来どおり対象外
 
 ## Marked/Mermaid エンジンの初期化
 

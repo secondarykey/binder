@@ -2,6 +2,7 @@ import React from "react";
 import Mermaid from "./engines/Mermaid";
 import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./code-copy";
 import { renderInlineMermaid } from "./inline-mermaid";
+import { attachPanZoom } from "./pan-zoom";
 
 /**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
@@ -18,6 +19,8 @@ import { renderInlineMermaid } from "./inline-mermaid";
  *   onCopyCode      - 指定するとコードブロックにコピーボタンを表示し、押下時に本文を渡して呼ぶ
  *   copyLabels      - コピーボタンのラベル { copy, copied }（参照が変わると付与済みボタンに反映）
  *   inlineMermaid   - true で ```mermaid のコードブロックを図として描画する
+ *   panZoomHint     - 図（div.binderSVG）に付ける操作説明（title 属性）
+ *   inlinePanZoomHint - 文章中の図（```mermaid 由来）に付ける操作説明
  */
 
 // iframe に注入するスクロールバー用 <style> のID
@@ -233,47 +236,6 @@ class HTMLFrame extends React.Component {
     if (!exist) head.appendChild(style);
   }
 
-  /**
-   * SVG にホイールズーム + 中ボタンドラッグのパン操作を付与する
-   */
-  attachPanZoom(container) {
-    const svg = container.querySelector('svg');
-    if (!svg) return;
-
-    let left = 0, top = 0, scale = 1.0;
-    const transform = () => {
-      svg.style.transform = `translate(${left}px,${top}px) scale(${scale})`;
-    };
-
-    // 中ボタンドラッグで移動
-    svg.addEventListener('pointerdown', (e) => {
-      if (e.button !== 1) return;
-      e.preventDefault();
-      container.style.cursor = 'grabbing';
-    });
-    svg.addEventListener('pointermove', (e) => {
-      if (!(e.buttons & 4)) return;
-      left += e.movementX;
-      top += e.movementY;
-      transform();
-    });
-    svg.addEventListener('pointerup', (e) => {
-      if (e.button === 1) container.style.cursor = '';
-    });
-
-    // ホイールでズーム
-    svg.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const s = e.deltaY > 0 ? -0.1 : 0.1;
-      scale += s;
-      if (scale < 0.1) scale = 0.1;
-      transform();
-    });
-
-    // SVG のオーバーフロー表示を許可
-    svg.style.overflow = 'visible';
-    container.style.overflow = 'hidden';
-  }
 
   postProcess(doc, onComplete) {
     if (!doc) { onComplete?.(); return; }
@@ -312,15 +274,19 @@ class HTMLFrame extends React.Component {
 
     // ```mermaid のコードブロックを図として描画する（inlineMermaid を指定したアプリのみ）
     if (this.props.inlineMermaid) {
-      tasks.push(renderInlineMermaid(doc).catch((err) => console.error(err)));
+      tasks.push(
+        renderInlineMermaid(doc, { panZoomHint: this.props.inlinePanZoomHint })
+          .catch((err) => console.error(err))
+      );
     }
 
     // ノート内の Mermaid ダイアグラムを描画
     const mermaidElements = Array.from(doc.querySelectorAll('div.binderSVG'));
     for (const elm of mermaidElements) {
-      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用
+      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用。
+      // ペイン全体が1つの図なので、ホイールは修飾キー無しで拡大に使う
       if (elm.querySelector('svg')) {
-        this.attachPanZoom(elm);
+        attachPanZoom(elm, { hint: this.props.panZoomHint });
         continue;
       }
       const raw = elm.dataset.mermaid;
