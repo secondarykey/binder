@@ -9,8 +9,8 @@ marked.js のバンドルバージョンを段階的に更新するための計�
 
 作成時点の状態: バンドル marked **14.1.4** / mermaid 11.16.0、アプリバージョン **0.13.1**。
 
-現在の状況: **0.14.0（互換基盤）と 0.15.0（marked 17.0.5 への差し替え）は実装完了**。
-バンドルは 17.0.5。残るのは 0.16.0（marked 18.0.7）の vendor 差し替え。
+現在の状況: **0.14.0（互換基盤）・0.15.0（marked 17.0.5）・0.16.0（marked 18.0.7）は実装完了**。
+バンドルは 18.0.7 で、本ドキュメントの移行計画は完了。以降は履歴として残す。
 
 ---
 
@@ -288,8 +288,13 @@ URL ではなく実際の解決結果に従うこと）。
 2. **バージョン定数を更新（忘れやすい）**:
    - `_cmd/binder/frontend/src/main.jsx` の `MARKED_VENDOR_VERSION`
    - `_cmd/lite/frontend/src/main.jsx` の `Marked.setVendorVersion('...')`
-3. `_cmd/binder/frontend/src/dialogs/Binder.jsx` の CDN URL プレースホルダの
-   `marked@x.y.z` を更新。
+3. **バージョンを書いたドキュメント・UI 文言を更新**:
+   - `_cmd/binder/frontend/src/dialogs/Binder.jsx` の CDN URL プレースホルダの `marked@x.y.z`
+   - `PLUGINS.md` の「marked のバージョンを変えて試す」の例示 URL
+     （**チェックリストから漏れやすい**。0.15.0 では更新されず、バンドルより新しい版を
+     指したままになっていた）
+   - `grep -rn 'marked@' --exclude-dir=bindings .` で拾い漏れを確認する。
+     `src/__tests__/*` の URL は解決ロジックの入力値なので**揃える必要はない**。
 4. **同梱プラグインが新バージョンで無傷か回帰テストで確認**:
    `cd _cmd/binder/frontend && npx vitest run src/__tests__/bundledPlugins.test.jsx`
    （バンドル実体を読むので、差し替え後の marked に対して検証される）。
@@ -326,7 +331,7 @@ URL ではなく実際の解決結果に従うこと）。
   全てパスすることで再確認した。フロントエンド全体（76ファイル・217件）もパス。
 - **コード変更は vendor とバージョン定数のみ**。エンジン層・プラグイン本体には手を入れていない。
 
-### 0.16.0 — marked 18.0.7
+### 0.16.0 — marked 18.0.7（✅ 実装済み）
 
 **17 と 18 を分ける理由**: リリース後の切り分けのため。1リリース＝1エンジン変更に
 しておけば、不具合が出たときに原因の版が一意に決まる。17 と 18 を同時に上げると
@@ -338,10 +343,27 @@ URL ではなく実際の解決結果に従うこと）。
 （`binder.json`）で任意の版を CDN 指定できるため、アプリのバージョンを下げずに
 17 へ固定できる。効かないのはオフライン環境のみ。
 
-- 上記チェックリストに従い vendor を 18.0.7 へ差し替え。実測上、追加のコード変更は不要な見込み。
+- 上記チェックリストに従い vendor を 18.0.7 へ差し替え済み（41,622B → 41,839B）。
+  binder / lite 両方の `src/assets/vendor/marked.min.js` を `lib/marked.esm.js` で上書きし、
+  バージョン定数（`MARKED_VENDOR_VERSION` / `setVendorVersion`）・`Binder.jsx` の
+  CDN プレースホルダ・`PLUGINS.md` の例示 URL を更新。
+  v17 と同様、末尾の `//# sourceMappingURL=marked.esm.js.map` は 1 行除去してある。
+  なお `npm i` はワークツリーの node_modules（Junction）を壊すため、
+  `npm pack marked@18.0.7` を scratchpad で展開して取得した。
 - v18 の「末尾空行トリム」は `parseWithSourceLines` の行マッピングに影響しないことを
   実測済み（`token.raw` の round-trip は v18 でも一致）。
+- 差し替え後の実測（バンドル実体に対して確認済み）:
+  ```
+  Lexer.lex('- [ ] a\n')[0].items[0].tokens[0].type === 'checkbox'         // >=17
+  marked('![a"x](u)').includes('&quot;') === true                           // v15/16 ではない
+  Lexer.lex('# h\n\ntext\n').map(t => t.type) === ['heading','space','paragraph'] // v18
+  ```
+  3つ目が v17 の `['heading','paragraph']` から変わり、`probeMajor` が 18 と判定できる状態。
+- 同梱15本の回帰テスト（`bundledPlugins.test.jsx`）を含むフロントエンド全体
+  （80ファイル・260件）がパス。Go 全パッケージもパス。binder / lite 両方の `vite build` も成功。
 - ライセンス変更不要（v18 の LICENSE も v14/v17 と同一）。
+- **コード変更は vendor とバージョン定数・ドキュメントのみ**。エンジン層・プラグイン本体は
+  0.15.0 に続いて無変更。
 
 ---
 

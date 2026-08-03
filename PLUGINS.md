@@ -303,8 +303,13 @@ HTML パーサが属性を大量に生成して極端に遅くなることがあ
 指定できるのは許可された CDN のみ（既定は jsdelivr / cdnjs / unpkg）。
 
 ```
-https://cdn.jsdelivr.net/npm/marked@18.0.7/lib/marked.esm.js
+https://cdn.jsdelivr.net/npm/marked@17.0.5/lib/marked.esm.js
 ```
+
+上は 0.15.0 のバンドル版（17.0.5）を指定する例で、そのまま「18 に上げたくない場合に
+前の版へ固定する」用途にも使える。バージョンは `marked@17` のように省略もできるが、
+省略するとメジャーしか確定できず `@marked` レンジの判定が緩くなるため、
+固定が目的ならパッチまで書く。
 
 **必ず `.esm.js` を指定すること**（`lib/marked.umd.js` は読み込めない）。
 この設定は `binder.json` に入るため git 管理され、チーム全員に効く。
