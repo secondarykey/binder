@@ -1,6 +1,7 @@
 import React from "react";
 import Mermaid from "./engines/Mermaid";
 import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./code-copy";
+import { renderInlineMermaid } from "./inline-mermaid";
 
 /**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
@@ -16,6 +17,7 @@ import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./cod
  *   customScrollbar - true で iframe 内のスクロールバーをアプリ側と同じ見た目にする
  *   onCopyCode      - 指定するとコードブロックにコピーボタンを表示し、押下時に本文を渡して呼ぶ
  *   copyLabels      - コピーボタンのラベル { copy, copied }（参照が変わると付与済みボタンに反映）
+ *   inlineMermaid   - true で ```mermaid のコードブロックを図として描画する
  */
 
 // iframe に注入するスクロールバー用 <style> のID
@@ -61,7 +63,8 @@ class HTMLFrame extends React.Component {
       || nextProps.colorSchemeAttr !== this.props.colorSchemeAttr
       || nextProps.colorSchemeValue !== this.props.colorSchemeValue
       || nextProps.customScrollbar !== this.props.customScrollbar
-      || nextProps.copyLabels !== this.props.copyLabels;
+      || nextProps.copyLabels !== this.props.copyLabels
+      || nextProps.inlineMermaid !== this.props.inlineMermaid;
   }
 
   componentDidUpdate(prevProps) {
@@ -292,45 +295,53 @@ class HTMLFrame extends React.Component {
     // ソース行コメントを data-src-line 属性に変換
     this.attachSourceLines(doc);
 
-    // コードブロックのコピーボタン（onCopyCode を渡したアプリのみ）
-    const labels = this.props.copyLabels || {};
-    attachCodeCopy(doc, {
-      onCopy: this.props.onCopyCode,
-      copyLabel: labels.copy,
-      copiedLabel: labels.copied,
-    });
+    // 描画完了後の共通処理
+    const finish = () => {
+      // コピーボタンは Mermaid 化されずに残ったコードブロックにだけ付ける
+      const labels = this.props.copyLabels || {};
+      attachCodeCopy(doc, {
+        onCopy: this.props.onCopyCode,
+        copyLabel: labels.copy,
+        copiedLabel: labels.copied,
+      });
+      this.scrollToSourceLine(doc, this.props.cursorLine);
+      onComplete?.();
+    };
+
+    const tasks = [];
+
+    // ```mermaid のコードブロックを図として描画する（inlineMermaid を指定したアプリのみ）
+    if (this.props.inlineMermaid) {
+      tasks.push(renderInlineMermaid(doc).catch((err) => console.error(err)));
+    }
 
     // ノート内の Mermaid ダイアグラムを描画
     const mermaidElements = Array.from(doc.querySelectorAll('div.binderSVG'));
-    if (mermaidElements.length === 0) {
-      // Mermaid なし → 即完了
-      this.scrollToSourceLine(doc, this.props.cursorLine);
-      onComplete?.();
-      return;
-    }
-
-    // 全 Mermaid の描画完了を待ってから切り替え
-    const promises = mermaidElements.map((elm) => {
+    for (const elm of mermaidElements) {
       // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用
       if (elm.querySelector('svg')) {
         this.attachPanZoom(elm);
-        return Promise.resolve();
+        continue;
       }
       const raw = elm.dataset.mermaid;
       const txt = raw
         ? new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
         : elm.textContent;
-      return Mermaid.parse(txt).then((data) => {
+      tasks.push(Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
         console.error(err);
-      });
-    });
+      }));
+    }
 
-    Promise.all(promises).then(() => {
-      this.scrollToSourceLine(doc, this.props.cursorLine);
-      onComplete?.();
-    });
+    if (tasks.length === 0) {
+      // 待つものが無い → 即完了
+      finish();
+      return;
+    }
+
+    // 全 Mermaid の描画完了を待ってから切り替え
+    Promise.all(tasks).then(finish);
   }
 
   render() {

@@ -75,7 +75,12 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
-      <HTMLFrame html={html} onCopyCode={CopyToClipboard} copyLabels={copyLabels} />
+      <HTMLFrame
+        html={html}
+        onCopyCode={CopyToClipboard}
+        copyLabels={copyLabels}
+        inlineMermaid={!mermaidMode}
+      />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
       <Tooltip title={mermaidMode ? 'Markdown' : 'Mermaid'} placement="left">
