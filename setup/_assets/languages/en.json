@@ -753,8 +753,7 @@
         "inlinePanZoomHint" : "Ctrl+Wheel to zoom / Drag to pan / Double-click to reset",
         "zoomIn" : "Zoom in",
         "zoomOut" : "Zoom out",
-        "resetView" : "Reset",
-        "pan" : "Pan"
+        "resetView" : "Reset"
     },
     "autocomplete" : {
         "if"       : "Conditional branch",
