@@ -24,7 +24,7 @@ function escapeAttr(s) {
  * mermaidMode に応じて Markdown または Mermaid でプレビューする。
  * 切り替えは親（App）がタブごとに管理する。
  */
-function PreviewPane({ text, mermaidMode, onToggleMode }) {
+function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
   const { t, i18n } = useTranslation();
   const [html, setHtml] = useState('');
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
@@ -90,6 +90,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
         onCopyCode={CopyToClipboard}
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}
+        cursorLine={mermaidMode ? null : cursorLine}
       />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
