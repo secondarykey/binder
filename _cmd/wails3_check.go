@@ -111,7 +111,11 @@ func main() {
 		label := fmt.Sprintf("  %s:", c.name)
 		if baseVersion != "" && modVersion != baseVersion {
 			fmt.Printf("%-*s %s ** MISMATCH **\n", width, label, modVersion)
-			mismatches = append(mismatches, fmt.Sprintf("  go -C %s get %s@%s", c.dir, wailsModule, baseVersion))
+			// パスは c.name（スラッシュ区切り）を使う。c.dir は Windows で
+			// バックスラッシュになり、git bash がエスケープとして食ってしまう
+			// （_cmd\binder -> _cmdbinder）。スラッシュなら cmd / PowerShell /
+			// bash のいずれでもそのまま通る
+			mismatches = append(mismatches, fmt.Sprintf("  go -C %s get %s@%s", c.name, wailsModule, baseVersion))
 			hasError = true
 		} else {
 			fmt.Printf("%-*s %s\n", width, label, modVersion)
