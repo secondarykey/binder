@@ -750,7 +750,11 @@
         "copyCode" : "Copy",
         "copiedCode" : "Copied",
         "panZoomHint" : "Wheel to zoom / Drag to pan / Double-click to reset",
-        "inlinePanZoomHint" : "Ctrl+Wheel to zoom / Drag to pan / Double-click to reset"
+        "inlinePanZoomHint" : "Ctrl+Wheel to zoom / Drag to pan / Double-click to reset",
+        "zoomIn" : "Zoom in",
+        "zoomOut" : "Zoom out",
+        "resetView" : "Reset",
+        "pan" : "Pan"
     },
     "autocomplete" : {
         "if"       : "Conditional branch",

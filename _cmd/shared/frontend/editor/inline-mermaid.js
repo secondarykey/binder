@@ -54,6 +54,7 @@ export function applyInlineMermaidStyle(doc) {
  * @param {Document} doc 対象ドキュメント（iframe の contentDocument）
  * @param {Object}   [options]
  * @param {string}   [options.panZoomHint] 図に付ける操作説明（title 属性）
+ * @param {Object}   [options.panZoomLabels] 指定すると図に操作ボタンを置く
  * @returns {Promise<number>} 図に置き換えたブロック数
  */
 export async function renderInlineMermaid(doc, options = {}) {
@@ -85,7 +86,12 @@ export async function renderInlineMermaid(doc, options = {}) {
       pre.parentNode.replaceChild(div, pre);
       // 文章中の図なので、ホイールは Ctrl 併用時だけ拡大に使う
       // （そのままだと図の上でページをスクロールできなくなる）
-      attachPanZoom(div, { wheelModifier: true, hint: options.panZoomHint });
+      attachPanZoom(div, {
+        wheelModifier: true,
+        hint: options.panZoomHint,
+        controls: !!options.panZoomLabels,
+        labels: options.panZoomLabels,
+      });
       count++;
     } catch (err) {
       console.warn('[Binder] mermaid render failed:', err);
