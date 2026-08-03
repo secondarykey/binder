@@ -44,7 +44,7 @@ setup/, settings/（Binder と共有）
 - **TitleBar.jsx** — フレームレスウィンドウ用カスタムタイトルバー。ファイル操作ボタン（New/Open/Save）+ テーマ切り替え + ウィンドウ操作（最小化/最大化/閉じる）
 - **TabBar.jsx** — ファイルタブバー。オーバーフロー時の左右スクロールボタン付き
 - **EditorPane.jsx** — エディタラッパー。共有 EditorArea + SearchBar + Markdown入力支援 + 行番号トグル（左上）+ 折り返しトグル（右下）
-- **PreviewPane.jsx** — プレビュー。共有 HTMLFrame + Marked/Mermaid エンジン。Markdown/Mermaid 切り替えボタン（右上）。`MutationObserver` でテーマ変更を検知し再描画
+- **PreviewPane.jsx** — プレビュー。共有 HTMLFrame + Marked/Mermaid エンジン。Markdown/Mermaid 切り替えボタン（右上）。`MutationObserver` でテーマ変更を検知し再描画。コードブロックのコピーボタン（`onCopyCode` に `CopyToClipboard` を渡す）
 - **ConfirmDialog.jsx** — カスタム確認ダイアログ（Promise ベース）
 - **theme.js** — テーマ管理。system/light/dark の3モード対応。system モードは `prefers-color-scheme` を監視
 - **language.jsx** — i18next 初期化
@@ -58,6 +58,7 @@ setup/, settings/（Binder と共有）
 - 左右分割レイアウト（エディタ + プレビュー）、スプリッターでサイズ調整
 - プレビューの折りたたみ・展開（アニメーション付き）
 - Markdown/Mermaid プレビュー切り替え（タブごとに保持）
+- プレビューのコードブロック（``` で囲んだ部分）をコピーするボタン（ホバーで表示。実体は `@shared/editor/code-copy.js`）
 - Markdown 入力支援（リスト・チェックリスト・引用・番号リストの自動継続）
 - Ctrl+S 明示的保存（アトミック書き込み）、未保存マーク表示
 - テーマ切り替え（system/light/dark）

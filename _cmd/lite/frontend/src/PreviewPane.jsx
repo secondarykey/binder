@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import { useTranslation } from 'react-i18next';
 import HTMLFrame from '@shared/editor/HTMLFrame';
 import Marked from '@shared/editor/engines/Marked';
 import Mermaid from '@shared/editor/engines/Mermaid';
 import { GetPreviewHTML } from '../bindings/binder/api/lite/app';
+import { CopyToClipboard } from '../bindings/main/window';
 import { useIframeScrollbarOffset } from './useHasScrollbar';
 
 /**
@@ -14,9 +16,17 @@ import { useIframeScrollbarOffset } from './useHasScrollbar';
  * 切り替えは親（App）がタブごとに管理する。
  */
 function PreviewPane({ text, mermaidMode, onToggleMode }) {
+  const { t, i18n } = useTranslation();
   const [html, setHtml] = useState('');
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
   const timerRef = useRef(null);
+
+  // コードブロックのコピーボタン用ラベル。
+  // 参照が変わると HTMLFrame がラベルを差し替えるため、言語が変わった時だけ作り直す
+  const copyLabels = useMemo(() => ({
+    copy: t('lite.copyCode'),
+    copied: t('lite.copiedCode'),
+  }), [t, i18n.language]);
 
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
   const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
@@ -65,7 +75,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
-      <HTMLFrame html={html} />
+      <HTMLFrame html={html} onCopyCode={CopyToClipboard} copyLabels={copyLabels} />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
       <Tooltip title={mermaidMode ? 'Markdown' : 'Mermaid'} placement="left">

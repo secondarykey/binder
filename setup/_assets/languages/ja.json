@@ -746,7 +746,9 @@
         "openNewWindow" : "新しいウィンドウで開く",
         "copyTab" : "コピー",
         "pasteTab" : "貼り付け",
-        "closeTab" : "タブを閉じる"
+        "closeTab" : "タブを閉じる",
+        "copyCode" : "コピー",
+        "copiedCode" : "コピーしました"
     },
     "autocomplete" : {
         "if"       : "条件分岐",
