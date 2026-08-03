@@ -91,16 +91,16 @@ describe('attachPanZoom', () => {
     const el = setBody('<div><svg></svg></div>');
     attachPanZoom(el, {
       controls: true,
-      labels: { zoomIn: '拡大', zoomOut: '縮小', reset: '元に戻す', pan: '移動' },
+      labels: { zoomIn: '拡大', zoomOut: '縮小', reset: '元に戻す' },
     });
 
+    // 移動はドラッグで行うので、ボタンは 縮小 / 元に戻す / 拡大 の3つだけ
     const buttons = el.querySelectorAll('.binderPanZoomBtn');
-    // 拡大・縮小・リセット + 上下左右
-    expect(buttons).toHaveLength(7);
-    expect(el.querySelector('[aria-label="拡大"]')).not.toBeNull();
+    expect(buttons).toHaveLength(3);
+    expect([...buttons].map(b => b.getAttribute('aria-label'))).toEqual(['縮小', '元に戻す', '拡大']);
   });
 
-  it('zooms and pans from the buttons', () => {
+  it('zooms and resets from the buttons', () => {
     const el = setBody('<div><svg></svg></div>');
     attachPanZoom(el, { controls: true });
     const svg = el.querySelector('svg');
@@ -112,10 +112,7 @@ describe('attachPanZoom', () => {
     byLabel('Zoom out').click();
     expect(svg.style.transform).toMatch(/scale\(1\)/);
 
-    // 上ボタン: 図を下へ動かして上の内容を見せる
-    byLabel('Pan').click();
-    expect(svg.style.transform).toContain('translate(0px, 40px)');
-
+    byLabel('Zoom in').click();
     byLabel('Reset').click();
     expect(svg.style.transform).toBe('translate(0px, 0px) scale(1)');
   });

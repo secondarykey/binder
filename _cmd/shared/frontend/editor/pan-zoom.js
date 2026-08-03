@@ -4,7 +4,7 @@
  * - ホイール: 拡大縮小。カーソル位置を基準に寄る
  * - ドラッグ（左・中ボタン）: 移動
  * - ダブルクリック: 元の倍率・位置に戻す
- * - 左上の操作ボタン（controls 指定時）: 拡大・縮小・上下左右の移動・リセット
+ * - 左上の操作ボタン（controls 指定時）: 縮小・元に戻す・拡大
  */
 
 // iframe に注入する <style> のID
@@ -15,7 +15,6 @@ const MAX_SCALE = 8;
 const STEP = 1.1;
 // ボタン操作は1クリックの手応えが要るのでホイールより大きく動かす
 const BUTTON_STEP = 1.25;
-const BUTTON_PAN = 40;
 
 const CONTROLS_CLASS = 'binderPanZoom';
 const CONTROL_BUTTON_CLASS = 'binderPanZoomBtn';
@@ -55,6 +54,7 @@ export function applyPanZoomStyle(doc) {
     '  grid-template-columns: repeat(3, 22px);',
     '  grid-auto-rows: 22px;',
     '  gap: 2px;',
+    '  width: max-content;',
     '  opacity: 0;',
     '  transition: opacity 0.15s;',
     '}',
@@ -90,7 +90,7 @@ export function applyPanZoomStyle(doc) {
  *        文章中の図では、図の上でも普通にページスクロールできる必要があるため使う
  * @param {string}  [options.hint] container の title 属性に入れる操作説明
  * @param {boolean} [options.controls] true で左上に操作ボタンを置く
- * @param {Object}  [options.labels] ボタンの説明 { zoomIn, zoomOut, reset, pan }
+ * @param {Object}  [options.labels] ボタンの説明 { zoomIn, zoomOut, reset }
  * @returns {boolean} 付与したら true
  */
 export function attachPanZoom(container, options = {}) {
@@ -199,11 +199,6 @@ export function attachPanZoom(container, options = {}) {
       zoomIn: () => zoomCenter(scale * BUTTON_STEP),
       zoomOut: () => zoomCenter(scale / BUTTON_STEP),
       reset,
-      pan: (dx, dy) => {
-        left += dx;
-        top += dy;
-        apply();
-      },
     });
   }
 
@@ -211,8 +206,8 @@ export function attachPanZoom(container, options = {}) {
 }
 
 /**
- * 左上に操作ボタン（拡大・縮小・リセット・上下左右の移動）を置く。
- * 3列グリッドに配置し、中央列に上下、両脇に左右を割り当てる。
+ * 左上に操作ボタンを置く。上下左右の移動はドラッグで行えるので、
+ * 「− / 元に戻す / ＋」の1列だけにする。
  */
 function attachControls(container, labels, actions) {
   const doc = container.ownerDocument;
@@ -225,26 +220,20 @@ function attachControls(container, labels, actions) {
   const box = doc.createElement('div');
   box.className = CONTROLS_CLASS;
 
-  // [ラベル, title, グリッド位置(列/行), 動作]
+  // [表示文字, title, 動作]
   const defs = [
-    ['−', labels.zoomOut || 'Zoom out', 1, 1, actions.zoomOut],
-    ['▲', labels.pan || 'Pan', 2, 1, () => actions.pan(0, BUTTON_PAN)],
-    ['＋', labels.zoomIn || 'Zoom in', 3, 1, actions.zoomIn],
-    ['◀', labels.pan || 'Pan', 1, 2, () => actions.pan(BUTTON_PAN, 0)],
-    ['↺', labels.reset || 'Reset', 2, 2, actions.reset],
-    ['▶', labels.pan || 'Pan', 3, 2, () => actions.pan(-BUTTON_PAN, 0)],
-    ['▼', labels.pan || 'Pan', 2, 3, () => actions.pan(0, -BUTTON_PAN)],
+    ['−', labels.zoomOut || 'Zoom out', actions.zoomOut],
+    ['↺', labels.reset || 'Reset', actions.reset],
+    ['＋', labels.zoomIn || 'Zoom in', actions.zoomIn],
   ];
 
-  for (const [text, title, col, row, action] of defs) {
+  for (const [text, title, action] of defs) {
     const btn = doc.createElement('button');
     btn.type = 'button';
     btn.className = CONTROL_BUTTON_CLASS;
     btn.textContent = text;
     btn.title = title;
     btn.setAttribute('aria-label', title);
-    btn.style.gridColumn = String(col);
-    btn.style.gridRow = String(row);
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();

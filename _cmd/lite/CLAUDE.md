@@ -59,7 +59,7 @@ setup/, settings/（Binder と共有）
 - プレビューの折りたたみ・展開（アニメーション付き）
 - Markdown/Mermaid プレビュー切り替え（タブごとに保持）
 - Markdown プレビュー内の ```mermaid コードブロックを図として描画（実体は `@shared/editor/inline-mermaid.js`。構文エラー時はコードブロックのまま）
-- 図の拡大・移動（実体は `@shared/editor/pan-zoom.js`）。Mermaid モードはホイール、文章中の図は Ctrl+ホイールで拡大。ドラッグで移動、ダブルクリックで元に戻す。図の左上に操作ボタン（拡大・縮小・上下左右・リセット）
+- 図の拡大・移動（実体は `@shared/editor/pan-zoom.js`）。Mermaid モードはホイール、文章中の図は Ctrl+ホイールで拡大。ドラッグで移動、ダブルクリックで元に戻す。図の左上に操作ボタン（− / 元に戻す / ＋）
 - プレビューのコードブロック（``` で囲んだ部分）をコピーするボタン（ホバーで表示。実体は `@shared/editor/code-copy.js`）。図に置き換わった Mermaid・Mermaid モードの図も元ソースをコピーできる
 - Markdown 入力支援（リスト・チェックリスト・引用・番号リストの自動継続）
 - エディタのカーソル行にプレビューのスクロール位置を追従（`Marked.parseWithSourceLines` の `data-src-line` を使う。追従の粒度はトップレベルブロック単位。Mermaid モードは対象外）

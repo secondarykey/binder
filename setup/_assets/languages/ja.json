@@ -753,8 +753,7 @@
         "inlinePanZoomHint" : "Ctrl+ホイールで拡大縮小 / ドラッグで移動 / ダブルクリックで元に戻す",
         "zoomIn" : "拡大",
         "zoomOut" : "縮小",
-        "resetView" : "元に戻す",
-        "pan" : "移動"
+        "resetView" : "元に戻す"
     },
     "autocomplete" : {
         "if"       : "条件分岐",

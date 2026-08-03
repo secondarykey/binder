@@ -46,7 +46,6 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
     zoomIn: t('lite.zoomIn'),
     zoomOut: t('lite.zoomOut'),
     reset: t('lite.resetView'),
-    pan: t('lite.pan'),
   }), [t, i18n.language]);
 
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
