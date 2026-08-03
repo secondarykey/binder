@@ -11,6 +11,7 @@ _cmd/shared/frontend/editor/
   HTMLFrame.jsx        ダブルバッファ iframe プレビュー
   FontDialog.jsx       フォント設定ダイアログ
   code-copy.js         プレビュー内コードブロックのコピーボタン付与
+  inline-mermaid.js    ```mermaid コードブロックの図としての描画
   markdown-keys.js     Markdown 入力支援（リスト継続・引用継続等）
   useAutocomplete.js   汎用オートコンプリートフック
   mermaid-candidates.js Mermaidオートコンプリートのデータ定義
@@ -46,6 +47,26 @@ _cmd/shared/frontend/editor/
   （`applyCodeCopyStyle`。テーマ変更時は `HTMLFrame` の MutationObserver から再注入）
 - ラベルは `copyLabels={{ copy, copied }}` で渡す。参照が変わると
   `refreshCodeCopyLabels` で付与済みボタンに反映される（言語切り替え用）
+
+## ```mermaid の描画（inline-mermaid.js）
+
+Markdown 中の ```mermaid コードブロックを図に置き換える。`HTMLFrame` に `inlineMermaid`
+を渡したアプリでのみ有効（現状は Lite のみ。Binder のノートは Go 側が `div.binderSVG` を
+出力するためこの経路を通らない）。
+
+- `renderInlineMermaid(doc)` — `pre > code.language-mermaid` を `Mermaid.parse()` に通し、
+  成功したものだけ `div.binderMermaid` に差し替える。`mermaid.render` はIDで一時要素を扱うため
+  逐次実行する
+- 構文エラー（編集途中を含む）はコードブロックのまま残す。図が消えるより書きかけの
+  テキストが見える方が状態が分かりやすい
+- `data-src-line` は差し替え後の要素へ引き継ぐ（プレビューのスクロール同期）
+- クラスは全画面表示用の `.binderSVG`（`height: 100vh` 指定）と分ける。
+  文章中の図が1画面分の高さを占めないようにするため
+- 配置スタイルは JS から注入する（プレビューCSSはユーザー編集ファイルが優先されるため、
+  そちらに書くと既存ユーザーに反映されない）
+
+`HTMLFrame.postProcess` の実行順は「Mermaid 描画 → コピーボタン付与」。
+図に変わらなかったコードブロックにだけコピーボタンが付く。
 
 ## Marked/Mermaid エンジンの初期化
 
