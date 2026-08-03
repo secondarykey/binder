@@ -43,7 +43,7 @@ setup/, settings/（Binder と共有）
 - **App.jsx** — メインコンポーネント。タブ管理、スプリッター、プレビュー折りたたみ、テーマモード、確認ダイアログ
 - **TitleBar.jsx** — フレームレスウィンドウ用カスタムタイトルバー。ファイル操作ボタン（New/Open/Save）+ テーマ切り替え + ウィンドウ操作（最小化/最大化/閉じる）
 - **TabBar.jsx** — ファイルタブバー。オーバーフロー時の左右スクロールボタン付き
-- **EditorPane.jsx** — エディタラッパー。共有 EditorArea + SearchBar + Markdown入力支援 + 行番号トグル（左上）+ 折り返しトグル（右下）
+- **EditorPane.jsx** — エディタラッパー。共有 EditorArea + SearchBar + Markdown入力支援 + 行番号トグル（左上）+ 折り返しトグル（右下）。カーソル行を `onCursorLineChange` で親へ通知する
 - **PreviewPane.jsx** — プレビュー。共有 HTMLFrame + Marked/Mermaid エンジン。Markdown/Mermaid 切り替えボタン（右上）。`MutationObserver` でテーマ変更を検知し再描画。コードブロックのコピーボタン（`onCopyCode` に `CopyToClipboard` を渡す）と ```mermaid の図描画（`inlineMermaid`。Markdown モード時のみ）
 - **ConfirmDialog.jsx** — カスタム確認ダイアログ（Promise ベース）
 - **theme.js** — テーマ管理。system/light/dark の3モード対応。system モードは `prefers-color-scheme` を監視
@@ -59,8 +59,9 @@ setup/, settings/（Binder と共有）
 - プレビューの折りたたみ・展開（アニメーション付き）
 - Markdown/Mermaid プレビュー切り替え（タブごとに保持）
 - Markdown プレビュー内の ```mermaid コードブロックを図として描画（実体は `@shared/editor/inline-mermaid.js`。構文エラー時はコードブロックのまま）
-- プレビューのコードブロック（``` で囲んだ部分）をコピーするボタン（ホバーで表示。実体は `@shared/editor/code-copy.js`）
+- プレビューのコードブロック（``` で囲んだ部分）をコピーするボタン（ホバーで表示。実体は `@shared/editor/code-copy.js`）。図に置き換わった Mermaid・Mermaid モードの図も元ソースをコピーできる
 - Markdown 入力支援（リスト・チェックリスト・引用・番号リストの自動継続）
+- エディタのカーソル行にプレビューのスクロール位置を追従（`Marked.parseWithSourceLines` の `data-src-line` を使う。追従の粒度はトップレベルブロック単位。Mermaid モードは対象外）
 - Ctrl+S 明示的保存（アトミック書き込み）、未保存マーク表示
 - テーマ切り替え（system/light/dark）
 - ファイルドロップ対応（`EnableFileDrop` + `data-file-drop-target`）

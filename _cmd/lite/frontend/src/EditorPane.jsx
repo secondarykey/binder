@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [] }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [], onCursorLineChange }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
@@ -111,10 +111,24 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
     handleMarkdownKeyDown(e, composingRef, onChange, tabSize);
   }, [onChange, tabSize, ac]);
 
+  // カーソル行を親へ通知する（プレビューのスクロール位置追従に使う）
+  const reportCursorLine = useCallback((textarea) => {
+    if (!onCursorLineChange || !textarea) return;
+    const line = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
+    onCursorLineChange(line);
+  }, [onCursorLineChange]);
+
+  // クリック・キー操作でのカーソル移動
+  const handleCursorMove = useCallback((e) => {
+    reportCursorLine(e.target);
+  }, [reportCursorLine]);
+
   const handleChange = useCallback((e) => {
     onChange(e.target.value);
+    // 貼り付け・IME確定など keyup を伴わない入力でも追従させる
+    reportCursorLine(e.target);
     ac.handleInput();
-  }, [onChange, ac]);
+  }, [onChange, ac, reportCursorLine]);
 
   const handleCompositionStart = useCallback(() => {
     composingRef.current = true;
@@ -212,6 +226,7 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
           wordWrap={wordWrap}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
+          onCursorMove={handleCursorMove}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
         />

@@ -67,13 +67,17 @@ export async function renderInlineMermaid(doc) {
     const pre = code.parentElement;
     if (!pre?.parentNode) continue;
 
+    const src = String(code.textContent);
     try {
-      const data = await Mermaid.parse(String(code.textContent));
+      const data = await Mermaid.parse(src);
       const div = doc.createElement('div');
       div.className = CLASS;
       // プレビューのスクロール同期に使う行番号を引き継ぐ
       const line = pre.getAttribute('data-src-line');
       if (line) div.setAttribute('data-src-line', line);
+      // 図に置き換わるとコードが画面から消えるため、コピー用に元ソースを持たせる
+      // （code-copy.js が data-copy-text を拾ってボタンを付ける）
+      div.dataset.copyText = src.replace(/\n$/, '');
       div.innerHTML = data.svg;
       pre.parentNode.replaceChild(div, pre);
       count++;

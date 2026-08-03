@@ -70,6 +70,26 @@ describe('attachCodeCopy', () => {
     expect(attachCodeCopy(doc, { onCopy: vi.fn() })).toBe(0);
   });
 
+  it('attaches to an element carrying data-copy-text (rendered mermaid)', () => {
+    const onCopy = vi.fn();
+    const doc = setBody('<div class="binderMermaid" data-copy-text="graph TD;"><svg></svg></div>');
+    const count = attachCodeCopy(doc, { onCopy });
+
+    expect(count).toBe(1);
+    const host = doc.querySelector('.binderMermaid');
+    expect(host.classList.contains('binderCopyHost')).toBe(true);
+
+    host.querySelector('.binderCopyButton').click();
+    expect(onCopy).toHaveBeenCalledWith('graph TD;');
+  });
+
+  it('does not attach twice to the same data-copy-text element', () => {
+    const doc = setBody('<div data-copy-text="a"><svg></svg></div>');
+    attachCodeCopy(doc, { onCopy: vi.fn() });
+    expect(attachCodeCopy(doc, { onCopy: vi.fn() })).toBe(0);
+    expect(doc.querySelectorAll('.binderCopyButton')).toHaveLength(1);
+  });
+
   it('does not attach twice to the same block', () => {
     const doc = setBody('<pre><code>a\n</code></pre>');
     attachCodeCopy(doc, { onCopy: vi.fn() });

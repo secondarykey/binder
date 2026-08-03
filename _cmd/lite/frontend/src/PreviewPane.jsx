@@ -10,12 +10,21 @@ import { GetPreviewHTML } from '../bindings/binder/api/lite/app';
 import { CopyToClipboard } from '../bindings/main/window';
 import { useIframeScrollbarOffset } from './useHasScrollbar';
 
+/** HTML 属性値に埋め込むためのエスケープ */
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 /**
  * プレビューペイン
  * mermaidMode に応じて Markdown または Mermaid でプレビューする。
  * 切り替えは親（App）がタブごとに管理する。
  */
-function PreviewPane({ text, mermaidMode, onToggleMode }) {
+function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
   const { t, i18n } = useTranslation();
   const [html, setHtml] = useState('');
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
@@ -48,7 +57,8 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
         let bodyHTML;
         if (mermaidMode) {
           const data = await Mermaid.parse(text || '');
-          bodyHTML = `<div class="binderSVG">${data.svg}</div>`;
+          // data-copy-text を持たせると HTMLFrame がコピーボタンを付ける
+          bodyHTML = `<div class="binderSVG" data-copy-text="${escapeAttr(text || '')}">${data.svg}</div>`;
         } else {
           bodyHTML = await Marked.parseWithSourceLines(text || '');
         }
@@ -80,6 +90,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
         onCopyCode={CopyToClipboard}
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}
+        cursorLine={mermaidMode ? null : cursorLine}
       />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
