@@ -12,6 +12,8 @@ export const CODE_COPY_STYLE_ID = 'binder-code-copy-style';
 // <pre> を包むラッパーとボタンのクラス名
 const WRAP_CLASS = 'binderCodeBlock';
 const BUTTON_CLASS = 'binderCopyButton';
+// data-copy-text を持つ要素（Mermaid の図など）に付けるクラス名
+const HOST_CLASS = 'binderCopyHost';
 
 // コピー完了表示を元のラベルに戻すまでのミリ秒
 const COPIED_DURATION = 1500;
@@ -43,7 +45,7 @@ export function applyCodeCopyStyle(doc) {
   const text = pick('--text-muted', 'inherit');
 
   const css = [
-    `.${WRAP_CLASS} { position: relative; }`,
+    `.${WRAP_CLASS}, .${HOST_CLASS} { position: relative; }`,
     `.${BUTTON_CLASS} {`,
     '  position: absolute;',
     '  top: 6px;',
@@ -61,7 +63,7 @@ export function applyCodeCopyStyle(doc) {
     '  opacity: 0;',
     '  transition: opacity 0.15s;',
     '}',
-    `.${WRAP_CLASS}:hover .${BUTTON_CLASS} { opacity: 0.85; }`,
+    `.${WRAP_CLASS}:hover .${BUTTON_CLASS}, .${HOST_CLASS}:hover .${BUTTON_CLASS} { opacity: 0.85; }`,
     `.${BUTTON_CLASS}:hover { opacity: 1; background: ${bgHover}; }`,
     `.${BUTTON_CLASS}.copied { opacity: 1; }`,
   ].join('\n');
@@ -74,25 +76,79 @@ export function applyCodeCopyStyle(doc) {
 }
 
 /**
- * `<pre><code>` にコピーボタンを付与する。
+ * コピーボタンを1つ生成する。
+ *
+ * @param {Document} doc
+ * @param {() => string} getText コピーする文字列を返す関数（クリック時に評価する）
+ * @param {{onCopy: Function, copyLabel: string, copiedLabel: string}} ctx
+ */
+function createButton(doc, getText, ctx) {
+  const btn = doc.createElement('button');
+  btn.type = 'button';
+  btn.className = BUTTON_CLASS;
+  btn.dataset.copyLabel = ctx.copyLabel;
+  btn.dataset.copiedLabel = ctx.copiedLabel;
+  btn.textContent = ctx.copyLabel;
+  btn.setAttribute('aria-label', ctx.copyLabel);
+
+  let timer = null;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      const rtn = ctx.onCopy(getText());
+      // Wails のバインディングは Promise を返す。失敗を握り潰さずログに残す
+      if (rtn && typeof rtn.then === 'function') {
+        rtn.catch((err) => console.error('[Binder] copy failed:', err));
+      }
+    } catch (err) {
+      console.error('[Binder] copy failed:', err);
+      return;
+    }
+
+    btn.textContent = btn.dataset.copiedLabel;
+    btn.classList.add('copied');
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      btn.textContent = btn.dataset.copyLabel;
+      btn.setAttribute('aria-label', btn.dataset.copyLabel);
+      btn.classList.remove('copied');
+      timer = null;
+    }, COPIED_DURATION);
+  });
+
+  return btn;
+}
+
+/**
+ * コピーボタンを付与する。対象は2種類:
+ *
+ * - `<pre><code>` — コードブロック本文をコピーする
+ * - `data-copy-text` を持つ要素 — その属性値をコピーする。
+ *   ```mermaid のように図へ置き換わってコードが画面から消えるものを、
+ *   描画側が元ソースを持たせることでコピー対象にできる
  *
  * @param {Document} doc     対象ドキュメント（iframe の contentDocument）
  * @param {Object}   options
  * @param {(text:string) => any} options.onCopy コピー処理。未指定なら何もしない
  * @param {string}   [options.copyLabel]   ボタンのラベル
  * @param {string}   [options.copiedLabel] コピー完了時のラベル
- * @returns {number} ボタンを付けたコードブロック数
+ * @returns {number} ボタンを付けた要素数
  */
 export function attachCodeCopy(doc, options = {}) {
   const { onCopy, copyLabel = 'Copy', copiedLabel = 'Copied' } = options;
   if (typeof onCopy !== 'function' || !doc?.body) return 0;
 
   const codes = doc.querySelectorAll('pre > code');
-  if (codes.length === 0) return 0;
+  const hosts = doc.querySelectorAll('[data-copy-text]');
+  if (codes.length === 0 && hosts.length === 0) return 0;
 
   applyCodeCopyStyle(doc);
 
+  const ctx = { onCopy, copyLabel, copiedLabel };
   let count = 0;
+
   for (const code of codes) {
     const pre = code.parentElement;
     // 二重付与を防ぐ（再描画時は iframe ごと作り直されるため通常は起きない）
@@ -105,44 +161,15 @@ export function attachCodeCopy(doc, options = {}) {
     pre.parentNode.insertBefore(wrap, pre);
     wrap.appendChild(pre);
 
-    const btn = doc.createElement('button');
-    btn.type = 'button';
-    btn.className = BUTTON_CLASS;
-    btn.dataset.copyLabel = copyLabel;
-    btn.dataset.copiedLabel = copiedLabel;
-    btn.textContent = copyLabel;
-    btn.setAttribute('aria-label', copyLabel);
+    // marked は末尾に改行を付けるため取り除く
+    wrap.appendChild(createButton(doc, () => String(code.textContent).replace(/\n$/, ''), ctx));
+    count++;
+  }
 
-    let timer = null;
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // marked は末尾に改行を付けるため取り除く
-      const text = String(code.textContent).replace(/\n$/, '');
-      try {
-        const rtn = onCopy(text);
-        // Wails のバインディングは Promise を返す。失敗を握り潰さずログに残す
-        if (rtn && typeof rtn.then === 'function') {
-          rtn.catch((err) => console.error('[Binder] copy failed:', err));
-        }
-      } catch (err) {
-        console.error('[Binder] copy failed:', err);
-        return;
-      }
-
-      btn.textContent = btn.dataset.copiedLabel;
-      btn.classList.add('copied');
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        btn.textContent = btn.dataset.copyLabel;
-        btn.setAttribute('aria-label', btn.dataset.copyLabel);
-        btn.classList.remove('copied');
-        timer = null;
-      }, COPIED_DURATION);
-    });
-
-    wrap.appendChild(btn);
+  for (const host of hosts) {
+    if (host.querySelector(`:scope > .${BUTTON_CLASS}`)) continue;
+    host.classList.add(HOST_CLASS);
+    host.appendChild(createButton(doc, () => String(host.dataset.copyText), ctx));
     count++;
   }
 

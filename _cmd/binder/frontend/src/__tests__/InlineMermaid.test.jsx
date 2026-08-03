@@ -28,6 +28,15 @@ describe('renderInlineMermaid', () => {
     expect(doc.getElementById(INLINE_MERMAID_STYLE_ID)).not.toBeNull();
   });
 
+  it('keeps the source in data-copy-text so it can still be copied', async () => {
+    vi.spyOn(Mermaid, 'parse').mockResolvedValue({ svg: '<svg></svg>' });
+
+    const doc = setBody('<pre><code class="language-mermaid">graph TD;\nA--&gt;B;\n</code></pre>');
+    await renderInlineMermaid(doc);
+
+    expect(doc.querySelector('.binderMermaid').dataset.copyText).toBe('graph TD;\nA-->B;');
+  });
+
   it('carries over data-src-line for preview scroll sync', async () => {
     vi.spyOn(Mermaid, 'parse').mockResolvedValue({ svg: '<svg></svg>' });
 

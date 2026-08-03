@@ -59,7 +59,7 @@ setup/, settings/（Binder と共有）
 - プレビューの折りたたみ・展開（アニメーション付き）
 - Markdown/Mermaid プレビュー切り替え（タブごとに保持）
 - Markdown プレビュー内の ```mermaid コードブロックを図として描画（実体は `@shared/editor/inline-mermaid.js`。構文エラー時はコードブロックのまま）
-- プレビューのコードブロック（``` で囲んだ部分）をコピーするボタン（ホバーで表示。実体は `@shared/editor/code-copy.js`）
+- プレビューのコードブロック（``` で囲んだ部分）をコピーするボタン（ホバーで表示。実体は `@shared/editor/code-copy.js`）。図に置き換わった Mermaid・Mermaid モードの図も元ソースをコピーできる
 - Markdown 入力支援（リスト・チェックリスト・引用・番号リストの自動継続）
 - Ctrl+S 明示的保存（アトミック書き込み）、未保存マーク表示
 - テーマ切り替え（system/light/dark）

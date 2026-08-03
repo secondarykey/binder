@@ -41,6 +41,9 @@ _cmd/shared/frontend/editor/
 - `attachCodeCopy(doc, { onCopy, copyLabel, copiedLabel })` — `postProcess` から呼ばれ、
   `<pre>` を `.binderCodeBlock` で包んで `.binderCopyButton` を重ねる。
   `<pre>` 自体に入れると `overflow-x: auto` で横スクロールに追従するためラッパーが要る
+- `data-copy-text` 属性を持つ要素にもボタンを付ける（`.binderCopyHost` を付与）。
+  Mermaid の図のようにコードが画面から消えるものは、描画側が元ソースをこの属性に
+  持たせることでコピー対象にできる（`inline-mermaid.js` / Lite の Mermaid モード）
 - コピー処理は onCopy に委譲する（iframe 内で `navigator.clipboard` が使える保証がないため）。
   Lite は Go 側の `CopyToClipboard` を渡す
 - ボタンの色は iframe にテーマCSSが無いため、親ドキュメントのCSS変数を実値で注入する
@@ -60,6 +63,7 @@ Markdown 中の ```mermaid コードブロックを図に置き換える。`HTML
 - 構文エラー（編集途中を含む）はコードブロックのまま残す。図が消えるより書きかけの
   テキストが見える方が状態が分かりやすい
 - `data-src-line` は差し替え後の要素へ引き継ぐ（プレビューのスクロール同期）
+- 元ソースを `data-copy-text` に持たせ、図になってもコピーできるようにする
 - クラスは全画面表示用の `.binderSVG`（`height: 100vh` 指定）と分ける。
   文章中の図が1画面分の高さを占めないようにするため
 - 配置スタイルは JS から注入する（プレビューCSSはユーザー編集ファイルが優先されるため、
