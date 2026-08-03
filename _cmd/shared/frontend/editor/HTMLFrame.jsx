@@ -1,5 +1,6 @@
 import React from "react";
 import Mermaid from "./engines/Mermaid";
+import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./code-copy";
 
 /**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
@@ -13,6 +14,8 @@ import Mermaid from "./engines/Mermaid";
  *   colorSchemeAttr - カラースキーム属性名（例: "data-theme"）
  *   colorSchemeValue - カラースキーム値（例: "dark"）
  *   customScrollbar - true で iframe 内のスクロールバーをアプリ側と同じ見た目にする
+ *   onCopyCode      - 指定するとコードブロックにコピーボタンを表示し、押下時に本文を渡して呼ぶ
+ *   copyLabels      - コピーボタンのラベル { copy, copied }（参照が変わると付与済みボタンに反映）
  */
 
 // iframe に注入するスクロールバー用 <style> のID
@@ -35,8 +38,11 @@ class HTMLFrame extends React.Component {
     // アプリのテーマ切り替え（data-theme の変化）に追従してスクロールバー色を更新する
     if (typeof MutationObserver !== 'undefined') {
       this.themeObserver = new MutationObserver(() => {
-        const iframe = this.getIframe(this.active);
-        if (iframe?.contentDocument) this.applyScrollbarStyle(iframe.contentDocument);
+        const doc = this.getIframe(this.active)?.contentDocument;
+        if (!doc) return;
+        this.applyScrollbarStyle(doc);
+        // コピーボタンの色もテーマ変数から実値で注入しているため追従させる
+        if (doc.querySelector('.binderCopyButton')) applyCodeCopyStyle(doc);
       });
       this.themeObserver.observe(window.document.documentElement, {
         attributes: true, attributeFilter: ['data-theme'],
@@ -54,10 +60,17 @@ class HTMLFrame extends React.Component {
       || nextProps.cursorLine !== this.props.cursorLine
       || nextProps.colorSchemeAttr !== this.props.colorSchemeAttr
       || nextProps.colorSchemeValue !== this.props.colorSchemeValue
-      || nextProps.customScrollbar !== this.props.customScrollbar;
+      || nextProps.customScrollbar !== this.props.customScrollbar
+      || nextProps.copyLabels !== this.props.copyLabels;
   }
 
   componentDidUpdate(prevProps) {
+    if (prevProps.copyLabels !== this.props.copyLabels) {
+      // 言語切り替え時。HTMLが同じなら iframe は作り直されないのでラベルだけ差し替える
+      const doc = this.getIframe(this.active)?.contentDocument;
+      const labels = this.props.copyLabels || {};
+      if (doc) refreshCodeCopyLabels(doc, labels.copy, labels.copied);
+    }
     if (prevProps.customScrollbar !== this.props.customScrollbar) {
       // 設定の切り替えは再描画せず表示中の iframe に即反映する
       const activeIframe = this.getIframe(this.active);
@@ -278,6 +291,14 @@ class HTMLFrame extends React.Component {
 
     // ソース行コメントを data-src-line 属性に変換
     this.attachSourceLines(doc);
+
+    // コードブロックのコピーボタン（onCopyCode を渡したアプリのみ）
+    const labels = this.props.copyLabels || {};
+    attachCodeCopy(doc, {
+      onCopy: this.props.onCopyCode,
+      copyLabel: labels.copy,
+      copiedLabel: labels.copied,
+    });
 
     // ノート内の Mermaid ダイアグラムを描画
     const mermaidElements = Array.from(doc.querySelectorAll('div.binderSVG'));

@@ -746,7 +746,9 @@
         "openNewWindow" : "Open in New Window",
         "copyTab" : "Copy Tab",
         "pasteTab" : "Paste Tab",
-        "closeTab" : "Close Tab"
+        "closeTab" : "Close Tab",
+        "copyCode" : "Copy",
+        "copiedCode" : "Copied"
     },
     "autocomplete" : {
         "if"       : "Conditional branch",

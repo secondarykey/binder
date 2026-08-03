@@ -10,6 +10,7 @@ _cmd/shared/frontend/editor/
   SearchBar.jsx        テキスト検索フローティングパネル
   HTMLFrame.jsx        ダブルバッファ iframe プレビュー
   FontDialog.jsx       フォント設定ダイアログ
+  code-copy.js         プレビュー内コードブロックのコピーボタン付与
   markdown-keys.js     Markdown 入力支援（リスト継続・引用継続等）
   useAutocomplete.js   汎用オートコンプリートフック
   mermaid-candidates.js Mermaidオートコンプリートのデータ定義
@@ -30,6 +31,21 @@ _cmd/shared/frontend/editor/
 - `resolve.alias`: `@shared` → `_cmd/shared/frontend/` ディレクトリ
 - `resolveSharedDeps` プラグイン: shared/ 内の bare import（react, @mui 等）を各プロジェクトの `node_modules` で解決
 - `server.fs.allow`: dev server が shared ディレクトリにアクセスすることを許可
+
+## コードブロックのコピーボタン（code-copy.js）
+
+プレビュー（`HTMLFrame`）内の `<pre><code>`（``` で囲んだ部分）にコピーボタンを付与する。
+`HTMLFrame` に `onCopyCode` を渡したアプリでのみ有効（現状は Lite のみ。Binder は未使用）。
+
+- `attachCodeCopy(doc, { onCopy, copyLabel, copiedLabel })` — `postProcess` から呼ばれ、
+  `<pre>` を `.binderCodeBlock` で包んで `.binderCopyButton` を重ねる。
+  `<pre>` 自体に入れると `overflow-x: auto` で横スクロールに追従するためラッパーが要る
+- コピー処理は onCopy に委譲する（iframe 内で `navigator.clipboard` が使える保証がないため）。
+  Lite は Go 側の `CopyToClipboard` を渡す
+- ボタンの色は iframe にテーマCSSが無いため、親ドキュメントのCSS変数を実値で注入する
+  （`applyCodeCopyStyle`。テーマ変更時は `HTMLFrame` の MutationObserver から再注入）
+- ラベルは `copyLabels={{ copy, copied }}` で渡す。参照が変わると
+  `refreshCodeCopyLabels` で付与済みボタンに反映される（言語切り替え用）
 
 ## Marked/Mermaid エンジンの初期化
 
