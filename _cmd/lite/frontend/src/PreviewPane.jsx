@@ -1,22 +1,52 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import { useTranslation } from 'react-i18next';
 import HTMLFrame from '@shared/editor/HTMLFrame';
 import Marked from '@shared/editor/engines/Marked';
 import Mermaid from '@shared/editor/engines/Mermaid';
 import { GetPreviewHTML } from '../bindings/binder/api/lite/app';
+import { CopyToClipboard } from '../bindings/main/window';
 import { useIframeScrollbarOffset } from './useHasScrollbar';
+
+/** HTML 属性値に埋め込むためのエスケープ */
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 /**
  * プレビューペイン
  * mermaidMode に応じて Markdown または Mermaid でプレビューする。
  * 切り替えは親（App）がタブごとに管理する。
  */
-function PreviewPane({ text, mermaidMode, onToggleMode }) {
+function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
+  const { t, i18n } = useTranslation();
   const [html, setHtml] = useState('');
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
   const timerRef = useRef(null);
+
+  // コードブロックのコピーボタン用ラベル。
+  // 参照が変わると HTMLFrame がラベルを差し替えるため、言語が変わった時だけ作り直す
+  const copyLabels = useMemo(() => ({
+    copy: t('lite.copyCode'),
+    copied: t('lite.copiedCode'),
+  }), [t, i18n.language]);
+
+  // 図の拡大・移動操作の説明（title 属性）。ホイールの扱いがモードで違う
+  const panZoomHint = t('lite.panZoomHint');
+  const inlinePanZoomHint = t('lite.inlinePanZoomHint');
+
+  // 図の操作ボタンのラベル（渡すとボタンが表示される）
+  const panZoomLabels = useMemo(() => ({
+    zoomIn: t('lite.zoomIn'),
+    zoomOut: t('lite.zoomOut'),
+    reset: t('lite.resetView'),
+  }), [t, i18n.language]);
 
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
   const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
@@ -38,7 +68,8 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
         let bodyHTML;
         if (mermaidMode) {
           const data = await Mermaid.parse(text || '');
-          bodyHTML = `<div class="binderSVG">${data.svg}</div>`;
+          // data-copy-text を持たせると HTMLFrame がコピーボタンを付ける
+          bodyHTML = `<div class="binderSVG" data-copy-text="${escapeAttr(text || '')}">${data.svg}</div>`;
         } else {
           bodyHTML = await Marked.parseWithSourceLines(text || '');
         }
@@ -65,7 +96,16 @@ function PreviewPane({ text, mermaidMode, onToggleMode }) {
 
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
-      <HTMLFrame html={html} />
+      <HTMLFrame
+        html={html}
+        onCopyCode={CopyToClipboard}
+        copyLabels={copyLabels}
+        inlineMermaid={!mermaidMode}
+        cursorLine={mermaidMode ? null : cursorLine}
+        panZoomHint={panZoomHint}
+        inlinePanZoomHint={inlinePanZoomHint}
+        panZoomLabels={panZoomLabels}
+      />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
       <Tooltip title={mermaidMode ? 'Markdown' : 'Mermaid'} placement="left">

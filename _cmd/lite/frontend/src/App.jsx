@@ -51,6 +51,13 @@ function App() {
   const [language, setLanguage_] = useState('en');
   const [settingOpen, setSettingOpen] = useState(false);
   const [editorFont, setEditorFont] = useState(null);
+  // エディタのカーソル行（1始まり）。プレビューのスクロール位置を追従させる
+  const [cursorLine, setCursorLine] = useState(1);
+
+  // textarea はタブ間で使い回すため、切り替え時は先頭に戻す
+  useEffect(() => {
+    setCursorLine(1);
+  }, [activeTabId]);
 
   // フォント設定を読み込む
   const loadFont = useCallback((theme) => {
@@ -541,6 +548,7 @@ function App() {
                 onLineNumbersToggle={() => setShowLineNumbers(prev => !prev)}
                 font={editorFont}
                 tabSize={tabSize}
+                onCursorLineChange={setCursorLine}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
@@ -626,7 +634,12 @@ function App() {
                   </IconButton>
                 </Tooltip>
               )}
-              <PreviewPane text={activeTab.content} mermaidMode={activeTab.mermaidMode} onToggleMode={toggleMermaidMode} />
+              <PreviewPane
+                text={activeTab.content}
+                mermaidMode={activeTab.mermaidMode}
+                onToggleMode={toggleMermaidMode}
+                cursorLine={cursorLine}
+              />
             </Box>
           </>
         ) : (

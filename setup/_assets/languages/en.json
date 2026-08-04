@@ -746,7 +746,14 @@
         "openNewWindow" : "Open in New Window",
         "copyTab" : "Copy Tab",
         "pasteTab" : "Paste Tab",
-        "closeTab" : "Close Tab"
+        "closeTab" : "Close Tab",
+        "copyCode" : "Copy",
+        "copiedCode" : "Copied",
+        "panZoomHint" : "Wheel to zoom / Drag to pan / Double-click to reset",
+        "inlinePanZoomHint" : "Ctrl+Wheel to zoom / Drag to pan / Double-click to reset",
+        "zoomIn" : "Zoom in",
+        "zoomOut" : "Zoom out",
+        "resetView" : "Reset"
     },
     "autocomplete" : {
         "if"       : "Conditional branch",

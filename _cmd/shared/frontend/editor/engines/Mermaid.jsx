@@ -14,6 +14,10 @@ const _svgCache = new Map();
 const SVG_CACHE_LIMIT = 50;
 let _generation = 0;
 
+// render に渡すID用の連番。生成されたSVGはこのIDをスタイル指定に埋め込むため、
+// 1つの文書に複数の図がある場合に重複させてはいけない
+let _renderSeq = 0;
+
 function invalidateSvgCache() {
   _generation++;
   _svgCache.clear();
@@ -216,7 +220,7 @@ class MermaidScript {
     }
 
     return new Promise((res, rej) => {
-      const renderId = 'mermaid-render-' + Date.now();
+      const renderId = 'mermaid-render-' + Date.now() + '-' + (++_renderSeq);
       var func = function () {
         mermaid.parse(fullTxt).then(() => {
           mermaid.render(renderId, fullTxt).then((data) => {

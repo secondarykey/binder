@@ -10,6 +10,9 @@ _cmd/shared/frontend/editor/
   SearchBar.jsx        テキスト検索フローティングパネル
   HTMLFrame.jsx        ダブルバッファ iframe プレビュー
   FontDialog.jsx       フォント設定ダイアログ
+  code-copy.js         プレビュー内コードブロックのコピーボタン付与
+  inline-mermaid.js    ```mermaid コードブロックの図としての描画
+  pan-zoom.js          SVG（図）の拡大・移動操作
   markdown-keys.js     Markdown 入力支援（リスト継続・引用継続等）
   useAutocomplete.js   汎用オートコンプリートフック
   mermaid-candidates.js Mermaidオートコンプリートのデータ定義
@@ -30,6 +33,63 @@ _cmd/shared/frontend/editor/
 - `resolve.alias`: `@shared` → `_cmd/shared/frontend/` ディレクトリ
 - `resolveSharedDeps` プラグイン: shared/ 内の bare import（react, @mui 等）を各プロジェクトの `node_modules` で解決
 - `server.fs.allow`: dev server が shared ディレクトリにアクセスすることを許可
+
+## コードブロックのコピーボタン（code-copy.js）
+
+プレビュー（`HTMLFrame`）内の `<pre><code>`（``` で囲んだ部分）にコピーボタンを付与する。
+`HTMLFrame` に `onCopyCode` を渡したアプリでのみ有効（現状は Lite のみ。Binder は未使用）。
+
+- `attachCodeCopy(doc, { onCopy, copyLabel, copiedLabel })` — `postProcess` から呼ばれ、
+  `<pre>` を `.binderCodeBlock` で包んで `.binderCopyButton` を重ねる。
+  `<pre>` 自体に入れると `overflow-x: auto` で横スクロールに追従するためラッパーが要る
+- `data-copy-text` 属性を持つ要素にもボタンを付ける（`.binderCopyHost` を付与）。
+  Mermaid の図のようにコードが画面から消えるものは、描画側が元ソースをこの属性に
+  持たせることでコピー対象にできる（`inline-mermaid.js` / Lite の Mermaid モード）
+- コピー処理は onCopy に委譲する（iframe 内で `navigator.clipboard` が使える保証がないため）。
+  Lite は Go 側の `CopyToClipboard` を渡す
+- ボタンの色は iframe にテーマCSSが無いため、親ドキュメントのCSS変数を実値で注入する
+  （`applyCodeCopyStyle`。テーマ変更時は `HTMLFrame` の MutationObserver から再注入）
+- ラベルは `copyLabels={{ copy, copied }}` で渡す。参照が変わると
+  `refreshCodeCopyLabels` で付与済みボタンに反映される（言語切り替え用）
+
+## ```mermaid の描画（inline-mermaid.js）
+
+Markdown 中の ```mermaid コードブロックを図に置き換える。`HTMLFrame` に `inlineMermaid`
+を渡したアプリでのみ有効（現状は Lite のみ。Binder のノートは Go 側が `div.binderSVG` を
+出力するためこの経路を通らない）。
+
+- `renderInlineMermaid(doc)` — `pre > code.language-mermaid` を `Mermaid.parse()` に通し、
+  成功したものだけ `div.binderMermaid` に差し替える。`mermaid.render` はIDで一時要素を扱うため
+  逐次実行する
+- 構文エラー（編集途中を含む）はコードブロックのまま残す。図が消えるより書きかけの
+  テキストが見える方が状態が分かりやすい
+- `data-src-line` は差し替え後の要素へ引き継ぐ（プレビューのスクロール同期）
+- 元ソースを `data-copy-text` に持たせ、図になってもコピーできるようにする
+- クラスは全画面表示用の `.binderSVG`（`height: 100vh` 指定）と分ける。
+  文章中の図が1画面分の高さを占めないようにするため
+- 配置スタイルは JS から注入する（プレビューCSSはユーザー編集ファイルが優先されるため、
+  そちらに書くと既存ユーザーに反映されない）
+
+`HTMLFrame.postProcess` の実行順は「Mermaid 描画 → コピーボタン付与」。
+図に変わらなかったコードブロックにだけコピーボタンが付く。
+
+## 図の拡大・移動（pan-zoom.js）
+
+`attachPanZoom(container, { wheelModifier, hint, controls, labels })` — container 内の SVG に
+ホイール拡大縮小・ドラッグ移動・ダブルクリックで初期状態に戻す操作を付ける。
+
+- 拡大はカーソル位置基準（`transform-origin: 0 0` + オフセット補正）。
+  倍率は 0.1〜8 倍に収める
+- `wheelModifier: true` はホイール拡大に Ctrl/⌘ を要求する。文章中の図で使う
+  （そのままだと図の上でページをスクロールできなくなる）
+- `controls: true`（Lite は `panZoomLabels` を渡すと有効）で左上に
+  「− / ↺（元に戻す） / ＋」を横1列に置き、ホバーで表示する。
+  移動はドラッグで足りるので方向ボタンは持たない。
+  ボタンの拡大は表示領域の中心基準（ホイールはカーソル位置基準）
+- ボタン（コピーボタン・操作ボタン）上での操作はドラッグ・リセットの対象外にする
+- 適用先: `div.binderSVG`（Lite の Mermaid モード。修飾キー無し）と
+  `div.binderMermaid`（```mermaid 由来。Ctrl 併用）。
+  Binder のノート内ダイアグラム（`data-mermaid` からパースするもの）は従来どおり対象外
 
 ## Marked/Mermaid エンジンの初期化
 

@@ -1,5 +1,8 @@
 import React from "react";
 import Mermaid from "./engines/Mermaid";
+import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./code-copy";
+import { renderInlineMermaid } from "./inline-mermaid";
+import { attachPanZoom } from "./pan-zoom";
 
 /**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
@@ -13,6 +16,12 @@ import Mermaid from "./engines/Mermaid";
  *   colorSchemeAttr - カラースキーム属性名（例: "data-theme"）
  *   colorSchemeValue - カラースキーム値（例: "dark"）
  *   customScrollbar - true で iframe 内のスクロールバーをアプリ側と同じ見た目にする
+ *   onCopyCode      - 指定するとコードブロックにコピーボタンを表示し、押下時に本文を渡して呼ぶ
+ *   copyLabels      - コピーボタンのラベル { copy, copied }（参照が変わると付与済みボタンに反映）
+ *   inlineMermaid   - true で ```mermaid のコードブロックを図として描画する
+ *   panZoomHint     - 図（div.binderSVG）に付ける操作説明（title 属性）
+ *   inlinePanZoomHint - 文章中の図（```mermaid 由来）に付ける操作説明
+ *   panZoomLabels   - 指定すると図の左上に操作ボタンを置く { zoomIn, zoomOut, reset, pan }
  */
 
 // iframe に注入するスクロールバー用 <style> のID
@@ -35,8 +44,11 @@ class HTMLFrame extends React.Component {
     // アプリのテーマ切り替え（data-theme の変化）に追従してスクロールバー色を更新する
     if (typeof MutationObserver !== 'undefined') {
       this.themeObserver = new MutationObserver(() => {
-        const iframe = this.getIframe(this.active);
-        if (iframe?.contentDocument) this.applyScrollbarStyle(iframe.contentDocument);
+        const doc = this.getIframe(this.active)?.contentDocument;
+        if (!doc) return;
+        this.applyScrollbarStyle(doc);
+        // コピーボタンの色もテーマ変数から実値で注入しているため追従させる
+        if (doc.querySelector('.binderCopyButton')) applyCodeCopyStyle(doc);
       });
       this.themeObserver.observe(window.document.documentElement, {
         attributes: true, attributeFilter: ['data-theme'],
@@ -54,10 +66,18 @@ class HTMLFrame extends React.Component {
       || nextProps.cursorLine !== this.props.cursorLine
       || nextProps.colorSchemeAttr !== this.props.colorSchemeAttr
       || nextProps.colorSchemeValue !== this.props.colorSchemeValue
-      || nextProps.customScrollbar !== this.props.customScrollbar;
+      || nextProps.customScrollbar !== this.props.customScrollbar
+      || nextProps.copyLabels !== this.props.copyLabels
+      || nextProps.inlineMermaid !== this.props.inlineMermaid;
   }
 
   componentDidUpdate(prevProps) {
+    if (prevProps.copyLabels !== this.props.copyLabels) {
+      // 言語切り替え時。HTMLが同じなら iframe は作り直されないのでラベルだけ差し替える
+      const doc = this.getIframe(this.active)?.contentDocument;
+      const labels = this.props.copyLabels || {};
+      if (doc) refreshCodeCopyLabels(doc, labels.copy, labels.copied);
+    }
     if (prevProps.customScrollbar !== this.props.customScrollbar) {
       // 設定の切り替えは再描画せず表示中の iframe に即反映する
       const activeIframe = this.getIframe(this.active);
@@ -217,47 +237,6 @@ class HTMLFrame extends React.Component {
     if (!exist) head.appendChild(style);
   }
 
-  /**
-   * SVG にホイールズーム + 中ボタンドラッグのパン操作を付与する
-   */
-  attachPanZoom(container) {
-    const svg = container.querySelector('svg');
-    if (!svg) return;
-
-    let left = 0, top = 0, scale = 1.0;
-    const transform = () => {
-      svg.style.transform = `translate(${left}px,${top}px) scale(${scale})`;
-    };
-
-    // 中ボタンドラッグで移動
-    svg.addEventListener('pointerdown', (e) => {
-      if (e.button !== 1) return;
-      e.preventDefault();
-      container.style.cursor = 'grabbing';
-    });
-    svg.addEventListener('pointermove', (e) => {
-      if (!(e.buttons & 4)) return;
-      left += e.movementX;
-      top += e.movementY;
-      transform();
-    });
-    svg.addEventListener('pointerup', (e) => {
-      if (e.button === 1) container.style.cursor = '';
-    });
-
-    // ホイールでズーム
-    svg.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const s = e.deltaY > 0 ? -0.1 : 0.1;
-      scale += s;
-      if (scale < 0.1) scale = 0.1;
-      transform();
-    });
-
-    // SVG のオーバーフロー表示を許可
-    svg.style.overflow = 'visible';
-    container.style.overflow = 'hidden';
-  }
 
   postProcess(doc, onComplete) {
     if (!doc) { onComplete?.(); return; }
@@ -279,37 +258,63 @@ class HTMLFrame extends React.Component {
     // ソース行コメントを data-src-line 属性に変換
     this.attachSourceLines(doc);
 
-    // ノート内の Mermaid ダイアグラムを描画
-    const mermaidElements = Array.from(doc.querySelectorAll('div.binderSVG'));
-    if (mermaidElements.length === 0) {
-      // Mermaid なし → 即完了
+    // 描画完了後の共通処理
+    const finish = () => {
+      // コピーボタンは Mermaid 化されずに残ったコードブロックにだけ付ける
+      const labels = this.props.copyLabels || {};
+      attachCodeCopy(doc, {
+        onCopy: this.props.onCopyCode,
+        copyLabel: labels.copy,
+        copiedLabel: labels.copied,
+      });
       this.scrollToSourceLine(doc, this.props.cursorLine);
       onComplete?.();
-      return;
+    };
+
+    const tasks = [];
+
+    // ```mermaid のコードブロックを図として描画する（inlineMermaid を指定したアプリのみ）
+    if (this.props.inlineMermaid) {
+      tasks.push(
+        renderInlineMermaid(doc, {
+          panZoomHint: this.props.inlinePanZoomHint,
+          panZoomLabels: this.props.panZoomLabels,
+        }).catch((err) => console.error(err))
+      );
     }
 
-    // 全 Mermaid の描画完了を待ってから切り替え
-    const promises = mermaidElements.map((elm) => {
-      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用
+    // ノート内の Mermaid ダイアグラムを描画
+    const mermaidElements = Array.from(doc.querySelectorAll('div.binderSVG'));
+    for (const elm of mermaidElements) {
+      // 既にSVGが入っている場合（lite の mermaid モード）はパースをスキップし、ズーム/パンのみ適用。
+      // ペイン全体が1つの図なので、ホイールは修飾キー無しで拡大に使う
       if (elm.querySelector('svg')) {
-        this.attachPanZoom(elm);
-        return Promise.resolve();
+        attachPanZoom(elm, {
+          hint: this.props.panZoomHint,
+          controls: !!this.props.panZoomLabels,
+          labels: this.props.panZoomLabels,
+        });
+        continue;
       }
       const raw = elm.dataset.mermaid;
       const txt = raw
         ? new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)))
         : elm.textContent;
-      return Mermaid.parse(txt).then((data) => {
+      tasks.push(Mermaid.parse(txt).then((data) => {
         elm.innerHTML = data.svg;
       }).catch((err) => {
         console.error(err);
-      });
-    });
+      }));
+    }
 
-    Promise.all(promises).then(() => {
-      this.scrollToSourceLine(doc, this.props.cursorLine);
-      onComplete?.();
-    });
+    if (tasks.length === 0) {
+      // 待つものが無い → 即完了
+      finish();
+      return;
+    }
+
+    // 全 Mermaid の描画完了を待ってから切り替え
+    Promise.all(tasks).then(finish);
   }
 
   render() {
