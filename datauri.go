@@ -42,10 +42,18 @@ func (b *Binder) AssetDataURI(id string) (string, error) {
 	if mimeType == "" {
 		mimeType = http.DetectContentType(data)
 	}
-	// "text/plain; charset=utf-8" のようなパラメータ付きでも data URI に有効
-	mimeType = strings.TrimSpace(mimeType)
+	return encodeDataURI(cleanDataURIMime(mimeType), data), nil
+}
 
-	return encodeDataURI(mimeType, data), nil
+// cleanDataURIMime は data URI に埋め込める形へMIMEを整える。
+// charset 等のパラメータは data URI として有効なので残すが、
+// "text/plain; charset=utf-8" の空白はURI中に置けないため詰める。
+func cleanDataURIMime(m string) string {
+	parts := strings.Split(m, ";")
+	for i, p := range parts {
+		parts[i] = strings.TrimSpace(p)
+	}
+	return strings.Join(parts, ";")
 }
 
 // MetaImageDataURI はノートのメタ画像を data URI で返す。
@@ -64,6 +72,6 @@ func (b *Binder) MetaImageDataURI(noteId string) (string, error) {
 		return "", nil
 	}
 
-	mimeType := strings.TrimSpace(http.DetectContentType(data))
+	mimeType := cleanDataURIMime(http.DetectContentType(data))
 	return encodeDataURI(mimeType, data), nil
 }

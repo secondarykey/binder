@@ -5,6 +5,7 @@ import (
 	"binder/db"
 	"binder/db/model"
 	"binder/fs"
+	"binder/internal"
 	"binder/log"
 
 	"github.com/google/uuid"
@@ -257,7 +258,13 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 			Name:     a.Name,
 			Alias:    a.Alias,
 			Binary:   a.Binary,
-			Mime:     a.Mime,
+			// manifest の値は原文のまま記録する（"text/css; charset=utf-8" も正しいMIME）。
+			// MIMEとして成立しない記述だけを弾く
+			Mime: internal.SanitizeMime(a.Mime),
+		}
+
+		if a.Mime != "" && ja.Mime == "" {
+			log.Warn("manifest asset %q has an invalid mime %q: ignored", a.Name, a.Mime)
 		}
 
 		if a.Id != "" {
