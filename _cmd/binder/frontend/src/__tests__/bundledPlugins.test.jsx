@@ -108,6 +108,41 @@ describe('bundled marked plugins', () => {
       expect(out).toContain('“hi”');
     });
 
+    // 区切り行の --- がエムダッシュに化けると marked がテーブルと認識できず、
+    // 表全体が段落として出力されていた
+    it('テーブルの区切り行を変換せず表として描画する', () => {
+      const md = [
+        '| Left align | Right align | Center align |',
+        '|:-----------|------------:|:------------:|',
+        '| This       | This        | This         |',
+        '',
+      ].join('\n');
+      const out = renderWith('smartypants.js', md);
+      expect(out).toContain('<table>');
+      expect(out).toContain('<th align="left">Left align</th>');
+      expect(out).toContain('<th align="right">Right align</th>');
+      expect(out).toContain('<th align="center">Center align</th>');
+    });
+
+    // パイプ無しの区切り行・CRLF の本文でも同じく表になる
+    it.each([
+      ['パイプ省略', 'A | B\n--- | ---\n1 | 2\n'],
+      ['CRLF', '| A | B |\r\n|:--|--:|\r\n| 1 | 2 |\r\n'],
+    ])('テーブルの区切り行を変換しない（%s）', (_label, md) => {
+      expect(renderWith('smartypants.js', md)).toContain('<table>');
+    });
+
+    it('テーブルのセル本文は従来どおり変換する', () => {
+      const out = renderWith('smartypants.js', '| A |\n|---|\n| He said "hi" -- ok... |\n');
+      expect(out).toContain('<td>He said “hi” – ok…</td>');
+    });
+
+    // 区切り行の保護が水平線・setext 見出しを巻き込んでいないこと
+    it('水平線と setext 見出しは従来どおり', () => {
+      expect(renderWith('smartypants.js', 'para\n\n---\n\npara2\n')).toContain('<hr>');
+      expect(renderWith('smartypants.js', 'Title\n---\n')).toContain('<h2>Title</h2>');
+    });
+
     it('通常の文章は従来どおり変換する', () => {
       const out = renderWith('smartypants.js', 'He said "hello" -- it\'s fine...');
       expect(out).toContain('“hello”');

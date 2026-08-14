@@ -48,25 +48,38 @@ const MIME_OPTIONS = [
 ];
 
 /**
+ * MIMEからパラメータ（"; charset=utf-8" 等）を除いたメディアタイプを返す。
+ *
+ * 判定専用。"text/html; charset=utf-8" もMIMEとして正しい値であり、
+ * 保存されている値をこれで書き換えてはならない（Go側 internal.MediaType と対）。
+ * 単純な文字列一致で判定するとパラメータ付きで外れるため、
+ * 種別の判定・選択肢との突き合わせは必ずここを通してメディアタイプ同士で比べる。
+ */
+function mediaType(mime) {
+  if (mime == null) return '';
+  return mime.split(';')[0].trim().toLowerCase();
+}
+
+/**
  * MIMEタイプが画像かどうかを判定する
  */
 function isImageMime(mime) {
-  return mime != null && mime.startsWith('image/');
+  return mediaType(mime).startsWith('image/');
 }
 
 /**
  * MIMEタイプがテキストかどうかを判定する
  */
 function isTextMime(mime) {
-  return mime != null && mime.startsWith('text/');
+  return mediaType(mime).startsWith('text/');
 }
 
 function isSvgMime(mime) {
-  return mime === 'image/svg+xml';
+  return mediaType(mime) === 'image/svg+xml';
 }
 
 function isHtmlMime(mime) {
-  return mime === 'text/html';
+  return mediaType(mime) === 'text/html';
 }
 
 //指定秒数での実行処理
@@ -426,6 +439,9 @@ function AssetViewer() {
 
   /** MIMEタイプ修正ダイアログを開く: コンテンツ推定をバックグラウンドで実行 */
   const handleOpenMimeFixDlg = () => {
+    // selectedMime は現在値の原文（パラメータ付きならそのまま）を保持する。
+    // 選択肢との突き合わせは表示時に mediaType() で行い、
+    // ユーザーが選び直さない限り charset 等を落とさない
     const current = assetContent?.mime || '';
     setSelectedMime(current);
     setDetectedMime(null);
@@ -545,7 +561,9 @@ function AssetViewer() {
       <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Loading...</div>
     );
   } else {
-    const { name, mime, content: fileContent } = assetContent;
+    const { name, content: fileContent } = assetContent;
+    // 旧データは charset 付きの可能性があるため正規化した値で扱う
+    const mime = mediaType(assetContent.mime);
     const isImage = isImageMime(mime);
     const isText = isTextMime(mime);
     const isSvg = isSvgMime(mime);
@@ -629,7 +647,7 @@ function AssetViewer() {
           {assetContent && (isSvgMime(assetContent.mime) || isHtmlMime(assetContent.mime)) && (
             <Tooltip title={showPreview ? t("assetViewer.editSource") : t("assetViewer.showPreview")} placement="bottom">
               <span>
-                <IconButton size="small" onClick={() => setShowPreview(v => !v)} className="editorBtn">
+                <IconButton size="small" aria-label="toggle preview" onClick={() => setShowPreview(v => !v)} className="editorBtn">
                   {showPreview ? <CodeIcon sx={{ fontSize: '16px' }} /> : <VisibilityIcon sx={{ fontSize: '16px' }} />}
                 </IconButton>
               </span>
@@ -783,8 +801,10 @@ function AssetViewer() {
               {t("assetViewer.detectedMime", { mime: detectedMime })}
             </DialogContentText>
           )}
+          {/* 選択肢はメディアタイプのみのため、現在値もメディアタイプで突き合わせて表示する。
+              選択し直さずに保存した場合は selectedMime（原文）がそのまま保存される */}
           <Select
-            value={selectedMime}
+            value={MIME_OPTIONS.some(o => o.value === mediaType(selectedMime)) ? mediaType(selectedMime) : ''}
             onChange={(e) => setSelectedMime(e.target.value)}
             fullWidth
             size="small"

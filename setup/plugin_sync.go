@@ -67,6 +67,8 @@ var shippedPluginHashes = map[string][]string{
 	"smartypants.js": {
 		"86656e9856087d37a554af1bf956df4111480c3ddf436ba53a0a9ff216f4becb",
 		"537c56a63160ae7df4b46820dfc4eaefbecbd7b7eb6ec641b5e72c7351ed0cb6",
+		// 0.16.0 で配布したバージョン（テーブル区切り行の保護で更新）
+		"6fcbae7cea43572e78f5eb3b0bda53b11802124148703423ed36fda30e0a92ac",
 	},
 	"subscript.js":   {"1253b01aed774475bae4c93e056b8c3e7e4e839f97f91dafac605b4f3ab5cbf6"},
 	"superscript.js": {"8a132e963a5bcf6574fb8a7739869360626c7551e16c8cd28735af5b2f0fb7b0"},

@@ -4,6 +4,7 @@ import (
 	"binder/api/json"
 	"binder/db/model"
 	"binder/fs"
+	"binder/internal"
 	"binder/log"
 	"bytes"
 	"encoding/base64"
@@ -58,6 +59,10 @@ var knownMimeTypes = map[string]string{
 // detectMime はファイル名の拡張子からMIMEタイプを判定する。
 // mime.TypeByExtension を試行し、結果が得られない場合は knownMimeTypes にフォールバックする。
 // いずれでも判定できない場合はバイナリなら "application/octet-stream"、テキストなら "text/plain" を返す。
+//
+// mime.TypeByExtension はOSのMIMEデータベース次第で "text/html; charset=utf-8" のような
+// パラメータ付きを返すが、それもMIMEとして正しい値なので落とさずそのまま返す。
+// 「HTMLかどうか」等の判定側が internal.MediaType でメディアタイプを取り出して比較する。
 func detectMime(name string, binary bool) string {
 	ext := strings.ToLower(filepath.Ext(name))
 	if ext != "" {
@@ -185,6 +190,11 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 
 	var prefix string
 	var files []string
+
+	// 外部（フロント・MIME修正ダイアログ・メタ編集の手入力）から渡されたMIMEは、
+	// 妥当ならパラメータごと原文を保持し、MIMEとして成立しない値だけを捨てる。
+	// 空になった場合は下の分岐で拡張子からの自動判定にフォールバックする。
+	a.Mime = internal.SanitizeMime(a.Mime)
 
 	//新規指定だった場合
 	if a.Id == "" {
@@ -705,6 +715,8 @@ func (b *Binder) ReadAssetBytes(id string) ([]byte, *json.Asset, error) {
 // DetectAssetMimeFromContent はアセットファイルの先頭バイトを読み取り、
 // コンテンツからMIMEタイプを推定して返す。
 // 拡張子なしで登録されたファイルのMIME修正時に利用する。
+// http.DetectContentType が返す "text/html; charset=utf-8" のようなパラメータも
+// 推定結果の情報なので落とさずそのまま返す（選択肢との突き合わせは呼び出し側が行う）。
 func (b *Binder) DetectAssetMimeFromContent(id string) (string, error) {
 	if b == nil {
 		return "", EmptyError
