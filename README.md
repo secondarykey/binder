@@ -110,3 +110,16 @@ certificate and notarized by Apple.
 Binder runs on Windows 10 / 11 and needs the WebView2 runtime, which is
 preinstalled on Windows 11.
 
+# Skills
+
+`docs/skills/` holds [Claude Code](https://claude.com/claude-code) skills that are
+distributed with this repository. **They operate on a binder — the data directory
+Binder creates (the one holding `binder.json`, `notes/`, `diagrams/`, `db/*.csv`) —
+not on this application's source code.** Copy or link the skill directory into your
+skills directory (`~/.claude/skills/`), then open the binder as the working
+directory and ask for the task.
+
+| Skill | What it does |
+|---|---|
+| [binder-organize](docs/skills/binder-organize/) | Reorganizes the notes in a binder: merges scattered notes, splits long ones into chapters, restructures the tree, generates index notes, and draws Mermaid diagrams from the text. It writes the real files and the CSV database, then records the result. |
+

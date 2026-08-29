@@ -226,3 +226,24 @@ iframe.htmlViewer {
   height: 100%;
   border: none;
 }
+
+/* === スクロールバー === */
+/* テーマCSS（--scrollbar-*）でライト・ダークが切り替わる。Binder本体と同じ見た目 */
+
+::-webkit-scrollbar {
+  cursor: auto;
+  width: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  cursor: auto;
+  background: var(--scrollbar-thumb);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}

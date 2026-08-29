@@ -105,6 +105,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
         panZoomHint={panZoomHint}
         inlinePanZoomHint={inlinePanZoomHint}
         panZoomLabels={panZoomLabels}
+        customScrollbar
       />
 
       {/* 切り替えボタン（右上に重ねて配置） */}
