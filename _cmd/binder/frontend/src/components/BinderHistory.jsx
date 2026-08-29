@@ -4,8 +4,10 @@ import { GetHistories } from "../../bindings/binder/api/app";
 import { OpenOverallHistoryWindow } from "../../bindings/main/window";
 import { List, ListItemButton, ListItemText, IconButton, Tooltip } from "@mui/material";
 import HistoryIcon from '@mui/icons-material/History';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import {EventContext} from '../Event';
+import { copyClipboard } from '../app/App';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +33,12 @@ function BinderHistory(props) {
     evt.openBinder(val);
   }
 
+  //パスをクリップボードにコピーする
+  const handleCopyPath = (val) => {
+    copyClipboard(val);
+    evt.showSuccessMessage(t('binderHistory.copied'));
+  }
+
   return (<>
     <h3 style={{ margin: "10px", color: "var(--text-primary)" }}>History</h3>
     <List key="historyList">
@@ -38,6 +46,15 @@ function BinderHistory(props) {
         return (
           <ListItemButton key={p} onClick={() => handleSelect(p)} >
             <ListItemText style={{ color: "var(--text-primary)" }} primary={p} />
+            <Tooltip title={t('binderHistory.copyPath')} placement="left">
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); handleCopyPath(p); }}
+                sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
+              >
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title={t('binderHistory.history')} placement="left">
               <IconButton
                 size="small"

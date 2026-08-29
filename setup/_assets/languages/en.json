@@ -313,7 +313,9 @@
         "previewColorSchemeValues" : "Values (comma separated)"
     },
     "binderHistory" : {
-        "history" : "History"
+        "history" : "History",
+        "copyPath" : "Copy Path",
+        "copied" : "Copied the path"
     },
     "share" : {
         "title" : "Share",

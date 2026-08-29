@@ -313,7 +313,9 @@
         "previewColorSchemeValues" : "値（カンマ区切り）"
     },
     "binderHistory" : {
-        "history" : "履歴"
+        "history" : "履歴",
+        "copyPath" : "パスをコピー",
+        "copied" : "パスをコピーしました"
     },
     "share" : {
         "title" : "共有",
