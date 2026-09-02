@@ -8,11 +8,15 @@ const COPY = 'preview.contextMenu.copy';
 const COPY_LINK = 'preview.contextMenu.copyLink';
 const OPEN_BROWSER = 'preview.contextMenu.openInBrowser';
 const OPEN_ENTRY = 'preview.contextMenu.openEntry';
+const BACK = 'editor.historyBack';
+const FORWARD = 'editor.historyForward';
 
 function setup(state, handlers = {}) {
   const props = {
     state: { open: true, x: 0, y: 0, kind: null, href: '', selection: '', ...state },
     onClose: vi.fn(),
+    onBack: vi.fn(),
+    onForward: vi.fn(),
     onCopy: vi.fn(),
     onCopyLink: vi.fn(),
     onOpenExternal: vi.fn(),
@@ -69,9 +73,30 @@ describe('PreviewContextMenu', () => {
     expect(screen.queryByText(OPEN_ENTRY)).toBeNull();
   });
 
-  it('offers only copy on an in-page anchor', () => {
+  it('goes back through the editor history, not the frame history', async () => {
+    const props = setup({ canBack: true });
+    await userEvent.click(screen.getByText(BACK));
+    expect(props.onBack).toHaveBeenCalled();
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('disables back and forward when the history has nowhere to go', () => {
+    setup({ canBack: false, canForward: false });
+    expect(screen.getByText(BACK).closest('li')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText(FORWARD).closest('li')).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('hides history items where there is no editor (Lite)', () => {
+    setup({ canBack: true }, { onBack: undefined, onForward: undefined });
+    expect(screen.queryByText(BACK)).toBeNull();
+    expect(screen.queryByText(FORWARD)).toBeNull();
+  });
+
+  it('offers no link items on an in-page anchor', () => {
     setup({ kind: 'anchor', href: '#sec', selection: 'x' });
     expect(screen.getByText(COPY)).toBeInTheDocument();
     expect(screen.queryByText(COPY_LINK)).toBeNull();
+    expect(screen.queryByText(OPEN_BROWSER)).toBeNull();
+    expect(screen.queryByText(OPEN_ENTRY)).toBeNull();
   });
 });

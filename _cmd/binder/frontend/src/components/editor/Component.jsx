@@ -197,6 +197,26 @@ const editorHistory = {
 };
 
 /**
+ * 履歴エントリのエディタURLを返す。
+ * asset だけ URL とモード名が異なるため、遷移する側で毎回書かずに済むよう共通化する。
+ */
+function editorHistoryURL(entry) {
+  const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+  return "/editor/" + urlMode + "/" + entry.id;
+}
+
+/**
+ * エディタ閲覧履歴の可否を別ウィンドウのプレビューへ通知する。
+ * editorHistory は React の状態ではないため、変化した時点で明示的に送る。
+ */
+function emitHistoryState() {
+  Events.Emit('binder:editor:historyState', {
+    canBack: editorHistory.canGoBack(),
+    canForward: editorHistory.canGoForward(),
+  });
+}
+
+/**
  * タブ区切りテキストをMarkdownテーブルに変換する
  * Excel等からの貼り付けデータを想定。
  * 判定条件: 2行以上、各行にタブが1つ以上、全行のタブ数（列数）が一致
@@ -494,6 +514,7 @@ function Editor(props) {
       editorHistory.push(mode, id);
     }
     editorHistory.navigating = false;
+    emitHistoryState();
   }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
@@ -810,8 +831,7 @@ function Editor(props) {
       }
       if (entry) {
         e.preventDefault();
-        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
-        nav("/editor/" + urlMode + "/" + entry.id);
+        nav(editorHistoryURL(entry));
       }
     };
     document.addEventListener('keydown', handler);
@@ -1113,6 +1133,8 @@ function Editor(props) {
       Events.Emit('binder:preview:update', {
         typ: modeRef.current, id: idRef.current, name: nameRef.current, html: htmlRef.current,
       });
+      // 後から開いたプレビューウィンドウにも現在の履歴の可否を渡す
+      emitHistoryState();
     });
     return () => { cleanup(); };
   }, []);
@@ -1715,8 +1737,24 @@ function Editor(props) {
 
   // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
   const [previewMenu, setPreviewMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
-  const handlePreviewContextMenu = (info) => setPreviewMenu({ ...info, open: true });
+  // 履歴の可否はメニューを開いた時点の値で固定する（editorHistory は React の状態ではない）
+  const handlePreviewContextMenu = (info) => setPreviewMenu({
+    ...info,
+    open: true,
+    canBack: editorHistory.canGoBack(),
+    canForward: editorHistory.canGoForward(),
+  });
   const closePreviewMenu = () => setPreviewMenu((m) => ({ ...m, open: false }));
+
+  // プレビューからの「戻る」は WebView のフレーム履歴ではなくエディタの閲覧履歴を辿る
+  const handleHistoryBack = () => {
+    const entry = editorHistory.goBack();
+    if (entry) nav(editorHistoryURL(entry));
+  };
+  const handleHistoryForward = () => {
+    const entry = editorHistory.goForward();
+    if (entry) nav(editorHistoryURL(entry));
+  };
 
   // プレビュー内の外部リンク: OSのブラウザで開く
   const handleLinkExternal = (url) => {
@@ -2878,6 +2916,8 @@ function Editor(props) {
               <PreviewContextMenu
                 state={previewMenu}
                 onClose={closePreviewMenu}
+                onBack={handleHistoryBack}
+                onForward={handleHistoryForward}
                 onCopy={copyClipboard}
                 onCopyLink={copyClipboard}
                 onOpenExternal={handleLinkExternal}
@@ -2963,4 +3003,4 @@ function Editor(props) {
 }
 
 export default Editor;
-export { editorHistory };
+export { editorHistory, editorHistoryURL };

@@ -42,6 +42,8 @@ function PreviewApp() {
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
   // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
   const [previewScrollbar, setPreviewScrollbar] = useState(true);
+  // エディタ閲覧履歴の可否（メインウィンドウが持つ状態の写し）
+  const [historyState, setHistoryState] = useState({ canBack: false, canForward: false });
 
   useEffect(() => {
     GetPreviewScrollbar().then((v) => setPreviewScrollbar(!!v)).catch(() => {});
@@ -49,7 +51,11 @@ function PreviewApp() {
       const data = event.data?.[0] ?? event.data;
       setPreviewScrollbar(!!data);
     });
-    return () => { cleanup(); };
+    const cleanupHistory = Events.On('binder:editor:historyState', (event) => {
+      const data = event.data?.[0] ?? event.data ?? {};
+      setHistoryState({ canBack: !!data.canBack, canForward: !!data.canForward });
+    });
+    return () => { cleanup(); cleanupHistory(); };
   }, []);
 
   useEffect(() => {
@@ -110,8 +116,12 @@ function PreviewApp() {
 
   // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
   const [menu, setMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
-  const handleContextMenu = (info) => setMenu({ ...info, open: true });
+  const handleContextMenu = (info) => setMenu({ ...info, open: true, ...historyState });
   const closeMenu = () => setMenu((m) => ({ ...m, open: false }));
+
+  // 戻る/進む はメインウィンドウのエディタ閲覧履歴を辿るため、依頼するだけ
+  const handleHistoryBack = () => Events.Emit('binder:editor:historyNav', { dir: 'back' });
+  const handleHistoryForward = () => Events.Emit('binder:editor:historyNav', { dir: 'forward' });
 
   // プレビュー内の外部リンク: OSのブラウザで開く
   const handleLinkExternal = (url) => {
@@ -191,6 +201,8 @@ function PreviewApp() {
       <PreviewContextMenu
         state={menu}
         onClose={closeMenu}
+        onBack={handleHistoryBack}
+        onForward={handleHistoryForward}
         onCopy={copyClipboard}
         onCopyLink={copyClipboard}
         onOpenExternal={handleLinkExternal}

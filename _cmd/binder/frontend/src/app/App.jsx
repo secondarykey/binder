@@ -27,7 +27,7 @@ import Event, { EventContext, useEventListener } from "../Event";
 import { SystemMessage } from '../Message';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog, BinderTooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
-import { editorHistory } from '../components/editor/Component';
+import { editorHistory, editorHistoryURL } from '../components/editor/Component';
 import MermaidScript from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
@@ -371,6 +371,14 @@ function App() {
       }
     });
 
+    // プレビューウィンドウのコンテキストメニューからの戻る/進む
+    // （エディタ閲覧履歴はメインウィンドウが持つため、こちらで辿る）
+    const cleanupHistoryNav = Events.On("binder:editor:historyNav", (event) => {
+      const { dir } = event.data?.[0] ?? event.data ?? {};
+      const entry = dir === "forward" ? editorHistory.goForward() : editorHistory.goBack();
+      if (entry) nav(editorHistoryURL(entry));
+    });
+
     //アプリバージョンを取得してタイトル用ラベルを生成
     GetVersionInfo().then((info) => {
       let label = "Binder " + info.version;
@@ -427,6 +435,7 @@ function App() {
       cleanupRestored();
       cleanupSearch();
       cleanupLink();
+      cleanupHistoryNav();
       cleanupAutoSave();
       // 世代を進めて、保留中の setupAutoSave().then がタイマーを生成しないようにする
       autoSaveGen++;
@@ -588,10 +597,7 @@ function App() {
                     sx={{ ml: 0.5, padding: '4px', '&.Mui-disabled': { opacity: 0.3, color: 'inherit' } }}
                     onClick={() => {
                       const entry = editorHistory.goBack();
-                      if (entry) {
-                        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
-                        nav("/editor/" + urlMode + "/" + entry.id);
-                      }
+                      if (entry) nav(editorHistoryURL(entry));
                     }}
                   >
                     <ArrowBackIosNewIcon sx={{ fontSize: '14px' }} />
@@ -605,10 +611,7 @@ function App() {
                     sx={{ padding: '4px', '&.Mui-disabled': { opacity: 0.3, color: 'inherit' } }}
                     onClick={() => {
                       const entry = editorHistory.goForward();
-                      if (entry) {
-                        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
-                        nav("/editor/" + urlMode + "/" + entry.id);
-                      }
+                      if (entry) nav(editorHistoryURL(entry));
                     }}
                   >
                     <ArrowForwardIosIcon sx={{ fontSize: '14px' }} />
