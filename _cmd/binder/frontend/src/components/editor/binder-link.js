@@ -15,19 +15,27 @@ const URL_TYPE = Object.freeze({
   asset: "assets",
 });
 
+// 相対リンクを解決する基準。
+// テンプレートの .Link は公開時の階層に合わせて "../pages/x.html"（通常のノート）と
+// "./pages/x.html"（docs/ 直下に置かれる index ノート）を出し分けるため、
+// プレビュー中のノートがどちらかを frontend からは決められない。両方を順に試す
+const BASES = ["http://binder.invalid/pages/", "http://binder.invalid/"];
+
 /**
- * href をバインダー内のパスへ正規化する。
- *
- * プレビューのノートは公開時に /pages/ 配下へ置かれるため、
- * 相対リンクもそこを基準に解決する。クエリ・フラグメントは落とす。
- * パスとして解釈できない場合は null を返す。
+ * href をバインダー内のパスの候補へ正規化する。
+ * クエリ・フラグメントは落とす。パスとして解釈できない場合は空配列を返す。
  */
-export function toBinderPath(href) {
-  try {
-    return new URL(href, "http://binder.invalid/pages/").pathname;
-  } catch {
-    return null;
+export function toBinderPaths(href) {
+  const paths = [];
+  for (const base of BASES) {
+    try {
+      const path = new URL(href, base).pathname;
+      if (!paths.includes(path)) paths.push(path);
+    } catch {
+      // noop（URLとして解釈できない基準は飛ばす）
+    }
   }
+  return paths;
 }
 
 /**
@@ -38,14 +46,14 @@ export function toBinderPath(href) {
  * @returns {Promise<{url: string, id: string, typ: string}|null>}
  */
 export async function resolveBinderLink(href) {
-  const path = toBinderPath(href);
-  if (!path) return null;
+  for (const path of toBinderPaths(href)) {
+    const s = await ResolveBinderLink(path);
+    if (!s || !s.id) continue;
 
-  const s = await ResolveBinderLink(path);
-  if (!s || !s.id) return null;
+    const urlType = URL_TYPE[s.type];
+    if (!urlType) return null;
 
-  const urlType = URL_TYPE[s.type];
-  if (!urlType) return null;
-
-  return { url: `/editor/${urlType}/${s.id}`, id: s.id, typ: s.type };
+    return { url: `/editor/${urlType}/${s.id}`, id: s.id, typ: s.type };
+  }
+  return null;
 }
