@@ -552,6 +552,11 @@
         "colorScheme" : "Color Scheme",
         "linkNotFound" : "Link target not found",
         "unresolvedResource" : "Not shown in preview (appears once published)",
+        "unresolvedHint" : {
+            "diagram" : "drawDiagram also renders it in the preview",
+            "layer" : "drawLayer also renders it in the preview",
+            "asset" : "assetsImage also renders it in the preview"
+        },
         "contextMenu" : {
             "copy" : "Copy",
             "copyLink" : "Copy link address",

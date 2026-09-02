@@ -17,6 +17,15 @@ export const UNRESOLVED_STYLE_ID = 'binder-unresolved-style';
 
 // プレースホルダに付けるクラス名
 const PLACEHOLDER_CLASS = 'binderUnresolved';
+const HINT_CLASS = 'binderUnresolvedHint';
+
+// 公開パスの形から、プレビューでも表示できる書き方の種別を導く。
+// 判定の規則は Go 側の parseAliasFromPath と同じ
+const KIND_PATTERNS = [
+  [new RegExp('(^|/)images/[^/]+$'), 'diagram'],
+  [new RegExp('(^|/)layers/[^/]+$'), 'layer'],
+  [new RegExp('(^|/)assets/[^/]+$'), 'asset'],
+];
 
 // プレビュー内で読み込める参照
 const RESOLVABLE = /^(data:|blob:|https?:|\/\/)/i;
@@ -32,13 +41,30 @@ export function isUnresolvedSrc(src) {
 }
 
 /**
+ * 参照のパスから種別（diagram / layer / asset）を導く。導けない場合は null を返す。
+ */
+export function unresolvedKind(src) {
+  const v = (src || '').trim();
+  for (const [pattern, kind] of KIND_PATTERNS) {
+    if (pattern.test(v)) return kind;
+  }
+  return null;
+}
+
+/**
  * 解決できない <img> をプレースホルダに置き換える。
+ *
+ * hints を渡すと、パスから種別を導けた場合に「プレビューでも表示するには〜」を
+ * 併記する。あくまで代替の提示であって訂正ではない（公開専用の画像として
+ * 意図的に url を使う書き方もあるため）。関数名はアプリによって存在しないので、
+ * 文言は呼び出し側から渡す（Lite は渡さない＝ヒントを出さない）。
  *
  * @param {Document} doc
  * @param {string} label 表示する説明（例: 「公開後に表示されます」）
+ * @param {object} [hints] { diagram, layer, asset } の説明
  * @returns {number} 置き換えた数
  */
-export function markUnresolvedResources(doc, label) {
+export function markUnresolvedResources(doc, label, hints) {
   if (!doc?.querySelectorAll) return 0;
 
   const targets = Array.from(doc.querySelectorAll('img[src]'))
@@ -53,14 +79,21 @@ export function markUnresolvedResources(doc, label) {
     box.className = PLACEHOLDER_CLASS;
     box.setAttribute('title', src);
 
-    const text = doc.createElement('span');
-    text.textContent = label || src;
-    box.appendChild(text);
-
+    const main = doc.createElement('span');
+    main.textContent = label || src;
     if (label) {
       const path = doc.createElement('code');
       path.textContent = src;
-      box.appendChild(path);
+      main.appendChild(path);
+    }
+    box.appendChild(main);
+
+    const hint = hints?.[unresolvedKind(src)];
+    if (hint) {
+      const hintEl = doc.createElement('span');
+      hintEl.className = HINT_CLASS;
+      hintEl.textContent = hint;
+      box.appendChild(hintEl);
     }
 
     img.replaceWith(box);
@@ -98,11 +131,13 @@ function applyUnresolvedStyle(doc) {
   style.id = UNRESOLVED_STYLE_ID;
   style.textContent = [
     `.${PLACEHOLDER_CLASS} {`,
-    '  display: inline-flex; align-items: baseline; gap: 6px;',
+    '  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px;',
     '  padding: 6px 10px; border-radius: 4px; font-size: 0.9em;',
     `  border: 1px dashed ${border}; color: ${text}; background: ${bg};`,
     '}',
-    `.${PLACEHOLDER_CLASS} code { font-size: 0.9em; opacity: 0.75; word-break: break-all; }`,
+    `.${PLACEHOLDER_CLASS} code { margin-left: 6px; font-size: 0.9em; opacity: 0.75; word-break: break-all; }`,
+    // ヒントは事実の提示（1行目）より弱く見せる
+    `.${HINT_CLASS} { font-size: 0.85em; opacity: 0.7; }`,
   ].join('\n');
   head.appendChild(style);
 }

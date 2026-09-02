@@ -179,7 +179,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{

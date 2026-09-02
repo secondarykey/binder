@@ -30,6 +30,8 @@ import { markUnresolvedResources } from "./preview-unresolved";
  *                     { x, y, kind, href, selection } を渡して呼ぶ（座標は親ウィンドウ基準）
  *   unresolvedLabel - プレビューで解決できない画像参照に出す説明。
  *                     指定するとその画像を見えるプレースホルダに置き換える
+ *   unresolvedHints - パスから種別を導けた場合に併記する代替の書き方
+ *                     { diagram, layer, asset }。関数名はアプリ依存なので文言を渡す
  *
  * リンクの扱いは link-handler.js を参照。未指定のコールバックに対応するリンクは
  * 何も起こらない（プレビューが遷移することはない）。
@@ -303,7 +305,7 @@ class HTMLFrame extends React.Component {
       applyLinkPolicy(doc);
       // 壊れた画像アイコンで終わらせず、解決できないことを明示する
       if (this.props.unresolvedLabel) {
-        markUnresolvedResources(doc, this.props.unresolvedLabel);
+        markUnresolvedResources(doc, this.props.unresolvedLabel, this.props.unresolvedHints);
       }
       this.scrollToSourceLine(doc, this.props.cursorLine);
       onComplete?.();

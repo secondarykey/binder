@@ -164,7 +164,11 @@ srcdoc なのでこのURLを読み込めない。`<img src="{{ url ... }}">` は
 （`_cmd/shared/frontend/editor/preview-unresolved.js`）。前回公開時の古い成果物を
 黙って見せるより、解決できないと明示する方針。
 
-プレビューでも図・画像を見たい場合は `drawDiagram` / `assetsImage` を使う。
+プレビューでも図・画像を見たい場合は `drawDiagram` / `assetsImage` / `drawLayer` を使う。
+プレースホルダはパスの形（`/images/` `/assets/` `/layers/`）から種別を導けた場合、
+その代替も併記する。訂正ではなく代替の提示であることに注意（公開専用の画像として
+意図的に `url` を使う書き方もあり、`drawDiagram` は `<div class="binderSVG">` で
+包むため任意の属性を付けた `<img>` の置き換えにはならない）。
 
 ## スキル化するときの論点
 

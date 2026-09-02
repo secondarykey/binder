@@ -2900,7 +2900,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2909,7 +2909,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
               </div>
 

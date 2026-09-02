@@ -552,6 +552,11 @@
         "colorScheme" : "カラースキーム",
         "linkNotFound" : "リンク先が見つかりません",
         "unresolvedResource" : "プレビューでは表示できません（公開後に表示されます）",
+        "unresolvedHint" : {
+            "diagram" : "プレビューでも表示するには drawDiagram が使えます",
+            "layer" : "プレビューでも表示するには drawLayer が使えます",
+            "asset" : "プレビューでも表示するには assetsImage が使えます"
+        },
         "contextMenu" : {
             "copy" : "コピー",
             "copyLink" : "リンクのURLをコピー",
