@@ -550,7 +550,13 @@
         "alwaysOnTop" : "最前面に固定",
         "notSupported" : "アセットは表示していません",
         "colorScheme" : "カラースキーム",
-        "linkNotFound" : "リンク先が見つかりません"
+        "linkNotFound" : "リンク先が見つかりません",
+        "contextMenu" : {
+            "copy" : "コピー",
+            "copyLink" : "リンクのURLをコピー",
+            "openInBrowser" : "ブラウザで開く",
+            "openEntry" : "このエントリを開く"
+        }
     },
     "convert" : {
         "title" : "データ移行",

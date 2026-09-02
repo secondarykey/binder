@@ -152,6 +152,41 @@ describe('attachLinkHandler', () => {
     expect(onInternal).not.toHaveBeenCalled();
   });
 
+  it('does not touch the context menu unless a handler is given', () => {
+    const doc = setBody('<p>text</p>');
+    attachLinkHandler(doc, {});
+
+    const e = new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    doc.querySelector('p').dispatchEvent(e);
+
+    expect(e.defaultPrevented).toBe(false);
+  });
+
+  it('suppresses the native context menu and reports the link under the cursor', () => {
+    const onContextMenu = vi.fn();
+    const doc = setBody('<a href="https://example.com/">ext</a>');
+    applyLinkPolicy(doc);
+    attachLinkHandler(doc, { onContextMenu });
+
+    const e = new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 20 });
+    doc.querySelector('a').dispatchEvent(e);
+
+    expect(e.defaultPrevented).toBe(true);
+    expect(onContextMenu).toHaveBeenCalledWith(expect.objectContaining({
+      x: 10, y: 20, kind: 'external', href: 'https://example.com/',
+    }));
+  });
+
+  it('reports no link when the cursor is not on one', () => {
+    const onContextMenu = vi.fn();
+    const doc = setBody('<p>text</p>');
+    attachLinkHandler(doc, { onContextMenu });
+
+    doc.querySelector('p').dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+
+    expect(onContextMenu).toHaveBeenCalledWith(expect.objectContaining({ kind: null, href: null }));
+  });
+
   it('prevents the default action of clicks outside links', () => {
     const doc = setBody('<p>text</p>');
     attachLinkHandler(doc, {});

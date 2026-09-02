@@ -34,9 +34,10 @@ import "../../language";
 import { useTranslation } from 'react-i18next';
 
 import HTMLFrame from "./HTMLFrame.jsx";
+import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
 import { resolveBinderLink } from "./binder-link";
 import '../../assets/Editor.css'
-import { Mode } from "../../app/App.jsx";
+import { Mode, copyClipboard } from "../../app/App.jsx";
 
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -1712,6 +1713,11 @@ function Editor(props) {
     });
   }
 
+  // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
+  const [previewMenu, setPreviewMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
+  const handlePreviewContextMenu = (info) => setPreviewMenu({ ...info, open: true });
+  const closePreviewMenu = () => setPreviewMenu((m) => ({ ...m, open: false }));
+
   // プレビュー内の外部リンク: OSのブラウザで開く
   const handleLinkExternal = (url) => {
     Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
@@ -2856,7 +2862,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2865,9 +2871,18 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} />
                 }
               </div>
+
+              <PreviewContextMenu
+                state={previewMenu}
+                onClose={closePreviewMenu}
+                onCopy={copyClipboard}
+                onCopyLink={copyClipboard}
+                onOpenExternal={handleLinkExternal}
+                onOpenInternal={handleLinkInternal}
+              />
 
               {/** パースステータスバー */}
               <div id="parseStatusBar">

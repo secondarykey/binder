@@ -25,6 +25,8 @@ import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
  *   panZoomLabels   - 指定すると図の左上に操作ボタンを置く { zoomIn, zoomOut, reset, pan }
  *   onLinkExternal  - 外部リンク（http/https 等）を押した時に URL を渡して呼ぶ
  *   onLinkInternal  - バインダー内リンク（/pages/x.html 等）を押した時に href を渡して呼ぶ
+ *   onContextMenu   - 指定すると WebView 既定のコンテキストメニューを止め、
+ *                     { x, y, kind, href, selection } を渡して呼ぶ（座標は親ウィンドウ基準）
  *
  * リンクの扱いは link-handler.js を参照。未指定のコールバックに対応するリンクは
  * 何も起こらない（プレビューが遷移することはない）。
@@ -106,6 +108,18 @@ class HTMLFrame extends React.Component {
         this.applyColorScheme(activeIframe.contentDocument);
       }
     }
+  }
+
+  /**
+   * iframe 内のクライアント座標を親ウィンドウ基準に直してから通知する。
+   */
+  raiseContextMenu(doc, info) {
+    const rect = doc.defaultView?.frameElement?.getBoundingClientRect?.();
+    this.props.onContextMenu?.({
+      ...info,
+      x: info.x + (rect?.left ?? 0),
+      y: info.y + (rect?.top ?? 0),
+    });
   }
 
   getIframe(index) {
@@ -256,6 +270,10 @@ class HTMLFrame extends React.Component {
     attachLinkHandler(doc, {
       onExternal: (url) => this.props.onLinkExternal?.(url),
       onInternal: (href) => this.props.onLinkInternal?.(href),
+      // 既定のメニューを止めるかはアプリ側の指定次第なので、登録の有無を props で決める
+      onContextMenu: this.props.onContextMenu
+        ? (info) => this.raiseContextMenu(doc, info)
+        : undefined,
     });
 
     // iframe 内のキーボードイベントを親ウィンドウに転送（F12 など）

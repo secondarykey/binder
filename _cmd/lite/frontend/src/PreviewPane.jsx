@@ -5,6 +5,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import { useTranslation } from 'react-i18next';
 import { Browser } from '@wailsio/runtime';
 import HTMLFrame from '@shared/editor/HTMLFrame';
+import PreviewContextMenu from '@shared/editor/PreviewContextMenu';
 import Marked from '@shared/editor/engines/Marked';
 import Mermaid from '@shared/editor/engines/Mermaid';
 import { GetPreviewHTML } from '../bindings/binder/api/lite/app';
@@ -95,6 +96,11 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
     };
   }, [text, mermaidMode, currentTheme]);
 
+  // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
+  const [menu, setMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
+  const handleContextMenu = (info) => setMenu({ ...info, open: true });
+  const closeMenu = () => setMenu((m) => ({ ...m, open: false }));
+
   // プレビュー内の外部リンクは OS のブラウザで開く。
   // Lite にはバインダーが無いため、内部リンク（相対パス）は何も起こさない
   const handleLinkExternal = (url) => {
@@ -106,6 +112,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
       <HTMLFrame
         html={html}
         onLinkExternal={handleLinkExternal}
+        onContextMenu={handleContextMenu}
         onCopyCode={CopyToClipboard}
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}
@@ -114,6 +121,14 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
         inlinePanZoomHint={inlinePanZoomHint}
         panZoomLabels={panZoomLabels}
         customScrollbar
+      />
+
+      <PreviewContextMenu
+        state={menu}
+        onClose={closeMenu}
+        onCopy={CopyToClipboard}
+        onCopyLink={CopyToClipboard}
+        onOpenExternal={handleLinkExternal}
       />
 
       {/* 切り替えボタン（右上に重ねて配置） */}

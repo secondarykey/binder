@@ -74,9 +74,29 @@ export function applyLinkPolicy(doc) {
  * @param {object} opts
  * @param {(url: string) => void} [opts.onExternal] 外部リンクを開く処理
  * @param {(href: string) => void} [opts.onInternal] バインダー内リンクを開く処理
+ * @param {(info: object) => void} [opts.onContextMenu] 右クリック時に呼ぶ。
+ *   指定した場合のみ WebView 既定のコンテキストメニューを止め、アプリ側のメニューに委ねる。
+ *   渡す情報は { x, y, kind, href, selection }（座標は iframe 内のクライアント座標）
  */
 export function attachLinkHandler(doc, opts = {}) {
   if (!doc?.addEventListener) return;
+
+  if (opts.onContextMenu) {
+    doc.addEventListener('contextmenu', (e) => {
+      // 既定のメニューには「リンクを開く」「戻る」が並び、プレビューを
+      // 意図せず遷移させられる。アプリ側のメニューに置き換える
+      e.preventDefault();
+
+      const a = e.target?.closest?.('a[data-link-kind]');
+      opts.onContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        kind: a?.dataset.linkKind ?? null,
+        href: a?.dataset.href ?? null,
+        selection: readSelection(doc),
+      });
+    });
+  }
 
   doc.addEventListener('click', (e) => {
     // プレビューは閲覧専用。既定の遷移・送信は常に止める
@@ -100,6 +120,17 @@ export function attachLinkHandler(doc, opts = {}) {
         break;
     }
   });
+}
+
+/**
+ * プレビュー内で選択中のテキストを返す。取得できない場合は空文字。
+ */
+function readSelection(doc) {
+  try {
+    return doc.getSelection?.()?.toString() ?? '';
+  } catch {
+    return '';
+  }
 }
 
 /**

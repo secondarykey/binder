@@ -10,9 +10,11 @@ import { Events, Window, Browser } from '@wailsio/runtime';
 import { GetConfig, GetPreviewScrollbar } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
+import { copyClipboard } from './App';
 import { EventContext } from '../Event';
 import { resolveBinderLink } from '../components/editor/binder-link';
 import HTMLFrame from '../components/editor/HTMLFrame';
+import PreviewContextMenu from '@shared/editor/PreviewContextMenu';
 import Mermaid from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
@@ -106,6 +108,11 @@ function PreviewApp() {
     Window.Close();
   };
 
+  // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
+  const [menu, setMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
+  const handleContextMenu = (info) => setMenu({ ...info, open: true });
+  const closeMenu = () => setMenu((m) => ({ ...m, open: false }));
+
   // プレビュー内の外部リンク: OSのブラウザで開く
   const handleLinkExternal = (url) => {
     Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
@@ -162,7 +169,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{
@@ -180,6 +187,15 @@ function PreviewApp() {
           </Typography>
         }
       </div>
+
+      <PreviewContextMenu
+        state={menu}
+        onClose={closeMenu}
+        onCopy={copyClipboard}
+        onCopyLink={copyClipboard}
+        onOpenExternal={handleLinkExternal}
+        onOpenInternal={handleLinkInternal}
+      />
 
       <SystemMessage />
     </div>
