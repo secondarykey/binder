@@ -551,6 +551,7 @@
         "notSupported" : "Assets are not displayed",
         "colorScheme" : "Color Scheme",
         "linkNotFound" : "Link target not found",
+        "unresolvedResource" : "Not shown in preview (appears once published)",
         "contextMenu" : {
             "copy" : "Copy",
             "copyLink" : "Copy link address",
@@ -797,6 +798,7 @@
         "urlquery" : "URL query escape",
         "embed"        : "Embed note/asset inline",
         "link"         : "Generate a link to an entry",
+        "url"          : "Get the published URL of an entry",
         "drawDiagram"  : "Render diagram SVG",
         "drawLayer"    : "Render layer overlay",
         "assets"       : "Get asset URL",

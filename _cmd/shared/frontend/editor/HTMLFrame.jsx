@@ -4,6 +4,7 @@ import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./cod
 import { renderInlineMermaid } from "./inline-mermaid";
 import { attachPanZoom } from "./pan-zoom";
 import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
+import { markUnresolvedResources } from "./preview-unresolved";
 
 /**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
@@ -27,6 +28,8 @@ import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
  *   onLinkInternal  - バインダー内リンク（/pages/x.html 等）を押した時に href を渡して呼ぶ
  *   onContextMenu   - 指定すると WebView 既定のコンテキストメニューを止め、
  *                     { x, y, kind, href, selection } を渡して呼ぶ（座標は親ウィンドウ基準）
+ *   unresolvedLabel - プレビューで解決できない画像参照に出す説明。
+ *                     指定するとその画像を見えるプレースホルダに置き換える
  *
  * リンクの扱いは link-handler.js を参照。未指定のコールバックに対応するリンクは
  * 何も起こらない（プレビューが遷移することはない）。
@@ -298,6 +301,10 @@ class HTMLFrame extends React.Component {
       });
       // リンクの書き換えは Mermaid 描画後に行う（図の中のリンクも対象にするため）
       applyLinkPolicy(doc);
+      // 壊れた画像アイコンで終わらせず、解決できないことを明示する
+      if (this.props.unresolvedLabel) {
+        markUnresolvedResources(doc, this.props.unresolvedLabel);
+      }
       this.scrollToSourceLine(doc, this.props.cursorLine);
       onComplete?.();
     };

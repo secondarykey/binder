@@ -113,6 +113,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
         html={html}
         onLinkExternal={handleLinkExternal}
         onContextMenu={handleContextMenu}
+        unresolvedLabel={t('preview.unresolvedResource')}
         onCopyCode={CopyToClipboard}
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}

@@ -551,6 +551,7 @@
         "notSupported" : "アセットは表示していません",
         "colorScheme" : "カラースキーム",
         "linkNotFound" : "リンク先が見つかりません",
+        "unresolvedResource" : "プレビューでは表示できません（公開後に表示されます）",
         "contextMenu" : {
             "copy" : "コピー",
             "copyLink" : "リンクのURLをコピー",
@@ -797,6 +798,7 @@
         "urlquery" : "URLクエリエスケープ",
         "embed"        : "ノート/アセットを埋め込み",
         "link"         : "エントリへのリンクを生成",
+        "url"          : "エントリの公開URLを取得",
         "drawDiagram"  : "ダイアグラムSVGを描画",
         "drawLayer"    : "レイヤーを描画",
         "assets"       : "アセットURLを取得",

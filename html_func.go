@@ -24,6 +24,7 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
 		"link":          w.link,
+		"url":           w.url,
 		"drawDiagram":   w.drawSVG,
 		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
@@ -435,14 +436,7 @@ func (w *wrapper) link(v ...any) template.HTML {
 		return templateError(fmt.Sprintf("ERROR: link(%s): %v", id, err))
 	}
 
-	// リンクは出しつつ、公開後に辿れない先であることは警告する
-	if !w.Local {
-		if s.Private {
-			w.addWarning(fmt.Sprintf("link(%s): private entry", id))
-		} else if s.Republish.IsZero() {
-			w.addWarning(fmt.Sprintf("link(%s): not published yet", id))
-		}
-	}
+	w.warnUnreachable("link", id, s)
 
 	name := Arg[string](v, 1).Default("")
 	if strings.TrimSpace(name) == "" {
@@ -451,6 +445,54 @@ func (w *wrapper) link(v ...any) template.HTML {
 
 	return template.HTML(fmt.Sprintf(`<a href="%s">%s</a>`,
 		template.HTMLEscapeString(href), template.HTMLEscapeString(name)))
+}
+
+// url はエントリIDから公開時のURLを返すテンプレート関数。
+// <a> を組み立てる link と違い、URLだけが欲しい場面（<meta property="og:image">、
+// 独自の属性を付けた <a>、CSS の url() 等）で使う。
+//
+// プレビューでも公開時と同じURLを返す。モードで別物にすると
+// テンプレートを書く側が挙動を追えなくなるためで、代わりに未公開・非公開は警告する。
+// プレビューの iframe はこのURLを読み込めないので、画像として使った場合は
+// 壊れた画像ではなく「解決できない」と分かる表示に置き換わる（preview-unresolved.js）。
+//
+// なお marked が先に走る都合で、ノート本文の [x]({{ url ... }}) は成立しない。
+// 本文からは link を、テンプレートからは url を使う。
+func (w *wrapper) url(v ...any) template.URL {
+
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		w.addWarning("url: missing id argument")
+		return template.URL("ERROR: url id")
+	}
+
+	s, err := w.owner.db.GetStructure(id)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("url(%s): GetStructure: %v", id, err))
+		return template.URL(fmt.Sprintf("ERROR: url(%s): %v", id, err))
+	}
+
+	href, err := w.entryURL(s)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("url(%s): %v", id, err))
+		return template.URL(fmt.Sprintf("ERROR: url(%s): %v", id, err))
+	}
+
+	w.warnUnreachable("url", id, s)
+	return template.URL(href)
+}
+
+// warnUnreachable は公開しても辿れないエントリを指した場合に警告する。
+// リンク・URLは出すが、公開後に 403/404 になることは知らせる。
+func (w *wrapper) warnUnreachable(fn string, id string, s *model.Structure) {
+	if w.Local {
+		return
+	}
+	if s.Private {
+		w.addWarning(fmt.Sprintf("%s(%s): private entry", fn, id))
+	} else if s.Republish.IsZero() {
+		w.addWarning(fmt.Sprintf("%s(%s): not published yet", fn, id))
+	}
 }
 
 // entryURL は Structure から公開時の相対URLを返す。
