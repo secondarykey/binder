@@ -34,6 +34,7 @@ import "../../language";
 import { useTranslation } from 'react-i18next';
 
 import HTMLFrame from "./HTMLFrame.jsx";
+import { resolveBinderLink } from "./binder-link";
 import '../../assets/Editor.css'
 import { Mode } from "../../app/App.jsx";
 
@@ -1711,6 +1712,23 @@ function Editor(props) {
     });
   }
 
+  // プレビュー内の外部リンク: OSのブラウザで開く
+  const handleLinkExternal = (url) => {
+    Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
+  };
+
+  // プレビュー内のバインダー内リンク: プレビューを遷移させず、そのエントリをエディタで開く
+  const handleLinkInternal = (href) => {
+    resolveBinderLink(href).then((target) => {
+      if (!target) {
+        evt.showWarningMessage(`${t("preview.linkNotFound")}: ${href}`);
+        return;
+      }
+      nav(target.url);
+      evt.selectTreeNode(target.id);
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   const handleOpenInBrowser = () => {
     if (!alias) return;
     let path = null;
@@ -2838,7 +2856,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2847,7 +2865,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} />
                 }
               </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 
 import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -6,10 +6,12 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import ContrastIcon from '@mui/icons-material/Contrast';
 
-import { Events, Window } from '@wailsio/runtime';
+import { Events, Window, Browser } from '@wailsio/runtime';
 import { GetConfig, GetPreviewScrollbar } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
+import { EventContext } from '../Event';
+import { resolveBinderLink } from '../components/editor/binder-link';
 import HTMLFrame from '../components/editor/HTMLFrame';
 import Mermaid from '../components/editor/engines/Mermaid';
 
@@ -25,6 +27,7 @@ import { useTranslation } from 'react-i18next';
 function PreviewApp() {
 
   const { t } = useTranslation();
+  const evt = useContext(EventContext);
 
   // URL search params から初期値を取得
   const params = new URLSearchParams(window.location.search);
@@ -103,6 +106,22 @@ function PreviewApp() {
     Window.Close();
   };
 
+  // プレビュー内の外部リンク: OSのブラウザで開く
+  const handleLinkExternal = (url) => {
+    Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
+  };
+
+  // プレビュー内のバインダー内リンク: 別ウィンドウのため、メインウィンドウへ遷移を依頼する
+  const handleLinkInternal = (href) => {
+    resolveBinderLink(href).then((target) => {
+      if (!target) {
+        evt.showWarningMessage(`${t("preview.linkNotFound")}: ${href}`);
+        return;
+      }
+      Events.Emit('binder:link:navigate', { url: target.url, id: target.id });
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   const handleToggleAlwaysOnTop = () => {
     const next = !alwaysOnTop;
     setAlwaysOnTop(next);
@@ -143,7 +162,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{

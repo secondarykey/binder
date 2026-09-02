@@ -362,6 +362,15 @@ function App() {
       }
     });
 
+    // プレビューウィンドウ内のバインダー内リンクからのナビゲーション通知
+    const cleanupLink = Events.On("binder:link:navigate", (event) => {
+      const { url, id } = event.data?.[0] ?? event.data ?? {};
+      if (url) {
+        nav(url, { state: { restoredAt: Date.now() } });
+        if (id) evt.selectTreeNode(id);
+      }
+    });
+
     //アプリバージョンを取得してタイトル用ラベルを生成
     GetVersionInfo().then((info) => {
       let label = "Binder " + info.version;
@@ -417,6 +426,7 @@ function App() {
       document.removeEventListener('keydown', handleKeyDown);
       cleanupRestored();
       cleanupSearch();
+      cleanupLink();
       cleanupAutoSave();
       // 世代を進めて、保留中の setupAutoSave().then がタイマーを生成しないようにする
       autoSaveGen++;

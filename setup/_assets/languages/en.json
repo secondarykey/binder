@@ -549,7 +549,8 @@
         "emptyContent" : "Content is empty",
         "alwaysOnTop" : "Always on Top",
         "notSupported" : "Assets are not displayed",
-        "colorScheme" : "Color Scheme"
+        "colorScheme" : "Color Scheme",
+        "linkNotFound" : "Link target not found"
     },
     "convert" : {
         "title" : "Data Migration",

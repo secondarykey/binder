@@ -3,6 +3,7 @@ import Mermaid from "./engines/Mermaid";
 import { attachCodeCopy, applyCodeCopyStyle, refreshCodeCopyLabels } from "./code-copy";
 import { renderInlineMermaid } from "./inline-mermaid";
 import { attachPanZoom } from "./pan-zoom";
+import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
 
 /**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
@@ -22,6 +23,11 @@ import { attachPanZoom } from "./pan-zoom";
  *   panZoomHint     - 図（div.binderSVG）に付ける操作説明（title 属性）
  *   inlinePanZoomHint - 文章中の図（```mermaid 由来）に付ける操作説明
  *   panZoomLabels   - 指定すると図の左上に操作ボタンを置く { zoomIn, zoomOut, reset, pan }
+ *   onLinkExternal  - 外部リンク（http/https 等）を押した時に URL を渡して呼ぶ
+ *   onLinkInternal  - バインダー内リンク（/pages/x.html 等）を押した時に href を渡して呼ぶ
+ *
+ * リンクの扱いは link-handler.js を参照。未指定のコールバックに対応するリンクは
+ * 何も起こらない（プレビューが遷移することはない）。
  */
 
 // iframe に注入するスクロールバー用 <style> のID
@@ -244,8 +250,13 @@ class HTMLFrame extends React.Component {
     this.applyColorScheme(doc);
     this.applyScrollbarStyle(doc);
 
-    // クリックを禁止
-    doc.addEventListener('click', (e) => e.preventDefault());
+    // リンク操作（ページ内アンカー / 外部リンク / バインダー内リンク）の委譲リスナを登録する。
+    // リンク以外のクリックはここで止まるため、プレビューは閲覧専用のまま保たれる。
+    // コールバックは登録時ではなくクリック時の props を見る（差し替えに追従させるため）
+    attachLinkHandler(doc, {
+      onExternal: (url) => this.props.onLinkExternal?.(url),
+      onInternal: (href) => this.props.onLinkInternal?.(href),
+    });
 
     // iframe 内のキーボードイベントを親ウィンドウに転送（F12 など）
     doc.addEventListener('keydown', (e) => {
@@ -267,6 +278,8 @@ class HTMLFrame extends React.Component {
         copyLabel: labels.copy,
         copiedLabel: labels.copied,
       });
+      // リンクの書き換えは Mermaid 描画後に行う（図の中のリンクも対象にするため）
+      applyLinkPolicy(doc);
       this.scrollToSourceLine(doc, this.props.cursorLine);
       onComplete?.();
     };

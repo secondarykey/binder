@@ -549,7 +549,8 @@
         "emptyContent" : "コンテンツが空です",
         "alwaysOnTop" : "最前面に固定",
         "notSupported" : "アセットは表示していません",
-        "colorScheme" : "カラースキーム"
+        "colorScheme" : "カラースキーム",
+        "linkNotFound" : "リンク先が見つかりません"
     },
     "convert" : {
         "title" : "データ移行",

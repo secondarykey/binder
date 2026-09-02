@@ -15,6 +15,18 @@ func (b *Binder) GetStructure(id string) (*model.Structure, error) {
 	return b.db.GetStructure(id)
 }
 
+// ResolveLinkPath は公開URLのパス（/pages/x.html、/images/x.svg 等）から
+// 対応するStructureを返す。
+// エンティティURLでないパス、または未登録のエイリアスの場合は nil を返す。
+// プレビュー内のバインダー内リンクを実体へ解決するために使う。
+func (b *Binder) ResolveLinkPath(path string) (*model.Structure, error) {
+	info := parseAliasFromPath(path)
+	if info == nil {
+		return nil, nil
+	}
+	return b.db.FindStructureByAlias(info.alias, info.typ)
+}
+
 // createStructure は新しいエンティティのStructure行を作成する
 func (b *Binder) createStructure(id, parentId, typ, name, detail, alias string) error {
 
