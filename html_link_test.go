@@ -211,3 +211,47 @@ func TestURLFunc(t *testing.T) {
 		}
 	})
 }
+
+// TestAssetsUnpublishedWarning は assets / assetsImage が未公開アセットを
+// 参照した場合に警告することを検証する。
+// プレビューでは data URI で綺麗に表示されるため、公開時にしか気付けない。
+func TestAssetsUnpublishedWarning(t *testing.T) {
+	b := test.CreateBinder(t, "assets_warning")
+	defer b.Close()
+
+	tree, err := b.GetBinderTree()
+	if err != nil {
+		t.Fatalf("GetBinderTree() error: %v", err)
+	}
+	leaf := findLeafByType(tree.Data, "asset")
+	if leaf == nil {
+		t.Skip("no asset in binder tree")
+	}
+	note, err := b.GetNote(getFirstNoteId(t, b))
+	if err != nil {
+		t.Fatalf("GetNote() error: %v", err)
+	}
+
+	for _, fn := range []string{"assets", "assetsImage"} {
+		t.Run(fn, func(t *testing.T) {
+			elm := fmt.Sprintf(`{{ %s "%s" }}`, fn, leaf.Id)
+
+			_, warnings, err := b.ParseNote(note, false, elm)
+			if err != nil {
+				t.Fatalf("ParseNote() error: %v", err)
+			}
+			if !hasWarning(warnings, "not published yet") {
+				t.Errorf("warnings = %v, want a not-published warning", warnings)
+			}
+
+			// プレビュー中は未公開が通常の状態なので警告しない
+			_, warnings, err = b.ParseNote(note, true, elm)
+			if err != nil {
+				t.Fatalf("ParseNote() error: %v", err)
+			}
+			if hasWarning(warnings, "not published yet") {
+				t.Errorf("warnings = %v, want no not-published warning in preview", warnings)
+			}
+		})
+	}
+}

@@ -551,6 +551,7 @@
         "notSupported" : "Assets are not displayed",
         "colorScheme" : "Color Scheme",
         "linkNotFound" : "Link target not found",
+        "publishWarn" : "Published with {{count}} warning(s) (e.g. references to unpublished data). See the log for details.",
         "unresolvedResource" : "Not shown in preview (appears once published)",
         "unresolvedHint" : {
             "diagram" : "drawDiagram also renders it in the preview",

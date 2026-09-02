@@ -551,6 +551,7 @@
         "notSupported" : "アセットは表示していません",
         "colorScheme" : "カラースキーム",
         "linkNotFound" : "リンク先が見つかりません",
+        "publishWarn" : "公開しましたが警告が {{count}} 件あります（未公開データの参照など）。ログで確認できます",
         "unresolvedResource" : "プレビューでは表示できません（公開後に表示されます）",
         "unresolvedHint" : {
             "diagram" : "プレビューでも表示するには drawDiagram が使えます",

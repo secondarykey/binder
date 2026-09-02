@@ -1810,10 +1810,14 @@ function Editor(props) {
         elm = text;
       }
 
-      await Generate(mode, id, elm);
+      // テンプレート関数の警告（未公開データの参照など）。公開後に 404 になる
+      // 参照はプレビューでは見えないため、公開したこの時点で知らせる
+      const genWarnings = await Generate(mode, id, elm);
       evt.reloadUnpublished();
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
+      } else if (genWarnings?.length > 0) {
+        evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
       } else {
         evt.showSuccessMessage("Generate.");
       }

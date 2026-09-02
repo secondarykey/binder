@@ -90,7 +90,7 @@ func (h ArgHelper[T]) Default(def T) T {
 // <link rel="stylesheet" href="{{assets ...}}"> 等でCSSが適用されなくなる。
 // assetURL はアセットの URL を返す共通コア。
 // Local は data URI で埋め込み（HTTPサーバ非依存）、それ以外は公開パス。
-func (w *wrapper) assetURL(id string) (template.URL, error) {
+func (w *wrapper) assetURL(fn string, id string) (template.URL, error) {
 	if w.Local {
 		uri, err := w.owner.AssetDataURI(id)
 		if err != nil {
@@ -104,6 +104,10 @@ func (w *wrapper) assetURL(id string) (template.URL, error) {
 		return "", err
 	}
 
+	// プレビューでは data URI で問題なく表示されるため、未公開のまま公開すると
+	// 画像だけが 404 になる。公開時に気付けるようにする
+	w.warnUnreachable(fn, id, a.Private, a.Republish)
+
 	if w.deps != nil {
 		w.deps.assets[id] = a
 	}
@@ -114,7 +118,7 @@ func (w *wrapper) assetURL(id string) (template.URL, error) {
 
 // assets はテンプレート関数。エラー時はプレビューに表示する ERROR 文字列を返す。
 func (w *wrapper) assets(id string) template.URL {
-	src, err := w.assetURL(id)
+	src, err := w.assetURL("assets", id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
 		return template.URL(fmt.Sprintf("ERROR: assets(%s): %v", id, err))
@@ -141,7 +145,7 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 
 	// エラー時は drawLayer と同様にプレビューへ可視のエラー文字列を返す
 	// （壊れた src の <img> を出さない）
-	src, err := w.assetURL(id)
+	src, err := w.assetURL("assetsImage", id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assetsImage(%s): %v", id, err))
 		return templateError(fmt.Sprintf("ERROR: assetsImage(%s): %v", id, err))
@@ -436,7 +440,7 @@ func (w *wrapper) link(v ...any) template.HTML {
 		return templateError(fmt.Sprintf("ERROR: link(%s): %v", id, err))
 	}
 
-	w.warnUnreachable("link", id, s)
+	w.warnUnreachable("link", id, s.Private, s.Republish)
 
 	name := Arg[string](v, 1).Default("")
 	if strings.TrimSpace(name) == "" {
@@ -478,19 +482,20 @@ func (w *wrapper) url(v ...any) template.URL {
 		return template.URL(fmt.Sprintf("ERROR: url(%s): %v", id, err))
 	}
 
-	w.warnUnreachable("url", id, s)
+	w.warnUnreachable("url", id, s.Private, s.Republish)
 	return template.URL(href)
 }
 
-// warnUnreachable は公開しても辿れないエントリを指した場合に警告する。
-// リンク・URLは出すが、公開後に 403/404 になることは知らせる。
-func (w *wrapper) warnUnreachable(fn string, id string, s *model.Structure) {
+// warnUnreachable は公開しても辿れないエントリを参照した場合に警告する。
+// 参照自体は出すが、公開後に 403/404 になることは知らせる。
+// プレビュー中は「まだ公開していない」のが通常の状態なので警告しない。
+func (w *wrapper) warnUnreachable(fn string, id string, private bool, republish time.Time) {
 	if w.Local {
 		return
 	}
-	if s.Private {
+	if private {
 		w.addWarning(fmt.Sprintf("%s(%s): private entry", fn, id))
-	} else if s.Republish.IsZero() {
+	} else if republish.IsZero() {
 		w.addWarning(fmt.Sprintf("%s(%s): not published yet", fn, id))
 	}
 }
