@@ -790,6 +790,7 @@
         "js"       : "JS escape",
         "urlquery" : "URL query escape",
         "embed"        : "Embed note/asset inline",
+        "link"         : "Generate a link to an entry",
         "drawDiagram"  : "Render diagram SVG",
         "drawLayer"    : "Render layer overlay",
         "assets"       : "Get asset URL",

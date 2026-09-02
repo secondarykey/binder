@@ -790,6 +790,7 @@
         "js"       : "JSエスケープ",
         "urlquery" : "URLクエリエスケープ",
         "embed"        : "ノート/アセットを埋め込み",
+        "link"         : "エントリへのリンクを生成",
         "drawDiagram"  : "ダイアグラムSVGを描画",
         "drawLayer"    : "レイヤーを描画",
         "assets"       : "アセットURLを取得",

@@ -54,6 +54,19 @@ flowchart TD
 デザイン用途で効くのは `childNotes` / `latestNotes` / `breadcrumb` / `assets` /
 `assetsImage` / `drawDiagram` / `formatDate` / `lf2br`。
 
+エントリ間のリンクは `link` を使う。種別ごとに関数を分けず、IDから
+note / diagram / layer / asset を判定して公開時の相対URLを出し分ける。
+第2引数を省略するとエントリ名がリンクテキストになる。
+
+```
+{{ link "01a06311-..." }}          → <a href="../pages/foo.html">ノート名</a>
+{{ link "01a06311-..." "表示名" }}  → <a href="../pages/foo.html">表示名</a>
+```
+
+`link` はノート本文でも使える（本文も同じ FuncMap でテンプレート処理される）。
+marked が先に走るため `[表示名]({{ ... }})` の形は壊れる。`link` が `<a>` タグごと
+返すのはこのため。
+
 同梱プリセットの `index.tmpl` が実例として分かりやすい。
 
 ```
@@ -133,6 +146,7 @@ CSS はテンプレートではなく**アセット**。プリセットではこ
 | `{{assets}}` | data URI で埋め込み | `docs/assets/{alias}` への相対パス |
 | `{{drawDiagram}}` | Mermaid ソースを渡してブラウザで描画 | `docs/images/{alias}.svg` を `<img>` |
 | `childNotes` | 未公開ノートも含む | 公開済みのみ |
+| `{{link}}` | 公開時と同じ相対パス（プレビューでは押すとエディタで開く） | `docs/` 配下への相対パス |
 
 ## スキル化するときの論点
 

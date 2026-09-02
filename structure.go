@@ -20,6 +20,16 @@ func (b *Binder) GetStructure(id string) (*model.Structure, error) {
 // エンティティURLでないパス、または未登録のエイリアスの場合は nil を返す。
 // プレビュー内のバインダー内リンクを実体へ解決するために使う。
 func (b *Binder) ResolveLinkPath(path string) (*model.Structure, error) {
+
+	// index ノートだけは docs/ 直下に置かれるため、エイリアス表記のURLにならない
+	if path == "/" || path == "/index.html" {
+		s, err := b.db.GetStructure("index")
+		if db.IsNotExist(err) {
+			return nil, nil
+		}
+		return s, err
+	}
+
 	info := parseAliasFromPath(path)
 	if info == nil {
 		return nil, nil

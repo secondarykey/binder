@@ -42,9 +42,25 @@ func TestResolveLinkPath(t *testing.T) {
 		}
 	})
 
+	t.Run("index note", func(t *testing.T) {
+		// index ノートは docs/ 直下（/index.html）に置かれエイリアス表記にならない
+		for _, path := range []string{"/", "/index.html"} {
+			got, err := b.ResolveLinkPath(path)
+			if err != nil {
+				t.Fatalf("ResolveLinkPath(%q) error: %v", path, err)
+			}
+			if got == nil {
+				t.Fatalf("ResolveLinkPath(%q) returned nil, want the index note", path)
+			}
+			if got.Id != "index" {
+				t.Errorf("ResolveLinkPath(%q).Id = %q, want %q", path, got.Id, "index")
+			}
+		}
+	})
+
 	t.Run("not an entity path", func(t *testing.T) {
 		// エンティティURLでないパスはエラーにせず nil を返す
-		for _, path := range []string{"/", "/style.css", "/pages/", "/images/x.png"} {
+		for _, path := range []string{"/style.css", "/pages/", "/images/x.png"} {
 			got, err := b.ResolveLinkPath(path)
 			if err != nil {
 				t.Fatalf("ResolveLinkPath(%q) error: %v", path, err)

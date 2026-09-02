@@ -23,6 +23,7 @@ func templateError(msg string) template.HTML {
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
+		"link":          w.link,
 		"drawDiagram":   w.drawSVG,
 		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
@@ -407,6 +408,100 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 // エラー時は warnings に記録し、HTMLにERRORプレフィックスを出力して処理を継続する。
 // 呼び出しパス上に同じ ID が既に存在する場合は循環参照エラーとなる。
 // structure で type を確認し、note と（テキスト）asset のみをサポートする。
+// link はエントリIDからそのエントリへのリンク（<a>タグ）を生成するテンプレート関数。
+// 第2引数を省略した場合はエントリ名をリンクテキストにする。
+// 対象は note / diagram / layer / asset（テンプレートは公開ページを持たないため対象外）。
+//
+// プレビューでも公開時と同じ相対URLを返す。assets が Local で data URI を返すのは
+// <img> に実体が必要だからで、リンクは行き先だけあればよい。こうすると公開HTMLでは
+// そのままページ間リンクになり、プレビューではエディタ側でそのエントリを開く導線になる。
+func (w *wrapper) link(v ...any) template.HTML {
+
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		w.addWarning("link: missing id argument")
+		return templateError("ERROR: link id")
+	}
+
+	s, err := w.owner.db.GetStructure(id)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("link(%s): GetStructure: %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: link(%s): %v", id, err))
+	}
+
+	href, err := w.entryURL(s)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("link(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: link(%s): %v", id, err))
+	}
+
+	// リンクは出しつつ、公開後に辿れない先であることは警告する
+	if !w.Local {
+		if s.Private {
+			w.addWarning(fmt.Sprintf("link(%s): private entry", id))
+		} else if s.Republish.IsZero() {
+			w.addWarning(fmt.Sprintf("link(%s): not published yet", id))
+		}
+	}
+
+	name := Arg[string](v, 1).Default("")
+	if strings.TrimSpace(name) == "" {
+		name = s.Name
+	}
+
+	return template.HTML(fmt.Sprintf(`<a href="%s">%s</a>`,
+		template.HTMLEscapeString(href), template.HTMLEscapeString(name)))
+}
+
+// entryURL は Structure から公開時の相対URLを返す。
+// エクスポート時は参照した実体を依存関係として記録する（ノートは別ページのため対象外）。
+func (w *wrapper) entryURL(s *model.Structure) (string, error) {
+
+	switch s.Typ {
+	case "note":
+		n, err := w.owner.GetNote(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetNote() error: %w", err)
+		}
+		return w.convertURL(fs.HTMLFile(n)), nil
+
+	case "diagram":
+		d, err := w.owner.GetDiagram(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetDiagram() error: %w", err)
+		}
+		if w.deps != nil {
+			w.deps.diagrams[s.Id] = d
+		}
+		return w.convertURL(fs.SVGFile(d)), nil
+
+	case "layer":
+		l, err := w.owner.GetLayerWithParent(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetLayerWithParent() error: %w", err)
+		}
+		if w.deps != nil {
+			w.deps.layers[s.Id] = l
+			if l.Parent != nil {
+				w.deps.assets[l.ParentId] = l.Parent
+			}
+		}
+		return w.convertURL(fs.PublicLayerFile(l)), nil
+
+	case "asset":
+		a, err := w.owner.GetAssetWithParent(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetAssetWithParent() error: %w", err)
+		}
+		if w.deps != nil {
+			w.deps.assets[s.Id] = a
+		}
+		return w.convertURL(fs.PublicAssetFile(a)), nil
+	}
+
+	return "", xerrors.Errorf("unsupported type=%s", s.Typ)
+}
+
 func (w *wrapper) embed(id string) template.HTML {
 	if w.visited[id] {
 		w.addWarning(fmt.Sprintf("embed(%s): cycle detected", id))
