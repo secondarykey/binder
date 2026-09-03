@@ -41,7 +41,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25'
+          go-version: '1.27'
           # クローズ済みPRトリガーではキャッシュスコープが読み取り専用になり保存が必ず失敗するため無効化
           cache: false
 
