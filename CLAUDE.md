@@ -28,6 +28,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `docs/marked-migration.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `docs/macos-signing.md` |
 | 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `docs/publish-design.md` |
+| 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `docs/site-i18n.md` |
 | 配布するユーザ向けスキル（バインダー＝データディレクトリを編集する。アプリ本体の開発には使わない） | `docs/skills/binder-organize/SKILL.md` |
 | Wails v3 一般（セットアップ・移行・ログ・Bindings） | Skill: `wails3` |
 
