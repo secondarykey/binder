@@ -549,7 +549,21 @@
         "emptyContent" : "コンテンツが空です",
         "alwaysOnTop" : "最前面に固定",
         "notSupported" : "アセットは表示していません",
-        "colorScheme" : "カラースキーム"
+        "colorScheme" : "カラースキーム",
+        "linkNotFound" : "リンク先が見つかりません",
+        "publishWarn" : "公開しましたが警告が {{count}} 件あります（未公開データの参照など）。ログで確認できます",
+        "unresolvedResource" : "プレビューでは表示できません（公開後に表示されます）",
+        "unresolvedHint" : {
+            "diagram" : "プレビューでも表示するには drawDiagram が使えます",
+            "layer" : "プレビューでも表示するには drawLayer が使えます",
+            "asset" : "プレビューでも表示するには assetsImage が使えます"
+        },
+        "contextMenu" : {
+            "copy" : "コピー",
+            "copyLink" : "リンクのURLをコピー",
+            "openInBrowser" : "ブラウザで開く",
+            "openEntry" : "このエントリを開く"
+        }
     },
     "convert" : {
         "title" : "データ移行",
@@ -789,6 +803,8 @@
         "js"       : "JSエスケープ",
         "urlquery" : "URLクエリエスケープ",
         "embed"        : "ノート/アセットを埋め込み",
+        "link"         : "エントリへのリンクを生成",
+        "url"          : "エントリの公開URLを取得",
         "drawDiagram"  : "ダイアグラムSVGを描画",
         "drawLayer"    : "レイヤーを描画",
         "assets"       : "アセットURLを取得",

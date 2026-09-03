@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 
 import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -6,11 +6,15 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import ContrastIcon from '@mui/icons-material/Contrast';
 
-import { Events, Window } from '@wailsio/runtime';
+import { Events, Window, Browser } from '@wailsio/runtime';
 import { GetConfig, GetPreviewScrollbar } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
+import { copyClipboard } from './App';
+import { EventContext } from '../Event';
+import { resolveBinderLink } from '../components/editor/binder-link';
 import HTMLFrame from '../components/editor/HTMLFrame';
+import PreviewContextMenu from '@shared/editor/PreviewContextMenu';
 import Mermaid from '../components/editor/engines/Mermaid';
 
 import '../assets/App.css';
@@ -25,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 function PreviewApp() {
 
   const { t } = useTranslation();
+  const evt = useContext(EventContext);
 
   // URL search params から初期値を取得
   const params = new URLSearchParams(window.location.search);
@@ -37,6 +42,8 @@ function PreviewApp() {
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
   // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
   const [previewScrollbar, setPreviewScrollbar] = useState(true);
+  // エディタ閲覧履歴の可否（メインウィンドウが持つ状態の写し）
+  const [historyState, setHistoryState] = useState({ canBack: false, canForward: false });
 
   useEffect(() => {
     GetPreviewScrollbar().then((v) => setPreviewScrollbar(!!v)).catch(() => {});
@@ -44,7 +51,11 @@ function PreviewApp() {
       const data = event.data?.[0] ?? event.data;
       setPreviewScrollbar(!!data);
     });
-    return () => { cleanup(); };
+    const cleanupHistory = Events.On('binder:editor:historyState', (event) => {
+      const data = event.data?.[0] ?? event.data ?? {};
+      setHistoryState({ canBack: !!data.canBack, canForward: !!data.canForward });
+    });
+    return () => { cleanup(); cleanupHistory(); };
   }, []);
 
   useEffect(() => {
@@ -103,6 +114,31 @@ function PreviewApp() {
     Window.Close();
   };
 
+  // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
+  const [menu, setMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
+  const handleContextMenu = (info) => setMenu({ ...info, open: true, ...historyState });
+  const closeMenu = () => setMenu((m) => ({ ...m, open: false }));
+
+  // 戻る/進む はメインウィンドウのエディタ閲覧履歴を辿るため、依頼するだけ
+  const handleHistoryBack = () => Events.Emit('binder:editor:historyNav', { dir: 'back' });
+  const handleHistoryForward = () => Events.Emit('binder:editor:historyNav', { dir: 'forward' });
+
+  // プレビュー内の外部リンク: OSのブラウザで開く
+  const handleLinkExternal = (url) => {
+    Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
+  };
+
+  // プレビュー内のバインダー内リンク: 別ウィンドウのため、メインウィンドウへ遷移を依頼する
+  const handleLinkInternal = (href) => {
+    resolveBinderLink(href).then((target) => {
+      if (!target) {
+        evt.showWarningMessage(`${t("preview.linkNotFound")}: ${href}`);
+        return;
+      }
+      Events.Emit('binder:link:navigate', { url: target.url, id: target.id });
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   const handleToggleAlwaysOnTop = () => {
     const next = !alwaysOnTop;
     setAlwaysOnTop(next);
@@ -143,7 +179,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{
@@ -161,6 +197,17 @@ function PreviewApp() {
           </Typography>
         }
       </div>
+
+      <PreviewContextMenu
+        state={menu}
+        onClose={closeMenu}
+        onBack={handleHistoryBack}
+        onForward={handleHistoryForward}
+        onCopy={copyClipboard}
+        onCopyLink={copyClipboard}
+        onOpenExternal={handleLinkExternal}
+        onOpenInternal={handleLinkInternal}
+      />
 
       <SystemMessage />
     </div>

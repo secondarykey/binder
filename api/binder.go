@@ -130,10 +130,14 @@ func (a *App) CreateRemoteBinder(url, dir, branch, workBranch string, info *json
 	return address, nil
 }
 
-func (a *App) Generate(mode string, id string, data string) error {
+// Generate は指定エンティティを公開する。
+// テンプレート関数の警告（未公開のアセットを参照している等）を返す。
+// 公開自体は止めないが、公開後に 404 になる参照に気付けるようフロントで表示する。
+func (a *App) Generate(mode string, id string, data string) ([]string, error) {
 
 	defer log.PrintTrace(log.Func("Generate()", mode, id))
 
+	var warnings []string
 	var err error
 	switch mode {
 	case "note":
@@ -145,10 +149,9 @@ func (a *App) Generate(mode string, id string, data string) error {
 			err = fmt.Errorf("%s", result.Error)
 		}
 		if err == nil {
-			if len(result.Warnings) > 0 {
-				for _, w := range result.Warnings {
-					log.Warn("Generate warning: %s", w)
-				}
+			warnings = result.Warnings
+			for _, w := range warnings {
+				log.Warn("Generate warning: %s", w)
 			}
 			_, err = a.current.PublishNote(id, []byte(result.HTML))
 		}
@@ -166,53 +169,54 @@ func (a *App) Generate(mode string, id string, data string) error {
 	}
 
 	if err != nil {
-		return userError(err)
+		return nil, userError(err)
 	}
-	return nil
+	return warnings, nil
 }
 
 // GenerateAll は複数の公開アイテムをまとめて処理し、全ファイルを1つのコミットにまとめる。
-func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
+// Generate と同様にテンプレート関数の警告を返す。
+func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string, error) {
 
 	defer log.PrintTrace(log.Func("GenerateAll()", len(items)))
 
 	var allFiles []string
+	var warnings []string
 	for _, item := range items {
 		switch item.Mode {
 		case "note":
 			result, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
-				return userError(err)
+				return nil, userError(err)
 			}
 			if result.Error != "" {
-				return xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
+				return nil, xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
 			}
-			if len(result.Warnings) > 0 {
-				for _, w := range result.Warnings {
-					log.Warn("GenerateAll warning: %s", w)
-				}
+			for _, w := range result.Warnings {
+				log.Warn("GenerateAll warning: %s", w)
 			}
+			warnings = append(warnings, result.Warnings...)
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {
-				return userError(err)
+				return nil, userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		case "diagram":
 			files, _, err := a.current.PublishDiagramStage(item.Id, []byte(item.Data))
 			if err != nil {
-				return userError(err)
+				return nil, userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		case "assets":
 			files, _, err := a.current.PublishAssetStage(item.Id)
 			if err != nil {
-				return userError(err)
+				return nil, userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		case "layer":
 			files, _, err := a.current.PublishLayerStage(item.Id)
 			if err != nil {
-				return userError(err)
+				return nil, userError(err)
 			}
 			allFiles = append(allFiles, files...)
 		default:
@@ -221,9 +225,9 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) error {
 	}
 
 	if err := a.current.CommitFiles(message, allFiles...); err != nil {
-		return userError(err)
+		return nil, userError(err)
 	}
-	return nil
+	return warnings, nil
 }
 
 func (a *App) Unpublish(mode string, id string) error {

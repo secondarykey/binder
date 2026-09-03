@@ -549,7 +549,21 @@
         "emptyContent" : "Content is empty",
         "alwaysOnTop" : "Always on Top",
         "notSupported" : "Assets are not displayed",
-        "colorScheme" : "Color Scheme"
+        "colorScheme" : "Color Scheme",
+        "linkNotFound" : "Link target not found",
+        "publishWarn" : "Published with {{count}} warning(s) (e.g. references to unpublished data). See the log for details.",
+        "unresolvedResource" : "Not shown in preview (appears once published)",
+        "unresolvedHint" : {
+            "diagram" : "drawDiagram also renders it in the preview",
+            "layer" : "drawLayer also renders it in the preview",
+            "asset" : "assetsImage also renders it in the preview"
+        },
+        "contextMenu" : {
+            "copy" : "Copy",
+            "copyLink" : "Copy link address",
+            "openInBrowser" : "Open in browser",
+            "openEntry" : "Open this entry"
+        }
     },
     "convert" : {
         "title" : "Data Migration",
@@ -789,6 +803,8 @@
         "js"       : "JS escape",
         "urlquery" : "URL query escape",
         "embed"        : "Embed note/asset inline",
+        "link"         : "Generate a link to an entry",
+        "url"          : "Get the published URL of an entry",
         "drawDiagram"  : "Render diagram SVG",
         "drawLayer"    : "Render layer overlay",
         "assets"       : "Get asset URL",

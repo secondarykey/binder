@@ -47,6 +47,8 @@ export const goTemplateCandidates = [
 
   // Binder custom functions (defineFuncMap)
   { label: 'embed',        detail: 'autocomplete.embed',        category: 'binder', args: [{ name: 'id', type: 'string', idType: 'note,asset' }], returns: 'HTML' },
+  { label: 'link',         detail: 'autocomplete.link',         category: 'binder', args: [{ name: 'id', type: 'string', idType: 'note,diagram,asset,layer' }, { name: 'name?', type: 'string' }], returns: 'HTML' },
+  { label: 'url',          detail: 'autocomplete.url',          category: 'binder', args: [{ name: 'id', type: 'string', idType: 'note,diagram,asset,layer' }], returns: 'URL' },
   { label: 'drawDiagram',  detail: 'autocomplete.drawDiagram',  category: 'binder', args: [{ name: 'id', type: 'string', idType: 'diagram' }, { name: 'class?', type: 'string' }], returns: 'HTML' },
   { label: 'drawLayer',    detail: 'autocomplete.drawLayer',    category: 'binder', args: [{ name: 'id', type: 'string', idType: 'layer' }, { name: 'class?', type: 'string' }], returns: 'HTML' },
   { label: 'assets',       detail: 'autocomplete.assets',       category: 'binder', args: [{ name: 'id', type: 'string', idType: 'asset' }], returns: 'URL' },

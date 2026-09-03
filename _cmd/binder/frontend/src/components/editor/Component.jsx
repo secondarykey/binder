@@ -34,8 +34,10 @@ import "../../language";
 import { useTranslation } from 'react-i18next';
 
 import HTMLFrame from "./HTMLFrame.jsx";
+import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
+import { resolveBinderLink } from "./binder-link";
 import '../../assets/Editor.css'
-import { Mode } from "../../app/App.jsx";
+import { Mode, copyClipboard } from "../../app/App.jsx";
 
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -193,6 +195,26 @@ const editorHistory = {
     this.navigating = false;
   },
 };
+
+/**
+ * 履歴エントリのエディタURLを返す。
+ * asset だけ URL とモード名が異なるため、遷移する側で毎回書かずに済むよう共通化する。
+ */
+function editorHistoryURL(entry) {
+  const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
+  return "/editor/" + urlMode + "/" + entry.id;
+}
+
+/**
+ * エディタ閲覧履歴の可否を別ウィンドウのプレビューへ通知する。
+ * editorHistory は React の状態ではないため、変化した時点で明示的に送る。
+ */
+function emitHistoryState() {
+  Events.Emit('binder:editor:historyState', {
+    canBack: editorHistory.canGoBack(),
+    canForward: editorHistory.canGoForward(),
+  });
+}
 
 /**
  * タブ区切りテキストをMarkdownテーブルに変換する
@@ -492,6 +514,7 @@ function Editor(props) {
       editorHistory.push(mode, id);
     }
     editorHistory.navigating = false;
+    emitHistoryState();
   }, [id]);
   useEffect(() => { nameRef.current = name; }, [name]);
 
@@ -808,8 +831,7 @@ function Editor(props) {
       }
       if (entry) {
         e.preventDefault();
-        const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
-        nav("/editor/" + urlMode + "/" + entry.id);
+        nav(editorHistoryURL(entry));
       }
     };
     document.addEventListener('keydown', handler);
@@ -1111,6 +1133,8 @@ function Editor(props) {
       Events.Emit('binder:preview:update', {
         typ: modeRef.current, id: idRef.current, name: nameRef.current, html: htmlRef.current,
       });
+      // 後から開いたプレビューウィンドウにも現在の履歴の可否を渡す
+      emitHistoryState();
     });
     return () => { cleanup(); };
   }, []);
@@ -1711,6 +1735,44 @@ function Editor(props) {
     });
   }
 
+  // プレビューのコンテキストメニュー（WebView既定のメニューは HTMLFrame 側で止めている）
+  const [previewMenu, setPreviewMenu] = useState({ open: false, x: 0, y: 0, kind: null, href: '', selection: '' });
+  // 履歴の可否はメニューを開いた時点の値で固定する（editorHistory は React の状態ではない）
+  const handlePreviewContextMenu = (info) => setPreviewMenu({
+    ...info,
+    open: true,
+    canBack: editorHistory.canGoBack(),
+    canForward: editorHistory.canGoForward(),
+  });
+  const closePreviewMenu = () => setPreviewMenu((m) => ({ ...m, open: false }));
+
+  // プレビューからの「戻る」は WebView のフレーム履歴ではなくエディタの閲覧履歴を辿る
+  const handleHistoryBack = () => {
+    const entry = editorHistory.goBack();
+    if (entry) nav(editorHistoryURL(entry));
+  };
+  const handleHistoryForward = () => {
+    const entry = editorHistory.goForward();
+    if (entry) nav(editorHistoryURL(entry));
+  };
+
+  // プレビュー内の外部リンク: OSのブラウザで開く
+  const handleLinkExternal = (url) => {
+    Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
+  };
+
+  // プレビュー内のバインダー内リンク: プレビューを遷移させず、そのエントリをエディタで開く
+  const handleLinkInternal = (href) => {
+    resolveBinderLink(href).then((target) => {
+      if (!target) {
+        evt.showWarningMessage(`${t("preview.linkNotFound")}: ${href}`);
+        return;
+      }
+      nav(target.url);
+      evt.selectTreeNode(target.id);
+    }).catch((err) => evt.showErrorMessage(err));
+  };
+
   const handleOpenInBrowser = () => {
     if (!alias) return;
     let path = null;
@@ -1748,10 +1810,14 @@ function Editor(props) {
         elm = text;
       }
 
-      await Generate(mode, id, elm);
+      // テンプレート関数の警告（未公開データの参照など）。公開後に 404 になる
+      // 参照はプレビューでは見えないため、公開したこの時点で知らせる
+      const genWarnings = await Generate(mode, id, elm);
       evt.reloadUnpublished();
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
+      } else if (genWarnings?.length > 0) {
+        evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
       } else {
         evt.showSuccessMessage("Generate.");
       }
@@ -2838,7 +2904,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2847,9 +2913,20 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
               </div>
+
+              <PreviewContextMenu
+                state={previewMenu}
+                onClose={closePreviewMenu}
+                onBack={handleHistoryBack}
+                onForward={handleHistoryForward}
+                onCopy={copyClipboard}
+                onCopyLink={copyClipboard}
+                onOpenExternal={handleLinkExternal}
+                onOpenInternal={handleLinkInternal}
+              />
 
               {/** パースステータスバー */}
               <div id="parseStatusBar">
@@ -2930,4 +3007,4 @@ function Editor(props) {
 }
 
 export default Editor;
-export { editorHistory };
+export { editorHistory, editorHistoryURL };

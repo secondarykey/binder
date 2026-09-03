@@ -23,6 +23,8 @@ func templateError(msg string) template.HTML {
 func defineFuncMap(w *wrapper) map[string]interface{} {
 	funcMap := map[string]interface{}{
 		"embed":         w.embed,
+		"link":          w.link,
+		"url":           w.url,
 		"drawDiagram":   w.drawSVG,
 		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
@@ -88,7 +90,7 @@ func (h ArgHelper[T]) Default(def T) T {
 // <link rel="stylesheet" href="{{assets ...}}"> 等でCSSが適用されなくなる。
 // assetURL はアセットの URL を返す共通コア。
 // Local は data URI で埋め込み（HTTPサーバ非依存）、それ以外は公開パス。
-func (w *wrapper) assetURL(id string) (template.URL, error) {
+func (w *wrapper) assetURL(fn string, id string) (template.URL, error) {
 	if w.Local {
 		uri, err := w.owner.AssetDataURI(id)
 		if err != nil {
@@ -102,6 +104,10 @@ func (w *wrapper) assetURL(id string) (template.URL, error) {
 		return "", err
 	}
 
+	// プレビューでは data URI で問題なく表示されるため、未公開のまま公開すると
+	// 画像だけが 404 になる。公開時に気付けるようにする
+	w.warnUnreachable(fn, id, a.Private, a.Republish)
+
 	if w.deps != nil {
 		w.deps.assets[id] = a
 	}
@@ -112,7 +118,7 @@ func (w *wrapper) assetURL(id string) (template.URL, error) {
 
 // assets はテンプレート関数。エラー時はプレビューに表示する ERROR 文字列を返す。
 func (w *wrapper) assets(id string) template.URL {
-	src, err := w.assetURL(id)
+	src, err := w.assetURL("assets", id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assets(%s): %v", id, err))
 		return template.URL(fmt.Sprintf("ERROR: assets(%s): %v", id, err))
@@ -139,7 +145,7 @@ func (w *wrapper) assetsImage(v ...any) template.HTML {
 
 	// エラー時は drawLayer と同様にプレビューへ可視のエラー文字列を返す
 	// （壊れた src の <img> を出さない）
-	src, err := w.assetURL(id)
+	src, err := w.assetURL("assetsImage", id)
 	if err != nil {
 		w.addWarning(fmt.Sprintf("assetsImage(%s): %v", id, err))
 		return templateError(fmt.Sprintf("ERROR: assetsImage(%s): %v", id, err))
@@ -407,6 +413,142 @@ func (w *wrapper) getSVGFile(id string) (string, error) {
 // エラー時は warnings に記録し、HTMLにERRORプレフィックスを出力して処理を継続する。
 // 呼び出しパス上に同じ ID が既に存在する場合は循環参照エラーとなる。
 // structure で type を確認し、note と（テキスト）asset のみをサポートする。
+// link はエントリIDからそのエントリへのリンク（<a>タグ）を生成するテンプレート関数。
+// 第2引数を省略した場合はエントリ名をリンクテキストにする。
+// 対象は note / diagram / layer / asset（テンプレートは公開ページを持たないため対象外）。
+//
+// プレビューでも公開時と同じ相対URLを返す。assets が Local で data URI を返すのは
+// <img> に実体が必要だからで、リンクは行き先だけあればよい。こうすると公開HTMLでは
+// そのままページ間リンクになり、プレビューではエディタ側でそのエントリを開く導線になる。
+func (w *wrapper) link(v ...any) template.HTML {
+
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		w.addWarning("link: missing id argument")
+		return templateError("ERROR: link id")
+	}
+
+	s, err := w.owner.db.GetStructure(id)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("link(%s): GetStructure: %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: link(%s): %v", id, err))
+	}
+
+	href, err := w.entryURL(s)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("link(%s): %v", id, err))
+		return templateError(fmt.Sprintf("ERROR: link(%s): %v", id, err))
+	}
+
+	w.warnUnreachable("link", id, s.Private, s.Republish)
+
+	name := Arg[string](v, 1).Default("")
+	if strings.TrimSpace(name) == "" {
+		name = s.Name
+	}
+
+	return template.HTML(fmt.Sprintf(`<a href="%s">%s</a>`,
+		template.HTMLEscapeString(href), template.HTMLEscapeString(name)))
+}
+
+// url はエントリIDから公開時のURLを返すテンプレート関数。
+// <a> を組み立てる link と違い、URLだけが欲しい場面（<meta property="og:image">、
+// 独自の属性を付けた <a>、CSS の url() 等）で使う。
+//
+// プレビューでも公開時と同じURLを返す。モードで別物にすると
+// テンプレートを書く側が挙動を追えなくなるためで、代わりに未公開・非公開は警告する。
+// プレビューの iframe はこのURLを読み込めないので、画像として使った場合は
+// 壊れた画像ではなく「解決できない」と分かる表示に置き換わる（preview-unresolved.js）。
+//
+// なお marked が先に走る都合で、ノート本文の [x]({{ url ... }}) は成立しない。
+// 本文からは link を、テンプレートからは url を使う。
+func (w *wrapper) url(v ...any) template.URL {
+
+	id, ok := Arg[string](v, 0).Required()
+	if !ok {
+		w.addWarning("url: missing id argument")
+		return template.URL("ERROR: url id")
+	}
+
+	s, err := w.owner.db.GetStructure(id)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("url(%s): GetStructure: %v", id, err))
+		return template.URL(fmt.Sprintf("ERROR: url(%s): %v", id, err))
+	}
+
+	href, err := w.entryURL(s)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("url(%s): %v", id, err))
+		return template.URL(fmt.Sprintf("ERROR: url(%s): %v", id, err))
+	}
+
+	w.warnUnreachable("url", id, s.Private, s.Republish)
+	return template.URL(href)
+}
+
+// warnUnreachable は公開しても辿れないエントリを参照した場合に警告する。
+// 参照自体は出すが、公開後に 403/404 になることは知らせる。
+// プレビュー中は「まだ公開していない」のが通常の状態なので警告しない。
+func (w *wrapper) warnUnreachable(fn string, id string, private bool, republish time.Time) {
+	if w.Local {
+		return
+	}
+	if private {
+		w.addWarning(fmt.Sprintf("%s(%s): private entry", fn, id))
+	} else if republish.IsZero() {
+		w.addWarning(fmt.Sprintf("%s(%s): not published yet", fn, id))
+	}
+}
+
+// entryURL は Structure から公開時の相対URLを返す。
+// エクスポート時は参照した実体を依存関係として記録する（ノートは別ページのため対象外）。
+func (w *wrapper) entryURL(s *model.Structure) (string, error) {
+
+	switch s.Typ {
+	case "note":
+		n, err := w.owner.GetNote(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetNote() error: %w", err)
+		}
+		return w.convertURL(fs.HTMLFile(n)), nil
+
+	case "diagram":
+		d, err := w.owner.GetDiagram(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetDiagram() error: %w", err)
+		}
+		if w.deps != nil {
+			w.deps.diagrams[s.Id] = d
+		}
+		return w.convertURL(fs.SVGFile(d)), nil
+
+	case "layer":
+		l, err := w.owner.GetLayerWithParent(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetLayerWithParent() error: %w", err)
+		}
+		if w.deps != nil {
+			w.deps.layers[s.Id] = l
+			if l.Parent != nil {
+				w.deps.assets[l.ParentId] = l.Parent
+			}
+		}
+		return w.convertURL(fs.PublicLayerFile(l)), nil
+
+	case "asset":
+		a, err := w.owner.GetAssetWithParent(s.Id)
+		if err != nil {
+			return "", xerrors.Errorf("GetAssetWithParent() error: %w", err)
+		}
+		if w.deps != nil {
+			w.deps.assets[s.Id] = a
+		}
+		return w.convertURL(fs.PublicAssetFile(a)), nil
+	}
+
+	return "", xerrors.Errorf("unsupported type=%s", s.Typ)
+}
+
 func (w *wrapper) embed(id string) template.HTML {
 	if w.visited[id] {
 		w.addWarning(fmt.Sprintf("embed(%s): cycle detected", id))

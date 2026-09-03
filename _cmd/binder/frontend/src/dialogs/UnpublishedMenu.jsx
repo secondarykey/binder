@@ -133,9 +133,10 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
     }
 
     let generateOk = true;
+    let genWarnings = [];
     if (items.length > 0) {
       try {
-        await GenerateAll(items, "Regenerate All");
+        genWarnings = await GenerateAll(items, "Regenerate All") || [];
       } catch (err) {
         generateOk = false;
         evt.showErrorMessage(err);
@@ -154,6 +155,8 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
     } else if (generateOk) {
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
+      } else if (genWarnings.length > 0) {
+        evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
       } else {
         evt.showSuccessMessage(t("tree.regenerateAll"));
       }
@@ -271,9 +274,10 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
 
     // レンダリングに成功したアイテムを1回のコミットにまとめて公開
     let generateOk = true;
+    let genWarnings = [];
     if (items.length > 0) {
       try {
-        await GenerateAll(items, comment);
+        genWarnings = await GenerateAll(items, comment) || [];
       } catch (err) {
         generateOk = false;
         evt.showErrorMessage(err);
@@ -287,17 +291,27 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       setTimeout(() => { loadTree(); }, 800);
     } else if (!generateOk) {
       setTimeout(() => { loadTree(); }, 800);
-    } else if (onGenerated) {
-      // 続けて送信できるよう閉じずに残す。一覧は空になるので取り直す
-      evt.showSuccessMessage(t("publishModal.generateSuccess"));
-      setTimeout(() => { loadTree(); }, 800);
-      onGenerated();
-    } else if (onClose) {
-      evt.showSuccessMessage(t("publishModal.generateSuccess"));
-      onClose();
     } else {
-      evt.showSuccessMessage(t("publishModal.generateSuccess"));
-      setTimeout(() => { loadTree(); }, 800);
+      // 未公開データを参照したまま公開した場合は成功ではなく警告を出す
+      const done = () => {
+        if (genWarnings.length > 0) {
+          evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
+        } else {
+          evt.showSuccessMessage(t("publishModal.generateSuccess"));
+        }
+      };
+      if (onGenerated) {
+        // 続けて送信できるよう閉じずに残す。一覧は空になるので取り直す
+        done();
+        setTimeout(() => { loadTree(); }, 800);
+        onGenerated();
+      } else if (onClose) {
+        done();
+        onClose();
+      } else {
+        done();
+        setTimeout(() => { loadTree(); }, 800);
+      }
     }
   });
 

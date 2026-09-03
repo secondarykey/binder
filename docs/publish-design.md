@@ -54,6 +54,27 @@ flowchart TD
 デザイン用途で効くのは `childNotes` / `latestNotes` / `breadcrumb` / `assets` /
 `assetsImage` / `drawDiagram` / `formatDate` / `lf2br`。
 
+エントリ間のリンクは `link` を使う。種別ごとに関数を分けず、IDから
+note / diagram / layer / asset を判定して公開時の相対URLを出し分ける。
+第2引数を省略するとエントリ名がリンクテキストになる。
+
+```
+{{ link "01a06311-..." }}          → <a href="../pages/foo.html">ノート名</a>
+{{ link "01a06311-..." "表示名" }}  → <a href="../pages/foo.html">表示名</a>
+```
+
+URLだけが欲しい場面（`<meta property="og:image">`、独自の属性を付けた `<a>`、
+CSS の `url()` 等）は `url` を使う。解決の規則は `link` と同じ。
+
+```
+<meta property="og:image" content="{{ url "01a06311-..." }}">
+<a class="card" href="{{ url "01a06311-..." }}">...</a>
+```
+
+`link` はノート本文でも使える（本文も同じ FuncMap でテンプレート処理される）。
+ただし marked が先に走るため `[表示名]({{ ... }})` `![alt]({{ url ... }})` の形は壊れる。
+`link` が `<a>` タグごと返すのはこのため。**本文からは `link`、テンプレートからは `url`**。
+
 同梱プリセットの `index.tmpl` が実例として分かりやすい。
 
 ```
@@ -133,6 +154,21 @@ CSS はテンプレートではなく**アセット**。プリセットではこ
 | `{{assets}}` | data URI で埋め込み | `docs/assets/{alias}` への相対パス |
 | `{{drawDiagram}}` | Mermaid ソースを渡してブラウザで描画 | `docs/images/{alias}.svg` を `<img>` |
 | `childNotes` | 未公開ノートも含む | 公開済みのみ |
+| `{{link}}` | 公開時と同じ相対パス（プレビューでは押すとエディタで開く） | `docs/` 配下への相対パス |
+| `{{url}}` | 公開時と同じ相対パス（プレビューの iframe は読み込めない） | `docs/` 配下への相対パス |
+
+`url` がプレビューでも公開時と同じURLを返すのは、モードで別物にすると
+テンプレートを書く側が挙動を追えなくなるため。ただしプレビューの iframe は
+srcdoc なのでこのURLを読み込めない。`<img src="{{ url ... }}">` は壊れた画像に
+なる代わりに「プレビューでは表示できません」という表示へ置き換わる
+（`_cmd/shared/frontend/editor/preview-unresolved.js`）。前回公開時の古い成果物を
+黙って見せるより、解決できないと明示する方針。
+
+プレビューでも図・画像を見たい場合は `drawDiagram` / `assetsImage` / `drawLayer` を使う。
+プレースホルダはパスの形（`/images/` `/assets/` `/layers/`）から種別を導けた場合、
+その代替も併記する。訂正ではなく代替の提示であることに注意（公開専用の画像として
+意図的に `url` を使う書き方もあり、`drawDiagram` は `<div class="binderSVG">` で
+包むため任意の属性を付けた `<img>` の置き換えにはならない）。
 
 ## スキル化するときの論点
 
@@ -140,8 +176,10 @@ CSS はテンプレートではなく**アセット**。プリセットではこ
   危険度が違う。別スキルに分けるか、モードを分けるかは要検討
 - Go テンプレートの構文検査を手元でやる手段が無い（ユーザ環境に Go は無い前提）。
   `{{...}}` の対応と既知の関数名・フィールド名のリントぐらいが現実的
-- `{{assets}}` の参照先アセットが**公開済みか**の検査は静的にできる
-  （`structures.csv` の `republish_date` がゼロでないか）。上記の落とし穴に直結するので価値が高い
+- `{{assets}}` の参照先アセットが**公開済みか**は公開時に警告する（`warnUnreachable`、
+  `link` / `url` も同じ）。プレビューでは data URI で綺麗に表示され、公開後に画像だけが
+  404 になるため、公開したその場で伝える必要があった。
+  警告は `Generate` / `GenerateAll` の戻り値としてフロントに渡り、スナックバーに件数が出る
 
 ## 参照
 
