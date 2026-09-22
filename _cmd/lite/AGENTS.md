@@ -50,7 +50,7 @@ setup/, settings/（Binder と共有）
 - **language.jsx** — i18next 初期化
 - **useHasScrollbar.js** — スクロールバー検出フック（`useScrollbarOffset`, `useHScrollbarOffset`, `useIframeScrollbarOffset`）。ボタン位置調整用
 
-共有エディタコンポーネントは `@shared/editor/...` を直接 import する（旧 `components/editor/` は削除済み）。詳細は `_cmd/shared/frontend/CLAUDE.md` を参照。
+共有エディタコンポーネントは `@shared/editor/...` を直接 import する（旧 `components/editor/` は削除済み）。詳細は `_cmd/shared/frontend/AGENTS.md` を参照。
 
 ## 主な機能
 
