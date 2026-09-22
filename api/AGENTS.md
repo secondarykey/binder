@@ -50,5 +50,5 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 ## サブパッケージ
 
 - **json/** — API入出力用のモデル型（`db/model` とは別物。フロントエンドと受け渡す形）
-- **lite/** — Binder Lite の Service（fs/db に依存しない。詳細は `_cmd/lite/CLAUDE.md`）
+- **lite/** — Binder Lite の Service（fs/db に依存しない。詳細は `_cmd/lite/AGENTS.md`）
 - **shared/** — Binder/Lite 共通の第3 Service（テーマ・言語・フォント一覧）

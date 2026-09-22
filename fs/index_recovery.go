@@ -15,7 +15,7 @@ import (
 const brokenIndexFile = "index.broken"
 
 // repairIndexIfCorrupt は .git/index の破損を検出した場合のみ自動復旧する。
-// Load() から一度だけ呼ばれる（詳細は fs/CLAUDE.md のトラブルシュート節を参照）。
+// Load() から一度だけ呼ばれる（詳細は fs/AGENTS.md のトラブルシュート節を参照）。
 //
 // go-git はインデックスを truncate + 直接書き込みで更新するため、書き込み中の
 // 電源断・強制終了・外部ツールの干渉で破損しうる。破損したままだとバインダーの

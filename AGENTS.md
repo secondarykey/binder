@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with code in this repository.
 
 ## プロジェクト概要
 
@@ -10,17 +10,17 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 
 ## 詳細ドキュメントの場所
 
-このファイルには全体像と必須ルールのみを置く。詳細は以下を参照する（ネストした CLAUDE.md は該当ディレクトリのファイルを扱う際に自動で読み込まれるが、計画段階では能動的に Read してよい）。
+このファイルには全体像と必須ルールのみを置く。詳細は以下を参照する（ネストした AGENTS.md は自動では読み込まれないため、該当ディレクトリのファイルを扱う際は先に Read すること）。
 
 | トピック | 参照先 |
 |---|---|
-| DB・ドメインエンティティ・マイグレーション・DAO生成 | `db/CLAUDE.md` |
-| fsパッケージ（パス規約・コミット/署名・Status・マージ） | `fs/CLAUDE.md` |
-| apiパッケージ（メソッド規約・ファイル別責務） | `api/CLAUDE.md` |
-| バインダーレベルマイグレーションの追加方法・各バージョンの移行内容 | `setup/convert/CLAUDE.md` |
-| Binderフロントエンド構成・テスト構成 | `_cmd/binder/frontend/CLAUDE.md` |
-| Binder Lite（アーキテクチャ・機能・タブ構造） | `_cmd/lite/CLAUDE.md` |
-| 共有エディタコンポーネント・オートコンプリート | `_cmd/shared/frontend/CLAUDE.md` |
+| DB・ドメインエンティティ・マイグレーション・DAO生成 | `db/AGENTS.md` |
+| fsパッケージ（パス規約・コミット/署名・Status・マージ） | `fs/AGENTS.md` |
+| apiパッケージ（メソッド規約・ファイル別責務） | `api/AGENTS.md` |
+| バインダーレベルマイグレーションの追加方法・各バージョンの移行内容 | `setup/convert/AGENTS.md` |
+| Binderフロントエンド構成・テスト構成 | `_cmd/binder/frontend/AGENTS.md` |
+| Binder Lite（アーキテクチャ・機能・タブ構造） | `_cmd/lite/AGENTS.md` |
+| 共有エディタコンポーネント・オートコンプリート | `_cmd/shared/frontend/AGENTS.md` |
 | ユーザ向けエラー（MessageError / userError / parseError） | Skill: `binder-user-error` |
 | テーマ・言語・i18n（CSS変数・翻訳キー・settings.T） | Skill: `binder-i18n-theme` |
 | バージョン変更手順 | Skill: `binder-version-up` |
