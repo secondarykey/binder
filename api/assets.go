@@ -54,17 +54,19 @@ func (a *App) DropAsset(as *json.Asset, filename string, base64data string) (*js
 
 // ImportLocalFiles は OS のファイルパス一覧を受け取り、各ファイルを指定ノートのアセットとして登録する。
 // Wails ネイティブファイルドロップ (EnableFileDrop) から Go ハンドラ経由で呼び出される。
-func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
+// 登録できたアセットを返す。途中でエラーになった場合も、それまでに登録したアセットは返す。
+func (a *App) ImportLocalFiles(parentId string, filePaths []string) ([]*json.Asset, error) {
 
 	defer log.PrintTrace(log.Func("ImportLocalFiles()", parentId))
 
+	assets := make([]*json.Asset, 0, len(filePaths))
 	for _, p := range filePaths {
 		data, err := os.ReadFile(p)
 		if err != nil {
-			return userError(err)
+			return assets, userError(err)
 		}
 		if len(data) == 0 {
-			return fmt.Errorf("ImportLocalFiles() error: empty file %s", filepath.Base(p))
+			return assets, fmt.Errorf("ImportLocalFiles() error: empty file %s", filepath.Base(p))
 		}
 		filename := filepath.Base(p)
 		b64 := base64.StdEncoding.EncodeToString(data)
@@ -75,12 +77,14 @@ func (a *App) ImportLocalFiles(parentId string, filePaths []string) error {
 			Detail:   "",
 			Binary:   false,
 		}
-		if _, err := a.current.DropAsset(as, filename, b64); err != nil {
+		rtn, err := a.current.DropAsset(as, filename, b64)
+		if err != nil {
 			log.PrintStackTrace(err)
-			return userError(err)
+			return assets, userError(err)
 		}
+		assets = append(assets, rtn)
 	}
-	return nil
+	return assets, nil
 }
 
 // GetAssetContent はアセットファイルの内容を base64 エンコードして返す。

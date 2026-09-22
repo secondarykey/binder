@@ -20,6 +20,23 @@ describe('EditorArea', () => {
     const { container } = render(<EditorArea text="line1" showLineNumbers={false} onChange={() => {}} />);
     expect(container.querySelector('.editorLineNumbers')).toBeNull();
   });
+
+  it('applies dropTarget attributes to the textarea', () => {
+    render(<EditorArea text="" onChange={() => {}} dropTarget={{
+      'data-file-drop-target': '',
+      'data-wails-node-id': 'note-1',
+      'data-wails-drop-kind': 'editor',
+    }} />);
+    const ta = screen.getByRole('textbox');
+    expect(ta).toHaveAttribute('data-file-drop-target', '');
+    expect(ta).toHaveAttribute('data-wails-node-id', 'note-1');
+    expect(ta).toHaveAttribute('data-wails-drop-kind', 'editor');
+  });
+
+  it('is not a drop target without dropTarget', () => {
+    render(<EditorArea text="" onChange={() => {}} />);
+    expect(screen.getByRole('textbox')).not.toHaveAttribute('data-file-drop-target');
+  });
 });
 
 describe('EditorArea line wrap cache', () => {
