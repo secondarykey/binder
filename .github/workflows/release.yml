@@ -17,8 +17,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-15]
-        #os: [ubuntu-latest, windows-latest, macos-latest]
+        # Linux は ubuntu-24.04 に固定する。cgo ビルドの配布物はビルド環境の glibc 以上を要求するため、
+        # ubuntu-latest（2026-10-19 から Ubuntu 26.04 / glibc 2.43 へ移行）だと
+        # README で対応をうたう Ubuntu 24.04 / Debian 13 で起動できなくなる（runner-images#14748）
+        os: [ubuntu-24.04, windows-latest, macos-15]
+        #os: [ubuntu-24.04, windows-latest, macos-latest]
     if: |
       contains(github.ref, 'refs/tags/v') && 
       !contains(github.ref, '-') && 
