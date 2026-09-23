@@ -45,10 +45,14 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
+      - name: Load variables
+        shell: bash
+        run: cat .github/variables >> $GITHUB_ENV
+
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.27'
+          go-version: ${{ env.GO_VERSION }}
       - name: Get Go Env
         shell: bash
         run: |
@@ -68,10 +72,6 @@ jobs:
           go env GOOS GOARCH
           node -v
           npm -v
-
-      - name: Load variables
-        shell: bash
-        run: cat .github/variables >> $GITHUB_ENV
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}

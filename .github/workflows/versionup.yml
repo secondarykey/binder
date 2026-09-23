@@ -38,15 +38,15 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
+      - name: Load variables
+        run: cat .github/variables >> $GITHUB_ENV
+
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.27'
+          go-version: ${{ env.GO_VERSION }}
           # クローズ済みPRトリガーではキャッシュスコープが読み取り専用になり保存が必ず失敗するため無効化
           cache: false
-
-      - name: Load variables
-        run: cat .github/variables >> $GITHUB_ENV
 
       - name: Install Wails3
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
