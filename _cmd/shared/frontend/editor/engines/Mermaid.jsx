@@ -1,7 +1,18 @@
 import Scripter from "./Scripter";
 
 const Name = "mermaid";
-const DefaultOpts = { startOnLoad: false };
+// theme / look / layout は mermaid 12 で既定が変わる（redux-color / neo / elk）ため、
+// 11 系の既定を明示して見た目を固定する。initialize の値は図側の指定
+// （%%{init}%%・frontmatter・スタイルテンプレート）より優先度が低いため、ユーザの指定は上書きしない。
+// トップレベルの layout は 12 の swimlane 既定（swimlane.layout）より優先されるので、
+// 図ごとのキーで swimlane だけ専用レイアウトに戻す（11 系では未使用のキーで影響なし）
+const DefaultOpts = {
+  startOnLoad: false,
+  theme: 'default',
+  look: 'classic',
+  layout: 'dagre',
+  swimlane: { layout: 'swimlane' },
+};
 
 // ダイアグラムスタイルテンプレートのキャッシュ（テンプレートID → 内容文字列）
 const _styleCache = {};
