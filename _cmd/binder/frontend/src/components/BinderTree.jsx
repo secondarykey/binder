@@ -217,7 +217,8 @@ function BinderTree(props) {
   // エディタ引数に {bfile} が含まれる場合に true（右クリック都度判定）
   const [showGitBashPath, setShowGitBashPath] = useState(false);
 
-  // 自動コミット操作（名前変更・メタ更新・移動など）後にフロントエンド側で保持するダーティID
+  // 自動コミット操作（名前変更・メタ更新など）後にフロントエンド側で保持するダーティID
+  // ツリーの D&D 移動は構成の変更のみのため対象外
   // ChangeAddress 時にクリア
   const [localDirtyIds, setLocalDirtyIds] = useState(new Set());
 
@@ -616,8 +617,6 @@ function BinderTree(props) {
   const handleChange = (changeInfo) => {
     const parentId = changeInfo.parentId ?? "";
     MoveNode(parentId, changeInfo.childIds).then(() => {
-      // 移動した要素のみをローカルダーティとしてマーク（兄弟要素は対象外）
-      evt.markModified(changeInfo.draggedId);
       viewTree();
     }).catch((err) => {
       evt.showErrorMessage(err);
