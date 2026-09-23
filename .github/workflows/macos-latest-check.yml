@@ -11,6 +11,7 @@ on:
   push:
     paths:
       - '.github/workflows/macos-latest-check.yml'
+      - '_cmd/*/build/**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -70,10 +71,10 @@ jobs:
           wails3 version
           wails3 doctor
 
-      # 問題のコマンド単体（Binder の common:generate:icons と同じ）
+      # 問題のタスク単体（package からも呼ばれる）
       - name: Generate icons (Binder)
-        working-directory: ./_cmd/binder/build
-        run: wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename windows/icon.ico -iconcomposerinput appicon.icon -macassetdir darwin
+        working-directory: ./_cmd/binder
+        run: wails3 task common:generate:icons
 
       - name: Package (Binder)
         working-directory: ./_cmd/binder
