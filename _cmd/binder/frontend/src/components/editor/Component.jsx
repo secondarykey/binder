@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, DropAsset, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, Unpublish, Commit, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar } from "../../../bindings/binder/api/app";
@@ -1271,6 +1271,19 @@ function Editor(props) {
     });
   });
 
+  // エディタへの OS ファイルドロップ: Go ハンドラ (main.go) がアセット登録後に
+  // binder:filedrop:editor を発行するので、カーソル位置にアセット参照を挿入する
+  useEffect(() => {
+    return Events.On('binder:filedrop:editor', (event) => {
+      const { nodeId, assets } = event.data ?? {};
+      if (modeRef.current !== Mode.note || nodeId !== idRef.current || !assets?.length) return;
+      const tags = assets.map((a) => a.mime?.startsWith('image/')
+        ? `{{assetsImage "${a.id}" ""}}`
+        : `{{assets "${a.id}"}}`);
+      evt.insertText(tags.join('\n'));
+    });
+  }, []);
+
   // エディタへフォーカスを移すイベントを購読
   // BinderTree でのリネーム確定など、ナビゲーションを伴わないケースで使う
   useEventListener(Event.FocusEditor, () => {
@@ -1966,80 +1979,6 @@ function Editor(props) {
     setText(textarea.value);
     writeFn(mode, id, textarea.value);
   };
-
-  /**
-   * ファイルドロップ許可
-   */
-  const handleDragOver = (e) => {
-    if (e.dataTransfer?.types?.includes('Files')) {
-      e.preventDefault();
-    }
-  }
-
-  /**
-   * エディタへのファイルドロップ処理
-   * 画像: {{assetsImage "id"}} を挿入
-   * その他: {{assets "id"}} を挿入
-   */
-  const handleDrop = (e) => {
-    if (mode !== Mode.note) return;
-
-    const files = e.dataTransfer?.files;
-    if (!files || files.length === 0) return;
-
-    e.preventDefault();
-
-    // ドロップ時点のカーソル位置を記録（非同期処理前に取得）
-    const dropPos = e.currentTarget.selectionStart;
-
-    Array.from(files).forEach((file) => {
-      const isImage = file.type.startsWith('image/');
-      const filename = file.name || `drop-${Date.now()}`;
-
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const base64 = ev.target.result.split(',')[1];
-        if (!base64) {
-          evt.showWarningMessage(t('editor.fileDataEmpty'));
-          return;
-        }
-
-        const asset = {
-          Id: '',
-          ParentId: id,
-          Name: filename,
-          Alias: filename,
-          Detail: '',
-          Binary: false,
-        };
-
-        DropAsset(asset, filename, base64).then((result) => {
-          evt.refreshTree();
-          if (result?.id) {
-            const tag = isImage
-              ? `{{assetsImage "${result.id}" ""}}`
-              : `{{assets "${result.id}"}}`;
-            const ta = document.querySelector('#editor');
-            if (!ta) return;
-            const val = ta.value;
-            const before = val.substring(0, dropPos);
-            const after = val.substring(dropPos);
-            const newVal = before + tag + after;
-            ta.value = newVal;
-            ta.selectionStart = dropPos + tag.length;
-            ta.selectionEnd = dropPos + tag.length;
-            requestAnimationFrame(() => {
-              setText(newVal);
-              writeFn(mode, id, newVal);
-            });
-          }
-        }).catch((err) => {
-          evt.showErrorMessage(err);
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  }
 
   /**
    * 文字列挿入
@@ -2752,8 +2691,12 @@ function Editor(props) {
                 onCursorMove={handleCursorMove}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
+                dropTarget={mode === Mode.note ? {
+                  'data-file-drop-target': '',
+                  'data-wails-node-id': id,
+                  'data-wails-node-type': 'note',
+                  'data-wails-drop-kind': 'editor',
+                } : undefined}
               />
 
               {/** ID ステータスバー */}

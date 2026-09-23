@@ -34,7 +34,7 @@ csvq（CSVファイルに対するSQL）を使用。binderリポジトリ内の`
 - 個々のバインダー（gitリポジトリ）内のDBスキーマ・ファイル構造を更新する処理
 - `binder.json` のバージョンとアプリバージョンを比較し、古い場合に `setup.Convert()` → `convert.Run()` で移行を実行する
 - バインダーを開く時にのみ実行される（`api.App.CheckCompat()` → フロントエンド確認 → `api.App.Convert()`）
-- 各バージョンの移行詳細・移行の追加方法は `setup/convert/CLAUDE.md` を参照
+- 各バージョンの移行詳細・移行の追加方法は `setup/convert/AGENTS.md` を参照
 
 ## DAO コード生成
 

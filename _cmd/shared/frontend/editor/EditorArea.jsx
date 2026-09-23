@@ -10,10 +10,10 @@ import { useRef, useState, useCallback, useEffect } from "react";
  *   wordWrap        - テキスト折り返しを有効にするか（デフォルト: true）
  *   onKeyDown       - キーダウンハンドラ
  *   onChange        - テキスト変更ハンドラ
- *   onDragOver      - ドラッグオーバーハンドラ
- *   onDrop          - ドロップハンドラ
+ *   dropTarget      - textarea に付与する Wails ファイルドロップ用の data 属性
+ *                     （data-file-drop-target 等。未指定ならドロップ先にしない）
  */
-function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onErrorLineDoubleClick, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, onDragOver, onDrop }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onErrorLineDoubleClick, onKeyDown, onChange, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, dropTarget }) {
   const lineNumbersRef = useRef(null);
   // 各論理行が折り返しで何 visual 行になるか（折り返し行数）。
   const [lineWraps, setLineWraps] = useState([]);
@@ -211,9 +211,8 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
         onKeyUp={onCursorMove}
         onCompositionStart={onCompositionStart}
         onCompositionEnd={onCompositionEnd}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
         onScroll={handleEditorScroll}
+        {...dropTarget}
       />
     </div>
   );

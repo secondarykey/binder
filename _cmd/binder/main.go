@@ -196,12 +196,22 @@ func main() {
 			return
 		}
 
-		if err := app.ImportLocalFiles(nodeId, files); err != nil {
+		assets, err := app.ImportLocalFiles(nodeId, files)
+		if err != nil {
 			log.PrintStackTrace(err)
 			wailsApp.Event.Emit("binder:error", err.Error())
+		}
+		if len(assets) == 0 {
 			return
 		}
 
+		// エディタへのドロップ: 登録したアセットの参照をエディタに挿入させる
+		if details.Attributes["data-wails-drop-kind"] == "editor" {
+			wailsApp.Event.Emit("binder:filedrop:editor", map[string]any{
+				"nodeId": nodeId,
+				"assets": assets,
+			})
+		}
 		wailsApp.Event.Emit("binder:filedrop:done")
 	})
 

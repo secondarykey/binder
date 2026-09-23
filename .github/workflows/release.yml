@@ -17,8 +17,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-15]
-        #os: [ubuntu-latest, windows-latest, macos-latest]
+        # Linux は ubuntu-24.04 に固定する。cgo ビルドの配布物はビルド環境の glibc 以上を要求するため、
+        # ubuntu-latest（2026-10-19 から Ubuntu 26.04 / glibc 2.43 へ移行）だと
+        # README で対応をうたう Ubuntu 24.04 / Debian 13 で起動できなくなる（runner-images#14748）
+        os: [ubuntu-24.04, windows-latest, macos-15]
+        #os: [ubuntu-24.04, windows-latest, macos-latest]
     if: |
       contains(github.ref, 'refs/tags/v') && 
       !contains(github.ref, '-') && 
@@ -42,10 +45,14 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
+      - name: Load variables
+        shell: bash
+        run: cat .github/variables >> $GITHUB_ENV
+
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.27'
+          go-version: ${{ env.GO_VERSION }}
       - name: Get Go Env
         shell: bash
         run: |
@@ -65,10 +72,6 @@ jobs:
           go env GOOS GOARCH
           node -v
           npm -v
-
-      - name: Load variables
-        shell: bash
-        run: cat .github/variables >> $GITHUB_ENV
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}

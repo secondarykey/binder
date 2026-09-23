@@ -1,0 +1,85 @@
+name: macos-latest Build Check
+
+# Issue #63: macos-latest のピン留め（macos-15）を解除できるかの確認用。
+# Xcode 26.5 の actool クラッシュ（FB20183399）で `wails3 generate icons -macassetdir darwin` が
+# 落ちていたため、macos-latest の既定 Xcode と比較用の Xcode で package（ad-hoc 署名）まで通るかを見る。
+# 既定 Xcode で成功すれば release.yml の matrix.os を macos-latest に戻して本ワークフローは削除する。
+on:
+  workflow_dispatch:
+  # workflow_dispatch はデフォルトブランチにファイルが無いと起動できないため、
+  # このファイル自体を変更した push でも動かす
+  push:
+    paths:
+      - '.github/workflows/macos-latest-check.yml'
+      - '_cmd/*/build/**'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # default: ランナーの既定 Xcode / 26.5: クラッシュが再現していた版（比較用）
+        xcode: ['default', '26.5']
+    runs-on: macos-latest
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        if: matrix.xcode != 'default'
+        run: |
+          XCODE_APP="/Applications/Xcode_${{ matrix.xcode }}.app"
+          if [ ! -d "$XCODE_APP" ]; then
+            echo "::error::$XCODE_APP がランナーイメージにありません"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+
+      - name: Display Xcode
+        run: |
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+          xcrun actool --version
+
+      - name: Load variables
+        run: cat .github/variables >> $GITHUB_ENV
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
+
+      - name: Wails doctor
+        run: |
+          wails3 version
+          wails3 doctor
+
+      # 問題のタスク単体（package からも呼ばれる）
+      - name: Generate icons (Binder)
+        working-directory: ./_cmd/binder
+        run: wails3 task common:generate:icons
+
+      - name: Package (Binder)
+        working-directory: ./_cmd/binder
+        run: wails3 package
+
+      - name: Package (Binder Lite)
+        working-directory: ./_cmd/lite
+        run: wails3 package
