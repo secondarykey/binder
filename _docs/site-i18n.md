@@ -555,6 +555,6 @@ alias が同じなのでリンクは生成できる。
 - 送信: [fs/git.go](../fs/git.go) `PushDocs` / [binder.go](../binder.go) `PushDocs`
 - 公開パス: [fs/path.go](../fs/path.go) `HTMLFile` / `svgFile` / `publicMetaFilePath`
 - URL生成: [html_wrapper.go](../html_wrapper.go) `relativePrefix` / `convertURL`
-- テンプレートに渡るデータ: [docs/publish-design.md](publish-design.md)
+- テンプレートに渡るデータ: [_docs/publish-design.md](publish-design.md)
 - マージ: [fs/merge.go](../fs/merge.go) / [fs/merge_csv.go](../fs/merge_csv.go) / [merge_reconcile.go](../merge_reconcile.go)
 - メタ: [fs/meta.go](../fs/meta.go) `BinderMeta`
