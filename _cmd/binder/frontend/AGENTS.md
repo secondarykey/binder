@@ -44,9 +44,9 @@
 
 ## テーマ・言語の利用
 
-- テーマ: `var(--変数名)` をsx prop / inline style / CSS いずれでも使用可能。切り替えは `applyTheme(themeId)`（`src/theme.js`）。CSS変数の追加はスキル `binder-i18n-theme` を参照
-- 言語: `useTranslation` フックで `t("menu.setting")` のように参照。動的読み込みは `loadLanguage(code)`（`src/language.jsx`）。翻訳キー追加はスキル `binder-i18n-theme` を参照
-- エラー表示: `src/error.js` の `parseError(err)`。仕組みはスキル `binder-user-error` を参照
+- テーマ: `var(--変数名)` をsx prop / inline style / CSS いずれでも使用可能。切り替えは `applyTheme(themeId)`（`src/theme.js`）。CSS変数の追加は `_docs/skills/binder-i18n-theme/SKILL.md` を参照
+- 言語: `useTranslation` フックで `t("menu.setting")` のように参照。動的読み込みは `loadLanguage(code)`（`src/language.jsx`）。翻訳キー追加は `_docs/skills/binder-i18n-theme/SKILL.md` を参照
+- エラー表示: `src/error.js` の `parseError(err)`。仕組みは `_docs/skills/binder-user-error/SKILL.md` を参照
 
 ## テスト構成
 

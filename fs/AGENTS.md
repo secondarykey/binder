@@ -63,7 +63,7 @@ docs/layers/{layer_alias}.svg
 - **fs.go** — `FileSystem` 本体、生成、低レベルI/O（create時に自動 git add）
 - **git.go** — git操作全般: リモートCRUD・`Fetch`・`MergeFFOnly`・`Push`・`PushDocs`（docs/のみの公開push）・ブランチ操作・`ResetHard(To)`・履歴（`GetOverallHistory` / `GetFileHistory` / `GetNowPatch` / `GetHistoryPatch`）・復元（`RestoreToCommit` / `RestoreFile`）
 - **note.go / diagram.go / asset.go / layer.go / template.go** — エンティティ別ファイル操作（Create/Read/Write/Delete/Publish/Unpublish/Rename）。テンプレートは `AddTemplateFrame` / `StripTemplateFrame` で編集用フレームを付脱
-- **rootfile.go / plugin.go** — ルートファイル・プラグイン（詳細は Skill: `binder-plugin-rootfile`）
+- **rootfile.go / plugin.go** — ルートファイル・プラグイン（詳細は `_docs/skills/binder-plugin-rootfile/SKILL.md`）
 - **meta.go** — `BinderMeta`（binder.json）: version / minAppVersion / name / detail / markedUrl / mermaidUrl / optimizeImage / publishOnly / publishBranch / publishSubDir / previewColorScheme。`Schema` フィールドは0.3.2未満との後方互換用（非推奨）
 - **db.go** — `db/` 配下CSVテーブルのパス解決・ステージング
 - **user.go / crypt.go** — `user_data.enc`（暗号化された `UserInfo`: git署名＋認証情報。`AuthType`: basic / token / ssh_key / ssh_agent）
@@ -99,7 +99,7 @@ docs/layers/{layer_alias}.svg
 
 ## エラー sentinel
 
-- `UpdatedFilesError`（更新ファイルなし）— API層で Info 扱い（Skill: `binder-user-error` 参照）
+- `UpdatedFilesError`（更新ファイルなし）— API層で Info 扱い（`_docs/skills/binder-user-error/SKILL.md` 参照）
 - `NoUpdated`
 
 ## テスト

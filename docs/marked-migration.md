@@ -450,7 +450,7 @@ renderer: function(token) { return '<kbd>' + token.text + '</kbd>'; }
 - テスト — `bundledPlugins` / `markedCompat` / `pluginMeta` / `pluginVisibility` /
   `PluginSetting` / `Binder`（vitest）
 
-詳細なプラグイン実装マップは Skill: `binder-plugin-rootfile` を参照。
+詳細なプラグイン実装マップは `_docs/skills/binder-plugin-rootfile/SKILL.md` を参照。
 
 ---
 
