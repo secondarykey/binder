@@ -30,13 +30,15 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `docs/macos-signing.md` |
 | 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `docs/publish-design.md` |
 | 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `docs/site-i18n.md` |
-| 配布するユーザ向けスキル（バインダー＝データディレクトリを編集する。アプリ本体の開発には使わない） | `docs/skills/binder-organize/SKILL.md` |
+| 配布するユーザ向けスキル（バインダー＝データディレクトリを編集する。アプリ本体の開発には使わない） | `_docs/skills/binder-organize/SKILL.md` |
 | Wails v3 一般（セットアップ・移行・ログ・Bindings） | Skill: `wails3` |
 
-`_docs/skills/` はアプリ本体の開発用の手順書（スキル形式）。特定のエージェントに依存しない参考資料として置いており、
-トピックに該当する作業の前に Read する。エージェント固有のスキル置き場（`.claude/skills/` 等）で使いたい場合は、
-手元でリンクやコピーをするだけにし、そちらはコミットしない。内容の更新は `_docs/skills/` 側で行う。
-`docs/skills/` はユーザへ配布するスキル（アプリ開発には使わない）で、置き場所を分けている。
+`_docs/skills/` にはスキル形式の手順書を置く。特定のエージェントに依存しない参考資料として置いており、
+内容の更新は `_docs/skills/` 側で行う。エージェント固有のスキル置き場（`.claude/skills/` 等）で使いたい場合は、
+手元でリンクやコピーをするだけにし、そちらはコミットしない。
+
+- アプリ本体の開発用: `binder-user-error` / `binder-i18n-theme` / `binder-version-up` / `binder-plugin-rootfile`。トピックに該当する作業の前に Read する
+- ユーザへ配布する用: `binder-organize`（README.md の Skills から案内している）。バインダーを編集するスキルで、アプリ開発には使わない
 
 ## ビルド・開発コマンド
 
