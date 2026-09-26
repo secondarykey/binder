@@ -196,7 +196,7 @@ Get-ChildItem -Path $dbDir -Filter '*.csv' | ForEach-Object {
 }
 
 # --- 7. Markdown 中のテンプレート関数の参照先が実在するか ---
-$refPattern = '\{\{\s*(drawDiagram|assetsImage|assets|embed|drawLayer)\s+"([^"]+)"'
+$refPattern = '\{\{\s*(drawDiagram|assetsImage|assets|embed|drawLayer|link|url)\s+"([^"]+)"'
 foreach ($sub in @('notes','diagrams')) {
     $dir = Join-Path $root $sub
     if (-not (Test-Path $dir)) { continue }
@@ -221,6 +221,11 @@ foreach ($sub in @('notes','diagrams')) {
                     'assets'      { $ok = ($rtyp -eq 'asset')   }
                     'drawLayer'   { $ok = ($rtyp -eq 'layer')   }
                     'embed'       { $ok = ($rtyp -eq 'note' -or $rtyp -eq 'asset') }
+                    # link / url は note / diagram / layer / asset のどれでも取れる。
+                    # structures に載る type はこの4つだけなので、存在すれば型は常に妥当。
+                    # 対象外はテンプレート（公開ページを持たない）だが structures に載らない
+                    'link'        { $ok = $true }
+                    'url'         { $ok = $true }
                 }
                 if (-not $ok) {
                     Add-Err "$where の参照先の type が不正: type=$rtyp"
