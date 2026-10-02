@@ -879,6 +879,8 @@
             "venn"               : "Venn Diagram",
             "eventmodeling"      : "Event Modeling Diagram",
             "cynefin"            : "Cynefin Framework Diagram",
+            "usecase"            : "Use Case Diagram",
+            "agentflow"          : "AgentFlow (Agent Workflow Diagram)",
             "dir" : {
                 "TD" : "Top → Down",
                 "TB" : "Top → Bottom",

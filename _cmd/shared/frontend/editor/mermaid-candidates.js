@@ -12,6 +12,8 @@ export const mermaidKnownKeywords = [
   'ishikawa', 'venn',
   // mermaid 11.15/11.16 で追加
   'eventmodeling', 'cynefin-beta',
+  // mermaid 12 で追加
+  'usecase-beta', 'agentflow-beta',
 ];
 
 const mermaidI18nMap = {
@@ -49,6 +51,8 @@ const mermaidI18nMap = {
   'venn':               'autocomplete.mermaid.venn',
   'eventmodeling':      'autocomplete.mermaid.eventmodeling',
   'cynefin-beta':       'autocomplete.mermaid.cynefin',
+  'usecase-beta':       'autocomplete.mermaid.usecase',
+  'agentflow-beta':     'autocomplete.mermaid.agentflow',
 };
 
 /**

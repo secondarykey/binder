@@ -5,12 +5,16 @@ const Name = "mermaid";
 // 11 系の既定を明示して見た目を固定する。initialize の値は図側の指定
 // （%%{init}%%・frontmatter・スタイルテンプレート）より優先度が低いため、ユーザの指定は上書きしない。
 // トップレベルの layout は 12 の swimlane 既定（swimlane.layout）より優先されるので、
-// 図ごとのキーで swimlane だけ専用レイアウトに戻す（11 系では未使用のキーで影響なし）
+// 図ごとのキーで swimlane だけ専用レイアウトに戻す（11 系では未使用のキーで影響なし）。
+// mermaid 12 は flowchart / state のノード最小幅（minNodeWidth: 120）と折り返し幅
+// （wrappingWidth: 120）も既定にしたため、11 系の値（最小幅なし・折り返し 200）に戻す
 const DefaultOpts = {
   startOnLoad: false,
   theme: 'default',
   look: 'classic',
   layout: 'dagre',
+  flowchart: { minNodeWidth: 0, wrappingWidth: 200 },
+  state: { minNodeWidth: 0, wrappingWidth: 200 },
   swimlane: { layout: 'swimlane' },
 };
 

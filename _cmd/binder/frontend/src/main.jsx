@@ -23,7 +23,7 @@ import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
 // バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
 const MARKED_VENDOR_VERSION = '18.0.7'
 // バンドルした mermaid のバージョン（vendor 差し替え時にここも更新する）
-const MERMAID_VENDOR_VERSION = '11.16.0'
+const MERMAID_VENDOR_VERSION = '12.1.0'
 Marked.setVendorUrl(markedVendorUrl)
 Marked.setVendorVersion(MARKED_VENDOR_VERSION)
 Mermaid.setVendorUrl(mermaidVendorUrl)

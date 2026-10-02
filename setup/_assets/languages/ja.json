@@ -879,6 +879,8 @@
             "venn"               : "ベン図",
             "eventmodeling"      : "イベントモデリング図",
             "cynefin"            : "クネビンフレームワーク図",
+            "usecase"            : "ユースケース図",
+            "agentflow"          : "AgentFlow（エージェントワークフロー図）",
             "dir" : {
                 "TD" : "上→下",
                 "TB" : "上→下",
