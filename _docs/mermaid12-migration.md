@@ -166,3 +166,13 @@ npx esbuild entry.mjs --bundle --format=iife   --global-name=__esbuild_esm_merma
 - 新しい図の種類 use case（`usecase-beta`）と AgentFlow（`agentflow-beta`）が使えます。入力補完にも追加しました。
 - 動作には Safari 17.4 相当以上の WebKit が必要です（macOS / Linux）。
 - 配布物が約 2MB 大きくなります（ELK を同梱するため）。
+- これまでの mermaid 11.16.0 で描きたい場合は、バインダー設定の Mermaid URL に次を設定してください。
+  ```
+  https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs
+  ```
+  - `@11` のように版を省略すると 11 系の最新（現時点で 11.17.2）が読み込まれるため、版まで指定してください。
+  - この設定はバインダー（`binder.json`）に保存されるため、同じバインダーを使う全員に効きます。
+  - CDN から読み込むため、オフラインでは使えません。読み込めない場合は同梱の 12.1.0 で描かれます。
+
+（確認済み: 上の URL は許可済みの CDN で、0.17.0 の `DefaultOpts` のまま描いた結果が
+差し替え前の同梱版と viewBox まで一致した。flowchart / sequence / class / state / ER / swimlane で確認。）
