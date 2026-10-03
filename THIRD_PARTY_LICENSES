@@ -118,6 +118,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
+elkjs - https://github.com/kieler/elkjs
+================================================================================
+
+Copyright (c) Kiel University and others.
+(Eclipse Layout Kernel - https://www.eclipse.org/elk/)
+
+Bundled within the mermaid script (mermaid 12 includes elkjs for the ELK layout).
+
+This program and the accompanying materials are made available under the
+terms of the Eclipse Public License 2.0 which is available at
+https://www.eclipse.org/legal/epl-2.0/
+
+SPDX-License-Identifier: EPL-2.0
+
+The source code of elkjs is available at https://github.com/kieler/elkjs
+and the source code of the Eclipse Layout Kernel is available at
+https://github.com/eclipse/elk
+
+================================================================================
 chai2010/webp - https://github.com/chai2010/webp
 ================================================================================
 

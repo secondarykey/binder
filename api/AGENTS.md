@@ -21,7 +21,7 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 	rtn, err := a.current.DoSomething(id)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return nil, userError(err)  // ユーザ向けエラーへ変換（Skill: binder-user-error）
+		return nil, userError(err)  // ユーザ向けエラーへ変換（_docs/skills/binder-user-error/SKILL.md）
 	}
 	return rtn, nil
 }
@@ -44,8 +44,8 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 - **setting.go** — アプリ設定（`settings` パッケージへの委譲）。テーマ・言語・フォント・エディタ設定等
 - **snippet.go** — スニペット設定の読み書き（アプリレベル、`settings` へ委譲）
 - **setup.go** — `Setup` / `CheckCompat` / `Convert`
-- **error.go / message.go** — `userError` / `MessageError` / `MarshalError`（詳細は Skill: `binder-user-error`）
-- **plugin.go / app_plugin.go / rootfile.go** — プラグイン・ルートファイル（詳細は Skill: `binder-plugin-rootfile`）
+- **error.go / message.go** — `userError` / `MessageError` / `MarshalError`（詳細は `_docs/skills/binder-user-error/SKILL.md`）
+- **plugin.go / app_plugin.go / rootfile.go** — プラグイン・ルートファイル（詳細は `_docs/skills/binder-plugin-rootfile/SKILL.md`）
 
 ## サブパッケージ
 

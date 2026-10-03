@@ -537,7 +537,7 @@ alias が同じなのでリンクは生成できる。
 
 ## スキルへの反映
 
-`docs/skills/binder-organize/SKILL.md` に国際化の節を足す話が出ているが、
+`_docs/skills/binder-organize/SKILL.md` に国際化の節を足す話が出ているが、
 案Eを採る前提なら書ける。内容は**運用手順**であって、データ構造の話ではない。
 
 - 原文バインダーからクローンして翻訳バインダーを作る手順
@@ -555,6 +555,6 @@ alias が同じなのでリンクは生成できる。
 - 送信: [fs/git.go](../fs/git.go) `PushDocs` / [binder.go](../binder.go) `PushDocs`
 - 公開パス: [fs/path.go](../fs/path.go) `HTMLFile` / `svgFile` / `publicMetaFilePath`
 - URL生成: [html_wrapper.go](../html_wrapper.go) `relativePrefix` / `convertURL`
-- テンプレートに渡るデータ: [docs/publish-design.md](publish-design.md)
+- テンプレートに渡るデータ: [_docs/publish-design.md](publish-design.md)
 - マージ: [fs/merge.go](../fs/merge.go) / [fs/merge_csv.go](../fs/merge_csv.go) / [merge_reconcile.go](../merge_reconcile.go)
 - メタ: [fs/meta.go](../fs/meta.go) `BinderMeta`

@@ -119,6 +119,6 @@ xcrun stapler validate binder.app
 - `_cmd/binder/build/darwin/Taskfile.yml` の `SIGN_IDENTITY` / `KEYCHAIN_PROFILE` は
   コメントアウトされたままにしておく。CI からは task の CLI 変数で上書きしているため、
   ファイルに書くと `wails3 update build-assets` での再生成時に失われる可能性がある
-- CI は macOS ランナーのアーキテクチャ（`macos-15` = arm64）でのみビルドするため、
+- CI は macOS ランナーのアーキテクチャ（`macos-latest` = arm64）でのみビルドするため、
   成果物は arm64 単体。Intel Mac にも配布するなら `darwin:package:universal` への
   切り替えが別途必要

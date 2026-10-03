@@ -363,7 +363,7 @@ function Binder({ isModal, ...props }) {
                 size="small"
                 value={mermaidUrl}
                 onChange={(e) => { setMermaidUrl(e.target.value); setMermaidStatus(""); }}
-                placeholder="https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs"
+                placeholder="https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs"
                 helperText={
                   mermaidStatus === "ok" ? t("binder.cdnOk") :
                   mermaidStatus === "error" ? t("binder.cdnLoadError") :

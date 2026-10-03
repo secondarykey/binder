@@ -21,16 +21,24 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | Binderフロントエンド構成・テスト構成 | `_cmd/binder/frontend/AGENTS.md` |
 | Binder Lite（アーキテクチャ・機能・タブ構造） | `_cmd/lite/AGENTS.md` |
 | 共有エディタコンポーネント・オートコンプリート | `_cmd/shared/frontend/AGENTS.md` |
-| ユーザ向けエラー（MessageError / userError / parseError） | Skill: `binder-user-error` |
-| テーマ・言語・i18n（CSS変数・翻訳キー・settings.T） | Skill: `binder-i18n-theme` |
-| バージョン変更手順 | Skill: `binder-version-up` |
-| プラグイン（marked拡張）・ルートファイル（README等） | Skill: `binder-plugin-rootfile` |
-| marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `docs/marked-migration.md` |
-| macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `docs/macos-signing.md` |
-| 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `docs/publish-design.md` |
-| 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `docs/site-i18n.md` |
-| 配布するユーザ向けスキル（バインダー＝データディレクトリを編集する。アプリ本体の開発には使わない） | `docs/skills/binder-organize/SKILL.md` |
+| ユーザ向けエラー（MessageError / userError / parseError） | `_docs/skills/binder-user-error/SKILL.md` |
+| テーマ・言語・i18n（CSS変数・翻訳キー・settings.T） | `_docs/skills/binder-i18n-theme/SKILL.md` |
+| バージョン変更手順 | `_docs/skills/binder-version-up/SKILL.md` |
+| プラグイン（marked拡張）・ルートファイル（README等） | `_docs/skills/binder-plugin-rootfile/SKILL.md` |
+| marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
+| mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
+| macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
+| 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `_docs/publish-design.md` |
+| 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `_docs/site-i18n.md` |
+| 配布するユーザ向けスキル（バインダー＝データディレクトリを編集する。アプリ本体の開発には使わない） | `_docs/skills/binder-organize/SKILL.md` |
 | Wails v3 一般（セットアップ・移行・ログ・Bindings） | Skill: `wails3` |
+
+`_docs/skills/` にはスキル形式の手順書を置く。特定のエージェントに依存しない参考資料として置いており、
+内容の更新は `_docs/skills/` 側で行う。エージェント固有のスキル置き場（`.claude/skills/` 等）で使いたい場合は、
+手元でリンクやコピーをするだけにし、そちらはコミットしない。
+
+- アプリ本体の開発用: `binder-user-error` / `binder-i18n-theme` / `binder-version-up` / `binder-plugin-rootfile`。トピックに該当する作業の前に Read する
+- ユーザへ配布する用: `binder-organize`（README.md の Skills から案内している）。バインダーを編集するスキルで、アプリ開発には使わない
 
 ## ビルド・開発コマンド
 
@@ -68,7 +76,7 @@ cd _cmd/binder && wails3 task common:generate:bindings
 # DAO再生成（db/model/*.go 変更時、リポジトリルートから実行）
 go run ./_cmd/gen/main.go
 
-# バージョン変更（詳細・注意点は Skill: binder-version-up）
+# バージョン変更（詳細・注意点は _docs/skills/binder-version-up/SKILL.md）
 go run ./_cmd/version.go 0.0.0
 ```
 
@@ -112,7 +120,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 - **`fs.BinderMeta`** (fs/meta.go) — `binder.json` の読み書きを担当。アプリバージョン・name・detail を保持。`Schema` フィールドは後方互換用（非推奨）
 - **`db.Instance`** (db/db.go) — csvqを使用したCSVファイルへのSQLインターフェース。テーブル: notes, diagrams, assets, templates, structures
 - **`internal.Version`** (internal/version.go) — セマンティックバージョンのパース・比較。`NewVersion(buf)`, `Lt()`, `Gt()`, `Eq()` 等
-- **`settings`の i18n 機能** (settings/languages.go) — Go側UI文字列の翻訳。`InitI18n(code)` / `T(key)` 等（Skill: `binder-i18n-theme` 参照）
+- **`settings`の i18n 機能** (settings/languages.go) — Go側UI文字列の翻訳。`InitI18n(code)` / `T(key)` 等（`_docs/skills/binder-i18n-theme/SKILL.md` 参照）
 
 ### Wails v3 固有の注意点
 
@@ -132,7 +140,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 4. `fs`が変更をgitコミットする
 5. JSONレスポンスをフロントエンドに返す
 
-例外: ルートファイル（Skill: `binder-plugin-rootfile`）は保存時にコミットせず、未記録一覧から記録する。
+例外: ルートファイル（`_docs/skills/binder-plugin-rootfile/SKILL.md`）は保存時にコミットせず、未記録一覧から記録する。
 
 ### 設定
 
