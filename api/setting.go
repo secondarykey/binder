@@ -2,10 +2,11 @@ package api
 
 import (
 	"binder/fs"
-	"binder/log"
 	"binder/settings"
 	"fmt"
 	"strings"
+
+	"github.com/wenteasy/log"
 )
 
 func (a *App) SavePosition(pos *settings.Position) error {

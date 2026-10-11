@@ -1,8 +1,9 @@
 package main
 
 import (
-	"binder/log"
 	"fmt"
+
+	"github.com/wenteasy/log"
 )
 
 func main() {

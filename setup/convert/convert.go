@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	. "binder/internal"
-	"binder/log"
 
 	"binder/db"
 	"binder/fs"
@@ -17,6 +16,7 @@ import (
 	convert092 "binder/setup/convert/db/092"
 	convert097 "binder/setup/convert/db/097"
 
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -227,7 +227,7 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 		if err != nil {
 			log.Warn("convert.Run: migration failed, restoring worktree to pre-migration snapshot")
 			if resetErr := bfs.ResetHardTo(rollbackTarget); resetErr != nil {
-				log.Warn("convert.Run: ResetHardTo() failed:\n%+v", resetErr)
+				log.Warnf("convert.Run: ResetHardTo() failed:\n%+v", resetErr)
 			}
 		}
 	}()

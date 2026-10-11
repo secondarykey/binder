@@ -6,9 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"binder/log"
-
 	"github.com/flopp/go-findfont"
+	"github.com/wenteasy/log"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/xerrors"
@@ -35,7 +34,7 @@ func FontNames() []string {
 		}
 		if err != nil {
 			b := filepath.Base(p)
-			log.Warn("Font Name error:%s\n%+v", b, err)
+			log.Warnf("Font Name error:%s\n%+v", b, err)
 		}
 	}
 

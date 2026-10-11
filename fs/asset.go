@@ -2,9 +2,9 @@ package fs
 
 import (
 	"binder/api/json"
-	"binder/log"
 	"fmt"
 
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -44,7 +44,7 @@ func (f *FileSystem) DeleteAsset(a *json.Asset) ([]string, error) {
 	if !f.isExist(fn) {
 		// 実体ファイルが欠損していても削除は継続する（欠損状態で削除不能になる
 		// 詰みを防ぐ）。git 側に残っていれば remove() が index からの削除を行う
-		log.Warn("DeleteAsset: asset file not exist, continue deletion: %s", fn)
+		log.Warnf("DeleteAsset: asset file not exist, continue deletion: %s", fn)
 	}
 	files = append(files, fn)
 

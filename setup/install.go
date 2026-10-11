@@ -4,13 +4,13 @@ import (
 	"binder/db"
 	"binder/fs"
 	. "binder/internal"
-	"binder/log"
 	"binder/settings"
 	"binder/setup/convert"
 	"embed"
 	"os"
 	"path/filepath"
 
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -75,14 +75,14 @@ func Install(dir string, ver *Version, name string, installType string) error {
 	// ユーザデータを暗号化して保存（Git設定のユーザ名・メールアドレスを初期値とする）
 	key, err := GetUserKey()
 	if err != nil {
-		log.Warn("Install: GetUserKey():\n%+v", err)
+		log.Warnf("Install: GetUserKey():\n%+v", err)
 	} else {
 		info := &fs.UserInfo{
 			Name:  s.Git.Name,
 			Email: s.Git.Mail,
 		}
 		if err = f.SaveUserData(key, info); err != nil {
-			log.Warn("Install: SaveUserData():\n%+v", err)
+			log.Warnf("Install: SaveUserData():\n%+v", err)
 		}
 	}
 

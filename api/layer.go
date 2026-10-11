@@ -2,8 +2,9 @@ package api
 
 import (
 	"binder/api/json"
-	"binder/log"
 	"strings"
+
+	"github.com/wenteasy/log"
 )
 
 func (a *App) EditLayer(l *json.Layer) (*json.Layer, error) {

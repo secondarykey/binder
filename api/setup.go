@@ -3,10 +3,10 @@ package api
 import (
 	"fmt"
 
-	"binder/log"
 	"binder/settings"
 	"binder/setup"
 
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 

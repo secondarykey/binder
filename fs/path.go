@@ -2,11 +2,12 @@ package fs
 
 import (
 	"binder/api/json"
-	"binder/log"
 
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/wenteasy/log"
 )
 
 func (sys *FileSystem) ToFullPath(mode, id string) string {

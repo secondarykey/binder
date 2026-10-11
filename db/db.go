@@ -2,7 +2,6 @@ package db
 
 import (
 	. "binder/internal"
-	"binder/log"
 	"bufio"
 	"context"
 	"database/sql"
@@ -13,6 +12,7 @@ import (
 	"strings"
 
 	_ "github.com/mithrandie/csvq-driver"
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -202,7 +202,7 @@ func loadOldSchemaFile(dir string) string {
 	//存在する場合
 	if len(files) >= 1 {
 		if len(files) > 1 {
-			log.Warn("schema file duplicate: %s", dir)
+			log.Warnf("schema file duplicate: %s", dir)
 		}
 
 		f := files[0]

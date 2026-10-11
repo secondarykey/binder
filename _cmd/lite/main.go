@@ -9,10 +9,11 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wenteasy/log"
 
 	"binder/api/lite"
 	"binder/api/shared"
-	"binder/log"
+	"binder/logging"
 	"binder/settings"
 	"binder/setup"
 )
@@ -34,18 +35,18 @@ func init() {
 func main() {
 
 	flag.Parse()
-	logger, err := log.Init()
+	logger, err := logging.Init()
 	if err != nil {
-		log.Warn("ログファイルの初期化に失敗:\n%+v", err)
+		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
 	}
-	defer log.Close()
+	defer logging.Close()
 
 	// ~/.binder/ ディレクトリとデフォルトリソースを配置
 	if err := settings.EnsureDir(); err != nil {
-		log.Warn("EnsureDir() error:\n%+v", err)
+		log.Warnf("EnsureDir() error:\n%+v", err)
 	}
 	if err := setup.UpdateDefaults(); err != nil {
-		log.Warn("UpdateDefaults() error:\n%+v", err)
+		log.Warnf("UpdateDefaults() error:\n%+v", err)
 	}
 
 	version := strings.TrimSpace(ver)
@@ -91,7 +92,7 @@ func main() {
 	// i18n 初期化（ウィンドウ作成前に実行）
 	liteLang := settings.GetLite().Language
 	if err := settings.InitI18n(liteLang); err != nil {
-		log.Warn("settings.InitI18n() error:\n%+v", err)
+		log.Warnf("settings.InitI18n() error:\n%+v", err)
 	}
 
 	win.app = app
@@ -159,6 +160,6 @@ func main() {
 
 	err = wailsApp.Run()
 	if err != nil {
-		log.Warn("Run() error:\n%+v", err)
+		log.Warnf("Run() error:\n%+v", err)
 	}
 }

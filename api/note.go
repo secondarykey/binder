@@ -2,8 +2,9 @@ package api
 
 import (
 	"binder/api/json"
-	"binder/log"
 	"strings"
+
+	"github.com/wenteasy/log"
 )
 
 func (a *App) EditNote(n *json.Note, imageName string) (*json.Note, error) {

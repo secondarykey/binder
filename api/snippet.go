@@ -1,8 +1,9 @@
 package api
 
 import (
-	"binder/log"
 	"binder/settings"
+
+	"github.com/wenteasy/log"
 )
 
 func (app *App) GetSnippets() (*settings.Snippets, error) {

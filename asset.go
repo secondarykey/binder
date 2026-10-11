@@ -5,7 +5,6 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"binder/internal"
-	"binder/log"
 	"bytes"
 	"encoding/base64"
 	"errors"
@@ -21,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/chai2010/webp"
+	"github.com/wenteasy/log"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	"golang.org/x/xerrors"
@@ -93,18 +93,18 @@ func convertToWebP(data []byte, filename string) ([]byte, string) {
 
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		log.Warn("convertToWebP: image.Decode failed, keeping original:\n%+v", err)
+		log.Warnf("convertToWebP: image.Decode failed, keeping original:\n%+v", err)
 		return data, filename
 	}
 
 	var buf bytes.Buffer
 	if err := webp.Encode(&buf, img, &webp.Options{Quality: 80}); err != nil {
-		log.Warn("convertToWebP: webp.Encode failed, keeping original:\n%+v", err)
+		log.Warnf("convertToWebP: webp.Encode failed, keeping original:\n%+v", err)
 		return data, filename
 	}
 
 	newFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + ".webp"
-	log.Info("convertToWebP: %s -> %s", filename, newFilename)
+	log.Infof("convertToWebP: %s -> %s", filename, newFilename)
 	return buf.Bytes(), newFilename
 }
 

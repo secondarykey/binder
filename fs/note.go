@@ -2,12 +2,12 @@ package fs
 
 import (
 	"binder/api/json"
-	"binder/log"
 	"bytes"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -65,7 +65,7 @@ func (f *FileSystem) DeleteNote(n *json.Note) ([]string, error) {
 	if !f.isExist(fn) {
 		// 実体ファイルが欠損していても削除は継続する（欠損状態で削除不能になる
 		// 詰みを防ぐ）。git 側に残っていれば remove() が index からの削除を行う
-		log.Warn("DeleteNote: note file not exist, continue deletion: %s", fn)
+		log.Warnf("DeleteNote: note file not exist, continue deletion: %s", fn)
 	}
 	files = append(files, fn)
 

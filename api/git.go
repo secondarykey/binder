@@ -6,7 +6,6 @@ import (
 	"binder"
 	"binder/api/json"
 	"binder/fs"
-	"binder/log"
 	"binder/settings"
 	"binder/setup/convert"
 
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	gogitplumbing "github.com/go-git/go-git/v5/plumbing"
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -389,7 +389,7 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 	// 6.5 structure 行が失われた orphan 実体ファイルをツリーへ復元する
 	restored, rerr := a.current.ReconcileMergedTree()
 	if rerr != nil {
-		log.Warn("ReconcileMergedTree() error:\n%+v", rerr)
+		log.Warnf("ReconcileMergedTree() error:\n%+v", rerr)
 	}
 
 	// 7. マージログノートを作成（失敗してもマージ自体は成功とする）
@@ -402,7 +402,7 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 			mergeLog.LocalBranch = branch
 		}
 		if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-			log.Warn("CreateMergeLogNote() error:\n+%v", err)
+			log.Warnf("CreateMergeLogNote() error:\n+%v", err)
 		}
 	}
 
@@ -434,9 +434,9 @@ func migrateSourceInPlace(dir string, tmpFs *fs.FileSystem, sourceHash gogitplum
 	// ワークツリーが不整合な状態で残らないようにする。
 	defer func() {
 		if restoreErr := tmpFs.CheckoutBranch(currentBranch); restoreErr != nil {
-			log.Warn("migrateSourceInPlace: CheckoutBranch() error, forcing checkout to current hash:\n%+v", restoreErr)
+			log.Warnf("migrateSourceInPlace: CheckoutBranch() error, forcing checkout to current hash:\n%+v", restoreErr)
 			if forceErr := tmpFs.CheckoutDetached(currentHash); forceErr != nil {
-				log.Warn("migrateSourceInPlace: force CheckoutDetached() also failed:\n%+v", forceErr)
+				log.Warnf("migrateSourceInPlace: force CheckoutDetached() also failed:\n%+v", forceErr)
 			}
 		}
 	}()
@@ -516,13 +516,13 @@ func (a *App) handleMergeAnalysis(dir string, tmpFs *fs.FileSystem, analysis *fs
 		// structure 行が失われた orphan 実体ファイルをツリーへ復元する
 		restored, rerr := a.current.ReconcileMergedTree()
 		if rerr != nil {
-			log.Warn("ReconcileMergedTree() error:\n%+v", rerr)
+			log.Warnf("ReconcileMergedTree() error:\n%+v", rerr)
 		}
 		if mergeLog != nil {
 			logSetter(mergeLog)
 			mergeLog.Restored = restored
 			if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-				log.Warn("CreateMergeLogNote() error:\n%+v", err)
+				log.Warnf("CreateMergeLogNote() error:\n%+v", err)
 			}
 		}
 		return &json.MergeResult{
@@ -808,7 +808,7 @@ func (a *App) GetOverallHistoryByPath(dir string, limit int, offset int) (*json.
 	}
 
 	// binder.Load() 失敗 → fs.Load() にフォールバック
-	log.Warn("binder.Load() failed, falling back to fs.Load():\n%+v", err)
+	log.Warnf("binder.Load() failed, falling back to fs.Load():\n%+v", err)
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
@@ -840,7 +840,7 @@ func (a *App) GetCommitFilesByPath(dir string, hash string) ([]*json.CommitFileE
 	}
 
 	// binder.Load() 失敗 → fs.Load() にフォールバック（名前解決なし）
-	log.Warn("binder.Load() failed, falling back to fs.Load():\n%+v", err)
+	log.Warnf("binder.Load() failed, falling back to fs.Load():\n%+v", err)
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)

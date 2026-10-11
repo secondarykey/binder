@@ -4,7 +4,6 @@ import (
 	. "binder/internal"
 
 	"binder"
-	"binder/log"
 	"binder/settings"
 	"binder/setup"
 
@@ -12,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/wenteasy/log"
 )
 
 const (

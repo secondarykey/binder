@@ -6,9 +6,9 @@ import (
 	"binder/db/model"
 	"binder/fs"
 	"binder/internal"
-	"binder/log"
 
 	"github.com/google/uuid"
+	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -70,7 +70,7 @@ func newOp(userId string) db.Op {
 func generateId() string {
 	id, err := uuid.NewV7()
 	if err != nil {
-		log.Error("UUID v7 generate error:\n%+v", err)
+		log.Errorf("UUID v7 generate error:\n%+v", err)
 		return ""
 	}
 	return id.String()
@@ -264,7 +264,7 @@ func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMa
 		}
 
 		if a.Mime != "" && ja.Mime == "" {
-			log.Warn("manifest asset %q has an invalid mime %q: ignored", a.Name, a.Mime)
+			log.Warnf("manifest asset %q has an invalid mime %q: ignored", a.Name, a.Mime)
 		}
 
 		if a.Id != "" {

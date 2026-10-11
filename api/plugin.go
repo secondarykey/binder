@@ -2,9 +2,10 @@ package api
 
 import (
 	"binder/fs"
-	"binder/log"
 	"binder/settings"
 	"fmt"
+
+	"github.com/wenteasy/log"
 )
 
 func (a *App) GetPlugins(engine string) ([]fs.PluginInfo, error) {

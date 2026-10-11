@@ -5,7 +5,7 @@ import (
 	"context"
 	"strings"
 
-	"binder/log"
+	"github.com/wenteasy/log"
 )
 
 // SearchResult はファイル単位の検索結果
@@ -34,7 +34,7 @@ func (b *Binder) Search(ctx context.Context, query string, onResult func(SearchR
 	// ノート・ダイアグラム・アセット（structures テーブル）
 	structures, err := b.db.FindStructures()
 	if err != nil {
-		log.Warn("Search: FindStructures error:\n%+v", err)
+		log.Warnf("Search: FindStructures error:\n%+v", err)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (b *Binder) Search(ctx context.Context, query string, onResult func(SearchR
 	// テンプレート（templates テーブル）
 	templates, err := b.db.FindTemplates()
 	if err != nil {
-		log.Warn("Search: FindTemplates error:\n%+v", err)
+		log.Warnf("Search: FindTemplates error:\n%+v", err)
 		return
 	}
 
