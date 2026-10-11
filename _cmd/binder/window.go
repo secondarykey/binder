@@ -673,8 +673,14 @@ func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
 		}, nil
 	}
 
+	// 日付が変わってファイルが切り替わると、前のファイルの offset が今のサイズを超える。
+	// そのときは新しいファイルの先頭から読む
+	if offset > size {
+		offset = 0
+	}
+
 	// 差分読み取り
-	if offset >= size {
+	if offset == size {
 		return map[string]interface{}{
 			"content": "",
 			"offset":  size,
