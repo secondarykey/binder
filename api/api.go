@@ -4,11 +4,10 @@ import (
 	. "binder/internal"
 
 	"binder"
+	"binder/log"
 	"binder/settings"
 	"context"
 	"fmt"
-
-	"github.com/wenteasy/log"
 )
 
 // SearchEmitter は検索イベントの発火を外部に委譲するインターフェース
@@ -41,9 +40,9 @@ func New(version string) *App {
 	var err error
 	app.version, err = NewVersion(version)
 	if err != nil {
-		log.Warnf("Version parse error:\n%+v", err)
+		log.Warn("Version parse error:\n%+v", err)
 	}
-	log.Noticef("Binder Version: %v", app.version)
+	log.Notice("Binder Version: %v", app.version)
 
 	return &app
 }

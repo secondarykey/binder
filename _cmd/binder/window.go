@@ -3,7 +3,7 @@ package main
 import (
 	"binder/api"
 	"binder/fs"
-	"binder/logging"
+	"binder/log"
 	"binder/settings"
 	"fmt"
 	"log/slog"
@@ -15,21 +15,20 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
 type Window struct {
 	app *api.App
 
-	runtime              *application.App
-	window               *application.WebviewWindow
-	commitWindow         *application.WebviewWindow
+	runtime        *application.App
+	window         *application.WebviewWindow
+	commitWindow   *application.WebviewWindow
 	historyWindows       map[string]*application.WebviewWindow // key: typ+":"+id
 	overallHistoryWindow *application.WebviewWindow
 	previewWindow        *application.WebviewWindow
-	syslogWindow         *application.WebviewWindow
-	searchWindow         *application.WebviewWindow
+	syslogWindow   *application.WebviewWindow
+	searchWindow   *application.WebviewWindow
 }
 
 func NewWindow(app *api.App) *Window {
@@ -88,14 +87,14 @@ func (win *Window) mainScreen() *application.Screen {
 	}
 	s, err := win.window.GetScreen()
 	if err != nil {
-		log.Debugf("mainScreen: GetScreen error: %+v", err)
+		log.Debug("mainScreen: GetScreen error: %+v", err)
 		return nil
 	}
 	if s == nil {
 		log.Debug("mainScreen: screen is nil")
 		return nil
 	}
-	log.Debugf("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
+	log.Debug("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
 	return s
 }
 
@@ -211,7 +210,7 @@ func (win *Window) SavePosition() error {
 	w, h := win.window.Size()
 	x, y := win.window.Position()
 
-	log.Debugf("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
+	log.Debug("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
 
 	cur := settings.Get().Position
 	var pos settings.Position
@@ -625,18 +624,18 @@ func (r *Window) CloseBinderWindows() {
 
 // SetLogLevel はログレベルを動的に変更する。
 func (r *Window) SetLogLevel(level int) {
-	logging.SetLevel(slog.Level(level))
+	log.SetLevel(slog.Level(level))
 }
 
 // GetLogLevel は現在のログレベルを返す。
 func (r *Window) GetLogLevel() int {
-	return int(logging.GetLevel())
+	return int(log.GetLevel())
 }
 
 // ReadLogTail はログファイルの末尾を読み取って返す。
 // offset が指定された場合、そのバイト位置以降の新しい内容のみを返す。
 func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
-	path := logging.Path()
+	path := log.Path()
 	if path == "" {
 		return map[string]interface{}{
 			"content": "",
@@ -674,14 +673,8 @@ func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
 		}, nil
 	}
 
-	// 日付が変わってファイルが切り替わると、前のファイルの offset が今のサイズを超える。
-	// そのときは新しいファイルの先頭から読む
-	if offset > size {
-		offset = 0
-	}
-
 	// 差分読み取り
-	if offset == size {
+	if offset >= size {
 		return map[string]interface{}{
 			"content": "",
 			"offset":  size,
@@ -754,10 +747,10 @@ func (win *Window) autoSaveOnClose() {
 	}
 	n, err := win.app.AutoSave()
 	if err != nil {
-		log.Warnf("AutoSave on close error:\n%+v", err)
+		log.Warn("AutoSave on close error:\n%+v", err)
 		return
 	}
 	if n > 0 {
-		log.Infof("AutoSave on close: %d files committed", n)
+		log.Info("AutoSave on close: %d files committed", n)
 	}
 }

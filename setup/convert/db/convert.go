@@ -1,11 +1,11 @@
 package dbconvert
 
 import (
+	"binder/log"
 	"binder/setup/convert/db/core"
 	"os"
 	"path/filepath"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -91,14 +91,14 @@ func execFileSet(p string, fset []*core.FileSet) error {
 			_, err2 := os.Stat(df)
 			if err2 == nil {
 				// 宛先が既に存在 → 前回の実行でリネーム済み、スキップ
-				log.Warnf("Already renamed: %s", df)
+				log.Warn("Already renamed: %s", df)
 				continue
 			}
-			log.Warnf("Not Found: \n%+v", err)
+			log.Warn("Not Found: \n%+v", err)
 		}
 		_, err = os.Stat(df)
 		if err == nil {
-			log.Warnf("Found: %s", df)
+			log.Warn("Found: %s", df)
 		}
 
 		err = os.Rename(nf, df)

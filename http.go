@@ -13,8 +13,8 @@ import (
 	"net/http"
 
 	binderFs "binder/fs"
+	"binder/log"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -216,7 +216,7 @@ func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 
 	s, err := h.binder.db.FindStructureByAlias(info.alias, info.typ)
 	if err != nil {
-		log.Warnf("FindStructureByAlias(%s,%s): %v", info.alias, info.typ, err)
+		log.Warn("FindStructureByAlias(%s,%s): %v", info.alias, info.typ, err)
 		h.fileServer.ServeHTTP(w, r)
 		return
 	}
@@ -368,7 +368,7 @@ func (b *Binder) serve() error {
 	}
 
 	go func() {
-		log.Noticef("HTTPServer Listen: %s", b.httpServerAddress)
+		log.Notice("HTTPServer Listen: %s", b.httpServerAddress)
 		err := b.httpServer.Serve(ln)
 		if err != nil {
 			//nilになってない場合、Shutdownの流れではない

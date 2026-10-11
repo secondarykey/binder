@@ -2,11 +2,11 @@ package binder
 
 import (
 	"binder/fs"
+	"binder/log"
 
 	"fmt"
 	"time"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -27,7 +27,7 @@ func (b *Binder) ToFile(mode string, id string) string {
 		// ルートファイルは id がファイル名そのもの
 		f = id
 	default:
-		log.Warnf("leaf is template type? %s", mode)
+		log.Warn("leaf is template type? %s", mode)
 	}
 	return f
 }

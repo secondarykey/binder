@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"binder/log"
 	"binder/settings"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -142,7 +142,7 @@ func SyncSamplePlugins() error {
 
 		// ユーザのファイルが「Binder が配布した既知バージョン」なら未編集とみなし上書きする
 		if !isKnownShippedHash(name, userHash, curHash) {
-			log.Infof("SyncSamplePlugins: skip user-modified plugin: %s", name)
+			log.Info("SyncSamplePlugins: skip user-modified plugin: %s", name)
 			continue
 		}
 
@@ -151,7 +151,7 @@ func SyncSamplePlugins() error {
 		if err := os.WriteFile(userPath, normalizeNewlines(bundled), 0644); err != nil {
 			return xerrors.Errorf("os.WriteFile(%s) error: %w", userPath, err)
 		}
-		log.Infof("SyncSamplePlugins: updated %s", name)
+		log.Info("SyncSamplePlugins: updated %s", name)
 	}
 
 	return nil

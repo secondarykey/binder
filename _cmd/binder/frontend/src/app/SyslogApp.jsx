@@ -22,16 +22,6 @@ import '../assets/SyslogApp.css';
 import '../language';
 import { useTranslation } from 'react-i18next';
 
-// 行頭のレベル表記（"[INFO  ]" のように 6 文字幅に空白で揃えてある。EMERGENCY は "EMERG"）
-const levelRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERG(?:ENCY)?) *\]/;
-
-// 行のレベル名を返す（レベル表記の無い継続行は null）
-const lineLevel = (line) => {
-  const m = line.match(levelRegex);
-  if (!m) return null;
-  return m[1].startsWith('EMERG') ? 'EMERGENCY' : m[1];
-};
-
 /**
  * システムログビューア
  * tail -f のようにログの末尾をリアルタイム表示するウィンドウ
@@ -140,11 +130,12 @@ function SyslogApp() {
     const lineArr = lines.split('\n');
     const filtered = [];
     let lastVisible = true;
+    const levelRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERGENCY)\]/;
 
     for (const line of lineArr) {
-      const lvl = lineLevel(line);
-      if (lvl) {
-        const priority = levelPriority[lvl] ?? 0;
+      const m = line.match(levelRegex);
+      if (m) {
+        const priority = levelPriority[m[1]] ?? 0;
         lastVisible = priority >= filterLevel;
       }
       if (lastVisible) filtered.push(line);
@@ -160,6 +151,7 @@ function SyslogApp() {
     if (!colorize && !searchText) return { highlightedContent: text, matchCount: 0 };
 
     const lineArr = text.split('\n');
+    const lvlRegex = /\[(TRACE|DEBUG|INFO|NOTICE|WARN|ERROR|EMERGENCY)\]/;
     const searchEscaped = searchText ? searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : null;
     const searchRegex = searchEscaped ? new RegExp(`(${searchEscaped})`, 'gi') : null;
 
@@ -169,8 +161,9 @@ function SyslogApp() {
     const elements = lineArr.map((line, lineIdx) => {
       // 行のレベルに応じた色クラスを決定（継続行は直前の色を引き継ぐ）
       if (colorize) {
-        const lvl = lineLevel(line);
-        if (lvl) {
+        const m = line.match(lvlRegex);
+        if (m) {
+          const lvl = m[1];
           if (lvl === 'WARN') lastColorClass = 'syslogWarn';
           else if (lvl === 'ERROR' || lvl === 'EMERGENCY') lastColorClass = 'syslogError';
           else lastColorClass = '';

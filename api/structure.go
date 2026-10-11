@@ -2,8 +2,7 @@ package api
 
 import (
 	"binder/api/json"
-
-	"github.com/wenteasy/log"
+	"binder/log"
 )
 
 func (a *App) GetStructure(id string) (*json.Structure, error) {

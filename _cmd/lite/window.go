@@ -2,6 +2,7 @@ package main
 
 import (
 	"binder/api/lite"
+	"binder/log"
 	"binder/settings"
 	"fmt"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wenteasy/log"
 )
 
 // Window は Wails v3 の第2 Service。ウィンドウ操作とファイルダイアログを担当する。
@@ -142,7 +142,7 @@ func (w *Window) OpenInNewWindow(path string) error {
 // Terminate はアプリ終了時に呼ばれる。
 func (w *Window) Terminate() bool {
 	if err := w.SavePosition(); err != nil {
-		log.Warnf("SavePosition() error:\n%+v", err)
+		log.Warn("SavePosition() error:\n%+v", err)
 	}
 	w.runtime.Quit()
 	return false

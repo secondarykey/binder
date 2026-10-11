@@ -2,8 +2,7 @@ package api
 
 import (
 	"binder/api/json"
-
-	"github.com/wenteasy/log"
+	"binder/log"
 )
 
 func (a *App) EditConfig(conf *json.Config) (*json.Config, error) {

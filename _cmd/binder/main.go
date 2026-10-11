@@ -8,12 +8,11 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
-	"github.com/wenteasy/log"
 
 	"binder"
 	"binder/api"
 	"binder/api/shared"
-	"binder/logging"
+	"binder/log"
 	"binder/settings"
 )
 
@@ -49,13 +48,13 @@ func init() {
 func main() {
 
 	flag.Parse()
-	logger, err := logging.Init()
+	logger, err := log.Init()
 	if err != nil {
-		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
+		log.Warn("ログファイルの初期化に失敗:\n%+v", err)
 	}
-	defer logging.Close()
+	defer log.Close()
 	if debug {
-		logging.SetLevel(slog.LevelDebug)
+		log.SetLevel(slog.LevelDebug)
 	}
 
 	app := api.New(strings.TrimSpace(ver))
@@ -82,7 +81,7 @@ func main() {
 	dev := wailsApp.Env.Info().Debug
 	app.SetDevMode(dev)
 	if dev {
-		logging.SetLevel(slog.LevelInfo)
+		log.SetLevel(slog.LevelInfo)
 	}
 
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
@@ -93,7 +92,7 @@ func main() {
 
 	// i18n 初期化（ウィンドウ作成前に実行）
 	if err := settings.InitI18n(set.Language); err != nil {
-		log.Warnf("settings.InitI18n() error:\n%+v", err)
+		log.Warn("settings.InitI18n() error:\n%+v", err)
 	}
 
 	// セーフモードまたは前回クラッシュ検出時は、今セッションの自動オープンをオフにする。
@@ -105,7 +104,7 @@ func main() {
 	// 起動中フラグを false に設定して保存（正常終了しなかった場合のクラッシュ検出用）。
 	// アプリが正常終了したときに true に書き戻す。
 	if err := settings.SaveStartupOk(false); err != nil {
-		log.Warnf("SaveStartupOk(false) error:\n%+v", err)
+		log.Warn("SaveStartupOk(false) error:\n%+v", err)
 	}
 
 	// 3. ウィンドウ作成
@@ -136,7 +135,7 @@ func main() {
 	if initialPos == application.WindowXY {
 		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
 			if !isPositionOnScreen(wailsApp, set.Position.Left, set.Position.Top) {
-				log.Debugf("saved position left=%d top=%d is off-screen, centering",
+				log.Debug("saved position left=%d top=%d is off-screen, centering",
 					set.Position.Left, set.Position.Top)
 				window.Center()
 			}
@@ -219,7 +218,7 @@ func main() {
 	// 5. 実行
 	err = wailsApp.Run()
 	if err != nil {
-		log.Warnf("Run() error:\n%+v", err)
+		log.Warn("Run() error:\n%+v", err)
 	}
 
 	// wailsApp.Run() が正常リターンした = 正常終了。
@@ -227,7 +226,7 @@ func main() {
 	// バインダーを開いた場合は LoadBinder() 内で既に true 保存済みだが、
 	// バインダーを開かずに正常終了したセッションをここでカバーする。
 	if err := settings.SaveStartupOk(true); err != nil {
-		log.Warnf("SaveStartupOk(true) error:\n%+v", err)
+		log.Warn("SaveStartupOk(true) error:\n%+v", err)
 	}
 }
 

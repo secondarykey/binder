@@ -2,9 +2,8 @@ package api
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"strings"
-
-	"github.com/wenteasy/log"
 )
 
 func (a *App) EditDiagram(d *json.Diagram) (*json.Diagram, error) {

@@ -1,13 +1,13 @@
 package fs
 
 import (
+	"binder/log"
 	"bytes"
 	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -23,7 +23,7 @@ func (sys *FileSystem) ReadPlugins(engine string) ([]PluginInfo, error) {
 	dir := PluginEngineDir(engine)
 
 	if _, err := sys.fs.Stat(dir); err != nil {
-		log.Infof("plugins directory not found: %s", dir)
+		log.Info("plugins directory not found: %s", dir)
 		return []PluginInfo{}, nil
 	}
 
@@ -49,18 +49,18 @@ func (sys *FileSystem) ReadPlugins(engine string) ([]PluginInfo, error) {
 		var buf bytes.Buffer
 		fn := filepath.Join(dir, e.Name())
 		if err := sys.readFile(&buf, fn); err != nil {
-			log.Warnf("plugin read error %s: %+v", e.Name(), err)
+			log.Warn("plugin read error %s: %+v", e.Name(), err)
 			continue
 		}
 		name := strings.TrimSuffix(e.Name(), ".js")
-		log.Infof("plugin loaded: %s/%s", engine, name)
+		log.Info("plugin loaded: %s/%s", engine, name)
 		plugins = append(plugins, PluginInfo{
 			Name:    name,
 			Content: buf.String(),
 		})
 	}
 
-	log.Infof("plugins found: %d (%s)", len(plugins), engine)
+	log.Info("plugins found: %d (%s)", len(plugins), engine)
 	return plugins, nil
 }
 

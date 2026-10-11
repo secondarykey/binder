@@ -2,9 +2,8 @@ package api
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"strings"
-
-	"github.com/wenteasy/log"
 )
 
 func (a *App) EditTemplate(t *json.Template) (*json.Template, error) {

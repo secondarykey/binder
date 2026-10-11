@@ -1,13 +1,13 @@
 package fs
 
 import (
+	"binder/log"
 	"errors"
 	"io"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/index"
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -34,16 +34,16 @@ func (f *FileSystem) repairIndexIfCorrupt() {
 		return
 	}
 
-	log.Warnf("FileSystem: corrupt git index detected, attempting auto-recovery: %+v", err)
+	log.Warn("FileSystem: corrupt git index detected, attempting auto-recovery: %+v", err)
 
 	if berr := f.backupBrokenIndex(); berr != nil {
-		log.Warnf("FileSystem: failed to back up broken index (continuing): %+v", berr)
+		log.Warn("FileSystem: failed to back up broken index (continuing): %+v", berr)
 	}
 
 	// go-git はインデックスファイル欠損時にこの空インデックスを返す仕様のため、
 	// 空インデックスへの置換は手動復旧の「index 削除」と等価
 	if err := f.repo.Storer.SetIndex(&index.Index{Version: 2}); err != nil {
-		log.Warnf("FileSystem: failed to reset index to empty, auto-recovery aborted: %+v", err)
+		log.Warn("FileSystem: failed to reset index to empty, auto-recovery aborted: %+v", err)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (f *FileSystem) repairIndexIfCorrupt() {
 			f.invalidateStatus()
 			return
 		}
-		log.Warnf("FileSystem: Head() error during index recovery, index left empty: %+v", err)
+		log.Warn("FileSystem: Head() error during index recovery, index left empty: %+v", err)
 		return
 	}
 
@@ -62,11 +62,11 @@ func (f *FileSystem) repairIndexIfCorrupt() {
 	// 触らないため、破損時に書きかけだった変更は「未記録」として残る
 	w, err := f.repo.Worktree()
 	if err != nil {
-		log.Warnf("FileSystem: Worktree() error during index recovery, index left empty: %+v", err)
+		log.Warn("FileSystem: Worktree() error during index recovery, index left empty: %+v", err)
 		return
 	}
 	if err := w.Reset(&git.ResetOptions{Mode: git.MixedReset}); err != nil {
-		log.Warnf("FileSystem: Reset(mixed) error during index recovery, index left empty: %+v", err)
+		log.Warn("FileSystem: Reset(mixed) error during index recovery, index left empty: %+v", err)
 		return
 	}
 

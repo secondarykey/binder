@@ -3,11 +3,11 @@ package binder
 import (
 	"binder/api/json"
 	"binder/fs"
+	"binder/log"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -52,14 +52,14 @@ func (b *Binder) CreateMergeLogNote(mergeLog *fs.MergeLog) error {
 	// テンプレートをデフォルト設定
 	lt, err := b.db.FindDefaultLayoutTemplate()
 	if err != nil {
-		log.Warnf("FindDefaultLayoutTemplate() error:\n%+v", err)
+		log.Warn("FindDefaultLayoutTemplate() error:\n%+v", err)
 	} else if lt != nil {
 		n.LayoutTemplate = lt.Id
 	}
 
 	dt, err := b.db.FindDefaultContentTemplate()
 	if err != nil {
-		log.Warnf("FindDefaultContentTemplate() error:\n%+v", err)
+		log.Warn("FindDefaultContentTemplate() error:\n%+v", err)
 	} else if dt != nil {
 		n.ContentTemplate = dt.Id
 	}

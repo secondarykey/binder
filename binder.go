@@ -7,6 +7,7 @@ import (
 	"binder/api/json"
 	"binder/db"
 	"binder/fs"
+	"binder/log"
 	"binder/settings"
 	"binder/setup"
 	"context"
@@ -18,7 +19,6 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -94,12 +94,12 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	// ユーザ情報を暗号化して保存（認証情報の保存 or ユーザ名/メールの保存）
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.Warnf("CreateRemote: GetUserKey:\n%+v", err)
+		log.Warn("CreateRemote: GetUserKey:\n%+v", err)
 	} else {
 		if save && fsInfo != nil {
 			// 認証情報ごと保存
 			if err = bfs.SaveUserData(key, fsInfo); err != nil {
-				log.Warnf("CreateRemote: SaveUserData:\n%+v", err)
+				log.Warn("CreateRemote: SaveUserData:\n%+v", err)
 			}
 		} else {
 			// save=false またはfsInfo==nil でもデフォルトのName/Emailで作成
@@ -109,7 +109,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 				Email: s.Git.Mail,
 			}
 			if err = bfs.SaveUserData(key, info); err != nil {
-				log.Warnf("CreateRemote: SaveUserData:\n%+v", err)
+				log.Warn("CreateRemote: SaveUserData:\n%+v", err)
 			}
 		}
 	}
@@ -119,7 +119,7 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 
 func Load(dir string) (*Binder, error) {
 
-	log.Noticef("Load Binder:%s", dir)
+	log.Notice("Load Binder:%s", dir)
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
@@ -143,12 +143,12 @@ func Load(dir string) (*Binder, error) {
 	// バージョン判定に依存せず修復する。csvq はカラム欠損時にクエリ自体が失敗するため、
 	// db を開く前に実行する。修復に失敗してもロード自体は継続する。
 	if repaired, rErr := setup.RepairSchema(dir, bfs.DatabaseDir()); rErr != nil {
-		log.Warnf("RepairSchema() error:\n%+v", rErr)
+		log.Warn("RepairSchema() error:\n%+v", rErr)
 	} else if len(repaired) > 0 {
-		log.Noticef("Schema repaired: %v", repaired)
+		log.Notice("Schema repaired: %v", repaired)
 		if cErr := bfs.AutoCommit(fs.M("Schema", "repair columns"), repaired...); cErr != nil {
 			if !errors.Is(cErr, fs.UpdatedFilesError) {
-				log.Warnf("RepairSchema AutoCommit() error:\n%+v", cErr)
+				log.Warn("RepairSchema AutoCommit() error:\n%+v", cErr)
 			}
 		}
 	}
@@ -171,11 +171,11 @@ func Load(dir string) (*Binder, error) {
 	// バインダーのユーザ情報をコミット署名に設定
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.Warnf("Load: GetUserKey():\n%+v", err)
+		log.Warn("Load: GetUserKey():\n%+v", err)
 	} else {
 		info, err := bfs.LoadUserData(key)
 		if err != nil {
-			log.Warnf("Load: LoadUserData():\n%+v", err)
+			log.Warn("Load: LoadUserData():\n%+v", err)
 		} else if info != nil {
 			bfs.SetUserSig(info)
 		} else {
@@ -186,7 +186,7 @@ func Load(dir string) (*Binder, error) {
 				Email: s.Git.Mail,
 			}
 			if err = bfs.SaveUserData(key, info); err != nil {
-				log.Warnf("Load: SaveUserData():\n%+v", err)
+				log.Warn("Load: SaveUserData():\n%+v", err)
 			}
 			bfs.SetUserSig(info)
 		}
@@ -198,9 +198,9 @@ func Load(dir string) (*Binder, error) {
 	// structures ↔ 実体テーブル ↔ 実体ファイルのズレを修復する。
 	// 修復に失敗してもバインダーのロード自体は継続する
 	if rep, err := b.RunDoctor(); err != nil {
-		log.Warnf("RunDoctor() error:\n%+v", err)
+		log.Warn("RunDoctor() error:\n%+v", err)
 	} else if rep.Repaired() {
-		log.Noticef("Doctor repaired: %s", rep.Summary())
+		log.Notice("Doctor repaired: %s", rep.Summary())
 	}
 
 	return &b, nil
@@ -241,7 +241,7 @@ func (b *Binder) RemovePlugin(engine, name string) error {
 	}
 	// 検証時メジャーの記録も破棄する（失敗は警告のみ）
 	if err := settings.DeletePluginVerified(b.dir, engine, name); err != nil {
-		log.Warnf("DeletePluginVerified(%s) error: %+v", name, err)
+		log.Warn("DeletePluginVerified(%s) error: %+v", name, err)
 	}
 	return b.fileSystem.Commit(fs.M("Remove Plugin", name), fn)
 }
@@ -286,7 +286,7 @@ func (b *Binder) RenamePlugin(engine, oldName, newName string) error {
 		return xerrors.Errorf("fs.RenamePlugin() error: %w", err)
 	}
 	if err := settings.RenamePluginVerified(b.dir, engine, oldName, newName); err != nil {
-		log.Warnf("RenamePluginVerified(%s -> %s) error: %+v", oldName, newName, err)
+		log.Warn("RenamePluginVerified(%s -> %s) error: %+v", oldName, newName, err)
 	}
 	return b.fileSystem.Commit(fs.M("Rename Plugin", oldName+" -> "+newName), files...)
 }
@@ -610,11 +610,11 @@ func (b *Binder) Fetch(remoteName, branchName string, info *fs.UserInfo) error {
 func (b *Binder) SaveUserInfo(info *fs.UserInfo) {
 	key, err := setup.GetUserKey()
 	if err != nil {
-		log.Warnf("setup.GetUserKey() error:\n%+v", err)
+		log.Warn("setup.GetUserKey() error:\n%+v", err)
 		return
 	}
 	if err = b.fileSystem.SaveUserData(key, info); err != nil {
-		log.Warnf("SaveUserData() error:\n%+v", err)
+		log.Warn("SaveUserData() error:\n%+v", err)
 		return
 	}
 	b.fileSystem.SetUserSig(info)
@@ -624,7 +624,7 @@ func (b *Binder) generateId() string {
 
 	id, err := uuid.NewV7()
 	if err != nil {
-		log.Errorf("UUID v7 generate error:\n%+v", err)
+		log.Error("UUID v7 generate error:\n%+v", err)
 		return ""
 	}
 	return id.String()

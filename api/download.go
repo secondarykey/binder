@@ -2,8 +2,7 @@ package api
 
 import (
 	"binder/api/json"
-
-	"github.com/wenteasy/log"
+	"binder/log"
 )
 
 // DownloadDocs はdocsディレクトリをZIPファイルとして指定パスに保存する。

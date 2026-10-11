@@ -7,8 +7,9 @@ import (
 	"net"
 	"strings"
 
+	"binder/log"
+
 	"github.com/Microsoft/go-winio"
-	"github.com/wenteasy/log"
 )
 
 const pipeName = `\\.\pipe\binder-lite`
@@ -33,7 +34,7 @@ func listenForFiles(onFilesReceived func([]string)) {
 	go func() {
 		l, err := winio.ListenPipe(pipeName, nil)
 		if err != nil {
-			log.Warnf("ListenPipe() error: %v", err)
+			log.Warn("ListenPipe() error: %v", err)
 			return
 		}
 		defer l.Close()

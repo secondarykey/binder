@@ -1,12 +1,13 @@
 package setup
 
 import (
+	"binder/log"
+
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
 
-	"github.com/wenteasy/log"
 	"github.com/zalando/go-keyring"
 	"golang.org/x/xerrors"
 )
@@ -101,7 +102,7 @@ func migrateUserKeyService() error {
 
 	// 旧サービス名のキーを削除（移行完了後）
 	if err := keyring.Delete(keyringServiceLegacy, keyringAccount); err != nil && !errors.Is(err, keyring.ErrNotFound) {
-		log.Warnf("migrateUserKeyService: Delete legacy key:\n%+v", err)
+		log.Warn("migrateUserKeyService: Delete legacy key:\n%+v", err)
 		// 削除失敗はエラーとせず警告のみ（新サービス名への移行は完了しているため）
 	}
 	return nil

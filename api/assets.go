@@ -6,10 +6,9 @@ import (
 	"path/filepath"
 
 	"binder/api/json"
+	"binder/log"
 
 	"fmt"
-
-	"github.com/wenteasy/log"
 )
 
 func (a *App) EditAsset(as *json.Asset, file string) (*json.Asset, error) {

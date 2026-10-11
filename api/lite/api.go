@@ -1,11 +1,11 @@
 package lite
 
 import (
+	"binder/log"
 	"binder/settings"
 	"os"
 	"path/filepath"
 
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 

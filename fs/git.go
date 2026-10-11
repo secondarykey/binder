@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"binder/log"
 	"binder/settings"
 	"encoding/json"
 	"errors"
@@ -22,7 +23,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -991,7 +991,7 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 		mod, err := getModelType(path)
 		if err != nil {
 			// db/・binder.json など管理外のファイルは無視（Debugレベル）
-			log.Debugf("getModelType() error: %+v", err)
+			log.Debug("getModelType() error: %+v", err)
 		} else {
 			mod.Status = s
 			rtn = append(rtn, mod)

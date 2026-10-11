@@ -2,6 +2,7 @@ package fs
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/wenteasy/log"
 	"golang.org/x/xerrors"
 )
 
@@ -342,7 +342,7 @@ func (f *FileSystem) getStatus(source string, republish, structureUpdated time.T
 			us = json.NothingStatus
 		}
 	} else {
-		log.Warnf("modified error %s:\n%+v", sfn, err)
+		log.Warn("modified error %s:\n%+v", sfn, err)
 	}
 
 	// DB の republish_date でまず非公開判定

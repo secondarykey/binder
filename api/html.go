@@ -2,10 +2,9 @@ package api
 
 import (
 	"binder/api/json"
+	"binder/log"
 	"regexp"
 	"strconv"
-
-	"github.com/wenteasy/log"
 )
 
 var templateErrorLineRe = regexp.MustCompile(`template: .*?:(\d+)(?::\d+)?:`)
