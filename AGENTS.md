@@ -204,6 +204,7 @@ Go API やフロントエンドを触る作業では、バインディングが�
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）
 - ロギングは`log/slog`と`log/`パッケージのヘルパーを使用（`log.PrintTrace()`, `log.PrintStackTrace()`）。`log/` の中身は [`github.com/wenteasy/log`](https://github.com/wenteasy/log)（ハンドラ・日ごとのファイル・出す関数）で、`log.Warn` などは printf の形
+- `log/` の作り方の決まりごとの正は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」（ひな形・よくある間違い）。今の `log/` は出す関数を wenteasy/log の関数に変数で指す形で、`log.Info` なども printf の形なので、README のひな形とは違う。ひな形に揃えるときは、printf の呼び出しを `Infof` などに書き換える
 - IDはUUID v7（`github.com/google/uuid`）
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり
