@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mithrandie/csvq-driver v1.7.0
 	github.com/sergi/go-diff v1.4.0
-	github.com/wenteasy/log v0.3.1
+	github.com/wenteasy/log v0.3.3
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/image v0.43.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da

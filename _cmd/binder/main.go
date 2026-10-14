@@ -48,13 +48,14 @@ func init() {
 func main() {
 
 	flag.Parse()
-	logger, err := log.Init()
+	// 開発中はコンソールにも出す（配る exe は GUI なので標準エラー出力の行き先が無い）
+	logs, err := log.Init(log.Options{Dir: log.DefaultDir(), Console: isDev})
 	if err != nil {
-		log.Warn("ログファイルの初期化に失敗:\n%+v", err)
+		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
 	}
-	defer log.Close()
+	defer logs.Close()
 	if debug {
-		log.SetLevel(slog.LevelDebug)
+		log.SetLevel(log.LevelDebug)
 	}
 
 	app := api.New(strings.TrimSpace(ver))
@@ -63,8 +64,9 @@ func main() {
 	// 1. アプリケーション作成
 	// wails3 に依存するサービスはWindowに設定する
 	wailsApp := application.New(application.Options{
-		Name:   "Binder",
-		Logger: logger,
+		Name: "Binder",
+		// 渡さないと、配る exe では Wails 自身のログ（エラーを含む）が捨てられる
+		Logger: slog.Default(),
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
@@ -80,8 +82,9 @@ func main() {
 	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
 	dev := wailsApp.Env.Info().Debug
 	app.SetDevMode(dev)
-	if dev {
-		log.SetLevel(slog.LevelInfo)
+	// -debug を付けたときは Debug のままにする
+	if dev && !debug {
+		log.SetLevel(log.LevelInfo)
 	}
 
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
@@ -92,7 +95,7 @@ func main() {
 
 	// i18n 初期化（ウィンドウ作成前に実行）
 	if err := settings.InitI18n(set.Language); err != nil {
-		log.Warn("settings.InitI18n() error:\n%+v", err)
+		log.Warnf("settings.InitI18n() error:\n%+v", err)
 	}
 
 	// セーフモードまたは前回クラッシュ検出時は、今セッションの自動オープンをオフにする。
@@ -104,7 +107,7 @@ func main() {
 	// 起動中フラグを false に設定して保存（正常終了しなかった場合のクラッシュ検出用）。
 	// アプリが正常終了したときに true に書き戻す。
 	if err := settings.SaveStartupOk(false); err != nil {
-		log.Warn("SaveStartupOk(false) error:\n%+v", err)
+		log.Warnf("SaveStartupOk(false) error:\n%+v", err)
 	}
 
 	// 3. ウィンドウ作成
@@ -135,7 +138,7 @@ func main() {
 	if initialPos == application.WindowXY {
 		window.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
 			if !isPositionOnScreen(wailsApp, set.Position.Left, set.Position.Top) {
-				log.Debug("saved position left=%d top=%d is off-screen, centering",
+				log.Debugf("saved position left=%d top=%d is off-screen, centering",
 					set.Position.Left, set.Position.Top)
 				window.Center()
 			}
@@ -218,7 +221,7 @@ func main() {
 	// 5. 実行
 	err = wailsApp.Run()
 	if err != nil {
-		log.Warn("Run() error:\n%+v", err)
+		log.Warnf("Run() error:\n%+v", err)
 	}
 
 	// wailsApp.Run() が正常リターンした = 正常終了。
@@ -226,7 +229,7 @@ func main() {
 	// バインダーを開いた場合は LoadBinder() 内で既に true 保存済みだが、
 	// バインダーを開かずに正常終了したセッションをここでカバーする。
 	if err := settings.SaveStartupOk(true); err != nil {
-		log.Warn("SaveStartupOk(true) error:\n%+v", err)
+		log.Warnf("SaveStartupOk(true) error:\n%+v", err)
 	}
 }
 

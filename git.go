@@ -27,7 +27,7 @@ func (b *Binder) ToFile(mode string, id string) string {
 		// ルートファイルは id がファイル名そのもの
 		f = id
 	default:
-		log.Warn("leaf is template type? %s", mode)
+		log.Warnf("leaf is template type? %s", mode)
 	}
 	return f
 }

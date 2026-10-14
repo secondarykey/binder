@@ -1,60 +1,47 @@
 # log の TODO(レビュー待ち)
 
-wenteasy/log の README「使う側のやり方(自分の log パッケージを作る)」(v0.3.2〜)と突き合わせて気付いた点。
-2026-10-14、aibow のセッションで書いた。**直すかどうか・どう直すかは binder 側でレビューして決める**(ここに書いたのは材料だけ)。
+wenteasy/log の README「使う側のやり方(自分の log パッケージを作る)」と突き合わせて気付いた点。
+2026-10-14、aibow のセッションで書き、2026-10-15 に wenteasy/log v0.3.3 の README に合わせて取り込んだ。
 
-binder の `log/` は wenteasy/log ができる前のたたき台を、あとから wenteasy/log に寄せたもの。
+## 取り込んだもの(2026-10-15)
 
-## 気付いた点
+- **出す関数を README のひな形にした**(`log.go`)。`Info` などはメッセージ + キーと値、printf は `Infof` など。
+  printf の書き方の呼び出し 117 か所を `Infof` などに書き換えた。`%` を含まない呼び出しはそのまま(どちらの形でも同じ行になる)。`window.go` の `log.Info(fn)`(変数を書式に渡していた)だけキーと値に直した。
+  `Func` / `PrintTrace` / `PrintStackTrace` / `NoneStop` は変数で指したまま
+- **出口を `Init(Options)` で組むようにした**(`setup.go`)。ファイルを作れなくても止めず、標準エラー出力で組んで error を返す。返す `io.Closer` は nil にしない
+- **ファイル名に頭の文字を付けた**: `binder_20261015.log`。ログビューア(`Window.ReadLogTail`)は `Path()` を通しているので、そのまま追いつく
+- **ログのフォルダを環境変数 `BINDER_LOG_DIR` で変えられるようにした**。無ければ今までどおり `os.TempDir()\binder`
+- **`wails3 dev` ではコンソールにも出す**(`Options.Console`)。`_cmd/binder` と `_cmd/lite` の `build_dev.go` / `build_production.go` の `isDev`(`-tags production` の有無)で決める
+- **dev で `-debug` が効くようにした**(dev の Info は `-debug` が無いときだけ)
+- **Wails の `Options.Logger` に `slog.Default()` を渡す**ようにした(今までは `Init` が返した Logger。`Init` が失敗すると nil になり、配る exe で Wails のログが捨てられていた)
+- **`settings/settings.go` の標準の `log.Println` を `binder/log` の `Warnf` にした**
+- **wenteasy/log を v0.3.3 にした**(コードは doc コメントだけの違い)。`_cmd/binder` と `_cmd/lite` の go.mod にも `// indirect` で載せた
+- テストを README の「入れておく歯止め」に揃えた(位置が呼んだ側・ファイルに書かれる・フォルダを作れなくても止まらない・出し先を戻す)
 
-### 1. `Info` などが printf の形
+## 残り
 
-- 今: `log.Info` / `log.Warn` などは `wlog.Infof` などを変数で指していて、printf の形(`log.Warn("失敗:\n%+v", err)`)
-- README: `Info` は slog と同じ「メッセージ + キーと値」、printf は `Infof`
-- 何が起きるか: README を読んだセッションが binder で `log.Info("保存しました", "path", p)` と書くと、
-  `保存しました%!(EXTRA string=path, …)` のような壊れた行になる。セッションごとに書き方がばらつく原因になる
-- 規模: `log.` の出す関数の呼び出し 130 か所のうち、文字列に `%` を含む printf の書き方が 116 か所(`.claude` の下を除く。2026-10-14 時点)
-- 揃えるなら: 出す関数を README のひな形(自前の `output`)にし、printf の呼び出しを `Infof` / `Warnf` などに書き換える。
-  `Func` / `PrintTrace` / `PrintStackTrace` / `NoneStop` は今の変数で指す形のままでよい(位置はずれない。`NoneStop` は包むと recover が効かない)
-- 揃えないなら: binder の AGENTS.md に「binder の `log.Info` は printf の形(README と違う)」と強めに書いておく(今も書いてある)
+### 1. 古いログファイルを消さない
 
-### 2. ファイルの置き場所が一時フォルダ
+- 今: 一時フォルダの `binder\` に日ごとのファイルが溜まり続ける(OS の掃除任せ)。ikkyoku は 7 日、aibow は 10 日で消している
+- 何日分を残したいかで決める。消すなら `Init` で `binder_*.log` の古いものを消す(ikkyoku の `log` にある)
+- ついでに: 頭の文字の無い古いファイル(`20261014.log`)も残っている
 
-- 今: `os.TempDir()\binder\20261014.log`
-- aibow: `%APPDATA%\aibow\logs\aibow_<日付>.log`。ikkyoku は binder と同じ一時フォルダ（`%TEMP%\ikkyoku`。7 日で消す）。
-  README は「置き場所はアプリで決める」（wenteasy/log `444a65e`。何日分を残したいか、どこで見るかで決める）
-- 気になる点: 一時フォルダは、Windows のディスクのクリーンアップなどで消されることがある
-- ただし: binder は自分のログビューア(`SyslogApp.jsx`。`Window.ReadLogTail` が `log.Path()` を読む)を持っていて、
-  ふだんはそこで見るので、一時フォルダでも困らないかもしれない(ユーザーの意見)。何日分を残したいかで決める
-- ついでに: ファイル名に頭の文字が無い(`20261014.log`)。`w.SetPrefix("binder")` で `binder_20261014.log` になる。
-  変えると `ReadLogTail` の読む場所も変わる(`Path()` を通しているので、コードはそのままで追従するはず)
+### 2. 置き場所が一時フォルダのまま
 
-### 3. `wails3 dev` でターミナルに何も出ない
+- 一時フォルダは Windows のディスクのクリーンアップなどで消されることがある
+- ふだんはログビューア(`SyslogApp.jsx`)で見るので、一時フォルダでも困らないかもしれない(ユーザーの意見)。1 と一緒に決める
 
-- 今: `Init` は常にファイルだけに書く
-- README: 開発中(`wails3 dev`・`go run`)はコンソールにも出す(`Options{Console: true}`)
-- ログビューアで見られるなら不要かもしれない。ターミナルでも見たいかで決める
+### 3. 異常終了(panic)を残していない
 
-### 4. dev のときに `-debug` が効かない
+- `debug.SetCrashOutput` で、拾われなかった panic をファイルに残せる(ikkyoku・aibow の `CatchCrash`)
+- binder は setting.json の `StartupOk` でクラッシュを検出しているが、理由は残らない
 
-- `_cmd/binder/main.go`: `-debug` なら `log.SetLevel(slog.LevelDebug)`(57 行目付近)、
-  そのあと dev なら `log.SetLevel(slog.LevelInfo)`(84 行目付近)。dev で `-debug` を付けても Info に戻る
-- 意図したものか確認する。意図していないなら、dev の Info は `-debug` が無いときだけにする
+### 4. `multiHandler` を自前で持っている
 
-### 5. 標準の `log` を直接使っている
+- `slog.NewMultiHandler` は Go 1.26 から。go.mod が 1.25 なので `setup.go` に小さく書いた。go.mod を 1.26 以上にしたら置き換える
 
-- `settings/settings.go` が標準の `log.Println` を使っている(320・328 行目付近)
-- `slog.SetDefault` のあとなら標準の `log` も slog の出口に流れるので、同じファイルには入る(レベルは Info)
-- README:「プロジェクトのコードは自分の log から出す」。`binder/log` に置き換えるか決める
+### 5. wenteasy/log の README のテストの書き方(向こうへ伝える)
 
-### 6. wenteasy/log の版
-
-- `go.mod` は v0.3.1。v0.3.2 にすると、モジュールのキャッシュの README に「使う側のやり方」が入る(コードの変更は無い)
-
-## そのままでよいと思った点
-
-- 出す関数を変数で指す形なので、記録される位置はずれていない
-- binder はアプリだけなので、`SetLogger` が無いのは README の決まりどおり
-- ログのレベル(`SetLevel` / `GetLevel`。画面から変える)を `binder/log` が持つのは、アプリ側の状態なので問題ない
-- `Init` が返す Logger を Wails の `Options.Logger` に渡しているので、Wails のログも同じファイルに入る
-- `_cmd/lite` も同じ `log.Init()` を使う。2・3 を変えるなら一緒に変わる
+- README の「テスト」は `runtime.FuncForPC(r.PC)` で位置を確かめるとあるが、引数の無い `log.Trace("t")` などはインライン展開され、
+  `FuncForPC` は展開された関数(`binder/log.Trace`)を返す。ハンドラ(`AddSource`・`PackageLevelHandler`)は `runtime.CallersFrames` で引くので、
+  実際に記録される位置は正しい。テストも `CallersFrames` で引くようにした(`log_test.go`)

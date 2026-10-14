@@ -37,7 +37,7 @@ func (f *FileSystem) DeleteDiagram(d *json.Diagram) ([]string, error) {
 	if !f.isExist(fn) {
 		// 実体ファイルが欠損していても削除は継続する（欠損状態で削除不能になる
 		// 詰みを防ぐ）。git 側に残っていれば remove() が index からの削除を行う
-		log.Warn("DeleteDiagram: diagram file not exist, continue deletion: %s", fn)
+		log.Warnf("DeleteDiagram: diagram file not exist, continue deletion: %s", fn)
 	}
 	files = append(files, fn)
 

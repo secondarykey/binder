@@ -2,7 +2,6 @@ package settings
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	"golang.org/x/xerrors"
+
+	"binder/log"
 )
 
 // saveMu は setting.json への保存（temp 書き込み + rename）を直列化する。
@@ -317,7 +318,7 @@ func def() *Setting {
 
 	host, err := os.Hostname()
 	if err != nil {
-		log.Println(err)
+		log.Warnf("os.Hostname() error:\n%+v", err)
 		host = "binder"
 	}
 	auth.WorkBranch = host
@@ -325,7 +326,7 @@ func def() *Setting {
 	// os/user からユーザ名を取得
 	u, err := user.Current()
 	if err != nil {
-		log.Println(err)
+		log.Warnf("user.Current() error:\n%+v", err)
 		auth.Name = ""
 	} else {
 		auth.Name = u.Name

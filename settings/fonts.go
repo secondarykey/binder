@@ -35,7 +35,7 @@ func FontNames() []string {
 		}
 		if err != nil {
 			b := filepath.Base(p)
-			log.Warn("Font Name error:%s\n%+v", b, err)
+			log.Warnf("Font Name error:%s\n%+v", b, err)
 		}
 	}
 

@@ -88,7 +88,7 @@ func migrateApp(ver *Version, devMode bool) error {
 
 	if needUpdate {
 		if err := UpdateDefaults(); err != nil {
-			log.Warn("migrateApp: UpdateDefaults:\n%+v", err)
+			log.Warnf("migrateApp: UpdateDefaults:\n%+v", err)
 		}
 	}
 
@@ -105,7 +105,7 @@ func migrateApp(ver *Version, devMode bool) error {
 		}
 		editor.GitBash = false
 		if err := settings.SaveEditor(editor); err != nil {
-			log.Warn("migrateApp: SaveEditor:\n%+v", err)
+			log.Warnf("migrateApp: SaveEditor:\n%+v", err)
 		}
 	}
 
@@ -113,7 +113,7 @@ func migrateApp(ver *Version, devMode bool) error {
 	v0120, _ := NewVersion("0.12.0")
 	if prevVer.Lt(v0120) {
 		if err := InstallSamplePlugins(); err != nil {
-			log.Warn("migrateApp: InstallSamplePlugins:\n%+v", err)
+			log.Warnf("migrateApp: InstallSamplePlugins:\n%+v", err)
 		}
 	}
 
@@ -121,7 +121,7 @@ func migrateApp(ver *Version, devMode bool) error {
 	// 0.14.0 のエスケープ修正などを既存ユーザへ届けるための仕組み。
 	if needUpdate {
 		if err := SyncSamplePlugins(); err != nil {
-			log.Warn("migrateApp: SyncSamplePlugins:\n%+v", err)
+			log.Warnf("migrateApp: SyncSamplePlugins:\n%+v", err)
 		}
 	}
 

@@ -203,8 +203,11 @@ Go API やフロントエンドを触る作業では、バインディングが�
 ## コーディング規約
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）
-- ロギングは`log/slog`と`log/`パッケージのヘルパーを使用（`log.PrintTrace()`, `log.PrintStackTrace()`）。`log/` の中身は [`github.com/wenteasy/log`](https://github.com/wenteasy/log)（ハンドラ・日ごとのファイル・出す関数）で、`log.Warn` などは printf の形
-- `log/` の作り方の決まりごとの正は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」（ひな形・よくある間違い）。今の `log/` は出す関数を wenteasy/log の関数に変数で指す形で、`log.Info` なども printf の形なので、README のひな形とは違う。ひな形に揃えるときは、printf の呼び出しを `Infof` などに書き換える
+- ロギングは `log/` パッケージ（`binder/log`）から出す（標準の `log`・`slog`・wenteasy/log を直接使わない）。`log/` の中身は [`github.com/wenteasy/log`](https://github.com/wenteasy/log)（ハンドラ・日ごとのファイル）
+  - 書き方は 2 つで混ぜない: `log.Info("保存しました", "path", p)`（slog と同じメッセージ + キーと値）と `log.Infof("失敗:\n%+v", err)`（printf）。`log.Info` に書式を渡すと整形されない
+  - ほかに `log.PrintTrace(log.Func(...))` / `log.PrintStackTrace(err)` / `defer log.NoneStop()`
+  - ログは `os.TempDir()\binder\binder_<日付>.log`（環境変数 `BINDER_LOG_DIR` で変えられる。試しに起動するときは普段のログと混ぜない）。開発中（`wails3 dev`）はコンソールにも出る
+- `log/` の作り方の決まりごとの正は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」（ひな形・よくある間違い）。`log/` はそのひな形（アプリだけの形。`SetLogger` は持たない）に揃えている。残りは `log/TODO.md`
 - IDはUUID v7（`github.com/google/uuid`）
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり

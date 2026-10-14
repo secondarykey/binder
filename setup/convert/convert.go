@@ -227,7 +227,7 @@ func Run(dir string, ver *Version) (result *MigrateResult, err error) {
 		if err != nil {
 			log.Warn("convert.Run: migration failed, restoring worktree to pre-migration snapshot")
 			if resetErr := bfs.ResetHardTo(rollbackTarget); resetErr != nil {
-				log.Warn("convert.Run: ResetHardTo() failed:\n%+v", resetErr)
+				log.Warnf("convert.Run: ResetHardTo() failed:\n%+v", resetErr)
 			}
 		}
 	}()
