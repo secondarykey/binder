@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 // recordHandler は受け取った Record を貯める。
@@ -196,5 +197,78 @@ func TestNoneStop(t *testing.T) {
 
 	if len(records) != 1 || records[0].Level != LevelEmergency || !strings.Contains(records[0].Message, "boom") {
 		t.Fatalf("records = %+v, want one emergency with boom", records)
+	}
+}
+
+// removeOld は今日を含めて keepDays 日分を残し、それより古いログだけを消す。
+func TestRemoveOld(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.Local)
+	old := now.AddDate(0, 0, -20)
+	files := map[string]bool{ // 名前 → 消えるか
+		FilePrefix + "_20261015.log":         false, // 今日
+		FilePrefix + "_20261006.log":         false, // 10 日目（残す一番古い日）
+		FilePrefix + "_20261005.log":         true,  // 11 日目
+		"20261001.log":                       true,  // 頭の文字が無かったころのもの
+		"memo.log":                           false, // 日付ではない
+		FilePrefix + "_memo.log":             false,
+		crashPrefix + "20261001-120000.log":  false, // 改名した異常終了の記録
+		crashPrefix + crashPIDMark + "1.log": true,  // 中身の無い古い書き出し先
+		crashPrefix + crashPIDMark + "2.log": false, // 中身があるもの（次の CatchCrash が改名する）
+		crashPrefix + crashPIDMark + "3.log": false, // 中身の無い新しい書き出し先（動いているプロセスのもの）
+	}
+	for name := range files {
+		body := []byte("x")
+		if name == crashPrefix+crashPIDMark+"1.log" || name == crashPrefix+crashPIDMark+"3.log" {
+			body = nil
+		}
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if name != crashPrefix+crashPIDMark+"3.log" {
+			if err := os.Chtimes(path, old, old); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	removeOld(dir, 10, true, now)
+	for name, removed := range files {
+		_, err := os.Stat(filepath.Join(dir, name))
+		if removed && !os.IsNotExist(err) {
+			t.Errorf("%s が残っている", name)
+		}
+		if !removed && err != nil {
+			t.Errorf("%s が消えた: %v", name, err)
+		}
+	}
+
+	// legacy でなければ（BINDER_LOG_DIR で指したフォルダ）、頭の文字の無いファイルは触らない
+	legacy := filepath.Join(dir, "20261001.log")
+	if err := os.WriteFile(legacy, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	removeOld(dir, 10, false, now)
+	if _, err := os.Stat(legacy); err != nil {
+		t.Errorf("legacy でないのに消えた: %v", err)
+	}
+}
+
+// Init(KeepDays) は、書き始める前に古いファイルを消す。
+func TestInitKeepDays(t *testing.T) {
+	keepDefault(t)
+	dir := t.TempDir()
+	old := filepath.Join(dir, FilePrefix+"_20200101.log")
+	if err := os.WriteFile(old, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Init(Options{Dir: dir, KeepDays: DefaultKeepDays})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	if _, err := os.Stat(old); !os.IsNotExist(err) {
+		t.Errorf("古いファイルが残っている: %v", err)
 	}
 }

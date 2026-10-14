@@ -19,32 +19,29 @@ wenteasy/log の README「使う側のやり方(自分の log パッケージを
 - **異常終了(拾われなかった panic)をファイルに残すようにした**(`crash.go` の `CatchCrash`。ikkyoku・aibow と同じ `debug.SetCrashOutput`)。
   Binder は複数のプロセス(Binder を 2 つ・Binder と Lite)が同じフォルダを使うので、書き出し先をプロセスごとに分けた
   (`binder_crash_pid<ID>.log`。正常に終わったら消す)。次の起動で中身のあるものを `binder_crash_<日時>.log` に改名し、ログに Warn で書く
+- **古いログを片付けるようにした**(`Options.KeepDays`。Binder・Lite とも `log.DefaultKeepDays` = 10 日。今日を含む)。起動の `Init` で、
+  `binder_<日付>.log`・頭の文字の無かったころの `<日付>.log`(一時フォルダの `binder\` のときだけ)・中身の無い古い `binder_crash_pid<ID>.log` を消す。
+  改名した異常終了の記録(`binder_crash_<日時>.log`)は消さない
 - テストを README の「入れておく歯止め」に揃えた(位置が呼んだ側・ファイルに書かれる・フォルダを作れなくても止まらない・出し先を戻す)
 
 ## 残り
 
-### 1. 古いログファイルを消さない
-
-- 今: 一時フォルダの `binder\` に日ごとのファイルが溜まり続ける(OS の掃除任せ)。ikkyoku は 7 日、aibow は 10 日で消している
-- 何日分を残したいかで決める。消すなら `Init` で `binder_*.log` の古いものを消す(ikkyoku の `log` にある)
-- ついでに: 頭の文字の無い古いファイル(`20261014.log`)も残っている
-
-### 2. 置き場所が一時フォルダのまま
+### 1. 置き場所が一時フォルダのまま
 
 - 一時フォルダは Windows のディスクのクリーンアップなどで消されることがある
-- ふだんはログビューア(`SyslogApp.jsx`)で見るので、一時フォルダでも困らないかもしれない(ユーザーの意見)。1 と一緒に決める
+- ふだんはログビューア(`SyslogApp.jsx`)で見るので、一時フォルダでも困らないかもしれない(ユーザーの意見)
 
-### 3. 異常終了の記録を画面で伝えていない
+### 2. 異常終了の記録を画面で伝えていない
 
 - 今: 前回の記録があると、ログに Warn で「異常終了の記録があります: <場所>」と書くだけ(ログビューアで見える)
 - aibow は画面のお知らせにも出している。出すなら、setting.json の `StartupOk` で自動オープンを止めているところと合わせて考える
-- 強制終了(タスクマネージャーなど)では、空の `binder_crash_pid<ID>.log` が消されずに残る(動いている別のプロセスのものと区別できないので、起動時にも消さない)。片付けるなら 1 と一緒に、日数の経った空のものだけを消す
+- 改名した異常終了の記録(`binder_crash_<日時>.log`)は片付けで消さないので、溜まり続ける(まれなので今は許す)
 
-### 4. `multiHandler` を自前で持っている
+### 3. `multiHandler` を自前で持っている
 
 - `slog.NewMultiHandler` は Go 1.26 から。go.mod が 1.25 なので `setup.go` に小さく書いた。go.mod を 1.26 以上にしたら置き換える
 
-### 5. wenteasy/log の README のテストの書き方(向こうへ伝える)
+### 4. wenteasy/log の README のテストの書き方(向こうへ伝える)
 
 - README の「テスト」は `runtime.FuncForPC(r.PC)` で位置を確かめるとあるが、引数の無い `log.Trace("t")` などはインライン展開され、
   `FuncForPC` は展開された関数(`binder/log.Trace`)を返す。ハンドラ(`AddSource`・`PackageLevelHandler`)は `runtime.CallersFrames` で引くので、
