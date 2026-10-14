@@ -54,8 +54,11 @@ func main() {
 		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
 	}
 	defer logs.Close()
+	// -debug なら Debug、開発中は Info（Wails の起動のログから残す）
 	if debug {
 		log.SetLevel(log.LevelDebug)
+	} else if isDev {
+		log.SetLevel(log.LevelInfo)
 	}
 
 	app := api.New(strings.TrimSpace(ver))
@@ -79,13 +82,8 @@ func main() {
 		MarshalError: api.MarshalError,
 	})
 
-	// 開発モード判定（Wails v3 が production ビルドタグで内部管理）
-	dev := wailsApp.Env.Info().Debug
-	app.SetDevMode(dev)
-	// -debug を付けたときは Debug のままにする
-	if dev && !debug {
-		log.SetLevel(log.LevelInfo)
-	}
+	// 開発モード（isDev は Wails の Env.Info().Debug と同じく production ビルドタグで決まる）
+	app.SetDevMode(isDev)
 
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
 	set, err := app.Setup()
