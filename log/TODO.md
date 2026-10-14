@@ -21,7 +21,7 @@ binder の `log/` は wenteasy/log ができる前のたたき台を、あとか
 ### 2. ファイルの置き場所が一時フォルダ
 
 - 今: `os.TempDir()\binder\20261014.log`
-- aibow: `%APPDATA%ibow\logsibow_<日付>.log`。ikkyoku は binder と同じ一時フォルダ（`%TEMP%\ikkyoku`。7 日で消す）。
+- aibow: `%APPDATA%\aibow\logs\aibow_<日付>.log`。ikkyoku は binder と同じ一時フォルダ（`%TEMP%\ikkyoku`。7 日で消す）。
   README は「置き場所はアプリで決める」（wenteasy/log `444a65e`。何日分を残したいか、どこで見るかで決める）
 - 気になる点: 一時フォルダは、Windows のディスクのクリーンアップなどで消されることがある
 - ただし: binder は自分のログビューア(`SyslogApp.jsx`。`Window.ReadLogTail` が `log.Path()` を読む)を持っていて、
