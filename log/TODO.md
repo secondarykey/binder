@@ -16,6 +16,9 @@ wenteasy/log の README「使う側のやり方(自分の log パッケージを
 - **Wails の `Options.Logger` に `slog.Default()` を渡す**ようにした(今までは `Init` が返した Logger。`Init` が失敗すると nil になり、配る exe で Wails のログが捨てられていた)
 - **`settings/settings.go` の標準の `log.Println` を `binder/log` の `Warnf` にした**
 - **wenteasy/log を v0.3.3 にした**(コードは doc コメントだけの違い)。`_cmd/binder` と `_cmd/lite` の go.mod にも `// indirect` で載せた
+- **異常終了(拾われなかった panic)をファイルに残すようにした**(`crash.go` の `CatchCrash`。ikkyoku・aibow と同じ `debug.SetCrashOutput`)。
+  Binder は複数のプロセス(Binder を 2 つ・Binder と Lite)が同じフォルダを使うので、書き出し先をプロセスごとに分けた
+  (`binder_crash_pid<ID>.log`。正常に終わったら消す)。次の起動で中身のあるものを `binder_crash_<日時>.log` に改名し、ログに Warn で書く
 - テストを README の「入れておく歯止め」に揃えた(位置が呼んだ側・ファイルに書かれる・フォルダを作れなくても止まらない・出し先を戻す)
 
 ## 残り
@@ -31,10 +34,11 @@ wenteasy/log の README「使う側のやり方(自分の log パッケージを
 - 一時フォルダは Windows のディスクのクリーンアップなどで消されることがある
 - ふだんはログビューア(`SyslogApp.jsx`)で見るので、一時フォルダでも困らないかもしれない(ユーザーの意見)。1 と一緒に決める
 
-### 3. 異常終了(panic)を残していない
+### 3. 異常終了の記録を画面で伝えていない
 
-- `debug.SetCrashOutput` で、拾われなかった panic をファイルに残せる(ikkyoku・aibow の `CatchCrash`)
-- binder は setting.json の `StartupOk` でクラッシュを検出しているが、理由は残らない
+- 今: 前回の記録があると、ログに Warn で「異常終了の記録があります: <場所>」と書くだけ(ログビューアで見える)
+- aibow は画面のお知らせにも出している。出すなら、setting.json の `StartupOk` で自動オープンを止めているところと合わせて考える
+- 強制終了(タスクマネージャーなど)では、空の `binder_crash_pid<ID>.log` が消されずに残る(動いている別のプロセスのものと区別できないので、起動時にも消さない)。片付けるなら 1 と一緒に、日数の経った空のものだけを消す
 
 ### 4. `multiHandler` を自前で持っている
 

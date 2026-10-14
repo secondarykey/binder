@@ -71,6 +71,17 @@ func main() {
 		os.Exit(0)
 	}
 
+	// 拾われなかった panic をログと同じフォルダに残す（配る exe では標準エラー出力の行き先が無い）。
+	// 上の os.Exit では defer が回らず書き出し先が残るので、そのあとで準備する
+	crash, previous, err := log.CatchCrash(log.DefaultDir())
+	if err != nil {
+		log.Warnf("異常終了の記録の準備に失敗（起動は続けます）:\n%+v", err)
+	}
+	defer crash.Close()
+	for _, p := range previous {
+		log.Warnf("異常終了の記録があります: %s", p)
+	}
+
 	// パイプサーバー起動: 他プロセスからのファイル受信を待機
 	var wailsApp *application.App
 	win := new(Window)
