@@ -39,6 +39,9 @@ type Setting struct {
 	// キー: バインダーのディレクトリパス → "engine/name" → marked メジャー。
 	// git 管理外のローカル観測値（@marked 未宣言プラグインの差異警告に使う）。
 	PluginVerified map[string]map[string]int `json:"pluginVerified,omitempty"`
+	// TrustedBinders はプレビューでスクリプトを動かしてよいバインダーのディレクトリパス。
+	// バインダーの中に置くと取り込んだ相手が書き換えられるため、アプリ側に持つ。
+	TrustedBinders []string `json:"trustedBinders,omitempty"`
 }
 
 // AutoSave はバインダーを開いている間の自動保存（全体コミット）設定。

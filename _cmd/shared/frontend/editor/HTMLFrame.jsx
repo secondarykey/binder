@@ -48,6 +48,12 @@ export function renderDiagramError(elm, err) {
  *                     指定するとその画像を見えるプレースホルダに置き換える
  *   unresolvedHints - パスから種別を導けた場合に併記する代替の書き方
  *                     { diagram, layer, asset }。関数名はアプリ依存なので文言を渡す
+ *   allowScripts    - true で HTML 中のスクリプトを動かす。既定は止める
+ *
+ * iframe はアプリと同じオリジンで HTML を表示するため、スクリプトを動かすと
+ * アプリの機能（Wails のランタイム）を呼べてしまう。既定では sandbox で止め、
+ * 信頼したバインダーだけ allowScripts で動かす。sandbox="allow-same-origin" なら
+ * 中のスクリプトは動かず、外側からの描画・クリックやホイールの処理は今までどおり動く。
  *
  * リンクの扱いは link-handler.js を参照。未指定のコールバックに対応するリンクは
  * 何も起こらない（プレビューが遷移することはない）。
@@ -55,6 +61,9 @@ export function renderDiagramError(elm, err) {
 
 // iframe に注入するスクロールバー用 <style> のID
 const SCROLLBAR_STYLE_ID = 'binder-scrollbar-style';
+
+// スクリプトを止めるときの sandbox。外側から中を描画・操作するため allow-same-origin は付ける
+const NO_SCRIPT_SANDBOX = 'allow-same-origin';
 
 class HTMLFrame extends React.Component {
 
@@ -97,7 +106,8 @@ class HTMLFrame extends React.Component {
       || nextProps.colorSchemeValue !== this.props.colorSchemeValue
       || nextProps.customScrollbar !== this.props.customScrollbar
       || nextProps.copyLabels !== this.props.copyLabels
-      || nextProps.inlineMermaid !== this.props.inlineMermaid;
+      || nextProps.inlineMermaid !== this.props.inlineMermaid
+      || nextProps.allowScripts !== this.props.allowScripts;
   }
 
   componentDidUpdate(prevProps) {
@@ -114,7 +124,8 @@ class HTMLFrame extends React.Component {
         this.applyScrollbarStyle(activeIframe.contentDocument);
       }
     }
-    if (prevProps.html !== this.props.html) {
+    if (prevProps.html !== this.props.html || prevProps.allowScripts !== this.props.allowScripts) {
+      // sandbox の変更は次の読み込みから効くため、HTML が同じでも読み込み直す
       this.view();
     } else if (prevProps.cursorLine !== this.props.cursorLine) {
       // HTML未変更でカーソル行のみ変化 → 表示中のiframeでスクロールだけ実行
@@ -164,6 +175,12 @@ class HTMLFrame extends React.Component {
         this.swap(backIndex);
       });
     };
+    // sandbox は読み込みのたびに合わせる（変更は次の読み込みから効く）
+    if (this.props.allowScripts) {
+      backIframe.removeAttribute('sandbox');
+    } else {
+      backIframe.setAttribute('sandbox', NO_SCRIPT_SANDBOX);
+    }
     backIframe.srcdoc = html;
   }
 
@@ -377,8 +394,8 @@ class HTMLFrame extends React.Component {
   render() {
     return (
       <>
-        <iframe className="htmlViewer" ref={this.refs0} style={{ visibility: 'hidden' }} />
-        <iframe className="htmlViewer" ref={this.refs1} style={{ visibility: 'hidden' }} />
+        <iframe className="htmlViewer" ref={this.refs0} sandbox={NO_SCRIPT_SANDBOX} style={{ visibility: 'hidden' }} />
+        <iframe className="htmlViewer" ref={this.refs1} sandbox={NO_SCRIPT_SANDBOX} style={{ visibility: 'hidden' }} />
       </>
     );
   }

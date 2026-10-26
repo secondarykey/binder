@@ -76,3 +76,27 @@ func (a *App) EditUserInfo(info *json.UserInfo) (*json.UserInfo, error) {
 	}
 	return info, nil
 }
+
+// IsBinderTrusted は開いているバインダーのプレビューでスクリプトを動かすかを返す。
+// 未オープン時は false（スクリプトを止める）。
+func (a *App) IsBinderTrusted() bool {
+
+	defer log.PrintTrace(log.Func("IsBinderTrusted()"))
+
+	if a.current == nil {
+		return false
+	}
+	return a.current.IsTrusted()
+}
+
+// SetBinderTrusted は開いているバインダーのプレビューでスクリプトを動かすかを保存する。
+func (a *App) SetBinderTrusted(trusted bool) error {
+
+	defer log.PrintTrace(log.Func("SetBinderTrusted()", trusted))
+
+	if err := a.current.SetTrusted(trusted); err != nil {
+		log.PrintStackTrace(err)
+		return userError(err)
+	}
+	return nil
+}

@@ -254,6 +254,23 @@ func (b *Binder) GetPluginVerified(engine string) map[string]int {
 	return settings.GetPluginVerified(b.dir, engine)
 }
 
+// IsTrusted はこのバインダーのプレビューでスクリプトを動かしてよいかを返す。
+// 信頼はバインダーの中ではなくアプリの設定に持つ（取り込んだ相手が書き換えられないように）。
+func (b *Binder) IsTrusted() bool {
+	if b == nil {
+		return false
+	}
+	return settings.IsTrustedBinder(b.dir)
+}
+
+// SetTrusted はこのバインダーのプレビューでスクリプトを動かすかを保存する。
+func (b *Binder) SetTrusted(trusted bool) error {
+	if b == nil {
+		return EmptyError
+	}
+	return settings.SetTrustedBinder(b.dir, trusted)
+}
+
 // SetPluginVerified はプラグインの検証時 marked メジャーを記録する。
 func (b *Binder) SetPluginVerified(engine, name string, major int) error {
 	if b == nil {

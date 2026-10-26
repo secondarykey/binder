@@ -22,6 +22,21 @@ _cmd/shared/frontend/editor/
     Mermaid.jsx        mermaid.js ラッパー
 ```
 
+## プレビューのスクリプト（HTMLFrame の sandbox）
+
+プレビューの iframe は `srcdoc` なので、アプリと同じオリジンで HTML を表示する。
+スクリプトが動くと `parent` や `/wails/runtime` を通じてアプリの機能を呼べてしまうため、
+既定では `sandbox="allow-same-origin"` を付けて止める。
+
+- `allow-same-origin` は外せない。外側から `contentDocument` を描画・操作するため
+  （Mermaid の描画、リンク・コピーボタン・拡大移動のリスナ付与など）。
+  外側から付けたリスナは sandbox の中でも動く（Chromium で確認済み）
+- `allowScripts` を渡したときだけ sandbox を外す。Binder は信頼したバインダー
+  （`IsBinderTrusted()`、`setting.json` の `trustedBinders`）だけ渡す。Lite は渡さない
+- `sandbox` の変更は次の読み込みから効くため、`view()` で `srcdoc` を入れる直前に毎回合わせる。
+  `allowScripts` が変わったら HTML が同じでも読み込み直す
+- 図の描画に失敗したら、図の場所に `ERROR: drawDiagram(ID): …` を出す（`renderDiagramError`）
+
 ## 参照方式
 
 - **Binder**: 既存の `components/editor/` に re-export ラッパーを配置（`export { default } from "@shared/editor/..."` の1行）。既存コードの import パスを維持

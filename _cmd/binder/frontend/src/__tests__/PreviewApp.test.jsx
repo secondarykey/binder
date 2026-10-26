@@ -5,6 +5,7 @@ import Event, { EventContext } from '../Event';
 vi.mock('../../bindings/binder/api/app', () => ({
   GetConfig: vi.fn(() => Promise.resolve({})),
   GetPreviewScrollbar: vi.fn(() => Promise.resolve(true)),
+  IsBinderTrusted: vi.fn(() => Promise.resolve(false)),
 }));
 
 import PreviewApp from '../app/PreviewApp';

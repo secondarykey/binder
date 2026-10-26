@@ -9,6 +9,27 @@ describe('HTMLFrame', () => {
     expect(iframes).toHaveLength(2);
   });
 
+  // iframe はアプリと同じオリジンで表示するため、既定ではスクリプトを止める
+  it('sandboxes both iframes by default', () => {
+    const { container } = render(<HTMLFrame html="<p>test</p>" />);
+    for (const iframe of container.querySelectorAll('iframe.htmlViewer')) {
+      expect(iframe.getAttribute('sandbox')).toBe('allow-same-origin');
+    }
+  });
+
+  it('lifts the sandbox when scripts are allowed', () => {
+    const { container, rerender } = render(<HTMLFrame html="<p>test</p>" allowScripts />);
+    // 最初の描画は裏側（2つ目）の iframe に読み込む
+    const back = container.querySelectorAll('iframe.htmlViewer')[1];
+    expect(back.hasAttribute('sandbox')).toBe(false);
+
+    // 信頼を外したら、HTML が同じでも sandbox を付けて読み込み直す
+    rerender(<HTMLFrame html="<p>test</p>" allowScripts={false} />);
+    for (const iframe of container.querySelectorAll('iframe.htmlViewer')) {
+      expect(iframe.getAttribute('sandbox')).toBe('allow-same-origin');
+    }
+  });
+
   it('renders with both iframes initially hidden', () => {
     const { container } = render(<HTMLFrame html="" />);
     const iframes = container.querySelectorAll('iframe.htmlViewer');

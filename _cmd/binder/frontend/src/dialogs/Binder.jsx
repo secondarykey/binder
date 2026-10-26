@@ -1,12 +1,13 @@
 import { useEffect, useState, useContext } from "react";
 
 import {
-  Box, FormControl, FormControlLabel, FormLabel, List, ListItemButton, ListItemText, Switch, TextField, Typography,
+  Box, FormControl, FormControlLabel, FormLabel, List, ListItemButton, ListItemText, Switch, TextField, Tooltip, Typography,
 } from "@mui/material";
+import { Events } from '@wailsio/runtime';
 import CheckIcon from '@mui/icons-material/Check';
 import CircularProgress from '@mui/material/CircularProgress';
 import AuthFields from "../components/AuthFields";
-import { GetConfig, EditConfig, GetUserInfo, EditUserInfo, GetAllowedCDNs } from "../../bindings/binder/api/app";
+import { GetConfig, EditConfig, GetUserInfo, EditUserInfo, GetAllowedCDNs, IsBinderTrusted, SetBinderTrusted } from "../../bindings/binder/api/app";
 import PluginSetting from "./PluginSetting";
 import RootFileSetting from "./RootFileSetting";
 import MarkedScript from "../components/editor/engines/Marked";
@@ -94,6 +95,8 @@ function Binder({ isModal, ...props }) {
   const [markedInfo, setMarkedInfo] = useState(null);
   const [savedMarkedUrl, setSavedMarkedUrl] = useState("");
   const [optimizeImage, setOptimizeImage] = useState(true);
+  // プレビューでスクリプトを動かすか。バインダーではなくアプリの設定に保存する
+  const [previewScripts, setPreviewScripts] = useState(false);
   const [colorSchemeAttr, setColorSchemeAttr] = useState("");
   const [colorSchemeValues, setColorSchemeValues] = useState("");
   const [scriptSaving, setScriptSaving] = useState(false);
@@ -127,6 +130,7 @@ function Binder({ isModal, ...props }) {
     }).catch((err) => {
       showError(err);
     });
+    IsBinderTrusted().then((v) => setPreviewScripts(!!v)).catch(() => {});
     GetUserInfo().then((info) => {
       setGitName(info.name || "");
       setGitMail(info.email || "");
@@ -163,6 +167,10 @@ function Binder({ isModal, ...props }) {
       : null;
     const config = { name, detail, markedUrl, mermaidUrl, optimizeImage, previewColorScheme };
     EditConfig(config).then(() => {
+      return SetBinderTrusted(previewScripts);
+    }).then(() => {
+      // 開いているプレビュー（別ウィンドウ含む）に反映する
+      Events.Emit('binder:preview:trustChanged', previewScripts);
       evt.changeBinderTitle(name);
       evt.showSuccessMessage(t("binder.updateSuccess"));
     }).catch((err) => {
@@ -301,6 +309,20 @@ function Binder({ isModal, ...props }) {
                 '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' },
               }}
             />
+
+            <Tooltip title={t("binder.previewScriptsTip")} placement="bottom-start" describeChild>
+              <FormControlLabel
+                control={
+                  <Switch checked={previewScripts} onChange={(e) => setPreviewScripts(e.target.checked)} size="small" />
+                }
+                label={t("binder.previewScripts")}
+                sx={{
+                  ml: 0.5,
+                  alignSelf: 'flex-start',
+                  '& .MuiFormControlLabel-label': { fontSize: '13px', color: 'var(--text-primary)' },
+                }}
+              />
+            </Tooltip>
 
             <Box sx={{ borderTop: '1px solid var(--border-subtle)', pt: 2, mt: 1 }}>
               <FormLabel sx={{ mb: 0, display: 'block' }}>{t("binder.previewColorScheme")}</FormLabel>

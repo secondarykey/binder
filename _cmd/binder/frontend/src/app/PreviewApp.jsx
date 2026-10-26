@@ -7,7 +7,7 @@ import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import ContrastIcon from '@mui/icons-material/Contrast';
 
 import { Events, Window, Browser } from '@wailsio/runtime';
-import { GetConfig, GetPreviewScrollbar } from '../../bindings/binder/api/app';
+import { GetConfig, GetPreviewScrollbar, IsBinderTrusted } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
 import { copyClipboard } from './App';
@@ -42,6 +42,8 @@ function PreviewApp() {
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
   // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
   const [previewScrollbar, setPreviewScrollbar] = useState(true);
+  // プレビューでスクリプトを動かすか（信頼したバインダーだけ）
+  const [allowScripts, setAllowScripts] = useState(false);
   // エディタ閲覧履歴の可否（メインウィンドウが持つ状態の写し）
   const [historyState, setHistoryState] = useState({ canBack: false, canForward: false });
 
@@ -51,11 +53,16 @@ function PreviewApp() {
       const data = event.data?.[0] ?? event.data;
       setPreviewScrollbar(!!data);
     });
+    IsBinderTrusted().then((v) => setAllowScripts(!!v)).catch(() => {});
+    const cleanupTrust = Events.On('binder:preview:trustChanged', (event) => {
+      const data = event.data?.[0] ?? event.data;
+      setAllowScripts(!!data);
+    });
     const cleanupHistory = Events.On('binder:editor:historyState', (event) => {
       const data = event.data?.[0] ?? event.data ?? {};
       setHistoryState({ canBack: !!data.canBack, canForward: !!data.canForward });
     });
-    return () => { cleanup(); cleanupHistory(); };
+    return () => { cleanup(); cleanupTrust(); cleanupHistory(); };
   }, []);
 
   useEffect(() => {
@@ -179,7 +186,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{
