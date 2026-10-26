@@ -142,7 +142,7 @@ func (w *Window) OpenInNewWindow(path string) error {
 // Terminate はアプリ終了時に呼ばれる。
 func (w *Window) Terminate() bool {
 	if err := w.SavePosition(); err != nil {
-		log.Warn("SavePosition() error:\n%+v", err)
+		log.Warnf("SavePosition() error:\n%+v", err)
 	}
 	w.runtime.Quit()
 	return false

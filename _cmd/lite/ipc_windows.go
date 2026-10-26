@@ -34,7 +34,7 @@ func listenForFiles(onFilesReceived func([]string)) {
 	go func() {
 		l, err := winio.ListenPipe(pipeName, nil)
 		if err != nil {
-			log.Warn("ListenPipe() error: %v", err)
+			log.Warnf("ListenPipe() error: %v", err)
 			return
 		}
 		defer l.Close()

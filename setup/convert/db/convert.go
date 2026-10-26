@@ -91,14 +91,14 @@ func execFileSet(p string, fset []*core.FileSet) error {
 			_, err2 := os.Stat(df)
 			if err2 == nil {
 				// 宛先が既に存在 → 前回の実行でリネーム済み、スキップ
-				log.Warn("Already renamed: %s", df)
+				log.Warnf("Already renamed: %s", df)
 				continue
 			}
-			log.Warn("Not Found: \n%+v", err)
+			log.Warnf("Not Found: \n%+v", err)
 		}
 		_, err = os.Stat(df)
 		if err == nil {
-			log.Warn("Found: %s", df)
+			log.Warnf("Found: %s", df)
 		}
 
 		err = os.Rename(nf, df)

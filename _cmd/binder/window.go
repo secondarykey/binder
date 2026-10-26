@@ -87,14 +87,14 @@ func (win *Window) mainScreen() *application.Screen {
 	}
 	s, err := win.window.GetScreen()
 	if err != nil {
-		log.Debug("mainScreen: GetScreen error: %+v", err)
+		log.Debugf("mainScreen: GetScreen error: %+v", err)
 		return nil
 	}
 	if s == nil {
 		log.Debug("mainScreen: screen is nil")
 		return nil
 	}
-	log.Debug("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
+	log.Debugf("mainScreen: id=%s name=%s workArea=%+v", s.ID, s.Name, s.WorkArea)
 	return s
 }
 
@@ -210,7 +210,7 @@ func (win *Window) SavePosition() error {
 	w, h := win.window.Size()
 	x, y := win.window.Position()
 
-	log.Debug("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
+	log.Debugf("SavePosition: x=%d y=%d w=%d h=%d", x, y, w, h)
 
 	cur := settings.Get().Position
 	var pos settings.Position
@@ -325,7 +325,7 @@ func (win *Window) RunEditor(mode, id string) error {
 	argsStr := editor.Args
 
 	fn := win.app.GetFullPath(mode, id)
-	log.Info(fn)
+	log.Info("RunEditor() open", "path", fn)
 
 	ch, err := runEditor(program, argsStr, fn)
 	if err != nil {
@@ -673,8 +673,14 @@ func (r *Window) ReadLogTail(offset int64) (map[string]interface{}, error) {
 		}, nil
 	}
 
+	// 日付が変わってファイルが切り替わると、前のファイルの offset が今のサイズを超える。
+	// そのときは新しいファイルの先頭から読む
+	if offset > size {
+		offset = 0
+	}
+
 	// 差分読み取り
-	if offset >= size {
+	if offset == size {
 		return map[string]interface{}{
 			"content": "",
 			"offset":  size,
@@ -747,10 +753,10 @@ func (win *Window) autoSaveOnClose() {
 	}
 	n, err := win.app.AutoSave()
 	if err != nil {
-		log.Warn("AutoSave on close error:\n%+v", err)
+		log.Warnf("AutoSave on close error:\n%+v", err)
 		return
 	}
 	if n > 0 {
-		log.Info("AutoSave on close: %d files committed", n)
+		log.Infof("AutoSave on close: %d files committed", n)
 	}
 }

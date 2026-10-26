@@ -40,9 +40,9 @@ func New(version string) *App {
 	var err error
 	app.version, err = NewVersion(version)
 	if err != nil {
-		log.Warn("Version parse error:\n%+v", err)
+		log.Warnf("Version parse error:\n%+v", err)
 	}
-	log.Notice("Binder Version: %v", app.version)
+	log.Noticef("Binder Version: %v", app.version)
 
 	return &app
 }

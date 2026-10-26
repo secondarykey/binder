@@ -61,7 +61,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 	// 履歴を保存（最近開いたバインダーを先頭にする）。
 	// 上で立てた StartupOk もこの save() で一緒に永続化される。
 	if err := settings.SaveHistory(dir); err != nil {
-		log.Warn("SaveHistory error:\n%+v", err)
+		log.Warnf("SaveHistory error:\n%+v", err)
 	}
 
 	return address, nil
@@ -151,7 +151,7 @@ func (a *App) Generate(mode string, id string, data string) ([]string, error) {
 		if err == nil {
 			warnings = result.Warnings
 			for _, w := range warnings {
-				log.Warn("Generate warning: %s", w)
+				log.Warnf("Generate warning: %s", w)
 			}
 			_, err = a.current.PublishNote(id, []byte(result.HTML))
 		}
@@ -165,7 +165,7 @@ func (a *App) Generate(mode string, id string, data string) ([]string, error) {
 
 	default:
 		//templateはないはず
-		log.Warn("Unknown Mode:%s", mode)
+		log.Warnf("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {
@@ -193,7 +193,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 				return nil, xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
 			}
 			for _, w := range result.Warnings {
-				log.Warn("GenerateAll warning: %s", w)
+				log.Warnf("GenerateAll warning: %s", w)
 			}
 			warnings = append(warnings, result.Warnings...)
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
@@ -220,7 +220,7 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 			}
 			allFiles = append(allFiles, files...)
 		default:
-			log.Warn("Unknown Mode:%s", item.Mode)
+			log.Warnf("Unknown Mode:%s", item.Mode)
 		}
 	}
 
@@ -245,7 +245,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	case "layer":
 		err = a.current.UnpublishLayer(id)
 	default:
-		log.Warn("Unknown Mode:%s", mode)
+		log.Warnf("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {

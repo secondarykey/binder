@@ -342,7 +342,7 @@ func (f *FileSystem) getStatus(source string, republish, structureUpdated time.T
 			us = json.NothingStatus
 		}
 	} else {
-		log.Warn("modified error %s:\n%+v", sfn, err)
+		log.Warnf("modified error %s:\n%+v", sfn, err)
 	}
 
 	// DB の republish_date でまず非公開判定

@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,18 +35,19 @@ func init() {
 func main() {
 
 	flag.Parse()
-	logger, err := log.Init()
+	// 開発中はコンソールにも出す（配る exe は GUI なので標準エラー出力の行き先が無い）
+	logs, err := log.Init(log.Options{Dir: log.DefaultDir(), Console: isDev, KeepDays: log.DefaultKeepDays})
 	if err != nil {
-		log.Warn("ログファイルの初期化に失敗:\n%+v", err)
+		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
 	}
-	defer log.Close()
+	defer logs.Close()
 
 	// ~/.binder/ ディレクトリとデフォルトリソースを配置
 	if err := settings.EnsureDir(); err != nil {
-		log.Warn("EnsureDir() error:\n%+v", err)
+		log.Warnf("EnsureDir() error:\n%+v", err)
 	}
 	if err := setup.UpdateDefaults(); err != nil {
-		log.Warn("UpdateDefaults() error:\n%+v", err)
+		log.Warnf("UpdateDefaults() error:\n%+v", err)
 	}
 
 	version := strings.TrimSpace(ver)
@@ -67,6 +69,17 @@ func main() {
 	// ファイル指定ありの場合: 既存プロセスがあればそちらで開いて終了
 	if !newWindow && len(filePaths) > 0 && trySendToExisting(filePaths) {
 		os.Exit(0)
+	}
+
+	// 拾われなかった panic をログと同じフォルダに残す（配る exe では標準エラー出力の行き先が無い）。
+	// 上の os.Exit では defer が回らず書き出し先が残るので、そのあとで準備する
+	crash, previous, err := log.CatchCrash(log.DefaultDir())
+	if err != nil {
+		log.Warnf("異常終了の記録の準備に失敗（起動は続けます）:\n%+v", err)
+	}
+	defer crash.Close()
+	for _, p := range previous {
+		log.Warnf("異常終了の記録があります: %s", p)
 	}
 
 	// パイプサーバー起動: 他プロセスからのファイル受信を待機
@@ -91,14 +104,15 @@ func main() {
 	// i18n 初期化（ウィンドウ作成前に実行）
 	liteLang := settings.GetLite().Language
 	if err := settings.InitI18n(liteLang); err != nil {
-		log.Warn("settings.InitI18n() error:\n%+v", err)
+		log.Warnf("settings.InitI18n() error:\n%+v", err)
 	}
 
 	win.app = app
 
 	wailsApp = application.New(application.Options{
-		Name:   settings.T("go.window.lite"),
-		Logger: logger,
+		Name: settings.T("go.window.lite"),
+		// 渡さないと、配る exe では Wails 自身のログ（エラーを含む）が捨てられる
+		Logger: slog.Default(),
 		Services: []application.Service{
 			application.NewService(app),
 			application.NewService(win),
@@ -159,6 +173,6 @@ func main() {
 
 	err = wailsApp.Run()
 	if err != nil {
-		log.Warn("Run() error:\n%+v", err)
+		log.Warnf("Run() error:\n%+v", err)
 	}
 }
