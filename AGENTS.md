@@ -194,6 +194,14 @@ cd _cmd/binder && wails3 task common:generate:bindings
 
 Go API やフロントエンドを触る作業では、バインディングがないとビルドもテストも通らない。API 変更を行った場合はその都度再生成する。
 
+**注意: `api/` を変えても task が生成を飛ばすことがある**。`generate:bindings` は `_cmd/binder/` 配下のファイルしか見ていないため、ルートの `api/` だけを変えると「up to date」で何もしない。API を足した・変えたときは `_cmd/binder` で生成コマンドを直接実行し、`frontend/bindings/binder/api/app.js` に出たことを確かめる。
+
+```bash
+cd _cmd/binder && wails3 generate bindings -f '' -clean=true
+```
+
+生成のあとで `_cmd/binder/go.sum` が書き換わることがある（`go mod tidy` が走るため）。作業と関係なければコミットに含めない。
+
 **禁止: バインディングのコミット**。`_cmd/binder/frontend/bindings/` は `.gitignore` 対象の生成物であり、`git add` や `git add -f` でステージングしてはならない。バインディングはローカルでのビルド・テスト用に生成するもので、各環境で都度生成される前提。
 
 ### 注意: task dev と Junction
