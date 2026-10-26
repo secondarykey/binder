@@ -321,19 +321,17 @@ func (w *wrapper) drawSVG(v ...any) template.HTML {
 		}
 	} else {
 
-		if w.deps != nil {
-			diag, err := w.owner.GetDiagram(id)
-			if err == nil {
-				w.deps.diagrams[id] = diag
-			}
-		}
-
-		f, err := w.getSVGFile(id)
+		diag, err := w.owner.GetDiagram(id)
 		if err != nil {
-			w.addWarning(fmt.Sprintf("drawDiagram(%s): SVG file: %v", id, err))
+			w.addWarning(fmt.Sprintf("drawDiagram(%s): GetDiagram: %v", id, err))
 			code = fmt.Sprintf("ERROR: drawDiagram(%s): %v", id, err)
 		} else {
-			code = fmt.Sprintf(`<img src="%s">`, f)
+			// 公開ページは公開済みの SVG を参照するため、図が未公開だと画像だけが 404 になる
+			w.warnUnreachable("drawDiagram", id, diag.Private, diag.Republish)
+			if w.deps != nil {
+				w.deps.diagrams[id] = diag
+			}
+			code = fmt.Sprintf(`<img src="%s">`, w.convertURL(fs.SVGFile(diag)))
 		}
 	}
 
@@ -386,6 +384,11 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 			w.addWarning(fmt.Sprintf("drawLayer(%s): GetLayerWithParent: %v", id, err))
 			return templateError(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 		}
+		// 公開ページはレイヤーの SVG と下敷きの画像を公開パスで参照するため、どちらも公開済みでないと 404 になる
+		w.warnUnreachable("drawLayer", id, m.Private, m.Republish)
+		if m.Parent != nil {
+			w.warnUnreachable("drawLayer", m.ParentId, m.Parent.Private, m.Parent.Republish)
+		}
 		if w.deps != nil {
 			w.deps.layers[id] = m
 			if m.Parent != nil {
@@ -404,16 +407,6 @@ func (w *wrapper) drawLayer(v ...any) template.HTML {
 		return templateError(fmt.Sprintf("ERROR: drawLayer(%s): %v", id, err))
 	}
 	return html
-}
-
-func (w *wrapper) getSVGFile(id string) (string, error) {
-	d, err := w.owner.GetDiagram(id)
-	if err != nil {
-		return "", xerrors.Errorf("GetDiagram() error: %w", err)
-	}
-
-	f := fs.SVGFile(d)
-	return w.convertURL(f), nil
 }
 
 // embed は指定 ID のノートまたはテキストアセットの内容をインライン展開する。
