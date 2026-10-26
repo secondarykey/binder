@@ -215,6 +215,42 @@ func TestFindPublishNotesOrder(t *testing.T) {
 	}
 }
 
+// FindPublishNotes / FindPublishSeqNotes は公開を取り下げたノートと未公開のノートを返さない
+func TestFindPublishNotesExcludesUnpublished(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	parent, _ := uuid.NewV7()
+	ids := insertChildNotes(t, inst, parent.String(), 1, 2, 3)
+
+	// 0: 公開中 / 1: 未公開 / 2: 公開を取り下げた
+	for _, i := range []int{0, 2} {
+		if _, err := inst.PublishStructure(ids[i], testOp()); err != nil {
+			t.Fatalf("PublishStructure() error:%v", err)
+		}
+	}
+	if err := inst.UnpublishStructure(ids[2], testOp()); err != nil {
+		t.Fatalf("UnpublishStructure() error:%v", err)
+	}
+
+	want := []string{ids[0]}
+	notes, err := inst.FindPublishNotes(parent.String(), -1, -1)
+	if err != nil {
+		t.Fatalf("FindPublishNotes() error:%v", err)
+	}
+	if got := noteIds(notes); !equalIds(got, want) {
+		t.Errorf("FindPublishNotes()\n got:%v\nwant:%v", got, want)
+	}
+
+	notes, err = inst.FindPublishSeqNotes(parent.String(), -1, -1)
+	if err != nil {
+		t.Fatalf("FindPublishSeqNotes() error:%v", err)
+	}
+	if got := noteIds(notes); !equalIds(got, want) {
+		t.Errorf("FindPublishSeqNotes()\n got:%v\nwant:%v", got, want)
+	}
+}
+
 func TestFindInNoteId(t *testing.T) {
 	inst := open()
 	defer inst.Close()

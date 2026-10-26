@@ -180,6 +180,28 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 
 	defer log.PrintTrace(log.Func("GenerateAll()", len(items)))
 
+	// 同時に公開するもの同士の参照（childNotes・link 等）が未公開扱いにならないよう、
+	// HTML を作る前にまとめて公開済みにしておく
+	var ids []string
+	for _, item := range items {
+		switch item.Mode {
+		case "note", "diagram", "assets", "layer":
+			ids = append(ids, item.Id)
+		}
+	}
+	batch, err := a.current.BeginPublish(ids...)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, userError(err)
+	}
+	// 途中で失敗したら、まだ書き出していないものを公開前に戻す
+	fail := func(err error) ([]string, error) {
+		if rerr := batch.Rollback(); rerr != nil {
+			log.PrintStackTrace(rerr)
+		}
+		return nil, err
+	}
+
 	var allFiles []string
 	var warnings []string
 	for _, item := range items {
@@ -187,10 +209,10 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 		case "note":
 			result, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
 			if result.Error != "" {
-				return nil, xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
+				return fail(xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error))
 			}
 			for _, w := range result.Warnings {
 				log.Warnf("GenerateAll warning: %s", w)
@@ -198,26 +220,30 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 			warnings = append(warnings, result.Warnings...)
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		case "diagram":
 			files, _, err := a.current.PublishDiagramStage(item.Id, []byte(item.Data))
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		case "assets":
 			files, _, err := a.current.PublishAssetStage(item.Id)
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		case "layer":
 			files, _, err := a.current.PublishLayerStage(item.Id)
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		default:
 			log.Warnf("Unknown Mode:%s", item.Mode)

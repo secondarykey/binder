@@ -38,15 +38,11 @@ func (inst *Instance) FindUpdatedNotes(id string, limit int, offset int) ([]*mod
 func (inst *Instance) FindPublishNotes(id string, limit int, offset int) ([]*model.Note, error) {
 
 	// publish_date は structures テーブルで管理されるため、先に公開済み note の ID を取得する
-
-	where := fmt.Sprintf("type = 'note' and private = false and !(publish_date = '%s')", TimeZero)
-	if id != "" {
-		where += fmt.Sprintf(" and parent_id = '%s'", id)
-	}
 	order := "publish_date desc"
-	return inst.findStructureNotes(where, order, limit, offset)
+	return inst.findStructureNotes(publishedNoteWhere(id), order, limit, offset)
 }
 
+// FindSeqNotes は非公開でないノートをツリーの順で返す（プレビュー用）。
 func (inst *Instance) FindSeqNotes(id string, limit int, offset int) ([]*model.Note, error) {
 	where := "type = 'note' and private = false"
 	if id != "" {
@@ -54,6 +50,22 @@ func (inst *Instance) FindSeqNotes(id string, limit int, offset int) ([]*model.N
 	}
 	order := "seq"
 	return inst.findStructureNotes(where, order, limit, offset)
+}
+
+// FindPublishSeqNotes は公開中のノートをツリーの順で返す（公開用）。
+func (inst *Instance) FindPublishSeqNotes(id string, limit int, offset int) ([]*model.Note, error) {
+	order := "seq"
+	return inst.findStructureNotes(publishedNoteWhere(id), order, limit, offset)
+}
+
+// publishedNoteWhere は公開中のノートを絞り込む条件を返す。
+// 公開を取り下げると republish_date だけが空に戻り publish_date は残るため、republish_date で判定する。
+func publishedNoteWhere(id string) string {
+	where := fmt.Sprintf("type = 'note' and private = false and !(republish_date = '%s')", TimeZero)
+	if id != "" {
+		where += fmt.Sprintf(" and parent_id = '%s'", id)
+	}
+	return where
 }
 
 func (inst *Instance) findStructureNotes(where string, order string, limit int, offset int) ([]*model.Note, error) {

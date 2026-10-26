@@ -167,3 +167,54 @@ func (b *Binder) getStructureMap(ids ...interface{}) (map[string]*model.Structur
 	}
 	return m, nil
 }
+
+// PublishBatch はまとめて公開するときに、HTML を作る前に公開済みにしておいたものを管理する。
+// 同時に公開するもの同士の参照（childNotes・link・assetsImage 等）を、公開済みとして扱うために使う。
+type PublishBatch struct {
+	b    *Binder
+	orig []*model.Structure
+	done map[string]bool
+}
+
+// BeginPublish は ids をまとめて公開済みにする。
+// 書き出しを終えたものは Done で知らせ、途中で失敗したら Rollback でまだのものを元に戻す。
+func (b *Binder) BeginPublish(ids ...string) (*PublishBatch, error) {
+
+	if b == nil {
+		return nil, EmptyError
+	}
+
+	p := &PublishBatch{b: b, done: make(map[string]bool)}
+	for _, id := range ids {
+		s, err := b.db.GetStructure(id)
+		if err != nil {
+			p.Rollback()
+			return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+		}
+		if _, err := b.db.PublishStructure(id, b.op); err != nil {
+			p.Rollback()
+			return nil, xerrors.Errorf("db.PublishStructure() error: %w", err)
+		}
+		p.orig = append(p.orig, s)
+	}
+	return p, nil
+}
+
+// Done は id の書き出しを終えたことを記録する。Rollback で元に戻さなくなる。
+func (p *PublishBatch) Done(id string) {
+	p.done[id] = true
+}
+
+// Rollback はまだ書き出していないものの公開日時を BeginPublish の前に戻す。
+func (p *PublishBatch) Rollback() error {
+	var errs []error
+	for _, s := range p.orig {
+		if p.done[s.Id] {
+			continue
+		}
+		if err := p.b.db.RestorePublishStructure(s); err != nil {
+			errs = append(errs, xerrors.Errorf("db.RestorePublishStructure(%s) error: %w", s.Id, err))
+		}
+	}
+	return errors.Join(errs...)
+}

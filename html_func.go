@@ -217,7 +217,14 @@ func (w *wrapper) getNotes(id string, limit int, offset int) []*tempNote {
 }
 
 func (w *wrapper) getSeqNotes(id string, limit int) []*tempNote {
-	notes, err := w.owner.db.FindSeqNotes(id, limit, -1)
+
+	var err error
+	var notes []*model.Note
+	if w.Local {
+		notes, err = w.owner.db.FindSeqNotes(id, limit, -1)
+	} else {
+		notes, err = w.owner.db.FindPublishSeqNotes(id, limit, -1)
+	}
 	if err != nil {
 		w.addWarning(fmt.Sprintf("childNotes(%s, seq): %v", id, err))
 		return nil
