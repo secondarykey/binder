@@ -7,6 +7,22 @@ import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
 import { markUnresolvedResources } from "./preview-unresolved";
 
 /**
+ * 図（div.binderSVG）の描画に失敗したとき、図の場所にエラーを表示する。
+ * 何も出さないと空白になり、図に間違いがあることに気づけない。
+ * 見え方は Go 側のテンプレート関数のエラー（templateError）に揃える。
+ * Mermaid のエラーは行と位置を示す複数行の文なので、改行を残して表示する。
+ */
+export function renderDiagramError(elm, err) {
+  const msg = err?.message ?? String(err);
+  const div = elm.ownerDocument.createElement('div');
+  div.className = 'binderError';
+  div.style.color = 'red';
+  div.style.whiteSpace = 'pre-wrap';
+  div.textContent = `ERROR: drawDiagram(${elm.id}): ${msg}`;
+  elm.replaceChildren(div);
+}
+
+/**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
  *
  * 2つの iframe を交互に使い、裏側で描画が完了してから表示を切り替えることで
@@ -344,6 +360,7 @@ class HTMLFrame extends React.Component {
         elm.innerHTML = data.svg;
       }).catch((err) => {
         console.error(err);
+        renderDiagramError(elm, err);
       }));
     }
 
