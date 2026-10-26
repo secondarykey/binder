@@ -67,6 +67,7 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ContrastIcon from '@mui/icons-material/Contrast';
+import CodeOffIcon from '@mui/icons-material/CodeOff';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
 
@@ -536,6 +537,8 @@ function Editor(props) {
   // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
   const [previewScrollbar, setPreviewScrollbar] = useState(true);
   const [allowScripts, setAllowScripts] = useState(false);
+  // 表示中のプレビューでスクリプトを止めたか（止めたときだけアイコンを出す）
+  const [scriptsBlocked, setScriptsBlocked] = useState(false);
 
   // オートコンプリートの挿入処理
   const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
@@ -2792,6 +2795,13 @@ function Editor(props) {
                 })()}
                 {mode !== Mode.template && <div className="previewMenuLeft" />}
                 <div className="previewMenuRight">
+                  {scriptsBlocked && (mode === Mode.note || (mode === Mode.template && templateType !== "diagram")) &&
+                    <Tooltip title={t("preview.scriptsBlocked")} placement="bottom">
+                      <IconButton size="small" aria-label="scripts-blocked" className="editorBtn" onClick={() => evt.openBinderModal()}>
+                        <CodeOffIcon sx={{ fontSize: '16px', color: 'var(--accent-orange)' }} />
+                      </IconButton>
+                    </Tooltip>
+                  }
                   {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
                     <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
                       <IconButton size="small" aria-label="color-scheme" className="editorBtn"
@@ -2858,7 +2868,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2867,7 +2877,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
               </div>
 

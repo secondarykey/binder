@@ -379,6 +379,12 @@ function App() {
       if (entry) nav(editorHistoryURL(entry));
     });
 
+    // プレビューウィンドウから、バインダー設定を開く（スクリプトを止めた知らせから）
+    const cleanupBinderSetting = Events.On("binder:binderSetting:open", () => {
+      Window.Focus().catch(() => {});
+      evt.openBinderModal();
+    });
+
     //アプリバージョンを取得してタイトル用ラベルを生成
     GetVersionInfo().then((info) => {
       let label = "Binder " + info.version;
@@ -436,6 +442,7 @@ function App() {
       cleanupSearch();
       cleanupLink();
       cleanupHistoryNav();
+      cleanupBinderSetting();
       cleanupAutoSave();
       // 世代を進めて、保留中の setupAutoSave().then がタイマーを生成しないようにする
       autoSaveGen++;

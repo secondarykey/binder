@@ -35,6 +35,10 @@ _cmd/shared/frontend/editor/
   （`IsBinderTrusted()`、`setting.json` の `trustedBinders`）だけ渡す。Lite は渡さない
 - `sandbox` の変更は次の読み込みから効くため、`view()` で `srcdoc` を入れる直前に毎回合わせる。
   `allowScripts` が変わったら HTML が同じでも読み込み直す
+- 止めたことは `onScriptsBlocked(blocked)` で知らせる。表示を切り替えるたびに呼び、
+  `<script>` か `on…` 属性があったときだけ true（`hasScripts`）。Binder はエディタのプレビュー上部と
+  プレビューウィンドウにアイコンを出し、押すとバインダー設定を開く
+  （プレビューウィンドウからは `binder:binderSetting:open` でメインウィンドウに頼む）
 - 図の描画に失敗したら、図の場所に `ERROR: drawDiagram(ID): …` を出す（`renderDiagramError`）
 
 ## 参照方式

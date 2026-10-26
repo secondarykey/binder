@@ -23,6 +23,21 @@ export function renderDiagramError(elm, err) {
 }
 
 /**
+ * HTML にスクリプト（<script> 要素か、onclick などの on… 属性）があるかを返す。
+ * sandbox で止めたことを知らせるかどうかの判定に使う。
+ */
+export function hasScripts(doc) {
+  if (!doc?.querySelector) return false;
+  if (doc.querySelector('script')) return true;
+  for (const el of doc.querySelectorAll('*')) {
+    for (const attr of el.attributes) {
+      if (/^on/i.test(attr.name)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * HTMLプレビュー用ダブルバッファ iframe コンポーネント
  *
  * 2つの iframe を交互に使い、裏側で描画が完了してから表示を切り替えることで
@@ -49,6 +64,8 @@ export function renderDiagramError(elm, err) {
  *   unresolvedHints - パスから種別を導けた場合に併記する代替の書き方
  *                     { diagram, layer, asset }。関数名はアプリ依存なので文言を渡す
  *   allowScripts    - true で HTML 中のスクリプトを動かす。既定は止める
+ *   onScriptsBlocked - 表示を切り替えるたびに、スクリプトを止めたかどうかを渡して呼ぶ。
+ *                     止めていても HTML にスクリプトが無ければ false
  *
  * iframe はアプリと同じオリジンで HTML を表示するため、スクリプトを動かすと
  * アプリの機能（Wails のランタイム）を呼べてしまう。既定では sandbox で止め、
@@ -170,9 +187,12 @@ class HTMLFrame extends React.Component {
     // 裏 iframe に描画開始
     backIframe.onload = () => {
       const doc = backIframe.contentDocument;
+      // 外側で手を加える前の、読み込んだままの HTML で判定する
+      const blocked = !this.props.allowScripts && hasScripts(doc);
       this.postProcess(doc, () => {
         // 描画完了後に表裏を切り替え
         this.swap(backIndex);
+        this.props.onScriptsBlocked?.(blocked);
       });
     };
     // sandbox は読み込みのたびに合わせる（変更は次の読み込みから効く）

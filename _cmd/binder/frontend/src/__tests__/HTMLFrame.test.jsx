@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import HTMLFrame, { renderDiagramError } from '@shared/editor/HTMLFrame';
+import HTMLFrame, { renderDiagramError, hasScripts } from '@shared/editor/HTMLFrame';
 
 describe('HTMLFrame', () => {
   it('renders two iframes for double buffering', () => {
@@ -60,5 +60,13 @@ describe('HTMLFrame', () => {
     renderDiagramError(elm, 'syntax error');
 
     expect(elm.textContent).toBe('ERROR: drawDiagram(diagram-id): syntax error');
+  });
+
+  it('finds scripts and inline event handlers', () => {
+    const parse = (html) => new DOMParser().parseFromString(html, 'text/html');
+    expect(hasScripts(parse('<p>text</p><pre><code>&lt;script&gt;</code></pre>'))).toBe(false);
+    expect(hasScripts(parse('<p>text</p><script>hljs.highlightAll()</script>'))).toBe(true);
+    expect(hasScripts(parse('<img src="x.png" onerror="alert(1)">'))).toBe(true);
+    expect(hasScripts(null)).toBe(false);
   });
 });
