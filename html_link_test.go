@@ -340,3 +340,44 @@ func TestDrawUnpublishedWarning(t *testing.T) {
 		}
 	})
 }
+
+// TestPublishScriptsWarning は、信頼していないバインダーで公開するページにスクリプトがあると
+// 警告することを検証する。プレビューではスクリプトを止めているため、
+// どう動くかを見ないまま公開することになる。
+// テスト用のバインダーは信頼していない（setting.json に登録しない）前提。
+func TestPublishScriptsWarning(t *testing.T) {
+	b := test.CreateBinder(t, "publish_scripts")
+	defer b.Close()
+
+	note, err := b.GetNote(getFirstNoteId(t, b))
+	if err != nil {
+		t.Fatalf("GetNote() error: %v", err)
+	}
+	if b.IsTrusted() {
+		t.Skip("test binder is trusted in setting.json")
+	}
+
+	const warn = "scripts(" // binder.ScriptsWarning
+	for _, c := range []struct {
+		name  string
+		elm   string
+		local bool
+		want  bool
+	}{
+		{"script element", `<p>x</p><script>alert(1)</script>`, false, true},
+		{"event handler attribute", `<img src="x.png" onerror="alert(1)">`, false, true},
+		{"escaped text", `<pre><code>&lt;script&gt;</code></pre>`, false, false},
+		// プレビューでは止めたことをアイコンで知らせるため、警告にはしない
+		{"preview", `<script>alert(1)</script>`, true, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			_, warnings, err := b.CreateNoteHTML(note, c.local, c.elm)
+			if err != nil {
+				t.Fatalf("CreateNoteHTML() error: %v", err)
+			}
+			if got := hasWarning(warnings, warn+note.Id+")"); got != c.want {
+				t.Errorf("warnings = %v, want scripts warning = %v", warnings, c.want)
+			}
+		})
+	}
+}

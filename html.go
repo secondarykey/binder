@@ -3,7 +3,9 @@ package binder
 import (
 	"errors"
 	"html/template"
+	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	texttemplate "text/template"
 
@@ -207,7 +209,28 @@ func (b *Binder) CreateNoteHTML(note *json.Note, local bool, elm string) (string
 	if err != nil {
 		return "", w.getWarnings(), xerrors.Errorf("writeHTML() error: %w", err)
 	}
-	return builder.String(), w.getWarnings(), nil
+	html := builder.String()
+
+	// 信頼していないバインダーはプレビューでスクリプトを止めているため、
+	// どう動くかを一度も見ないまま公開することになる。公開するこの時点で知らせる
+	if !local && !b.IsTrusted() && hasScripts(html) {
+		w.addWarning(fmt.Sprintf("%s(%s): %s", ScriptsWarning, note.Id, "the page has scripts that are blocked in the preview"))
+	}
+	return html, w.getWarnings(), nil
+}
+
+// ScriptsWarning は公開ページにプレビューで止めていたスクリプトがあるときの警告の頭。
+// フロントエンドはこの頭で見分けて、専用のメッセージを出す。
+const ScriptsWarning = "scripts"
+
+// scriptPattern は HTML のスクリプト（<script> 要素か、onclick などの on… 属性）に当たる。
+// 本文の文字としての "<script>" はエスケープされているため当たらない。
+var scriptPattern = regexp.MustCompile(`(?i)<script[\s>/]|<[a-z][^>]*\son[a-z]+\s*=`)
+
+// hasScripts は HTML にスクリプトがあるかを返す。
+// フロントエンドの hasScripts（_cmd/shared/frontend/editor/HTMLFrame.jsx）と同じ判定。
+func hasScripts(html string) bool {
+	return scriptPattern.MatchString(html)
 }
 
 // ParseNoteForExport はエクスポート用にノート要素のテンプレート関数を展開する。

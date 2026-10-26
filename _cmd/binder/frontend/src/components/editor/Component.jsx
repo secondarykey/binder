@@ -37,6 +37,7 @@ import HTMLFrame from "./HTMLFrame.jsx";
 import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
 import { resolveBinderLink } from "./binder-link";
 import { watchExternalEditor } from "./external-editor";
+import { publishWarningMessage } from "../../publish-warning";
 import '../../assets/Editor.css'
 import { Mode, copyClipboard } from "../../app/App.jsx";
 
@@ -1849,7 +1850,7 @@ function Editor(props) {
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
       } else if (genWarnings?.length > 0) {
-        evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
+        evt.showWarningMessage(publishWarningMessage(t, genWarnings));
       } else {
         evt.showSuccessMessage("Generate.");
       }
