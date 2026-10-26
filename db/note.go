@@ -68,7 +68,23 @@ func (inst *Instance) findStructureNotes(where string, order string, limit int, 
 	for i, s := range structs {
 		ids[i] = s.Id
 	}
-	return inst.FindInNoteId(ids...)
+	notes, err := inst.FindInNoteId(ids...)
+	if err != nil {
+		return nil, xerrors.Errorf("FindInNoteId() error: %w", err)
+	}
+
+	// FindInNoteId は updated_date で並べ直すため、structures で指定した順に戻す
+	noteMap := make(map[string]*model.Note, len(notes))
+	for _, n := range notes {
+		noteMap[n.Id] = n
+	}
+	rtn := make([]*model.Note, 0, len(notes))
+	for _, s := range structs {
+		if n, ok := noteMap[s.Id]; ok {
+			rtn = append(rtn, n)
+		}
+	}
+	return rtn, nil
 }
 
 func (inst *Instance) FindInNoteId(ids ...interface{}) ([]*model.Note, error) {
