@@ -83,6 +83,10 @@ distributions, and `gtk4` / `webkitgtk-6.0` on Arch.
 
 Binder requires macOS 12.0 or later.
 
+The release archive (`binder-<version>_darwin_arm64.zip`) is built for Apple
+silicon only and does not run on Intel Macs. On an Intel Mac, build from source
+(see [Build](#build)).
+
 Releases built without an Apple Developer ID certificate are ad-hoc signed only.
 Because macOS attaches the `com.apple.quarantine` attribute to downloaded files,
 Gatekeeper refuses to launch them with:
