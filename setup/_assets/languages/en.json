@@ -616,6 +616,7 @@
         "openExternalEditor" : "Open in External Editor",
         "openPreviewWindow" : "Open in Preview Window",
         "externalEditorLocked" : "Opened in external editor.",
+        "finishExternalEditor" : "Finish External Editing",
         "searchPlaceholder" : "Search text...",
         "searchMatches" : "{{count}} matches",
         "searchNoMatches" : "No matches",

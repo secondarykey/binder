@@ -616,6 +616,7 @@
         "openExternalEditor" : "外部エディタで開く",
         "openPreviewWindow" : "プレビューウィンドウで開く",
         "externalEditorLocked" : "外部エディタで開いています。",
+        "finishExternalEditor" : "外部エディタでの編集を終える",
         "searchPlaceholder" : "テキストを検索...",
         "searchMatches" : "{{count}}件",
         "searchNoMatches" : "一致なし",

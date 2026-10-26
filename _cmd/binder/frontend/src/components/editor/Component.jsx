@@ -36,6 +36,7 @@ import { useTranslation } from 'react-i18next';
 import HTMLFrame from "./HTMLFrame.jsx";
 import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
 import { resolveBinderLink } from "./binder-link";
+import { watchExternalEditor } from "./external-editor";
 import '../../assets/Editor.css'
 import { Mode, copyClipboard } from "../../app/App.jsx";
 
@@ -424,6 +425,10 @@ function Editor(props) {
   const [editor, setEditor] = useState(true);
   const [viewer, setViewer] = useState(true);
   const [editorLocked, setEditorLocked] = useState(false);
+  // 外部エディタのプロセスはすぐ終わったが、編集は続いているとみなしている間
+  const [editorDetached, setEditorDetached] = useState(false);
+  const externalEditorRef = useRef(null);
+  useEffect(() => () => externalEditorRef.current?.stop(), []);
 
   const [text, setText] = useState("");
   const [name, setName] = useState("");
@@ -2134,35 +2139,30 @@ function Editor(props) {
     setEditorLocked(true);
 
     // 外部エディタ起動中にファイル変更をポーリングして反映
-    const lastTextRef = { current: text };
-    const sec = 2;
     const openFn = mode === Mode.note ? OpenNote
                  : mode === Mode.diagram ? OpenDiagram
                  : mode === Mode.template ? OpenTemplate : null;
 
-    var interval = setInterval(function () {
-      if (!openFn) return;
-      openFn(id).then((resp) => {
-        if (resp !== lastTextRef.current) {
-          lastTextRef.current = resp;
-          setText(resp);
-        }
-      }).catch(() => {});
-    }, 1000 * sec)
+    externalEditorRef.current = watchExternalEditor({
+      run: () => RunEditor(mode, id),
+      read: openFn ? () => openFn(id) : null,
+      initialText: text,
+      onText: setText,
+      onDetach: () => setEditorDetached(true),
+      onFinish: () => {
+        externalEditorRef.current = null;
+        setEditorDetached(false);
+        setEditorLocked(false);
+      },
+      onError: (err) => evt.showErrorMessage(err),
+    });
+  }
 
-    RunEditor(mode, id).then(() => {
-      clearInterval(interval)
-      // プロセス終了後にファイルを再読み込み
-      if (openFn) {
-        openFn(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
-      }
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-      clearInterval(interval)
-    }).finally(() => {
-      clearInterval(interval)
-      setEditorLocked(false);
-    })
+  /**
+   * 起動だけしてすぐ終わる外部エディタでの編集を終える
+   */
+  const handleFinishExternalEditor = () => {
+    externalEditorRef.current?.finish();
   }
 
   /**
@@ -2943,7 +2943,12 @@ function Editor(props) {
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <span style={{ color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>{t("editor.externalEditorLocked")}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>
+          <span>{t("editor.externalEditorLocked")}</span>
+          {editorDetached && (
+            <Button variant="contained" onClick={handleFinishExternalEditor}>{t("editor.finishExternalEditor")}</Button>
+          )}
+        </div>
       </Backdrop>
     </>
   );
