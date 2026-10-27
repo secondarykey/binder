@@ -60,21 +60,11 @@ func addPrivateToStructures(p string, fs *core.FileSet) (*core.FileSet, error) {
 	}
 	defer fp.Close()
 
-	nn := "structures097.csv"
-	nf := filepath.Join(p, nn)
-	np, err := os.Create(nf)
-	if err != nil {
-		return nil, xerrors.Errorf("os.Create() error: %w", err)
-	}
-	defer np.Close()
-
 	scanner := bufio.NewScanner(fp)
 
 	// ヘッダ行を読み込む
 	if !scanner.Scan() {
 		// 空ファイルの場合はそのまま返す
-		np.Close()
-		os.Remove(nf)
 		return fs, nil
 	}
 	headerLine := scanner.Text()
@@ -83,8 +73,6 @@ func addPrivateToStructures(p string, fs *core.FileSet) (*core.FileSet, error) {
 	// 冪等: private 列が既に存在すればスキップ
 	for _, c := range cols {
 		if c == "private" {
-			np.Close()
-			os.Remove(nf)
 			return fs, nil
 		}
 	}
@@ -108,6 +96,17 @@ func addPrivateToStructures(p string, fs *core.FileSet) (*core.FileSet, error) {
 		newCols = append(newCols, "private")
 		newCols = append(newCols, cols[insertIdx:]...)
 	}
+
+	// 一時ファイルは列の追加が必要と分かってから作る。
+	// RepairSchema() は Load() のたびに走るため、修復済みのバインダーでは
+	// ファイルを作らない（作っては消すと、同時に走った別のロードとぶつかる）。
+	nn := "structures097.csv"
+	nf := filepath.Join(p, nn)
+	np, err := os.Create(nf)
+	if err != nil {
+		return nil, xerrors.Errorf("os.Create() error: %w", err)
+	}
+	defer np.Close()
 
 	if _, err = np.Write([]byte(strings.Join(newCols, ",") + "\n")); err != nil {
 		return nil, xerrors.Errorf("np.Write(header) error: %w", err)
@@ -156,20 +155,10 @@ func addStyleTemplateToDiagrams(p string, fs *core.FileSet) (*core.FileSet, erro
 	}
 	defer fp.Close()
 
-	nn := "diagrams097.csv"
-	nf := filepath.Join(p, nn)
-	np, err := os.Create(nf)
-	if err != nil {
-		return nil, xerrors.Errorf("os.Create() error: %w", err)
-	}
-	defer np.Close()
-
 	scanner := bufio.NewScanner(fp)
 
 	// ヘッダ行を読み込む
 	if !scanner.Scan() {
-		np.Close()
-		os.Remove(nf)
 		return fs, nil
 	}
 	headerLine := scanner.Text()
@@ -178,8 +167,6 @@ func addStyleTemplateToDiagrams(p string, fs *core.FileSet) (*core.FileSet, erro
 	// 冪等: style_template 列が既に存在すればスキップ
 	for _, c := range cols {
 		if c == "style_template" {
-			np.Close()
-			os.Remove(nf)
 			return fs, nil
 		}
 	}
@@ -202,6 +189,15 @@ func addStyleTemplateToDiagrams(p string, fs *core.FileSet) (*core.FileSet, erro
 		newCols = append(newCols, "style_template")
 		newCols = append(newCols, cols[insertIdx:]...)
 	}
+
+	// 一時ファイルは列の追加が必要と分かってから作る（addPrivateToStructures と同じ理由）
+	nn := "diagrams097.csv"
+	nf := filepath.Join(p, nn)
+	np, err := os.Create(nf)
+	if err != nil {
+		return nil, xerrors.Errorf("os.Create() error: %w", err)
+	}
+	defer np.Close()
 
 	if _, err = np.Write([]byte(strings.Join(newCols, ",") + "\n")); err != nil {
 		return nil, xerrors.Errorf("np.Write(header) error: %w", err)

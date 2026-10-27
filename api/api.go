@@ -8,6 +8,7 @@ import (
 	"binder/settings"
 	"context"
 	"fmt"
+	"sync"
 )
 
 // SearchEmitter は検索イベントの発火を外部に委譲するインターフェース
@@ -32,6 +33,11 @@ type App struct {
 	// startupOkSaved は今セッションで StartupOk(true) を保存済みかどうか。
 	// 最初のバインダーを開けた時点で一度だけ保存するためのガード。
 	startupOkSaved bool
+	// loadMu は LoadBinder() を直列化する。
+	// binder.Load() は db を開く前にスキーマ修復で CSV を書き換えるため、
+	// 同じバインダーのロードが並行して走るとファイル操作がぶつかる
+	// （開発モードでは StrictMode の二重実行で起動時に2本同時に呼ばれる）。
+	loadMu sync.Mutex
 }
 
 func New(version string) *App {

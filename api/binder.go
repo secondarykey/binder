@@ -15,6 +15,10 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
 
+	// ロードは同時に1本だけにする（loadMu のコメント参照）
+	a.loadMu.Lock()
+	defer a.loadMu.Unlock()
+
 	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
 	defer func() {
 		if r := recover(); r != nil {
