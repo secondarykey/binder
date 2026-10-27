@@ -4,10 +4,11 @@ import { Toolbar, Tooltip, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import CodeOffIcon from '@mui/icons-material/CodeOff';
 import ContrastIcon from '@mui/icons-material/Contrast';
 
 import { Events, Window, Browser } from '@wailsio/runtime';
-import { GetConfig, GetPreviewScrollbar } from '../../bindings/binder/api/app';
+import { GetConfig, GetPreviewScrollbar, IsBinderTrusted } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
 import { copyClipboard } from './App';
@@ -42,6 +43,10 @@ function PreviewApp() {
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
   // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
   const [previewScrollbar, setPreviewScrollbar] = useState(true);
+  // プレビューでスクリプトを動かすか（信頼したバインダーだけ）
+  const [allowScripts, setAllowScripts] = useState(false);
+  // 表示中のプレビューでスクリプトを止めたか（止めたときだけアイコンを出す）
+  const [scriptsBlocked, setScriptsBlocked] = useState(false);
   // エディタ閲覧履歴の可否（メインウィンドウが持つ状態の写し）
   const [historyState, setHistoryState] = useState({ canBack: false, canForward: false });
 
@@ -51,11 +56,16 @@ function PreviewApp() {
       const data = event.data?.[0] ?? event.data;
       setPreviewScrollbar(!!data);
     });
+    IsBinderTrusted().then((v) => setAllowScripts(!!v)).catch(() => {});
+    const cleanupTrust = Events.On('binder:preview:trustChanged', (event) => {
+      const data = event.data?.[0] ?? event.data;
+      setAllowScripts(!!data);
+    });
     const cleanupHistory = Events.On('binder:editor:historyState', (event) => {
       const data = event.data?.[0] ?? event.data ?? {};
       setHistoryState({ canBack: !!data.canBack, canForward: !!data.canForward });
     });
-    return () => { cleanup(); cleanupHistory(); };
+    return () => { cleanup(); cleanupTrust(); cleanupHistory(); };
   }, []);
 
   useEffect(() => {
@@ -120,6 +130,8 @@ function PreviewApp() {
   const closeMenu = () => setMenu((m) => ({ ...m, open: false }));
 
   // 戻る/進む はメインウィンドウのエディタ閲覧履歴を辿るため、依頼するだけ
+  // バインダー設定はメインウィンドウで開く
+  const handleOpenBinderSetting = () => Events.Emit('binder:binderSetting:open');
   const handleHistoryBack = () => Events.Emit('binder:editor:historyNav', { dir: 'back' });
   const handleHistoryForward = () => Events.Emit('binder:editor:historyNav', { dir: 'forward' });
 
@@ -153,6 +165,13 @@ function PreviewApp() {
         <Typography variant="body2" sx={{ flex: 1 }} noWrap>
           {t('preview.windowTitle')}{name ? ` — ${name}` : ''}
         </Typography>
+        {scriptsBlocked && (typ === 'note' || typ === 'template') &&
+          <Tooltip title={t('preview.scriptsBlocked')} placement="bottom">
+            <IconButton size="small" color="inherit" aria-label="scripts-blocked" onClick={handleOpenBinderSetting}>
+              <CodeOffIcon fontSize="small" sx={{ color: 'var(--accent-orange)' }} />
+            </IconButton>
+          </Tooltip>
+        }
         {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
           <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
             <IconButton size="small" color="inherit" aria-label="color-scheme"
@@ -179,7 +198,7 @@ function PreviewApp() {
       {/** プレビューエリア */}
       <div id="previewArea">
         {(typ === 'note' || typ === 'template') &&
-          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+          <HTMLFrame html={html} cursorLine={null} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handleContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
         }
         {typ === 'diagram' &&
           <div id="previewMermaidViewer" style={{

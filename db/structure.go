@@ -122,3 +122,18 @@ func (inst *Instance) UnpublishStructure(id string, op Op) error {
 	}
 	return nil
 }
+
+// RestorePublishStructure は PublishStructure の前に取っておいた s の公開日時と更新日時を書き戻す。
+// UpdateStructure は updated_date を現在時刻にするため使わない。
+func (inst *Instance) RestorePublishStructure(s *model.Structure) error {
+	num, err := inst.updateStructure(
+		"publish_date = ?,republish_date = ?,updated_date = ?,updated_user = ?",
+		"id = ?", s.Publish, s.Republish, s.Updated, s.UpdatedUser, s.Id)
+	if err != nil {
+		return xerrors.Errorf("updateStructure() error: %w", err)
+	}
+	if num != 1 {
+		return fmt.Errorf("updateStructure() non single error: %v == %d", s.Id, num)
+	}
+	return nil
+}

@@ -1,114 +1,37 @@
+// Package log は Binder のログ。Binder のコードはここの関数でログを出す（標準の log・slog・wenteasy/log を直接使わない）。
+// 中身は github.com/wenteasy/log に任せ、ここではアプリの出口（setup.go）・レベル・出す関数だけを持つ。
+// 作り方は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」のひな形に揃えている。
+//
+// 出す関数は slog と同じ「メッセージ + キーと値」（Info）と printf（Infof）の 2 つ。
+// 出口は slog.Default() なので、slog で直接書いたログも同じ出口へ出る。
 package log
 
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
+
+	wlog "github.com/wenteasy/log"
 )
 
-// debug = -4 ,info = 0 warn = 4,error = 8
-
+// 値は wenteasy/log と同じ。型は slog.Level（debug = -4 ,info = 0 warn = 4,error = 8）。
 const (
-	LevelTrace     slog.Level = -8
-	LevelNotice    slog.Level = 2
-	LevelEmergency slog.Level = 32
+	LevelTrace     = wlog.LevelTrace
+	LevelDebug     = wlog.LevelDebug
+	LevelInfo      = wlog.LevelInfo
+	LevelNotice    = wlog.LevelNotice
+	LevelWarn      = wlog.LevelWarn
+	LevelError     = wlog.LevelError
+	LevelEmergency = wlog.LevelEmergency
 )
 
-var gCtx context.Context
-var gLogger *slog.Logger
-var logFile *os.File
+// logLevel は出口（ファイル・コンソール）のレベル。画面（ログビューア）から変える。
 var logLevel slog.LevelVar
 
 func init() {
-	gCtx = context.Background()
 	logLevel.Set(LevelNotice)
-	gLogger = slog.Default()
-}
-
-// Init はログファイルを temp ディレクトリに作成し、slog を設定する。
-func Init() (*slog.Logger, error) {
-	dir := filepath.Join(os.TempDir(), "binder")
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, err
-	}
-
-	name := time.Now().Format("20060102") + ".log"
-	f, err := os.OpenFile(filepath.Join(dir, name), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		return nil, err
-	}
-	logFile = f
-
-	handler := &simpleHandler{w: logFile, level: &logLevel}
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
-	gLogger = logger
-
-	//Notice(fmt.Sprintf("Log Level:%v", levelName(logLevel)))
-
-	return gLogger, nil
-}
-
-// simpleHandler はデフォルトの log パッケージに近いシンプルな出力を行う slog.Handler。
-// 出力形式: 2006/01/02 15:04:05 [LEVEL] message
-type simpleHandler struct {
-	w     io.Writer
-	level *slog.LevelVar
-}
-
-func (h *simpleHandler) Enabled(_ context.Context, l slog.Level) bool {
-	return l >= h.level.Level()
-}
-
-func (h *simpleHandler) Handle(_ context.Context, r slog.Record) error {
-	t := r.Time.Format(time.RFC3339)
-	_, err := fmt.Fprintf(h.w, "%s [%-6s] %s\n", t, levelName(r.Level), r.Message)
-	return err
-}
-
-func (h *simpleHandler) WithAttrs(_ []slog.Attr) slog.Handler { return h }
-func (h *simpleHandler) WithGroup(_ string) slog.Handler      { return h }
-
-func levelName(l slog.Level) string {
-	switch {
-	case l <= LevelTrace:
-		return "TRACE"
-	case l <= slog.LevelDebug:
-		return "DEBUG"
-	case l < LevelNotice:
-		return "INFO"
-	case l < slog.LevelWarn:
-		return "NOTICE"
-	case l < slog.LevelError:
-		return "WARN"
-	case l < LevelEmergency:
-		return "ERROR"
-	default:
-		return "EMERGENCY"
-	}
-}
-
-// Close はログファイルを閉じる。
-func Close() {
-	if logFile != nil {
-		logFile.Close()
-		logFile = nil
-	}
-}
-
-// Path は現在のログファイルのパスを返す。
-// Init が未呼び出しの場合は空文字を返す。
-func Path() string {
-	if logFile == nil {
-		return ""
-	}
-	return logFile.Name()
 }
 
 // SetLevel はログレベルを動的に変更する。
@@ -121,88 +44,58 @@ func GetLevel() slog.Level {
 	return logLevel.Level()
 }
 
-func SetContext(ctx context.Context) {
-	gCtx = ctx
+// Enabled は level のログが出るかを返す。引数を組み立てるのが重いときに先に確かめる。
+func Enabled(level slog.Level) bool {
+	return slog.Default().Enabled(context.Background(), level)
 }
 
-func Trace(msg string, args ...interface{}) {
-	log(LevelTrace, msg, args...)
-}
+// 出す関数（メッセージ + キーと値）。log.Info("保存しました", "path", p)
+func Trace(msg string, args ...any)  { output(LevelTrace, msg, "", nil, args) }
+func Debug(msg string, args ...any)  { output(LevelDebug, msg, "", nil, args) }
+func Info(msg string, args ...any)   { output(LevelInfo, msg, "", nil, args) }
+func Notice(msg string, args ...any) { output(LevelNotice, msg, "", nil, args) }
+func Warn(msg string, args ...any)   { output(LevelWarn, msg, "", nil, args) }
+func Error(msg string, args ...any)  { output(LevelError, msg, "", nil, args) }
 
-func Debug(msg string, args ...interface{}) {
-	log(slog.LevelDebug, msg, args...)
-}
+// 出す関数（printf）。log.Warnf("失敗:\n%+v", err)
+func Tracef(format string, args ...any)  { output(LevelTrace, "", format, args, nil) }
+func Debugf(format string, args ...any)  { output(LevelDebug, "", format, args, nil) }
+func Infof(format string, args ...any)   { output(LevelInfo, "", format, args, nil) }
+func Noticef(format string, args ...any) { output(LevelNotice, "", format, args, nil) }
+func Warnf(format string, args ...any)   { output(LevelWarn, "", format, args, nil) }
+func Errorf(format string, args ...any)  { output(LevelError, "", format, args, nil) }
 
-func Info(msg string, args ...interface{}) {
-	log(slog.LevelInfo, msg, args...)
-}
+// runtime.Callers → output → 公開関数 → 呼び出し元。
+// ⚠️ output は公開関数から直接呼ぶ（間に関数を挟むと、記録される位置がずれる）。
+const callerSkip = 3
 
-func Notice(msg string, args ...interface{}) {
-	log(LevelNotice, msg, args...)
-}
-
-func Warn(msg string, args ...interface{}) {
-	log(slog.LevelWarn, msg, args...)
-}
-
-func Error(msg string, args ...interface{}) {
-	log(slog.LevelError, msg, args...)
-}
-
-func log(lv slog.Level, msg string, args ...interface{}) {
-	put(gCtx, lv, msg, args...)
-}
-
-func put(ctx context.Context, lv slog.Level, format string, args ...interface{}) {
-	if gLogger.Enabled(ctx, lv) {
-		msg := fmt.Sprintf(format, args...)
-		slog.Log(ctx, lv, msg)
+func output(level slog.Level, msg, format string, fargs, attrs []any) {
+	l := slog.Default()
+	ctx := context.Background()
+	if !l.Enabled(ctx, level) {
+		return // 出さないレベルなら Sprintf もしない
 	}
-}
-
-func PrintTrace(caller string) {
-	Trace("%s %s", caller, "End")
-}
-
-func Func(caller string, args ...interface{}) string {
-	Trace("%s %s", caller, "Start")
-	if len(args) > 0 {
-		Trace("Arguments:%s", arguments(args...))
+	if format != "" {
+		msg = fmt.Sprintf(format, fargs...)
 	}
-	return caller
+	var pcs [1]uintptr
+	runtime.Callers(callerSkip, pcs[:])
+	r := slog.NewRecord(time.Now(), level, msg, pcs[0])
+	r.Add(attrs...)
+	_ = l.Handler().Handle(ctx, r)
 }
 
-func arguments(args ...interface{}) string {
-	var buf strings.Builder
-	for idx, a := range args {
-		if idx != 0 {
-			buf.WriteString(",")
-		}
-		buf.WriteString(fmt.Sprintf("%v", a))
-	}
-	return buf.String()
-}
+// 以下は wenteasy/log のものを変数で指す（包むと記録される位置が包んだ関数になる）。
 
-func PrintStackTrace(err error) {
-	Error("Error:%+v", err)
-	return
-}
+// 関数の出入り。defer log.PrintTrace(log.Func("Name()", args...)) で使う。
+var (
+	Func       = wlog.Func
+	PrintTrace = wlog.PrintTrace
+)
 
-func NoneStop() {
-	if err := recover(); err != nil {
-		emergency(err)
-	}
-}
+// PrintStackTrace は err を "%+v" で Error に出す。
+var PrintStackTrace = wlog.PrintStackTrace
 
-func emergency(err interface{}) {
-	//0.this
-	//1.emergency
-	//2.defer
-	//3. panic!
-	_, file, line, ok := runtime.Caller(3)
-	put(gCtx, LevelEmergency, "Emergency!!\n%+v", err)
-	if ok {
-		put(gCtx, LevelEmergency, "File:%s", file)
-		put(gCtx, LevelEmergency, "Line:%d", line)
-	}
-}
+// NoneStop は panic を拾って Emergency で記録し、そこで止める（defer log.NoneStop()）。
+// recover は defer された関数の中で直接呼ばないと効かないため、包まずに wenteasy/log のものを指す。
+var NoneStop = wlog.NoneStop

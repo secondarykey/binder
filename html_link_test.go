@@ -1,6 +1,7 @@
 package binder_test
 
 import (
+	"binder/api/json"
 	"binder/test"
 	"fmt"
 	"strings"
@@ -251,6 +252,131 @@ func TestAssetsUnpublishedWarning(t *testing.T) {
 			}
 			if hasWarning(warnings, "not published yet") {
 				t.Errorf("warnings = %v, want no not-published warning in preview", warnings)
+			}
+		})
+	}
+}
+
+// TestDrawUnpublishedWarning は drawDiagram / drawLayer が未公開の図・レイヤー・下敷きの画像を
+// 参照した場合に警告することを検証する。
+// 公開ページは公開済みの SVG・画像を参照するため、未公開だとその部分だけが 404 になる。
+func TestDrawUnpublishedWarning(t *testing.T) {
+	b := test.CreateBinder(t, "draw_warning")
+	defer b.Close()
+
+	note, err := b.GetNote(getFirstNoteId(t, b))
+	if err != nil {
+		t.Fatalf("GetNote() error: %v", err)
+	}
+
+	// parse は公開時の警告と、プレビュー時の警告を返す
+	parse := func(t *testing.T, elm string) (publish, preview []string) {
+		t.Helper()
+		_, publish, err := b.ParseNote(note, false, elm)
+		if err != nil {
+			t.Fatalf("ParseNote() error: %v", err)
+		}
+		_, preview, err = b.ParseNote(note, true, elm)
+		if err != nil {
+			t.Fatalf("ParseNote() error: %v", err)
+		}
+		return publish, preview
+	}
+
+	t.Run("drawDiagram", func(t *testing.T) {
+		d := createDiagram(t, b)
+		elm := fmt.Sprintf(`{{ drawDiagram "%s" }}`, d.Id)
+
+		publish, preview := parse(t, elm)
+		if !hasWarning(publish, "drawDiagram("+d.Id+"): not published yet") {
+			t.Errorf("warnings = %v, want a not-published warning", publish)
+		}
+		if hasWarning(preview, "not published yet") {
+			t.Errorf("warnings = %v, want no not-published warning in preview", preview)
+		}
+
+		if _, err := b.PublishDiagram(d.Id, []byte("<svg></svg>")); err != nil {
+			t.Fatalf("PublishDiagram() error: %v", err)
+		}
+		if publish, _ := parse(t, elm); hasWarning(publish, "not published yet") {
+			t.Errorf("warnings = %v, want none after publishing", publish)
+		}
+	})
+
+	t.Run("drawLayer", func(t *testing.T) {
+		tree, err := b.GetBinderTree()
+		if err != nil {
+			t.Fatalf("GetBinderTree() error: %v", err)
+		}
+		asset := findLeafByType(tree.Data, "asset")
+		if asset == nil {
+			t.Skip("no asset in binder tree")
+		}
+		l, err := b.EditLayer(&json.Layer{ParentId: asset.Id, Name: "TestLayer"})
+		if err != nil {
+			t.Fatalf("EditLayer() error: %v", err)
+		}
+		elm := fmt.Sprintf(`{{ drawLayer "%s" }}`, l.Id)
+
+		// レイヤーも下敷きの画像も未公開
+		publish, preview := parse(t, elm)
+		for _, id := range []string{l.Id, asset.Id} {
+			if !hasWarning(publish, "drawLayer("+id+"): not published yet") {
+				t.Errorf("warnings = %v, want a not-published warning for %s", publish, id)
+			}
+		}
+		if hasWarning(preview, "not published yet") {
+			t.Errorf("warnings = %v, want no not-published warning in preview", preview)
+		}
+
+		if _, err := b.PublishAsset(asset.Id); err != nil {
+			t.Fatalf("PublishAsset() error: %v", err)
+		}
+		if _, err := b.PublishLayer(l.Id); err != nil {
+			t.Fatalf("PublishLayer() error: %v", err)
+		}
+		if publish, _ := parse(t, elm); hasWarning(publish, "not published yet") {
+			t.Errorf("warnings = %v, want none after publishing", publish)
+		}
+	})
+}
+
+// TestPublishScriptsWarning は、信頼していないバインダーで公開するページにスクリプトがあると
+// 警告することを検証する。プレビューではスクリプトを止めているため、
+// どう動くかを見ないまま公開することになる。
+// テスト用のバインダーは信頼していない（setting.json に登録しない）前提。
+func TestPublishScriptsWarning(t *testing.T) {
+	b := test.CreateBinder(t, "publish_scripts")
+	defer b.Close()
+
+	note, err := b.GetNote(getFirstNoteId(t, b))
+	if err != nil {
+		t.Fatalf("GetNote() error: %v", err)
+	}
+	if b.IsTrusted() {
+		t.Skip("test binder is trusted in setting.json")
+	}
+
+	const warn = "scripts(" // binder.ScriptsWarning
+	for _, c := range []struct {
+		name  string
+		elm   string
+		local bool
+		want  bool
+	}{
+		{"script element", `<p>x</p><script>alert(1)</script>`, false, true},
+		{"event handler attribute", `<img src="x.png" onerror="alert(1)">`, false, true},
+		{"escaped text", `<pre><code>&lt;script&gt;</code></pre>`, false, false},
+		// プレビューでは止めたことをアイコンで知らせるため、警告にはしない
+		{"preview", `<script>alert(1)</script>`, true, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			_, warnings, err := b.CreateNoteHTML(note, c.local, c.elm)
+			if err != nil {
+				t.Fatalf("CreateNoteHTML() error: %v", err)
+			}
+			if got := hasWarning(warnings, warn+note.Id+")"); got != c.want {
+				t.Errorf("warnings = %v, want scripts warning = %v", warnings, c.want)
 			}
 		})
 	}

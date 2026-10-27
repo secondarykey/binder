@@ -194,6 +194,14 @@ cd _cmd/binder && wails3 task common:generate:bindings
 
 Go API やフロントエンドを触る作業では、バインディングがないとビルドもテストも通らない。API 変更を行った場合はその都度再生成する。
 
+**注意: `api/` を変えても task が生成を飛ばすことがある**。`generate:bindings` は `_cmd/binder/` 配下のファイルしか見ていないため、ルートの `api/` だけを変えると「up to date」で何もしない。API を足した・変えたときは `_cmd/binder` で生成コマンドを直接実行し、`frontend/bindings/binder/api/app.js` に出たことを確かめる。
+
+```bash
+cd _cmd/binder && wails3 generate bindings -f '' -clean=true
+```
+
+生成のあとで `_cmd/binder/go.sum` が書き換わることがある（`go mod tidy` が走るため）。作業と関係なければコミットに含めない。
+
 **禁止: バインディングのコミット**。`_cmd/binder/frontend/bindings/` は `.gitignore` 対象の生成物であり、`git add` や `git add -f` でステージングしてはならない。バインディングはローカルでのビルド・テスト用に生成するもので、各環境で都度生成される前提。
 
 ### 注意: task dev と Junction
@@ -203,7 +211,12 @@ Go API やフロントエンドを触る作業では、バインディングが�
 ## コーディング規約
 
 - エラーラッピングは`golang.org/x/xerrors`を使用（`xerrors.Errorf("context: %w", err)`）
-- ロギングは`log/slog`と`log/`パッケージのヘルパーを使用（`log.PrintTrace()`, `log.PrintStackTrace()`）
+- ロギングは `log/` パッケージ（`binder/log`）から出す（標準の `log`・`slog`・wenteasy/log を直接使わない）。`log/` の中身は [`github.com/wenteasy/log`](https://github.com/wenteasy/log)（ハンドラ・日ごとのファイル）
+  - 書き方は 2 つで混ぜない: `log.Info("保存しました", "path", p)`（slog と同じメッセージ + キーと値）と `log.Infof("失敗:\n%+v", err)`（printf）。`log.Info` に書式を渡すと整形されない
+  - ほかに `log.PrintTrace(log.Func(...))` / `log.PrintStackTrace(err)` / `defer log.NoneStop()`
+  - ログは `os.TempDir()\binder\binder_<日付>.log`（環境変数 `BINDER_LOG_DIR` で変えられる。試しに起動するときは普段のログと混ぜない）。開発中（`wails3 dev`）はコンソールにも出る。起動時に 10 日（`log.DefaultKeepDays`）より古いログを消す
+  - 拾われなかった panic は同じフォルダの `binder_crash_<日時>.log` に残る（`log.CatchCrash`。書いている間は `binder_crash_pid<ID>.log`）
+- `log/` の作り方の決まりごとの正は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」（ひな形・よくある間違い）。`log/` はそのひな形（アプリだけの形。`SetLogger` は持たない）に揃えている。残りは `log/TODO.md`
 - IDはUUID v7（`github.com/google/uuid`）
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり

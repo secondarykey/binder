@@ -118,6 +118,139 @@ func TestFindPublish(t *testing.T) {
 
 }
 
+// insertChildNotes は parentId の下に seqs の順で seq を付けたノートを作り、ID を作成順で返す。
+// ノートの更新日時は作成順に付けるため、更新日時の新しい順は作成順の逆になる。
+func insertChildNotes(t *testing.T, inst *db.Instance, parentId string, seqs ...int) []string {
+	t.Helper()
+	ids := make([]string, len(seqs))
+	for i, seq := range seqs {
+		id, _ := uuid.NewV7()
+		ids[i] = id.String()
+		if err := inst.InsertNote(&model.Note{Id: ids[i]}, testOp()); err != nil {
+			t.Fatalf("InsertNote() error:%v", err)
+		}
+		s := model.Structure{Id: ids[i], ParentId: parentId, Seq: seq, Typ: "note", Name: "Child"}
+		if err := inst.InsertStructure(&s, testOp()); err != nil {
+			t.Fatalf("InsertStructure() error:%v", err)
+		}
+	}
+	// InsertNote は updated_date を空のままにするので、更新して日時を付ける
+	for _, id := range ids {
+		if err := inst.UpdateNote(&model.Note{Id: id}, testOp()); err != nil {
+			t.Fatalf("UpdateNote() error:%v", err)
+		}
+	}
+	return ids
+}
+
+func noteIds(notes []*model.Note) []string {
+	rtn := make([]string, len(notes))
+	for i, n := range notes {
+		rtn[i] = n.Id
+	}
+	return rtn
+}
+
+func equalIds(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// FindSeqNotes はノートの更新日時ではなく、ツリーの順（seq）で返す
+func TestFindSeqNotesOrder(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	parent, _ := uuid.NewV7()
+	// 作成順は seq 1,2,3。更新日時の新しい順だと 3,2,1 になる
+	ids := insertChildNotes(t, inst, parent.String(), 1, 2, 3)
+
+	notes, err := inst.FindSeqNotes(parent.String(), -1, -1)
+	if err != nil {
+		t.Fatalf("FindSeqNotes() error:%v", err)
+	}
+	if got := noteIds(notes); !equalIds(got, ids) {
+		t.Errorf("FindSeqNotes() order\n got:%v\nwant:%v", got, ids)
+	}
+
+	// 件数指定も seq の先頭から取る
+	notes, err = inst.FindSeqNotes(parent.String(), 2, -1)
+	if err != nil {
+		t.Fatalf("FindSeqNotes(limit) error:%v", err)
+	}
+	if got := noteIds(notes); !equalIds(got, ids[:2]) {
+		t.Errorf("FindSeqNotes(limit) order\n got:%v\nwant:%v", got, ids[:2])
+	}
+}
+
+// FindPublishNotes は公開日時の新しい順で返す
+func TestFindPublishNotesOrder(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	parent, _ := uuid.NewV7()
+	ids := insertChildNotes(t, inst, parent.String(), 1, 2, 3)
+
+	// 公開順を作成順と変える: 0 → 2 → 1
+	for _, i := range []int{0, 2, 1} {
+		if _, err := inst.PublishStructure(ids[i], testOp()); err != nil {
+			t.Fatalf("PublishStructure() error:%v", err)
+		}
+	}
+
+	notes, err := inst.FindPublishNotes(parent.String(), -1, -1)
+	if err != nil {
+		t.Fatalf("FindPublishNotes() error:%v", err)
+	}
+	want := []string{ids[1], ids[2], ids[0]}
+	if got := noteIds(notes); !equalIds(got, want) {
+		t.Errorf("FindPublishNotes() order\n got:%v\nwant:%v", got, want)
+	}
+}
+
+// FindPublishNotes / FindPublishSeqNotes は公開を取り下げたノートと未公開のノートを返さない
+func TestFindPublishNotesExcludesUnpublished(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	parent, _ := uuid.NewV7()
+	ids := insertChildNotes(t, inst, parent.String(), 1, 2, 3)
+
+	// 0: 公開中 / 1: 未公開 / 2: 公開を取り下げた
+	for _, i := range []int{0, 2} {
+		if _, err := inst.PublishStructure(ids[i], testOp()); err != nil {
+			t.Fatalf("PublishStructure() error:%v", err)
+		}
+	}
+	if err := inst.UnpublishStructure(ids[2], testOp()); err != nil {
+		t.Fatalf("UnpublishStructure() error:%v", err)
+	}
+
+	want := []string{ids[0]}
+	notes, err := inst.FindPublishNotes(parent.String(), -1, -1)
+	if err != nil {
+		t.Fatalf("FindPublishNotes() error:%v", err)
+	}
+	if got := noteIds(notes); !equalIds(got, want) {
+		t.Errorf("FindPublishNotes()\n got:%v\nwant:%v", got, want)
+	}
+
+	notes, err = inst.FindPublishSeqNotes(parent.String(), -1, -1)
+	if err != nil {
+		t.Fatalf("FindPublishSeqNotes() error:%v", err)
+	}
+	if got := noteIds(notes); !equalIds(got, want) {
+		t.Errorf("FindPublishSeqNotes()\n got:%v\nwant:%v", got, want)
+	}
+}
+
 func TestFindInNoteId(t *testing.T) {
 	inst := open()
 	defer inst.Close()

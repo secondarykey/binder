@@ -15,6 +15,10 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 
 	defer log.PrintTrace(log.Func("LoadBinder()"))
 
+	// ロードは同時に1本だけにする（loadMu のコメント参照）
+	a.loadMu.Lock()
+	defer a.loadMu.Unlock()
+
 	// 予期しないパニックをエラーに変換してアプリのクラッシュを防ぐ
 	defer func() {
 		if r := recover(); r != nil {
@@ -61,7 +65,7 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 	// 履歴を保存（最近開いたバインダーを先頭にする）。
 	// 上で立てた StartupOk もこの save() で一緒に永続化される。
 	if err := settings.SaveHistory(dir); err != nil {
-		log.Warn("SaveHistory error:\n%+v", err)
+		log.Warnf("SaveHistory error:\n%+v", err)
 	}
 
 	return address, nil
@@ -151,7 +155,7 @@ func (a *App) Generate(mode string, id string, data string) ([]string, error) {
 		if err == nil {
 			warnings = result.Warnings
 			for _, w := range warnings {
-				log.Warn("Generate warning: %s", w)
+				log.Warnf("Generate warning: %s", w)
 			}
 			_, err = a.current.PublishNote(id, []byte(result.HTML))
 		}
@@ -165,7 +169,7 @@ func (a *App) Generate(mode string, id string, data string) ([]string, error) {
 
 	default:
 		//templateはないはず
-		log.Warn("Unknown Mode:%s", mode)
+		log.Warnf("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {
@@ -180,6 +184,28 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 
 	defer log.PrintTrace(log.Func("GenerateAll()", len(items)))
 
+	// 同時に公開するもの同士の参照（childNotes・link 等）が未公開扱いにならないよう、
+	// HTML を作る前にまとめて公開済みにしておく
+	var ids []string
+	for _, item := range items {
+		switch item.Mode {
+		case "note", "diagram", "assets", "layer":
+			ids = append(ids, item.Id)
+		}
+	}
+	batch, err := a.current.BeginPublish(ids...)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, userError(err)
+	}
+	// 途中で失敗したら、まだ書き出していないものを公開前に戻す
+	fail := func(err error) ([]string, error) {
+		if rerr := batch.Rollback(); rerr != nil {
+			log.PrintStackTrace(rerr)
+		}
+		return nil, err
+	}
+
 	var allFiles []string
 	var warnings []string
 	for _, item := range items {
@@ -187,40 +213,44 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 		case "note":
 			result, err := a.CreateNoteHTML(item.Id, false, item.Data)
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
 			if result.Error != "" {
-				return nil, xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error)
+				return fail(xerrors.Errorf("CreateNoteHTML() parse error: %s", result.Error))
 			}
 			for _, w := range result.Warnings {
-				log.Warn("GenerateAll warning: %s", w)
+				log.Warnf("GenerateAll warning: %s", w)
 			}
 			warnings = append(warnings, result.Warnings...)
 			files, _, err := a.current.PublishNoteStage(item.Id, []byte(result.HTML))
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		case "diagram":
 			files, _, err := a.current.PublishDiagramStage(item.Id, []byte(item.Data))
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		case "assets":
 			files, _, err := a.current.PublishAssetStage(item.Id)
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		case "layer":
 			files, _, err := a.current.PublishLayerStage(item.Id)
 			if err != nil {
-				return nil, userError(err)
+				return fail(userError(err))
 			}
+			batch.Done(item.Id)
 			allFiles = append(allFiles, files...)
 		default:
-			log.Warn("Unknown Mode:%s", item.Mode)
+			log.Warnf("Unknown Mode:%s", item.Mode)
 		}
 	}
 
@@ -245,7 +275,7 @@ func (a *App) Unpublish(mode string, id string) error {
 	case "layer":
 		err = a.current.UnpublishLayer(id)
 	default:
-		log.Warn("Unknown Mode:%s", mode)
+		log.Warnf("Unknown Mode:%s", mode)
 	}
 
 	if err != nil {

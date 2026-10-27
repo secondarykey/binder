@@ -1,9 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
+import { Events } from '@wailsio/runtime';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import Event, { EventContext } from '../Event';
 import { DialogErrorContext } from '../dialogs/components/DialogError';
 
 const config = vi.fn(() => Promise.resolve({}));
+const trusted = vi.fn(() => Promise.resolve(false));
+const setTrusted = vi.fn(() => Promise.resolve());
 
 vi.mock('../../bindings/binder/api/app', () => ({
   GetConfig: vi.fn(() => config()),
@@ -11,6 +14,8 @@ vi.mock('../../bindings/binder/api/app', () => ({
   GetUserInfo: vi.fn(() => Promise.resolve({})),
   EditUserInfo: vi.fn(() => Promise.resolve()),
   GetAllowedCDNs: vi.fn(() => Promise.resolve([])),
+  IsBinderTrusted: vi.fn(() => trusted()),
+  SetBinderTrusted: vi.fn((v) => setTrusted(v)),
 }));
 vi.mock('../../bindings/main/window', () => ({
   SelectFileContent: vi.fn(() => Promise.resolve('')),
@@ -82,5 +87,21 @@ describe('Binder', () => {
     await waitFor(() => expect(screen.getByText('binder.versionCdn')).toBeTruthy());
 
     vi.restoreAllMocks();
+  });
+
+  // プレビューのスクリプトは既定で止め、信頼したバインダーだけ動かす
+  it('プレビューのスクリプト設定を読み込み、保存するとプレビューへ知らせる', async () => {
+    trusted.mockResolvedValueOnce(true);
+
+    renderBinder();
+    const sw = await screen.findByRole('switch', { name: 'binder.previewScripts' });
+    await waitFor(() => expect(sw.checked).toBe(true));
+
+    fireEvent.click(sw);
+    expect(sw.checked).toBe(false);
+    fireEvent.click(screen.getByLabelText('common.save').querySelector('button'));
+
+    await waitFor(() => expect(setTrusted).toHaveBeenCalledWith(false));
+    await waitFor(() => expect(Events.Emit).toHaveBeenCalledWith('binder:preview:trustChanged', false));
   });
 });

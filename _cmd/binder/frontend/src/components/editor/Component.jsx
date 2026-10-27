@@ -10,7 +10,7 @@ import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bi
 import { GetAsset, Generate, Unpublish, Commit, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
-import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar } from "../../../bindings/binder/api/app";
+import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar, IsBinderTrusted } from "../../../bindings/binder/api/app";
 import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
@@ -36,6 +36,8 @@ import { useTranslation } from 'react-i18next';
 import HTMLFrame from "./HTMLFrame.jsx";
 import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
 import { resolveBinderLink } from "./binder-link";
+import { watchExternalEditor } from "./external-editor";
+import { publishWarningMessage } from "../../publish-warning";
 import '../../assets/Editor.css'
 import { Mode, copyClipboard } from "../../app/App.jsx";
 
@@ -66,6 +68,7 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ContrastIcon from '@mui/icons-material/Contrast';
+import CodeOffIcon from '@mui/icons-material/CodeOff';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
 
@@ -424,6 +427,10 @@ function Editor(props) {
   const [editor, setEditor] = useState(true);
   const [viewer, setViewer] = useState(true);
   const [editorLocked, setEditorLocked] = useState(false);
+  // 外部エディタのプロセスはすぐ終わったが、編集は続いているとみなしている間
+  const [editorDetached, setEditorDetached] = useState(false);
+  const externalEditorRef = useRef(null);
+  useEffect(() => () => externalEditorRef.current?.stop(), []);
 
   const [text, setText] = useState("");
   const [name, setName] = useState("");
@@ -530,6 +537,9 @@ function Editor(props) {
 
   // プレビューのスクロールバーをエディタ画面と揃えるか（アプリ設定・デフォルトON）
   const [previewScrollbar, setPreviewScrollbar] = useState(true);
+  const [allowScripts, setAllowScripts] = useState(false);
+  // 表示中のプレビューでスクリプトを止めたか（止めたときだけアイコンを出す）
+  const [scriptsBlocked, setScriptsBlocked] = useState(false);
 
   // オートコンプリートの挿入処理
   const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
@@ -1177,6 +1187,16 @@ function Editor(props) {
     const cleanup = Events.On('binder:preview:scrollbarChanged', (event) => {
       const data = event.data?.[0] ?? event.data;
       setPreviewScrollbar(!!data);
+    });
+    return () => { cleanup(); };
+  }, []);
+
+  // プレビューでスクリプトを動かすか（信頼したバインダーだけ。バインダー設定からの変更を同期）
+  useEffect(() => {
+    IsBinderTrusted().then((v) => setAllowScripts(!!v)).catch(() => { });
+    const cleanup = Events.On('binder:preview:trustChanged', (event) => {
+      const data = event.data?.[0] ?? event.data;
+      setAllowScripts(!!data);
     });
     return () => { cleanup(); };
   }, []);
@@ -1830,7 +1850,7 @@ function Editor(props) {
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
       } else if (genWarnings?.length > 0) {
-        evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
+        evt.showWarningMessage(publishWarningMessage(t, genWarnings));
       } else {
         evt.showSuccessMessage("Generate.");
       }
@@ -2134,35 +2154,30 @@ function Editor(props) {
     setEditorLocked(true);
 
     // 外部エディタ起動中にファイル変更をポーリングして反映
-    const lastTextRef = { current: text };
-    const sec = 2;
     const openFn = mode === Mode.note ? OpenNote
                  : mode === Mode.diagram ? OpenDiagram
                  : mode === Mode.template ? OpenTemplate : null;
 
-    var interval = setInterval(function () {
-      if (!openFn) return;
-      openFn(id).then((resp) => {
-        if (resp !== lastTextRef.current) {
-          lastTextRef.current = resp;
-          setText(resp);
-        }
-      }).catch(() => {});
-    }, 1000 * sec)
+    externalEditorRef.current = watchExternalEditor({
+      run: () => RunEditor(mode, id),
+      read: openFn ? () => openFn(id) : null,
+      initialText: text,
+      onText: setText,
+      onDetach: () => setEditorDetached(true),
+      onFinish: () => {
+        externalEditorRef.current = null;
+        setEditorDetached(false);
+        setEditorLocked(false);
+      },
+      onError: (err) => evt.showErrorMessage(err),
+    });
+  }
 
-    RunEditor(mode, id).then(() => {
-      clearInterval(interval)
-      // プロセス終了後にファイルを再読み込み
-      if (openFn) {
-        openFn(id).then((resp) => setText(resp)).catch((err) => evt.showErrorMessage(err));
-      }
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-      clearInterval(interval)
-    }).finally(() => {
-      clearInterval(interval)
-      setEditorLocked(false);
-    })
+  /**
+   * 起動だけしてすぐ終わる外部エディタでの編集を終える
+   */
+  const handleFinishExternalEditor = () => {
+    externalEditorRef.current?.finish();
   }
 
   /**
@@ -2781,6 +2796,13 @@ function Editor(props) {
                 })()}
                 {mode !== Mode.template && <div className="previewMenuLeft" />}
                 <div className="previewMenuRight">
+                  {scriptsBlocked && (mode === Mode.note || (mode === Mode.template && templateType !== "diagram")) &&
+                    <Tooltip title={t("preview.scriptsBlocked")} placement="bottom">
+                      <IconButton size="small" aria-label="scripts-blocked" className="editorBtn" onClick={() => evt.openBinderModal()}>
+                        <CodeOffIcon sx={{ fontSize: '16px', color: 'var(--accent-orange)' }} />
+                      </IconButton>
+                    </Tooltip>
+                  }
                   {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
                     <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
                       <IconButton size="small" aria-label="color-scheme" className="editorBtn"
@@ -2847,7 +2869,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2856,7 +2878,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
               </div>
 
@@ -2943,7 +2965,12 @@ function Editor(props) {
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <span style={{ color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>{t("editor.externalEditorLocked")}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', color: '#fff', fontSize: '14px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '40px', borderRadius: '10px' }}>
+          <span>{t("editor.externalEditorLocked")}</span>
+          {editorDetached && (
+            <Button variant="contained" onClick={handleFinishExternalEditor}>{t("editor.finishExternalEditor")}</Button>
+          )}
+        </div>
       </Backdrop>
     </>
   );

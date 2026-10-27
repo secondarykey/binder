@@ -102,7 +102,7 @@ func migrateUserKeyService() error {
 
 	// 旧サービス名のキーを削除（移行完了後）
 	if err := keyring.Delete(keyringServiceLegacy, keyringAccount); err != nil && !errors.Is(err, keyring.ErrNotFound) {
-		log.Warn("migrateUserKeyService: Delete legacy key:\n%+v", err)
+		log.Warnf("migrateUserKeyService: Delete legacy key:\n%+v", err)
 		// 削除失敗はエラーとせず警告のみ（新サービス名への移行は完了しているため）
 	}
 	return nil

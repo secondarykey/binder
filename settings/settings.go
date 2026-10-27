@@ -2,7 +2,6 @@ package settings
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	"golang.org/x/xerrors"
+
+	"binder/log"
 )
 
 // saveMu は setting.json への保存（temp 書き込み + rename）を直列化する。
@@ -38,6 +39,9 @@ type Setting struct {
 	// キー: バインダーのディレクトリパス → "engine/name" → marked メジャー。
 	// git 管理外のローカル観測値（@marked 未宣言プラグインの差異警告に使う）。
 	PluginVerified map[string]map[string]int `json:"pluginVerified,omitempty"`
+	// TrustedBinders はプレビューでスクリプトを動かしてよいバインダーのディレクトリパス。
+	// バインダーの中に置くと取り込んだ相手が書き換えられるため、アプリ側に持つ。
+	TrustedBinders []string `json:"trustedBinders,omitempty"`
 }
 
 // AutoSave はバインダーを開いている間の自動保存（全体コミット）設定。
@@ -317,7 +321,7 @@ func def() *Setting {
 
 	host, err := os.Hostname()
 	if err != nil {
-		log.Println(err)
+		log.Warnf("os.Hostname() error:\n%+v", err)
 		host = "binder"
 	}
 	auth.WorkBranch = host
@@ -325,7 +329,7 @@ func def() *Setting {
 	// os/user からユーザ名を取得
 	u, err := user.Current()
 	if err != nil {
-		log.Println(err)
+		log.Warnf("user.Current() error:\n%+v", err)
 		auth.Name = ""
 	} else {
 		auth.Name = u.Name

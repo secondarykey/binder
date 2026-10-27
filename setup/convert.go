@@ -130,7 +130,7 @@ func Convert(dir string, ver *Version) error {
 	if result.UserDataRequired {
 		key, err := GetUserKey()
 		if err != nil {
-			log.Warn("Convert: GetUserKey:\n%+v", err)
+			log.Warnf("Convert: GetUserKey:\n%+v", err)
 		} else {
 			s := settings.Get()
 			info := &fs.UserInfo{
@@ -138,7 +138,7 @@ func Convert(dir string, ver *Version) error {
 				Email: s.Git.Mail,
 			}
 			if err = fs.SaveUserInfo(dir, key, info); err != nil {
-				log.Warn("Convert: SaveUserInfo:\n%+v", err)
+				log.Warnf("Convert: SaveUserInfo:\n%+v", err)
 			}
 		}
 	}

@@ -618,6 +618,9 @@ func (f *FileSystem) copyDocsToMemFS(srcDir, relPath string, mfs billy.Filesyste
 	return nil
 }
 
+// tokenAuthUsername はトークン認証で Basic 認証のユーザ名に入れる値。
+const tokenAuthUsername = "x-access-token"
+
 // authMethod はUserInfoの認証種別に応じたtransport.AuthMethodを返す。
 func authMethod(info *UserInfo) (transport.AuthMethod, error) {
 	switch info.AuthType {
@@ -627,8 +630,11 @@ func authMethod(info *UserInfo) (transport.AuthMethod, error) {
 			Password: info.Password,
 		}, nil
 	case AuthToken:
-		return &http.TokenAuth{
-			Token: info.Token,
+		// GitHub・GitLab などは Bearer（http.TokenAuth）を受け付けず、
+		// Basic 認証のパスワードにトークンを入れる形を求める。ユーザ名は空でなければよい
+		return &http.BasicAuth{
+			Username: tokenAuthUsername,
+			Password: info.Token,
 		}, nil
 	case AuthSSHKey, AuthSSHFile, AuthSSHBytes:
 		key, err := ssh.NewPublicKeys("git", info.Bytes, info.Passphrase)
@@ -991,7 +997,7 @@ func (f *FileSystem) Status() (ModifiedFiles, error) {
 		mod, err := getModelType(path)
 		if err != nil {
 			// db/・binder.json など管理外のファイルは無視（Debugレベル）
-			log.Debug("getModelType() error: %+v", err)
+			log.Debugf("getModelType() error: %+v", err)
 		} else {
 			mod.Status = s
 			rtn = append(rtn, mod)

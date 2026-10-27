@@ -30,11 +30,11 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		binaryMap[a.Id] = a.Binary
 	}
 
-	log.Info("Tree Length: %d", len(structures))
+	log.Infof("Tree Length: %d", len(structures))
 
 	treeMap := make(map[string][]*json.Leaf)
 	for _, s := range structures {
-		log.Trace("GetTree() : %v", s.Id)
+		log.Tracef("GetTree() : %v", s.Id)
 		leaf := convertStructure2Leaf(s)
 		if s.Typ == "asset" {
 			leaf.Binary = binaryMap[s.Id]
@@ -58,10 +58,10 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 	}
 	buildTree(root)
 
-	log.Debug("Tree:%d", len(root))
+	log.Debugf("Tree:%d", len(root))
 	if root != nil {
-		log.Debug("Tree RootId: %s", root[0].Id)
-		log.Debug("Tree Root Children: %d", len(root[0].Children))
+		log.Debugf("Tree RootId: %s", root[0].Id)
+		log.Debugf("Tree Root Children: %d", len(root[0].Children))
 	}
 
 	var tree json.Tree

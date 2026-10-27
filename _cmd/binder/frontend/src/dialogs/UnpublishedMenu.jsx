@@ -24,6 +24,7 @@ import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
+import { publishWarningMessage } from "../publish-warning";
 
 /**
  * 未公開一覧
@@ -156,7 +157,7 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
       } else if (genWarnings.length > 0) {
-        evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
+        evt.showWarningMessage(publishWarningMessage(t, genWarnings));
       } else {
         evt.showSuccessMessage(t("tree.regenerateAll"));
       }
@@ -295,7 +296,7 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       // 未公開データを参照したまま公開した場合は成功ではなく警告を出す
       const done = () => {
         if (genWarnings.length > 0) {
-          evt.showWarningMessage(t("preview.publishWarn", { count: genWarnings.length }));
+          evt.showWarningMessage(publishWarningMessage(t, genWarnings));
         } else {
           evt.showSuccessMessage(t("publishModal.generateSuccess"));
         }
