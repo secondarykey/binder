@@ -12,6 +12,7 @@ import (
 )
 
 // ワーク（保存前の Untitled タブ）は ~/.binder/lite/works/<name>.md に保存する。
+// 貼り付けた画像は ~/.binder/lite/works/<name>.assets/ に置く（lite_image.go）。
 // ファイルとして保存された時点でワークは削除される。
 const (
 	LiteWorkDirName = "works"
@@ -119,6 +120,10 @@ func CreateLiteWork() (string, error) {
 			return "", xerrors.Errorf("os.OpenFile(%s) error: %w", p, err)
 		}
 		f.Close()
+		// 前に同じ名前で使われたワークの画像が残っていたら片付ける（別のメモの画像を引き継がない）
+		if assets, err := liteWorkAssetsPath(name); err == nil {
+			os.RemoveAll(assets)
+		}
 		return name, nil
 	}
 	return "", xerrors.Errorf("lite work name exhausted (max %d)", liteWorkMaxIndex)
@@ -140,7 +145,7 @@ func SaveLiteWork(name, content string) error {
 	return nil
 }
 
-// DeleteLiteWork はワークを削除する。存在しない場合は何もしない。
+// DeleteLiteWork はワークと、その画像フォルダ（<name>.assets）を削除する。存在しない場合は何もしない。
 func DeleteLiteWork(name string) error {
 
 	p, err := liteWorkPath(name)
@@ -149,6 +154,13 @@ func DeleteLiteWork(name string) error {
 	}
 	if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
 		return xerrors.Errorf("os.Remove(%s) error: %w", p, err)
+	}
+	assets, err := liteWorkAssetsPath(name)
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(assets); err != nil {
+		return xerrors.Errorf("os.RemoveAll(%s) error: %w", assets, err)
 	}
 	return nil
 }

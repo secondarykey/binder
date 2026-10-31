@@ -40,6 +40,11 @@ _cmd/shared/frontend/editor/
   プレビューウィンドウにアイコンを出し、押すとバインダー設定を開く
   （プレビューウィンドウからは `binder:binderSetting:open` でメインウィンドウに頼む）
 - 図の描画に失敗したら、図の場所に `ERROR: drawDiagram(ID): …` を出す（`renderDiagramError`）
+- `resolveImage(src)` を渡すと、相対パスの `<img>` を Promise で返された data URI に差し替える
+  （`decodeURI` した src を渡す。元の src は `data-binder-src` に残す）。Lite がファイルの隣の画像を出すのに使う。
+  解決できなかったものは、そのあと `unresolvedLabel` の表示になる
+- `onHeadingClick` / `onBlockDoubleClick` を渡すと、プレビューの見出しのクリック・ブロックのダブルクリックで
+  元の行へ移るための情報を渡す（Binder のノートのエディタが使う）
 
 ## 参照方式
 

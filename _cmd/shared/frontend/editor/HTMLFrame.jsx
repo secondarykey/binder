@@ -6,6 +6,7 @@ import { attachPanZoom } from "./pan-zoom";
 import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
 import { markUnresolvedResources } from "./preview-unresolved";
 import { normalizeHeadingText } from "./outline";
+import { isRelativeImageSrc } from "./image-paste";
 
 /**
  * 図（div.binderSVG）の描画に失敗したとき、図の場所にエラーを表示する。
@@ -61,6 +62,8 @@ export function hasScripts(doc) {
  *   onHeadingClick  - 指定すると見出し（h1〜h6）を押した時に { text, occurrence, srcLine } を渡して呼ぶ。
  *                     occurrence は同じ文字の見出しのうち何番目か（0始まり）、srcLine は data-src-line
  *   onBlockDoubleClick - 指定すると見出し以外のブロックをダブルクリックした時に、その data-src-line（行）を渡して呼ぶ
+ *   resolveImage    - 指定すると相対パスの <img> の src を渡して呼ぶ。Promise で data URI を返すと差し替える
+ *                     （srcdoc では相対パスを読めないため。Lite がファイルの隣の画像を出すのに使う）
  *   onContextMenu   - 指定すると WebView 既定のコンテキストメニューを止め、
  *                     { x, y, kind, href, selection } を渡して呼ぶ（座標は親ウィンドウ基準）
  *   unresolvedLabel - プレビューで解決できない画像参照に出す説明。
@@ -430,6 +433,23 @@ class HTMLFrame extends React.Component {
     };
 
     const tasks = [];
+
+    // 相対パスの画像を読み込める形（data URI）に差し替える。解決できないものは finish で
+    // 「解決できない」表示になる
+    if (this.props.resolveImage) {
+      for (const img of Array.from(doc.querySelectorAll('img[src]'))) {
+        const src = img.getAttribute('src');
+        if (!isRelativeImageSrc(src)) continue;
+        let decoded = src;
+        try { decoded = decodeURI(src); } catch { /* そのまま使う */ }
+        tasks.push(Promise.resolve(this.props.resolveImage(decoded)).then((uri) => {
+          if (uri) {
+            img.setAttribute('data-binder-src', src);
+            img.setAttribute('src', uri);
+          }
+        }).catch(() => {}));
+      }
+    }
 
     // ```mermaid のコードブロックを図として描画する（inlineMermaid を指定したアプリのみ）
     if (this.props.inlineMermaid) {

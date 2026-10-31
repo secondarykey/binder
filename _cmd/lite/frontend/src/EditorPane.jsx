@@ -7,6 +7,7 @@ import SearchBar from '@shared/editor/SearchBar';
 import Autocomplete from '@shared/editor/Autocomplete';
 import { handleMarkdownKeyDown } from '@shared/editor/markdown-keys';
 import { useAutocomplete } from '@shared/editor/useAutocomplete';
+import { clipboardImage, fileToBase64, markdownImage } from '@shared/editor/image-paste';
 import { useScrollbarOffset, useHScrollbarOffset } from './useHasScrollbar';
 import { Events } from '@wailsio/runtime';
 
@@ -16,8 +17,11 @@ import { useTranslation } from 'react-i18next';
 /**
  * エディタペイン
  * EditorArea + SearchBar をラップし、Ctrl+F 検索を提供する
+ *
+ * onSaveImage を渡すと、画像の貼り付けを受け付ける。
+ * onSaveImage({ data, ext }) は画像を保存し、本文に書く相対パスを返す。
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [], onCursorLineChange }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [], onCursorLineChange, onSaveImage }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
@@ -130,6 +134,26 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
     ac.handleInput();
   }, [onChange, ac, reportCursorLine]);
 
+  // 画像を貼り付けたら保存し、カーソル位置に ![](相対パス) を入れる
+  const handlePaste = useCallback((e) => {
+    if (!onSaveImage) return;
+    const image = clipboardImage(e.clipboardData);
+    if (!image) return;
+    e.preventDefault();
+    const textarea = e.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    fileToBase64(image.file)
+      .then((data) => onSaveImage({ data, ext: image.ext }))
+      .then((rel) => {
+        if (!rel) return;
+        textarea.focus();
+        textarea.setSelectionRange(start, end);
+        document.execCommand('insertText', false, markdownImage(rel));
+      })
+      .catch((err) => console.error('paste image error:', err));
+  }, [onSaveImage]);
+
   const handleCompositionStart = useCallback(() => {
     composingRef.current = true;
   }, []);
@@ -226,6 +250,7 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
           wordWrap={wordWrap}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
+          onPaste={handlePaste}
           onCursorMove={handleCursorMove}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}

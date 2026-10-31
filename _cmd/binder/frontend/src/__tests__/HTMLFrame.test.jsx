@@ -142,3 +142,30 @@ describe('HTMLFrame.attachBlockDoubleClick', () => {
     expect(() => dblclick(doc.querySelector('p'))).not.toThrow();
   });
 });
+
+// 相対パスの画像は resolveImage で data URI に差し替え、解決できないものは「解決できない」表示にする
+describe('HTMLFrame resolveImage', () => {
+  it('replaces relative image sources and marks the rest as unresolved', async () => {
+    const doc = new DOMParser().parseFromString(
+      '<html><head></head><body>' +
+      '<img src="memo.assets/a.png"><img src="my%20memo.assets/b.png"><img src="missing.png"><img src="https://example.com/c.png">' +
+      '</body></html>', 'text/html');
+    const asked = [];
+    const frame = new HTMLFrame({
+      unresolvedLabel: 'NG',
+      resolveImage: (src) => {
+        asked.push(src);
+        return Promise.resolve(src === 'missing.png' ? null : `data:image/png;base64,${src.length}`);
+      },
+    });
+    await new Promise((resolve) => frame.postProcess(doc, resolve));
+
+    expect(asked).toEqual(['memo.assets/a.png', 'my memo.assets/b.png', 'missing.png']);
+    const imgs = doc.querySelectorAll('img');
+    expect(imgs[0].getAttribute('src')).toMatch(/^data:image\/png/);
+    expect(imgs[0].getAttribute('data-binder-src')).toBe('memo.assets/a.png');
+    expect(imgs[1].getAttribute('src')).toMatch(/^data:image\/png/);
+    expect(imgs[2].getAttribute('src')).toBe('https://example.com/c.png');
+    expect(doc.querySelectorAll('.binderUnresolved')).toHaveLength(1);
+  });
+});

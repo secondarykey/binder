@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -8,7 +8,7 @@ import HTMLFrame from '@shared/editor/HTMLFrame';
 import PreviewContextMenu from '@shared/editor/PreviewContextMenu';
 import Marked from '@shared/editor/engines/Marked';
 import Mermaid from '@shared/editor/engines/Mermaid';
-import { GetPreviewHTML } from '../bindings/binder/api/lite/app';
+import { GetPreviewHTML, ReadImage } from '../bindings/binder/api/lite/app';
 import { CopyToClipboard } from '../bindings/main/window';
 import { useIframeScrollbarOffset } from './useHasScrollbar';
 
@@ -21,12 +21,16 @@ function escapeAttr(s) {
     .replace(/>/g, '&gt;');
 }
 
+// プレビューで読んだ画像（data URI）を覚えておく数の上限
+const IMAGE_CACHE_MAX = 100;
+
 /**
  * プレビューペイン
  * mermaidMode に応じて Markdown または Mermaid でプレビューする。
  * 切り替えは親（App）がタブごとに管理する。
+ * path（ファイル）か work（保存前のワーク）を基準に、相対パスの画像を読み込んで表示する。
  */
-function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
+function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work }) {
   const { t, i18n } = useTranslation();
   const [html, setHtml] = useState('');
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
@@ -49,6 +53,23 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
     zoomOut: t('lite.zoomOut'),
     reset: t('lite.resetView'),
   }), [t, i18n.language]);
+
+  // 相対パスの画像を Go で読み、data URI で返す。入力のたびに読み直さないよう、読めたものは覚えておく
+  const imageCacheRef = useRef(new Map());
+  const resolveImage = useCallback(async (src) => {
+    if (!path && !work) return null;
+    const key = `${path || ''}|${work || ''}|${src}`;
+    const cache = imageCacheRef.current;
+    if (cache.has(key)) return cache.get(key);
+    try {
+      const uri = await ReadImage(path || '', work || '', src);
+      if (cache.size >= IMAGE_CACHE_MAX) cache.clear();
+      cache.set(key, uri);
+      return uri;
+    } catch {
+      return null;
+    }
+  }, [path, work]);
 
   // iframe のスクロールバー検出（切り替えボタンの位置調整用）
   const toggleBtnRight = useIframeScrollbarOffset('iframe.htmlViewer', 6, html);
@@ -113,7 +134,8 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine }) {
         html={html}
         onLinkExternal={handleLinkExternal}
         onContextMenu={handleContextMenu}
-        unresolvedLabel={t('preview.unresolvedResource')}
+        unresolvedLabel={t('lite.imageNotFound')}
+        resolveImage={resolveImage}
         onCopyCode={CopyToClipboard}
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}
