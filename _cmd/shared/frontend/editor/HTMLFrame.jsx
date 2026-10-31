@@ -60,6 +60,7 @@ export function hasScripts(doc) {
  *   onLinkInternal  - バインダー内リンク（/pages/x.html 等）を押した時に href を渡して呼ぶ
  *   onHeadingClick  - 指定すると見出し（h1〜h6）を押した時に { text, occurrence, srcLine } を渡して呼ぶ。
  *                     occurrence は同じ文字の見出しのうち何番目か（0始まり）、srcLine は data-src-line
+ *   onBlockDoubleClick - 指定すると見出し以外のブロックをダブルクリックした時に、その data-src-line（行）を渡して呼ぶ
  *   onContextMenu   - 指定すると WebView 既定のコンテキストメニューを止め、
  *                     { x, y, kind, href, selection } を渡して呼ぶ（座標は親ウィンドウ基準）
  *   unresolvedLabel - プレビューで解決できない画像参照に出す説明。
@@ -280,6 +281,30 @@ class HTMLFrame extends React.Component {
   }
 
   /**
+   * 見出し以外のブロックをダブルクリックしたら onBlockDoubleClick を呼ぶ。
+   * 行は data-src-line を使う（付いているのは外側のブロックだけなので、リストや表は先頭の行になる）。
+   * リンク・ボタン・入力欄・図はダブルクリックを別の操作に使うことがあるため除く。
+   * 見出しは 1 回のクリックで飛ぶ（attachHeadingClick）ので除く。
+   */
+  attachBlockDoubleClick(doc) {
+    if (!doc?.body) return;
+    doc.addEventListener('dblclick', (e) => {
+      const fn = this.props.onBlockDoubleClick;
+      if (!fn) return;
+      const t = e.target;
+      if (!t?.closest) return;
+      if (t.closest('a, button, input, select, textarea, label, summary, svg, .binderSVG, .binderMermaid, h1, h2, h3, h4, h5, h6')) return;
+      const block = t.closest('[data-src-line]');
+      if (!block) return;
+      const line = parseInt(block.getAttribute('data-src-line'), 10);
+      if (!line) return;
+      // ダブルクリックで選ばれた単語を外す
+      doc.getSelection?.()?.removeAllRanges();
+      fn(line);
+    });
+  }
+
+  /**
    * カーソル行に最も近い（直前の）ブロック要素をプレビュー中央にスクロールする
    */
   scrollToSourceLine(doc, cursorLine) {
@@ -383,6 +408,7 @@ class HTMLFrame extends React.Component {
     // ソース行コメントを data-src-line 属性に変換
     this.attachSourceLines(doc);
     this.attachHeadingClick(doc);
+    this.attachBlockDoubleClick(doc);
 
     // 描画完了後の共通処理
     const finish = () => {

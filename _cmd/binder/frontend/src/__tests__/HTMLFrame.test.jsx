@@ -101,3 +101,44 @@ describe('HTMLFrame.attachHeadingClick', () => {
     expect(setup('<h1>a</h1>', undefined).querySelector('style')).toBeNull();
   });
 });
+
+// 見出し以外のブロックをダブルクリックすると、その行を渡す
+describe('HTMLFrame.attachBlockDoubleClick', () => {
+  const setup = (html, onBlockDoubleClick) => {
+    const doc = new DOMParser().parseFromString(`<html><head></head><body>${html}</body></html>`, 'text/html');
+    const frame = new HTMLFrame({ onBlockDoubleClick });
+    frame.attachBlockDoubleClick(doc);
+    return doc;
+  };
+  const dblclick = (el) => el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+  it('passes the line of the block that contains the target', () => {
+    const lines = [];
+    const doc = setup('<p data-src-line="3">a <em>b</em></p><ul data-src-line="5"><li>item</li></ul>', (l) => lines.push(l));
+    dblclick(doc.querySelector('em'));
+    dblclick(doc.querySelector('li'));
+    expect(lines).toEqual([3, 5]);
+  });
+
+  it('ignores headings, links, buttons, diagrams and blocks without a line', () => {
+    const lines = [];
+    const doc = setup(
+      '<h2 data-src-line="1">h</h2>' +
+      '<p data-src-line="2"><a href="#x">link</a></p>' +
+      '<div data-src-line="3" class="binderCodeBlock"><button>copy</button></div>' +
+      '<div data-src-line="4" class="binderSVG"><span>fig</span></div>' +
+      '<p>no line</p>',
+      (l) => lines.push(l));
+    dblclick(doc.querySelector('h2'));
+    dblclick(doc.querySelector('a'));
+    dblclick(doc.querySelector('button'));
+    dblclick(doc.querySelector('.binderSVG span'));
+    dblclick(doc.querySelectorAll('p')[1]);
+    expect(lines).toHaveLength(0);
+  });
+
+  it('does nothing without the callback', () => {
+    const doc = setup('<p data-src-line="3">a</p>', undefined);
+    expect(() => dblclick(doc.querySelector('p'))).not.toThrow();
+  });
+});
