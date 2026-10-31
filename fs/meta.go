@@ -33,6 +33,7 @@ type BinderMeta struct {
 	PublishOnly        bool                `json:"publishOnly,omitempty"`   // docs/のみpushする場合 true
 	PublishBranch      string              `json:"publishBranch,omitempty"` // docs/のpush先ブランチ名
 	PublishSubDir      string              `json:"publishSubDir,omitempty"` // 公開ブランチ上のサブディレクトリ（例: "en"）
+	SiteURL            string              `json:"siteUrl,omitempty"`       // 公開サイトの URL（OGP の絶対 URL 用。空なら推し量る）
 	PreviewColorScheme *PreviewColorScheme `json:"previewColorScheme,omitempty"`
 	Schema             string              `json:"schema,omitempty"` // deprecated: 0.3.2未満との後方互換用。新規書き込み時は空にする
 }
