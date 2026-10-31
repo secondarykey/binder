@@ -51,8 +51,21 @@ flowchart TD
 | `.Marked` | 本文のHTML（`template.HTML` なのでエスケープされない） |
 
 加えて `defineFuncMap()`（[html_func.go:23](../html_func.go)）の関数が全て使える。
-デザイン用途で効くのは `childNotes` / `latestNotes` / `breadcrumb` / `assets` /
-`assetsImage` / `drawDiagram` / `formatDate` / `lf2br`。
+デザイン用途で効くのは `childNotes` / `latestNotes` / `breadcrumb` / `prevNote` / `nextNote` /
+`assets` / `assetsImage` / `drawDiagram` / `formatDate` / `lf2br`。
+
+「前へ」「次へ」は `prevNote` / `nextNote` で作る。ツリーを深さ優先でたどった順
+（親の次に子、同じ親の中は seq 順）で前後のノートを返し、無ければ nil。
+引数に起点のノートの ID を渡すと、その下だけを順番にする（起点自身も含む。省略時はバインダー全体）。
+非公開のノートは飛ばし、公開時は公開中のノートだけを数える。
+
+```
+{{ with prevNote "01a165e4-..." }}<a href="{{ .Link }}">前へ {{ .Name }}</a>{{ end }}
+{{ with nextNote "01a165e4-..." }}<a href="{{ .Link }}">次へ {{ .Name }}</a>{{ end }}
+```
+
+前後のノートを公開・取り下げしても、すでに公開したページのリンクは変わらない。
+公開し直すと反映される（`childNotes` と同じ）。
 
 エントリ間のリンクは `link` を使う。種別ごとに関数を分けず、IDから
 note / diagram / layer / asset を判定して公開時の相対URLを出し分ける。
@@ -63,8 +76,23 @@ note / diagram / layer / asset を判定して公開時の相対URLを出し分�
 {{ link "01a06311-..." "表示名" }}  → <a href="../pages/foo.html">表示名</a>
 ```
 
-URLだけが欲しい場面（`<meta property="og:image">`、独自の属性を付けた `<a>`、
-CSS の `url()` 等）は `url` を使う。解決の規則は `link` と同じ。
+URLだけが欲しい場面（独自の属性を付けた `<a>`、CSS の `url()` 等）は `url` を使う。
+解決の規則は `link` と同じ。
+
+OGP の `og:url` / `og:image` のように**絶対 URL** が要る場所は `fullURL` を使う。
+基準はバインダー設定の「サイトの URL」（`binder.json` の `siteUrl`）。空なら推し量る
+（`docs/CNAME` があれば `https://<CNAME>/`、リモートが `github.com/<user>/<repo>` なら
+`https://<user>.github.io/<repo>/`。docs だけを公開ブランチのサブディレクトリへ送る設定なら、その名前を後ろに付ける。
+実体は [site_url.go](../site_url.go)）。どちらも分からないときは `url` と同じ相対パスを返し、公開時に警告する。
+
+```
+<meta property="og:url" content="{{ fullURL }}">                    → 今のページ
+<meta property="og:image" content="{{ fullURL "01a06311-..." }}">  → エントリ（PNG などのアセット）
+<meta property="og:image" content="{{ fullURL .This.Image }}">      → 今のページからの相対パス
+```
+
+SVG は多くの SNS で OGP 画像として使えない。アセットは「画像を軽量化する」が有効だと WebP に変わるため、
+OGP 用の画像は軽量化を切ってから追加する。
 
 ```
 <meta property="og:image" content="{{ url "01a06311-..." }}">

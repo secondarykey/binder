@@ -6,12 +6,16 @@ type PreviewColorScheme struct {
 }
 
 type Config struct {
-	Name               string              `json:"name"`
-	Detail             string              `json:"detail"`
-	MarkedURL          string              `json:"markedUrl"`
-	MermaidURL         string              `json:"mermaidUrl"`
-	OptimizeImage      bool                `json:"optimizeImage"`
-	PreviewColorScheme *PreviewColorScheme  `json:"previewColorScheme,omitempty"`
+	Name          string `json:"name"`
+	Detail        string `json:"detail"`
+	MarkedURL     string `json:"markedUrl"`
+	MermaidURL    string `json:"mermaidUrl"`
+	OptimizeImage bool   `json:"optimizeImage"`
+	// SiteURL は公開サイトの URL（fullURL の基準）。空なら SiteURLGuess を使う
+	SiteURL string `json:"siteUrl"`
+	// SiteURLGuess は SiteURL が空のときに使う、推し量った URL（読み取り専用。保存では無視する）
+	SiteURLGuess       string              `json:"siteUrlGuess"`
+	PreviewColorScheme *PreviewColorScheme `json:"previewColorScheme,omitempty"`
 }
 
 type UserInfo struct {
@@ -39,16 +43,16 @@ type PublishSettings struct {
 }
 
 type BranchResult struct {
-	Status  string `json:"status"`  // success, error, reload_error
+	Status  string `json:"status"` // success, error, reload_error
 	Message string `json:"message"`
 	Address string `json:"address"`
 }
 
 type MergeResult struct {
-	Status       string          `json:"status"`        // success, uptodate, conflicts, error, reload_error
+	Status       string          `json:"status"` // success, uptodate, conflicts, error, reload_error
 	Message      string          `json:"message"`
 	Address      string          `json:"address"`
-	Conflicts    []*ConflictFile `json:"conflicts"`     // status=="conflicts" 時のみ
+	Conflicts    []*ConflictFile `json:"conflicts"` // status=="conflicts" 時のみ
 	BaseHash     string          `json:"base_hash"`
 	OursHash     string          `json:"ours_hash"`
 	TheirsHash   string          `json:"theirs_hash"`

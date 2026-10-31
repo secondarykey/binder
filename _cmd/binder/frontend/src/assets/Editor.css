@@ -248,6 +248,12 @@
 .parseStatusRight {
   display: flex;
   align-items: center;
+  gap: 12px;
+  padding-right: 12px;
+}
+
+.saveStateError {
+  color: var(--accent-red);
 }
 
 .parseStatusText {

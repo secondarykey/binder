@@ -37,6 +37,32 @@ func TestGetBinderTree(t *testing.T) {
 	}
 }
 
+// TestGetBinderTreeAssetMime はアセットの葉に MIME が入ることを検証する。
+// エディタの ID 挿入が、画像かどうかで入れる書き方を変えるのに使う。
+func TestGetBinderTreeAssetMime(t *testing.T) {
+	b := test.CreateBinder(t, "binder_tree_mime")
+	defer b.Close()
+
+	tree, err := b.GetBinderTree()
+	if err != nil {
+		t.Fatalf("GetBinderTree() error: %v", err)
+	}
+	leaf := findLeafByType(tree.Data, "asset")
+	if leaf == nil {
+		t.Skip("no asset in binder tree")
+	}
+	a, err := b.GetAsset(leaf.Id)
+	if err != nil {
+		t.Fatalf("GetAsset() error: %v", err)
+	}
+	if leaf.Mime != a.Mime {
+		t.Errorf("leaf.Mime = %q, want %q", leaf.Mime, a.Mime)
+	}
+	if leaf.Mime == "" {
+		t.Error("leaf.Mime is empty")
+	}
+}
+
 func TestGetTemplateTree(t *testing.T) {
 	b := test.CreateBinder(t, "template_tree")
 	defer b.Close()

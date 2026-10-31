@@ -4,7 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Events } from '@wailsio/runtime';
 
-import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, GetFont, ListWorks, CreateWork, SaveWork, DeleteWork } from '../bindings/binder/api/lite/app';
+import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSettings, GetFont, ListWorks, CreateWork, SaveWork, DeleteWork, SaveImage, RelocateImages } from '../bindings/binder/api/lite/app';
 import { OpenFileDialog, SaveFileDialog, Terminate, OpenInNewWindow, CopyToClipboard, PasteFilePath } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
@@ -225,10 +225,17 @@ function App() {
     setActiveTabId(id);
   }, []);
 
-  // ファイルとして保存できたらワークは不要になるので削除する
-  const applySavedPath = useCallback(async (tab, savePath) => {
+  // 保存先が変わるとき（ワークの初めての保存・名前を付けて保存）は、本文が参照する画像を
+  // 新しい <ファイル名>.assets/ へ写し、パスを書き換えた本文を返す
+  const relocateImages = async (tab, savePath) => {
+    if (tab.path === savePath) return tab.content;
+    return RelocateImages(tab.path || '', tab.work || '', savePath, tab.content);
+  };
+
+  // ファイルとして保存できたらワークは不要になるので削除する。
+  // content は保存した本文（画像のパスを書き換えた場合はタブの本文も差し替える）
+  const applySavedPath = useCallback(async (tab, savePath, content = tab.content) => {
     const filename = savePath.split(/[/\\]/).pop();
-    const content = tab.content;
     if (tab.work) {
       pendingWorks.current.delete(tab.work);
       try {
@@ -239,7 +246,7 @@ function App() {
     }
     setTabs(prev => prev.map(t =>
       t.id === tab.id
-        ? { ...t, path: savePath, filename, work: null, savedContent: content }
+        ? { ...t, path: savePath, filename, work: null, savedContent: content, ...(content !== tab.content ? { content } : {}) }
         : t
     ));
   }, []);
@@ -264,8 +271,9 @@ function App() {
     if (activeTab.path && activeTab.content === activeTab.savedContent) return;
 
     try {
-      await SaveFile(savePath, activeTab.content);
-      await applySavedPath(activeTab, savePath);
+      const content = await relocateImages(activeTab, savePath);
+      await SaveFile(savePath, content);
+      await applySavedPath(activeTab, savePath, content);
     } catch (err) {
       console.error('Save error:', err);
     }
@@ -286,12 +294,19 @@ function App() {
     if (!savePath) return;
 
     try {
-      await SaveFile(savePath, activeTab.content);
-      await applySavedPath(activeTab, savePath);
+      const content = await relocateImages(activeTab, savePath);
+      await SaveFile(savePath, content);
+      await applySavedPath(activeTab, savePath, content);
     } catch (err) {
       console.error('Save error:', err);
     }
   }, [activeTab, applySavedPath]);
+
+  // 貼り付けた画像を、今のファイル（保存前ならワーク）の隣の <ファイル名>.assets/ に保存する
+  const saveImage = useCallback(({ data, ext }) => {
+    if (!activeTab) return Promise.resolve(null);
+    return SaveImage(activeTab.path || '', activeTab.work || '', data, ext);
+  }, [activeTab]);
 
   const removeTab = useCallback((tabId) => {
     setTabs(prev => {
@@ -549,6 +564,7 @@ function App() {
                 font={editorFont}
                 tabSize={tabSize}
                 onCursorLineChange={setCursorLine}
+                onSaveImage={saveImage}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
@@ -639,6 +655,8 @@ function App() {
                 mermaidMode={activeTab.mermaidMode}
                 onToggleMode={toggleMermaidMode}
                 cursorLine={cursorLine}
+                path={activeTab.path}
+                work={activeTab.work}
               />
             </Box>
           </>

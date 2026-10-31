@@ -1,6 +1,8 @@
 package binder
 
 import (
+	"strings"
+
 	"binder/api/json"
 	"binder/fs"
 	"binder/setup"
@@ -27,6 +29,7 @@ func (b *Binder) EditConfig(conf *json.Config) error {
 	meta.MarkedURL = conf.MarkedURL
 	meta.MermaidURL = conf.MermaidURL
 	meta.OptimizeImage = &conf.OptimizeImage
+	meta.SiteURL = strings.TrimSpace(conf.SiteURL)
 	if conf.PreviewColorScheme != nil && conf.PreviewColorScheme.Attribute != "" && len(conf.PreviewColorScheme.Values) > 0 {
 		meta.PreviewColorScheme = &fs.PreviewColorScheme{
 			Attribute: conf.PreviewColorScheme.Attribute,
@@ -70,6 +73,8 @@ func (b *Binder) GetConfig() (*json.Config, error) {
 	if meta.OptimizeImage == nil || *meta.OptimizeImage {
 		conf.OptimizeImage = true
 	}
+	conf.SiteURL = meta.SiteURL
+	conf.SiteURLGuess = b.GuessSiteURL()
 	if meta.PreviewColorScheme != nil {
 		conf.PreviewColorScheme = &json.PreviewColorScheme{
 			Attribute: meta.PreviewColorScheme.Attribute,

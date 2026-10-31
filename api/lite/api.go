@@ -110,6 +110,31 @@ func (a *App) DeleteWork(name string) error {
 	return settings.DeleteLiteWork(name)
 }
 
+// --- 画像（Markdown ファイルの隣の <ファイル名>.assets/） ---
+
+// SaveImage は貼り付けた画像を保存し、本文に書く相対パスを返す。
+// docPath が空ならワーク（work）の画像として保存する。data は base64、ext は拡張子。
+func (a *App) SaveImage(docPath, work, data, ext string) (string, error) {
+	defer log.PrintTrace(log.Func("SaveImage()", docPath, work, ext))
+	return settings.SaveLiteImage(docPath, work, data, ext)
+}
+
+// ReadImage は本文の相対パスの画像を data URI で返す（プレビュー用）。
+func (a *App) ReadImage(docPath, work, src string) (string, error) {
+	return settings.ReadLiteImage(docPath, work, src)
+}
+
+// RelocateImages は保存先が変わるときに本文が参照する画像を写し、パスを書き換えた本文を返す。
+// 一部の画像を写せなくても保存は止めない（写せたものだけ書き換えた本文を返し、失敗はログに残す）。
+func (a *App) RelocateImages(fromPath, fromWork, toPath, content string) (string, error) {
+	defer log.PrintTrace(log.Func("RelocateImages()", fromPath, fromWork, toPath))
+	out, err := settings.RelocateLiteAssets(fromPath, fromWork, toPath, content)
+	if err != nil {
+		log.Warnf("RelocateLiteAssets() error:\n%+v", err)
+	}
+	return out, nil
+}
+
 // --- lite 固有設定（setting-lite.json） ---
 
 // GetTheme は現在のテーマIDを返す。

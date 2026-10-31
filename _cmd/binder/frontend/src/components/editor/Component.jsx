@@ -19,7 +19,11 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 import Autocomplete from "./Autocomplete.jsx";
-import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView, linkFromPaste } from "@shared/editor/markdown-keys";
+import { countChars } from "@shared/editor/char-count";
+import { idInsertText, isInsideTemplate } from "./id-insert";
+import { extractHeadings, findHeadingLine } from "@shared/editor/outline";
+import { ALERT_TYPES, hasAlertsPlugin, alertInsertText } from "@shared/editor/alerts";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
@@ -57,7 +61,9 @@ import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import NewLabelIcon from '@mui/icons-material/NewLabel';
+import TocIcon from '@mui/icons-material/Toc';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -125,7 +131,7 @@ function flattenDiagrams(nodes) {
 function flattenStructures(nodes) {
   const result = [];
   for (const node of nodes) {
-    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId, updated: node.updated });
+    result.push({ id: node.id, name: node.name, type: node.type, mime: node.mime, parentId: node.parentId, updated: node.updated });
     if (node.children && node.children.length > 0) {
       result.push(...flattenStructures(node.children));
     }
@@ -488,6 +494,48 @@ function Editor(props) {
   const [idList, setIdList] = useState([]);
   const idInsertBtnRef = useRef(null);
 
+  // 囲み（GitHub Alerts）。プラグインが効いているときだけメニューを出す
+  const [alertsAvailable, setAlertsAvailable] = useState(false);
+  const [alertsAnchor, setAlertsAnchor] = useState(null);
+
+  // アウトライン（見出しの一覧）
+  const [outlineAnchor, setOutlineAnchor] = useState(null);
+  const [outline, setOutline] = useState([]);
+  // 一覧を開いたときにカーソルがある見出しの行
+  const [outlineCurrent, setOutlineCurrent] = useState(0);
+
+  // 保存の状態（null: 開いたまま / saving: 保存待ち・保存中 / saved: 保存済み / error: 失敗）
+  const [saveState, setSaveState] = useState(null);
+  // 最後に頼んだ保存の番号。追い越された保存の結果で状態を書き換えないために使う
+  const saveSeqRef = useRef(0);
+  // 選んでいる範囲の文字数
+  const [selectionChars, setSelectionChars] = useState(0);
+
+  /**
+   * テキストを保存し、保存の状態を表示に反映する。
+   * writeFn はデバウンスされるため、追い越された呼び出しの Promise は完了しない。
+   */
+  const saveText = (m, i, txt) => {
+    const seq = ++saveSeqRef.current;
+    setSaveState("saving");
+    const p = writeFn(m, i, txt);
+    p.then(
+      () => { if (saveSeqRef.current === seq) setSaveState("saved"); },
+      () => { if (saveSeqRef.current === seq) setSaveState("error"); },
+    );
+    return p;
+  };
+
+  // 開くものが変わったら、保存の状態と選択の文字数を戻す
+  useEffect(() => {
+    saveSeqRef.current++;
+    setSaveState(null);
+    setSelectionChars(0);
+  }, [mode, id]);
+
+  // ページ全体の文字数
+  const totalChars = useMemo(() => countChars(text), [text]);
+
   // カーソル行の UUID に対応する Structure 情報（複数対応）
   const [cursorStructures, setCursorStructures] = useState([]);
   const [cursorStructureIndex, setCursorStructureIndex] = useState(0);
@@ -581,7 +629,7 @@ function Editor(props) {
     }
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   }, [mode, id, autoComplete.autoClose]);
 
@@ -871,7 +919,7 @@ function Editor(props) {
     document.execCommand('insertText', false, replacement);
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   }, [mode, id]);
 
@@ -888,7 +936,7 @@ function Editor(props) {
     document.execCommand('insertText', false, newText);
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   }, [text, mode, id]);
 
@@ -1269,9 +1317,78 @@ function Editor(props) {
     // execCommand は同期で textarea.value を確定するため、次フレームで state へ反映すれば足りる
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   };
+
+  /**
+   * ID一覧で選んだものを入れる。
+   * ノートの本文では種類に合わせたテンプレート関数まで入れ、{{ }} の中では ID だけを入れる。
+   */
+  const handleInsertId = (item) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const withFunc = mode === Mode.note && !isInsideTemplate(textarea.value, textarea.selectionStart);
+    handleInsertSnippet(idInsertText(item, withFunc));
+  };
+
+  /**
+   * アウトラインを開く。カーソルがある見出しを選んだ状態にする
+   */
+  const openOutline = (anchor) => {
+    const textarea = document.querySelector("#editor");
+    const headings = extractHeadings(textarea ? textarea.value : text);
+    const current = headings.filter((h) => h.line <= cursorLineRef.current).pop();
+    setOutline(headings);
+    setOutlineCurrent(current ? current.line : 0);
+    setOutlineAnchor(anchor);
+  };
+
+  /**
+   * 指定した行の先頭へカーソルを移し、その行を上端近くに見せる。
+   * follow が true ならプレビューもその行へ追従させる
+   * （プレビューの見出しから飛んだときは、押したところが動かないよう追従させない）。
+   */
+  const jumpToLine = (line, follow) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const lines = textarea.value.split('\n');
+    const n = Math.min(Math.max(line, 1), lines.length);
+    let pos = 0;
+    for (let i = 0; i < n - 1; i++) pos += lines[i].length + 1;
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(pos, pos);
+    scrollCaretIntoView(textarea, { top: true });
+    cursorLineRef.current = n;
+    if (follow) setCursorLine(n);
+    detectIdAtCursor(textarea.value, pos);
+    setSelectionChars(0);
+  };
+
+  /**
+   * プレビューの見出しが押されたら、エディタでその見出しの行へ飛ぶ
+   */
+  const handlePreviewHeadingClick = (target) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const line = findHeadingLine(extractHeadings(textarea.value), target);
+    if (line) jumpToLine(line, false);
+  };
+
+  /**
+   * 囲み（> [!NOTE] など）を入れる。選んでいる行があればそれを囲む
+   */
+  const handleInsertAlert = (type) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const { selectionStart: start, selectionEnd: end, value } = textarea;
+    handleInsertSnippet(alertInsertText(value, start, end, type));
+  };
+
+  /**
+   * プレビューのブロックがダブルクリックされたら、エディタでその行へ飛ぶ
+   */
+  const handlePreviewBlockDoubleClick = (line) => jumpToLine(line, false);
 
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
@@ -1287,7 +1404,7 @@ function Editor(props) {
 
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(modeRef.current, idRef.current, textarea.value);
+      saveText(modeRef.current, idRef.current, textarea.value);
     });
   });
 
@@ -1428,6 +1545,8 @@ function Editor(props) {
     }
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
+    // プラグインは描画の前に読み込まれるため、描画のたびに囲みのメニューを出すかを決め直す
+    setAlertsAvailable(hasAlertsPlugin(Marked.getPluginStatus()));
 
     // エンジンとプラグインの失敗（CDN読込失敗・読込エラー・実行時例外・互換スキップ・
     // 未適用）を警告として拾う。互換層はプレビューを落とさないために失敗を握り潰すため、
@@ -1736,7 +1855,18 @@ function Editor(props) {
 
     detectIdAtCursor(textarea.value, pos);
     detectFuncHint(textarea.value, pos);
+    handleSelectionChange(e);
   }, [detectIdAtCursor]);
+
+  /**
+   * 選んでいる範囲の文字数を数え直す
+   */
+  const handleSelectionChange = useCallback((e) => {
+    const textarea = e.target;
+    const s = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    setSelectionChars(end > s ? countChars(textarea.value.substring(s, end)) : 0);
+  }, []);
 
   /**
    * テキストの変更
@@ -1755,7 +1885,7 @@ function Editor(props) {
     ac.handleInput();
 
     setUpdated(true);
-    writeFn(mode, id, txt).then(() => {
+    saveText(mode, id, txt).then(() => {
       console.debug("Write!");
       // ダイアグラムスタイルテンプレートの保存時はエンジン側キャッシュも同期する
       if (mode === Mode.template && templateType === "diagram") {
@@ -1983,6 +2113,21 @@ function Editor(props) {
     const plainText = e.clipboardData?.getData('text/plain');
     if (!plainText) return;
 
+    // ノートで文字を選んで URL を貼ったら、選んだ文字をリンクにする
+    if (mode === Mode.note) {
+      const textarea = e.target;
+      const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+      const link = linkFromPaste(selected, plainText);
+      if (link) {
+        e.preventDefault();
+        document.execCommand('insertText', false, link);
+        isEditingRef.current = true;
+        setText(textarea.value);
+        saveText(mode, id, textarea.value);
+        return;
+      }
+    }
+
     const markdown = tsvToMarkdownTable(plainText);
     if (!markdown) return;
 
@@ -1997,7 +2142,7 @@ function Editor(props) {
 
     isEditingRef.current = true;
     setText(textarea.value);
-    writeFn(mode, id, textarea.value);
+    saveText(mode, id, textarea.value);
   };
 
   /**
@@ -2036,7 +2181,7 @@ function Editor(props) {
     requestAnimationFrame(function () {
       const val = textarea.value;
       setText(val);
-      writeFn(mode, id, val);
+      saveText(mode, id, val);
     })
 
   }
@@ -2090,7 +2235,7 @@ function Editor(props) {
           textarea.selectionEnd = result.selectionEnd;
           isEditingRef.current = true;
           setText(result.value);
-          writeFn(mode, id, result.value);
+          saveText(mode, id, result.value);
           requestAnimationFrame(() => {
             textarea.selectionStart = result.selectionStart;
             textarea.selectionEnd = result.selectionEnd;
@@ -2113,7 +2258,7 @@ function Editor(props) {
         textarea.selectionEnd = result.selectionEnd;
         isEditingRef.current = true;
         setText(result.value);
-        writeFn(mode, id, result.value);
+        saveText(mode, id, result.value);
         requestAnimationFrame(() => {
           textarea.selectionStart = result.selectionStart;
           textarea.selectionEnd = result.selectionEnd;
@@ -2137,7 +2282,7 @@ function Editor(props) {
       textarea.selectionEnd = result.cursor;
       isEditingRef.current = true;
       setText(result.value);
-      writeFn(mode, id, result.value);
+      saveText(mode, id, result.value);
       requestAnimationFrame(() => {
         textarea.selectionStart = result.cursor;
         textarea.selectionEnd = result.cursor;
@@ -2227,7 +2372,7 @@ function Editor(props) {
     textarea.value = newText;
     setTimeout(() => {
       setText(newText);
-      writeFn(mode, id, newText);
+      saveText(mode, id, newText);
     }, 500);
   };
 
@@ -2435,6 +2580,44 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
+                  {/** アウトライン（ノート編集時のみ表示） */}
+                  {mode === Mode.note && <>
+                    <Tooltip title={t("editor.outline")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="outline" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => openOutline(e.currentTarget)}
+                        className="editorBtn">
+                        <TocIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={outlineAnchor}
+                      open={Boolean(outlineAnchor)}
+                      onClose={() => setOutlineAnchor(null)}
+                      disableAutoFocus
+                      disableEnforceFocus
+                      disableRestoreFocus
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 400, maxWidth: 360 } }}
+                    >
+                      {outline.length === 0
+                        ? <MenuItem disabled sx={{ fontSize: '13px' }}>{t("editor.outlineEmpty")}</MenuItem>
+                        : outline.map((h) => (
+                          <MenuItem key={h.line}
+                            selected={h.line === outlineCurrent}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => { setOutlineAnchor(null); jumpToLine(h.line, true); }}
+                            sx={{
+                              fontSize: '13px',
+                              pl: `${16 + (h.level - 1) * 14}px`,
+                              '&:hover': { backgroundColor: 'var(--hover-menuitem)' },
+                              '&.Mui-selected': { backgroundColor: 'var(--hover-menuitem)' },
+                            }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.text}</span>
+                          </MenuItem>
+                        ))}
+                    </Menu>
+                  </>}
+
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
                     {/** 区切り */}
@@ -2500,7 +2683,7 @@ function Editor(props) {
                     {idList.map((s) => (
                       <MenuItem key={s.id}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); setIdListPos(null); }}
+                        onClick={() => { handleInsertId(s); setIdListAnchor(null); setIdListPos(null); }}
                         sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                         {s.name}
                       </MenuItem>
@@ -2546,6 +2729,36 @@ function Editor(props) {
                         <FormatQuoteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
+                    {/** 囲み（GitHub Alerts プラグインが効いているときだけ） */}
+                    {alertsAvailable && <>
+                      <Tooltip title={t("editor.alerts")} placement="bottom">
+                        <IconButton size="small" edge="start" color="inherit" aria-label="alerts" sx={{ mr: 2 }}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={(e) => setAlertsAnchor(e.currentTarget)}
+                          className="editorBtn">
+                          <AnnouncementOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Menu
+                        anchorEl={alertsAnchor}
+                        open={Boolean(alertsAnchor)}
+                        onClose={() => setAlertsAnchor(null)}
+                        disableAutoFocus
+                        disableEnforceFocus
+                        disableRestoreFocus
+                        PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
+                      >
+                        {ALERT_TYPES.map((a) => (
+                          <MenuItem key={a.type}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => { setAlertsAnchor(null); handleInsertAlert(a.type); }}
+                            sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
+                            {a.icon} {a.type}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>}
 
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
@@ -2702,6 +2915,7 @@ function Editor(props) {
                 onErrorLineDoubleClick={parseStatus.err ? () => setParseErrorDlg(true) : undefined}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
+                onSelect={handleSelectionChange}
                 onPaste={handlePaste}
                 onCursorMove={handleCursorMove}
                 onCompositionStart={handleCompositionStart}
@@ -2869,7 +3083,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} onHeadingClick={editor ? handlePreviewHeadingClick : undefined} onBlockDoubleClick={editor ? handlePreviewBlockDoubleClick : undefined} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2907,6 +3121,18 @@ function Editor(props) {
                     ? <><AutorenewIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: '6px', animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /><span className="parseStatusText">Processing...</span></>
                     : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success{parseStatus.ms != null ? ` (${parseStatus.ms}ms)` : ''}</span></>
                   }
+                </div>
+                <div className="parseStatusRight">
+                  <span className="parseStatusText">
+                    {selectionChars > 0
+                      ? t("editor.charCountSelected", { selected: selectionChars.toLocaleString(), total: totalChars.toLocaleString() })
+                      : t("editor.charCount", { total: totalChars.toLocaleString() })}
+                  </span>
+                  {saveState && (
+                    <span className={"parseStatusText saveState" + (saveState === "error" ? " saveStateError" : "")}>
+                      {t(saveState === "saving" ? "editor.saving" : saveState === "saved" ? "editor.saved" : "editor.saveFailed")}
+                    </span>
+                  )}
                 </div>
               </div>
 

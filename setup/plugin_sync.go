@@ -57,6 +57,8 @@ var shippedPluginHashes = map[string][]string{
 	"github-alerts.js": {
 		"610b07964dda65c23684417c5b9968808f923565af74f180f8487686361bd709",
 		"43917581671aaae6fc3fed369b55b151d53fba889ba59c0d78aa9fca7787f99a",
+		// 0.15.0〜0.17.x で配布した 1.0.1（見出しの表と、囲みごとの見出しを足して 1.1.0 に更新）
+		"7594b8398015fcb6a739b6eae7f5a61bd2cc276ca66430119aae87e08752aa12",
 	},
 	"highlight.js": {"e4ccb846deb793dcb6be29e380fca99a2ec593cc63091bcf1ff104782c2dbf2b"},
 	"kbd.js":       {"f716c2a6f86156296aa38678c82910e5645d3edb25a8b225a9dd114ff1be130b"},

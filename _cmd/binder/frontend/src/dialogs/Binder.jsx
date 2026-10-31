@@ -95,6 +95,9 @@ function Binder({ isModal, ...props }) {
   const [markedInfo, setMarkedInfo] = useState(null);
   const [savedMarkedUrl, setSavedMarkedUrl] = useState("");
   const [optimizeImage, setOptimizeImage] = useState(true);
+  // 公開サイトの URL（OGP の絶対 URL 用）。空なら推し量った URL（siteUrlGuess）を使う
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteUrlGuess, setSiteUrlGuess] = useState("");
   // プレビューでスクリプトを動かすか。バインダーではなくアプリの設定に保存する
   const [previewScripts, setPreviewScripts] = useState(false);
   const [colorSchemeAttr, setColorSchemeAttr] = useState("");
@@ -123,6 +126,8 @@ function Binder({ isModal, ...props }) {
       setMermaidUrl(conf.mermaidUrl || "");
       setSavedMarkedUrl(conf.markedUrl || "");
       setOptimizeImage(conf.optimizeImage !== false);
+      setSiteUrl(conf.siteUrl || "");
+      setSiteUrlGuess(conf.siteUrlGuess || "");
       if (conf.previewColorScheme) {
         setColorSchemeAttr(conf.previewColorScheme.attribute || "");
         setColorSchemeValues((conf.previewColorScheme.values || []).join(", "));
@@ -165,7 +170,7 @@ function Binder({ isModal, ...props }) {
     const previewColorScheme = colorSchemeAttr && values.length > 0
       ? { attribute: colorSchemeAttr, values }
       : null;
-    const config = { name, detail, markedUrl, mermaidUrl, optimizeImage, previewColorScheme };
+    const config = { name, detail, markedUrl, mermaidUrl, optimizeImage, siteUrl, previewColorScheme };
     EditConfig(config).then(() => {
       return SetBinderTrusted(previewScripts);
     }).then(() => {
@@ -193,7 +198,8 @@ function Binder({ isModal, ...props }) {
       const previewColorScheme = colorSchemeAttr && values.length > 0
         ? { attribute: colorSchemeAttr, values }
         : null;
-      const config = { name, detail, markedUrl, mermaidUrl, previewColorScheme };
+      // binder.json の設定はまとめて保存されるため、このタブに無い項目も送る
+      const config = { name, detail, markedUrl, mermaidUrl, optimizeImage, siteUrl, previewColorScheme };
       await EditConfig(config);
       // 保存済みURLを更新し、直後のバージョン表示が「判定結果」を反映できるようにする
       setSavedMarkedUrl(markedUrl);
@@ -296,6 +302,14 @@ function Binder({ isModal, ...props }) {
             <FormControl>
               <FormLabel>{t("common.detail")}</FormLabel>
               <TextField size="small" value={detail} onChange={(e) => setDetail(e.target.value)} multiline />
+            </FormControl>
+
+            <FormControl>
+              <Tooltip title={t("binder.siteUrlTip")} placement="bottom-start">
+                <FormLabel sx={{ alignSelf: 'flex-start' }}>{t("binder.siteUrl")}</FormLabel>
+              </Tooltip>
+              <TextField size="small" value={siteUrl} onChange={(e) => setSiteUrl(e.target.value)}
+                placeholder={siteUrlGuess || "https://"} />
             </FormControl>
 
             <FormControlLabel

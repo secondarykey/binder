@@ -42,8 +42,14 @@ Mermaid 図を描画する。`diagrams/{id}.md` の中身を Mermaid ソース�
 ```
 
 ### `{{url "<id>"}}`
-エントリの公開URLだけを返す。`<a>` を自分で組み立てたいとき、`og:image`、
+エントリの公開URLだけを返す。`<a>` を自分で組み立てたいとき、
 CSS の `url()` 等で使う。`link` と同じく v0.16.3 以降。
+
+### `{{fullURL ["<id>"]}}`
+公開サイトでの**絶対 URL** を返す。OGP の `og:url` / `og:image` のように絶対 URL が要る場所で使う。
+
+- 引数なし: 今のページ。ID: そのエントリの公開先（`url` と同じ決まり）。それ以外の文字列: 今のページからの相対パス（`.This.Image` など）
+- 基準はバインダー設定の「サイトの URL」（`binder.json` の `siteUrl`）。空なら `docs/CNAME` や GitHub のリモートから推し量る。分からなければ `url` と同じ相対パス
 
 **ノート本文で `[表示名]({{url "..."}})` は成立しない**——と `url` の実装コメント
 （`html_func.go`）が明言している。**本文からは `link` を、テンプレートからは `url` を使う。**
@@ -79,10 +85,21 @@ text/template を先に実行してから結果を Markdown へ渡しており�
 ### `{{breadcrumb}}`
 現在のノートから index までの祖先を root→current の順で返す。
 
+### `{{prevNote ["<note_id>"]}}` / `{{nextNote ["<note_id>"]}}`
+ツリーの順（深さ優先。親の次に子、同じ親の中は seq 順）で、現在のノートの前・後のノートを返す。
+無ければ nil なので `with` で囲む。レイアウトテンプレートで「前へ」「次へ」を作るのに使う。
+
+- note_id を渡すと、そのノートの下だけを順番にする（起点のノート自身も含む）。省略するとバインダー全体
+- 非公開のノートは飛ばす。公開時は公開中のノートだけを数える
+
+```
+{{with nextNote "<note_id>"}}<a href="{{.Link}}">次へ {{.Name}}</a>{{end}}
+```
+
 ### `{{drawLayer "<layer_id>" ["<class>"]}}`
 画像の上にシェイプを重ねたものを描画する。アプリの画像編集機能で作った layer 用。
 
-## `childNotes` / `latestNotes` / `breadcrumb` が返す要素のフィールド
+## `childNotes` / `latestNotes` / `breadcrumb` / `prevNote` / `nextNote` が返す要素のフィールド
 
 | フィールド | 内容 |
 |---|---|

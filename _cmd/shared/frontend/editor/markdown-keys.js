@@ -136,6 +136,25 @@ export function handleMarkdownFormat(textarea, key) {
 }
 
 /**
+ * 選択した文字の上に URL を貼り付けたとき、Markdown のリンクにした文字列を返す。
+ *
+ * - 貼り付けるものが 1 行の URL（http / https）で、選択が 1 行のときだけリンクにする
+ * - 選択自体が URL のときは、URL の差し替えとみなしてリンクにしない
+ *
+ * @param {string} selected - 選択している文字
+ * @param {string} pasted - 貼り付ける文字
+ * @returns {string|null} リンクにした文字列。リンクにしないときは null
+ */
+export function linkFromPaste(selected, pasted) {
+  if (!selected || !pasted) return null;
+  const url = pasted.trim();
+  if (!/^https?:\/\/\S+$/.test(url)) return null;
+  if (/[\r\n]/.test(selected)) return null;
+  if (/^https?:\/\/\S+$/.test(selected.trim())) return null;
+  return '[' + selected + '](' + url + ')';
+}
+
+/**
  * Tab / Shift+Tab でインデント・アウトデントを行う。
  *
  * - 複数行選択: 各行の先頭にスペースを追加/削除
@@ -227,8 +246,10 @@ export function handleMarkdownTab(textarea, shiftKey, tabSize) {
  * ミラー要素を作り、キャレット位置にマーカーを挿入して offsetTop を実測する。
  *
  * @param {HTMLTextAreaElement} textarea - 対象の textarea 要素
+ * @param {{ top?: boolean }} [options] - top: true でキャレットの行を表示領域の上端近くに合わせる
+ *   （見出しへ移動したときなど、その下の本文を見せたいとき）
  */
-export function scrollCaretIntoView(textarea) {
+export function scrollCaretIntoView(textarea, options = {}) {
   const val = textarea.value;
   const caret = textarea.selectionEnd;
   const cs = window.getComputedStyle(textarea);
@@ -272,6 +293,12 @@ export function scrollCaretIntoView(textarea) {
   const caretTopInTextarea = caretTop + paddingTop;
   const viewTop = textarea.scrollTop;
   const viewBottom = viewTop + textarea.clientHeight;
+
+  if (options.top) {
+    // 1 行分の余白を残して上端に合わせる
+    textarea.scrollTop = Math.max(0, caretTopInTextarea - lineHeight);
+    return;
+  }
 
   if (caretTopInTextarea < viewTop) {
     textarea.scrollTop = caretTopInTextarea;

@@ -26,8 +26,10 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		return nil, xerrors.Errorf("db.FindAssets() error: %w", err)
 	}
 	binaryMap := make(map[string]bool, len(assets))
+	mimeMap := make(map[string]string, len(assets))
 	for _, a := range assets {
 		binaryMap[a.Id] = a.Binary
+		mimeMap[a.Id] = a.Mime
 	}
 
 	log.Infof("Tree Length: %d", len(structures))
@@ -38,6 +40,7 @@ func (b *Binder) GetBinderTree() (*json.Tree, error) {
 		leaf := convertStructure2Leaf(s)
 		if s.Typ == "asset" {
 			leaf.Binary = binaryMap[s.Id]
+			leaf.Mime = mimeMap[s.Id]
 		}
 		list := treeMap[s.ParentId]
 		treeMap[s.ParentId] = append(list, leaf)

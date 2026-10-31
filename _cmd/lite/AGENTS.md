@@ -32,7 +32,7 @@ setup/, settings/（Binder と共有）
 
 ## Go バックエンド
 
-- **`lite.App`** (api/lite/api.go) — Wails v3 Service。`ReadFile`, `SaveFile`（アトミック書き込み）、テーマ・言語は `settings` パッケージに委譲。起動引数ファイルの管理（`SetInitialFiles` / `InitialFiles`）、ワーク管理（`ListWorks` / `CreateWork` / `SaveWork` / `DeleteWork`）
+- **`lite.App`** (api/lite/api.go) — Wails v3 Service。`ReadFile`, `SaveFile`（アトミック書き込み）、テーマ・言語は `settings` パッケージに委譲。起動引数ファイルの管理（`SetInitialFiles` / `InitialFiles`）、ワーク管理（`ListWorks` / `CreateWork` / `SaveWork` / `DeleteWork`）、画像（`SaveImage` / `ReadImage` / `RelocateImages`。下記「画像の貼り付け」）
 - **`Window`** (_cmd/lite/window.go) — 第2 Service。ファイルダイアログ（Open/Save）、新規ファイル作成、ウィンドウ操作
 - Binder の `fs/`, `db/`, `api/` には一切依存しない
 - Lite は `binder/api` を import できないため `MarshalError` を登録していない（`MessageError` を生成しないので実害なし。共有が必要になったら lite が import できるパッケージへ切り出す）
@@ -66,6 +66,7 @@ setup/, settings/（Binder と共有）
 - Ctrl+S 明示的保存（アトミック書き込み）、未保存マーク表示
 - テーマ切り替え（system/light/dark）
 - ファイルドロップ対応（`EnableFileDrop` + `data-file-drop-target`）
+- 画像の貼り付け（下記「画像の貼り付け」）
 - フレームレスウィンドウ（`--wails-draggable` でドラッグ領域制御）
 
 ## タブデータ構造
@@ -106,3 +107,21 @@ setup/, settings/（Binder と共有）
 Go 側の実体は `settings/lite_work.go`（`ListLiteWorks` / `CreateLiteWork` /
 `SaveLiteWork` / `DeleteLiteWork`）。名前は `^Untitled(-[1-9][0-9]*)?$` で検証し、
 パストラバーサルを防いでいる。
+
+## 画像の貼り付け
+
+エディタに画像を貼り付けると、Markdown ファイルの隣の `<ファイル名>.assets/<日時>.png` に保存し、
+カーソル位置に `![](<ファイル名>.assets/<日時>.png)` を入れる（空白や括弧を含むパスは `<>` で囲む）。
+VS Code や GitHub でもそのまま見られる形にするため、本文に埋め込まず相対パスで参照する。
+
+- **受け付けるもの**: クリップボードの画像（スクリーンショットなど）。文字も一緒に入っているとき
+  （表計算ソフトのセルなど）は文字の貼り付けを優先する（`@shared/editor/image-paste.js` の `clipboardImage`）
+- **ワーク（保存前）**: `~/.binder/lite/works/<ワーク名>.assets/` に置く。ファイルとして保存するとき
+  （`relocateImages` → `RelocateImages`）に、本文が参照する画像だけを保存先の `<ファイル名>.assets/` へ写し、
+  パスを書き換える。名前を付けて保存したときも同じ。写し先に同じ名前の別の画像があれば名前を変える（上書きしない）。
+  ワークを消すと（保存・タブを閉じる）画像フォルダも消える。同じ名前のワークを作り直すと、残っていた画像フォルダを片付ける
+- **プレビュー**: srcdoc では相対パスを読めないため、`HTMLFrame` の `resolveImage` で相対パスの `<img>` を
+  Go（`ReadImage`）で読んだ data URI に差し替える。読むのは画像の拡張子のものだけで、URL・絶対パスは読まない。
+  読めなかった画像は「画像を読み込めません」と表示する。読めた画像は `PreviewPane` が覚えておき、入力のたびに読み直さない
+- **消した画像は片付けない**: 本文から参照を消しても、`.assets/` の画像は残る
+- Go 側の実体は `settings/lite_image.go`（`SaveLiteImage` / `ReadLiteImage` / `RelocateLiteAssets`）
