@@ -185,3 +185,45 @@ describe('bundled marked plugins', () => {
     });
   });
 });
+
+// GitHub Alerts: 見出しは titles の表から取り、[!TYPE] の後ろに書いた文字があればそれを使う
+describe('github-alerts titles', () => {
+  const title = (html) => html.match(/<p class="binder-alert-title">.*?<\/span> (.*?)<\/p>/)?.[1];
+
+  it('uses the default title from the table', () => {
+    const html = renderWith('github-alerts.js', '> [!NOTE]\n> body');
+    expect(title(html)).toBe('Note');
+    expect(html).toContain('<p>body</p>');
+    expect(html).not.toContain('[!NOTE]');
+  });
+
+  it('uses the text after the marker as the title of that alert', () => {
+    const html = renderWith('github-alerts.js', '> [!TIP] Shortcut **keys**\n> Press Ctrl+S.');
+    expect(title(html)).toBe('Shortcut <strong>keys</strong>');
+    expect(html).toContain('<p>Press Ctrl+S.</p>');
+  });
+
+  it('handles a marker without body, and a marker followed by paragraphs', () => {
+    const only = renderWith('github-alerts.js', '> [!WARNING] 注意');
+    expect(title(only)).toBe('注意');
+    expect(only).not.toContain('<p></p>');
+
+    const paras = renderWith('github-alerts.js', '> [!CAUTION]\n>\n> first\n>\n> second');
+    expect(title(paras)).toBe('Caution');
+    expect(paras).not.toMatch(/<\/p><p>\s*<\/p>|title">.*<\/p>\s*<p>\s*<\/p>/);
+    expect(paras).toContain('<p>first</p>');
+    expect(paras).toContain('<p>second</p>');
+  });
+
+  it('works with breaks enabled', () => {
+    const inst = new Marked({ breaks: true });
+    inst.use(loadPlugin('github-alerts.js'));
+    const html = inst.parse('> [!IMPORTANT] Key\n> body');
+    expect(title(html)).toBe('Key');
+    expect(html).toContain('<p>body</p>');
+  });
+
+  it('keeps plain blockquotes', () => {
+    expect(renderWith('github-alerts.js', '> just a quote')).toContain('<blockquote>');
+  });
+});
