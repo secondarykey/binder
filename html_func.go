@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"net/url"
 	"sort"
 	"strings"
 	texttemplate "text/template"
@@ -26,6 +27,7 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"embed":         w.embed,
 		"link":          w.link,
 		"url":           w.url,
+		"fullURL":       w.fullURL,
 		"drawDiagram":   w.drawSVG,
 		"drawLayer":     w.drawLayer,
 		"assets":        w.assets,
@@ -598,6 +600,67 @@ func (w *wrapper) url(v ...any) template.URL {
 
 	w.warnUnreachable("url", id, s.Private, s.Republish)
 	return template.URL(href)
+}
+
+// fullURL は公開サイトでの絶対 URL を返す。OGP の og:url / og:image のように絶対 URL が要る場所で使う。
+//
+//   - 引数なし: 今のページ（index は サイトの URL そのもの）
+//   - エントリの ID: そのエントリの公開先（url と同じ決まり）
+//   - それ以外: 今のページからの相対パスとして扱う（.This.Image などを渡せる）
+//
+// 基準はサイトの URL（SiteURL。設定か、推し量ったもの）。分からないときは url と同じ相対パスを返し、
+// 公開時は警告する。
+func (w *wrapper) fullURL(v ...any) template.URL {
+
+	// 今のページの、サイトの一番上からのパス
+	page := ""
+	if w.note != nil && w.note.Id != "index" {
+		page = w.publishRelPath(fs.HTMLFile(w.note))
+	}
+
+	// 今のページからの相対パス（url と同じ形）
+	// .This.Image のように template.URL で渡されることもあるため、文字列にしてから見る
+	target := ""
+	if len(v) > 0 && v[0] != nil {
+		target = fmt.Sprint(v[0])
+	}
+	ref := ""
+	if target != "" {
+		if s, err := w.owner.db.GetStructure(target); err == nil && s != nil {
+			href, err := w.entryURL(s)
+			if err != nil {
+				w.addWarning(fmt.Sprintf("fullURL(%s): %v", target, err))
+				return template.URL(fmt.Sprintf("ERROR: fullURL(%s): %v", target, err))
+			}
+			w.warnUnreachable("fullURL", target, s.Private, s.Republish)
+			ref = href
+		} else {
+			ref = target
+		}
+	} else {
+		ref = w.relativePrefix() + page
+	}
+
+	base := w.owner.SiteURL()
+	if base == "" {
+		if !w.Local {
+			w.addWarning("fullURL: site URL is unknown (set it in the binder settings)")
+		}
+		return template.URL(ref)
+	}
+
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("fullURL: site URL %q: %v", base, err))
+		return template.URL(ref)
+	}
+	refURL, err := url.Parse(ref)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("fullURL(%s): %v", ref, err))
+		return template.URL(ref)
+	}
+	pageURL := baseURL.ResolveReference(&url.URL{Path: page})
+	return template.URL(pageURL.ResolveReference(refURL).String())
 }
 
 // warnUnreachable は公開しても辿れないエントリを参照した場合に警告する。
