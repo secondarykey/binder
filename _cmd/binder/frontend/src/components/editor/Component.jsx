@@ -2562,6 +2562,44 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
+                  {/** アウトライン（ノート編集時のみ表示） */}
+                  {mode === Mode.note && <>
+                    <Tooltip title={t("editor.outline")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="outline" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => openOutline(e.currentTarget)}
+                        className="editorBtn">
+                        <TocIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={outlineAnchor}
+                      open={Boolean(outlineAnchor)}
+                      onClose={() => setOutlineAnchor(null)}
+                      disableAutoFocus
+                      disableEnforceFocus
+                      disableRestoreFocus
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 400, maxWidth: 360 } }}
+                    >
+                      {outline.length === 0
+                        ? <MenuItem disabled sx={{ fontSize: '13px' }}>{t("editor.outlineEmpty")}</MenuItem>
+                        : outline.map((h) => (
+                          <MenuItem key={h.line}
+                            selected={h.line === outlineCurrent}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => { setOutlineAnchor(null); jumpToLine(h.line, true); }}
+                            sx={{
+                              fontSize: '13px',
+                              pl: `${16 + (h.level - 1) * 14}px`,
+                              '&:hover': { backgroundColor: 'var(--hover-menuitem)' },
+                              '&.Mui-selected': { backgroundColor: 'var(--hover-menuitem)' },
+                            }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.text}</span>
+                          </MenuItem>
+                        ))}
+                    </Menu>
+                  </>}
+
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
                     {/** 区切り */}
@@ -2633,44 +2671,6 @@ function Editor(props) {
                       </MenuItem>
                     ))}
                   </Menu>
-
-                  {/** アウトライン（ノート編集時のみ表示） */}
-                  {mode === Mode.note && <>
-                    <Tooltip title={t("editor.outline")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="outline" sx={{ mr: 2 }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => openOutline(e.currentTarget)}
-                        className="editorBtn">
-                        <TocIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Menu
-                      anchorEl={outlineAnchor}
-                      open={Boolean(outlineAnchor)}
-                      onClose={() => setOutlineAnchor(null)}
-                      disableAutoFocus
-                      disableEnforceFocus
-                      disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 400, maxWidth: 360 } }}
-                    >
-                      {outline.length === 0
-                        ? <MenuItem disabled sx={{ fontSize: '13px' }}>{t("editor.outlineEmpty")}</MenuItem>
-                        : outline.map((h) => (
-                          <MenuItem key={h.line}
-                            selected={h.line === outlineCurrent}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => { setOutlineAnchor(null); jumpToLine(h.line, true); }}
-                            sx={{
-                              fontSize: '13px',
-                              pl: `${16 + (h.level - 1) * 14}px`,
-                              '&:hover': { backgroundColor: 'var(--hover-menuitem)' },
-                              '&.Mui-selected': { backgroundColor: 'var(--hover-menuitem)' },
-                            }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.text}</span>
-                          </MenuItem>
-                        ))}
-                    </Menu>
-                  </>}
 
                   {/** マークダウン書式ボタン（ノート編集時のみ表示） */}
                   {mode === Mode.note && <>
