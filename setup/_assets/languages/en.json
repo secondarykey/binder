@@ -632,6 +632,11 @@
         "notInTable" : "Cursor is not inside a table",
         "historyBack" : "Back (Alt+←)",
         "historyForward" : "Forward (Alt+→)",
+        "charCount" : "{{total}} chars",
+        "charCountSelected" : "{{selected}} / {{total}} chars",
+        "saving" : "Saving…",
+        "saved" : "Saved",
+        "saveFailed" : "Save failed",
         "idStatus" : {
             "note" : "Note",
             "diagram" : "Diagram",

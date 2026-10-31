@@ -19,7 +19,9 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 import Autocomplete from "./Autocomplete.jsx";
-import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView } from "@shared/editor/markdown-keys";
+import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView, linkFromPaste } from "@shared/editor/markdown-keys";
+import { countChars } from "@shared/editor/char-count";
+import { idInsertText, isInsideTemplate } from "./id-insert";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
@@ -125,7 +127,7 @@ function flattenDiagrams(nodes) {
 function flattenStructures(nodes) {
   const result = [];
   for (const node of nodes) {
-    result.push({ id: node.id, name: node.name, type: node.type, parentId: node.parentId, updated: node.updated });
+    result.push({ id: node.id, name: node.name, type: node.type, mime: node.mime, parentId: node.parentId, updated: node.updated });
     if (node.children && node.children.length > 0) {
       result.push(...flattenStructures(node.children));
     }
@@ -488,6 +490,38 @@ function Editor(props) {
   const [idList, setIdList] = useState([]);
   const idInsertBtnRef = useRef(null);
 
+  // 保存の状態（null: 開いたまま / saving: 保存待ち・保存中 / saved: 保存済み / error: 失敗）
+  const [saveState, setSaveState] = useState(null);
+  // 最後に頼んだ保存の番号。追い越された保存の結果で状態を書き換えないために使う
+  const saveSeqRef = useRef(0);
+  // 選んでいる範囲の文字数
+  const [selectionChars, setSelectionChars] = useState(0);
+
+  /**
+   * テキストを保存し、保存の状態を表示に反映する。
+   * writeFn はデバウンスされるため、追い越された呼び出しの Promise は完了しない。
+   */
+  const saveText = (m, i, txt) => {
+    const seq = ++saveSeqRef.current;
+    setSaveState("saving");
+    const p = writeFn(m, i, txt);
+    p.then(
+      () => { if (saveSeqRef.current === seq) setSaveState("saved"); },
+      () => { if (saveSeqRef.current === seq) setSaveState("error"); },
+    );
+    return p;
+  };
+
+  // 開くものが変わったら、保存の状態と選択の文字数を戻す
+  useEffect(() => {
+    saveSeqRef.current++;
+    setSaveState(null);
+    setSelectionChars(0);
+  }, [mode, id]);
+
+  // ページ全体の文字数
+  const totalChars = useMemo(() => countChars(text), [text]);
+
   // カーソル行の UUID に対応する Structure 情報（複数対応）
   const [cursorStructures, setCursorStructures] = useState([]);
   const [cursorStructureIndex, setCursorStructureIndex] = useState(0);
@@ -581,7 +615,7 @@ function Editor(props) {
     }
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   }, [mode, id, autoComplete.autoClose]);
 
@@ -871,7 +905,7 @@ function Editor(props) {
     document.execCommand('insertText', false, replacement);
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   }, [mode, id]);
 
@@ -888,7 +922,7 @@ function Editor(props) {
     document.execCommand('insertText', false, newText);
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
   }, [text, mode, id]);
 
@@ -1269,8 +1303,19 @@ function Editor(props) {
     // execCommand は同期で textarea.value を確定するため、次フレームで state へ反映すれば足りる
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(mode, id, textarea.value);
+      saveText(mode, id, textarea.value);
     });
+  };
+
+  /**
+   * ID一覧で選んだものを入れる。
+   * ノートの本文では種類に合わせたテンプレート関数まで入れ、{{ }} の中では ID だけを入れる。
+   */
+  const handleInsertId = (item) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const withFunc = mode === Mode.note && !isInsideTemplate(textarea.value, textarea.selectionStart);
+    handleInsertSnippet(idInsertText(item, withFunc));
   };
 
   // エディタへのテキスト挿入イベントを購読
@@ -1287,7 +1332,7 @@ function Editor(props) {
 
     requestAnimationFrame(() => {
       setText(textarea.value);
-      writeFn(modeRef.current, idRef.current, textarea.value);
+      saveText(modeRef.current, idRef.current, textarea.value);
     });
   });
 
@@ -1736,7 +1781,18 @@ function Editor(props) {
 
     detectIdAtCursor(textarea.value, pos);
     detectFuncHint(textarea.value, pos);
+    handleSelectionChange(e);
   }, [detectIdAtCursor]);
+
+  /**
+   * 選んでいる範囲の文字数を数え直す
+   */
+  const handleSelectionChange = useCallback((e) => {
+    const textarea = e.target;
+    const s = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    setSelectionChars(end > s ? countChars(textarea.value.substring(s, end)) : 0);
+  }, []);
 
   /**
    * テキストの変更
@@ -1755,7 +1811,7 @@ function Editor(props) {
     ac.handleInput();
 
     setUpdated(true);
-    writeFn(mode, id, txt).then(() => {
+    saveText(mode, id, txt).then(() => {
       console.debug("Write!");
       // ダイアグラムスタイルテンプレートの保存時はエンジン側キャッシュも同期する
       if (mode === Mode.template && templateType === "diagram") {
@@ -1983,6 +2039,21 @@ function Editor(props) {
     const plainText = e.clipboardData?.getData('text/plain');
     if (!plainText) return;
 
+    // ノートで文字を選んで URL を貼ったら、選んだ文字をリンクにする
+    if (mode === Mode.note) {
+      const textarea = e.target;
+      const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+      const link = linkFromPaste(selected, plainText);
+      if (link) {
+        e.preventDefault();
+        document.execCommand('insertText', false, link);
+        isEditingRef.current = true;
+        setText(textarea.value);
+        saveText(mode, id, textarea.value);
+        return;
+      }
+    }
+
     const markdown = tsvToMarkdownTable(plainText);
     if (!markdown) return;
 
@@ -1997,7 +2068,7 @@ function Editor(props) {
 
     isEditingRef.current = true;
     setText(textarea.value);
-    writeFn(mode, id, textarea.value);
+    saveText(mode, id, textarea.value);
   };
 
   /**
@@ -2036,7 +2107,7 @@ function Editor(props) {
     requestAnimationFrame(function () {
       const val = textarea.value;
       setText(val);
-      writeFn(mode, id, val);
+      saveText(mode, id, val);
     })
 
   }
@@ -2090,7 +2161,7 @@ function Editor(props) {
           textarea.selectionEnd = result.selectionEnd;
           isEditingRef.current = true;
           setText(result.value);
-          writeFn(mode, id, result.value);
+          saveText(mode, id, result.value);
           requestAnimationFrame(() => {
             textarea.selectionStart = result.selectionStart;
             textarea.selectionEnd = result.selectionEnd;
@@ -2113,7 +2184,7 @@ function Editor(props) {
         textarea.selectionEnd = result.selectionEnd;
         isEditingRef.current = true;
         setText(result.value);
-        writeFn(mode, id, result.value);
+        saveText(mode, id, result.value);
         requestAnimationFrame(() => {
           textarea.selectionStart = result.selectionStart;
           textarea.selectionEnd = result.selectionEnd;
@@ -2137,7 +2208,7 @@ function Editor(props) {
       textarea.selectionEnd = result.cursor;
       isEditingRef.current = true;
       setText(result.value);
-      writeFn(mode, id, result.value);
+      saveText(mode, id, result.value);
       requestAnimationFrame(() => {
         textarea.selectionStart = result.cursor;
         textarea.selectionEnd = result.cursor;
@@ -2227,7 +2298,7 @@ function Editor(props) {
     textarea.value = newText;
     setTimeout(() => {
       setText(newText);
-      writeFn(mode, id, newText);
+      saveText(mode, id, newText);
     }, 500);
   };
 
@@ -2500,7 +2571,7 @@ function Editor(props) {
                     {idList.map((s) => (
                       <MenuItem key={s.id}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { handleInsertSnippet(s.id); setIdListAnchor(null); setIdListPos(null); }}
+                        onClick={() => { handleInsertId(s); setIdListAnchor(null); setIdListPos(null); }}
                         sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
                         {s.name}
                       </MenuItem>
@@ -2702,6 +2773,7 @@ function Editor(props) {
                 onErrorLineDoubleClick={parseStatus.err ? () => setParseErrorDlg(true) : undefined}
                 onKeyDown={handleKeyDown}
                 onChange={handleChangeText}
+                onSelect={handleSelectionChange}
                 onPaste={handlePaste}
                 onCursorMove={handleCursorMove}
                 onCompositionStart={handleCompositionStart}
@@ -2907,6 +2979,18 @@ function Editor(props) {
                     ? <><AutorenewIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: '6px', animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /><span className="parseStatusText">Processing...</span></>
                     : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success{parseStatus.ms != null ? ` (${parseStatus.ms}ms)` : ''}</span></>
                   }
+                </div>
+                <div className="parseStatusRight">
+                  <span className="parseStatusText">
+                    {selectionChars > 0
+                      ? t("editor.charCountSelected", { selected: selectionChars.toLocaleString(), total: totalChars.toLocaleString() })
+                      : t("editor.charCount", { total: totalChars.toLocaleString() })}
+                  </span>
+                  {saveState && (
+                    <span className={"parseStatusText saveState" + (saveState === "error" ? " saveStateError" : "")}>
+                      {t(saveState === "saving" ? "editor.saving" : saveState === "saved" ? "editor.saved" : "editor.saveFailed")}
+                    </span>
+                  )}
                 </div>
               </div>
 
