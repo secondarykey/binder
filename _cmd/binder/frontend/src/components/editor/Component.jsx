@@ -22,6 +22,7 @@ import Autocomplete from "./Autocomplete.jsx";
 import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView, linkFromPaste } from "@shared/editor/markdown-keys";
 import { countChars } from "@shared/editor/char-count";
 import { idInsertText, isInsideTemplate } from "./id-insert";
+import { extractHeadings, findHeadingLine } from "@shared/editor/outline";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
@@ -59,6 +60,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import NewLabelIcon from '@mui/icons-material/NewLabel';
+import TocIcon from '@mui/icons-material/Toc';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
@@ -489,6 +491,12 @@ function Editor(props) {
   const [idListPos, setIdListPos] = useState(null);
   const [idList, setIdList] = useState([]);
   const idInsertBtnRef = useRef(null);
+
+  // アウトライン（見出しの一覧）
+  const [outlineAnchor, setOutlineAnchor] = useState(null);
+  const [outline, setOutline] = useState([]);
+  // 一覧を開いたときにカーソルがある見出しの行
+  const [outlineCurrent, setOutlineCurrent] = useState(0);
 
   // 保存の状態（null: 開いたまま / saving: 保存待ち・保存中 / saved: 保存済み / error: 失敗）
   const [saveState, setSaveState] = useState(null);
@@ -1317,6 +1325,54 @@ function Editor(props) {
     const withFunc = mode === Mode.note && !isInsideTemplate(textarea.value, textarea.selectionStart);
     handleInsertSnippet(idInsertText(item, withFunc));
   };
+
+  /**
+   * アウトラインを開く。カーソルがある見出しを選んだ状態にする
+   */
+  const openOutline = (anchor) => {
+    const textarea = document.querySelector("#editor");
+    const headings = extractHeadings(textarea ? textarea.value : text);
+    const current = headings.filter((h) => h.line <= cursorLineRef.current).pop();
+    setOutline(headings);
+    setOutlineCurrent(current ? current.line : 0);
+    setOutlineAnchor(anchor);
+  };
+
+  /**
+   * 指定した行の先頭へカーソルを移し、その行を上端近くに見せる。
+   * follow が true ならプレビューもその行へ追従させる
+   * （プレビューの見出しから飛んだときは、押したところが動かないよう追従させない）。
+   */
+  const jumpToLine = (line, follow) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const lines = textarea.value.split('\n');
+    const n = Math.min(Math.max(line, 1), lines.length);
+    let pos = 0;
+    for (let i = 0; i < n - 1; i++) pos += lines[i].length + 1;
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(pos, pos);
+    scrollCaretIntoView(textarea, { top: true });
+    cursorLineRef.current = n;
+    if (follow) setCursorLine(n);
+    detectIdAtCursor(textarea.value, pos);
+    setSelectionChars(0);
+  };
+
+  /**
+   * プレビューの見出しが押されたら、エディタでその見出しの行へ飛ぶ
+   */
+  const handlePreviewHeadingClick = (target) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const line = findHeadingLine(extractHeadings(textarea.value), target);
+    if (line) jumpToLine(line, false);
+  };
+
+  /**
+   * プレビューのブロックがダブルクリックされたら、エディタでその行へ飛ぶ
+   */
+  const handlePreviewBlockDoubleClick = (line) => jumpToLine(line, false);
 
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
@@ -2506,6 +2562,44 @@ function Editor(props) {
                     </ToggleButton>
                   </Tooltip>
 
+                  {/** アウトライン（ノート編集時のみ表示） */}
+                  {mode === Mode.note && <>
+                    <Tooltip title={t("editor.outline")} placement="bottom">
+                      <IconButton size="small" edge="start" color="inherit" aria-label="outline" sx={{ mr: 2 }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => openOutline(e.currentTarget)}
+                        className="editorBtn">
+                        <TocIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={outlineAnchor}
+                      open={Boolean(outlineAnchor)}
+                      onClose={() => setOutlineAnchor(null)}
+                      disableAutoFocus
+                      disableEnforceFocus
+                      disableRestoreFocus
+                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 400, maxWidth: 360 } }}
+                    >
+                      {outline.length === 0
+                        ? <MenuItem disabled sx={{ fontSize: '13px' }}>{t("editor.outlineEmpty")}</MenuItem>
+                        : outline.map((h) => (
+                          <MenuItem key={h.line}
+                            selected={h.line === outlineCurrent}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => { setOutlineAnchor(null); jumpToLine(h.line, true); }}
+                            sx={{
+                              fontSize: '13px',
+                              pl: `${16 + (h.level - 1) * 14}px`,
+                              '&:hover': { backgroundColor: 'var(--hover-menuitem)' },
+                              '&.Mui-selected': { backgroundColor: 'var(--hover-menuitem)' },
+                            }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.text}</span>
+                          </MenuItem>
+                        ))}
+                    </Menu>
+                  </>}
+
                   {/** スニペット挿入 */}
                   {snippetList.length > 0 && (<>
                     {/** 区切り */}
@@ -2941,7 +3035,7 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} onHeadingClick={editor ? handlePreviewHeadingClick : undefined} onBlockDoubleClick={editor ? handlePreviewBlockDoubleClick : undefined} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>

@@ -5,6 +5,7 @@ import { renderInlineMermaid } from "./inline-mermaid";
 import { attachPanZoom } from "./pan-zoom";
 import { attachLinkHandler, applyLinkPolicy } from "./link-handler";
 import { markUnresolvedResources } from "./preview-unresolved";
+import { normalizeHeadingText } from "./outline";
 
 /**
  * 図（div.binderSVG）の描画に失敗したとき、図の場所にエラーを表示する。
@@ -57,6 +58,9 @@ export function hasScripts(doc) {
  *   panZoomLabels   - 指定すると図の左上に操作ボタンを置く { zoomIn, zoomOut, reset, pan }
  *   onLinkExternal  - 外部リンク（http/https 等）を押した時に URL を渡して呼ぶ
  *   onLinkInternal  - バインダー内リンク（/pages/x.html 等）を押した時に href を渡して呼ぶ
+ *   onHeadingClick  - 指定すると見出し（h1〜h6）を押した時に { text, occurrence, srcLine } を渡して呼ぶ。
+ *                     occurrence は同じ文字の見出しのうち何番目か（0始まり）、srcLine は data-src-line
+ *   onBlockDoubleClick - 指定すると見出し以外のブロックをダブルクリックした時に、その data-src-line（行）を渡して呼ぶ
  *   onContextMenu   - 指定すると WebView 既定のコンテキストメニューを止め、
  *                     { x, y, kind, href, selection } を渡して呼ぶ（座標は親ウィンドウ基準）
  *   unresolvedLabel - プレビューで解決できない画像参照に出す説明。
@@ -242,6 +246,65 @@ class HTMLFrame extends React.Component {
   }
 
   /**
+   * 見出し（h1〜h6）を押したら onHeadingClick を呼ぶ。
+   * リスナは常に付け、呼ぶかどうかは押した時点の props で決める。
+   * 指針（cursor: pointer）は読み込んだ時点で onHeadingClick があるときだけ付ける。
+   */
+  attachHeadingClick(doc) {
+    if (!doc?.body) return;
+    const selector = 'h1, h2, h3, h4, h5, h6';
+
+    if (this.props.onHeadingClick) {
+      const style = doc.createElement('style');
+      style.textContent = `${selector} { cursor: pointer; }`;
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+
+    doc.addEventListener('click', (e) => {
+      const fn = this.props.onHeadingClick;
+      if (!fn || e.button !== 0) return;
+      const heading = e.target.closest?.(selector);
+      if (!heading || e.target.closest('a, button')) return;
+      // 文字を選んでいるとき（コピーしようとしているとき）は飛ばない
+      const sel = doc.getSelection?.();
+      if (sel && !sel.isCollapsed) return;
+
+      const text = normalizeHeadingText(heading.textContent);
+      let occurrence = 0;
+      for (const el of doc.querySelectorAll(selector)) {
+        if (el === heading) break;
+        if (normalizeHeadingText(el.textContent) === text) occurrence++;
+      }
+      const line = heading.getAttribute('data-src-line');
+      fn({ text, occurrence, srcLine: line ? parseInt(line, 10) : null });
+    });
+  }
+
+  /**
+   * 見出し以外のブロックをダブルクリックしたら onBlockDoubleClick を呼ぶ。
+   * 行は data-src-line を使う（付いているのは外側のブロックだけなので、リストや表は先頭の行になる）。
+   * リンク・ボタン・入力欄・図はダブルクリックを別の操作に使うことがあるため除く。
+   * 見出しは 1 回のクリックで飛ぶ（attachHeadingClick）ので除く。
+   */
+  attachBlockDoubleClick(doc) {
+    if (!doc?.body) return;
+    doc.addEventListener('dblclick', (e) => {
+      const fn = this.props.onBlockDoubleClick;
+      if (!fn) return;
+      const t = e.target;
+      if (!t?.closest) return;
+      if (t.closest('a, button, input, select, textarea, label, summary, svg, .binderSVG, .binderMermaid, h1, h2, h3, h4, h5, h6')) return;
+      const block = t.closest('[data-src-line]');
+      if (!block) return;
+      const line = parseInt(block.getAttribute('data-src-line'), 10);
+      if (!line) return;
+      // ダブルクリックで選ばれた単語を外す
+      doc.getSelection?.()?.removeAllRanges();
+      fn(line);
+    });
+  }
+
+  /**
    * カーソル行に最も近い（直前の）ブロック要素をプレビュー中央にスクロールする
    */
   scrollToSourceLine(doc, cursorLine) {
@@ -344,6 +407,8 @@ class HTMLFrame extends React.Component {
 
     // ソース行コメントを data-src-line 属性に変換
     this.attachSourceLines(doc);
+    this.attachHeadingClick(doc);
+    this.attachBlockDoubleClick(doc);
 
     // 描画完了後の共通処理
     const finish = () => {
