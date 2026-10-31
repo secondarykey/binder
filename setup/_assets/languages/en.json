@@ -639,6 +639,7 @@
         "saveFailed" : "Save failed",
         "outline" : "Outline",
         "outlineEmpty" : "No headings",
+        "alerts" : "Alerts",
         "idStatus" : {
             "note" : "Note",
             "diagram" : "Diagram",
