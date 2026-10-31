@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"sort"
 	"strings"
 	texttemplate "text/template"
 	"time"
@@ -33,6 +34,8 @@ func defineFuncMap(w *wrapper) map[string]interface{} {
 		"childNotes":    w.childNotes,
 		"latestNotes":   w.latestNotes,
 		"breadcrumb":    w.breadcrumb,
+		"prevNote":      w.prevNote,
+		"nextNote":      w.nextNote,
 		"safe":          safeTemplate,
 		"lit":           litTemplate,
 		"litURL":        litURLTemplate,
@@ -277,6 +280,117 @@ func (w *wrapper) breadcrumb() []*tempNote {
 		chain[i], chain[j] = chain[j], chain[i]
 	}
 	return chain
+}
+
+// prevNote は、ツリーの順で現在のノートの前のノートを返す。無ければ nil。
+// 「前へ」「次へ」を作るためのもの。順番と引数は neighborNote を参照。
+func (w *wrapper) prevNote(v ...any) *tempNote {
+	return w.neighborNote("prevNote", -1, v...)
+}
+
+// nextNote は、ツリーの順で現在のノートの次のノートを返す。無ければ nil。
+func (w *wrapper) nextNote(v ...any) *tempNote {
+	return w.neighborNote("nextNote", 1, v...)
+}
+
+// neighborNote は、ツリーの順で現在のノートから step だけ離れたノートを返す。
+//
+// 順番は、起点のノートから深さ優先でたどった順（親の次に子、同じ親の中は seq 順）。
+// 第1引数で起点のノートの ID を指定できる（省略時は "index" = バインダー全体）。起点のノート自身も順番に含む。
+// ノート以外（ダイアグラム等）は数えないが、その下にあるノートはたどる。
+// 非公開のノートは数えず、公開時は公開中のノートだけを数える（現在のノートは常に含める）。
+// 現在のノートが起点の外にあるときは nil を返す。
+func (w *wrapper) neighborNote(fn string, step int, v ...any) *tempNote {
+	if w.note == nil {
+		return nil
+	}
+	root := Arg[string](v, 0).Default("index")
+
+	order, err := w.noteOrder(root)
+	if err != nil {
+		w.addWarning(fmt.Sprintf("%s(%s): %v", fn, root, err))
+		return nil
+	}
+	for i, s := range order {
+		if s.Id != w.note.Id {
+			continue
+		}
+		j := i + step
+		if j < 0 || j >= len(order) {
+			return nil
+		}
+		return w.structureNote(fn, order[j])
+	}
+	return nil
+}
+
+// noteOrder は root から深さ優先でたどったノートの並びを返す（neighborNote の順番）。
+func (w *wrapper) noteOrder(root string) ([]*model.Structure, error) {
+	all, err := w.owner.db.FindStructures()
+	if err != nil {
+		return nil, xerrors.Errorf("FindStructures() error: %w", err)
+	}
+
+	byId := make(map[string]*model.Structure, len(all))
+	children := make(map[string][]*model.Structure)
+	for _, s := range all {
+		byId[s.Id] = s
+		children[s.ParentId] = append(children[s.ParentId], s)
+	}
+	for _, list := range children {
+		sort.SliceStable(list, func(i, j int) bool { return list[i].Seq < list[j].Seq })
+	}
+
+	top, ok := byId[root]
+	if !ok {
+		return nil, xerrors.Errorf("structure not found: %s", root)
+	}
+
+	var order []*model.Structure
+	visited := make(map[string]bool)
+	var walk func(s *model.Structure)
+	walk = func(s *model.Structure) {
+		if visited[s.Id] {
+			return
+		}
+		visited[s.Id] = true
+		if s.Typ == "note" && w.countsInOrder(s) {
+			order = append(order, s)
+		}
+		for _, c := range children[s.Id] {
+			walk(c)
+		}
+	}
+	walk(top)
+	return order, nil
+}
+
+// countsInOrder は、ノートを「前へ」「次へ」の順番に数えるかを返す。
+func (w *wrapper) countsInOrder(s *model.Structure) bool {
+	if w.note != nil && s.Id == w.note.Id {
+		return true
+	}
+	if s.Private {
+		return false
+	}
+	// 公開時は公開中のノートだけ（取り下げると republish_date が空に戻る）
+	if !w.Local && s.Republish.IsZero() {
+		return false
+	}
+	return true
+}
+
+// structureNote は Structure からテンプレートに渡すノートを作る。
+func (w *wrapper) structureNote(fn string, s *model.Structure) *tempNote {
+	n, err := w.owner.db.GetNote(s.Id)
+	if err != nil || n == nil {
+		w.addWarning(fmt.Sprintf("%s: GetNote(%s): %v", fn, s.Id, err))
+		jn := &json.Note{Id: s.Id, Name: s.Name, Detail: s.Detail, Alias: s.Alias}
+		return w.convertNote(jn)
+	}
+	jn := n.To()
+	jn.ApplyStructure(s.To())
+	return w.convertNote(jn)
 }
 
 func (w *wrapper) drawSVG(v ...any) template.HTML {

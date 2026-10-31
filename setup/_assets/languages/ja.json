@@ -824,6 +824,8 @@
         "childNotes"   : "子ノート一覧を取得",
         "latestNotes"  : "最新ノート一覧を取得",
         "breadcrumb"   : "パンくずリストを取得",
+        "prevNote"     : "ツリーの順で前のノートを取得",
+        "nextNote"     : "ツリーの順で次のノートを取得",
         "safe"         : "エスケープ無効化",
         "lit"          : "HTML リテラル出力",
         "litURL"       : "URL リテラル出力",

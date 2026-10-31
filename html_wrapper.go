@@ -120,8 +120,6 @@ func (w *wrapper) convertNote(n *json.Note) *tempNote {
 		t.Image = template.URL(w.convertURL(m))
 	}
 
-	//TODO PREV NEXTは？
-
 	return &t
 }
 
