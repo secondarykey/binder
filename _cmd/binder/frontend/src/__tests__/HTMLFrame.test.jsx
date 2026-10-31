@@ -70,3 +70,34 @@ describe('HTMLFrame', () => {
     expect(hasScripts(null)).toBe(false);
   });
 });
+
+// プレビューの見出しを押すと、エディタで元の行へ飛ぶための情報を渡す
+describe('HTMLFrame.attachHeadingClick', () => {
+  const setup = (html, onHeadingClick) => {
+    const doc = new DOMParser().parseFromString(`<html><head></head><body>${html}</body></html>`, 'text/html');
+    const frame = new HTMLFrame({ onHeadingClick });
+    frame.attachHeadingClick(doc);
+    return doc;
+  };
+  const click = (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+  it('passes the heading text, its occurrence and the source line', () => {
+    const calls = [];
+    const doc = setup('<h2>Intro</h2><p>x</p><h2 data-src-line="9"> Intro </h2>', (t) => calls.push(t));
+    click(doc.querySelectorAll('h2')[1]);
+    expect(calls).toEqual([{ text: 'Intro', occurrence: 1, srcLine: 9 }]);
+  });
+
+  it('ignores links inside headings and other elements', () => {
+    const calls = [];
+    const doc = setup('<h2><a href="#x">link</a> text</h2><p>para</p>', (t) => calls.push(t));
+    click(doc.querySelector('a'));
+    click(doc.querySelector('p'));
+    expect(calls).toHaveLength(0);
+  });
+
+  it('adds the pointer cursor only when the callback is given', () => {
+    expect(setup('<h1>a</h1>', () => {}).querySelector('style')?.textContent).toContain('cursor: pointer');
+    expect(setup('<h1>a</h1>', undefined).querySelector('style')).toBeNull();
+  });
+});

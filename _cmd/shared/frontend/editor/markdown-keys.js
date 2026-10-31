@@ -246,8 +246,10 @@ export function handleMarkdownTab(textarea, shiftKey, tabSize) {
  * ミラー要素を作り、キャレット位置にマーカーを挿入して offsetTop を実測する。
  *
  * @param {HTMLTextAreaElement} textarea - 対象の textarea 要素
+ * @param {{ top?: boolean }} [options] - top: true でキャレットの行を表示領域の上端近くに合わせる
+ *   （見出しへ移動したときなど、その下の本文を見せたいとき）
  */
-export function scrollCaretIntoView(textarea) {
+export function scrollCaretIntoView(textarea, options = {}) {
   const val = textarea.value;
   const caret = textarea.selectionEnd;
   const cs = window.getComputedStyle(textarea);
@@ -291,6 +293,12 @@ export function scrollCaretIntoView(textarea) {
   const caretTopInTextarea = caretTop + paddingTop;
   const viewTop = textarea.scrollTop;
   const viewBottom = viewTop + textarea.clientHeight;
+
+  if (options.top) {
+    // 1 行分の余白を残して上端に合わせる
+    textarea.scrollTop = Math.max(0, caretTopInTextarea - lineHeight);
+    return;
+  }
 
   if (caretTopInTextarea < viewTop) {
     textarea.scrollTop = caretTopInTextarea;
