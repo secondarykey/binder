@@ -824,6 +824,8 @@
         "childNotes"   : "List child notes",
         "latestNotes"  : "List latest notes",
         "breadcrumb"   : "Get breadcrumb chain",
+        "prevNote"     : "Get the previous note in tree order",
+        "nextNote"     : "Get the next note in tree order",
         "safe"         : "Disable escaping",
         "lit"          : "HTML literal output",
         "litURL"       : "URL literal output",

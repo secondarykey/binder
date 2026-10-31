@@ -57,6 +57,8 @@ export const goTemplateCandidates = [
   { label: 'childrenNotes', detail: 'autocomplete.childNotes', category: 'binder', args: [{ name: 'n?', type: 'int' }, { name: 'id?', type: 'string', idType: 'note' }, { name: 'order?', type: 'string' }], returns: '[]Note', deprecated: true },
   { label: 'latestNotes',  detail: 'autocomplete.latestNotes',  category: 'binder', args: [{ name: 'n', type: 'int' }], returns: '[]Note' },
   { label: 'breadcrumb',   detail: 'autocomplete.breadcrumb',   category: 'binder', args: [], returns: '[]Note' },
+  { label: 'prevNote',     detail: 'autocomplete.prevNote',     category: 'binder', args: [{ name: 'id?', type: 'string', idType: 'note' }], returns: 'Note' },
+  { label: 'nextNote',     detail: 'autocomplete.nextNote',     category: 'binder', args: [{ name: 'id?', type: 'string', idType: 'note' }], returns: 'Note' },
   { label: 'safe',         detail: 'autocomplete.safe',         category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'string' },
   { label: 'lit',          detail: 'autocomplete.lit',          category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'HTML' },
   { label: 'litURL',       detail: 'autocomplete.litURL',       category: 'binder', args: [{ name: 'src', type: 'string' }], returns: 'URL' },

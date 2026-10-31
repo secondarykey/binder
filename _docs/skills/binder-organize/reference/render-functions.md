@@ -79,10 +79,21 @@ text/template を先に実行してから結果を Markdown へ渡しており�
 ### `{{breadcrumb}}`
 現在のノートから index までの祖先を root→current の順で返す。
 
+### `{{prevNote ["<note_id>"]}}` / `{{nextNote ["<note_id>"]}}`
+ツリーの順（深さ優先。親の次に子、同じ親の中は seq 順）で、現在のノートの前・後のノートを返す。
+無ければ nil なので `with` で囲む。レイアウトテンプレートで「前へ」「次へ」を作るのに使う。
+
+- note_id を渡すと、そのノートの下だけを順番にする（起点のノート自身も含む）。省略するとバインダー全体
+- 非公開のノートは飛ばす。公開時は公開中のノートだけを数える
+
+```
+{{with nextNote "<note_id>"}}<a href="{{.Link}}">次へ {{.Name}}</a>{{end}}
+```
+
 ### `{{drawLayer "<layer_id>" ["<class>"]}}`
 画像の上にシェイプを重ねたものを描画する。アプリの画像編集機能で作った layer 用。
 
-## `childNotes` / `latestNotes` / `breadcrumb` が返す要素のフィールド
+## `childNotes` / `latestNotes` / `breadcrumb` / `prevNote` / `nextNote` が返す要素のフィールド
 
 | フィールド | 内容 |
 |---|---|
