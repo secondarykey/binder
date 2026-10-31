@@ -639,6 +639,7 @@
         "saveFailed" : "保存できませんでした",
         "outline" : "アウトライン",
         "outlineEmpty" : "見出しがありません",
+        "alerts" : "囲み（Alerts）",
         "idStatus" : {
             "note" : "ノート",
             "diagram" : "ダイアグラム",

@@ -23,6 +23,7 @@ import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCar
 import { countChars } from "@shared/editor/char-count";
 import { idInsertText, isInsideTemplate } from "./id-insert";
 import { extractHeadings, findHeadingLine } from "@shared/editor/outline";
+import { ALERT_TYPES, hasAlertsPlugin, alertInsertText } from "@shared/editor/alerts";
 import { getCaretPosition } from "@shared/editor/caret-position";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
@@ -62,6 +63,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import NewLabelIcon from '@mui/icons-material/NewLabel';
 import TocIcon from '@mui/icons-material/Toc';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import WrapTextIcon from '@mui/icons-material/WrapText';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -491,6 +493,10 @@ function Editor(props) {
   const [idListPos, setIdListPos] = useState(null);
   const [idList, setIdList] = useState([]);
   const idInsertBtnRef = useRef(null);
+
+  // 囲み（GitHub Alerts）。プラグインが効いているときだけメニューを出す
+  const [alertsAvailable, setAlertsAvailable] = useState(false);
+  const [alertsAnchor, setAlertsAnchor] = useState(null);
 
   // アウトライン（見出しの一覧）
   const [outlineAnchor, setOutlineAnchor] = useState(null);
@@ -1370,6 +1376,16 @@ function Editor(props) {
   };
 
   /**
+   * 囲み（> [!NOTE] など）を入れる。選んでいる行があればそれを囲む
+   */
+  const handleInsertAlert = (type) => {
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return;
+    const { selectionStart: start, selectionEnd: end, value } = textarea;
+    handleInsertSnippet(alertInsertText(value, start, end, type));
+  };
+
+  /**
    * プレビューのブロックがダブルクリックされたら、エディタでその行へ飛ぶ
    */
   const handlePreviewBlockDoubleClick = (line) => jumpToLine(line, false);
@@ -1529,6 +1545,8 @@ function Editor(props) {
     }
 
     var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
+    // プラグインは描画の前に読み込まれるため、描画のたびに囲みのメニューを出すかを決め直す
+    setAlertsAvailable(hasAlertsPlugin(Marked.getPluginStatus()));
 
     // エンジンとプラグインの失敗（CDN読込失敗・読込エラー・実行時例外・互換スキップ・
     // 未適用）を警告として拾う。互換層はプレビューを落とさないために失敗を握り潰すため、
@@ -2711,6 +2729,36 @@ function Editor(props) {
                         <FormatQuoteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
+                    {/** 囲み（GitHub Alerts プラグインが効いているときだけ） */}
+                    {alertsAvailable && <>
+                      <Tooltip title={t("editor.alerts")} placement="bottom">
+                        <IconButton size="small" edge="start" color="inherit" aria-label="alerts" sx={{ mr: 2 }}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={(e) => setAlertsAnchor(e.currentTarget)}
+                          className="editorBtn">
+                          <AnnouncementOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Menu
+                        anchorEl={alertsAnchor}
+                        open={Boolean(alertsAnchor)}
+                        onClose={() => setAlertsAnchor(null)}
+                        disableAutoFocus
+                        disableEnforceFocus
+                        disableRestoreFocus
+                        PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
+                      >
+                        {ALERT_TYPES.map((a) => (
+                          <MenuItem key={a.type}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => { setAlertsAnchor(null); handleInsertAlert(a.type); }}
+                            sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
+                            {a.icon} {a.type}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>}
 
                     <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
 
