@@ -632,6 +632,11 @@
         "notInTable" : "カーソルがテーブル内にありません",
         "historyBack" : "戻る (Alt+←)",
         "historyForward" : "進む (Alt+→)",
+        "charCount" : "{{total}} 文字",
+        "charCountSelected" : "{{selected}} / {{total}} 文字",
+        "saving" : "保存中…",
+        "saved" : "保存しました",
+        "saveFailed" : "保存できませんでした",
         "idStatus" : {
             "note" : "ノート",
             "diagram" : "ダイアグラム",

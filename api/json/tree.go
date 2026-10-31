@@ -10,15 +10,17 @@ type Tree struct {
 }
 
 type Leaf struct {
-	Id            string  `json:"id"`
-	ParentId      string  `json:"parentId"`
-	Seq           int     `json:"seq"`
-	Name          string  `json:"name"`
-	Type          string  `json:"type"`
-	Modified      bool    `json:"modified"`
-	PublishStatus int     `json:"publishStatus"` // 0:最新 1:未公開(新規) 2:更新あり
-	Private       bool    `json:"private"`
-	Binary        bool    `json:"binary"` // type=="asset" の場合のみ意味を持つ（画像アセットかどうか）
+	Id            string `json:"id"`
+	ParentId      string `json:"parentId"`
+	Seq           int    `json:"seq"`
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	Modified      bool   `json:"modified"`
+	PublishStatus int    `json:"publishStatus"` // 0:最新 1:未公開(新規) 2:更新あり
+	Private       bool   `json:"private"`
+	Binary        bool   `json:"binary"` // type=="asset" の場合のみ意味を持つ（画像アセットかどうか）
+	// Mime は type=="asset" の場合のみ意味を持つ。ID挿入で画像かどうかを見分けるのに使う
+	Mime string `json:"mime"`
 	// Updated は Structure の更新日付。ID一覧の並び替えに使用する
 	Updated  time.Time `json:"updated"`
 	Children []*Leaf   `json:"children"`
