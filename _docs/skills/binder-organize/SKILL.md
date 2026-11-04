@@ -239,6 +239,8 @@ ERROR が 1 件でも出たら**コミットしない**。修正するか、`git
 - 実体ファイルに対応する structures 行があるか（orphan）
 - `parent_id` が実在するか / 自己参照でないか / index から到達できるか
 - `alias` が type 内で一意か
+- `alias` が公開先のパスとして使えるか（`/` `\` `..` を含まない。先頭の `/` は asset の `/robots.txt` 等と note の `/404` だけ。
+  asset は `index.html` `404.html` `pages` `images` `assets` `layers` を使えない）
 - 同じ親の中で `seq` が重複していないか
 - 各行の列数がヘッダと一致するか（エスケープ漏れによるカンマ混入の検出）
 - **`{{drawDiagram "..."}}` `{{assetsImage "..."}}` `{{assets "..."}}` `{{embed "..."}}`
