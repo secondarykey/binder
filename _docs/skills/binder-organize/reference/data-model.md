@@ -37,7 +37,7 @@ id,parent_id,seq,type,name,detail,alias,publish_date,republish_date,private,crea
 | `type` | `note` / `diagram` / `asset` / `layer` |
 | `name` | ツリーに出る表示名。**要エスケープ** |
 | `detail` | 説明文。**要エスケープ** |
-| `alias` | 公開ファイル名。note / diagram は id と同値が既定。asset は元のファイル名 |
+| `alias` | 公開ファイル名。note / diagram は id と同値が既定。asset は元のファイル名。`/` `\` は含めない。例外は先頭の `/`（サイトのルート）で、asset の `/robots.txt` 等は `docs/robots.txt`、note の `/404` は 404 ページ（`docs/404.html`）になる |
 | `publish_date` | 初回公開日時。未公開はゼロ値 |
 | `republish_date` | 最終公開日時。未公開・公開解除はゼロ値 |
 | `private` | `true` / `false`。列が無いバージョンもある |

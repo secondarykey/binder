@@ -38,7 +38,8 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
    - `userError` の switch に `case errors.Is(err, ErrXxx): return Wrap(err, settings.T("go.error.xxx"))` を追加。エラーではなく情報通知（例: 変更なし）は `Info(err, ...)` を、警告は `Warning(err, ...)` を使う
    - `setup/_assets/languages/{en,ja}.json` の `go.error.*` にメッセージを追加
 3. 据え置いてよいもの: `fmt.Errorf("%s", settings.T("go.error.*"))`（既に翻訳済み）、panic 復帰、HTML生成の parse error 等の固有メッセージ。内部ヘルパーの `xerrors(%w)` は伝播用に維持（上位 API が `userError` で包む）
-   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.UpdatedFilesError`（Info）
+   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.ErrInvalidNoteAlias` / `fs.ErrInvalidAlias` / `fs.ErrReservedAlias` / `fs.UpdatedFilesError`（Info）。
+     `fs.ErrInvalidNoteAlias` は `fs.ErrInvalidAlias` を包んでいるので、`userError` では先に判定する
 
 ## フロント側
 

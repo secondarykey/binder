@@ -21,6 +21,7 @@
 **dialogs/** — ダイアログ & dialog内でのみ使用するコンポーネント:
 - components/ — ConfirmDialog, MetaDialog, ModalWrapper, ActionButton, DialogError（ダイアログ共通コンポーネント）
 - *MetaDialog.jsx — Note/Diagram/Asset/Layer/Templateのメタ編集ダイアログ
+- rootAsset.js / errorPage.js — Asset/NoteMetaDialog の判定（サイトのルートに置くアセット・404 ページの alias と警告）。`_docs/site-root-files.md`
 - BinderModal / CommitModal / PublishModal / SettingModal — フルスクリーンモーダル
 - BranchModal.jsx — `BranchPanel` の名前付きエクスポートのみ（モーダル本体は無く、全体履歴の右ペインで使う）
 - Binder.jsx / Setting.jsx / GenerateForm.jsx 等 — モーダル内でのみ使用するコンポーネント
@@ -53,7 +54,7 @@
 - テストフレームワーク: Vitest（`vitest.config.js`）
 - テストファイル: `src/__tests__/*.test.jsx`
 - セットアップ: `src/__tests__/setup.js`（`@wailsio/runtime` のグローバルモック、ResizeObserver ポリフィル、i18n 初期化）
-- 全コンポーネントにビルドパスレベルのテストあり（2026-08時点: 79ファイル・221テスト）
+- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 96ファイル・430テスト）
 
 ```bash
 # フロントエンドテスト実行
