@@ -5,7 +5,7 @@ GitHub Pages で公開するときに、`docs/` 直下に置きたいファイ�
 
 進め方は 2 段階。
 
-1. **フェーズ1: アセットをサイトのルートに公開する** — 静的なファイル（robots.txt / `.nojekyll` / CNAME / sitemap.xml の手書き版 / 所有権確認ファイル）
+1. **フェーズ1: アセットをサイトのルートに公開する** — 静的なファイル（robots.txt / `.nojekyll` / CNAME / sitemap.xml の手書き版 / 所有権確認ファイル）。**実装済み**
 2. **フェーズ2: 404 ページ** — layout / content テンプレートで作るページを `docs/404.html` に出す
 
 sitemap.xml の自動出力は後日（[将来](#将来-sitemapxml-の自動出力)）。
@@ -47,6 +47,9 @@ UI ではこれを警告する（後述）。
 ---
 
 ## フェーズ1: アセットをサイトのルートに公開する
+
+実装済み。検証は `fs/alias.go`、公開先は `fs/path.go` の `publicAssetFile`、UI の判定は
+`_cmd/binder/frontend/src/dialogs/rootAsset.js`。
 
 ### 表し方: alias の先頭の `/`
 
@@ -129,17 +132,18 @@ DB・`api/json`・バインディングには変更が無い。
   - alias が `/robots.txt` で、サイトの URL のパスが `/` でない → 「プロジェクトサイトでは robots.txt は読まれません。独自ドメインかユーザサイトで公開したときに効きます」
   - `publishSubDir` が空でない → 「公開データはサブディレクトリ（{dir}）に送られるため、ここに置いたファイルはサイトのルートになりません」
 
-警告の判定に要る値は既存の API（サイトの URL・公開設定）で取れる。新しい API が要るなら `GetSiteRootInfo()`
-（`{ siteUrl, rootPath, subDir }`）のように 1 本にまとめる。
+警告の判定に要る値は既存の API で取れるため、API は足していない（バインディングの再生成も不要）。
+サイトの URL は `GetConfig()` の `siteUrl`（空なら `siteUrlGuess`）、送信先のサブディレクトリは `GetPublishSettings()`。
+サブディレクトリの警告が出るときは robots.txt の警告を重ねない。
 
-**ツリー・未公開一覧**: アセットとして今までどおり並ぶ。ルートに置くアセットは見分けられるよう、
-名前の横に小さく `/` のバッジを付ける（任意）。
+**ツリー・未公開一覧**: アセットとして今までどおり並ぶ。ルートに置くアセットを見分けるバッジは付けていない（必要になったら足す）。
 
 **新規作成の導線**: 既存の「テキストを追加」（`AddTextAsset`）で作り、alias を変える。
 よく使うものを選んで作るメニュー（robots.txt / .nojekyll / CNAME の雛形）は便利だが、フェーズ1では入れない。
 
-翻訳キー（`setup/_assets/languages/` の ja / en）: `asset.rootPublish` `asset.rootPublishTip`
+翻訳キー（`setup/_assets/languages/` の ja / en）: `asset.rootPublish` `asset.rootPublishTip` `asset.publishPath`
 `asset.robotsIneffective` `asset.subDirIneffective` `go.error.invalidAlias` `go.error.reservedAlias`。
+`asset.publishPath` は「公開先」というラベルだけで、URL は別の要素に出す。
 
 ### 使い方の例
 
@@ -163,7 +167,10 @@ GitHub のリポジトリ設定で独自ドメインを入れると、GitHub が
 | `asset_test.go` | ルートのアセットを公開すると `docs/robots.txt` ができ、取り下げると消える。alias を `robots.txt` ⇔ `/robots.txt` と変えると公開済みファイルが移る。予約名・不正な alias はエラーになる |
 | `html_link_test.go` | `url` がページからは `../robots.txt`、index からは `./robots.txt` を返す。`fullURL` が `https://…/robots.txt` を返す |
 | `http.go` | プレビューサーバで未公開のルートのアセットが 404 ページ、非公開が 403 ページになる |
-| フロントエンド | チェックボックスと alias 欄が同期する。警告の表示条件 |
+| `download.go` | エクスポートの zip で、ルートのアセットが zip の直下に入る（`download_internal_test.go`） |
+| フロントエンド | チェックボックスと alias 欄が同期する。警告の表示条件（`rootAsset.test.js` / `AssetMetaDialog.test.jsx`） |
+
+Go 側のテストは `fs/alias_test.go` と `asset_root_test.go`。
 
 ---
 

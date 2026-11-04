@@ -75,6 +75,9 @@ func injectBanner(body []byte) []byte {
 type aliasInfo struct {
 	typ   string
 	alias string
+	// root は公開ディレクトリ直下のパスから推し量ったもの。
+	// アセットとして登録されていなければ、手で置いたファイル（docs/CNAME 等）としてそのまま返す
+	root bool
 }
 
 // parseAliasFromPath はリクエストパスからエンティティ種別とエイリアスを抽出する。
@@ -96,6 +99,13 @@ func parseAliasFromPath(path string) *aliasInfo {
 			return nil
 		}
 		return &aliasInfo{typ: "asset", alias: alias}
+	}
+
+	// 公開ディレクトリ直下の 1 階層（/robots.txt 等）はサイトのルートに置くアセット（alias "/robots.txt"）。
+	// index.html・pages 等の Binder が使う名前は除く
+	if name := strings.TrimPrefix(path, "/"); name != "" && !strings.Contains(name, "/") &&
+		!binderFs.IsReservedPublicRootName(name) {
+		return &aliasInfo{typ: "asset", alias: path, root: true}
 	}
 	return nil
 }
@@ -217,6 +227,11 @@ func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 	s, err := h.binder.db.FindStructureByAlias(info.alias, info.typ)
 	if err != nil {
 		log.Warnf("FindStructureByAlias(%s,%s): %v", info.alias, info.typ, err)
+		h.fileServer.ServeHTTP(w, r)
+		return
+	}
+
+	if s == nil && info.root {
 		h.fileServer.ServeHTTP(w, r)
 		return
 	}
