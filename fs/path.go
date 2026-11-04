@@ -135,7 +135,13 @@ func PublicAssetFile(a *json.Asset) string {
 	return publicAssetFile(a.Alias)
 }
 
+// publicAssetFile は alias から公開先のパスを返す。
+// alias が "/" で始まるもの（ルートのアセット）は公開ディレクトリの直下（docs/robots.txt）、
+// それ以外は docs/assets/{alias} に置く。alias の検証は ValidateAssetAlias で行う。
 func publicAssetFile(alias string) string {
+	if IsRootAlias(alias) {
+		return filepath.Join(publishDir, strings.TrimPrefix(alias, "/"))
+	}
 	return filepath.Join(publishDir, publicAssetsDir, alias)
 }
 

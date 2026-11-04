@@ -1,18 +1,19 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, Button,
-  FormControl, FormLabel, InputAdornment, TextField, Typography,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Checkbox,
+  FormControl, FormControlLabel, FormLabel, InputAdornment, TextField, Tooltip, Typography,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
 
-import { EditAsset, GetAsset, RemoveAsset } from "../../bindings/binder/api/app";
+import { EditAsset, GetAsset, GetConfig, GetPublishSettings, RemoveAsset } from "../../bindings/binder/api/app";
 import { OpenSearchWindowWithQuery } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import PublishDateField from "./components/PublishDateField";
+import { aliasName, isRootAlias, joinAlias, publishLocation, rootAssetWarnings } from "./rootAsset";
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -39,6 +40,9 @@ function AssetMetaDialog({ open, id, onClose }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [publish, setPublish] = useState(null);
   const [republish, setRepublish] = useState(null);
+  // 公開先の表示・ルートに置いても効かない場合の警告に使う
+  const [siteUrl, setSiteUrl] = useState("");
+  const [publishSettings, setPublishSettings] = useState({});
 
   useEffect(() => {
     if (!open || !id) return;
@@ -56,7 +60,21 @@ function AssetMetaDialog({ open, id, onClose }) {
       setPublish(isZeroTime(data.publish) ? null : new Date(data.publish));
       setRepublish(isZeroTime(data.republish) ? null : new Date(data.republish));
     }).catch((err) => showError(err));
+
+    // 表示の補助なので、取れなくてもダイアログは使えるようにする
+    GetConfig().then((conf) => {
+      setSiteUrl((conf && (conf.siteUrl || conf.siteUrlGuess)) || "");
+    }).catch(() => setSiteUrl(""));
+    GetPublishSettings().then((s) => setPublishSettings(s || {})).catch(() => setPublishSettings({}));
   }, [open, id]);
+
+  const root = isRootAlias(alias);
+  const location = publishLocation(alias, siteUrl);
+  const warnings = rootAssetWarnings({
+    alias, siteUrl,
+    publishOnly: publishSettings.publishOnly,
+    publishSubDir: publishSettings.publishSubDir,
+  });
 
   const handleSave = () => {
     EditAsset({ id, parentId, name, alias, detail, binary, mime, private: isPrivate, publish: publish || ZERO_TIME, republish: republish || ZERO_TIME }, "").then(() => {
@@ -114,12 +132,36 @@ function AssetMetaDialog({ open, id, onClose }) {
             <FormLabel>{t("common.alias")}</FormLabel>
             <TextField
               size="small"
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
+              value={aliasName(alias)}
+              onChange={(e) => setAlias(joinAlias(e.target.value, root))}
+              inputProps={{ "data-testid": "asset-alias" }}
               InputProps={{
-                startAdornment: <InputAdornment position="start"><FormLabel>/assets/</FormLabel></InputAdornment>,
+                startAdornment: <InputAdornment position="start"><FormLabel>{root ? "/" : "/assets/"}</FormLabel></InputAdornment>,
               }} />
           </FormControl>
+          <Tooltip title={t("asset.rootPublishTip")} placement="bottom-start" describeChild>
+            <FormControlLabel
+              control={
+                <Checkbox size="small" checked={root}
+                  onChange={(e) => setAlias(joinAlias(aliasName(alias), e.target.checked))} />
+              }
+              label={t("asset.rootPublish")}
+              sx={{
+                ml: 0, alignSelf: "flex-start",
+                "& .MuiFormControlLabel-label": { fontSize: "13px", color: "var(--text-primary)" },
+              }}
+            />
+          </Tooltip>
+          {location && (
+            <Typography variant="caption" sx={{ color: "var(--text-secondary)", wordBreak: "break-all" }}>
+              {t("asset.publishPath")}: <span data-testid="asset-publish-location">{location}</span>
+            </Typography>
+          )}
+          {warnings.map((w) => (
+            <Alert key={w.key} severity="warning" sx={{ fontSize: "13px" }}>
+              {t(w.key, w.params)}
+            </Alert>
+          ))}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Box sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 12px", alignItems: "center", flex: 1 }}>
               <PublishDateField label={t("meta.publishDate")} value={publish} />

@@ -120,7 +120,12 @@
         "updateSuccess" : "Assets updated.",
         "removeSuccess" : "Assets removed.",
         "deleteTitle" : "Delete Assets",
-        "deleteConfirm" : "Delete \"{{name}}\"?"
+        "deleteConfirm" : "Delete \"{{name}}\"?",
+        "rootPublish" : "Place at the site root",
+        "rootPublishTip" : "Adds \"/\" to the start of the alias and publishes the file directly under the published data (docs/robots.txt). Use it for files that must be at a fixed location, such as robots.txt, .nojekyll and CNAME",
+        "publishPath" : "Published to",
+        "robotsIneffective" : "robots.txt is only read at the host root (https://host/robots.txt), so it has no effect on this site ({{url}}). It works when you publish with a custom domain or a user site (username.github.io)",
+        "subDirIneffective" : "The published data is sent to a subdirectory ({{dir}}), so files placed here are not at the site root"
     },
     "layer" : {
         "editTitle" : "Edit Layer",
@@ -731,6 +736,8 @@
             "indexNoteUndeletable" : "The index note cannot be deleted",
             "assetHasLayers" : "This asset has layers and cannot be deleted",
             "duplicateAlias" : "That alias is already in use",
+            "invalidAlias" : "That alias cannot be used as a publish path. Do not include \"/\" or \"\\\". To place a file at the site root, start it with \"/\" followed only by letters, digits, \".\", \"_\" and \"-\" (e.g. \"/robots.txt\")",
+            "reservedAlias" : "That alias is used by the binder directly under the published data (index.html, 404.html, pages, images, assets, layers)",
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",
             "uncommitted" : "There are unrecorded changes. Please record them first",
