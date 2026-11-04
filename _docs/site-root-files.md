@@ -6,7 +6,7 @@ GitHub Pages で公開するときに、`docs/` 直下に置きたいファイ�
 進め方は 2 段階。
 
 1. **フェーズ1: アセットをサイトのルートに公開する** — 静的なファイル（robots.txt / `.nojekyll` / CNAME / sitemap.xml の手書き版 / 所有権確認ファイル）。**実装済み**
-2. **フェーズ2: 404 ページ** — layout / content テンプレートで作るページを `docs/404.html` に出す
+2. **フェーズ2: 404 ページ** — layout / content テンプレートで作るページを `docs/404.html` に出す。**実装済み**
 
 sitemap.xml の自動出力は後日（[将来](#将来-sitemapxml-の自動出力)）。
 
@@ -176,54 +176,100 @@ Go 側のテストは `fs/alias_test.go` と `asset_root_test.go`。
 
 ## フェーズ2: 404 ページ
 
-テンプレート（layout / content）を使って `docs/404.html` を作る。
+実装済み。テンプレート（layout / content）を使って `docs/404.html` を作る。
 
 ### 表し方: ノートの alias `/404`
 
 フェーズ1と同じ「`/` はサイトのルート」の規則をノートにも当てる。**alias が `/404` のノートは `docs/404.html` に出す。**
+定義は `api/json/note.go` の `ErrorPageAlias` / `IsErrorPageAlias` / `Note.IsErrorPage`（fs・db・binder のどこからも読めるよう json に置く）。
 
-- ノートで許すルートの alias はフェーズ2では `/404` だけにする。他の名前を許しても GitHub Pages では意味が無く、URL の基準の扱いが増えるだけのため
+- ノートで許すルートの alias は `/404` だけ。他の名前を許しても GitHub Pages では意味が無く、URL の基準の扱いが増えるだけのため
 - 本文は Markdown で書け、layout / content テンプレートも普通のノートと同じように選べる
-- `fs.HTMLFile(note)`: `index` と同じ並びで、alias が `/404` なら `docs/404.html` を返す
-- `parseAliasFromPath` / `ResolveLinkPath`: `/404.html` を alias `/404` のノートとして解決する
+- バインダーに 1 つだけ（alias の重複チェックでそうなる）。index ノートは 404 ページにできない
+- `fs.HTMLFile(note)` / `htmlFile(alias)`: alias が `/404` なら `docs/404.html`（`fs.ErrorPageName`）
+- メタ画像は `docs/images/meta/404`（"/" を外す）。alias が `404` の普通のノートとは同じ場所になるが、404 ページに OGP 画像を付けることはまず無いので分けていない
+- `parseAliasFromPath` / `ResolveLinkPath`: `/404.html` を alias `/404` のノートとして解決する。登録が無ければ手で置いた `docs/404.html` として扱う
+
+#### 検証（`fs.ValidateNoteAlias`）
+
+アセットと同じく、ノートの alias も公開先のパスを兼ねるので保存時に検証する（`EditNote` の更新時）。
+
+- 空は許す（従来どおり）。`/404` は許す（index 以外）
+- それ以外の `/` で始まるもの、`/` `\` を含むもの、`.` `..` は不可（`docs/pages` の外に書き出せていた）
+- エラーは `fs.ErrInvalidNoteAlias`（`ErrInvalidAlias` を包む）。メッセージはアセットと分ける（`go.error.invalidNoteAlias`）
+- 規則に合わない既存の alias は doctor が警告だけ出す
+
+#### 404 ページになる・やめる alias の変更
+
+公開済みのノートの alias を `x` ⇔ `/404` と変えた場合、書き出し済みの HTML は**移さずに消す**（`RenamePublishedNote`）。
+`pages/x.html` と `404.html` では URL の基準（`../` とサイトのルートからのパス）が違い、移すと表示が崩れるため。
+構造の更新日が新しくなるので、ノートは「要再公開」になり、公開し直すと正しい HTML が出る。
 
 ### URL の基準（一番の要点）
 
 404.html は利用者がアクセスした URL のまま返される（`/repo/pages/a/b/x.html` へのアクセスに 404.html の中身が返る）。
-相対パスでは CSS もリンクも壊れるため、**404 ページを公開するときだけ、`relativePrefix()` がサイトのルートからの絶対パスを返す**。
+相対パスでは CSS もリンクも壊れるため、**404 ページを公開するときだけ、`relativePrefix()` がサイトのルートからのパスを返す**。
 
 | 場面 | `relativePrefix()` | 例 |
 |---|---|---|
 | index | `./` | `./assets/styles.css` |
 | pages/ | `../` | `../assets/styles.css` |
-| 404（公開） | `SiteURL()` のパス | `/repo/assets/styles.css` |
+| 404（公開） | `SiteURL()` のパス | `/repo/assets/styles.css`（独自ドメインなら `/assets/styles.css`） |
 | 404（プレビュー、`Local`） | `./` | プレビューはアセットが data URI なので相対で足りる |
 | 404（公開、サイトの URL が不明） | `./` + 公開時に警告 | 1 階層目の 404 では表示が崩れない |
 
 `.Home.Link` `.Note.Link` `url` `link` `assets` `childNotes` の `.Link` はすべて `convertURL` → `relativePrefix` を通るため、ここ 1 か所で揃う。
 フルの URL（`https://…`）ではなくパス（`/repo/`）にするのは、http / https や独自ドメインの付け外しの影響を受けないため。
 `fullURL` は `page = "404.html"` として既存の処理で絶対 URL を作れる。
+サイトの URL のパスは `siteURLPath()`（[site_url.go](../site_url.go)）で取り出し、1 回の書き出しの中で使い回す（`wrapper.siteRoot`）。
+
+#### embed したノートの URL（あわせて直した既存の不具合）
+
+`embed` は子の wrapper に埋め込むノートを渡していたため、展開した中身の相対パスが**埋め込むノートの位置**で決まっていた
+（index に `pages/` のノートを埋め込むと `../` になり、リンクが壊れる）。
+wrapper に「いま書き出しているページ」（`page`）を持たせ、`relativePrefix()` と `fullURL` はそちらを見るようにした。
+404 ページで共通のフッター等を `embed` しても崩れない。
 
 ### 一覧から外す
 
 404 ノートはツリーに置かれる普通のノートなので、そのままだと一覧に出てしまう。次から除く。
 
-- `childNotes` / `childrenNotes` / `latestNotes` / `prevNote` / `nextNote` / `breadcrumb`
-- 将来の sitemap.xml の自動出力
-
-除外の判定は「alias が `/404`」の 1 か所（例: `json.Note.IsErrorPage()`）にまとめる。
+| 関数 | 除き方 |
+|---|---|
+| `childNotes` / `childrenNotes` / `latestNotes` | DB の検索条件（`db/note.go` の `excludeErrorPage`）。後から絞ると件数の指定がずれるため SQL で外す。csvq は空欄を NULL で読むので `alias IS NULL or alias <> '/404'` |
+| `prevNote` / `nextNote` | `countsInOrder` で数えない（404 ページ自身から見た前後は出せる） |
+| `breadcrumb` | 何もしない。404 ページが他のページの祖先になることは普通ないため |
 
 ### プレビューサーバ
 
-公開の確認用サーバ（`http.go` の `serveWithAliasCheck`）で、見つからないパスに `docs/404.html` を 404 で返すと GitHub Pages の動きに近くなる。
-ただしプレビューサーバは docs を `/` に置いているので、`/repo/` で始まる絶対パスはそのままでは解決できない
-（[未決事項](#未決事項)）。
+公開の確認用サーバ（`http.go` の `handler`）も GitHub Pages と同じように 404 ページを返す。
+
+- 存在しないパス（`docs` に実体が無い・エンティティの alias が見つからない）には、`docs/404.html` があればそれをステータス 404 で返す。無ければ従来の「存在しません(404)」
+- 404 ページの中の参照は `/repo/…` で始まるので、**サイトのパスから始まるリクエストはそのパスを外して `docs` に対応づける**（`stripSitePath`）。
+  `docs` にそのパスの実体があるとき（リポジトリ名と docs 直下のディレクトリ名が同じ等）は外さない
+- 未公開・非公開のページへの案内（「まだ公開処理を行っていません」「非公開のページです」）は作者向けの情報なので残す
+- 手で置いた `docs/404.html`（アセットとしても 404 ノートとしても登録の無いもの）も同じように使う
 
 ### UI
 
-- ノートのメタ情報ダイアログに「このノートを 404 ページにする」（alias を `/404` にする）。バインダーに 1 つだけ（alias の重複チェックで自然に 1 つになる）
-- フェーズ1と同じく、`publishSubDir` があるときは「効かない」と警告する
-- サイトの URL が分からないまま公開したときは、公開時の警告（既存の `fullURL` と同じ仕組み）
+ノートのメタ情報ダイアログ（`NoteMetaDialog.jsx`）。判定は `src/dialogs/errorPage.js`。
+
+- 「404 ページにする」チェックボックス（index ノートには出さない）。入れると alias を `/404` にし、外すと開いた時点の alias に戻す（開いた時点で 404 ページだったら ID に戻す）
+- 404 ページの間は alias 欄を `/` + `404` + `.html` と表示し、編集させない
+- 警告（保存は止めない）
+  - `publishSubDir` があるとき: GitHub Pages がこのページを 404 ページとして使わない
+  - サイトの URL が分からないとき: 深い階層のパスでリンクや CSS が崩れる
+- 翻訳キー: `note.errorPage` `note.errorPageTip` `note.errorPageSubDir` `note.errorPageNoSiteUrl` `go.error.invalidNoteAlias`
+
+### テスト
+
+| 対象 | ファイル |
+|---|---|
+| 公開先・取り下げ・リンク解決・alias の検証・URL の基準・embed・一覧からの除外・alias の変更・プレビューサーバ・手置きの 404.html | `error_page_test.go` |
+| `ValidateNoteAlias` / `HTMLFile` | `fs/alias_test.go` |
+| `siteURLPath` | `site_url_internal_test.go` |
+| DB の一覧からの除外 | `db/note_test.go` |
+| フロントエンド | `errorPage.test.js` / `NoteMetaDialog.test.jsx` |
 
 ---
 
@@ -239,6 +285,5 @@ Go 側のテストは `fs/alias_test.go` と `asset_root_test.go`。
 | 項目 | 選択肢・メモ |
 |---|---|
 | サブディレクトリ（`/.well-known/…`） | フェーズ1では不可。要るなら alias の `/` の後ろに 2 階層以上を許すが、予約名との衝突・`RenamePublishedAsset` で空になったディレクトリの後始末を考える |
-| プレビューサーバでの 404 | ① 404 だけ相対パスで出し直して返す ② サーバがサイトのパス（`/repo/`）でも docs を返す ③ 扱わない |
 | 404 用のプリセットテンプレート | 同梱の content テンプレートに「エラーページ」を足すか。新規バインダーにだけ入るので、既存のバインダーには届かない |
 | ルートのアセットの雛形メニュー | robots.txt / .nojekyll / CNAME を選んで作る導線。フェーズ1の後で使われ方を見て決める |

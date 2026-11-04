@@ -2,8 +2,11 @@ package fs
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
+
+	"binder/api/json"
 
 	"golang.org/x/xerrors"
 )
@@ -16,6 +19,10 @@ import (
 // ErrInvalidAlias は公開先のパスとして使えない alias（"/" を含む・".." 等）のエラー。
 var ErrInvalidAlias = errors.New("invalid alias")
 
+// ErrInvalidNoteAlias はノートの alias が公開先のパスとして使えないエラー（ErrInvalidAlias の一種）。
+// アセットと規則が違う（ルートに置けるのは "/404" だけ）ため、メッセージを分けられるよう別にする。
+var ErrInvalidNoteAlias = fmt.Errorf("%w: note", ErrInvalidAlias)
+
 // ErrReservedAlias は Binder が公開ディレクトリの直下で使う名前と重なる alias のエラー。
 var ErrReservedAlias = errors.New("reserved alias")
 
@@ -26,7 +33,7 @@ var rootAliasNamePattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 // reservedPublicRootNames は Binder が公開ディレクトリの直下に出すもの（小文字比較）。
 var reservedPublicRootNames = map[string]bool{
 	"index.html":    true, // index ノートの出力先
-	"404.html":      true, // エラーページの出力先（予定）
+	ErrorPageName:   true, // 404 ページ（alias "/404" のノート）の出力先
 	pagesDir:        true,
 	resourceDir:     true,
 	publicAssetsDir: true,
@@ -74,4 +81,26 @@ func ValidateAssetAlias(alias string) error {
 
 func isDotName(name string) bool {
 	return name == "." || name == ".."
+}
+
+// ValidateNoteAlias はノートの alias が公開先のパスとして使えるかを検証する。
+//
+//   - 空は許す（従来どおり）
+//   - "/404"（json.ErrorPageAlias）は 404 ページ。docs/404.html に公開する。index ノートには使えない
+//   - それ以外の "/" で始まるものは不可（ノートをサイトのルートに置けるのは 404 ページだけ）
+//   - "/" "\" を含むもの、"." ".." は不可（docs/pages の外に書き出さないため）
+func ValidateNoteAlias(id, alias string) error {
+	if alias == "" {
+		return nil
+	}
+	if json.IsErrorPageAlias(alias) {
+		if id == "index" {
+			return xerrors.Errorf("%w: index note cannot be the error page", ErrInvalidNoteAlias)
+		}
+		return nil
+	}
+	if strings.ContainsAny(alias, `/\`) || isDotName(alias) {
+		return xerrors.Errorf("%w: %s", ErrInvalidNoteAlias, alias)
+	}
+	return nil
 }

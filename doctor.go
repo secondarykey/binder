@@ -22,7 +22,7 @@ type DoctorReport struct {
 	RowsRestored []fs.RestoredEntity
 	// Reparented は親が存在しなかった structure 行の ID（index 直下へ移動）
 	Reparented []string
-	// InvalidAliases は公開先のパスとして使えない alias を持つアセットの ID（警告のみ。直さない）。
+	// InvalidAliases は公開先のパスとして使えない alias を持つノート・アセットの ID（警告のみ。直さない）。
 	// 公開すると docs の外に書き出す・Binder が docs 直下で使う名前と重なる、といったもの
 	InvalidAliases []string
 }
@@ -96,6 +96,10 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 		switch s.Typ {
 		case "note":
 			fileFn, tableFn = fs.NoteFile(s.Id), fs.NoteTableFile()
+			if err := fs.ValidateNoteAlias(s.Id, s.Alias); err != nil {
+				log.Warnf("Doctor: note alias cannot be used as a publish path: %s (%s): %v", s.Id, s.Name, err)
+				rep.InvalidAliases = append(rep.InvalidAliases, s.Id)
+			}
 		case "diagram":
 			fileFn, tableFn = fs.DiagramFile(s.Id), fs.DiagramTableFile()
 		case "layer":

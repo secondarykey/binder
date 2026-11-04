@@ -1,17 +1,17 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Checkbox,
   Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormControlLabel, FormLabel, IconButton, InputAdornment,
-  Select, TextField, MenuItem, Typography,
+  Select, TextField, MenuItem, Tooltip, Typography,
 } from "@mui/material";
 import { Check as CheckIcon, Close as CloseIcon, DeleteOutline, ExpandMore } from "@mui/icons-material";
 import PublishDateField from "./components/PublishDateField";
 
 import {
   GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage, UploadNoteImage,
-  EditNote, RemoveNote, PrivatizeChildren,
+  EditNote, RemoveNote, PrivatizeChildren, GetConfig, GetPublishSettings,
 } from "../../bindings/binder/api/app";
 import { SelectFile, OpenSearchWindowWithQuery } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png';
@@ -20,6 +20,7 @@ import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
 import { ActionButton } from "./components/ActionButton";
+import { errorPageWarnings, isErrorPageAlias, toggleErrorPageAlias } from "./errorPage";
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -54,6 +55,11 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [contents, setContents] = useState([]);
   const [publish, setPublish] = useState(null);
   const [republish, setRepublish] = useState(null);
+  // 開いた時点の alias（「404 ページにする」を外したときに戻す先）
+  const [savedAlias, setSavedAlias] = useState("");
+  // 404 ページの警告に使う
+  const [siteUrl, setSiteUrl] = useState("");
+  const [publishSettings, setPublishSettings] = useState({});
 
   // テンプレート一覧（起動時に1回取得）
   useEffect(() => {
@@ -66,13 +72,14 @@ function NoteMetaDialog({ open, id, onClose }) {
   // ダイアログが開くたびにデータ取得
   useEffect(() => {
     if (!open || !id) return;
-    setName(""); setAlias(""); setDetail(""); setIsPrivate(false);
+    setName(""); setAlias(""); setSavedAlias(""); setDetail(""); setIsPrivate(false);
     setViewImage(noImage); setHasImage(false);
     setPublish(null); setRepublish(null);
 
     GetNote(id).then((note) => {
       setName(note.name);
       setAlias(note.alias);
+      setSavedAlias(note.alias);
       setDetail(note.detail);
       setIsPrivate(note.private);
       setParentId(note.parentId);
@@ -86,6 +93,12 @@ function NoteMetaDialog({ open, id, onClose }) {
       setViewImage(url || noImage);
       setHasImage(!!url);
     }).catch(() => { setViewImage(noImage); setHasImage(false); });
+
+    // 404 ページの警告に使う。表示の補助なので、取れなくてもダイアログは使えるようにする
+    GetConfig().then((conf) => {
+      setSiteUrl((conf && (conf.siteUrl || conf.siteUrlGuess)) || "");
+    }).catch(() => setSiteUrl(""));
+    GetPublishSettings().then((s) => setPublishSettings(s || {})).catch(() => setPublishSettings({}));
   }, [open, id]);
 
   const buildNote = () => ({
@@ -178,7 +191,14 @@ function NoteMetaDialog({ open, id, onClose }) {
   };
 
   const isIndex = id === "index";
-  const aliasStart = isIndex ? "/" : "/pages/";
+  // 404 ページは docs/404.html（サイトのルート）に公開する
+  const isErrorPage = !isIndex && isErrorPageAlias(alias);
+  const aliasStart = isIndex || isErrorPage ? "/" : "/pages/";
+  const errorPageWarns = isErrorPage ? errorPageWarnings({
+    siteUrl,
+    publishOnly: publishSettings.publishOnly,
+    publishSubDir: publishSettings.publishSubDir,
+  }) : [];
 
   return (<>
     <MetaDialog
@@ -221,13 +241,36 @@ function NoteMetaDialog({ open, id, onClose }) {
             <FormLabel>{t("common.alias")}</FormLabel>
             <TextField
               size="small"
-              value={alias}
-              onChange={(e) => { if (!isIndex) setAlias(e.target.value); }}
+              value={isErrorPage ? alias.slice(1) : alias}
+              onChange={(e) => { if (!isIndex && !isErrorPage) setAlias(e.target.value); }}
+              disabled={isErrorPage}
+              inputProps={{ "data-testid": "note-alias" }}
               InputProps={{
                 startAdornment: <InputAdornment position="start"><FormLabel>{aliasStart}</FormLabel></InputAdornment>,
                 endAdornment: <InputAdornment position="end"><FormLabel>.html</FormLabel></InputAdornment>,
               }} />
           </FormControl>
+
+          {!isIndex && (
+            <Tooltip title={t("note.errorPageTip")} placement="bottom-start" describeChild>
+              <FormControlLabel
+                control={
+                  <Checkbox size="small" checked={isErrorPage}
+                    onChange={(e) => setAlias(toggleErrorPageAlias(e.target.checked, { alias, previous: savedAlias, id }))} />
+                }
+                label={t("note.errorPage")}
+                sx={{
+                  ml: 0, alignSelf: "flex-start",
+                  "& .MuiFormControlLabel-label": { fontSize: "13px", color: "var(--text-primary)" },
+                }}
+              />
+            </Tooltip>
+          )}
+          {errorPageWarns.map((w) => (
+            <Alert key={w.key} severity="warning" sx={{ fontSize: "13px" }}>
+              {t(w.key, w.params)}
+            </Alert>
+          ))}
 
           <FormControl>
             <FormLabel>{t("note.noteImage")}</FormLabel>

@@ -85,6 +85,10 @@
         "publishSubtree" : "下層を含め公開"
     },
     "note" : {
+        "errorPage" : "404 ページにする",
+        "errorPageTip" : "公開データの直下（docs/404.html）に公開し、存在しないページへのアクセスにこのページを返します（GitHub Pages）。ページの一覧（childNotes・latestNotes・前後のノート）には並びません",
+        "errorPageSubDir" : "公開データはサブディレクトリ（{{dir}}）に送られるため、GitHub Pages はこのページを 404 ページとして使いません",
+        "errorPageNoSiteUrl" : "サイトの URL が分からないため、深い階層のページで 404 ページのリンクや CSS が崩れます。バインダー設定でサイトの URL を設定してください",
         "editTitle" : "ノート編集",
         "layoutTemplate" : "レイアウトテンプレート",
         "contentTemplate" : "コンテンツテンプレート",
@@ -737,6 +741,7 @@
             "assetHasLayers" : "レイヤーがあるアセットは削除できません",
             "duplicateAlias" : "そのエイリアスは既に使用されています",
             "invalidAlias" : "そのエイリアスは公開先のパスとして使えません。「/」「\\」を含めず、サイトのルートに置く場合は「/robots.txt」のように先頭の「/」の後ろを英数字と「.」「_」「-」だけにしてください",
+            "invalidNoteAlias" : "そのエイリアスは公開先のパスとして使えません。「/」「\\」を含めないでください。404 ページにする場合だけ「/404」にできます（index ノートは 404 ページにできません）",
             "reservedAlias" : "そのエイリアスはバインダーが公開データの直下で使っているため使えません（index.html・404.html・pages・images・assets・layers）",
             "duplicateName" : "その名前は既に使用されています",
             "notBinder" : "このフォルダはバインダーではありません",

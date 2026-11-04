@@ -85,6 +85,10 @@
         "publishSubtree" : "Publish with descendants"
     },
     "note" : {
+        "errorPage" : "Use as the 404 page",
+        "errorPageTip" : "Publishes the note directly under the published data (docs/404.html) and returns it for pages that do not exist (GitHub Pages). It is not listed in childNotes, latestNotes or the previous/next notes",
+        "errorPageSubDir" : "The published data is sent to a subdirectory ({{dir}}), so GitHub Pages does not use this page as the 404 page",
+        "errorPageNoSiteUrl" : "The site URL is unknown, so links and CSS on the 404 page break for deep paths. Set the site URL in the binder settings",
         "editTitle" : "Edit Note",
         "layoutTemplate" : "Layout Template",
         "contentTemplate" : "Content Template",
@@ -737,6 +741,7 @@
             "assetHasLayers" : "This asset has layers and cannot be deleted",
             "duplicateAlias" : "That alias is already in use",
             "invalidAlias" : "That alias cannot be used as a publish path. Do not include \"/\" or \"\\\". To place a file at the site root, start it with \"/\" followed only by letters, digits, \".\", \"_\" and \"-\" (e.g. \"/robots.txt\")",
+            "invalidNoteAlias" : "That alias cannot be used as a publish path. Do not include \"/\" or \"\\\". Only \"/404\" may start with \"/\", which makes the note the 404 page (the index note cannot be the 404 page)",
             "reservedAlias" : "That alias is used by the binder directly under the published data (index.html, 404.html, pages, images, assets, layers)",
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",

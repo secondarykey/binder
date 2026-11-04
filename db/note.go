@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 
+	"binder/api/json"
 	"binder/db/model"
 
 	_ "github.com/mithrandie/csvq-driver"
@@ -25,7 +26,7 @@ func (inst *Instance) FindNotes() ([]*model.Note, error) {
 func (inst *Instance) FindUpdatedNotes(id string, limit int, offset int) ([]*model.Note, error) {
 
 	//TODO ツリーが更新されてないならダメ
-	where := fmt.Sprintf("type = 'note' and private = false")
+	where := fmt.Sprintf("type = 'note' and private = false%s", excludeErrorPage)
 	if id != "" {
 		where += fmt.Sprintf(" and parent_id = '%s'", id)
 	}
@@ -44,7 +45,7 @@ func (inst *Instance) FindPublishNotes(id string, limit int, offset int) ([]*mod
 
 // FindSeqNotes は非公開でないノートをツリーの順で返す（プレビュー用）。
 func (inst *Instance) FindSeqNotes(id string, limit int, offset int) ([]*model.Note, error) {
-	where := "type = 'note' and private = false"
+	where := "type = 'note' and private = false" + excludeErrorPage
 	if id != "" {
 		where += fmt.Sprintf(" and parent_id = '%s'", id)
 	}
@@ -58,10 +59,15 @@ func (inst *Instance) FindPublishSeqNotes(id string, limit int, offset int) ([]*
 	return inst.findStructureNotes(publishedNoteWhere(id), order, limit, offset)
 }
 
+// excludeErrorPage は 404 ページのノート（alias "/404"）を一覧から外す条件。
+// childNotes / latestNotes に 404 ページが並ばないようにする。件数の指定（limit）がずれないよう SQL で外す。
+// csvq は空欄を NULL として読むため、NULL を明示的に残す（比較だけだと空の alias のノートまで落ちる）
+var excludeErrorPage = fmt.Sprintf(" and (alias IS NULL or alias <> '%s')", json.ErrorPageAlias)
+
 // publishedNoteWhere は公開中のノートを絞り込む条件を返す。
 // 公開を取り下げると republish_date だけが空に戻り publish_date は残るため、republish_date で判定する。
 func publishedNoteWhere(id string) string {
-	where := fmt.Sprintf("type = 'note' and private = false and !(republish_date = '%s')", TimeZero)
+	where := fmt.Sprintf("type = 'note' and private = false and !(republish_date = '%s')%s", TimeZero, excludeErrorPage)
 	if id != "" {
 		where += fmt.Sprintf(" and parent_id = '%s'", id)
 	}
