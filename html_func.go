@@ -375,6 +375,10 @@ func (w *wrapper) countsInOrder(s *model.Structure) bool {
 	if s.Private {
 		return false
 	}
+	// 404 ページは前後のノートとして辿る先ではない
+	if json.IsErrorPageAlias(s.Alias) {
+		return false
+	}
 	// 公開時は公開中のノートだけ（取り下げると republish_date が空に戻る）
 	if !w.Local && s.Republish.IsZero() {
 		return false
@@ -614,8 +618,8 @@ func (w *wrapper) fullURL(v ...any) template.URL {
 
 	// 今のページの、サイトの一番上からのパス
 	page := ""
-	if w.note != nil && w.note.Id != "index" {
-		page = w.publishRelPath(fs.HTMLFile(w.note))
+	if pn := w.pageNote(); pn != nil && pn.Id != "index" {
+		page = w.publishRelPath(fs.HTMLFile(pn))
 	}
 
 	// 今のページからの相対パス（url と同じ形）
@@ -771,6 +775,9 @@ func (w *wrapper) embedNote(id string) template.HTML {
 		deps:          w.deps,
 		exportAsIndex: w.exportAsIndex,
 		warnings:      w.warnings,
+		// URL は埋め込み先のページの位置で決まる（index や 404 に pages/ のノートを埋め込んでも崩れない）
+		page:     w.pageNote(),
+		siteRoot: w.siteRootCache(),
 	}
 
 	content := buf.String()
@@ -822,6 +829,8 @@ func (w *wrapper) embedTextAsset(id string) template.HTML {
 		deps:          w.deps,
 		exportAsIndex: w.exportAsIndex,
 		warnings:      w.warnings,
+		page:          w.page,
+		siteRoot:      w.siteRootCache(),
 	}
 
 	content := string(data)

@@ -37,6 +37,14 @@ export function publishLocation(alias, siteUrl) {
   return "docs/" + rel;
 }
 
+/**
+ * 公開データの送り先のサブディレクトリ（前後の区切りは外す）。docs だけを送る設定でなければ空。
+ * 空でなければ docs 直下はサイトのルートにならない。
+ */
+export function publishSubDirOf(publishOnly, publishSubDir) {
+  return publishOnly ? (publishSubDir || "").replace(/^[\\/]+|[\\/]+$/g, "") : "";
+}
+
 /** サイトの URL のパス部分（"https://u.github.io/repo/" → "/repo/"）。解釈できなければ null */
 function sitePath(siteUrl) {
   if (!siteUrl) return null;
@@ -59,7 +67,7 @@ function sitePath(siteUrl) {
 export function rootAssetWarnings({ alias, siteUrl, publishOnly, publishSubDir }) {
   if (!isRootAlias(alias)) return [];
 
-  const subDir = publishOnly ? (publishSubDir || "").replace(/^[\\/]+|[\\/]+$/g, "") : "";
+  const subDir = publishSubDirOf(publishOnly, publishSubDir);
   if (subDir) {
     return [{ key: "asset.subDirIneffective", params: { dir: subDir } }];
   }

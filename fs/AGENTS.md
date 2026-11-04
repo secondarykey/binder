@@ -31,12 +31,20 @@ user_data.enc                  ← 暗号化git認証情報（.gitignore対象�
 **public（公開HTML、aliasがファイル名）**: `docs/`（`publishDir`、`SetPublishDirectory()` で変更可）
 ```
 docs/index.html                ← id "index" のノート
+docs/404.html                  ← alias が "/404" のノート（404 ページ）
 docs/pages/{note_alias}.html
 docs/images/{diagram_alias}.svg
-docs/images/meta/{note_alias}
+docs/images/meta/{note_alias}  ← "/404" は "/" を外して 404
 docs/assets/{asset_alias}
+docs/{asset_alias から "/" を外したもの} ← alias が "/" で始まるアセット（robots.txt・.nojekyll 等）
 docs/layers/{layer_alias}.svg
 ```
+
+alias は公開先のパスを兼ねるため、保存時に `alias.go` で検証する（`ValidateAssetAlias` / `ValidateNoteAlias`）。
+`/` で始まる alias（サイトのルート）を持てるのは、アセット（1 階層・予約名以外）と、ノートの `/404` だけ。
+それ以外の `/` `\` `..` は docs の外に書き出せてしまうため拒否する（`ErrInvalidAlias` / `ErrInvalidNoteAlias` / `ErrReservedAlias`）。
+予約名は `IsReservedPublicRootName`（`index.html` `404.html` `pages` `images` `assets` `layers`）。
+設計は `_docs/site-root-files.md`。
 
 ## コミットと署名（git.go）
 

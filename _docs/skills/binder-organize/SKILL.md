@@ -208,6 +208,8 @@ doctor が**空ファイルを再作成**するため本文が失われる。
 - `id` は UUID v7。`scripts/New-Uuid7.ps1 -Count N` で生成する（自分で捏造しない）
 - `seq` は同一 `parent_id` 内の max+1。再編したら **その親の子全部を `1..n` で振り直す**
 - `alias` は note / diagram では **id と同じ値**を入れる（アプリの新規作成と同じ挙動）
+- note の `alias` が `/404` のノートは **404 ページ**（`docs/404.html` に公開され、ページの一覧に並ばない）。
+  バインダーに 1 つだけ。ユーザに頼まれない限り作らない・外さない。それ以外の note の alias に `/` `\` を含めない
 - asset の `alias` は公開先のパス（`docs/assets/{alias}`）を兼ねる。`/` `\` を含めない。
   先頭が `/` のもの（`/robots.txt` `/.nojekyll` `/CNAME`）は**サイトのルート**（`docs/robots.txt`）に公開される。
   `/` の後ろは 1 階層の英数字・`.` `_` `-` だけで、`index.html` `404.html` `pages` `images` `assets` `layers` は使えない。

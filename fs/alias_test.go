@@ -82,3 +82,55 @@ func TestPublicAssetFileRoot(t *testing.T) {
 		}
 	}
 }
+
+// TestValidateNoteAlias はノートの alias の判定を検証する（"/404" だけがサイトのルートに置ける）
+func TestValidateNoteAlias(t *testing.T) {
+	tests := []struct {
+		id    string
+		alias string
+		want  error
+	}{
+		{"n", "", nil},
+		{"n", "my-page", nil},
+		{"n", "01a1a84b-e05b-7d90", nil},
+		{"n", "/404", nil},
+		{"index", "/404", fs.ErrInvalidAlias}, // index は 404 ページにできない
+		{"n", "/about", fs.ErrInvalidAlias},
+		{"n", "/", fs.ErrInvalidAlias},
+		{"n", "a/b", fs.ErrInvalidAlias},
+		{"n", `a\b`, fs.ErrInvalidAlias},
+		{"n", "..", fs.ErrInvalidAlias},
+	}
+	for _, tt := range tests {
+		err := fs.ValidateNoteAlias(tt.id, tt.alias)
+		if tt.want == nil {
+			if err != nil {
+				t.Errorf("ValidateNoteAlias(%q, %q) = %v, want nil", tt.id, tt.alias, err)
+			}
+			continue
+		}
+		if !errors.Is(err, tt.want) {
+			t.Errorf("ValidateNoteAlias(%q, %q) = %v, want %v", tt.id, tt.alias, err, tt.want)
+		}
+	}
+}
+
+// TestErrorPageHTMLFile は 404 ページのノートの公開先が docs/404.html になることを検証する
+func TestErrorPageHTMLFile(t *testing.T) {
+	tests := []struct {
+		note json.Note
+		want string
+	}{
+		{json.Note{Id: "n", Alias: "/404"}, "docs/404.html"},
+		{json.Note{Id: "n", Alias: "404"}, "docs/pages/404.html"},
+		{json.Note{Id: "index", Alias: "index"}, "docs/index.html"},
+	}
+	for _, tt := range tests {
+		if got := filepath.ToSlash(fs.HTMLFile(&tt.note)); got != tt.want {
+			t.Errorf("HTMLFile(%q) = %q, want %q", tt.note.Alias, got, tt.want)
+		}
+	}
+	if got := filepath.ToSlash(fs.PublicMetaFile(&json.Note{Alias: "/404"})); got != "docs/images/meta/404" {
+		t.Errorf("PublicMetaFile(/404) = %q", got)
+	}
+}

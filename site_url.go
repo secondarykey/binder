@@ -2,6 +2,7 @@ package binder
 
 import (
 	"io"
+	"net/url"
 	"path"
 	"regexp"
 	"strings"
@@ -105,4 +106,24 @@ func normalizeSiteURL(s string) string {
 		s += "/"
 	}
 	return s
+}
+
+// siteURLPath はサイトの URL のパス部分を "/" で終わる形で返す（"https://u.github.io/repo/" → "/repo/"）。
+// 空や解釈できない URL なら空を返す。
+func siteURLPath(siteURL string) string {
+	if strings.TrimSpace(siteURL) == "" {
+		return ""
+	}
+	u, err := url.Parse(siteURL)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	p := u.Path
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	if !strings.HasSuffix(p, "/") {
+		p += "/"
+	}
+	return p
 }

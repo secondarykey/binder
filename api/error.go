@@ -40,6 +40,8 @@ func userError(err error) error {
 		return Wrap(err, settings.T("go.error.assetHasLayers"))
 	case errors.Is(err, db.DuplicateAlias):
 		return Wrap(err, settings.T("go.error.duplicateAlias"))
+	case errors.Is(err, fs.ErrInvalidNoteAlias):
+		return Wrap(err, settings.T("go.error.invalidNoteAlias"))
 	case errors.Is(err, fs.ErrInvalidAlias):
 		return Wrap(err, settings.T("go.error.invalidAlias"))
 	case errors.Is(err, fs.ErrReservedAlias):

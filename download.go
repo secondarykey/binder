@@ -226,7 +226,8 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 	// meta image
 	metaData, err := b.ReadMetaBytes(note.Id)
 	if err == nil && metaData != nil && note.Alias != "" {
-		zipPath := "images/meta/" + note.Alias
+		// 404 ページ（"/404"）の "/" は外す（PublicMetaFile と同じ）
+		zipPath := "images/meta/" + strings.TrimPrefix(note.Alias, "/")
 		mf, err := w.Create(zipPath)
 		if err == nil {
 			mf.Write(metaData)
