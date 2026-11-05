@@ -151,6 +151,45 @@ foreach ($s in $structures) {
     }
 }
 
+# --- 3b. alias が公開先のパスとして使えるか ---
+# alias は公開先のパスを兼ねる（note は docs/pages/{alias}.html、asset は docs/assets/{alias}）。
+# アプリの fs/alias.go（ValidateAssetAlias / ValidateNoteAlias）と同じ規則。アプリでは保存できない値なので ERROR にする。
+#   - 先頭の "/" はサイトのルート。asset は "/robots.txt" のように 1 階層（docs/robots.txt）、
+#     note は "/404" だけ（404 ページ = docs/404.html。index は不可）
+#   - それ以外で "/" "\" を含むもの、"." ".." は docs の外に書き出せてしまうため不可
+$rootNamePattern = '^[A-Za-z0-9._-]+$'
+$reservedRootNames = @('index.html', '404.html', 'pages', 'images', 'assets', 'layers')
+foreach ($s in $structures) {
+    $a = $s.alias
+    if ([string]::IsNullOrEmpty($a)) { continue }
+    $label = "$($s.type) '$($s.name)' ($($s.id)) alias=$a"
+
+    switch ($s.type) {
+        'asset' {
+            if ($a.StartsWith('/')) {
+                $name = $a.Substring(1)
+                if ($name -notmatch $rootNamePattern -or $name -eq '.' -or $name -eq '..' -or
+                    $name.StartsWith('.git', [System.StringComparison]::OrdinalIgnoreCase)) {
+                    Add-Err "alias が公開先のパスとして使えない: $label。サイトのルートに置くなら '/' の後ろは 1 階層の英数字と . _ - だけ（例: /robots.txt）"
+                } elseif ($reservedRootNames -contains $name.ToLower()) {
+                    Add-Err "alias が Binder の予約名と重なる: $label（$($reservedRootNames -join ' / ') は使えない）"
+                }
+            } elseif ($a -match '[/\\]' -or $a -eq '.' -or $a -eq '..') {
+                Add-Err "alias が公開先のパスとして使えない: $label。'/' '\' を含めない（先頭の '/' はサイトのルートの意味）"
+            }
+        }
+        'note' {
+            if ($a -ceq '/404') {
+                if ($s.id -eq 'index') {
+                    Add-Err "index ノートは 404 ページ（alias=/404）にできない: $label"
+                }
+            } elseif ($a -match '[/\\]' -or $a -eq '.' -or $a -eq '..') {
+                Add-Err "alias が公開先のパスとして使えない: $label。'/' '\' を含めない（'/' で始められるのは 404 ページの /404 だけ）"
+            }
+        }
+    }
+}
+
 # --- 4. 同じ親の中での seq 重複 ---
 $seqSeen = @{}
 foreach ($s in $structures) {
