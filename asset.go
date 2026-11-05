@@ -196,6 +196,11 @@ func (b *Binder) editAsset(a *json.Asset, data []byte) (*json.Asset, error) {
 	// 空になった場合は下の分岐で拡張子からの自動判定にフォールバックする。
 	a.Mime = internal.SanitizeMime(a.Mime)
 
+	// alias は公開先のパスを兼ねるため、docs の外を指すもの・予約名と重なるものは保存しない
+	if err := fs.ValidateAssetAlias(a.Alias); err != nil {
+		return nil, xerrors.Errorf("fs.ValidateAssetAlias() error: %w", err)
+	}
+
 	//新規指定だった場合
 	if a.Id == "" {
 
@@ -596,7 +601,8 @@ func (b *Binder) MigrateAssetToNote(assetId string, deleteAsset bool) (*json.Not
 	}
 	n.Id = b.generateId()
 	// エイリアスは元アセットのエイリアスから拡張子を除いたものを使用
-	n.Alias = strings.TrimSuffix(a.Alias, filepath.Ext(a.Alias))
+	// サイトのルートに置くアセット（"/robots.txt"）の "/" はノートの alias には持ち込まない
+	n.Alias = strings.TrimSuffix(strings.TrimPrefix(a.Alias, "/"), filepath.Ext(a.Alias))
 
 	// デフォルトレイアウトテンプレートを設定
 	lt, err := b.db.FindDefaultLayoutTemplate()

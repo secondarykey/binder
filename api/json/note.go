@@ -63,3 +63,18 @@ func (n *Note) ApplyStructure(s *Structure) {
 	n.Republish = s.Republish
 	n.StructureUpdated = s.Updated
 }
+
+// ErrorPageAlias は 404 ページにするノートの alias。
+// このノートは docs/pages/ ではなく docs/404.html に公開する（_docs/site-root-files.md フェーズ2）。
+// 先頭の "/" はアセットと同じく「サイトのルート」の意味。
+const ErrorPageAlias = "/404"
+
+// IsErrorPageAlias は 404 ページにするノートの alias かどうかを返す。
+func IsErrorPageAlias(alias string) bool {
+	return alias == ErrorPageAlias
+}
+
+// IsErrorPage は 404 ページにするノートかどうかを返す。
+func (n *Note) IsErrorPage() bool {
+	return n != nil && IsErrorPageAlias(n.Alias)
+}

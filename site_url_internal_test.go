@@ -24,3 +24,24 @@ func TestGuessSiteURL(t *testing.T) {
 		}
 	}
 }
+
+// TestSiteURLPath はサイトの URL からパス部分（404 ページの URL の基準）を取り出すことを検証する
+func TestSiteURLPath(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"https://user.github.io/repo/", "/repo/"},
+		{"https://user.github.io/repo", "/repo/"},
+		{"https://user.github.io/repo/en/", "/repo/en/"},
+		{"https://example.com/", "/"},
+		{"https://example.com", "/"},
+		{"", ""},
+		{"not a url", ""},
+	}
+	for _, tt := range tests {
+		if got := siteURLPath(tt.in); got != tt.want {
+			t.Errorf("siteURLPath(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}

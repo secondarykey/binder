@@ -11,7 +11,9 @@ import (
 	stdFs "io/fs"
 	"net"
 	"net/http"
+	pathpkg "path"
 
+	"binder/api/json"
 	binderFs "binder/fs"
 	"binder/log"
 
@@ -75,6 +77,9 @@ func injectBanner(body []byte) []byte {
 type aliasInfo struct {
 	typ   string
 	alias string
+	// root は公開ディレクトリ直下のパスから推し量ったもの。
+	// アセットとして登録されていなければ、手で置いたファイル（docs/CNAME 等）としてそのまま返す
+	root bool
 }
 
 // parseAliasFromPath はリクエストパスからエンティティ種別とエイリアスを抽出する。
@@ -96,6 +101,18 @@ func parseAliasFromPath(path string) *aliasInfo {
 			return nil
 		}
 		return &aliasInfo{typ: "asset", alias: alias}
+	}
+
+	// 404 ページ（alias "/404" のノート）。登録が無ければ手で置いた docs/404.html としてそのまま返す
+	if path == "/"+binderFs.ErrorPageName {
+		return &aliasInfo{typ: "note", alias: json.ErrorPageAlias, root: true}
+	}
+
+	// 公開ディレクトリ直下の 1 階層（/robots.txt 等）はサイトのルートに置くアセット（alias "/robots.txt"）。
+	// index.html・pages 等の Binder が使う名前は除く
+	if name := strings.TrimPrefix(path, "/"); name != "" && !strings.Contains(name, "/") &&
+		!binderFs.IsReservedPublicRootName(name) {
+		return &aliasInfo{typ: "asset", alias: path, root: true}
 	}
 	return nil
 }
@@ -165,7 +182,8 @@ func parseAddress(url string) string {
 
 type handler struct {
 	fileServer http.Handler
-	binder     *Binder // プライベートアセット配信用
+	docs       stdFs.FS // 公開ディレクトリ（存在確認・404 ページの読み込み用）
+	binder     *Binder  // プライベートアセット配信用
 }
 
 func (b *Binder) newHTTPServer() (*http.Server, error) {
@@ -181,11 +199,13 @@ func (b *Binder) newHTTPServer() (*http.Server, error) {
 	}
 	var h handler
 	h.fileServer = http.FileServer(http.FS(docs))
+	h.docs = docs
 	h.binder = b
 	return &http.Server{Handler: &h}, nil
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r = h.stripSitePath(r)
 	path := r.URL.Path
 	switch {
 	case path == "/search":
@@ -210,7 +230,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 	info := parseAliasFromPath(r.URL.Path)
 	if info == nil || h.binder == nil || h.binder.db == nil {
-		h.fileServer.ServeHTTP(w, r)
+		h.serveFile(w, r)
 		return
 	}
 
@@ -221,8 +241,13 @@ func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if s == nil && info.root {
+		h.serveFile(w, r)
+		return
+	}
+
 	if s == nil {
-		writeErrorPage(w, http.StatusNotFound, "存在しません(404)")
+		h.serveNotFound(w)
 		return
 	}
 
@@ -242,7 +267,7 @@ func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.fileServer.ServeHTTP(w, r)
+	h.serveFile(w, r)
 }
 
 // isOutdated はDB上の更新日またはソースファイルのModTimeでoutdatedを判定する
@@ -386,4 +411,69 @@ func (b *Binder) ServerAddress() string {
 		return ""
 	}
 	return b.httpServerAddress
+}
+
+// stripSitePath は、サイトのパス（"/repo/"）から始まるリクエストを公開ディレクトリのパスに直す。
+//
+// 404 ページは公開時にサイトのルートからのパス（"/repo/assets/x.css"）で参照を書き出すが、
+// プレビューサーバは docs を "/" に置いているため、そのままでは辿れない。GitHub Pages と同じ URL で
+// 確かめられるよう、サイトのパスを外して扱う。docs にそのパスの実体があるとき（リポジトリ名と
+// docs 直下のディレクトリが同じ等）はそちらを優先する。
+func (h *handler) stripSitePath(r *http.Request) *http.Request {
+	if h.binder == nil {
+		return r
+	}
+	root := siteURLPath(h.binder.SiteURL())
+	if root == "" || root == "/" {
+		return r
+	}
+	p := r.URL.Path
+	if p != strings.TrimSuffix(root, "/") && !strings.HasPrefix(p, root) {
+		return r
+	}
+	if h.exists(p) {
+		return r
+	}
+	r2 := r.Clone(r.Context())
+	u := *r.URL
+	u.Path = "/" + strings.TrimPrefix(strings.TrimPrefix(p, strings.TrimSuffix(root, "/")), "/")
+	u.RawPath = ""
+	r2.URL = &u
+	return r2
+}
+
+// exists は公開ディレクトリに URL のパスの実体（ファイルかディレクトリ）があるかを返す。
+func (h *handler) exists(urlPath string) bool {
+	if h.docs == nil {
+		return true
+	}
+	name := strings.TrimPrefix(pathpkg.Clean("/"+urlPath), "/")
+	if name == "" {
+		name = "."
+	}
+	_, err := stdFs.Stat(h.docs, name)
+	return err == nil
+}
+
+// serveFile は公開ディレクトリのファイルを返す。無ければ 404 ページを返す。
+func (h *handler) serveFile(w http.ResponseWriter, r *http.Request) {
+	if !h.exists(r.URL.Path) {
+		h.serveNotFound(w)
+		return
+	}
+	h.fileServer.ServeHTTP(w, r)
+}
+
+// serveNotFound は存在しないパスへの応答を返す。
+// GitHub Pages と同じく、公開ディレクトリ直下に 404.html があればそれをステータス 404 で返す。
+func (h *handler) serveNotFound(w http.ResponseWriter) {
+	if h.docs != nil {
+		if data, err := stdFs.ReadFile(h.docs, binderFs.ErrorPageName); err == nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write(data)
+			return
+		}
+	}
+	writeErrorPage(w, http.StatusNotFound, "存在しません(404)")
 }

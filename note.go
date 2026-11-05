@@ -164,6 +164,12 @@ func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
 			return nil, xerrors.Errorf("db.GetNote() error: %w", err)
 		}
 
+		// alias は公開先のパスを兼ねるため、docs/pages の外を指すものは保存しない。
+		// "/404" は 404 ページ（docs/404.html）。alias の重複チェックでバインダーに 1 つだけになる
+		if err := fs.ValidateNoteAlias(n.Id, n.Alias); err != nil {
+			return nil, xerrors.Errorf("fs.ValidateNoteAlias() error: %w", err)
+		}
+
 		// alias変更時に公開済みファイルをリネーム
 		oldS, err := b.db.GetStructure(n.Id)
 		if err != nil {

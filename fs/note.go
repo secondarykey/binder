@@ -207,15 +207,24 @@ func (f *FileSystem) UnpublishNoteMeta(n *json.Note) (string, bool) {
 }
 
 // RenamePublishedNote は公開済みのノートファイルを旧aliasから新aliasへ移動する。
-// 対象: docs/pages/{alias}.html および docs/images/meta/{alias}
+// 対象: docs/pages/{alias}.html（404 ページは docs/404.html）および docs/images/meta/{alias}
 // ファイルが存在しない場合はスキップする。変更されたファイルパスのスライスを返す。
+// 404 ページになる・やめる変更では HTML を移さずに消す（公開し直しが要る）。
 func (f *FileSystem) RenamePublishedNote(oldAlias, newAlias string) ([]string, error) {
 	var files []string
 
 	// HTML ファイル
 	oldHTML := htmlFile(oldAlias)
 	newHTML := htmlFile(newAlias)
-	if f.isExist(oldHTML) {
+	if f.isExist(oldHTML) && json.IsErrorPageAlias(oldAlias) != json.IsErrorPageAlias(newAlias) {
+		// docs/pages/x.html と docs/404.html をまたぐ場合、書き出し済みの HTML は URL の基準
+		// （"../" とサイトのルートからのパス）が違うので、移すと表示が崩れる。
+		// 古い方を消すだけにして公開し直してもらう（structure の更新日が新しくなるので「要再公開」になる）
+		if err := f.remove(oldHTML); err != nil {
+			return nil, xerrors.Errorf("remove(%s) error: %w", oldHTML, err)
+		}
+		files = append(files, oldHTML)
+	} else if f.isExist(oldHTML) {
 		if err := f.copyFile(newHTML, oldHTML); err != nil {
 			return nil, xerrors.Errorf("copyFile(%s) error: %w", oldHTML, err)
 		}

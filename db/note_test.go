@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"binder/api/json"
 	"binder/db"
 	"binder/db/model"
 	"errors"
@@ -262,5 +263,43 @@ func TestFindInNoteId(t *testing.T) {
 
 	if len(notes) != 0 {
 		t.Errorf("inst.FindInNoteId() not zero[%d]", len(notes))
+	}
+}
+
+// 一覧（childNotes / latestNotes の元）は 404 ページ（alias "/404"）を返さない
+func TestFindNotesExcludesErrorPage(t *testing.T) {
+	inst := open()
+	defer inst.Close()
+
+	parent, _ := uuid.NewV7()
+	ids := insertChildNotes(t, inst, parent.String(), 1, 2)
+	s, err := inst.GetStructure(ids[0])
+	if err != nil {
+		t.Fatalf("GetStructure() error:%v", err)
+	}
+	s.Alias = json.ErrorPageAlias
+	if err := inst.UpdateStructure(s, testOp()); err != nil {
+		t.Fatalf("UpdateStructure() error:%v", err)
+	}
+	for _, id := range ids {
+		if _, err := inst.PublishStructure(id, testOp()); err != nil {
+			t.Fatalf("PublishStructure() error:%v", err)
+		}
+	}
+
+	want := []string{ids[1]}
+	for name, find := range map[string]func(string, int, int) ([]*model.Note, error){
+		"FindUpdatedNotes":    inst.FindUpdatedNotes,
+		"FindPublishNotes":    inst.FindPublishNotes,
+		"FindSeqNotes":        inst.FindSeqNotes,
+		"FindPublishSeqNotes": inst.FindPublishSeqNotes,
+	} {
+		notes, err := find(parent.String(), -1, -1)
+		if err != nil {
+			t.Fatalf("%s() error:%v", name, err)
+		}
+		if got := noteIds(notes); !equalIds(got, want) {
+			t.Errorf("%s()\n got:%v\nwant:%v", name, got, want)
+		}
 	}
 }

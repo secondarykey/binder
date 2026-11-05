@@ -22,6 +22,9 @@ type DoctorReport struct {
 	RowsRestored []fs.RestoredEntity
 	// Reparented は親が存在しなかった structure 行の ID（index 直下へ移動）
 	Reparented []string
+	// InvalidAliases は公開先のパスとして使えない alias を持つノート・アセットの ID（警告のみ。直さない）。
+	// 公開すると docs の外に書き出す・Binder が docs 直下で使う名前と重なる、といったもの
+	InvalidAliases []string
 }
 
 // Repaired は何らかの修復を行った場合に true を返す。
@@ -93,6 +96,10 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 		switch s.Typ {
 		case "note":
 			fileFn, tableFn = fs.NoteFile(s.Id), fs.NoteTableFile()
+			if err := fs.ValidateNoteAlias(s.Id, s.Alias); err != nil {
+				log.Warnf("Doctor: note alias cannot be used as a publish path: %s (%s): %v", s.Id, s.Name, err)
+				rep.InvalidAliases = append(rep.InvalidAliases, s.Id)
+			}
 		case "diagram":
 			fileFn, tableFn = fs.DiagramFile(s.Id), fs.DiagramTableFile()
 		case "layer":
@@ -101,6 +108,12 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 			defaultContent = "{}"
 		case "asset":
 			fileFn, tableFn = fs.AssetFile(&json.Asset{Id: s.Id}), fs.AssetTableFile()
+			// alias の検証が入る前に保存されたものは規則に合わないことがある。
+			// alias は利用者が決めるものなので直さず、編集時に検証エラーになることを知らせる
+			if err := fs.ValidateAssetAlias(s.Alias); err != nil {
+				log.Warnf("Doctor: asset alias cannot be used as a publish path: %s (%s): %v", s.Id, s.Name, err)
+				rep.InvalidAliases = append(rep.InvalidAliases, s.Id)
+			}
 		default:
 			// 未知タイプの行は触らない
 			continue

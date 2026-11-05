@@ -208,6 +208,12 @@ doctor が**空ファイルを再作成**するため本文が失われる。
 - `id` は UUID v7。`scripts/New-Uuid7.ps1 -Count N` で生成する（自分で捏造しない）
 - `seq` は同一 `parent_id` 内の max+1。再編したら **その親の子全部を `1..n` で振り直す**
 - `alias` は note / diagram では **id と同じ値**を入れる（アプリの新規作成と同じ挙動）
+- note の `alias` が `/404` のノートは **404 ページ**（`docs/404.html` に公開され、ページの一覧に並ばない）。
+  バインダーに 1 つだけ。ユーザに頼まれない限り作らない・外さない。それ以外の note の alias に `/` `\` を含めない
+- asset の `alias` は公開先のパス（`docs/assets/{alias}`）を兼ねる。`/` `\` を含めない。
+  先頭が `/` のもの（`/robots.txt` `/.nojekyll` `/CNAME`）は**サイトのルート**（`docs/robots.txt`）に公開される。
+  `/` の後ろは 1 階層の英数字・`.` `_` `-` だけで、`index.html` `404.html` `pages` `images` `assets` `layers` は使えない。
+  既存の alias の `/` を付け外しすると公開先が変わるので、ユーザに頼まれない限り触らない
 - `publish_date` / `republish_date` は新規行では必ずゼロ値 `0001-01-01T00:00:00Z`
   （勝手に公開扱いにしない）
 - `name` / `detail` は `,` `"` 半角空白 改行 を `&#44;` `&#34;` `&#32;` `&#10;` にエスケープする
@@ -233,6 +239,8 @@ ERROR が 1 件でも出たら**コミットしない**。修正するか、`git
 - 実体ファイルに対応する structures 行があるか（orphan）
 - `parent_id` が実在するか / 自己参照でないか / index から到達できるか
 - `alias` が type 内で一意か
+- `alias` が公開先のパスとして使えるか（`/` `\` `..` を含まない。先頭の `/` は asset の `/robots.txt` 等と note の `/404` だけ。
+  asset は `index.html` `404.html` `pages` `images` `assets` `layers` を使えない）
 - 同じ親の中で `seq` が重複していないか
 - 各行の列数がヘッダと一致するか（エスケープ漏れによるカンマ混入の検出）
 - **`{{drawDiagram "..."}}` `{{assetsImage "..."}}` `{{assets "..."}}` `{{embed "..."}}`

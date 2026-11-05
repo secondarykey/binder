@@ -7,7 +7,8 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
-import MergeIcon from '@mui/icons-material/Merge';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import SyncIcon from '@mui/icons-material/Sync';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -200,6 +201,11 @@ function ImportPanel({ onDone = () => {} }) {
   const isMergeDisabled = importMode === 'local'
     ? merging || !sourceBranch || hasUncommitted
     : merging || !remoteName || !remoteBranch || !authInfo?.auth_type || hasUncommitted;
+
+  // 取込元の表示名（確認文・ボタンのツールチップ用）
+  const sourceLabel = importMode === 'local'
+    ? sourceBranch
+    : (remoteName && remoteBranch ? `${remoteName}/${remoteBranch}` : '');
 
   const allResolved = conflicts.length > 0 && Object.keys(resolutions).length === conflicts.length;
   const selectedConflict = conflicts.find((c) => c.path === selectedPath);
@@ -417,7 +423,7 @@ function ImportPanel({ onDone = () => {} }) {
           }}
         >
           <ToggleButton value="local">
-            <MergeIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('share.modeLocal')}
+            <AccountTreeIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('share.modeLocal')}
           </ToggleButton>
           <ToggleButton value="remote">
             <CloudDownloadIcon sx={{ fontSize: '16px', mr: 0.5 }} />{t('share.modeRemote')}
@@ -431,35 +437,31 @@ function ImportPanel({ onDone = () => {} }) {
         </Alert>
       )}
 
-      {/* ローカルモード / リモートモード（Collapseでアニメーション切替） */}
+      {/*
+        取込元（上）→ 下向き矢印 → 反映先（下）の順に並べ、変更の流れを上から下へ読めるようにする。
+        選べるのは取込元だけ。反映先は常に現在のブランチなので入力欄ではなく表示にする。
+      */}
       <Box>
         <Collapse in={importMode === 'local'} timeout={150} unmountOnExit>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <FormControl size="small">
-              <FormLabel>{t('share.sourceBranch')}</FormLabel>
-              {selectableBranches.length > 0 ? (
-                <Select
-                  value={sourceBranch}
-                  onChange={(e) => setSourceBranch(e.target.value)}
-                  size="small"
-                >
-                  {selectableBranches.map((b) => (
-                    <MenuItem key={b} value={b}>{b}</MenuItem>
-                  ))}
-                </Select>
-              ) : (
-                <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 0.5 }}>
-                  {/* 他にブランチがない場合 */}
-                  —
-                </Typography>
-              )}
-            </FormControl>
-
-            <FormControl size="small">
-              <FormLabel>{t('share.targetBranch')}</FormLabel>
-              <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
-            </FormControl>
-          </Box>
+          <FormControl size="small" fullWidth>
+            <FormLabel>{t('share.sourceBranch')}</FormLabel>
+            {selectableBranches.length > 0 ? (
+              <Select
+                value={sourceBranch}
+                onChange={(e) => setSourceBranch(e.target.value)}
+                size="small"
+              >
+                {selectableBranches.map((b) => (
+                  <MenuItem key={b} value={b}>{b}</MenuItem>
+                ))}
+              </Select>
+            ) : (
+              <Typography sx={{ fontSize: '12px', color: 'var(--text-secondary)', mt: 0.5 }}>
+                {/* 他にブランチがない場合 */}
+                —
+              </Typography>
+            )}
+          </FormControl>
         </Collapse>
 
         <Collapse in={importMode === 'remote'} timeout={150} unmountOnExit>
@@ -484,18 +486,40 @@ function ImportPanel({ onDone = () => {} }) {
                 <TextField size="small" value={remoteBranch} onChange={(e) => setRemoteBranch(e.target.value)} />
               )}
             </FormControl>
-
-            <FormControl size="small">
-              <FormLabel>{t('share.localBranch')}</FormLabel>
-              <TextField size="small" value={localBranch} InputProps={{ readOnly: true }} />
-            </FormControl>
           </Box>
         </Collapse>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-        <ActionButton variant="confirm" label={t('share.mergeButton')}
-          icon={merging ? <CircularProgress size={16} /> : (importMode === 'local' ? <MergeIcon /> : <CloudDownloadIcon />)}
+      {/* 取込元 → 反映先 の向き */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: -1 }} aria-hidden="true">
+        <ArrowDownwardIcon sx={{ fontSize: '22px', color: 'var(--text-muted)' }} />
+      </Box>
+
+      <Box>
+        <FormLabel>{t('share.targetBranch')}</FormLabel>
+        <Box data-testid="import-target" sx={{
+          mt: 0.5, px: 1.5, py: 0.75,
+          display: 'flex', alignItems: 'center', gap: 1,
+          border: '1px dashed var(--border-input)', borderRadius: '4px',
+        }}>
+          <AccountTreeIcon sx={{ fontSize: '16px', color: 'var(--text-muted)' }} />
+          <Typography sx={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+            {localBranch || '—'}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* 何が起きるかを文章でも示す */}
+      {sourceLabel && localBranch && (
+        <Typography data-testid="import-summary" sx={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+          {t('share.mergeSummary', { source: sourceLabel, target: localBranch })}
+        </Typography>
+      )}
+
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <ActionButton variant="confirm"
+          label={localBranch ? t('share.mergeInto', { branch: localBranch }) : t('share.mergeButton')}
+          icon={merging ? <CircularProgress size={16} /> : <CheckIcon />}
           onClick={handleMerge} disabled={isMergeDisabled} />
       </Box>
 

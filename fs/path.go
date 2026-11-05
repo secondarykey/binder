@@ -96,7 +96,14 @@ func HTMLFile(note *json.Note) string {
 	return htmlFile(a)
 }
 
+// ErrorPageName は 404 ページ（alias が json.ErrorPageAlias のノート）の、公開ディレクトリ直下でのファイル名。
+// GitHub Pages は公開元の直下にあるこの名前のファイルを、存在しないパスへの応答に使う。
+const ErrorPageName = "404.html"
+
 func htmlFile(a string) string {
+	if json.IsErrorPageAlias(a) {
+		return filepath.Join(publishDir, ErrorPageName)
+	}
 	return filepath.Join(publishDir, pagesDir, fmt.Sprintf("%s.html", a))
 }
 
@@ -118,7 +125,8 @@ const publicAssetsDir = "assets"
 const publicMetaSubDir = "meta"
 
 func publicMetaFilePath(alias string) string {
-	return filepath.Join(publishDir, resourceDir, publicMetaSubDir, alias)
+	// 404 ページ（"/404"）は "/" を外す（filepath.Join でも詰まるが、意図を明示する）
+	return filepath.Join(publishDir, resourceDir, publicMetaSubDir, strings.TrimPrefix(alias, "/"))
 }
 
 func PublicMetaFile(n *json.Note) string {
@@ -135,7 +143,13 @@ func PublicAssetFile(a *json.Asset) string {
 	return publicAssetFile(a.Alias)
 }
 
+// publicAssetFile は alias から公開先のパスを返す。
+// alias が "/" で始まるもの（ルートのアセット）は公開ディレクトリの直下（docs/robots.txt）、
+// それ以外は docs/assets/{alias} に置く。alias の検証は ValidateAssetAlias で行う。
 func publicAssetFile(alias string) string {
+	if IsRootAlias(alias) {
+		return filepath.Join(publishDir, strings.TrimPrefix(alias, "/"))
+	}
 	return filepath.Join(publishDir, publicAssetsDir, alias)
 }
 

@@ -213,7 +213,9 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 		if err != nil {
 			continue
 		}
-		zipPath := "assets/" + a.Alias
+		// HTML 側の参照（convertURL）と同じく、公開先のパスから公開ディレクトリを除いたもの。
+		// サイトのルートに置くアセット（alias "/robots.txt"）は zip の直下になる
+		zipPath := exportAssetPath(a)
 		af, err := w.Create(zipPath)
 		if err != nil {
 			continue
@@ -224,7 +226,8 @@ func (b *Binder) writeExportZip(savePath string, html []byte, note *json.Note, d
 	// meta image
 	metaData, err := b.ReadMetaBytes(note.Id)
 	if err == nil && metaData != nil && note.Alias != "" {
-		zipPath := "images/meta/" + note.Alias
+		// 404 ページ（"/404"）の "/" は外す（PublicMetaFile と同じ）
+		zipPath := "images/meta/" + strings.TrimPrefix(note.Alias, "/")
 		mf, err := w.Create(zipPath)
 		if err == nil {
 			mf.Write(metaData)
@@ -294,4 +297,14 @@ func (b *Binder) GetBinderName() (string, error) {
 		return "", xerrors.Errorf("GetConfig() error: %w", err)
 	}
 	return conf.Name, nil
+}
+
+// exportAssetPath はエクスポートの zip 内でのアセットのパスを返す。
+// 公開時のパス（docs/assets/x・docs/x）から公開ディレクトリを除いた形で、
+// エクスポートした HTML の参照（"./assets/x"・"./x"）と一致する。
+func exportAssetPath(a *json.Asset) string {
+	if fs.IsRootAlias(a.Alias) {
+		return strings.TrimPrefix(a.Alias, "/")
+	}
+	return "assets/" + a.Alias
 }
