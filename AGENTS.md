@@ -215,7 +215,7 @@ cd _cmd/binder && wails3 generate bindings -f '' -clean=true
 - ロギングは `log/` パッケージ（`binder/log`）から出す（標準の `log`・`slog`・wenteasy/log を直接使わない）。`log/` の中身は [`github.com/wenteasy/log`](https://github.com/wenteasy/log)（ハンドラ・日ごとのファイル）
   - 書き方は 2 つで混ぜない: `log.Info("保存しました", "path", p)`（slog と同じメッセージ + キーと値）と `log.Infof("失敗:\n%+v", err)`（printf）。`log.Info` に書式を渡すと整形されない
   - ほかに `log.PrintTrace(log.Func(...))` / `log.PrintStackTrace(err)` / `defer log.NoneStop()`
-  - ログは `os.TempDir()\binder\binder_<日付>.log`（環境変数 `BINDER_LOG_DIR` で変えられる。試しに起動するときは普段のログと混ぜない）。開発中（`wails3 dev`）はコンソールにも出る。起動時に 10 日（`log.DefaultKeepDays`）より古いログを消す
+  - ログは `os.TempDir()\binder\binder_<日付>.log`（環境変数 `BINDER_LOG_DIR` で変えられる。試しに起動するときは普段のログと混ぜない）。開発中（`wails3 dev`）はコンソールにも出る。古いログの片付けは wenteasy/log の `RollingFileWriter` に任せている（最初に書いたときと日付が変わったときに別の goroutine で動く）。3 日（`log.DefaultCompressDays`）より古いものは `.log.gz` に圧縮し、90 日（`log.DefaultKeepDays`）より古いものは消す。頭に `binder_` の無い旧形式のファイルと空の `binder_crash_pid*.log` だけは `log.Init` が消す
   - 拾われなかった panic は同じフォルダの `binder_crash_<日時>.log` に残る（`log.CatchCrash`。書いている間は `binder_crash_pid<ID>.log`）
 - `log/` の作り方の決まりごとの正は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」（ひな形・よくある間違い）。`log/` はそのひな形（アプリだけの形。`SetLogger` は持たない）に揃えている。残りは `log/TODO.md`
 - IDはUUID v7（`github.com/google/uuid`）
