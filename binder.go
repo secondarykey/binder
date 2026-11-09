@@ -38,6 +38,10 @@ type Binder struct {
 	httpServerAddress string
 	serveMu           sync.Mutex // httpServer の遅延起動を保護する
 	op                db.Op
+
+	// doctorReport は Load() 時の RunDoctor で修復した内容。修復が無ければ nil。
+	// 画面で知らせるため TakeDoctorReport() で一度だけ取り出す
+	doctorReport *DoctorReport
 }
 
 type userOp struct {
@@ -214,6 +218,7 @@ func Load(dir string) (rtn *Binder, rtnErr error) {
 		log.Warnf("RunDoctor() error:\n%+v", err)
 	} else if rep.Repaired() {
 		log.Noticef("Doctor repaired: %s", rep.Summary())
+		b.doctorReport = rep
 	}
 
 	return &b, nil

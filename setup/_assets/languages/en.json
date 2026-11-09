@@ -703,6 +703,14 @@
         "preview" : "Preview",
         "modifiedSection" : "File"
     },
+    "doctor" : {
+        "repaired" : "Fixed {{count}} inconsistencies in the binder when opening it",
+        "repairedLost" : "Fixed {{count}} inconsistencies in the binder when opening it. Some content was lost",
+        "recreated" : "The content file was missing, so it was recreated empty. The previous content can be restored from the history",
+        "orphan" : "It was not in the tree, so it was put back under index",
+        "row" : "Its information was missing, so it was filled in",
+        "reparented" : "Its parent was not found, so it was moved under index"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",

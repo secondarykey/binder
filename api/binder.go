@@ -103,6 +103,35 @@ func (a *App) CloseBinder() error {
 	return nil
 }
 
+// TakeDoctorReport は、開いたときに整合性を修復した内容を返す（一度だけ。次からは nil）。
+// 修復が無ければ nil。外部のツールでバインダーを編集した後の書き損じなどを、
+// フロントがバインダーを開いた直後に知らせるために使う。
+func (a *App) TakeDoctorReport() (*json.DoctorReport, error) {
+
+	defer log.PrintTrace(log.Func("TakeDoctorReport()"))
+
+	if a.current == nil {
+		return nil, nil
+	}
+	rep := a.current.TakeDoctorReport()
+	if !rep.Repaired() {
+		return nil, nil
+	}
+
+	var items []*json.DoctorItem
+	add := func(kind string, list []fs.RestoredEntity) {
+		for _, e := range list {
+			items = append(items, &json.DoctorItem{Id: e.Id, Typ: e.Typ, Name: e.Name, Kind: kind})
+		}
+	}
+	// 本文が失われたもの（recreated）を先に並べる
+	add("recreated", rep.FilesRecreated)
+	add("orphan", rep.OrphanRestored)
+	add("row", rep.RowsRestored)
+	add("reparented", rep.Reparented)
+	return &json.DoctorReport{Items: items}, nil
+}
+
 // holdOpen は、バインダーを閉じて fs.Load で直接書き込み、開き直す操作（復元・ブランチ切替・
 // 取り込み・履歴の整理）の間も「開いている」印を持ち続けるためのもの（fs/openmark.go）。
 // 閉じてから開き直すまでの間に印が消えると、外部のツールが「閉じている」と見てしまう。

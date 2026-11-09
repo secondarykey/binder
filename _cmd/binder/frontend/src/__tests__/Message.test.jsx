@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import Message, { SystemMessage } from '../Message';
 import Event, { EventContext } from '../Event';
 
@@ -64,5 +64,35 @@ describe('SystemMessage', () => {
         <SystemMessage />
       </EventContext.Provider>
     );
+  });
+
+  it('shows an action button and runs it', () => {
+    const evt = new Event();
+    const onClick = vi.fn();
+    render(
+      <EventContext.Provider value={evt}>
+        <SystemMessage />
+      </EventContext.Provider>
+    );
+    act(() => {
+      evt.showMessage({ type: 'info', body: 'repaired', detail: '', debug: '', action: { label: 'History', onClick } });
+    });
+    expect(screen.getAllByText('repaired').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'History' }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no action button without an action', () => {
+    const evt = new Event();
+    render(
+      <EventContext.Provider value={evt}>
+        <SystemMessage />
+      </EventContext.Provider>
+    );
+    act(() => {
+      evt.showMessage({ type: 'info', body: 'plain', detail: '', debug: '' });
+    });
+    expect(screen.getAllByText('plain').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });

@@ -26,6 +26,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
   Convert: vi.fn(() => Promise.resolve()),
   GetAutoSave: vi.fn(() => Promise.resolve({ enabled: false, intervalMinutes: 30, onClose: true })),
   AutoSave: vi.fn(() => Promise.resolve(0)),
+  TakeDoctorReport: vi.fn(() => Promise.resolve(null)),
 }));
 vi.mock('../../bindings/main/window', () => ({
   SavePosition: vi.fn(() => Promise.resolve()),

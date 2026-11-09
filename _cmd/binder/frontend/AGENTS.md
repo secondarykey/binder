@@ -6,7 +6,7 @@
 
 - **main.jsx** — エントリポイント。URLパラメータ（`history` / `overallHistory` / `preview` / `syslog` / `search`）で開くアプリを切り替え、未指定ならメインウィンドウの App
 - **Event.jsx** — コンポーネント間通信用のカスタムイベントバス
-- **Message.jsx** — Snackbar通知
+- **Message.jsx** — Snackbar通知。メッセージに `action: { label, onClick }` を持たせると右端にボタンを出す（例: Doctor の修復通知の「履歴」）
 
 **app/** — アプリエントリ & アプリ固有コンポーネント:
 - App.jsx — メインウィンドウ: 左側Menu + 右側Content。各モーダルの開閉状態もここが持つ

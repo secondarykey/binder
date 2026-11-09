@@ -703,6 +703,14 @@
         "preview" : "プレビュー",
         "modifiedSection" : "ファイル"
     },
+    "doctor" : {
+        "repaired" : "開いたときにバインダーの食い違いを {{count}} 件直しました",
+        "repairedLost" : "開いたときにバインダーの食い違いを {{count}} 件直しました。本文が失われたものがあります",
+        "recreated" : "本文のファイルが無かったため、空で作り直しました。以前の本文は履歴から戻せます",
+        "orphan" : "ツリーに無かったため、index の下に戻しました",
+        "row" : "情報が欠けていたため補いました",
+        "reparented" : "親が見つからないため、index の下へ移しました"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",

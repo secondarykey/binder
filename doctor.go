@@ -20,8 +20,8 @@ type DoctorReport struct {
 	FilesRecreated []fs.RestoredEntity
 	// RowsRestored は structure 行はあるが実体テーブル行が無かったもの（最小行を復元）
 	RowsRestored []fs.RestoredEntity
-	// Reparented は親が存在しなかった structure 行の ID（index 直下へ移動）
-	Reparented []string
+	// Reparented は親が存在しなかった structure 行（index 直下へ移動）
+	Reparented []fs.RestoredEntity
 	// InvalidAliases は公開先のパスとして使えない alias を持つノート・アセットの ID（警告のみ。直さない）。
 	// 公開すると docs の外に書き出す・Binder が docs 直下で使う名前と重なる、といったもの
 	InvalidAliases []string
@@ -149,7 +149,7 @@ func (b *Binder) RunDoctor() (*DoctorReport, error) {
 			}
 			log.Warnf("Doctor: reparented dangling structure: %s (%s -> index)", s.Id, oldParent)
 			structureChanged = true
-			rep.Reparented = append(rep.Reparented, s.Id)
+			rep.Reparented = append(rep.Reparented, fs.RestoredEntity{Id: s.Id, Typ: s.Typ, Name: s.Name})
 		}
 	}
 
@@ -276,4 +276,16 @@ func (b *Binder) restoreEntityRow(typ, id string) error {
 		}
 	}
 	return nil
+}
+
+// TakeDoctorReport は Load() 時に修復した内容を返し、持っていた報告を消す。
+// 修復が無かった・取り出し済みなら nil。外部のツールでバインダーを編集した後などに、
+// 開いた直後の 1 回だけ画面で知らせるために使う。
+func (b *Binder) TakeDoctorReport() *DoctorReport {
+	if b == nil {
+		return nil
+	}
+	rep := b.doctorReport
+	b.doctorReport = nil
+	return rep
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Alert, Box, Collapse, Dialog, DialogContent, DialogContentText, DialogTitle, IconButton, Link, Slide, Snackbar } from '@mui/material';
+import { Alert, Box, Button, Collapse, Dialog, DialogContent, DialogContentText, DialogTitle, IconButton, Link, Slide, Snackbar } from '@mui/material';
 
 import CloseIcon from "@mui/icons-material/Close";
 import Event, { useEventListener } from "./Event";
@@ -90,6 +90,15 @@ export function SystemMessage(props) {
                 autoHideDuration={msgObj.type === "success" ? 2000 : null}>
                 <Alert severity={msgObj.type}
                     variant="filled"
+                    action={msgObj.action ? (
+                        <Button color="inherit" size="small"
+                            onClick={() => {
+                                hideSlideMessage();
+                                msgObj.action.onClick();
+                            }}>
+                            {msgObj.action.label}
+                        </Button>
+                    ) : undefined}
                     sx={{ width: '100%' }}>
                     {msgObj.body}
                 </Alert>
