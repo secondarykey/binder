@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 
+	"binder/fs"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -40,5 +41,13 @@ func (a *App) Convert(dir string) (err error) {
 			err = fmt.Errorf("unexpected error during migration: %v", r)
 		}
 	}()
+
+	// 移行はバインダーへ書き込むため、その間は「開いている」印を立てる（fs/openmark.go）
+	if err := fs.AcquireOpen(dir); err != nil {
+		log.PrintStackTrace(err)
+		return userError(err)
+	}
+	defer fs.ReleaseOpen(dir)
+
 	return setup.Convert(dir, a.version)
 }

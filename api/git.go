@@ -218,6 +218,7 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 
 	// 5. ディレクトリを保存してから Binder を閉じる
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err = a.CloseBinder()
 	if err != nil {
@@ -333,6 +334,7 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 
 	// 2. Binder を閉じる
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 	err = a.CloseBinder()
 	if err != nil {
 		log.PrintStackTrace(err)
@@ -575,6 +577,7 @@ func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
 
 	// 2. ディレクトリを保存してから Binder を閉じる
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err = a.CloseBinder()
 	if err != nil {
@@ -749,6 +752,7 @@ func (a *App) RestoreToCommit(hash string) (*json.BranchResult, error) {
 
 	// ディレクトリを保存してから Binder を閉じる
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err = a.CloseBinder()
 	if err != nil {
@@ -875,7 +879,14 @@ func (a *App) RestoreToCommitByPath(dir string, hash string) (*json.BranchResult
 		return a.RestoreToCommit(hash)
 	}
 
-	// バインダー未オープン: fs.Load で直接復元
+	// バインダー未オープン: fs.Load で直接復元する。
+	// 書き込む間は「開いている」印を立て、別のプロセスが開いていれば触らない
+	if err := fs.AcquireOpen(dir); err != nil {
+		log.PrintStackTrace(err)
+		return nil, userError(err)
+	}
+	defer fs.ReleaseOpen(dir)
+
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
@@ -948,6 +959,13 @@ func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, e
 	if a.current != nil && a.current.Dir() == dir {
 		return a.SwitchBranch(name)
 	}
+
+	// 書き込む間は「開いている」印を立て、別のプロセスが開いていれば触らない
+	if err := fs.AcquireOpen(dir); err != nil {
+		log.PrintStackTrace(err)
+		return nil, userError(err)
+	}
+	defer fs.ReleaseOpen(dir)
 
 	tmpFs, err := fs.Load(dir)
 	if err != nil {
@@ -1073,6 +1091,7 @@ func (a *App) SwitchBranch(name string) (*json.BranchResult, error) {
 
 	// ディレクトリを保存してから Binder を閉じる
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err = a.CloseBinder()
 	if err != nil {
@@ -1119,6 +1138,7 @@ func (a *App) CreateBranch(name string) (*json.BranchResult, error) {
 
 	// ディレクトリを保存してから Binder を閉じる
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err := a.CloseBinder()
 	if err != nil {
@@ -1204,6 +1224,7 @@ func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 	}
 
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err = a.CloseBinder()
 	if err != nil {
@@ -1253,6 +1274,7 @@ func (a *App) RunGC() (*json.GCResult, error) {
 	defer log.PrintTrace(log.Func("RunGC()"))
 
 	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
 
 	err := a.CloseBinder()
 	if err != nil {

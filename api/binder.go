@@ -3,6 +3,7 @@ package api
 import (
 	"binder"
 	"binder/api/json"
+	"binder/fs"
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
@@ -44,7 +45,17 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 		a.WindowCloser.CloseBinderWindows()
 	}
 
+	// フロントはバインダーの切り替えで CloseBinder を経ずに LoadBinder を呼ぶため、
+	// 前のバインダーをここで閉じる。閉じないと「開いている」印（fs/openmark.go）が
+	// 残り、外部のツールから切り替え前のバインダーがまだ開いているように見える。
+	// 同じバインダーの開き直しでも印は参照カウントなので、新しい方の分が残る
+	prev := a.current
 	a.SetCurrent(b)
+	if prev != nil {
+		if err := prev.Close(); err != nil {
+			log.Warnf("前のバインダーを閉じられません:\n%+v", err)
+		}
+	}
 
 	// バインダーを問題なく開けた = この起動は安全と確定できるので、
 	// クラッシュ検出フラグ StartupOk を true に戻す（次回起動で自動オープンを許可）。
@@ -90,6 +101,18 @@ func (a *App) CloseBinder() error {
 		}
 	}
 	return nil
+}
+
+// holdOpen は、バインダーを閉じて fs.Load で直接書き込み、開き直す操作（復元・ブランチ切替・
+// 取り込み・履歴の整理）の間も「開いている」印を持ち続けるためのもの（fs/openmark.go）。
+// 閉じてから開き直すまでの間に印が消えると、外部のツールが「閉じている」と見てしまう。
+// 使い方: defer a.holdOpen(dir)()
+func (a *App) holdOpen(dir string) func() {
+	if err := fs.AcquireOpen(dir); err != nil {
+		log.Warnf("holdOpen(%s):\n%+v", dir, err)
+		return func() {}
+	}
+	return func() { fs.ReleaseOpen(dir) }
 }
 
 func (a *App) CreateBinder(dir string, name string, installType string) (string, error) {

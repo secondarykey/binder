@@ -41,14 +41,29 @@ powershell -ExecutionPolicy Bypass -File <skill>/scripts/Preflight.ps1
 |---|---|
 | `binder.json` の存在 | 無ければ**中断**（ここはバインダーではない） |
 | `.git` の存在 | 無ければ**中断** |
-| `.git/index.lock` | 有れば**中断**（Binder が動作中の可能性） |
+| `BINDER_OPEN=` の行 | `live` なら**中断**（Binder アプリがこのバインダーを開いている） |
+| `.git/index.lock` | 有れば**中断**（git の操作中） |
 | `git status` | 汚れていれば**中断**（先にアプリで記録してもらう） |
 | `db/*.csv` のヘッダ行 | 出力された列順・列有無をこの回の作業前提として固定する |
 | `CONTAINERS=` の行 | 未完成マーカーの書式が決まる（下記「未完成箇所のマーカー」） |
 
-**さらにユーザへ明示的に確認する**: 「Binder アプリでこのバインダーを開いていませんか？
-開いていれば閉じてください」。go-git は `.git/index` を lock ファイルを介さず直接書き込むため、
-アプリと同時に編集するとインデックスが壊れる。
+**Binder アプリが開いているかの判定**: go-git は `.git/index` を lock ファイルを介さず直接書き込むため、
+アプリと同時に編集するとインデックスが壊れる。`.git/index.lock` では判定できないので、
+Binder がバインダーを開いている間に置く印（`.git/binder-open.lock` とその情報 `.git/binder-open.json`）で判定する。
+印は OS のファイルロックで、アプリが落ちれば外れる（判定は `scripts/OpenMarker.ps1`）。
+
+| `BINDER_OPEN=` | 意味 | すること |
+|---|---|---|
+| `live` | このPCの Binder が開いている | **中断**。アプリでバインダーを閉じてもらい、Preflight をやり直す |
+| `stale` | 前回正しく閉じなかった印が残っているだけ | 続けてよい（印はアプリが次に開くときに書き換える。消さなくてよい） |
+| `none` | 印が無い | 続けてよい。ただし下の `ASK_USER` に従う |
+| `other-host` | 別のPCの印（同期フォルダ等）。ここからは判定できない | `ASK_USER=yes` になる |
+| `unknown` | ロックファイルを確かめられなかった | `ASK_USER=yes` になる |
+
+**最後の行が `ASK_USER=yes` のときだけ**、ユーザへ明示的に確認する:
+「Binder アプリでこのバインダーを開いていませんか？開いていれば閉じてください」。
+印を出さない古い Binder（`binder.json` の version が 0.17.3 以前）で最後に開かれたバインダーでは、
+印が無くても閉じているとは言えないため `ASK_USER=yes` になる。`ASK_USER=no` なら聞かなくてよい。
 
 ### 1. 読み込みと現状レポート
 
@@ -233,8 +248,13 @@ powershell -ExecutionPolicy Bypass -File <skill>/scripts/Validate.ps1
 ERROR が 1 件でも出たら**コミットしない**。修正するか、`git checkout -- .` で
 実行前の状態に戻してからユーザに報告する。
 
+例外: 「Binder アプリがこのバインダーを開いている」の ERROR は、作業中にアプリで開かれたことを示す。
+このときは `git checkout` で戻さない（アプリが開くときに doctor が書き込んでいることがあり、
+戻すと区別がつかなくなる）。ユーザにアプリでバインダーを閉じてもらい、Validate をやり直す。
+
 検証項目:
 
+- Binder アプリがこのバインダーを開いていないか（Preflight と同じ判定。コミット直前にもう一度確かめる）
 - structures の各行に対応する実体ファイルと実体テーブル行があるか
 - 実体ファイルに対応する structures 行があるか（orphan）
 - `parent_id` が実在するか / 自己参照でないか / index から到達できるか

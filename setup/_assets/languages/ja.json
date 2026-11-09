@@ -746,6 +746,7 @@
             "reservedAlias" : "そのエイリアスはバインダーが公開データの直下で使っているため使えません（index.html・404.html・pages・images・assets・layers）",
             "duplicateName" : "その名前は既に使用されています",
             "notBinder" : "このフォルダはバインダーではありません",
+            "openedElsewhere" : "このバインダーは別の Binder で開かれています。そちらを閉じてから開いてください",
             "uncommitted" : "未記録の変更があります。先に記録してください",
             "noUpdates" : "記録する変更がありません",
             "mergeSourceTooOld" : "マージ元のデータ形式が古すぎるため移行できません。以前のバージョンのアプリで開いて移行してください"

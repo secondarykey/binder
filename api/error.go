@@ -50,6 +50,8 @@ func userError(err error) error {
 		return Wrap(err, settings.T("go.error.duplicateName"))
 	case errors.Is(err, convert.ErrNotBinder):
 		return Wrap(err, settings.T("go.error.notBinder"))
+	case errors.Is(err, fs.ErrOpenedElsewhere):
+		return Wrap(err, settings.T("go.error.openedElsewhere"))
 	case errors.Is(err, ErrUncommittedChanges):
 		return Wrap(err, settings.T("go.error.uncommitted"))
 	case errors.Is(err, fs.UpdatedFilesError):

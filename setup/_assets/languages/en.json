@@ -746,6 +746,7 @@
             "reservedAlias" : "That alias is used by the binder directly under the published data (index.html, 404.html, pages, images, assets, layers)",
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",
+            "openedElsewhere" : "This binder is open in another Binder. Close it there first",
             "uncommitted" : "There are unrecorded changes. Please record them first",
             "noUpdates" : "No changes to record",
             "mergeSourceTooOld" : "The merge source uses a data format that is too old to migrate. Please open it with an older version of the app first"

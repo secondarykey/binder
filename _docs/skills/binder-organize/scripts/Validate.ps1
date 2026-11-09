@@ -30,6 +30,15 @@ $root  = (Resolve-Path $Path).Path
 $dbDir = Join-Path $root 'db'
 Write-Output "=== Validate: $root ==="
 
+# --- 作業中に Binder アプリで開かれていないか（コミット直前にもう一度確かめる） ---
+. (Join-Path $PSScriptRoot 'OpenMarker.ps1')
+$open = Get-BinderOpenState $root
+switch ($open.State) {
+    'live'       { Add-Err "Binder アプリがこのバインダーを開いている。作業中に開かれた可能性がある。アプリでバインダーを閉じてから検証し直すこと ($($open.Detail))" }
+    'other-host' { Add-Warn "別のPCの Binder の印が残っている ($($open.Detail))" }
+    'unknown'    { Add-Warn "Binder が開いているか確かめられない ($($open.Detail))" }
+}
+
 if (-not (Test-Path (Join-Path $dbDir 'structures.csv'))) {
     Write-Output "ERROR: db/structures.csv が無い"
     exit 1

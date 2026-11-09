@@ -232,6 +232,14 @@ func main() {
 		log.Warnf("Run() error:\n%+v", err)
 	}
 
+	// OS のウィンドウクローズ（× ボタン・Alt+F4）は Terminate を通らず CloseBinder が呼ばれないため、
+	// ここで閉じて「開いている」印（fs/openmark.go）を消す。ウィンドウはもう無いので閉じる対象から外す。
+	// Terminate 経由なら既に閉じていて何もしない
+	app.WindowCloser = nil
+	if err := app.CloseBinder(); err != nil {
+		log.Warnf("CloseBinder() error:\n%+v", err)
+	}
+
 	// wailsApp.Run() が正常リターンした = 正常終了。
 	// 次回起動で自動オープンが動くよう StartupOk を true に戻す。
 	// バインダーを開いた場合は LoadBinder() 内で既に true 保存済みだが、
