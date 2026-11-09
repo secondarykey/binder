@@ -3,16 +3,17 @@ import { useState, useEffect, useContext } from "react";
 import {
   Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControl, FormLabel, IconButton, List, ListItemButton, ListItemIcon,
-  ListItemText, TextField, ToggleButton, ToggleButtonGroup, Typography,
+  ListItemText, Menu, MenuItem, TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
+import PostAddIcon from '@mui/icons-material/PostAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 
-import { ListRootFiles, ReadRootFile, SaveRootFile, RemoveRootFile, RenameRootFile } from "../../bindings/binder/api/app";
+import { ListRootFiles, ReadRootFile, SaveRootFile, RemoveRootFile, RenameRootFile, ListRootFileTemplates, ReadRootFileTemplate } from "../../bindings/binder/api/app";
 import Marked from "../components/editor/engines/Marked";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
@@ -38,6 +39,10 @@ function RootFileSetting() {
   const { t } = useTranslation();
 
   const [files, setFiles] = useState([]);
+
+  // 雛形（AGENTS.md 等）。バインダーへ自動では置かず、ここで選んだときだけ書き出す
+  const [templates, setTemplates] = useState([]);
+  const [templateAnchor, setTemplateAnchor] = useState(null);
 
   // 追加ダイアログ
   const [addDialog, setAddDialog] = useState(false);
@@ -69,6 +74,9 @@ function RootFileSetting() {
 
   useEffect(() => {
     loadFiles();
+    ListRootFileTemplates().then((list) => {
+      setTemplates(list || []);
+    }).catch((err) => showError(err));
   }, []);
 
   const validateName = (name, excludeName = null) => {
@@ -95,6 +103,19 @@ function RootFileSetting() {
       setAddDialog(false);
       loadFiles();
       openEditDialog(addName);
+    }).catch((err) => showError(err));
+  };
+
+  // --- 雛形から追加 ---
+  // 同じ名前のファイルがあれば選べない（上書きしない）。書き出したら編集ダイアログで中身を見せる
+  const handleAddFromTemplate = (name) => {
+    setTemplateAnchor(null);
+    ReadRootFileTemplate(name).then((content) => {
+      return SaveRootFile(name, content);
+    }).then(() => {
+      evt.showSuccessMessage(t("rootFile.addSuccess"));
+      loadFiles();
+      openEditDialog(name);
     }).catch((err) => showError(err));
   };
 
@@ -172,6 +193,9 @@ function RootFileSetting() {
           <Typography variant="caption" sx={{ flex: 1, color: 'var(--text-muted)', textAlign: 'left' }}>
             {t("rootFile.hint")}
           </Typography>
+          {templates.length > 0 && (
+            <ActionButton variant="confirm" icon={<PostAddIcon />} label={t("rootFile.addFromTemplate")} onClick={(e) => setTemplateAnchor(e.currentTarget)} size="small" />
+          )}
           <ActionButton variant="save" icon={<AddIcon />} label={t("common.add")} onClick={handleOpenAddDialog} size="small" />
         </Box>
 
@@ -230,6 +254,25 @@ function RootFileSetting() {
         </FormControl>
 
       </Box>
+
+      {/** 雛形の一覧 */}
+      <Menu
+        anchorEl={templateAnchor}
+        open={!!templateAnchor}
+        onClose={() => setTemplateAnchor(null)}
+      >
+        {templates.map((name) => (
+          <MenuItem
+            key={name}
+            dense
+            disabled={files.some((f) => f.name.toLowerCase() === name.toLowerCase())}
+            onClick={() => handleAddFromTemplate(name)}
+            sx={{ fontSize: '13px' }}
+          >
+            {name}
+          </MenuItem>
+        ))}
+      </Menu>
 
       {/** 追加ダイアログ */}
       <Dialog

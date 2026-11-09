@@ -687,6 +687,7 @@
         "hint" : "バインダーのルートに配置するファイル（README.md 等）。変更は未記録一覧に表示されます。",
         "empty" : "ファイルがありません",
         "add" : "ファイルを追加",
+        "addFromTemplate" : "雛形から追加",
         "nameLabel" : "ファイル名",
         "namePlaceholder" : "例: README.md",
         "nameRequired" : "ファイル名は必須です",

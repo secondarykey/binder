@@ -687,6 +687,7 @@
         "hint" : "Files placed at the binder root (e.g. README.md). Changes appear in the unrecorded list.",
         "empty" : "No files",
         "add" : "Add File",
+        "addFromTemplate" : "Add from template",
         "nameLabel" : "File Name",
         "namePlaceholder" : "e.g. README.md",
         "nameRequired" : "File name is required",

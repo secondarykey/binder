@@ -4,6 +4,7 @@ import (
 	"binder/fs"
 	"binder/log"
 	"binder/settings"
+	"binder/setup"
 	"fmt"
 )
 
@@ -67,4 +68,27 @@ func (a *App) RenameRootFile(oldName, newName string) error {
 		return userError(err)
 	}
 	return nil
+}
+
+// ListRootFileTemplates はルートファイルの雛形（AGENTS.md 等）の名前の一覧を返す。
+// 雛形はバインダーへ自動では置かず、ユーザが選んだときだけ書き出す。
+func (a *App) ListRootFileTemplates() ([]string, error) {
+	defer log.PrintTrace(log.Func("ListRootFileTemplates()"))
+	names, err := setup.RootFileTemplates()
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, userError(err)
+	}
+	return names, nil
+}
+
+// ReadRootFileTemplate は雛形の中身を、いまのアプリの言語で返す（無い言語は英語）。
+func (a *App) ReadRootFileTemplate(name string) (string, error) {
+	defer log.PrintTrace(log.Func("ReadRootFileTemplate()", name))
+	content, err := setup.RootFileTemplate(name, settings.I18nLang())
+	if err != nil {
+		log.PrintStackTrace(err)
+		return "", userError(err)
+	}
+	return content, nil
 }
