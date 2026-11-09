@@ -34,7 +34,7 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 ## ファイル別の責務
 
 - **api.go** — `App` 本体、`GetVersionInfo`、非同期検索（`SearchBinder`）、`Address` / `EnsureAddress`（HTTPサーバ遅延起動）
-- **binder.go** — バインダーの Load/Create/Close/CreateRemote、公開（`Generate` / `GenerateAll` / `Unpublish*`）。`LoadBinder` はクラッシュ検出フラグ `StartupOk` の管理も行う
+- **binder.go** — バインダーの Load/Create/Close/CreateRemote、公開（`Generate` / `GenerateAll` / `Unpublish*`、一緒に公開する参照先の `GetUnpublishedRefs`）。`LoadBinder` はクラッシュ検出フラグ `StartupOk` の管理も行う
 - **git.go** — 最大のファイル。記録（`Commit` / `CommitFiles` / `AutoSave`）、リモートCRUD・Push・PushDocs、マージ（`MergeFromRemote` / `MergeFromLocal` / `ApplyMergeResolution`）、履歴・復元、ブランチ操作、`*ByPath` 系（バインダーを開かずにディレクトリ指定で履歴操作）、クリーンアップ（`SquashHistory` / `RunGC`）
 - **note.go / diagram.go / assets.go / layer.go / template.go / structure.go** — エンティティ別 CRUD・コンテンツの読み書き
 - **tree.go** — 各種ツリー取得（Binder/Template/Modified/Unpublished/Published）と `MoveNode`

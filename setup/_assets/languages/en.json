@@ -422,6 +422,11 @@
         "generateError" : "Errors occurred in the following files:",
         "noFilesSelected" : "No files selected."
     },
+    "publishRefs" : {
+        "title" : "Publish referenced data too?",
+        "message" : "This refers to diagrams, assets or layers that have not been published yet. Unless they are published, those parts will not appear on the published page.",
+        "publish" : "Publish"
+    },
     "snippetSetting" : {
         "markdowns" : "Markdowns",
         "diagrams" : "Diagrams",

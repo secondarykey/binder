@@ -12,19 +12,19 @@ import SyncIcon from '@mui/icons-material/Sync';
 
 import {
   GetUnpublishedTree, GetPublishedNotesByTemplate, GetPublishedTree,
-  OpenNote, OpenDiagram,
-  ParseNote, ParseDiagram, GenerateAll, UnpublishAll,
+  OpenNote, GetUnpublishedRefs, GenerateAll, UnpublishAll,
 } from '../../bindings/binder/api/app';
 
 import Marked from '../components/editor/engines/Marked';
-import Mermaid from '../components/editor/engines/Mermaid';
 
 import Event, { EventContext, useEventListener } from '../Event';
 import { useDialogMessage } from './components/DialogError';
 import { ActionButton } from './components/ActionButton';
+import { usePublishRefsDialog } from './PublishRefsDialog';
 import "../language";
 import { useTranslation } from 'react-i18next';
 import { publishWarningMessage } from "../publish-warning";
+import { renderPublishItem, publishCommentLines } from "../publish-items";
 
 /**
  * 未公開一覧
@@ -111,23 +111,7 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       const leaf = all[i];
       evt.raise(Event.PublishProgress, { running: true, current: i, total: all.length });
       try {
-        if (leaf.type === "note") {
-          const text = await OpenNote(leaf.id);
-          const parseResult = await ParseNote(leaf.id, false, text);
-          if (parseResult.error) throw new Error(parseResult.error);
-          const html = await Marked.parse(parseResult.html);
-          items.push({ mode: "note", id: leaf.id, data: html });
-        } else if (leaf.type === "diagram") {
-          const text = await OpenDiagram(leaf.id);
-          const diagResult = await ParseDiagram(leaf.id, false, text);
-          if (diagResult.error) throw new Error(diagResult.error);
-          const obj = await Mermaid.parse(diagResult.html);
-          items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
-        } else if (leaf.type === "layer") {
-          items.push({ mode: "layer", id: leaf.id, data: "" });
-        } else {
-          items.push({ mode: "assets", id: leaf.id, data: "" });
-        }
+        items.push(await renderPublishItem(leaf));
       } catch (err) {
         errors.push(leaf.name);
       }
@@ -225,6 +209,31 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
     });
   };
 
+  // 参照先を一緒に公開するかを聞くダイアログ
+  const [publishRefsDialog, askPublishRefs] = usePublishRefsDialog();
+
+  /**
+   * 選んだノートが参照している、まだ公開していない図・アセット・レイヤーのうち、選ばれていないものを返す。
+   * 調べられなかったノートは飛ばす（公開時の警告で知らせる）。
+   */
+  const unselectedRefs = async (selected) => {
+    const ids = new Set(selected.map((l) => l.id));
+    const found = new Map();
+    for (const leaf of selected) {
+      if (leaf.type !== "note") continue;
+      try {
+        const text = await OpenNote(leaf.id);
+        const refs = await GetUnpublishedRefs(leaf.id, text) ?? [];
+        refs.forEach((r) => {
+          if (!ids.has(r.id) && !found.has(r.id)) found.set(r.id, r);
+        });
+      } catch (err) {
+        // 公開は止めない
+      }
+    }
+    return [...found.values()];
+  };
+
   // GenerateForm からの Generate 実行イベント
   useEventListener(Event.PublishGenerate, async (comment) => {
 
@@ -240,6 +249,15 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       return;
     }
 
+    // 選んだノートが参照している、まだ公開していない図・アセット・レイヤーのうち、
+    // 一覧で選ばれていないもの（チェックを外した・下層公開で範囲の外にある等）を一緒に公開するか聞く
+    const extra = await unselectedRefs(selected);
+    if (extra.length > 0) {
+      const chosen = await askPublishRefs(extra);
+      if (chosen === null) return;
+      selected.push(...chosen);
+    }
+
     const total = selected.length;
     evt.raise(Event.PublishProgress, { running: true, current: 0, total });
 
@@ -250,27 +268,16 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       const leaf = selected[i];
       evt.raise(Event.PublishProgress, { running: true, current: i, total });
       try {
-        if (leaf.type === "note") {
-          const text = await OpenNote(leaf.id);
-          const parseResult = await ParseNote(leaf.id, false, text);
-          if (parseResult.error) throw new Error(parseResult.error);
-          const html = await Marked.parse(parseResult.html);
-          items.push({ mode: "note", id: leaf.id, data: html });
-        } else if (leaf.type === "diagram") {
-          const text = await OpenDiagram(leaf.id);
-          const diagResult = await ParseDiagram(leaf.id, false, text);
-          if (diagResult.error) throw new Error(diagResult.error);
-          const obj = await Mermaid.parse(diagResult.html);
-          items.push({ mode: "diagram", id: leaf.id, data: obj.svg });
-        } else if (leaf.type === "layer") {
-          items.push({ mode: "layer", id: leaf.id, data: "" });
-        } else {
-          // asset
-          items.push({ mode: "assets", id: leaf.id, data: "" });
-        }
+        items.push(await renderPublishItem(leaf));
       } catch (err) {
         errors.push(leaf.name);
       }
+    }
+
+    // 一緒に公開する参照先を記録のメッセージに足す
+    const added = selected.filter((l) => extra.some((r) => r.id === l.id));
+    if (added.length > 0) {
+      comment += publishCommentLines(added);
     }
 
     // レンダリングに成功したアイテムを1回のコミットにまとめて公開
@@ -353,6 +360,8 @@ function UnpublishedMenu({ date: dateProp, template, filterIds, onNavigate, onCl
       </ListItemButton>
     </>}
     </div>
+
+    {publishRefsDialog}
 
     <Menu open={contextMenu.open}
       onClose={() => setContextMenu({ open: false, x: 0, y: 0, leaf: null })}

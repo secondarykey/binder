@@ -422,6 +422,11 @@
         "generateError" : "以下のファイルでエラーが発生しました:",
         "noFilesSelected" : "ファイルが選択されていません。"
     },
+    "publishRefs" : {
+        "title" : "参照しているデータも公開しますか？",
+        "message" : "まだ公開していない図・アセット・レイヤーを参照しています。公開しないと、公開したページのその部分が表示されません。",
+        "publish" : "公開"
+    },
     "snippetSetting" : {
         "markdowns" : "マークダウン",
         "diagrams" : "ダイアグラム",
