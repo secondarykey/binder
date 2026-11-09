@@ -97,6 +97,12 @@ Multi-OS Build の結果と配布物を確認し、問題なければこの節�
 - **Linux: `ubuntu-24.04` に固定**。v0.16.4 のビルドは成功済み。配布物が要求する glibc が 2.39 以下であることは未確認
   （`objdump -T binder | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1`）
 - **Go バージョン: `.github/variables` の `GO_VERSION` を参照するよう変更**。v0.16.4 のビルドは成功済み
+- **「開いている」印（`fs/openmark.go`）を 0.17.3 の次の版で出す前提**（2026-11-10 に追加）。
+  binder-organize の `scripts/OpenMarker.ps1` が `$BinderOpenMarkerSince = 0.17.3`（これより新しい版が印を出す）で判定している。
+  この機能を含まない版を 0.17.3 の次に出すなら、この値を直す。README の Skills 節の「Binder 0.17.4 and later」も版に合わせる。
+  macOS / Linux の `flock` は実機で未確認（バインダーを開いて `.git/binder-open.lock` ができ、閉じると消えること、
+  2 つ目の Binder で同じバインダーを開くと断られること）。
+  同じ版で入れた修復の通知・AGENTS.md の雛形と合わせて、マニュアルの「更新情報」とバインダー設定の「ファイル」の行（雛形から作れること）を直す
 
 ## リリース時の注意（Linux: ランナーの固定）
 
