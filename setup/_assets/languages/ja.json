@@ -422,6 +422,11 @@
         "generateError" : "以下のファイルでエラーが発生しました:",
         "noFilesSelected" : "ファイルが選択されていません。"
     },
+    "publishRefs" : {
+        "title" : "参照しているデータも公開しますか？",
+        "message" : "まだ公開していない図・アセット・レイヤーを参照しています。公開しないと、公開したページのその部分が表示されません。",
+        "publish" : "公開"
+    },
     "snippetSetting" : {
         "markdowns" : "マークダウン",
         "diagrams" : "ダイアグラム",
@@ -687,6 +692,7 @@
         "hint" : "バインダーのルートに配置するファイル（README.md 等）。変更は未記録一覧に表示されます。",
         "empty" : "ファイルがありません",
         "add" : "ファイルを追加",
+        "addFromTemplate" : "雛形から追加",
         "nameLabel" : "ファイル名",
         "namePlaceholder" : "例: README.md",
         "nameRequired" : "ファイル名は必須です",
@@ -702,6 +708,14 @@
         "editTitle" : "ファイル編集",
         "preview" : "プレビュー",
         "modifiedSection" : "ファイル"
+    },
+    "doctor" : {
+        "repaired" : "開いたときにバインダーの食い違いを {{count}} 件直しました",
+        "repairedLost" : "開いたときにバインダーの食い違いを {{count}} 件直しました。本文が失われたものがあります",
+        "recreated" : "本文のファイルが無かったため、空で作り直しました。以前の本文は履歴から戻せます",
+        "orphan" : "ツリーに無かったため、index の下に戻しました",
+        "row" : "情報が欠けていたため補いました",
+        "reparented" : "親が見つからないため、index の下へ移しました"
     },
     "go" : {
         "window" : {
@@ -746,6 +760,7 @@
             "reservedAlias" : "そのエイリアスはバインダーが公開データの直下で使っているため使えません（index.html・404.html・pages・images・assets・layers）",
             "duplicateName" : "その名前は既に使用されています",
             "notBinder" : "このフォルダはバインダーではありません",
+            "openedElsewhere" : "このバインダーは別の Binder で開かれています。そちらを閉じてから開いてください",
             "uncommitted" : "未記録の変更があります。先に記録してください",
             "noUpdates" : "記録する変更がありません",
             "mergeSourceTooOld" : "マージ元のデータ形式が古すぎるため移行できません。以前のバージョンのアプリで開いて移行してください"

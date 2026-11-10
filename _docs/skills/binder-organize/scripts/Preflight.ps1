@@ -45,12 +45,42 @@ if (Test-Path $gitPath) {
     Add-Err ".git が無い。バインダーは git リポジトリである必要がある"
 }
 
-# --- Binder アプリが動作中でないことの確認 ---
+# --- Binder アプリがこのバインダーを開いていないことの確認 ---
+# go-git は .git/index を lock ファイルを使わずに直接書くため、index.lock では判定できない。
+# Binder が開いている間に置く印（.git/binder-open.lock）のロックで判定する（OpenMarker.ps1）
+. (Join-Path $PSScriptRoot 'OpenMarker.ps1')
+$askUser = $false
+$open = Get-BinderOpenState $root
+switch ($open.State) {
+    'live' {
+        Add-Err "Binder アプリがこのバインダーを開いている。アプリでバインダーを閉じてから再実行すること ($($open.Detail))"
+    }
+    'other-host' {
+        Write-Output "WARN : 別のPCの Binder の印が残っている。そのPCで開いたままか、そのPCで正しく閉じなかった ($($open.Detail))"
+        $askUser = $true
+    }
+    'unknown' {
+        Write-Output "WARN : Binder が開いているか確かめられない ($($open.Detail))"
+        $askUser = $true
+    }
+    'stale' {
+        Add-Ok "Binder は開いていない（前回正しく閉じなかった印が残っているが、ロックされていない）"
+    }
+    'none' {
+        if (Test-BinderOpenMarkerTrusted $v) {
+            Add-Ok "Binder は開いていない"
+        } else {
+            Write-Output "WARN : このバインダーを最後に開いた Binder (version=$v) は「開いている」印を出さない版。開いているかを判定できない"
+            $askUser = $true
+        }
+    }
+}
+Write-Output "BINDER_OPEN=$($open.State)"
+
+# git コマンドの操作中（アプリではなく git CLI 等）
 $lockPath = Join-Path $root '.git\index.lock'
 if (Test-Path $lockPath) {
-    Add-Err ".git/index.lock がある。Binder アプリが動作中の可能性。アプリを閉じてから再実行すること"
-} else {
-    Add-Ok ".git/index.lock なし"
+    Add-Err ".git/index.lock がある。git の操作中か、中断した git の操作が残っている。終わるのを待つか、原因を確かめてから再実行すること"
 }
 
 # --- ワークツリーがクリーンであることの確認 ---
@@ -124,7 +154,11 @@ if ($errors.Count -gt 0) {
 }
 
 Write-Output "=== OK: 編集可能 ==="
-Write-Output ""
-Write-Output "注意: Binder アプリでこのバインダーを開いていないかユーザに必ず確認すること。"
-Write-Output "      go-git はインデックスを直接書き込むため、同時編集で .git/index が壊れる。"
+if ($askUser) {
+    Write-Output ""
+    Write-Output "ASK_USER=yes  Binder アプリでこのバインダーを開いていないかユーザに確認すること。"
+    Write-Output "              go-git はインデックスを直接書き込むため、同時編集で .git/index が壊れる。"
+} else {
+    Write-Output "ASK_USER=no"
+}
 exit 0

@@ -422,6 +422,11 @@
         "generateError" : "Errors occurred in the following files:",
         "noFilesSelected" : "No files selected."
     },
+    "publishRefs" : {
+        "title" : "Publish referenced data too?",
+        "message" : "This refers to diagrams, assets or layers that have not been published yet. Unless they are published, those parts will not appear on the published page.",
+        "publish" : "Publish"
+    },
     "snippetSetting" : {
         "markdowns" : "Markdowns",
         "diagrams" : "Diagrams",
@@ -687,6 +692,7 @@
         "hint" : "Files placed at the binder root (e.g. README.md). Changes appear in the unrecorded list.",
         "empty" : "No files",
         "add" : "Add File",
+        "addFromTemplate" : "Add from template",
         "nameLabel" : "File Name",
         "namePlaceholder" : "e.g. README.md",
         "nameRequired" : "File name is required",
@@ -702,6 +708,14 @@
         "editTitle" : "Edit File",
         "preview" : "Preview",
         "modifiedSection" : "File"
+    },
+    "doctor" : {
+        "repaired" : "Fixed {{count}} inconsistencies in the binder when opening it",
+        "repairedLost" : "Fixed {{count}} inconsistencies in the binder when opening it. Some content was lost",
+        "recreated" : "The content file was missing, so it was recreated empty. The previous content can be restored from the history",
+        "orphan" : "It was not in the tree, so it was put back under index",
+        "row" : "Its information was missing, so it was filled in",
+        "reparented" : "Its parent was not found, so it was moved under index"
     },
     "go" : {
         "window" : {
@@ -746,6 +760,7 @@
             "reservedAlias" : "That alias is used by the binder directly under the published data (index.html, 404.html, pages, images, assets, layers)",
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",
+            "openedElsewhere" : "This binder is open in another Binder. Close it there first",
             "uncommitted" : "There are unrecorded changes. Please record them first",
             "noUpdates" : "No changes to record",
             "mergeSourceTooOld" : "The merge source uses a data format that is too old to migrate. Please open it with an older version of the app first"

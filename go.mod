@@ -10,9 +10,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mithrandie/csvq-driver v1.7.0
 	github.com/sergi/go-diff v1.4.0
-	github.com/wenteasy/log v0.3.3
+	github.com/wenteasy/log v0.4.0
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/image v0.43.0
+	golang.org/x/sys v0.46.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
 
@@ -40,7 +41,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/term v0.44.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

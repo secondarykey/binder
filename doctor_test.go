@@ -107,7 +107,7 @@ func TestDoctorReparentsDanglingParent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunDoctor() error: %v", err)
 	}
-	if len(rep.Reparented) != 1 || rep.Reparented[0] != id {
+	if len(rep.Reparented) != 1 || rep.Reparented[0].Id != id {
 		t.Fatalf("Reparented = %+v, want [%s]", rep.Reparented, id)
 	}
 
@@ -210,5 +210,33 @@ func TestDoctorRunsOnLoad(t *testing.T) {
 
 	if _, err := os.Stat(mdPath); err != nil {
 		t.Errorf("Load 時に実体ファイルが再作成されていない: %v", err)
+	}
+
+	// Load 時の修復内容は画面で知らせるため一度だけ取り出せる
+	rep := b2.TakeDoctorReport()
+	if !rep.Repaired() || len(rep.FilesRecreated) != 1 || rep.FilesRecreated[0].Id != id {
+		t.Fatalf("TakeDoctorReport() = %+v, want FilesRecreated for %s", rep, id)
+	}
+	if again := b2.TakeDoctorReport(); again != nil {
+		t.Errorf("2 回目の TakeDoctorReport() = %+v, want nil", again)
+	}
+}
+
+// 修復が無ければ Load 後の報告は nil。
+func TestDoctorReportNilWhenClean(t *testing.T) {
+	const work = "doctor_report_clean"
+	b := test.CreateBinder(t, work)
+	if err := b.Close(); err != nil {
+		t.Fatalf("Close() error: %v", err)
+	}
+
+	b2, err := binder.Load(filepath.Join(test.Dir, work))
+	if err != nil {
+		t.Fatalf("binder.Load() error: %v", err)
+	}
+	defer b2.Close()
+
+	if rep := b2.TakeDoctorReport(); rep != nil {
+		t.Errorf("TakeDoctorReport() = %+v, want nil", rep)
 	}
 }

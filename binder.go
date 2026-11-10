@@ -38,6 +38,10 @@ type Binder struct {
 	httpServerAddress string
 	serveMu           sync.Mutex // httpServer の遅延起動を保護する
 	op                db.Op
+
+	// doctorReport は Load() 時の RunDoctor で修復した内容。修復が無ければ nil。
+	// 画面で知らせるため TakeDoctorReport() で一度だけ取り出す
+	doctorReport *DoctorReport
 }
 
 type userOp struct {
@@ -117,9 +121,22 @@ func CreateRemote(url, dir, branch, workBranch string, userInfo *json.UserInfo, 
 	return nil
 }
 
-func Load(dir string) (*Binder, error) {
+func Load(dir string) (rtn *Binder, rtnErr error) {
 
 	log.Noticef("Load Binder:%s", dir)
+
+	// 「開いている」印を最初に立てる。この後のインデックス復旧・スキーマ修復・doctor も
+	// バインダーへ書き込むため、その前に外部のツールから見えるようにする（fs/openmark.go）。
+	// 別のプロセスが開いていれば開かない（同時に書くと .git/index や CSV が壊れる）
+	if err := fs.AcquireOpen(dir); err != nil {
+		return nil, xerrors.Errorf("fs.AcquireOpen() error: %w", err)
+	}
+	defer func() {
+		if rtnErr != nil {
+			fs.ReleaseOpen(dir)
+		}
+	}()
+
 	bfs, err := fs.Load(dir)
 	if err != nil {
 		return nil, xerrors.Errorf("fs.Load() error: %w", err)
@@ -201,6 +218,7 @@ func Load(dir string) (*Binder, error) {
 		log.Warnf("RunDoctor() error:\n%+v", err)
 	} else if rep.Repaired() {
 		log.Noticef("Doctor repaired: %s", rep.Summary())
+		b.doctorReport = rep
 	}
 
 	return &b, nil
@@ -397,6 +415,12 @@ func (b *Binder) Close() error {
 			log.PrintStackTrace(err)
 			rtnErr = xerrors.Errorf("db.Close() error: %w", err)
 		}
+	}
+
+	// Load() で立てた「開いている」印を下ろす。二重に Close されても下ろすのは 1 回だけにする
+	// （fileSystem は 1 回目の Close で nil になる）
+	if fp != nil {
+		fs.ReleaseOpen(b.dir)
 	}
 
 	return rtnErr

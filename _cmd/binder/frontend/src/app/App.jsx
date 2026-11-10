@@ -20,11 +20,12 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds, TakeDoctorReport } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext, useEventListener } from "../Event";
 import { SystemMessage } from '../Message';
+import { doctorReportMessage } from './doctorReport';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog, BinderTooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
 import { editorHistory, editorHistoryURL } from '../components/editor/Component';
@@ -229,6 +230,14 @@ function App() {
       MarkedScript.ensureInit().catch(() => {});
       evt.changeAddress(href);
       currentBinderDir = dir;
+
+      // 開いたときに整合性を修復していたら知らせる（外部のツールで編集した後の書き損じ等）
+      TakeDoctorReport().then((report) => {
+        const msg = doctorReportMessage(report, t, () => evt.openBranchModal());
+        if (msg) {
+          evt.showMessage(msg);
+        }
+      }).catch(() => {});
 
       // エディタ route へ遷移してからスプラッシュを解除する。
       // 解除を nav より前にすると、openLastData の非同期遷移までの間に

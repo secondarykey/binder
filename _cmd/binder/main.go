@@ -49,7 +49,7 @@ func main() {
 
 	flag.Parse()
 	// 開発中はコンソールにも出す（配る exe は GUI なので標準エラー出力の行き先が無い）
-	logs, err := log.Init(log.Options{Dir: log.DefaultDir(), Console: isDev, KeepDays: log.DefaultKeepDays})
+	logs, err := log.Init(log.Options{Dir: log.DefaultDir(), Console: isDev, KeepDays: log.DefaultKeepDays, CompressDays: log.DefaultCompressDays})
 	if err != nil {
 		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
 	}
@@ -230,6 +230,14 @@ func main() {
 	err = wailsApp.Run()
 	if err != nil {
 		log.Warnf("Run() error:\n%+v", err)
+	}
+
+	// OS のウィンドウクローズ（× ボタン・Alt+F4）は Terminate を通らず CloseBinder が呼ばれないため、
+	// ここで閉じて「開いている」印（fs/openmark.go）を消す。ウィンドウはもう無いので閉じる対象から外す。
+	// Terminate 経由なら既に閉じていて何もしない
+	app.WindowCloser = nil
+	if err := app.CloseBinder(); err != nil {
+		log.Warnf("CloseBinder() error:\n%+v", err)
 	}
 
 	// wailsApp.Run() が正常リターンした = 正常終了。

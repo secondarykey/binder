@@ -124,6 +124,14 @@ not on this application's source code.** Copy or link the skill directory into y
 skills directory (`~/.claude/skills/`), then open the binder as the working
 directory and ask for the task.
 
+Close the binder in Binder before you start. While Binder has a binder open it
+writes to the same files, and editing from both sides corrupts them. Binder 0.17.4
+and later mark an open binder (`.git/binder-open.lock`), and the skill stops when it
+finds the mark.
+
+For other agents, Binder can write an `AGENTS.md` into the binder that explains these
+rules (Binder Settings → Files → Add from template). Binder never adds it on its own.
+
 | Skill | What it does |
 |---|---|
 | [binder-organize](_docs/skills/binder-organize/) | Reorganizes the notes in a binder: merges scattered notes, splits long ones into chapters, restructures the tree, generates index notes, and draws Mermaid diagrams from the text. It writes the real files and the CSV database, then records the result. |

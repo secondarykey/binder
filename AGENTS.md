@@ -113,7 +113,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 
 ### 主要な型
 
-- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する
+- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）
 - **`api.App`** (api/api.go) — Wails v3 の Service として登録される構造体。初期化（`Setup()`）は Wails の Service ライフサイクルとは独立しており、`main()` から直接呼び出される。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
 - **`Window`** (_cmd/binder/window.go) — Wails v3 の第2 Service。ウィンドウ操作（サイズ変更・移動・最小化・最大化）を担当
 - **`shared.Shared`** (api/shared/shared.go) — Binder/Lite 共通の第3 Service。テーマ・言語・フォント一覧の取得
@@ -215,7 +215,7 @@ cd _cmd/binder && wails3 generate bindings -f '' -clean=true
 - ロギングは `log/` パッケージ（`binder/log`）から出す（標準の `log`・`slog`・wenteasy/log を直接使わない）。`log/` の中身は [`github.com/wenteasy/log`](https://github.com/wenteasy/log)（ハンドラ・日ごとのファイル）
   - 書き方は 2 つで混ぜない: `log.Info("保存しました", "path", p)`（slog と同じメッセージ + キーと値）と `log.Infof("失敗:\n%+v", err)`（printf）。`log.Info` に書式を渡すと整形されない
   - ほかに `log.PrintTrace(log.Func(...))` / `log.PrintStackTrace(err)` / `defer log.NoneStop()`
-  - ログは `os.TempDir()\binder\binder_<日付>.log`（環境変数 `BINDER_LOG_DIR` で変えられる。試しに起動するときは普段のログと混ぜない）。開発中（`wails3 dev`）はコンソールにも出る。起動時に 10 日（`log.DefaultKeepDays`）より古いログを消す
+  - ログは `os.TempDir()\binder\binder_<日付>.log`（環境変数 `BINDER_LOG_DIR` で変えられる。試しに起動するときは普段のログと混ぜない）。開発中（`wails3 dev`）はコンソールにも出る。古いログの片付けは wenteasy/log の `RollingFileWriter` に任せている（最初に書いたときと日付が変わったときに別の goroutine で動く）。3 日（`log.DefaultCompressDays`）より古いものは `.log.gz` に圧縮し、90 日（`log.DefaultKeepDays`）より古いものは消す。頭に `binder_` の無い旧形式のファイルと空の `binder_crash_pid*.log` だけは `log.Init` が消す
   - 拾われなかった panic は同じフォルダの `binder_crash_<日時>.log` に残る（`log.CatchCrash`。書いている間は `binder_crash_pid<ID>.log`）
 - `log/` の作り方の決まりごとの正は wenteasy/log の README「使う側のやり方（自分の log パッケージを作る）」（ひな形・よくある間違い）。`log/` はそのひな形（アプリだけの形。`SetLogger` は持たない）に揃えている。残りは `log/TODO.md`
 - IDはUUID v7（`github.com/google/uuid`）

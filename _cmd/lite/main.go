@@ -36,7 +36,7 @@ func main() {
 
 	flag.Parse()
 	// 開発中はコンソールにも出す（配る exe は GUI なので標準エラー出力の行き先が無い）
-	logs, err := log.Init(log.Options{Dir: log.DefaultDir(), Console: isDev, KeepDays: log.DefaultKeepDays})
+	logs, err := log.Init(log.Options{Dir: log.DefaultDir(), Console: isDev, KeepDays: log.DefaultKeepDays, CompressDays: log.DefaultCompressDays})
 	if err != nil {
 		log.Warnf("ログファイルの初期化に失敗:\n%+v", err)
 	}
@@ -51,6 +51,8 @@ func main() {
 	}
 
 	version := strings.TrimSpace(ver)
+	// 起動ごとに 1 行は書く（ログファイルを開いたときに古いファイルの片付けが動くので、書かない起動では片付かない）
+	log.Noticef("Binder Lite Version: %s", version)
 
 	// 引数にファイルが指定されていれば絶対パスに変換
 	var filePaths []string

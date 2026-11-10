@@ -92,3 +92,14 @@ plugins/              ← バインダー内（git管理・共有される）
 **フロントエンド実装**:
 - `dialogs/RootFileSetting.jsx` — バインダー設定の「ファイル」タブ。一覧 + 追加・リネーム・削除。編集ダイアログは `.md` / `.markdown` でプレビュー切替（`Marked.parse()` 使用）
 - `dialogs/ModifiedMenu.jsx` — `DIR_File` を「File」セクションとして表示。`type === 'file'` はエディタ画面を持たないためダブルクリックで開かない
+
+### 雛形（AGENTS.md 等）
+
+ルートファイルの雛形をアプリに同梱し、ファイルタブの「雛形から追加」で選んだときだけ書き出す。
+**バインダーへ自動では置かない**（新規作成・移行・doctor でも足さない）。バインダーはユーザのディレクトリで、
+AI 向けのファイルがあるだけで嫌がる人もいるため。
+
+- 雛形: `setup/_assets/rootfiles/{lang}/{name}`。名前の一覧は `en` を基準にし、アプリの言語の雛形が無ければ `en` を使う
+- Go: `setup/rootfile_template.go`（`RootFileTemplates` / `RootFileTemplate`。改行は LF にそろえる）、API は `ListRootFileTemplates` / `ReadRootFileTemplate`（`api/rootfile.go`）
+- フロント: `RootFileSetting.jsx` の雛形メニュー。同じ名前のファイルがあれば選べない（上書きしない）。書き出したら編集ダイアログで中身を見せる。記録は通常のルートファイルと同じく未記録一覧から
+- `AGENTS.md` は、スキルを使わないエージェント向けに「開いている」印（`.git/binder-open.lock`）・書き込み順・CSV の決まりを書いたもの。内容を変えたら `_docs/skills/binder-organize` と食い違わないようにする

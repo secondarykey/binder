@@ -200,16 +200,15 @@ func TestNoneStop(t *testing.T) {
 	}
 }
 
-// removeOld は今日を含めて keepDays 日分を残し、それより古いログだけを消す。
-func TestRemoveOld(t *testing.T) {
+// removeLeftovers は RollingFileWriter が扱わない名前のファイルだけを、今日を含めて keepDays 日分を残して消す。
+func TestRemoveLeftovers(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.Local)
 	old := now.AddDate(0, 0, -20)
 	files := map[string]bool{ // 名前 → 消えるか
-		FilePrefix + "_20261015.log":         false, // 今日
-		FilePrefix + "_20261006.log":         false, // 10 日目（残す一番古い日）
-		FilePrefix + "_20261005.log":         true,  // 11 日目
-		"20261001.log":                       true,  // 頭の文字が無かったころのもの
+		"20261006.log":                       false, // 頭の文字が無かったころのもの・10 日目（残す一番古い日）
+		"20261005.log":                       true,  // 頭の文字が無かったころのもの・11 日目
+		FilePrefix + "_20261001.log":         false, // RollingFileWriter が片付ける
 		"memo.log":                           false, // 日付ではない
 		FilePrefix + "_memo.log":             false,
 		crashPrefix + "20261001-120000.log":  false, // 改名した異常終了の記録
@@ -233,7 +232,7 @@ func TestRemoveOld(t *testing.T) {
 		}
 	}
 
-	removeOld(dir, 10, true, now)
+	removeLeftovers(dir, 10, true, now)
 	for name, removed := range files {
 		_, err := os.Stat(filepath.Join(dir, name))
 		if removed && !os.IsNotExist(err) {
@@ -249,26 +248,44 @@ func TestRemoveOld(t *testing.T) {
 	if err := os.WriteFile(legacy, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	removeOld(dir, 10, false, now)
+	removeLeftovers(dir, 10, false, now)
 	if _, err := os.Stat(legacy); err != nil {
 		t.Errorf("legacy でないのに消えた: %v", err)
 	}
 }
 
-// Init(KeepDays) は、書き始める前に古いファイルを消す。
+// Init(KeepDays・CompressDays) は、最初に書いたときに古いファイルを消し、少し古いファイルを圧縮する（別の goroutine で動く）。
 func TestInitKeepDays(t *testing.T) {
 	keepDefault(t)
 	dir := t.TempDir()
-	old := filepath.Join(dir, FilePrefix+"_20200101.log")
-	if err := os.WriteFile(old, []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
+	name := func(daysAgo int) string {
+		return filepath.Join(dir, FilePrefix+"_"+time.Now().AddDate(0, 0, -daysAgo).Format("20060102")+".log")
 	}
-	c, err := Init(Options{Dir: dir, KeepDays: DefaultKeepDays})
+	removed := name(DefaultKeepDays)        // 残す日数を過ぎた
+	compressed := name(DefaultCompressDays) // 読める形で残す日数を過ぎた
+	kept := name(DefaultCompressDays - 1)   // 読める形で残す一番古い日
+	for _, path := range []string{removed, compressed, kept} {
+		if err := os.WriteFile(path, []byte("x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	c, err := Init(Options{Dir: dir, KeepDays: DefaultKeepDays, CompressDays: DefaultCompressDays})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
-	if _, err := os.Stat(old); !os.IsNotExist(err) {
-		t.Errorf("古いファイルが残っている: %v", err)
+	Notice("start") // 片付けはファイルを開いたとき（最初に書いたとき）に動く。既定のレベルは Notice
+
+	exists := func(path string) bool { _, err := os.Stat(path); return err == nil }
+	deadline := time.Now().Add(5 * time.Second)
+	for exists(removed) || exists(compressed) || !exists(compressed+".gz") {
+		if time.Now().After(deadline) {
+			t.Fatalf("片付けが終わらない: removed=%v compressed=%v gz=%v", exists(removed), exists(compressed), exists(compressed+".gz"))
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !exists(kept) {
+		t.Errorf("%s が残っていない", kept)
 	}
 }

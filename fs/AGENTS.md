@@ -80,6 +80,22 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 - **cleanup.go** — 履歴圧縮: `GetCleanupInfo`（統計）→ squash 実行で `.git/objects` を削減
 - **search.go** — 未実装スタブ
 - **index_recovery.go** — `Load()` 時の gitインデックス破損検出・自動復旧（詳細下記トラブルシュート節）
+- **openmark.go**（+ `openmark_windows.go` / `openmark_unix.go`）— 「開いている」印（下記）
+
+## 「開いている」印（openmark.go）
+
+アプリがバインダーを開いている間、`.git/binder-open.lock`（OS のファイルロックを掛けたまま開いておく）と
+`.git/binder-open.json`（pid / host / app / openedAt。表示用）を置く。外部のツール
+（`_docs/skills/binder-organize` の Preflight / Validate）が、ロックファイルを排他で開けるかどうかで
+アプリが開いているかを判定する。go-git は `.git/index` を lock ファイル無しで書くため、`index.lock` では判定できない。
+
+- `AcquireOpen(dir)` / `ReleaseOpen(dir)` — 対で呼ぶ。同じプロセスの中では参照カウント（ByPath 系 API が開いているバインダーを再度 `binder.Load()` するため）。
+  別のプロセスがロックを持っていれば `ErrOpenedElsewhere`（API 層で `go.error.openedElsewhere`）。`.git` が無ければ何もしない
+- 立てる場所: `binder.Load()` の先頭（インデックス復旧・スキーマ修復・doctor より前）と `Binder.Close()`。
+  `Load()` を通らずに書き込む API（`Convert`、`RestoreToCommitByPath` / `SwitchBranchByPath`）は自分で立てる。
+  閉じて `fs.Load()` で書いてから開き直す API（復元・ブランチ切替・取り込み・履歴の整理）は `api.App.holdOpen` で間も持ち続ける
+- クラッシュで残ったファイルはロックされていないので「開いている」とは判定されない（次に開くときに書き換える）
+- ロックは Windows が `LockFileEx`（中身の読み取りを妨げないよう遠いオフセットの 1 バイト）、それ以外が `flock`
 
 ## トラブルシュート: gitインデックス破損（index file corrupt）
 
