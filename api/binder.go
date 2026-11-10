@@ -312,6 +312,20 @@ func (a *App) GenerateAll(items []*json.GenerateItem, message string) ([]string,
 	return warnings, nil
 }
 
+// GetUnpublishedRefs はノートが参照している、まだ公開していない図・アセット・レイヤーを返す。
+// text はエディタ上の Markdown。ノートと一緒に公開するかをフロントで選ばせるために使う。
+func (a *App) GetUnpublishedRefs(noteId string, text string) ([]*json.PublishRef, error) {
+
+	defer log.PrintTrace(log.Func("GetUnpublishedRefs()", noteId))
+
+	refs, err := a.current.GetUnpublishedRefs(noteId, text)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return nil, userError(err)
+	}
+	return refs, nil
+}
+
 func (a *App) Unpublish(mode string, id string) error {
 
 	defer log.PrintTrace(log.Func("Unpublish()", mode, id))

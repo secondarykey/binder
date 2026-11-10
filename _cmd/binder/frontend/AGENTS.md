@@ -31,6 +31,7 @@
 - PluginSetting.jsx / RootFileSetting.jsx — バインダー設定のタブ（プラグイン / ルートファイル）
 - AppPluginSetting.jsx — アプリ設定のプラグインタブ
 - ModifiedMenu.jsx / UnpublishedMenu.jsx — 未記録一覧・未公開一覧
+- PublishRefsDialog.jsx — ノートの公開時に、まだ公開していない参照先（図・アセット・レイヤー）を一緒に公開するかを選ぶダイアログ（`usePublishRefsDialog` で Promise として使う）。公開する 1 件の描画は `src/publish-items.js`（`_docs/publish-design.md`）
 
 **components/** — 複数スコープで共有されるコンポーネント:
 - Tree.jsx — 汎用ツリーコンポーネント（`@mui/x-tree-view`）
@@ -54,7 +55,7 @@
 - テストフレームワーク: Vitest（`vitest.config.js`）
 - テストファイル: `src/__tests__/*.test.jsx`
 - セットアップ: `src/__tests__/setup.js`（`@wailsio/runtime` のグローバルモック、ResizeObserver ポリフィル、i18n 初期化）
-- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 96ファイル・430テスト）
+- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 98ファイル・445テスト）
 
 ```bash
 # フロントエンドテスト実行

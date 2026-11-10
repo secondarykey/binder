@@ -7,7 +7,7 @@ import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../..
 import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
 import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, Unpublish, Commit, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
+import { GetAsset, Generate, GenerateAll, GetUnpublishedRefs, Unpublish, Commit, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar, IsBinderTrusted } from "../../../bindings/binder/api/app";
@@ -42,6 +42,8 @@ import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
 import { resolveBinderLink } from "./binder-link";
 import { watchExternalEditor } from "./external-editor";
 import { publishWarningMessage } from "../../publish-warning";
+import { renderPublishItem, publishComment } from "../../publish-items";
+import { usePublishRefsDialog } from "../../dialogs/PublishRefsDialog.jsx";
 import '../../assets/Editor.css'
 import { Mode, copyClipboard } from "../../app/App.jsx";
 
@@ -1951,12 +1953,23 @@ function Editor(props) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
+  // ノートの公開時に、まだ公開していない参照先を一緒に公開するかを聞くダイアログ
+  const [publishRefsDialog, askPublishRefs] = usePublishRefsDialog();
+
   //出力処理
   const handlePublish = async () => {
     try {
       var elm = "";
       var pluginWarnings = [];
+      // 一緒に公開する参照先（図・アセット・レイヤー）
+      var refs = [];
       if (mode === Mode.note) {
+        // 参照先を調べられなくても公開は止めない（公開時の警告で知らせる）
+        const unpublished = await GetUnpublishedRefs(id, text).catch(() => []) ?? [];
+        if (unpublished.length > 0) {
+          refs = await askPublishRefs(unpublished);
+          if (refs === null) return;
+        }
         const markedResult = await createMarked(id, text, false);
         elm = markedResult.html;
         // 出力した HTML は git に記録されるため、エンジン／プラグインが効いていないまま
@@ -1975,7 +1988,17 @@ function Editor(props) {
 
       // テンプレート関数の警告（未公開データの参照など）。公開後に 404 になる
       // 参照はプレビューでは見えないため、公開したこの時点で知らせる
-      const genWarnings = await Generate(mode, id, elm);
+      let genWarnings;
+      if (refs.length > 0) {
+        // ノートと参照先を 1 回の記録で公開する。同時に公開するもの同士は未公開の警告にならない
+        const items = [{ mode: "note", id, data: elm }];
+        for (const r of refs) {
+          items.push(await renderPublishItem(r));
+        }
+        genWarnings = await GenerateAll(items, publishComment([{ type: "note", name }, ...refs]));
+      } else {
+        genWarnings = await Generate(mode, id, elm);
+      }
       evt.reloadUnpublished();
       if (pluginWarnings.length > 0) {
         evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
@@ -3181,6 +3204,7 @@ function Editor(props) {
       </Dialog>
 
       {/** 未公開確認ダイアログ */}
+      {publishRefsDialog}
       <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
         <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
         <DialogActions>
