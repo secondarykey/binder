@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "Binder"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "0.17.3"
+    !define INFO_PRODUCTVERSION "0.17.4"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "(c)2026, secondarykey"
