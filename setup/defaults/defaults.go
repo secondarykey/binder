@@ -1,17 +1,28 @@
-package setup
+// Package defaults は、アプリ共通の既定アセット（テーマ・言語・Lite のプレビュー・
+// 同梱プラグイン）を ~/.binder へ配置する。
+//
+// Binder と Binder Lite の両方が使う。Lite は git も DB も持たないので、このパッケージは
+// binder/settings と binder/log だけを import する。binder（ルート）・db・fs・setup を
+// import すると、Lite のバイナリに go-git と csvq が入る（setup から分けた理由）。
+// バインダーの作成・移行は setup パッケージ側にある。
+package defaults
 
 import (
 	"binder/settings"
+	"embed"
 	"os"
 	"path/filepath"
 
 	"golang.org/x/xerrors"
 )
 
-// installThemes はデフォルトテーマを ~/.binder/themes/_default/ に配置する。
+//go:embed _assets
+var embFs embed.FS
+
+// InstallThemes はデフォルトテーマを ~/.binder/themes/_default/ に配置する。
 // force=false の場合、各ファイルが既に存在すればスキップする。
 // force=true の場合、常に上書きする。
-func installThemes(force bool) error {
+func InstallThemes(force bool) error {
 
 	dir := settings.DefaultThemesDirPath()
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -40,10 +51,10 @@ func installThemes(force bool) error {
 	return nil
 }
 
-// installLanguages はデフォルト言語ファイルを ~/.binder/languages/_default/ に配置する。
+// InstallLanguages はデフォルト言語ファイルを ~/.binder/languages/_default/ に配置する。
 // force=false の場合、各ファイルが既に存在すればスキップする。
 // force=true の場合、常に上書きする。
-func installLanguages(force bool) error {
+func InstallLanguages(force bool) error {
 
 	dir := settings.DefaultLanguagesDirPath()
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -72,8 +83,8 @@ func installLanguages(force bool) error {
 	return nil
 }
 
-// installLiteAssets はデフォルトの lite プレビューテンプレート・CSS を ~/.binder/lite/_default/ に配置する。
-func installLiteAssets(force bool) error {
+// InstallLiteAssets はデフォルトの lite プレビューテンプレート・CSS を ~/.binder/lite/_default/ に配置する。
+func InstallLiteAssets(force bool) error {
 
 	dir := settings.DefaultLiteDirPath()
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -102,8 +113,8 @@ func installLiteAssets(force bool) error {
 	return nil
 }
 
-// installPlugins はデフォルトプラグインテンプレートを ~/.binder/plugins/_default/{engine}/ に配置する。
-func installPlugins(force bool) error {
+// InstallPlugins はデフォルトプラグインテンプレートを ~/.binder/plugins/_default/{engine}/ に配置する。
+func InstallPlugins(force bool) error {
 
 	engines := []string{"marked"}
 	files := map[string][]string{
@@ -177,20 +188,20 @@ func InstallSamplePlugins() error {
 	return nil
 }
 
-// UpdateDefaults はデフォルトテーマ・言語・lite テンプレート・プラグインテンプレートを強制的に最新に上書きする。
+// Update はデフォルトテーマ・言語・lite テンプレート・プラグインテンプレートを強制的に最新に上書きする。
 // 開発モード起動時およびマイグレーション実行時に呼ばれる。
-func UpdateDefaults() error {
-	if err := installThemes(true); err != nil {
-		return xerrors.Errorf("installThemes(force) error: %w", err)
+func Update() error {
+	if err := InstallThemes(true); err != nil {
+		return xerrors.Errorf("InstallThemes(force) error: %w", err)
 	}
-	if err := installLanguages(true); err != nil {
-		return xerrors.Errorf("installLanguages(force) error: %w", err)
+	if err := InstallLanguages(true); err != nil {
+		return xerrors.Errorf("InstallLanguages(force) error: %w", err)
 	}
-	if err := installLiteAssets(true); err != nil {
-		return xerrors.Errorf("installLiteAssets(force) error: %w", err)
+	if err := InstallLiteAssets(true); err != nil {
+		return xerrors.Errorf("InstallLiteAssets(force) error: %w", err)
 	}
-	if err := installPlugins(true); err != nil {
-		return xerrors.Errorf("installPlugins(force) error: %w", err)
+	if err := InstallPlugins(true); err != nil {
+		return xerrors.Errorf("InstallPlugins(force) error: %w", err)
 	}
 	return nil
 }

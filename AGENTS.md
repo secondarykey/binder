@@ -122,7 +122,8 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 - **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）
 - **`api.App`** (api/api.go) — Wails v3 の Service として登録される構造体。初期化（`Setup()`）は Wails の Service ライフサイクルとは独立しており、`main()` から直接呼び出される。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
 - **`Window`** (_cmd/binder/window.go) — Wails v3 の第2 Service。ウィンドウ操作（サイズ変更・移動・最小化・最大化）を担当
-- **`shared.Shared`** (api/shared/shared.go) — Binder/Lite 共通の第3 Service。テーマ・言語・フォント一覧の取得
+- **`shared.Shared`** (api/shared/shared.go) — Binder/Lite 共通の第3 Service。テーマ・言語・フォント一覧の取得。Lite からも使うので `binder`（ルート）・`db`・`fs` を import しない
+- **`setup/defaults`** — テーマ・言語・Lite のプレビュー・同梱プラグインを `~/.binder` へ配置する（アセットは `setup/defaults/_assets/`）。Binder（`setup` 経由）と Lite が使う。`settings` と `log` だけに依存する。バインダーの作成・移行は `setup` 側（アセットは `setup/_assets/`）
 - **`fs.FileSystem`** (fs/fs.go) — go-gitリポジトリのラッパー。全コンテンツ変更はここを経由し、gitコミットされる
 - **`fs.BinderMeta`** (fs/meta.go) — `binder.json` の読み書きを担当。アプリバージョン・name・detail を保持。`Schema` フィールドは後方互換用（非推奨）
 - **`db.Instance`** (db/db.go) — csvqを使用したCSVファイルへのSQLインターフェース。テーブル: notes, diagrams, assets, templates, structures
@@ -157,7 +158,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 
 UIではGit用語を隠蔽し、ユーザーフレンドリーな表現を使用する。
 コード内部の変数名・イベント名・ファイル名は元の語（`commit` / `merge` / `push` 等）のまま維持し、
-言語ファイル（`setup/_assets/languages/`）の表示ラベルのみ置き換える:
+言語ファイル（`setup/defaults/_assets/languages/`）の表示ラベルのみ置き換える:
 
 - **コミット → 記録**（Record） / **未コミット → 未記録**（Unrecorded）
 - **マージ → 取り込み**（Bring In）。`share.*` 配下

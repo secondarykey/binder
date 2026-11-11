@@ -15,7 +15,7 @@ import (
 	"binder/api/shared"
 	"binder/log"
 	"binder/settings"
-	"binder/setup"
+	"binder/setup/defaults"
 )
 
 //go:embed all:frontend/dist
@@ -46,8 +46,8 @@ func main() {
 	if err := settings.EnsureDir(); err != nil {
 		log.Warnf("EnsureDir() error:\n%+v", err)
 	}
-	if err := setup.UpdateDefaults(); err != nil {
-		log.Warnf("UpdateDefaults() error:\n%+v", err)
+	if err := defaults.Update(); err != nil {
+		log.Warnf("defaults.Update() error:\n%+v", err)
 	}
 
 	version := strings.TrimSpace(ver)

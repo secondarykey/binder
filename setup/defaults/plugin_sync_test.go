@@ -1,4 +1,4 @@
-package setup
+package defaults
 
 import (
 	"bytes"
