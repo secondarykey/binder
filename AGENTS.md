@@ -81,7 +81,7 @@ go run ./_cmd/gen/main.go
 go run ./_cmd/version.go 0.0.0
 ```
 
-`_cmd/` 直下の `*.go`（`version.go` のほか、試し書きの `git.go` / `keyring.go` / `recover.go` / `slog.go`）は、
+`_cmd/` 直下の `*.go`（`version.go` のほか、試し書きの `keyring.go` / `recover.go` / `slog.go`）は、
 それぞれが `main()` を持つ 1 ファイル完結のスクリプト。`go run ./_cmd/<ファイル>.go` のようにファイルを指定して動かす
 （`_cmd` をパッケージとして `go build` / `go vet .` はできない）。`_cmd`・`_cmd/gen`・`_cmd/binder`・`_cmd/lite` は
 それぞれ別モジュール（`module main` + `replace binder`）で、ルートの `go test ./...` の対象には入らない。
