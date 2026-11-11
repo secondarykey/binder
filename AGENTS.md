@@ -44,7 +44,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 ## ビルド・開発コマンド
 
 ### 前提条件
-- Go 1.25+
+- Go 1.26+（アプリ本体 `_cmd/binder`・`_cmd/lite` の go.mod が 1.26.0。ルートのモジュールと `_cmd`・`_cmd/gen` は 1.25.0。CI が使う版は `.github/variables` の `GO_VERSION`）
 - Node.js + npm
 - Wails v3 CLI (`go install github.com/wailsapp/wails/v3/cmd/wails3@latest`)
 - Task (`go install github.com/go-task/task/v3/cmd/task@latest`)
@@ -61,7 +61,7 @@ OS固有のビルド依存（Wails v3 は cgo で各OSのネイティブWebView�
 実行時（配布物を動かすだけ）に必要なものは別。Linux は `libgtk-4-1` `libwebkitgtk-6.0-4`、
 macOS は 12.0+、Windows は WebView2 ランタイム。
 **リリースzipは `wails3 build` の素のバイナリを固めているだけで deb/rpm ではないため、
-`build/linux/nfpm/nfpm.yaml` の `depends` は配布物に効かない**（実行時依存の告知先は README.md のみ）。
+`_cmd/binder/build/linux/nfpm/nfpm.yaml` の `depends` は配布物に効かない**（実行時依存の告知先は README.md のみ）。
 
 ### 開発・ビルド
 ```bash
@@ -80,6 +80,12 @@ go run ./_cmd/gen/main.go
 # バージョン変更（詳細・注意点は _docs/skills/binder-version-up/SKILL.md）
 go run ./_cmd/version.go 0.0.0
 ```
+
+`_cmd/` 直下の `*.go`（`version.go` のほか、試し書きの `git.go` / `keyring.go` / `recover.go` / `slog.go`）は、
+それぞれが `main()` を持つ 1 ファイル完結のスクリプト。`go run ./_cmd/<ファイル>.go` のようにファイルを指定して動かす
+（`_cmd` をパッケージとして `go build` / `go vet .` はできない）。`_cmd`・`_cmd/gen`・`_cmd/binder`・`_cmd/lite` は
+それぞれ別モジュール（`module main` + `replace binder`）で、ルートの `go test ./...` の対象には入らない。
+ルートの go.mod で依存を上げたら、`_cmd` と `_cmd/gen` でも `go mod tidy` を掛けて揃える。
 
 ### テスト
 ```bash
@@ -129,7 +135,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 - アプリ取得: サービス内から `application.Get()` で `*application.App` を取得
 - ウィンドウ作成: `app.Window.NewWithOptions(opts)` / ダイアログ: `app.Dialog.OpenFile()...` / ブラウザ: `app.Browser.OpenURL(url)`
 - フロントエンドバインディング: `frontend/bindings/binder/api/app.js`（Goパッケージパスに対応、手動編集不可）
-- ビルド設定: `_cmd/binder/Taskfile.yml` + `_cmd/binder/build/config.yml`（Wails v2の `wails.json` はメタデータのみ残存）
+- ビルド設定: `_cmd/binder/Taskfile.yml` + `_cmd/binder/build/config.yml`（Wails v2 の `wails.json` は無い）
 - バージョン: `_cmd/binder/main.go` が `//go:embed version` で `_cmd/binder/version` ファイルからバージョン文字列を取得
 
 ### データフロー
@@ -222,7 +228,7 @@ cd _cmd/binder && wails3 generate bindings -f '' -clean=true
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり
 - コミットメッセージはConventional Commits形式（`fix:`, `feat:`, `docs:`）。末尾に「Glory to mankind.」を付ける
-- `api/json/`パッケージはAPI向けのモデル型を含み、`db/model/`とは別
+- `api/json/`パッケージはフロントへ返すモデル型で、`db/model/`（テーブルの行）とは別。名前は api 配下だが、実際は `db`・`db/model`・`fs`・`setup`・ルートパッケージからも import する全層共通の型（`db/model` の `To()` / `ConvertXxx()` が相互に変換する。`ErrorPageAlias` や `TemplateType` などの定数もここ）。`api/json` 自身は他の binder パッケージを import しない
 - DAOファイルは`_dao.go`サフィックスを使用（自動生成、手動編集不可）
 - `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
 - セマンティックバージョン操作は`internal.Version`を使用（直接文字列比較は不可）
