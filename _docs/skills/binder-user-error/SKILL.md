@@ -36,7 +36,7 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
 2. **個別メッセージ（任意）**: 専用メッセージを出したい原因だけ、
    - 下位層（`binder`/`db`/`fs`）に sentinel を定義（`var ErrXxx = errors.New(...)`）、`xerrors.Errorf("%w: ...", ErrXxx)` で包んで返す。API 層特有の条件は `api/error.go` に置く（例 `ErrUncommittedChanges`）
    - `userError` の switch に `case errors.Is(err, ErrXxx): return Wrap(err, settings.T("go.error.xxx"))` を追加。エラーではなく情報通知（例: 変更なし）は `Info(err, ...)` を、警告は `Warning(err, ...)` を使う
-   - `setup/_assets/languages/{en,ja}.json` の `go.error.*` にメッセージを追加
+   - `setup/defaults/_assets/languages/{en,ja}.json` の `go.error.*` にメッセージを追加
 3. 据え置いてよいもの: `fmt.Errorf("%s", settings.T("go.error.*"))`（既に翻訳済み）、panic 復帰、HTML生成の parse error 等の固有メッセージ。内部ヘルパーの `xerrors(%w)` は伝播用に維持（上位 API が `userError` で包む）
    - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.ErrInvalidNoteAlias` / `fs.ErrInvalidAlias` / `fs.ErrReservedAlias` / `fs.ErrOpenedElsewhere`（別の Binder が開いている。`fs/openmark.go`） / `fs.UpdatedFilesError`（Info）。
      `fs.ErrInvalidNoteAlias` は `fs.ErrInvalidAlias` を包んでいるので、`userError` では先に判定する

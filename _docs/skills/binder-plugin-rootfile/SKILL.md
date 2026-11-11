@@ -52,7 +52,7 @@ plugins/              ← バインダー内（git管理・共有される）
 - `api/app_plugin.go` — アプリプラグイン CRUD + `InstallAppPlugin`
 - `settings/plugins.go` — `~/.binder/plugins/` のパスヘルパー・CRUD（OS レベル、git 管理外）。
   `ListAppPlugins` は設定画面がメタデータを解析できるよう `AppPluginInfo.Content` を含めて返す
-- `setup/externals.go` — `installPlugins()` でテンプレートを `_default/` に配置
+- `setup/defaults/defaults.go` — `InstallPlugins()` でテンプレートを `_default/` に配置
 
 **フロントエンド実装**:
 - `_cmd/shared/frontend/editor/engines/Marked.jsx` — `applyPlugins(plugins)`: `(0, eval)(content)` で評価し `marked.use()` に渡す
@@ -70,7 +70,7 @@ plugins/              ← バインダー内（git管理・共有される）
 
 **即時反映**: プラグインの追加・更新・削除後に `Marked.reset()` を呼ぶことで、次回プレビュー描画時に marked を再初期化してプラグインを再適用する。
 
-**サンプルプラグイン**: `setup/_assets/plugins/marked/github-alerts.js` — GitHub Note 記法（`> [!NOTE]` 等）のサンプル実装（配布対象外・動作確認用）。
+**サンプルプラグイン**: `setup/defaults/_assets/plugins/marked/github-alerts.js` — GitHub Note 記法（`> [!NOTE]` 等）のサンプル実装（配布対象外・動作確認用）。
 
 ## ルートファイル（README.md 等）
 

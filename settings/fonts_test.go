@@ -1,12 +1,12 @@
-package binder_test
+package settings_test
 
 import (
-	"binder"
+	"binder/settings"
 	"testing"
 )
 
 func TestFontNames(t *testing.T) {
-	names := binder.FontNames()
+	names := settings.FontNames()
 	if names[0] != "0xProto" {
 		t.Errorf("font name error(not other terminal) : %s", names[0])
 	}

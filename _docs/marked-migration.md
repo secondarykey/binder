@@ -160,7 +160,7 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
      `getPluginStatus()` に `runtimeError` を記録し、プレビュー全体は落とさない。
    - 隔離は単体では検知性を下げるため、可視化（item 9 以降）とセットで入れる。
 
-5. ✅ **同梱プラグインの修正**（`setup/_assets/plugins/marked/`）
+5. ✅ **同梱プラグインの修正**（`setup/defaults/_assets/plugins/marked/`）
    - 全15本に `@marked: >=14 <19` を付与
    - **エスケープ問題の修正（実測で確認済み・5本）**: `token.text` を生で埋めているため、
      中身の特殊文字（`&`/`<`）がエスケープされず不正な HTML を出力していた。
@@ -181,7 +181,7 @@ silent breakage を本当に捕まえられるのは回帰テストだけ。同�
    互換層の単体テスト（`pluginMeta.test.jsx`）と、ゲート・エラー隔離・コンテキスト注入の
    統合テスト（`markedCompat.test.jsx`）。
 
-7. ✅ **配布済みプラグインの更新機構** — `setup/plugin_sync.go` の `SyncSamplePlugins()`。
+7. ✅ **配布済みプラグインの更新機構** — `setup/defaults/plugin_sync.go` の `SyncSamplePlugins()`。
    各同梱プラグインについて、ユーザの `~/.binder/plugins/marked/<file>` のハッシュが
    **Binder が配布した既知ハッシュ集合（過去バージョン + 現行同梱版）に一致する場合のみ**
    最新版で上書きする。ユーザ編集ファイル・削除済みファイルは触らない。既知ハッシュは
@@ -282,12 +282,11 @@ URL ではなく実際の解決結果に従うこと）。
 
 1. `npm i marked@<version>` して `node_modules/marked/lib/marked.esm.js` を取得。
    v16 以降このファイルは minify 済みなので、そのまま
-   `_cmd/binder/frontend/src/assets/vendor/marked.min.js` と
-   `_cmd/lite/frontend/src/assets/vendor/marked.min.js` に上書きコピーする（2箇所）。
+   `_cmd/shared/frontend/vendor/marked.min.js` に上書きコピーする
+   （Binder と Lite で共通の 1 箇所。以前は両方の `src/assets/vendor/` に 2 箇所あった）。
    現行バンドルの構造（ESM。`Scripter.import` で読み `globalThis.marked` に代入）に合う。
 2. **バージョン定数を更新（忘れやすい）**:
-   - `_cmd/binder/frontend/src/main.jsx` の `MARKED_VENDOR_VERSION`
-   - `_cmd/lite/frontend/src/main.jsx` の `Marked.setVendorVersion('...')`
+   - `_cmd/shared/frontend/vendor/index.js` の `MARKED_VENDOR_VERSION`（Binder と Lite で共通）
 3. **バージョンを書いたドキュメント・UI 文言を更新**:
    - `_cmd/binder/frontend/src/dialogs/Binder.jsx` の CDN URL プレースホルダの `marked@x.y.z`
    - `PLUGINS.md` の「marked のバージョンを変えて試す」の例示 URL
@@ -371,7 +370,7 @@ URL ではなく実際の解決結果に従うこと）。
 
 esbuild で IIFE 形式にバンドルする（mermaid 更新時に確立した手順と同型）。
 marked は v16 以降 `lib/marked.esm.js` 自体が minify 済みなので、そのまま
-`_cmd/{binder,lite}/frontend/src/assets/vendor/marked.min.js` に置く方式でも良い。
+`_cmd/shared/frontend/vendor/marked.min.js` に置く方式でも良い。
 現行バンドルの構造（`globalThis.marked` に ESM の名前空間を代入）に合わせること。
 
 差し替え後は必ず:
@@ -442,8 +441,8 @@ renderer: function(token) { return '<kbd>' + token.text + '</kbd>'; }
   `getWarnings()` を warnings に連結（プレビューの警告バー）、出力時の警告
 - `_cmd/binder/frontend/src/dialogs/Binder.jsx` — CDN 保存後の再初期化、
   バージョン表示を実際の解決結果ベースに
-- `setup/_assets/plugins/marked/*.js` — `@marked` 付与、エスケープ問題5本の修正
-- `setup/externals.go` / `setup/plugin_sync.go` — 配布済みプラグインをハッシュ一致時のみ上書き
+- `setup/defaults/_assets/plugins/marked/*.js` — `@marked` 付与、エスケープ問題5本の修正
+- `setup/defaults/defaults.go` / `setup/defaults/plugin_sync.go` — 配布済みプラグインをハッシュ一致時のみ上書き
 - `_cmd/binder/frontend/src/dialogs/PluginSetting.jsx` / `AppPluginSetting.jsx` —
   対応marked / 現在のmarked / 状態の表示（実行結果込み）
 - 言語ファイル — `plugin.compat.*` / `plugin.warn.*` / `marked.warn.*` / `binder.version*`

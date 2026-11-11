@@ -12,7 +12,7 @@ import Marked from '@shared/editor/engines/Marked';
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const vendorPath = path.resolve(here, '../assets/vendor/marked.min.js');
+const vendorPath = path.resolve(here, '../../../../shared/frontend/vendor/marked.min.js');
 
 const OK_PLUGIN = `(function(){ return { extensions: [{
   name: 'okTag', level: 'inline',

@@ -346,10 +346,10 @@ test('特殊文字がエスケープされる', () => {
 
 ## 8. 同梱プラグインを修正する場合（Binder 本体への貢献）
 
-`setup/_assets/plugins/marked/` のファイルを更新したときは、以下も合わせて行う。
+`setup/defaults/_assets/plugins/marked/` のファイルを更新したときは、以下も合わせて行う。
 
 1. `@plugin-version` を上げる
-2. **更新前のファイルの sha256 を `setup/plugin_sync.go` の `shippedPluginHashes` に追記する**
+2. **更新前のファイルの sha256 を `setup/defaults/plugin_sync.go` の `shippedPluginHashes` に追記する**
    （改行を LF に正規化した内容のハッシュ）
 
 2 を忘れると、その版を持っているユーザのファイルが「ユーザが編集したもの」と

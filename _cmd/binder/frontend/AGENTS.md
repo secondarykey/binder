@@ -40,7 +40,17 @@
 - BinderHistory / BinderRegister / BinderRemote — バインダー管理画面（Content からルーティング）
 - AssetViewer.jsx / LayerEditor.jsx — アセット表示・レイヤー編集
 - AuthFields.jsx / AuthAccordion.jsx / RemoteSelect.jsx — リモート接続まわりの共通部品（ImportPanel / SendForm / Binder.jsx で共用）
-- components/editor/ — `@shared/editor/...` への re-export ラッパー（実体は `_cmd/shared/frontend/`）
+- components/editor/ — エディタ画面（`/editor/:mode/:id`）
+  - **Component.jsx** — エディタ本体。開く・変換してプレビューする・保存する・公開する、の状態と流れを持つ（約 2100 行）。
+    ここに残しているのは互いに絡む状態（`text` / `parseStatus` / 各種 ref）で、**動かして確かめずに分けない**
+  - 画面の部品（状態はメニューの開閉だけ。何をするかは本体から受け取る）:
+    `EditorToolbar.jsx`（編集側のツールバー）/ `ToolbarMenus.jsx`（アウトライン・スニペット・ID 挿入・囲み・その他メニュー。
+    Ctrl+Shift+O と Ctrl+T もここ）/ `PreviewToolbar.jsx`（プレビュー側）/ `ParseStatusBar.jsx`（ステータスバーとエラー・警告のダイアログ）/ `IdStatusBar.jsx`
+  - フック: `useEditorCandidates.js`（オートコンプリートの候補）/ `useSplitterDrag.js`（スプリッターのドラッグ）
+  - 状態を持たない関数: `tree-flatten.js` / `table-markdown.js` / `conflict-view.js` / `editor-history.js`（閲覧履歴。App.jsx も使う）/
+    `preview-run.js` / `editor-save.js`（保存のデバウンス）/ `download.js` / `diagram-pan-zoom.js` / `id-insert.js` / `binder-link.js` / `external-editor.js`
+  - `EditorArea.jsx` / `SearchBar.jsx` / `HTMLFrame.jsx` / `Autocomplete.jsx` / `engines/` — `@shared/editor/...` への re-export ラッパー（実体は `_cmd/shared/frontend/`）
+  - 部品やフックで種類を見るときは `Mode`（App.jsx）を import せず、`isNote` などを props で受ける（App.jsx との循環を増やさない。テストも軽くなる）
 
 **bindings/** — Wails v3が自動生成するJSバインディング（手動編集不可・コミット禁止）
 
@@ -55,7 +65,7 @@
 - テストフレームワーク: Vitest（`vitest.config.js`）
 - テストファイル: `src/__tests__/*.test.jsx`
 - セットアップ: `src/__tests__/setup.js`（`@wailsio/runtime` のグローバルモック、ResizeObserver ポリフィル、i18n 初期化）
-- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 98ファイル・445テスト）
+- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 102ファイル・490テスト）
 
 ```bash
 # フロントエンドテスト実行

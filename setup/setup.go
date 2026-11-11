@@ -4,6 +4,7 @@ import (
 	. "binder/internal"
 	"binder/log"
 	"binder/settings"
+	"binder/setup/defaults"
 
 	"golang.org/x/xerrors"
 )
@@ -26,27 +27,27 @@ func EnsureExists(ver *Version, devMode bool) error {
 	}
 
 	// ~/.binder/themes/_default/ にデフォルトテーマを配置（存在しなければ）
-	err = installThemes(false)
+	err = defaults.InstallThemes(false)
 	if err != nil {
-		return xerrors.Errorf("installThemes() error: %w", err)
+		return xerrors.Errorf("defaults.InstallThemes() error: %w", err)
 	}
 
 	// ~/.binder/languages/_default/ にデフォルト言語ファイルを配置（存在しなければ）
-	err = installLanguages(false)
+	err = defaults.InstallLanguages(false)
 	if err != nil {
-		return xerrors.Errorf("installLanguages() error: %w", err)
+		return xerrors.Errorf("defaults.InstallLanguages() error: %w", err)
 	}
 
 	// ~/.binder/lite/_default/ にデフォルトプレビューテンプレートを配置（存在しなければ）
-	err = installLiteAssets(false)
+	err = defaults.InstallLiteAssets(false)
 	if err != nil {
-		return xerrors.Errorf("installLiteAssets() error: %w", err)
+		return xerrors.Errorf("defaults.InstallLiteAssets() error: %w", err)
 	}
 
 	// ~/.binder/plugins/_default/ にデフォルトプラグインテンプレートを配置（存在しなければ）
-	err = installPlugins(false)
+	err = defaults.InstallPlugins(false)
 	if err != nil {
-		return xerrors.Errorf("installPlugins() error: %w", err)
+		return xerrors.Errorf("defaults.InstallPlugins() error: %w", err)
 	}
 
 	// 旧サービス名のキーを新サービス名に移行
@@ -87,8 +88,8 @@ func migrateApp(ver *Version, devMode bool) error {
 	needUpdate := devMode || !prevVer.Eq(ver)
 
 	if needUpdate {
-		if err := UpdateDefaults(); err != nil {
-			log.Warnf("migrateApp: UpdateDefaults:\n%+v", err)
+		if err := defaults.Update(); err != nil {
+			log.Warnf("migrateApp: defaults.Update:\n%+v", err)
 		}
 	}
 
@@ -112,7 +113,7 @@ func migrateApp(ver *Version, devMode bool) error {
 	// 0.12.0: サンプルプラグインを ~/.binder/plugins/marked/ にインストール
 	v0120, _ := NewVersion("0.12.0")
 	if prevVer.Lt(v0120) {
-		if err := InstallSamplePlugins(); err != nil {
+		if err := defaults.InstallSamplePlugins(); err != nil {
 			log.Warnf("migrateApp: InstallSamplePlugins:\n%+v", err)
 		}
 	}
@@ -120,7 +121,7 @@ func migrateApp(ver *Version, devMode bool) error {
 	// バージョン変更のたびに、ユーザ未編集の同梱プラグインを最新の同梱版へ同期する。
 	// 0.14.0 のエスケープ修正などを既存ユーザへ届けるための仕組み。
 	if needUpdate {
-		if err := SyncSamplePlugins(); err != nil {
+		if err := defaults.SyncSamplePlugins(); err != nil {
 			log.Warnf("migrateApp: SyncSamplePlugins:\n%+v", err)
 		}
 	}

@@ -1,12 +1,12 @@
 import { useState, useEffect, useContext, useRef, useCallback, useMemo, memo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
-import { Backdrop, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem, Paper, TextField, Toolbar, Select, ToggleButton, Tooltip, Divider } from "@mui/material";
+import { Backdrop, Button, Dialog, DialogActions, DialogTitle, Paper } from "@mui/material";
 
-import { GetNote, ParseNote, OpenNote, SaveNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
-import { GetDiagram, OpenDiagram, SaveDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
+import { GetNote, ParseNote, OpenNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
+import { GetDiagram, OpenDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
 import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
-import { GetHTMLTemplates, GetBinderTree, CreateTemplateHTML } from "../../../bindings/binder/api/app";
+import { GetHTMLTemplates, GetBinderTree } from "../../../bindings/binder/api/app";
 import { GetAsset, Generate, GenerateAll, GetUnpublishedRefs, Unpublish, Commit, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
@@ -23,11 +23,9 @@ import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCar
 import { countChars } from "@shared/editor/char-count";
 import { idInsertText, isInsideTemplate } from "./id-insert";
 import { extractHeadings, findHeadingLine } from "@shared/editor/outline";
-import { ALERT_TYPES, hasAlertsPlugin, alertInsertText } from "@shared/editor/alerts";
-import { getCaretPosition } from "@shared/editor/caret-position";
+import { hasAlertsPlugin, alertInsertText } from "@shared/editor/alerts";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
-import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThisDiagramFields, dotHomeFields, dotNoteFields, dotDiagramFields } from "@shared/editor/go-template-candidates";
-import { buildMermaidCandidates, buildMermaidSyntaxMap, buildMermaidDirections, mermaidKnownKeywords, mermaidDirectionTypes } from "@shared/editor/mermaid-candidates";
+import { goTemplateCandidates } from "@shared/editor/go-template-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
@@ -44,39 +42,25 @@ import { watchExternalEditor } from "./external-editor";
 import { publishWarningMessage } from "../../publish-warning";
 import { renderPublishItem, publishComment } from "../../publish-items";
 import { usePublishRefsDialog } from "../../dialogs/PublishRefsDialog.jsx";
+import { flattenNotes, flattenDiagrams } from "./tree-flatten";
+import { editorHistory, editorHistoryURL, emitHistoryState } from "./editor-history";
+import { tsvToMarkdownTable, detectTableAt } from "./table-markdown";
+import { hasConflictMarkers, buildConflictHTML } from "./conflict-view";
+import { extractMermaidErrorLine, runTemplatePreview } from "./preview-run";
+import { writeFn } from "./editor-save";
+import { downloadBlob, triggerTextDownload } from "./download";
+import { attachDiagramPanZoom } from "./diagram-pan-zoom";
+import { useEditorCandidates } from "./useEditorCandidates";
+import { useSplitterDrag } from "./useSplitterDrag";
+import EditorToolbar from "./EditorToolbar.jsx";
+import PreviewToolbar from "./PreviewToolbar.jsx";
+import ParseStatusBar, { ParseDialogs } from "./ParseStatusBar.jsx";
 import '../../assets/Editor.css'
 import { Mode, copyClipboard } from "../../app/App.jsx";
 
 import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/Download';
-import PublishIcon from '@mui/icons-material/Publish';
 import UnpublishedIcon from '@mui/icons-material/Unpublished';
 
-import LaunchIcon from '@mui/icons-material/Launch';
-import OpenInBrowserIcon from '@mui/icons-material/OpenInBrowser';
-import FontDownloadIcon from '@mui/icons-material/FontDownload';
-import PreviewIcon from '@mui/icons-material/Preview';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import FormatBoldIcon from '@mui/icons-material/FormatBold';
-import FormatItalicIcon from '@mui/icons-material/FormatItalic';
-import CodeIcon from '@mui/icons-material/Code';
-import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
-import NewLabelIcon from '@mui/icons-material/NewLabel';
-import TocIcon from '@mui/icons-material/Toc';
-import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
-import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
-import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
-import WrapTextIcon from '@mui/icons-material/WrapText';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import FolderZipIcon from '@mui/icons-material/FolderZip';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
-import ErrorIcon from '@mui/icons-material/Error';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import ContrastIcon from '@mui/icons-material/Contrast';
-import CodeOffIcon from '@mui/icons-material/CodeOff';
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
 
@@ -95,318 +79,10 @@ const MemoAutocomplete = memo(Autocomplete);
 const MemoIdStatusBar = memo(IdStatusBar);
 const MemoCommitBar = memo(CommitBar);
 
-/**
- * ツリーからノートのみを再帰的に抽出する
- */
-function flattenNotes(nodes) {
-  const result = [];
-  for (const node of nodes) {
-    if (node.type === "note") {
-      result.push({ id: node.id, name: node.name });
-    }
-    if (node.children && node.children.length > 0) {
-      result.push(...flattenNotes(node.children));
-    }
-  }
-  return result;
-}
-
-/**
- * ツリーからダイアグラムのみを再帰的に抽出する
- */
-function flattenDiagrams(nodes) {
-  const result = [];
-  for (const node of nodes) {
-    if (node.type === "diagram") {
-      result.push({ id: node.id, name: node.name });
-    }
-    if (node.children && node.children.length > 0) {
-      result.push(...flattenDiagrams(node.children));
-    }
-  }
-  return result;
-}
-
-/**
- * ツリーから全Structureをフラットに抽出する
- */
-function flattenStructures(nodes) {
-  const result = [];
-  for (const node of nodes) {
-    result.push({ id: node.id, name: node.name, type: node.type, mime: node.mime, parentId: node.parentId, updated: node.updated });
-    if (node.children && node.children.length > 0) {
-      result.push(...flattenStructures(node.children));
-    }
-  }
-  return result;
-}
-
-/**
- * ID一覧の並び順を作る。
- * 基本は更新日付の降順。currentId の子は上位グループとして先頭にまとめる。
- * 自分自身（currentId）は除外する。
- */
-function sortIdCandidates(list, currentId) {
-  const byUpdated = (a, b) => {
-    const ta = a.updated ? Date.parse(a.updated) : 0;
-    const tb = b.updated ? Date.parse(b.updated) : 0;
-    return (tb || 0) - (ta || 0);
-  };
-  const children = list.filter((s) => s.id !== currentId && s.parentId === currentId).sort(byUpdated);
-  const others = list.filter((s) => s.id !== currentId && s.parentId !== currentId).sort(byUpdated);
-  return [...children, ...others];
-}
-
-/**
- * エディタ専用の閲覧履歴スタック（MRU方式）。
- * 同一IDは古い方を除去し、各IDが最大1回だけ存在する。
- * コンポーネント外で保持するためリマウントでリセットされない。
- */
-const editorHistory = {
-  stack: [],   // [{ mode, id }, ...]
-  cursor: -1,  // 現在位置（-1 = 現在のページはスタック外）
-  navigating: false,  // goBack/goForward による遷移中フラグ（push抑制用）
-
-  push(mode, id) {
-    // 戻る/進む中の場合、カーソルより先を切り捨て
-    if (this.cursor >= 0 && this.cursor < this.stack.length - 1) {
-      this.stack = this.stack.slice(0, this.cursor + 1);
-    }
-    // 重複除去: 古い同一IDを削除
-    this.stack = this.stack.filter((e) => e.id !== id);
-    this.stack.push({ mode, id });
-    this.cursor = this.stack.length - 1;
-  },
-
-  canGoBack() {
-    return this.cursor > 0;
-  },
-
-  canGoForward() {
-    return this.cursor < this.stack.length - 1;
-  },
-
-  goBack() {
-    if (!this.canGoBack()) return null;
-    this.cursor--;
-    this.navigating = true;
-    return this.stack[this.cursor];
-  },
-
-  goForward() {
-    if (!this.canGoForward()) return null;
-    this.cursor++;
-    this.navigating = true;
-    return this.stack[this.cursor];
-  },
-
-  clear() {
-    this.stack = [];
-    this.cursor = -1;
-    this.navigating = false;
-  },
-};
-
-/**
- * 履歴エントリのエディタURLを返す。
- * asset だけ URL とモード名が異なるため、遷移する側で毎回書かずに済むよう共通化する。
- */
-function editorHistoryURL(entry) {
-  const urlMode = entry.mode === 'asset' ? 'assets' : entry.mode;
-  return "/editor/" + urlMode + "/" + entry.id;
-}
-
-/**
- * エディタ閲覧履歴の可否を別ウィンドウのプレビューへ通知する。
- * editorHistory は React の状態ではないため、変化した時点で明示的に送る。
- */
-function emitHistoryState() {
-  Events.Emit('binder:editor:historyState', {
-    canBack: editorHistory.canGoBack(),
-    canForward: editorHistory.canGoForward(),
-  });
-}
-
-/**
- * タブ区切りテキストをMarkdownテーブルに変換する
- * Excel等からの貼り付けデータを想定。
- * 判定条件: 2行以上、各行にタブが1つ以上、全行のタブ数（列数）が一致
- * @param {string} text
- * @returns {string|null} Markdownテーブル文字列。タブ区切りでなければ null
- */
-function tsvToMarkdownTable(text) {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimEnd().split('\n');
-  if (lines.length < 2) return null;
-
-  const tabCounts = lines.map(line => (line.match(/\t/g) || []).length);
-  if (tabCounts[0] === 0) return null;
-  if (!tabCounts.every(c => c === tabCounts[0])) return null;
-
-  const rows = lines.map(line => line.split('\t').map(cell => cell.trim()));
-  const colCount = rows[0].length;
-
-  const header = '| ' + rows[0].join(' | ') + ' |';
-  const separator = '| ' + rows[0].map(() => '---').join(' | ') + ' |';
-  const body = rows.slice(1).map(row => {
-    while (row.length < colCount) row.push('');
-    return '| ' + row.join(' | ') + ' |';
-  });
-
-  return [header, separator, ...body].join('\n');
-}
-
-/**
- * カーソル位置からマークダウンテーブルの範囲を検出する
- * @param {string} fullText
- * @param {number} cursorPos
- * @returns {{ startOffset: number, endOffset: number, lines: string[] } | null}
- */
-function detectTableAt(fullText, cursorPos) {
-  const allLines = fullText.split("\n");
-  let offset = 0;
-  let cursorLineIdx = -1;
-
-  for (let i = 0; i < allLines.length; i++) {
-    const lineEnd = offset + allLines[i].length;
-    if (cursorPos <= lineEnd) {
-      cursorLineIdx = i;
-      break;
-    }
-    offset = lineEnd + 1;
-  }
-
-  if (cursorLineIdx < 0) return null;
-  if (!allLines[cursorLineIdx].trimStart().startsWith("|")) return null;
-
-  let startLine = cursorLineIdx;
-  while (startLine > 0 && allLines[startLine - 1].trimStart().startsWith("|")) {
-    startLine--;
-  }
-
-  let endLine = cursorLineIdx;
-  while (endLine < allLines.length - 1 && allLines[endLine + 1].trimStart().startsWith("|")) {
-    endLine++;
-  }
-
-  const tableLines = allLines.slice(startLine, endLine + 1);
-  if (tableLines.length < 2) return null;
-  if (!/^\|[-:| ]+\|$/.test(tableLines[1].trim())) return null;
-
-  const startOffset =
-    allLines.slice(0, startLine).join("\n").length + (startLine > 0 ? 1 : 0);
-  const endOffset = startOffset + tableLines.join("\n").length;
-
-  return { startOffset, endOffset, lines: tableLines };
-}
-
-// ---- マージコンフリクトマーカー（diff3）の検出・表示 ----
-// マーカーは fs/diff3.go が出力する構造的プレフィックスで判定する（ラベル文字列に依存しない）。
-
-function escapeHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/**
- * ノート本文に未解決のコンフリクトマーカーが含まれるか。
- * ours(<<<<<<<) → mid(=======) → theirs(>>>>>>>) の3点が「この順」で存在する
- * 構造のみを検出する。単独行の誤検出（git を説明する文書など）を避けるため、
- * 3マーカーが揃った構造に限定する。
- */
-function hasConflictMarkers(text) {
-  if (!text) return false;
-  return /^<<<<<<< .*$[\s\S]*^=======$[\s\S]*^>>>>>>> .*$/m.test(text);
-}
-
-/**
- * コンフリクトマーカー入りの本文を、marked を通さずに色分けした完結HTMLへ変換する。
- * ours ブロック=緑、theirs ブロック=赤、マーカー行=強調。HTMLFrame の srcdoc に渡す。
- */
-function buildConflictHTML(text, bannerText) {
-  const lines = (text || '').split('\n');
-  let zone = 'normal'; // normal | ours | theirs
-  const rows = lines.map((line) => {
-    const esc = escapeHtml(line) || '&nbsp;';
-    if (/^<<<<<<< /.test(line)) { zone = 'ours'; return `<div class="m ours-m">${esc}</div>`; }
-    if (zone !== 'normal' && /^=======\s*$/.test(line)) { zone = 'theirs'; return `<div class="m mid-m">${esc}</div>`; }
-    if (/^>>>>>>> /.test(line)) { zone = 'normal'; return `<div class="m theirs-m">${esc}</div>`; }
-    const cls = zone === 'ours' ? 'ours' : zone === 'theirs' ? 'theirs' : '';
-    return `<div class="${cls}">${esc}</div>`;
-  }).join('');
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-    body { margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; line-height:1.5; color:#1a1a1a; background:#fff; }
-    .banner { padding:8px 12px; background:#fff3cd; color:#664d03; border-bottom:1px solid #ffe69c; font-family: system-ui, sans-serif; }
-    .body { padding:8px 12px; }
-    .body > div { white-space:pre-wrap; word-break:break-word; }
-    .ours { background: rgba(76,175,80,0.14); }
-    .theirs { background: rgba(244,67,54,0.14); }
-    .m { font-weight:bold; }
-    .ours-m { background: rgba(76,175,80,0.30); color:#1b5e20; }
-    .mid-m { background: rgba(0,0,0,0.08); color:#555; }
-    .theirs-m { background: rgba(244,67,54,0.30); color:#b71c1c; }
-    @media (prefers-color-scheme: dark) {
-      body { color:#e0e0e0; background:#1e1e1e; }
-      .banner { background:#3a3000; color:#ffe69c; border-bottom-color:#5a4b00; }
-      .mid-m { background: rgba(255,255,255,0.12); color:#bbb; }
-      .ours-m { color:#a5d6a7; } .theirs-m { color:#ef9a9a; }
-    }
-  </style></head><body>
-    <div class="banner">&#9888; ${escapeHtml(bannerText || '')}</div>
-    <div class="body">${rows}</div>
-  </body></html>`;
-}
-
-const mermaidErrorLineRe = /on line (\d+)/i;
-
-function extractMermaidErrorLine(err) {
-  const msg = err instanceof Error ? err.message : String(err);
-  const m = mermaidErrorLineRe.exec(msg);
-  if (m) return parseInt(m[1], 10);
-  if (/UnknownDiagramError|No diagram type detected/i.test(msg)) return 1;
-  return 0;
-}
-
-/**
- * テンプレートプレビューHTMLを生成する
- */
-async function runTemplatePreview(templateId, templateType, otherTemplateId, noteId) {
-  const content = await OpenNote(noteId);
-  const parseResult = await ParseNote(noteId, true, content);
-  if (parseResult.error) return parseResult;
-  const marked = await Marked.parse(parseResult.html);
-  const templateResult = await CreateTemplateHTML(templateId, templateType, otherTemplateId, noteId, marked);
-  templateResult.warnings = [...(parseResult.warnings || []), ...(templateResult.warnings || [])];
-  return templateResult;
-}
-
-//指定秒数での実行処理
-const debouncePromiss = (fn, delay) => {
-  var timer = null;
-  return function (...args) {
-    clearTimeout(timer);
-    return new Promise((resolve) => {
-      timer = setTimeout(() => {
-        resolve(fn.apply(this, args));
-      }, delay);
-    });
-  }
-}
-
 // テンプレートプレビューで前回選択したノート・テンプレート・ダイアグラムを記憶する
 let lastPreviewNoteId = "";
 let lastPreviewOtherTemplateId = "";
 let lastPreviewDiagramId = "";
-
-//テキストの保存処理（デバウンス）
-const writeFn = debouncePromiss((mode, id, txt) => {
-  if (mode === Mode.note) {
-    return SaveNote(id, txt);
-  } else if (mode === Mode.diagram) {
-    return SaveDiagram(id, txt);
-  } else if (mode === Mode.template) {
-    return SaveTemplate(id, txt);
-  }
-}, 1000);
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -471,40 +147,11 @@ function Editor(props) {
   const [tableDialogLines, setTableDialogLines] = useState([]);
   const [tableRange, setTableRange] = useState({ start: 0, end: 0 });
 
-  // エディタメニュー MoreVert
-  const [editorMoreMenu, setEditorMoreMenu] = useState({ open: false, el: null });
-  const openEditorMoreMenu = (el) => setEditorMoreMenu({ open: true, el });
-  const closeEditorMoreMenu = () => { setEditorMoreMenu({ open: false, el: null }); setTextDownloadMenuAnchor(null); };
-
-  // テキストダウンロードサブメニューのアンカー要素
-  const [textDownloadMenuAnchor, setTextDownloadMenuAnchor] = useState(null);
-
-  // プレビューメニュー MoreVert
-  const [previewMoreMenu, setPreviewMoreMenu] = useState({ open: false, el: null });
-  const openPreviewMoreMenu = (el) => setPreviewMoreMenu({ open: true, el });
-  const closePreviewMoreMenu = () => setPreviewMoreMenu({ open: false, el: null });
-
   // スニペット
   const [snippets, setSnippets] = useState({ markdowns: [], diagrams: [], templates: [] });
-  const [snippetAnchor, setSnippetAnchor] = useState(null);
-  const [snippetPos, setSnippetPos] = useState(null);
-  const snippetBtnRef = useRef(null);
-
-  // ID挿入
-  const [idListAnchor, setIdListAnchor] = useState(null);
-  const [idListPos, setIdListPos] = useState(null);
-  const [idList, setIdList] = useState([]);
-  const idInsertBtnRef = useRef(null);
 
   // 囲み（GitHub Alerts）。プラグインが効いているときだけメニューを出す
   const [alertsAvailable, setAlertsAvailable] = useState(false);
-  const [alertsAnchor, setAlertsAnchor] = useState(null);
-
-  // アウトライン（見出しの一覧）
-  const [outlineAnchor, setOutlineAnchor] = useState(null);
-  const [outline, setOutline] = useState([]);
-  // 一覧を開いたときにカーソルがある見出しの行
-  const [outlineCurrent, setOutlineCurrent] = useState(0);
 
   // 保存の状態（null: 開いたまま / saving: 保存待ち・保存中 / saved: 保存済み / error: 失敗）
   const [saveState, setSaveState] = useState(null);
@@ -635,148 +282,8 @@ function Editor(props) {
     });
   }, [mode, id, autoComplete.autoClose]);
 
-  const resolveI18n = useCallback((arr) =>
-    arr.map(c => ({ ...c, detail: t(c.detail) })), [t]);
-
-  const resolvedCandidates = useMemo(() => resolveI18n(goTemplateCandidates), [resolveI18n]);
-  const [mermaidTypeCandidates, setMermaidTypeCandidates] = useState([]);
-  const mermaidSyntaxMapRef = useRef({});
-  const mermaidDirectionsRef = useRef([]);
-  useEffect(() => {
-    mermaidSyntaxMapRef.current = buildMermaidSyntaxMap(t);
-    mermaidDirectionsRef.current = buildMermaidDirections(t);
-    Mermaid.getDiagramTypes(mermaidKnownKeywords).then(types => {
-      setMermaidTypeCandidates(buildMermaidCandidates(types, t));
-    }).catch(() => {});
-  }, [t]);
-
-  const getMermaidCandidates = useCallback((filterText) => {
-    const textarea = document.querySelector('#editor');
-    if (!textarea) return mermaidTypeCandidates;
-    const text = textarea.value;
-    const cursorPos = textarea.selectionStart;
-    const beforeCursor = text.substring(0, cursorPos);
-    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
-    const isFirstLine = lineStart === 0;
-
-    if (isFirstLine) {
-      const parts = filterText.split(/\s+/);
-      if (parts.length >= 2) {
-        const diagramType = parts[0];
-        if (mermaidDirectionTypes.has(diagramType)) {
-          return { items: mermaidDirectionsRef.current, filterKey: parts[parts.length - 1] };
-        }
-        return [];
-      }
-      return mermaidTypeCandidates;
-    }
-
-    const firstLine = text.substring(0, text.indexOf('\n') >= 0 ? text.indexOf('\n') : text.length).trim();
-    const diagramType = firstLine.split(/\s+/)[0];
-    const syntaxItems = mermaidSyntaxMapRef.current[diagramType];
-    if (syntaxItems) return syntaxItems;
-    return [];
-  }, [mermaidTypeCandidates]);
-
-  const resolvedDotTopLevel = useMemo(() => resolveI18n(dotTopLevelCandidates), [resolveI18n]);
-  const resolvedDotHome = useMemo(() => resolveI18n(dotHomeFields), [resolveI18n]);
-  const resolvedDotNote = useMemo(() => resolveI18n(dotNoteFields), [resolveI18n]);
-  const resolvedDotDiagram = useMemo(() => resolveI18n(dotDiagramFields), [resolveI18n]);
-  const resolvedDotThisNote = useMemo(() => resolveI18n(dotThisNoteFields), [resolveI18n]);
-  const resolvedDotThisDiagram = useMemo(() => resolveI18n(dotThisDiagramFields), [resolveI18n]);
-
-  const resolvedDotThis = mode === Mode.diagram ? resolvedDotThisDiagram : resolvedDotThisNote;
-
-  const dotFieldMap = useMemo(() => ({
-    Home: resolvedDotHome,
-    This: resolvedDotThis,
-    Note: resolvedDotNote,
-    Diagram: resolvedDotDiagram,
-  }), [resolvedDotHome, resolvedDotThis, resolvedDotNote, resolvedDotDiagram]);
-
-  const getDotCandidates = useCallback(() => {
-    const textarea = document.querySelector('#editor');
-    if (!textarea) return [];
-    const text = textarea.value;
-    const cursorPos = textarea.selectionStart;
-    const before = text.substring(0, cursorPos);
-    const openIdx = before.lastIndexOf('{{');
-    if (openIdx === -1) return [];
-    if (before.substring(openIdx + 2).includes('}}')) return [];
-    const lastDotIdx = before.lastIndexOf('.');
-    if (lastDotIdx <= openIdx) return [];
-    const beforeDot = before.substring(0, lastDotIdx);
-    const prevDotIdx = beforeDot.lastIndexOf('.');
-    if (prevDotIdx <= openIdx) return resolvedDotTopLevel;
-    const parentToken = beforeDot.substring(prevDotIdx + 1).trim();
-    return dotFieldMap[parentToken] || [];
-  }, [resolvedDotTopLevel, dotFieldMap]);
-
-  const getIdCandidates = useCallback(() => {
-    const textarea = document.querySelector('#editor');
-    if (!textarea) return [];
-    const text = textarea.value;
-    const cursorPos = textarea.selectionStart;
-    const result = detectTemplateFunc(text, cursorPos);
-    if (!result || result.argIndex < 0) return [];
-    let candidate = goTemplateCandidates.find(c => c.label === result.name);
-    if (!candidate) return [];
-    let argIndex = result.argIndex;
-    if (candidate.needsEnd && argIndex >= 1 && result.tokens?.length > 0) {
-      const innerName = result.tokens[0];
-      const innerCandidate = goTemplateCandidates.find(c => c.label === innerName);
-      if (innerCandidate?.args) {
-        candidate = innerCandidate;
-        argIndex = argIndex - 1;
-      }
-    }
-    if (!candidate.args) return [];
-    const arg = candidate.args[argIndex];
-    if (!arg || !arg.idType) return [];
-    const types = arg.idType.split(',');
-    return GetBinderTree().then((tree) => {
-      const all = flattenStructures(tree.data || []);
-      const filtered = all.filter(s => types.includes(s.type));
-      // ID挿入メニューと同じ並び（子を優先し、更新日付の降順）
-      return sortIdCandidates(filtered, id).map(s => ({
-        label: s.name || s.id,
-        detail: s.type,
-        insertText: s.id,
-      }));
-    }).catch(() => []);
-  }, [id]);
-
-  const getTemplateCandidates = useCallback((filterText) => {
-    const trimmed = (filterText || '').trim();
-    const parts = trimmed.split(/\s+/);
-    if (parts.length >= 2) {
-      const keyword = parts[0];
-      const isBlock = goTemplateCandidates.some(c => c.label === keyword && c.needsEnd);
-      if (isBlock) {
-        const items = resolvedCandidates.filter(c =>
-          !c.needsEnd && c.label !== 'end' && c.label !== 'else' && c.label !== 'else if'
-        );
-        return { items, filterKey: parts[parts.length - 1] };
-      }
-    }
-    return resolvedCandidates;
-  }, [resolvedCandidates]);
-
-  const autocompleteTriggers = useMemo(() => {
-    if (mode === Mode.diagram) {
-      if (!autoComplete.mermaid) return [];
-      return [{ trigger: '', lineStart: true, candidates: getMermaidCandidates }];
-    }
-    const triggers = [];
-    if (autoComplete.template) {
-      triggers.push({ trigger: '{{', candidates: getTemplateCandidates });
-      triggers.push({ trigger: '.', candidates: getDotCandidates });
-    }
-    if (autoComplete.idAssist) {
-      triggers.push({ trigger: '"', candidates: getIdCandidates });
-    }
-    return triggers;
-  }, [autoComplete, mode, getMermaidCandidates, getTemplateCandidates, getDotCandidates, getIdCandidates]);
+  // オートコンプリートの候補（テンプレート関数・フィールド・ID・Mermaid）
+  const { resolvedCandidates, autocompleteTriggers } = useEditorCandidates({ mode, id, autoComplete, t });
 
   const ac = useAutocomplete({
     triggers: autocompleteTriggers,
@@ -842,42 +349,6 @@ function Editor(props) {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [replaceMode]);
-
-  // Ctrl+Shift+O でスニペット挿入メニューを開く
-  // Ctrl+T でID挿入メニューを開く
-  useEffect(() => {
-    const handler = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
-        e.preventDefault();
-        const pos = getCaretPosition(document.querySelector("#editor"));
-        if (pos) {
-          setSnippetPos(pos);
-          setSnippetAnchor(null);
-        } else if (snippetBtnRef.current) {
-          setSnippetAnchor(snippetBtnRef.current);
-          setSnippetPos(null);
-        }
-      }
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') {
-        e.preventDefault();
-        const textarea = document.querySelector("#editor");
-        const pos = getCaretPosition(textarea);
-        GetBinderTree().then((tree) => {
-          const all = flattenStructures(tree.data || []);
-          setIdList(sortIdCandidates(all, id));
-          if (pos) {
-            setIdListPos(pos);
-            setIdListAnchor(null);
-          } else if (idInsertBtnRef.current) {
-            setIdListAnchor(idInsertBtnRef.current);
-            setIdListPos(null);
-          }
-        }).catch((err) => evt.showErrorMessage(err));
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [id]);
 
   // Alt+← / Alt+→ でエディタ履歴ナビゲーション
   useEffect(() => {
@@ -1315,7 +786,6 @@ function Editor(props) {
     const end = textarea.selectionEnd;
     textarea.setSelectionRange(start, end);
     document.execCommand('insertText', false, body);
-    setSnippetAnchor(null);
     // execCommand は同期で textarea.value を確定するため、次フレームで state へ反映すれば足りる
     requestAnimationFrame(() => {
       setText(textarea.value);
@@ -1332,18 +802,6 @@ function Editor(props) {
     if (!textarea) return;
     const withFunc = mode === Mode.note && !isInsideTemplate(textarea.value, textarea.selectionStart);
     handleInsertSnippet(idInsertText(item, withFunc));
-  };
-
-  /**
-   * アウトラインを開く。カーソルがある見出しを選んだ状態にする
-   */
-  const openOutline = (anchor) => {
-    const textarea = document.querySelector("#editor");
-    const headings = extractHeadings(textarea ? textarea.value : text);
-    const current = headings.filter((h) => h.line <= cursorLineRef.current).pop();
-    setOutline(headings);
-    setOutlineCurrent(current ? current.line : 0);
-    setOutlineAnchor(anchor);
   };
 
   /**
@@ -1631,45 +1089,8 @@ function Editor(props) {
       }
       Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
 
-      var svg = document.querySelector('#mermaidViewer svg');
-      var left = 0;
-      var top = 0;
-      var scale = 1.0;
-
-      var transform = function () {
-        var px = left + 'px';
-        var py = top + 'px';
-        svg.style.transform = `translate(${px},${py}) scale(${scale})`;
-      }
-
-      // ホイールクリック（中ボタン）でドラッグ移動。AssetViewer/LayerEditor と統一。
-      svg.addEventListener("pointerdown", function (event) {
-        if (event.button !== 1) return;
-        event.preventDefault(); // ブラウザのオートスクロールモードを抑制
-        elm.style.cursor = 'grabbing';
-      });
-      svg.addEventListener("pointermove", function (event) {
-        if (!(event.buttons & 4)) return; // 中ボタン押下中のみ
-        left = (left + event.movementX);
-        top = (top + event.movementY);
-        transform();
-      });
-      svg.addEventListener("pointerup", function (event) {
-        if (event.button === 1) elm.style.cursor = '';
-      });
-
-      //Wheelによる拡大
-      svg.addEventListener("wheel", function (event) {
-        var dy = event.deltaY;
-        var s = 0.1;
-        if (dy > 0) {
-          s *= -1;
-        }
-        scale += s;
-        transform();
-      });
-
-      transform();
+      // 中ボタンのドラッグで移動、ホイールで拡大
+      attachDiagramPanZoom(elm);
 
     }).catch((err) => {
       const elm = document.querySelector('#mermaidViewer');
@@ -1706,75 +1127,23 @@ function Editor(props) {
     });
   }
 
-  // ---- エディタ/ビューア間スプリッタードラッグ ----
-  // Pointer Capture を使用: iframeをまたいでもイベントが途切れない
-  const splitterRef = useRef(null);
-  const splitStartRef = useRef(null);
+  // ---- エディタ/ビューア間のスプリッター ----
+  const splitter = useSplitterDrag({
+    enabled: viewer, size: width, onCommit: setWidth, min: 100, containerId: 'editorContent',
+    apply: (w) => {
+      const wrapper = document.getElementById('editorWrapper');
+      if (wrapper) wrapper.style.width = (w - 4) + 'px';
+    },
+  });
 
-  const handleSplitterPointerDown = (e) => {
-    if (!viewer) return;
-    e.preventDefault();
-    splitStartRef.current = { startX: e.clientX, startWidth: width };
-    splitterRef.current.setPointerCapture(e.pointerId);
-    document.getElementById('editorContent')?.classList.add('no-transition');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  };
-
-  const handleSplitterPointerMove = (e) => {
-    if (!splitStartRef.current) return;
-    const delta = e.clientX - splitStartRef.current.startX;
-    const newWidth = Math.max(100, splitStartRef.current.startWidth + delta);
-    // ドラッグ中は state を更新せず DOM を直接書き換え、巨大な Editor の再レンダーを回避する。
-    // 最終値は pointerup で一度だけ setWidth して確定する。
-    splitStartRef.current.lastWidth = newWidth;
-    const wrapper = document.getElementById('editorWrapper');
-    if (wrapper) wrapper.style.width = (newWidth - 4) + 'px';
-  };
-
-  const handleSplitterPointerUp = () => {
-    if (!splitStartRef.current) return;
-    const finalWidth = splitStartRef.current.lastWidth;
-    splitStartRef.current = null;
-    if (finalWidth != null) setWidth(finalWidth);
-    document.getElementById('editorContent')?.classList.remove('no-transition');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  };
-
-  // ---- ツリー/エディタ間スプリッタードラッグ ----
-  const treeSplitterRef = useRef(null);
-  const treeSplitStartRef = useRef(null);
-
-  const handleTreeSplitterPointerDown = (e) => {
-    if (!treeVisible) return;
-    e.preventDefault();
-    treeSplitStartRef.current = { startX: e.clientX, startWidth: treeWidth };
-    treeSplitterRef.current.setPointerCapture(e.pointerId);
-    document.getElementById('splitScreen')?.classList.add('no-transition');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  };
-
-  const handleTreeSplitterPointerMove = (e) => {
-    if (!treeSplitStartRef.current) return;
-    const delta = e.clientX - treeSplitStartRef.current.startX;
-    const newWidth = Math.max(80, treeSplitStartRef.current.startWidth + delta);
-    // ドラッグ中は state を更新せず DOM を直接書き換え、ツリー・エディタの再レンダーを回避する。
-    treeSplitStartRef.current.lastWidth = newWidth;
-    const panel = document.getElementById('editorTreePanel');
-    if (panel) panel.style.width = newWidth + 'px';
-  };
-
-  const handleTreeSplitterPointerUp = () => {
-    if (!treeSplitStartRef.current) return;
-    const finalWidth = treeSplitStartRef.current.lastWidth;
-    treeSplitStartRef.current = null;
-    if (finalWidth != null) setTreeWidth(finalWidth);
-    document.getElementById('splitScreen')?.classList.remove('no-transition');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  };
+  // ---- ツリー/エディタ間のスプリッター ----
+  const treeSplitter = useSplitterDrag({
+    enabled: treeVisible, size: treeWidth, onCommit: setTreeWidth, min: 80, containerId: 'splitScreen',
+    apply: (w) => {
+      const panel = document.getElementById('editorTreePanel');
+      if (panel) panel.style.width = w + 'px';
+    },
+  });
 
 
   /**
@@ -2042,36 +1411,14 @@ function Editor(props) {
   const handleDownload = async () => {
     if (mode === Mode.diagram) {
       var elm = document.querySelector('#mermaidViewer');
-      var data = new Blob([elm.innerHTML], { type: 'image/svg+xml' });
-      var dataURL = window.URL.createObjectURL(data);
-      var tempLink = document.createElement('a');
-      tempLink.href = dataURL;
-      tempLink.setAttribute('download', name + '.svg');
-      tempLink.click();
+      downloadBlob(elm.innerHTML, 'image/svg+xml', name + '.svg');
     } else if (mode === Mode.note) {
-      var data = new Blob([html], { type: 'text/html' });
-      var dataURL = window.URL.createObjectURL(data);
-      var tempLink = document.createElement('a');
-      tempLink.href = dataURL;
-      tempLink.setAttribute('download', name + '.html');
-      tempLink.click();
+      downloadBlob(html, 'text/html', name + '.html');
     }
   }
 
-  /** Blob を生成してテキストファイルをダウンロードする */
-  const triggerTextDownload = (content, filename) => {
-    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   /** テキストをそのままダウンロード（テキストステートから直接） */
   const handleDownloadRaw = () => {
-    closeEditorMoreMenu();
     if (mode === Mode.note) {
       triggerTextDownload(text, name + '.md');
     } else if (mode === Mode.diagram) {
@@ -2081,7 +1428,6 @@ function Editor(props) {
 
   /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
   const handleDownloadExpanded = async () => {
-    closeEditorMoreMenu();
     try {
       if (mode === Mode.note) {
         const result = await ParseNote(id, false, text);
@@ -2534,12 +1880,12 @@ function Editor(props) {
         {/** ツリー/エディタ間スプリッター */}
         {showTree && (
           <div
-            ref={treeSplitterRef}
+            ref={treeSplitter.ref}
             id="treeSplitter"
             className={!treeVisible ? 'hidden' : ''}
-            onPointerDown={handleTreeSplitterPointerDown}
-            onPointerMove={handleTreeSplitterPointerMove}
-            onPointerUp={handleTreeSplitterPointerUp}
+            onPointerDown={treeSplitter.onPointerDown}
+            onPointerMove={treeSplitter.onPointerMove}
+            onPointerUp={treeSplitter.onPointerUp}
           />
         )}
 
@@ -2575,333 +1921,23 @@ function Editor(props) {
             <div id="editorWrapper" className={!viewer ? 'viewer-hidden' : ''} style={{ width: (width - 4) + 'px' }}>
 
               {/** テキスト用のメニュー */}
-              <Container id="editorMenu">
-                <Container className="buttonBarLeft">
-
-                  {/** 行番号表示トグル */}
-                  <Tooltip title={showLineNumbers ? t("editor.lineNumberOn") : t("editor.lineNumberOff")} placement="bottom">
-                    <ToggleButton
-                      value="lineNumbers"
-                      selected={showLineNumbers}
-                      size="small"
-                      onChange={() => { setShowLineNumbers(v => !v); saveEditorSetting({ showLineNumbers: !showLineNumbers }); }}
-                      sx={{
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px',
-                        color: showLineNumbers ? 'var(--text-primary)' : 'var(--text-muted)',
-                        '&.Mui-selected': {
-                          backgroundColor: 'rgba(255,255,255,0.08)',
-                          color: 'var(--text-primary)',
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
-                        },
-                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
-                        mr: '2px',
-                      }}
-                    >
-                      <FormatListNumberedIcon sx={{ fontSize: '16px' }} />
-                    </ToggleButton>
-                  </Tooltip>
-
-                  {/** アウトライン（ノート編集時のみ表示） */}
-                  {mode === Mode.note && <>
-                    <Tooltip title={t("editor.outline")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="outline" sx={{ mr: 2 }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => openOutline(e.currentTarget)}
-                        className="editorBtn">
-                        <TocIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Menu
-                      anchorEl={outlineAnchor}
-                      open={Boolean(outlineAnchor)}
-                      onClose={() => setOutlineAnchor(null)}
-                      disableAutoFocus
-                      disableEnforceFocus
-                      disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 400, maxWidth: 360 } }}
-                    >
-                      {outline.length === 0
-                        ? <MenuItem disabled sx={{ fontSize: '13px' }}>{t("editor.outlineEmpty")}</MenuItem>
-                        : outline.map((h) => (
-                          <MenuItem key={h.line}
-                            selected={h.line === outlineCurrent}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => { setOutlineAnchor(null); jumpToLine(h.line, true); }}
-                            sx={{
-                              fontSize: '13px',
-                              pl: `${16 + (h.level - 1) * 14}px`,
-                              '&:hover': { backgroundColor: 'var(--hover-menuitem)' },
-                              '&.Mui-selected': { backgroundColor: 'var(--hover-menuitem)' },
-                            }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.text}</span>
-                          </MenuItem>
-                        ))}
-                    </Menu>
-                  </>}
-
-                  {/** スニペット挿入 */}
-                  {snippetList.length > 0 && (<>
-                    {/** 区切り */}
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                    <Tooltip title={t("editor.insertSnippet") + " (Ctrl+Shift+O)"} placement="bottom">
-                      <IconButton ref={snippetBtnRef} size="small" edge="start" color="inherit" aria-label="snippet" sx={{ mr: 2 }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => { setSnippetAnchor(e.currentTarget); setSnippetPos(null); }}
-                        className="editorBtn">
-                        <PlaylistAddIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Menu
-                      anchorEl={snippetAnchor}
-                      anchorReference={snippetPos ? 'anchorPosition' : 'anchorEl'}
-                      anchorPosition={snippetPos || undefined}
-                      open={Boolean(snippetAnchor) || Boolean(snippetPos)}
-                      onClose={() => { setSnippetAnchor(null); setSnippetPos(null); }}
-                      disableAutoFocus
-                      disableEnforceFocus
-                      disableRestoreFocus
-                      PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 300 } }}
-                    >
-                      {snippetList.map((s) => (
-                        <MenuItem key={s.id}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { handleInsertSnippet(s.body); setSnippetPos(null); }}
-                          sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
-                          {s.name}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  </>)}
-
-                  {/** ID挿入 */}
-                  <Tooltip title={t("editor.insertId") + " (Ctrl+T)"} placement="bottom">
-                    <IconButton ref={idInsertBtnRef} size="small" edge="start" color="inherit" aria-label="insert-id" sx={{ mr: 2 }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={(e) => {
-                        const anchor = e.currentTarget;
-                        GetBinderTree().then((tree) => {
-                          const all = flattenStructures(tree.data || []);
-                          setIdList(sortIdCandidates(all, id));
-                          setIdListAnchor(anchor);
-                          setIdListPos(null);
-                        }).catch((err) => evt.showErrorMessage(err));
-                      }}
-                      className="editorBtn">
-                      <NewLabelIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Menu
-                    anchorEl={idListAnchor}
-                    anchorReference={idListPos ? 'anchorPosition' : 'anchorEl'}
-                    anchorPosition={idListPos || undefined}
-                    open={Boolean(idListAnchor) || Boolean(idListPos)}
-                    onClose={() => { setIdListAnchor(null); setIdListPos(null); }}
-                    disableAutoFocus
-                    disableEnforceFocus
-                    disableRestoreFocus
-                    PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)', maxHeight: 300 } }}
-                  >
-                    {idList.map((s) => (
-                      <MenuItem key={s.id}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { handleInsertId(s); setIdListAnchor(null); setIdListPos(null); }}
-                        sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
-                        {s.name}
-                      </MenuItem>
-                    ))}
-                  </Menu>
-
-                  {/** マークダウン書式ボタン（ノート編集時のみ表示） */}
-                  {mode === Mode.note && <>
-                    {/** 区切り */}
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
-                    {/** 強調 */}
-                    <Tooltip title={`${t("editor.bold")} (Ctrl+B)`} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="bold" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("**", "**")} className="editorBtn">
-                        <FormatBoldIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {/** イタリック */}
-                    <Tooltip title={`${t("editor.italic")} (Ctrl+I)`} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="italic" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("*", "*")} className="editorBtn">
-                        <FormatItalicIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {/** 打ち消し線 */}
-                    <Tooltip title={t("editor.strikethrough")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="strike" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("~~", "~~")} className="editorBtn">
-                        <FormatStrikethroughIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {/** コードブロック */}
-                    <Tooltip title={t("editor.codeBlock")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("\n```\n", "\n```\n")} className="editorBtn">
-                        <CodeIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {/** 引用 */}
-                    <Tooltip title={t("editor.quote")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="code" sx={{ mr: 2 }} onMouseDown={(e) => e.preventDefault()} onClick={(e) => handleInsert("> ")} className="editorBtn">
-                        <FormatQuoteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {/** 囲み（GitHub Alerts プラグインが効いているときだけ） */}
-                    {alertsAvailable && <>
-                      <Tooltip title={t("editor.alerts")} placement="bottom">
-                        <IconButton size="small" edge="start" color="inherit" aria-label="alerts" sx={{ mr: 2 }}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={(e) => setAlertsAnchor(e.currentTarget)}
-                          className="editorBtn">
-                          <AnnouncementOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Menu
-                        anchorEl={alertsAnchor}
-                        open={Boolean(alertsAnchor)}
-                        onClose={() => setAlertsAnchor(null)}
-                        disableAutoFocus
-                        disableEnforceFocus
-                        disableRestoreFocus
-                        PaperProps={{ sx: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-input)' } }}
-                      >
-                        {ALERT_TYPES.map((a) => (
-                          <MenuItem key={a.type}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => { setAlertsAnchor(null); handleInsertAlert(a.type); }}
-                            sx={{ fontSize: '13px', '&:hover': { backgroundColor: 'var(--hover-menuitem)' } }}>
-                            {a.icon} {a.type}
-                          </MenuItem>
-                        ))}
-                      </Menu>
-                    </>}
-
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
-                    {/** テーブル編集 */}
-                    <Tooltip title={t("editor.tableEdit")} placement="bottom">
-                      <IconButton size="small" edge="start" color="inherit" aria-label="table-edit" sx={{ mr: 2 }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleTableEdit} className="editorBtn">
-                        <TableChartIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>}
-
-                </Container>
-
-                <Container className="buttonBarRight">
-
-                  {/** テキスト折り返しトグル */}
-                  <Tooltip title={wordWrap ? t("editor.wordWrapOn") : t("editor.wordWrapOff")} placement="bottom">
-                    <ToggleButton
-                      value="wordWrap"
-                      selected={wordWrap}
-                      size="small"
-                      onChange={() => { setWordWrap(v => !v); saveEditorSetting({ wordWrap: !wordWrap }); }}
-                      sx={{
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px',
-                        color: wordWrap ? 'var(--text-primary)' : 'var(--text-muted)',
-                        '&.Mui-selected': {
-                          backgroundColor: 'rgba(255,255,255,0.08)',
-                          color: 'var(--text-primary)',
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
-                        },
-                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
-                        mr: '2px',
-                      }}
-                    >
-                      <WrapTextIcon sx={{ fontSize: '16px' }} />
-                    </ToggleButton>
-                  </Tooltip>
-
-
-                  {/** プレビュー表示トグル */}
-                  <Tooltip title={viewer ? t("editor.previewOn") : t("editor.previewOff")} placement="bottom">
-                    <ToggleButton
-                      value="viewer"
-                      selected={viewer}
-                      size="small"
-                      onChange={() => { setViewer(v => !v); saveEditorSetting({ showPreview: !viewer }); }}
-                      sx={{
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px',
-                        color: viewer ? 'var(--text-primary)' : 'var(--text-muted)',
-                        '&.Mui-selected': {
-                          backgroundColor: 'rgba(255,255,255,0.08)',
-                          color: 'var(--text-primary)',
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)' },
-                        },
-                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
-                      }}
-                    >
-                      <VisibilityIcon sx={{ fontSize: '16px' }} />
-                    </ToggleButton>
-                  </Tooltip>
-
-                  {/** 区切り */}
-                  <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-
-                  {/** MoreVert メニューボタン */}
-                  <Tooltip title={t("editor.menu")} placement="bottom">
-                    <IconButton
-                      size="small"
-                      onClick={(e) => openEditorMoreMenu(e.currentTarget)}
-                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
-                      className="editorBtn"
-                    >
-                      <MoreVertIcon sx={{ fontSize: '18px' }} />
-                    </IconButton>
-                  </Tooltip>
-
-                </Container>
-              </Container>
-
-              {/** エディタ MoreVert ドロップダウンメニュー */}
-              <Menu
-                open={editorMoreMenu.open}
-                anchorEl={editorMoreMenu.el ?? undefined}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                onClose={closeEditorMoreMenu}
-                slotProps={{ paper: { sx: { minWidth: 160 } } }}
-              >
-                <MenuItem onClick={() => { closeEditorMoreMenu(); handleFontDialog(); }}>
-                  <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
-                </MenuItem>
-                <MenuItem onClick={() => { closeEditorMoreMenu(); handleRunEditor(); }}>
-                  <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
-                </MenuItem>
-                {(mode === Mode.note || mode === Mode.diagram) && <Divider />}
-                {(mode === Mode.note || mode === Mode.diagram) && (
-                  <MenuItem onClick={(e) => { e.stopPropagation(); setTextDownloadMenuAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
-                  </MenuItem>
-                )}
-              </Menu>
-
-              {/** テキストダウンロードサブメニュー */}
-              <Menu
-                open={Boolean(textDownloadMenuAnchor)}
-                onClose={closeEditorMoreMenu}
-                anchorEl={textDownloadMenuAnchor}
-                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                slotProps={{ paper: { sx: { minWidth: 180 } } }}
-              >
-                <MenuItem onClick={handleDownloadRaw}>{t("tree.downloadText")}</MenuItem>
-                <MenuItem onClick={handleDownloadExpanded}>{t("tree.downloadExpanded")}</MenuItem>
-              </Menu>
+              <EditorToolbar
+                isNote={mode === Mode.note} canDownload={mode === Mode.note || mode === Mode.diagram}
+                showLineNumbers={showLineNumbers}
+                onToggleLineNumbers={() => { setShowLineNumbers(v => !v); saveEditorSetting({ showLineNumbers: !showLineNumbers }); }}
+                wordWrap={wordWrap}
+                onToggleWordWrap={() => { setWordWrap(v => !v); saveEditorSetting({ wordWrap: !wordWrap }); }}
+                viewer={viewer}
+                onToggleViewer={() => { setViewer(v => !v); saveEditorSetting({ showPreview: !viewer }); }}
+                text={text} cursorLineRef={cursorLineRef} onJumpToLine={(line) => jumpToLine(line, true)}
+                snippets={snippetList} onInsertSnippet={handleInsertSnippet}
+                currentId={id} onInsertId={handleInsertId} onError={(err) => evt.showErrorMessage(err)}
+                onInsert={handleInsert}
+                alertsAvailable={alertsAvailable} onInsertAlert={handleInsertAlert}
+                onTableEdit={handleTableEdit}
+                onFontDialog={handleFontDialog} onRunEditor={handleRunEditor}
+                onDownloadRaw={handleDownloadRaw} onDownloadExpanded={handleDownloadExpanded}
+              />
 
               {/** オートコンプリートポップアップ */}
               <MemoAutocomplete
@@ -2972,136 +2008,36 @@ function Editor(props) {
 
           {/** セパレータ（エディタ/ビューア間） */}
           {editor &&
-            <div ref={splitterRef} id="splitter"
+            <div ref={splitter.ref} id="splitter"
               className={!viewer ? 'hidden' : ''}
-              onPointerDown={handleSplitterPointerDown}
-              onPointerMove={handleSplitterPointerMove}
-              onPointerUp={handleSplitterPointerUp}
+              onPointerDown={splitter.onPointerDown}
+              onPointerMove={splitter.onPointerMove}
+              onPointerUp={splitter.onPointerUp}
             />
           }
 
           {/** 表示側 */}
             <div id="dataViewer" className={!viewer ? 'hidden' : ''}>
 
-              {/** プレビューメニュー */}
-              <div id="previewMenu">
-                {mode === Mode.template && (() => {
-                  if (templateType === "diagram") {
-                    return (
-                      <div className="previewMenuLeft">
-                        <Select
-                          value={previewDiagramId}
-                          onChange={(e) => { lastPreviewDiagramId = e.target.value; setPreviewDiagramId(e.target.value); }}
-                          size="small"
-                          displayEmpty
-                          sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                        >
-                          {previewDiagrams.map((d) => (
-                            <MenuItem key={d.id} value={d.id} sx={{ fontSize: "0.8rem" }}>{d.name}</MenuItem>
-                          ))}
-                        </Select>
-                      </div>
-                    );
-                  }
-                  const previewOtherTemplates = templateType === "layout" ? previewContents : previewLayouts;
-                  return (
-                    <div className="previewMenuLeft">
-                      <Select
-                        value={previewOtherTemplateId}
-                        onChange={(e) => { lastPreviewOtherTemplateId = e.target.value; setPreviewOtherTemplateId(e.target.value); }}
-                        size="small"
-                        displayEmpty
-                        sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" }, mr: '6px' }}
-                      >
-                        {previewOtherTemplates.map((t) => (
-                          <MenuItem key={t.id} value={t.id} sx={{ fontSize: "0.8rem" }}>{t.name}</MenuItem>
-                        ))}
-                      </Select>
-                      <Select
-                        value={previewNoteId}
-                        onChange={(e) => { lastPreviewNoteId = e.target.value; setPreviewNoteId(e.target.value); }}
-                        size="small"
-                        displayEmpty
-                        sx={{ minWidth: 120, height: "26px", fontSize: "0.78rem", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-strong)" }, "& .MuiSelect-select": { padding: "2px 8px" } }}
-                      >
-                        {previewNotes.map((n) => (
-                          <MenuItem key={n.id} value={n.id} sx={{ fontSize: "0.8rem" }}>{n.name}</MenuItem>
-                        ))}
-                      </Select>
-                    </div>
-                  );
-                })()}
-                {mode !== Mode.template && <div className="previewMenuLeft" />}
-                <div className="previewMenuRight">
-                  {scriptsBlocked && (mode === Mode.note || (mode === Mode.template && templateType !== "diagram")) &&
-                    <Tooltip title={t("preview.scriptsBlocked")} placement="bottom">
-                      <IconButton size="small" aria-label="scripts-blocked" className="editorBtn" onClick={() => evt.openBinderModal()}>
-                        <CodeOffIcon sx={{ fontSize: '16px', color: 'var(--accent-orange)' }} />
-                      </IconButton>
-                    </Tooltip>
-                  }
-                  {colorSchemeConfig && colorSchemeConfig.values.length > 0 &&
-                    <Tooltip title={`${t("preview.colorScheme")}: ${colorSchemeConfig.values[colorSchemeIndex]}`} placement="bottom">
-                      <IconButton size="small" aria-label="color-scheme" className="editorBtn"
-                        onClick={() => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length)}
-                      >
-                        <ContrastIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  }
-                  {mode !== Mode.template &&
-                    <Tooltip title={t("preview.download")} placement="bottom">
-                      <IconButton size="small" aria-label="download" onClick={handleDownload} className="editorBtn">
-                        <DownloadIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  }
-                  {mode === Mode.note &&
-                    <Tooltip title={t("preview.downloadZip")} placement="bottom">
-                      <IconButton size="small" aria-label="download-zip" onClick={handleDownloadZip} className="editorBtn">
-                        <FolderZipIcon sx={{ fontSize: '16px' }} />
-                      </IconButton>
-                    </Tooltip>
-                  }
-                  {mode !== Mode.template &&
-                    <span style={{ display: 'inline-block', width: '1px', height: '16px', backgroundColor: 'var(--border-primary)', margin: '0 6px', verticalAlign: 'middle' }} />
-                  }
-                  {mode !== Mode.template &&
-                    <IconButton
-                      size="small"
-                      onClick={(e) => openPreviewMoreMenu(e.currentTarget)}
-                      sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' }, padding: '5px 0px' }}
-                    >
-                      <MoreVertIcon sx={{ fontSize: '18px' }} />
-                    </IconButton>
-                  }
-                </div>
-              </div>
-
-              {/** プレビュー MoreVert ドロップダウンメニュー */}
-              <Menu
-                open={previewMoreMenu.open}
-                anchorEl={previewMoreMenu.el ?? undefined}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                onClose={closePreviewMoreMenu}
-                slotProps={{ paper: { sx: { minWidth: 160 } } }}
-              >
-                <MenuItem onClick={() => { closePreviewMoreMenu(); OpenPreviewWindow(mode, id, name); }} disabled={mode === Mode.template}>
-                  <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.openPreviewWindow")}
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={() => { closePreviewMoreMenu(); handlePublish(); }} disabled={parseStatus.status === "error" || isPrivate}>
-                  <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
-                </MenuItem>
-                <MenuItem onClick={() => { closePreviewMoreMenu(); handleOpenInBrowser(); }} disabled={!alias || mode === Mode.template}>
-                  <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={() => { closePreviewMoreMenu(); handleUnpublish(); }}>
-                  <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-                </MenuItem>
-              </Menu>
+              {/** プレビューメニュー（前回の選択はモジュールの変数に覚えておき、開き直したときに戻す） */}
+              <PreviewToolbar
+                isNote={mode === Mode.note} isTemplate={mode === Mode.template} templateType={templateType}
+                previewDiagrams={previewDiagrams} previewDiagramId={previewDiagramId}
+                onPreviewDiagramChange={(v) => { lastPreviewDiagramId = v; setPreviewDiagramId(v); }}
+                previewOtherTemplates={templateType === "layout" ? previewContents : previewLayouts}
+                previewOtherTemplateId={previewOtherTemplateId}
+                onPreviewOtherTemplateChange={(v) => { lastPreviewOtherTemplateId = v; setPreviewOtherTemplateId(v); }}
+                previewNotes={previewNotes} previewNoteId={previewNoteId}
+                onPreviewNoteChange={(v) => { lastPreviewNoteId = v; setPreviewNoteId(v); }}
+                scriptsBlocked={scriptsBlocked} onScriptsBlockedClick={() => evt.openBinderModal()}
+                colorSchemeConfig={colorSchemeConfig} colorSchemeIndex={colorSchemeIndex}
+                onNextColorScheme={() => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length)}
+                onDownload={handleDownload} onDownloadZip={handleDownloadZip}
+                onOpenPreviewWindow={() => OpenPreviewWindow(mode, id, name)}
+                onPublish={handlePublish} publishDisabled={parseStatus.status === "error" || isPrivate}
+                onOpenInBrowser={handleOpenInBrowser} openInBrowserDisabled={!alias || mode === Mode.template}
+                onUnpublish={handleUnpublish}
+              />
 
               {/** プレビューコンテンツ */}
               <div id="previewContent">
@@ -3131,33 +2067,9 @@ function Editor(props) {
               />
 
               {/** パースステータスバー */}
-              <div id="parseStatusBar">
-                <div className="parseStatusLeft" onDoubleClick={() => {
-                  if (parseStatus.err) setParseErrorDlg(true);
-                  else if (parseStatus.warnings?.length > 0) setParseWarningDlg(true);
-                }}>
-                  {parseStatus.status === "error"
-                    ? <><ErrorIcon sx={{ fontSize: '16px', color: 'var(--accent-red)', mr: '6px' }} /><span className="parseStatusText">{t("preview.parseError")}</span></>
-                    : parseStatus.status === "warning"
-                    ? <><WarningAmberIcon sx={{ fontSize: '16px', color: 'var(--accent-warning, orange)', mr: '6px' }} /><span className="parseStatusText">Warning ({parseStatus.warnings?.length})</span></>
-                    : parseStatus.status === "processing"
-                    ? <><AutorenewIcon sx={{ fontSize: '16px', color: 'var(--text-muted)', mr: '6px', animation: 'spin 1s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} /><span className="parseStatusText">Processing...</span></>
-                    : <><CheckCircleIcon sx={{ fontSize: '16px', color: 'var(--accent-green)', mr: '6px' }} /><span className="parseStatusText">Success{parseStatus.ms != null ? ` (${parseStatus.ms}ms)` : ''}</span></>
-                  }
-                </div>
-                <div className="parseStatusRight">
-                  <span className="parseStatusText">
-                    {selectionChars > 0
-                      ? t("editor.charCountSelected", { selected: selectionChars.toLocaleString(), total: totalChars.toLocaleString() })
-                      : t("editor.charCount", { total: totalChars.toLocaleString() })}
-                  </span>
-                  {saveState && (
-                    <span className={"parseStatusText saveState" + (saveState === "error" ? " saveStateError" : "")}>
-                      {t(saveState === "saving" ? "editor.saving" : saveState === "saved" ? "editor.saved" : "editor.saveFailed")}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <ParseStatusBar parseStatus={parseStatus}
+                selectionChars={selectionChars} totalChars={totalChars} saveState={saveState}
+                onShowError={() => setParseErrorDlg(true)} onShowWarnings={() => setParseWarningDlg(true)} />
 
             </div>
 
@@ -3175,33 +2087,10 @@ function Editor(props) {
         onClose={handleTableClose}
       />
 
-      {/** パースエラー詳細ダイアログ */}
-      <Dialog open={parseErrorDlg} onClose={() => setParseErrorDlg(false)}>
-        <DialogTitle>Parse Error</DialogTitle>
-        <DialogContent>
-          <DialogContentText className="messageTxt">
-            {parseStatus.err ? String(parseStatus.err) : ""}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseErrorDlg(false)} />
-        </DialogActions>
-      </Dialog>
-
-      {/** テンプレート関数警告ダイアログ */}
-      <Dialog open={parseWarningDlg} onClose={() => setParseWarningDlg(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Warnings ({parseStatus.warnings?.length || 0})</DialogTitle>
-        <DialogContent>
-          {(parseStatus.warnings || []).map((w, i) => (
-            <DialogContentText key={i} className="messageTxt" sx={{ fontSize: '13px', mb: '4px', color: 'var(--text-secondary)' }}>
-              {w}
-            </DialogContentText>
-          ))}
-        </DialogContent>
-        <DialogActions>
-          <ActionButton variant="cancel" label={t("common.close")} icon={<CloseIcon />} onClick={() => setParseWarningDlg(false)} />
-        </DialogActions>
-      </Dialog>
+      {/** パースエラー・警告の詳細ダイアログ */}
+      <ParseDialogs parseStatus={parseStatus}
+        errorOpen={parseErrorDlg} warningOpen={parseWarningDlg}
+        onCloseError={() => setParseErrorDlg(false)} onCloseWarning={() => setParseWarningDlg(false)} />
 
       {/** 未公開確認ダイアログ */}
       {publishRefsDialog}

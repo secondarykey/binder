@@ -4,7 +4,7 @@ import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import TerminalIcon from '@mui/icons-material/Terminal';
 
 import { GetVersionInfo } from "../../bindings/binder/api/app";
-import { GetLicense, GetThirdPartyLicenses } from "../../bindings/binder/api/shared/shared";
+import { license, thirdPartyLicenses } from "@shared/licenses";
 import { OpenSyslogWindow } from "../../bindings/main/window";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
@@ -20,23 +20,11 @@ function LicenseSetting() {
   const { showError } = useDialogMessage();
   const {t} = useTranslation();
 
-  const [license, setLicense] = useState("");
-  const [thirdParty, setThirdParty] = useState("");
   const [versionInfo, setVersionInfo] = useState(null);
 
   useEffect(() => {
     GetVersionInfo().then((info) => {
       setVersionInfo(info);
-    }).catch((err) => {
-      showError(err);
-    });
-    GetLicense().then((text) => {
-      setLicense(text);
-    }).catch((err) => {
-      showError(err);
-    });
-    GetThirdPartyLicenses().then((text) => {
-      setThirdParty(text);
     }).catch((err) => {
       showError(err);
     });
@@ -93,7 +81,7 @@ function LicenseSetting() {
           borderRadius: 1,
           p: 2,
         }}>
-          {thirdParty}
+          {thirdPartyLicenses}
         </Box>
 
       </Box>

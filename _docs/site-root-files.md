@@ -141,7 +141,7 @@ DB・`api/json`・バインディングには変更が無い。
 **新規作成の導線**: 既存の「テキストを追加」（`AddTextAsset`）で作り、alias を変える。
 よく使うものを選んで作るメニュー（robots.txt / .nojekyll / CNAME の雛形）は便利だが、フェーズ1では入れない。
 
-翻訳キー（`setup/_assets/languages/` の ja / en）: `asset.rootPublish` `asset.rootPublishTip` `asset.publishPath`
+翻訳キー（`setup/defaults/_assets/languages/` の ja / en）: `asset.rootPublish` `asset.rootPublishTip` `asset.publishPath`
 `asset.robotsIneffective` `asset.subDirIneffective` `go.error.invalidAlias` `go.error.reservedAlias`。
 `asset.publishPath` は「公開先」というラベルだけで、URL は別の要素に出す。
 
