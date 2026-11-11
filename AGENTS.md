@@ -120,6 +120,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 ### 主要な型
 
 - **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）
+- **`Repository`** (repository.go) — バインダーを開かずに（DB を読まずに）リポジトリへ直接行う操作。取り込み（`Merge` / `ApplyMergeResolution`。取り込み元のバージョン確認とその場での移行を含む）・復元・ブランチ・履歴の整理。作業ツリーや pack を丸ごと入れ替える操作は DB を開いたままできないので、`api.App` がバインダーを閉じてからこれを使い、開き直す（`api/AGENTS.md` の `runClosed`）。移行に失敗して開けないバインダーの履歴・ブランチ操作（`*ByPath`）もここ
 - **`api.App`** (api/api.go) — Wails v3 の Service として登録される構造体。初期化（`Setup()`）は Wails の Service ライフサイクルとは独立しており、`main()` から直接呼び出される。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
 - **`Window`** (_cmd/binder/window.go) — Wails v3 の第2 Service。ウィンドウ操作（サイズ変更・移動・最小化・最大化）を担当
 - **`shared.Shared`** (api/shared/shared.go) — Binder/Lite 共通の第3 Service。テーマ・言語・フォント一覧の取得。Lite からも使うので `binder`（ルート）・`db`・`fs` を import しない

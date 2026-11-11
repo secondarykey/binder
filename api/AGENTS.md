@@ -36,7 +36,12 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 - **api.go** — `App` 本体、`GetVersionInfo`、非同期検索（`SearchBinder`）、`Address` / `EnsureAddress`（HTTPサーバ遅延起動）
 - **binder.go** — バインダーの Load/Create/Close/CreateRemote、公開（`Generate` / `GenerateAll` / `Unpublish*`）。`LoadBinder` はクラッシュ検出フラグ `StartupOk` の管理も行う。
   `LoadBinder` は切り替え前のバインダーを閉じる（フロントは切り替えで `CloseBinder` を呼ばない）。`holdOpen` は閉じて開き直す操作の間も「開いている」印を持ち続ける（`fs/AGENTS.md`）
-- **git.go** — 最大のファイル。記録（`Commit` / `CommitFiles` / `AutoSave`）、リモートCRUD・Push・PushDocs、マージ（`MergeFromRemote` / `MergeFromLocal` / `ApplyMergeResolution`）、履歴・復元、ブランチ操作、`*ByPath` 系（バインダーを開かずにディレクトリ指定で履歴操作）、クリーンアップ（`SquashHistory` / `RunGC`）
+- **git.go** — 記録（`Commit` / `CommitFiles` / `AutoSave`）、リモートCRUD・Push・PushDocs、マージ（`MergeFromRemote` / `MergeFromLocal` / `ApplyMergeResolution`）、履歴・復元、ブランチ操作、`*ByPath` 系（バインダーを開かずにディレクトリ指定で履歴操作）、クリーンアップ（`SquashHistory` / `RunGC`）。
+  **`fs.Load` を直接呼ばない**。閉じたバインダーへの操作の中身は `binder.Repository`（ルートの `repository.go`）にあり、ここは次の 2 つだけを行う:
+  - `runClosed(op)` — 開いているバインダーを閉じ、`binder.OpenRepository` で開いて `op` を実行し、開き直す。結果は `closedResult`（`success` / `error`＝操作が失敗・開き直せた / `reload_error`＝開き直せなかった）。取り込み・復元・ブランチ切替・履歴の整理はすべてこれを通す
+  - 結果を `json.MergeResult` / `BranchResult` / `CleanupResult` に詰め替える
+  
+  バインダーを開いていないときの書き込み（`RestoreToCommitByPath` / `SwitchBranchByPath`）は `binder.LockRepository` で「開いている」印を立てる
 - **note.go / diagram.go / assets.go / layer.go / template.go / structure.go** — エンティティ別 CRUD・コンテンツの読み書き
 - **tree.go** — 各種ツリー取得（Binder/Template/Modified/Unpublished/Published）と `MoveNode`
 - **html.go** — プレビュー・公開用HTMLの生成（`CreateNoteHTML` / `Parse*`）
