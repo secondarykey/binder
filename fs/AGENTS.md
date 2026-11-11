@@ -94,6 +94,7 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 - 立てる場所: `binder.Load()` の先頭（インデックス復旧・スキーマ修復・doctor より前）と `Binder.Close()`。
   `Load()` を通らずに書き込む API（`Convert`、`RestoreToCommitByPath` / `SwitchBranchByPath`）は自分で立てる。
   閉じて `fs.Load()` で書いてから開き直す API（復元・ブランチ切替・取り込み・履歴の整理）は `api.App.holdOpen` で間も持ち続ける
+- 最後の `ReleaseOpen` で両方のファイルを消す（消せなくてもロックが外れていれば「開いていない」と判定される）
 - クラッシュで残ったファイルはロックされていないので「開いている」とは判定されない（次に開くときに書き換える）
 - ロックは Windows が `LockFileEx`（中身の読み取りを妨げないよう遠いオフセットの 1 バイト）、それ以外が `flock`
 
