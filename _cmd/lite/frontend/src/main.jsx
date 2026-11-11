@@ -11,13 +11,12 @@ import { loadLanguage } from './language'
 // 共有エンジンにベンダー URL を設定
 import Marked from '@shared/editor/engines/Marked'
 import Mermaid from '@shared/editor/engines/Mermaid'
-import markedVendorUrl from './assets/vendor/marked.min.js?url'
-import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
-// バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
+// 同梱の marked / mermaid とそのバージョンは Binder と共通（@shared/vendor）
+import { markedVendorUrl, mermaidVendorUrl, MARKED_VENDOR_VERSION, MERMAID_VENDOR_VERSION } from '@shared/vendor'
 Marked.setVendorUrl(markedVendorUrl)
-Marked.setVendorVersion('18.0.7')
+Marked.setVendorVersion(MARKED_VENDOR_VERSION)
 Mermaid.setVendorUrl(mermaidVendorUrl)
-Mermaid.setVendorVersion('12.1.0')
+Mermaid.setVendorVersion(MERMAID_VENDOR_VERSION)
 
 const container = document.getElementById('root')
 const root = createRoot(container)

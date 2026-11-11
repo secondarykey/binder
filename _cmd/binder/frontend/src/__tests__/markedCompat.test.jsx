@@ -9,7 +9,7 @@ import Marked from '@shared/editor/engines/Marked';
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const vendorPath = path.resolve(here, '../assets/vendor/marked.min.js');
+const vendorPath = path.resolve(here, '../../../../shared/frontend/vendor/marked.min.js');
 
 // プラグインは文字列ソースとして applyPlugins に渡す（eval される）
 const COMPAT_PLUGIN = `(function(){ return { extensions: [{

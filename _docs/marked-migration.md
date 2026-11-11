@@ -282,12 +282,11 @@ URL ではなく実際の解決結果に従うこと）。
 
 1. `npm i marked@<version>` して `node_modules/marked/lib/marked.esm.js` を取得。
    v16 以降このファイルは minify 済みなので、そのまま
-   `_cmd/binder/frontend/src/assets/vendor/marked.min.js` と
-   `_cmd/lite/frontend/src/assets/vendor/marked.min.js` に上書きコピーする（2箇所）。
+   `_cmd/shared/frontend/vendor/marked.min.js` に上書きコピーする
+   （Binder と Lite で共通の 1 箇所。以前は両方の `src/assets/vendor/` に 2 箇所あった）。
    現行バンドルの構造（ESM。`Scripter.import` で読み `globalThis.marked` に代入）に合う。
 2. **バージョン定数を更新（忘れやすい）**:
-   - `_cmd/binder/frontend/src/main.jsx` の `MARKED_VENDOR_VERSION`
-   - `_cmd/lite/frontend/src/main.jsx` の `Marked.setVendorVersion('...')`
+   - `_cmd/shared/frontend/vendor/index.js` の `MARKED_VENDOR_VERSION`（Binder と Lite で共通）
 3. **バージョンを書いたドキュメント・UI 文言を更新**:
    - `_cmd/binder/frontend/src/dialogs/Binder.jsx` の CDN URL プレースホルダの `marked@x.y.z`
    - `PLUGINS.md` の「marked のバージョンを変えて試す」の例示 URL
@@ -371,7 +370,7 @@ URL ではなく実際の解決結果に従うこと）。
 
 esbuild で IIFE 形式にバンドルする（mermaid 更新時に確立した手順と同型）。
 marked は v16 以降 `lib/marked.esm.js` 自体が minify 済みなので、そのまま
-`_cmd/{binder,lite}/frontend/src/assets/vendor/marked.min.js` に置く方式でも良い。
+`_cmd/shared/frontend/vendor/marked.min.js` に置く方式でも良い。
 現行バンドルの構造（`globalThis.marked` に ESM の名前空間を代入）に合わせること。
 
 差し替え後は必ず:

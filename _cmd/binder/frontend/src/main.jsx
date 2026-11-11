@@ -18,12 +18,8 @@ import { loadLanguage } from './language'
 import Marked from '@shared/editor/engines/Marked'
 import Mermaid from '@shared/editor/engines/Mermaid'
 import { installEngineInit } from './engineInit'
-import markedVendorUrl from './assets/vendor/marked.min.js?url'
-import mermaidVendorUrl from './assets/vendor/mermaid.min.js?url'
-// バンドルした marked のバージョン（vendor 差し替え時にここも更新する）
-const MARKED_VENDOR_VERSION = '18.0.7'
-// バンドルした mermaid のバージョン（vendor 差し替え時にここも更新する）
-const MERMAID_VENDOR_VERSION = '12.1.0'
+// 同梱の marked / mermaid とそのバージョンは Lite と共通（@shared/vendor）
+import { markedVendorUrl, mermaidVendorUrl, MARKED_VENDOR_VERSION, MERMAID_VENDOR_VERSION } from '@shared/vendor'
 Marked.setVendorUrl(markedVendorUrl)
 Marked.setVendorVersion(MARKED_VENDOR_VERSION)
 Mermaid.setVendorUrl(mermaidVendorUrl)

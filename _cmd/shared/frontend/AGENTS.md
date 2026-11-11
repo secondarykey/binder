@@ -123,12 +123,13 @@ Markdown 中の ```mermaid コードブロックを図に置き換える。`HTML
 
 ## Marked/Mermaid エンジンの初期化
 
-vendor JS の URL はプロジェクトごとに異なるため、`setVendorUrl()` で外部から注入する:
+同梱の `marked.min.js` / `mermaid.min.js` は `_cmd/shared/frontend/vendor/` に 1 組だけ置く（Binder と Lite で共通）。
+バージョンの定数も同じディレクトリの `index.js` にある。各プロジェクトの main.jsx が `setVendorUrl()` / `setVendorVersion()` で渡す:
 ```js
-// 各プロジェクトの main.jsx で設定
 import Marked from '@shared/editor/engines/Marked'
-import markedVendorUrl from './assets/vendor/marked.min.js?url'
+import { markedVendorUrl, MARKED_VENDOR_VERSION } from '@shared/vendor'
 Marked.setVendorUrl(markedVendorUrl)
+Marked.setVendorVersion(MARKED_VENDOR_VERSION)
 ```
 Binder は追加で CDN 対応の `init()` を main.jsx で上書きする。
 

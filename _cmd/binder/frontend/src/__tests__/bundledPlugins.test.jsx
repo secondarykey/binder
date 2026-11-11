@@ -15,7 +15,7 @@ import { parsePluginMeta } from '@shared/editor/pluginMeta';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '../../../../../');
-const vendorPath = path.resolve(here, '../assets/vendor/marked.min.js');
+const vendorPath = path.resolve(here, '../../../../shared/frontend/vendor/marked.min.js');
 const pluginDir = path.join(repoRoot, 'setup/defaults/_assets/plugins/marked');
 
 let Marked;
