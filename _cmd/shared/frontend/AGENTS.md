@@ -20,7 +20,13 @@ _cmd/shared/frontend/editor/
     Scripter.jsx       ESM/UMD 動的読み込みユーティリティ
     Marked.jsx         marked.js ラッパー
     Mermaid.jsx        mermaid.js ラッパー
+_cmd/shared/frontend/licenses.js
+                       ライセンス文（ルートの LICENSE / THIRD_PARTY_LICENSES を ?raw で取り込む）
 ```
+
+ライセンス文は Go から返さず、`licenses.js` がリポジトリルートの 2 ファイルをビルド時に取り込む。
+実体をルートから動かさないのは GitHub のライセンス表示のため。Go で埋め込むにはルートパッケージの import が要り、
+Lite が db / fs を抱え込むのでフロントで読む。
 
 ## プレビューのスクリプト（HTMLFrame の sandbox）
 
@@ -56,7 +62,7 @@ _cmd/shared/frontend/editor/
 両プロジェクトの `vite.config.js` で以下を設定:
 - `resolve.alias`: `@shared` → `_cmd/shared/frontend/` ディレクトリ
 - `resolveSharedDeps` プラグイン: shared/ 内の bare import（react, @mui 等）を各プロジェクトの `node_modules` で解決
-- `server.fs.allow`: dev server が shared ディレクトリにアクセスすることを許可
+- `server.fs.allow`: dev server とテストが shared ディレクトリと、リポジトリルート（`licenses.js` が読む `LICENSE` / `THIRD_PARTY_LICENSES` のため。`?raw` はファイル単位で許可できない）にアクセスすることを許可
 
 ## コードブロックのコピーボタン（code-copy.js）
 

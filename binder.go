@@ -2,7 +2,6 @@ package binder
 
 import (
 	. "binder/internal"
-	_ "embed"
 
 	"binder/api/json"
 	"binder/db"
@@ -23,12 +22,6 @@ import (
 )
 
 var EmptyError = fmt.Errorf("Binder is empty")
-
-//go:embed LICENSE
-var LicenseText string
-
-//go:embed THIRD_PARTY_LICENSES
-var ThirdPartyLicensesText string
 
 type Binder struct {
 	dir               string

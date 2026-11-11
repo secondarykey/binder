@@ -187,8 +187,7 @@ func (a *App) SaveFont(theme string, f *settings.Font) error {
 }
 
 // 以下のメソッドは api/shared パッケージに移動:
-// GetFontNames, GetThemeList, GetThemeCSS, GetLanguageList, GetLanguageData,
-// GetLicense, GetThirdPartyLicenses
+// GetFontNames, GetThemeList, GetThemeCSS, GetLanguageList, GetLanguageData
 
 // --- プレビューテンプレート ---
 

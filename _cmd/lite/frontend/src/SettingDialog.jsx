@@ -5,7 +5,8 @@ import {
 } from '@mui/material';
 
 import { GetFont, SaveFont, SetTheme, SetLanguage, SaveEditorSettings, Version, OpenPreviewFiles } from '../bindings/binder/api/lite/app';
-import { GetThemeList, GetLanguageList, GetFontNames, GetLicense, GetThirdPartyLicenses } from '../bindings/binder/api/shared/shared';
+import { GetThemeList, GetLanguageList, GetFontNames } from '../bindings/binder/api/shared/shared';
+import { license, thirdPartyLicenses } from '@shared/licenses';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import { setThemeMode } from './theme';
 import { loadLanguage } from './language';
@@ -35,8 +36,6 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
 
   // --- ライセンスタブ ---
   const [version, setVersion] = useState('');
-  const [license, setLicense] = useState('');
-  const [thirdParty, setThirdParty] = useState('');
 
   // ダイアログを開いた時に設定をロード
   useEffect(() => {
@@ -59,8 +58,6 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
     GetFont(effectiveTheme).then(f => { if (f) setFont(f); }).catch(() => {});
 
     Version().then(v => setVersion(v || '')).catch(() => {});
-    GetLicense().then(setLicense).catch(() => {});
-    GetThirdPartyLicenses().then(setThirdParty).catch(() => {});
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // テーマ変更時にフォントを再読み込み
@@ -238,7 +235,7 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
                 color: 'var(--text-secondary)', backgroundColor: 'var(--bg-overlay)',
                 border: '1px solid var(--border-primary)', borderRadius: 1, p: 2,
               }}>
-                {thirdParty}
+                {thirdPartyLicenses}
               </Box>
             </Box>
           )}

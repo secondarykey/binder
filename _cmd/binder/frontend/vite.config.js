@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 const sharedDir = path.resolve(__dirname, '../../shared/frontend')
+// shared/frontend/licenses.js がルートの LICENSE / THIRD_PARTY_LICENSES を ?raw で読む。
+// Vite は ?raw 付きの ID も allow と照合するので、ファイル単位では許可できずディレクトリで許可する
+// （.env や .git は Vite 既定の deny で引き続き拒否される）。
+const repoRoot = path.resolve(__dirname, '../../..')
 
 /**
  * shared/ ディレクトリ内の bare import（react, @mui 等）を
@@ -31,7 +35,7 @@ export default defineConfig({
   },
   server: {
     fs: {
-      allow: ['.', sharedDir],
+      allow: ['.', sharedDir, repoRoot],
     },
   },
   build: {

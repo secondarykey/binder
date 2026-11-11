@@ -2,6 +2,10 @@ import { defineConfig } from 'vitest/config'
 import path from 'path'
 
 const sharedDir = path.resolve(__dirname, '../../shared/frontend')
+// shared/frontend/licenses.js がルートの LICENSE / THIRD_PARTY_LICENSES を ?raw で読む。
+// Vite は ?raw 付きの ID も allow と照合するので、ファイル単位では許可できずディレクトリで許可する
+// （.env や .git は Vite 既定の deny で引き続き拒否される）。
+const repoRoot = path.resolve(__dirname, '../../..')
 
 function resolveSharedDeps() {
   const anchor = path.resolve(__dirname, 'src/main.jsx')
@@ -24,6 +28,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': sharedDir,
+    },
+  },
+  server: {
+    fs: {
+      allow: ['.', sharedDir, repoRoot],
     },
   },
   test: {
