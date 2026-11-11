@@ -141,15 +141,38 @@ func readConfigVersion(root string) string {
 	return s[:end]
 }
 
+// getRoot は p から上へたどり、binder モジュールの go.mod がある位置を返す。
+// ディレクトリ名（"binder"）では探さない。git のワークツリーはメインのチェックアウトの
+// 下（binder/.claude/worktrees/<名前>）に置かれることがあり、名前で探すとワークツリーを
+// 通り過ぎてメイン側の db/ に書き出してしまうため。
+// 見つからなければ p をそのまま返す。
 func getRoot(p string) string {
-	b := filepath.Base(p)
-	if b == "binder" {
-		//TODO binderではなく、go.modのある位置がいいかも
-		return p
+	for dir := p; ; {
+		if isBinderModule(dir) {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return p
+		}
+		dir = parent
 	}
+}
 
-	dir := filepath.Dir(p)
-	return getRoot(dir)
+// isBinderModule は dir の go.mod が binder モジュール（module binder）かを返す。
+// _cmd/ や _cmd/gen/ の go.mod（module main）は別モジュールなので飛ばす。
+func isBinderModule(dir string) bool {
+	data, err := os.ReadFile(filepath.Join(dir, "go.mod"))
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		f := strings.Fields(line)
+		if len(f) >= 2 && f[0] == "module" {
+			return f[1] == "binder"
+		}
+	}
+	return false
 }
 
 type Table struct {
