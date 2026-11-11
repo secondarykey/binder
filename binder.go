@@ -632,6 +632,11 @@ func (b *Binder) Dir() string {
 	return b.dir
 }
 
+// GetFullPath はmode(note/diagram等)とidからファイルのフルパスを返す
+func (b *Binder) GetFullPath(mode, id string) string {
+	return b.fileSystem.ToFullPath(mode, id)
+}
+
 // Fetch はリモートブランチをフェッチする。
 func (b *Binder) Fetch(remoteName, branchName string, info *fs.UserInfo) error {
 	if b == nil {
