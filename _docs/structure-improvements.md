@@ -1,0 +1,236 @@
+# 構造の改善（残っている作業）
+
+2026-11-12 にリポジトリ全体の構造を見直し、気になった点を 7 件挙げた。
+そのうち済んだものと、残っているものをここにまとめる。**別のセッションで続きを行うための引き継ぎ**。
+
+数字（行数・件数）は 2026-11-12 時点のもの。着手する前に、書いてあるコマンドで測り直すこと。
+
+## 済んだもの
+
+| 内容 | コミット |
+|---|---|
+| Lite から db / fs の依存を外す（バイナリ 27.2MB → 19.2MB）。既定アセットの配置を `setup/defaults` に分け、ライセンス文はフロントのビルドで取り込む | `1ebee0f6` `eff70d8b` |
+| `api/git.go` の中身を `binder.Repository`（`repository.go`）へ移す（1316 行 → 799 行） | `bae6aa48` |
+| `_cmd` と `_cmd/gen` の go.mod をルートに揃える。DAO 生成の出力先を go.mod の位置で決める。ビルドできない `_cmd/git.go` を消す | `cb320030` `bef103ac` `4ea6b798` |
+| ルートの残骸（`fonts.go` / `editor.go`）の片付け。同梱の marked / mermaid を `_cmd/shared/frontend/vendor/` の 1 組にまとめる | `2c547cd6` `54420f66` |
+| エディタの `Component.jsx` から部品・フック・関数を切り出す（3230 行 → 2119 行） | `3b7d659d` |
+| AGENTS.md の記述を実体に合わせる | `d689c1e7` |
+
+## 先にやること: 実機での確認
+
+上の変更は、テスト（Go 全パス・フロント 102 ファイル 490 件）とビルドでしか確かめていない。
+**アプリを起動して画面を触る確認はしていない**。残りの作業に入る前に、次を一度動かしておく。
+ここで問題が出たら、残りの作業より先に直す。
+
+Lite / ライセンス:
+
+- [ ] Binder と Lite の設定画面で、ライセンスとサードパーティライセンスの文が表示される
+- [ ] Lite が起動し、テーマ・言語・プレビューが今までどおり動く（`~/.binder` の `_default/` が更新される）
+- [ ] macOS / Linux でビルドできる（アセットのパスを `setup/defaults/_assets/` に変えた）
+
+閉じて開き直す操作（`api.App.runClosed`。ここにはテストが無い）:
+
+- [ ] 取り込み（他ブランチから / リモートから）: 早送り・衝突なし・衝突ありの 3 通り
+- [ ] 衝突の解決を選んで適用する。取り込みログのノートができる
+- [ ] 履歴からの復元、ブランチの作成・切替、履歴の整理（圧縮）、不要データの削除
+- [ ] バインダーを開いていない状態での履歴表示・復元・ブランチ切替（`*ByPath`）
+
+エディタ:
+
+- [ ] スプリッター 2 本のドラッグ（ツリー幅・エディタ幅）
+- [ ] Ctrl+Shift+O（スニペット）と Ctrl+T（ID 挿入）で、メニューがカーソルの位置に出る
+- [ ] アウトライン・囲み・書式ボタン・表の編集
+- [ ] ダイアグラムのプレビューの、中ボタンでの移動とホイールでの拡大
+- [ ] 編集側の「その他」メニューからのテキストのダウンロード（そのまま / 展開済み）
+- [ ] テンプレート編集時の、プレビュー対象の選択と、開き直したときの前回の選択の復元
+- [ ] プレビュー側の「その他」メニュー（別ウィンドウ・公開・ブラウザで開く・非公開）
+
+## 残っている作業
+
+手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。A と B は独立しているので、どれからでもよい。
+
+### A. 下の層が `api/json` に依存している
+
+**いまの状態**: `db/model`・`db`・`fs`・`setup` とルートパッケージが `binder/api/json` を import している。
+AGENTS.md の層の図（api → ルート → db / fs）と逆向き。
+
+```bash
+# 誰が import しているか
+grep -rln '"binder/api/json"' --include=*.go . | grep -v _test | grep -v '^./api/'
+```
+
+| パッケージ | ファイル数（テスト以外） |
+|---|---|
+| ルート（`binder`） | 18 |
+| `fs` | 8 |
+| `db/model` | 6 |
+| `db` | 3 |
+| `setup` | 1 |
+
+下の層が使っているのは、API の入出力というよりドメインの型と定数:
+
+- 型: `Note` / `Asset` / `Diagram` / `Template` / `Layer` / `Structure`
+- 状態: `Status`（`LatestStatus` / `PrivateStatus` / `UpdatedStatus` / `NothingStatus` / `ErrorStatus`）
+- テンプレートの種類: `TemplateType`（`LayoutTemplateType` / `ContentTemplateType` / `DiagramTemplateType`）
+- 404 ページ: `ErrorPageAlias` / `IsErrorPageAlias`
+
+`api/json` 自身は他の binder パッケージを import しないので、循環は起きていない。
+実害は「名前と置き場所が中身と合っていない」ことと、`db/model` が API 層の型を知っていること
+（`db/model/*.go` の `To()` / `ConvertXxx()` が `json.Xxx` と相互に変換する）。
+
+**進め方の案**（影響が全パッケージに及ぶので、一度にやらない）:
+
+1. ドメインの型と定数の置き場所を決める。候補は新しいパッケージ（たとえば `binder/entity`）。
+   `api/json` には API 専用の型（`MergeResult` / `BranchResult` / `HistoryPage` / `ParseResult` など）だけを残す
+2. 新しいパッケージへ型を移し、`api/json` には**型エイリアス**（`type Note = entity.Note`）と定数の再エクスポートを置く。
+   これで import を変えなくても全部がビルドできる
+3. パッケージごとに import を新しい方へ書き換える（`db/model` → `db` → `fs` → `setup` → ルートの順）。
+   1 パッケージずつコミットし、そのつど `go test ./...`
+4. 下の層からの `api/json` の import が無くなったら、エイリアスのうち不要なものを消す
+
+**注意**:
+
+- Wails のバインディングは Go のパッケージパスからモデルの置き場所を決める。型を移すと
+  フロントの `bindings/binder/api/json/models.js` の中身や場所が変わりうる。
+  フロントのソースは `bindings/binder/api/json` を直接 import していない（2026-11-12 時点で 0 件）ので
+  影響は小さいはずだが、移したあと生成し直してビルドとテストで確かめる
+  （型エイリアスがバインディングでどう扱われるかは未確認）
+- JSON のフィールド名（`json:"..."` タグ）は変えない。画面との受け渡しがそのまま壊れる
+- 済んだら AGENTS.md の「コーディング規約」にある `api/json` の説明を直す
+
+**終わりの目安**: 上の grep が、ルートと `api` 配下以外で 0 件になる。
+
+### B. `fs` が `db` と `settings` に依存している
+
+**いまの状態**: 層の図では `fs` と `db` は並びの関係だが、`fs` が両方を import している。
+
+- `fs/db.go` → `binder/db`: テーブル名の定数（`db.NoteTableName` など 6 つ）と `db.Tables()` を、
+  DB の CSV ファイルを git に載せるパスを作るために使っている。使っているのは**名前だけ**
+- `fs/git.go`（816 行目・832 行目付近）→ `binder/settings`: コミットの署名に使う名前とメールを
+  `settings.Get().Git` から読んでいる
+
+```bash
+grep -n '"binder/db"\|"binder/settings"' fs/*.go
+grep -n 'db\.\|settings\.' fs/db.go fs/git.go | grep -v _test
+```
+
+**進め方の案**:
+
+- `db` の方: テーブル名の一覧を `fs` に渡す形にする。`fs.Load` / `fs.New` の引数か、
+  `FileSystem` のフィールドとして `Binder`（ルート）が設定する。`fs` はテーブルの意味を知らず、
+  「git に載せる DB ファイルの名前の一覧」として持つ。A でドメイン用のパッケージを作るなら、
+  テーブル名の定数をそこへ置く手もある
+- `settings` の方: 署名の既定値（名前・メール）を取る関数を `fs` に注入する。
+  いまも `fs.UserInfo` で渡す経路があるので、設定を読むのは呼び出し側（ルート）に寄せる
+
+**注意**: `fs` のテストはインメモリのファイルシステム（billy）で動く。引数を足すとテストの生成箇所が
+全部変わるので、既定値つきのオプション（未設定なら今と同じ動き）にすると変更が小さい。
+
+**終わりの目安**: `go list -f '{{join .Imports "\n"}}' ./fs | grep ^binder` が `binder/log` と
+（A が済んでいなければ）`binder/api/json` だけになる。
+
+### C. `api` に残っている `fs` の直接利用
+
+**いまの状態**: `api/git.go` から `fs.Load` は無くなったが、`api` はまだ `fs` を import している。
+
+```bash
+grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
+```
+
+| ファイル | 件数 | 中身 |
+|---|---|---|
+| `api/git.go` | 11 | `fs.UserInfo` への詰め替え、`fs.ListRemoteBranches`、`fs.FileResolution` / `fs.MergeLog` / `fs.CommitInfo` などの型 |
+| `api/error.go` | 5 | `fs` の sentinel エラーをユーザ向けのメッセージに対応させている |
+| `api/binder.go` | 4 | `holdOpen`（`fs.AcquireOpen` / `fs.ReleaseOpen`）ほか |
+| `api/plugin.go` | 4 | 未調査 |
+| `api/rootfile.go` / `setting.go` / `setup.go` | 各 2 | 未調査 |
+
+**やる価値があるもの**:
+
+- **`runClosed` のテスト**（一番やる価値がある）。「閉じる → 操作 → 開き直す」は取り込み・復元・ブランチ・
+  履歴の整理のすべてが通るのに、テストが無い。`api` のテストは `error_test.go` と `message_test.go` だけ。
+  `test.CreateBinder` でバインダーを作り、`App` に開かせて `SwitchBranch` / `MergeFromLocal` などを呼び、
+  返る `Status` と開き直したあとの状態を確かめる。`App.LoadBinder` は HTTP サーバのアドレスや設定の保存に
+  触るので、テストで何を差し替える必要があるかを先に調べる（`settings` の保存先は `BINDER_LOG_DIR` のような
+  切り替えがあるかを確認する）
+- **リモートからの取り込み・取り込み元の移行のテスト**。`repository_test.go` はローカルブランチからの
+  取り込み（早送り・衝突）だけを見ている。`Repository.Merge` のリモートの経路と
+  `checkMergeSourceVersion` / `migrateSourceInPlace`（古いバージョンをその場で移行）は、コードを移しただけで
+  テストが無い。ローカルの bare リポジトリをリモートにすればネットワーク無しで書ける
+  （`fs/git_test.go` や `fs/auth_test.go` にリモートを使う例があるか先に見る）
+
+**やらなくてよさそうなもの**: `fs.UserInfo` などの型や sentinel エラーを `api` から見えなくすること。
+型の詰め替えは api の仕事で、`fs` の import を 0 にすること自体に意味は薄い。
+
+### D. エディタ本体（`Component.jsx`）の残り
+
+**いまの状態**: 2119 行。`useState` が 53、`useRef` が 17、`useEffect` が 27 ある。
+残っているのは、開く・変換してプレビューする・保存する・公開する、の流れ。
+構成は `_cmd/binder/frontend/AGENTS.md` の「components/editor/」を参照。
+
+**なぜ残したか**: `text` / `parseStatus` / `html` と、`loadingRef` / `fileOpeningRef` / `isEditingRef` /
+`parseTimerRef` / `diagramInitializedRef` などの ref が、複数の `useEffect` をまたいで順序に依存している
+（非同期ロードの競合対策・入力中のデバウンス・開いた直後のカーソル位置など）。
+テストは「描画できる」と「部品につながっている」だけなので、**動かして確かめずに分けると壊す**。
+
+**分けるなら、切りやすい順**:
+
+1. **ダウンロード**（`handleDownload` / `handleDownloadRaw` / `handleDownloadExpanded` / `handleDownloadZip`）。
+   読むのは `mode` / `id` / `name` / `text` / `html` だけで、状態を書かない。`useEditorDownloads` に出せる
+2. **公開**（`handlePublish` / `doUnpublish` / `handleOpenInBrowser` と `unpublishConfirm` の状態）。
+   `createMarked` を使うので、3 のあとの方が切りやすい
+3. **プレビューの生成**（`parseText` / `createMarked` / `viewHTML` / `viewDiagram` /
+   `viewDiagramTemplatePreview`）。`setParseStatus` / `setHTML` と `#mermaidViewer` の DOM を直接触る。
+   フックにして `{ html, parseStatus, parseText }` を返す形が素直だが、4 と絡む
+4. **開いたときの初期処理**（`useEffect(..., [id, restoredAt])` の約 220 行。種類ごとの分岐）。
+   種類ごとの関数に分けるだけでも読みやすくなる。状態のセッターを 15 個ほど使うので、
+   フックに出すなら 3 と一緒に「読み込みとプレビュー」としてまとめて出す
+5. **テキストへの挿入**。`textarea.focus()` → `setSelectionRange` → `document.execCommand('insertText', ...)` →
+   次フレームで `setText` と `saveText`、という同じ形が 8 か所ほどある
+   （`handleInsertSnippet` / `handleInsert` / `handleReplace` / `handleAutocompleteSelect` / `InsertText` のイベントなど）。
+   `insertAtSelection(textarea, text)` のような 1 つの関数にまとめると、行数が減り、挙動も揃う。
+   **これは 1〜4 と独立にできる**
+
+**そのほか、エディタまわりで気付いたこと**:
+
+- `EditorComponent.test.jsx` の `vi.mock('../../../bindings/binder/api/app', ...)` はパスが 1 段多く、
+  効いていない（正しくは `'../../bindings/...'`）。いまは実物のバインディングが `Call.ByID` のモック経由で
+  動いている。直すと、モックに無い関数（`GetEditor` など）を足す必要が出る
+- `Mode` は `app/App.jsx` にあり、`Component.jsx` / `useEditorCandidates.js` / `editor-save.js` など 9 ファイルが
+  App.jsx を import している（App → Content → Component → App の循環）。実行時は問題になっていないが、
+  `Mode` を小さなモジュール（たとえば `src/mode.js`）に出すと循環が切れ、部品のテストも軽くなる
+- `HTMLFrame` に渡す props が、ノート用とテンプレート用の 2 か所でほぼ同じ内容を繰り返している
+
+### E. 小さなもの
+
+- **`go` ディレクティブの不揃い**。`_cmd/binder`・`_cmd/lite` は 1.26.0、ルート・`_cmd`・`_cmd/gen` は 1.25.0、
+  CI は `.github/variables` の `GO_VERSION`（1.27）。ルートを 1.26 に上げると、`log/TODO.md` にある
+  `slog.NewMultiHandler` への置き換えも一緒にできる。上げるかどうかは判断が要る（利用者のビルド環境に効く）
+- **gofmt が掛かっていないファイル**が 12 個ある（今回の変更とは無関係。差分が混ざるので別コミットで）
+  ```bash
+  gofmt -l . | grep -v node_modules
+  ```
+- **`__tests__` の平置き**（約 100 ファイル）。`app` / `dialogs` / `components` の区分と対応していない。
+  動かすと相対 import と `vi.mock` のパスが全部変わる。得るものが見た目の整理だけなので、**見送ってよい**
+- **Vite の警告**。`vite.config.js` / `vitest.config.js` の `__dirname` が将来の `configLoader: 'native'` で
+  使えなくなる（`import.meta.dirname` へ）。`vitest.config.js` の `esbuild: { jsx: 'automatic' }` は
+  oxc の設定があるため無視されている
+
+## 作業するときの注意（今回つまずいたこと）
+
+- **ワークツリーで生成・書き換えをするスクリプトは、出力先を先に確かめる**。ワークツリーは
+  メインのチェックアウトの下（`binder/.claude/worktrees/<名前>`）にあるので、「上へたどって名前で探す」作りの
+  ツールはメイン側を書き換える。`_cmd/gen` はこれでメイン側の `db/*_dao.go` を書き換えた（直した）。
+  動かしたあとはメイン側の `git status` も見る
+- **`vite build` が失敗すると `frontend/dist` が空になる**。`_cmd/binder` と `_cmd/lite` は
+  `//go:embed all:frontend/dist` なので、空のままだと Go のビルドと `go list` が通らない。作り直す
+- **バインディングは古いことがある**。ワークツリーに `bindings/` があっても、API を足したあとに
+  生成し直していなければビルドで「is not exported」になる。`cd _cmd/binder && wails3 generate bindings -f '' -clean=true`
+  （Lite も `_cmd/lite` で同じ）
+- **バンドラは未定義の変数を検出しない**。大きなコンポーネントを分けたときは、`vite build` が通っても
+  参照切れが残りうる。eslint は入っていないが `@babel/parser` と `@babel/traverse` が `node_modules` にあるので、
+  スコープ解析（`path.scope.globals`）で未定義の参照を調べられる
+- **Lite に入れてよい binder パッケージ**は `log` / `settings` / `api/lite` / `api/shared` / `setup/defaults` だけ。
+  import を足したら `cd _cmd/lite && go list -deps . | grep ^binder` で確かめる（`_cmd/lite/AGENTS.md`）
+- **Vite の `?raw` で親ディレクトリのファイルを読むとき**、`server.fs.allow` はファイル単位では効かない
+  （`?raw` 付きの ID も照合されるため）。ディレクトリで許可する。dev サーバと vitest の両方に要る
