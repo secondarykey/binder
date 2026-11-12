@@ -14,6 +14,9 @@ import (
 	"binder/fs"
 	"binder/settings"
 	"binder/test"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // 「閉じる → 操作 → 開き直す」（runClosed）と、それを通る API のテスト。
@@ -703,5 +706,194 @@ func TestByPathWithoutOpenBinder(t *testing.T) {
 	}
 	if openMarked(t, f.dir) {
 		t.Errorf("RestoreToCommitByPath のあとも「開いている」印が残っている")
+	}
+}
+
+// testUserInfo は、ローカルのリモート（ディレクトリ）への送受信に渡す認証情報。
+// ディレクトリ相手では使われないが、認証の種類が空だとエラーになるので入れておく。
+func testUserInfo() *json.UserInfo {
+	return &json.UserInfo{Name: "Binder test", Email: "binder_test@localhost", AuthType: string(fs.AuthBasic)}
+}
+
+// pushFeature は bare リポジトリをリモート origin にし、feature ブランチに content を記録して送り、
+// 元のブランチへ戻る（ネットワークは使わない）。ローカルに残る feature の参照は消すので、
+// 取り込めるのはリモートから取ってきたものだけになる。
+func (f *closedFixture) pushFeature(content string) {
+	f.t.Helper()
+	base := f.branch()
+
+	remoteDir, err := filepath.Abs(f.dir + "_remote.git")
+	if err != nil {
+		f.t.Fatalf("Abs() error: %v", err)
+	}
+	if _, err := git.PlainInit(remoteDir, true); err != nil {
+		f.t.Fatalf("PlainInit() error: %v", err)
+	}
+	if err := f.app.AddRemote("origin", remoteDir); err != nil {
+		f.t.Fatalf("AddRemote() error: %v", err)
+	}
+
+	if _, err := f.app.CreateBranch("feature"); err != nil {
+		f.t.Fatalf("CreateBranch() error: %v", err)
+	}
+	f.record(content)
+	if err := f.app.current.Push("origin", testUserInfo(), false); err != nil {
+		f.t.Fatalf("Push() error: %v", err)
+	}
+	if _, err := f.app.SwitchBranch(base); err != nil {
+		f.t.Fatalf("SwitchBranch() error: %v", err)
+	}
+
+	repo, err := git.PlainOpen(f.dir)
+	if err != nil {
+		f.t.Fatalf("PlainOpen() error: %v", err)
+	}
+	for _, ref := range []plumbing.ReferenceName{
+		plumbing.NewBranchReferenceName("feature"),
+		plumbing.NewRemoteReferenceName("origin", "feature"),
+	} {
+		if err := repo.Storer.RemoveReference(ref); err != nil {
+			f.t.Fatalf("RemoveReference(%s) error: %v", ref, err)
+		}
+	}
+}
+
+// リモートのブランチを取ってきて、早送りで取り込めること。
+func TestMergeFromRemoteFastForward(t *testing.T) {
+	f := newClosedFixture(t, "closed_merge_remote_ff")
+	f.pushFeature("remote content\n")
+
+	res, err := f.app.MergeFromRemote("origin", "feature", testUserInfo(), false)
+	if err != nil {
+		t.Fatalf("MergeFromRemote() error: %v", err)
+	}
+	if res.Status != statusSuccess || len(res.Conflicts) != 0 {
+		t.Fatalf("MergeFromRemote() = %+v, want Status success", res)
+	}
+	f.requireOpen(res.Address)
+	if got := f.note(); got != "remote content\n" {
+		t.Fatalf("取り込み後の中身 = %q", got)
+	}
+
+	res, err = f.app.MergeFromRemote("origin", "feature", testUserInfo(), false)
+	if err != nil {
+		t.Fatalf("MergeFromRemote() 2 回目 error: %v", err)
+	}
+	if res.Status != "uptodate" {
+		t.Fatalf("2 回目の Status = %q, want uptodate", res.Status)
+	}
+	f.requireOpen(res.Address)
+}
+
+// リモートと両方が同じノートを書き換えていれば衝突を返し、選んだ側で取り込めること。
+func TestMergeFromRemoteConflict(t *testing.T) {
+	f := newClosedFixture(t, "closed_merge_remote_conflict")
+	f.pushFeature("theirs\n")
+	f.record("ours\n")
+
+	res, err := f.app.MergeFromRemote("origin", "feature", testUserInfo(), false)
+	if err != nil {
+		t.Fatalf("MergeFromRemote() error: %v", err)
+	}
+	if res.Status != binder.MergeConflicts || len(res.Conflicts) != 1 {
+		t.Fatalf("MergeFromRemote() = %+v, want 衝突 1 件", res)
+	}
+	f.requireOpen(res.Address)
+	if got := f.note(); got != "ours\n" {
+		t.Fatalf("衝突の時点の中身 = %q, want ours", got)
+	}
+	notesBefore := f.noteIds()
+
+	applied, err := f.app.ApplyMergeResolution(&json.MergeResolution{
+		BaseHash:     res.BaseHash,
+		OursHash:     res.OursHash,
+		TheirsHash:   res.TheirsHash,
+		RemoteName:   "origin",
+		RemoteBranch: "feature",
+		Resolutions: []*json.FileResolution{
+			{Path: res.Conflicts[0].Path, Resolution: "theirs"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("ApplyMergeResolution() error: %v", err)
+	}
+	if applied.Status != statusSuccess {
+		t.Fatalf("ApplyMergeResolution() = %+v, want Status success", applied)
+	}
+	f.requireOpen(applied.Address)
+	if got := f.note(); got != "theirs\n" {
+		t.Fatalf("取り込み後の中身 = %q, want theirs", got)
+	}
+	if n := len(f.noteIds()); n != len(notesBefore)+1 {
+		t.Errorf("ノートの数 = %d, want %d（取り込みログの分が増える）", n, len(notesBefore)+1)
+	}
+}
+
+// 無いリモートからは取ってこられず、閉じる前にエラーで返ること（バインダーは開いたまま）。
+func TestMergeFromRemoteUnknownRemote(t *testing.T) {
+	f := newClosedFixture(t, "closed_merge_remote_unknown")
+	before := f.app.current
+
+	if _, err := f.app.MergeFromRemote("no-such-remote", "feature", testUserInfo(), false); err == nil {
+		t.Fatalf("無いリモートの MergeFromRemote() がエラーにならない")
+	}
+	if f.app.current != before {
+		t.Errorf("取ってこられなかったのにバインダーを開き直している")
+	}
+}
+
+// 取り込み元がアプリより新しければ version_error を返し、何も取り込まずに開き直すこと。
+func TestMergeFromLocalVersionNewer(t *testing.T) {
+	f := newClosedFixture(t, "closed_merge_newer")
+	base := f.branch()
+
+	if _, err := f.app.CreateBranch("feature"); err != nil {
+		t.Fatalf("CreateBranch() error: %v", err)
+	}
+	f.record("newer\n")
+
+	// feature の binder.json を、アプリより新しいバージョンにして記録する（閉じてから直接書く）
+	if err := f.app.CloseBinder(); err != nil {
+		t.Fatalf("CloseBinder() error: %v", err)
+	}
+	meta, err := fs.LoadMeta(f.dir)
+	if err != nil {
+		t.Fatalf("LoadMeta() error: %v", err)
+	}
+	meta.Version = "999.0.0"
+	if err := fs.SaveMeta(f.dir, meta); err != nil {
+		t.Fatalf("SaveMeta() error: %v", err)
+	}
+	bfs, err := fs.Load(f.dir)
+	if err != nil {
+		t.Fatalf("fs.Load() error: %v", err)
+	}
+	if err := bfs.AddFile(fs.BinderMetaFile); err != nil {
+		t.Fatalf("AddFile() error: %v", err)
+	}
+	if err := bfs.AutoCommit("version: 999.0.0", fs.BinderMetaFile); err != nil {
+		t.Fatalf("AutoCommit() error: %v", err)
+	}
+	if res, err := f.app.SwitchBranchByPath(f.dir, base); err != nil || res.Status != statusSuccess {
+		t.Fatalf("SwitchBranchByPath() = %+v, %v", res, err)
+	}
+	if _, err := f.app.LoadBinder(f.dir); err != nil {
+		t.Fatalf("LoadBinder() error: %v", err)
+	}
+	original := f.note()
+
+	res, err := f.app.MergeFromLocal("feature")
+	if err != nil {
+		t.Fatalf("MergeFromLocal() error: %v", err)
+	}
+	if res.Status != binder.MergeVersionNewer {
+		t.Fatalf("Status = %q, want %q（%+v）", res.Status, binder.MergeVersionNewer, res)
+	}
+	f.requireOpen(res.Address)
+	if cur := f.branch(); cur != base {
+		t.Errorf("ブランチ = %q, want %q", cur, base)
+	}
+	if got := f.note(); got != original {
+		t.Errorf("中身が変わっている: %q", got)
 	}
 }
