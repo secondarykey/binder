@@ -2,7 +2,6 @@ package fs
 
 import (
 	"binder/log"
-	"binder/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -808,15 +807,29 @@ func (f *FileSystem) SetUserSig(info *UserInfo) {
 	f.userSig = info
 }
 
-// UserName はバインダーのユーザ名を返す。バインダー固有の設定があればそれを、なければアプリ設定を使用する。
+// defaultUser は、バインダーごとの署名が無いときに使う名前とメールを返す。
+// fs は設定（settings）を読まない。アプリの設定から取る関数を、使う側が SetDefaultUser で渡す
+// （setup パッケージの init が渡している）。
+var defaultUser = func() (name, email string) { return "", "" }
+
+// SetDefaultUser は、バインダーごとの署名が無いときに使う名前とメールの取り方を設定する。
+// 記録のたびに呼ばれるので、設定の変更はそのまま反映される。
+func SetDefaultUser(fn func() (name, email string)) {
+	if fn != nil {
+		defaultUser = fn
+	}
+}
+
+// UserName はバインダーのユーザ名を返す。バインダー固有の設定があればそれを、なければ既定（SetDefaultUser）を使用する。
 func (f *FileSystem) UserName() string {
 	if f.userSig != nil && f.userSig.Name != "" {
 		return f.userSig.Name
 	}
-	return settings.Get().Git.Name
+	name, _ := defaultUser()
+	return name
 }
 
-// userSigOrDefault はバインダーのユーザ署名があればそれを、なければアプリ設定を使用する。
+// userSigOrDefault はバインダーのユーザ署名があればそれを、なければ既定（SetDefaultUser）を使用する。
 func (f *FileSystem) userSigOrDefault() *object.Signature {
 	if f.userSig != nil && f.userSig.Name != "" {
 		return &object.Signature{
@@ -828,12 +841,12 @@ func (f *FileSystem) userSigOrDefault() *object.Signature {
 	return UserSig()
 }
 
+// UserSig は既定（SetDefaultUser）の名前とメールでの署名を返す。
 func UserSig() *object.Signature {
-	set := settings.Get()
-	auth := set.Git
+	name, email := defaultUser()
 	sig := &object.Signature{
-		Name:  auth.Name,
-		Email: auth.Mail,
+		Name:  name,
+		Email: email,
 		When:  time.Now(),
 	}
 	return sig
