@@ -761,14 +761,7 @@ export function Hidden() {
   return <></>;
 }
 
-/**
- * 各種モード
- */
-export const Mode = Object.freeze({
-    template: 'template',
-    asset: 'asset',
-    note: 'note',
-    diagram: 'diagram',
-})
+// 各種モード。実体は src/mode.js（エディタの部品が App.jsx を import して循環しないよう分けた）
+export { Mode } from "../mode";
 
 export default App

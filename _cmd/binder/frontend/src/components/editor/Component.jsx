@@ -1,20 +1,18 @@
 import { useState, useEffect, useLayoutEffect, useContext, useRef, useCallback, useMemo, memo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
-import { Backdrop, Button, Dialog, DialogActions, DialogTitle, Paper } from "@mui/material";
+import { Backdrop, Button, Paper } from "@mui/material";
 
-import { GetNote, ParseNote, OpenNote, CreateNoteHTML } from "../../../bindings/binder/api/app";
-import { GetDiagram, OpenDiagram, ParseDiagram } from "../../../bindings/binder/api/app";
-import { GetTemplate, OpenTemplate, SaveTemplate } from "../../../bindings/binder/api/app";
-import { GetHTMLTemplates, GetBinderTree } from "../../../bindings/binder/api/app";
-import { GetAsset, Generate, GenerateAll, GetUnpublishedRefs, Unpublish, Commit, EnsureAddress, CollectExportDeps, GetConfig } from "../../../bindings/binder/api/app";
+import { GetNote, OpenNote } from "../../../bindings/binder/api/app";
+import { GetDiagram, OpenDiagram } from "../../../bindings/binder/api/app";
+import { GetTemplate, OpenTemplate } from "../../../bindings/binder/api/app";
+import { GetAsset, Commit, GetConfig } from "../../../bindings/binder/api/app";
 import { GetLayer } from "../../../bindings/binder/api/app";
 import { GetModifiedIds } from "../../../bindings/binder/api/app";
 import { GetFont, SaveFont, GetSnippets, GetEditor, SaveEditor, GetStructure, GetPreviewScrollbar, IsBinderTrusted } from "../../../bindings/binder/api/app";
-import { RunEditor, OpenPreviewWindow, DownloadNote } from "../../../bindings/main/window";
+import { RunEditor, OpenPreviewWindow } from "../../../bindings/main/window";
 import { Events, Browser } from '@wailsio/runtime';
 
-import Marked from "./engines/Marked.jsx";
 import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
@@ -23,7 +21,7 @@ import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCar
 import { countChars } from "@shared/editor/char-count";
 import { idInsertText, isInsideTemplate } from "./id-insert";
 import { extractHeadings, findHeadingLine } from "@shared/editor/outline";
-import { hasAlertsPlugin, alertInsertText } from "@shared/editor/alerts";
+import { alertInsertText } from "@shared/editor/alerts";
 import { useAutocomplete } from "@shared/editor/useAutocomplete";
 import { goTemplateCandidates } from "@shared/editor/go-template-candidates";
 import { extractUuidsOnLine } from "@shared/editor/id-detect";
@@ -31,7 +29,6 @@ import { detectTemplateFunc } from "@shared/editor/template-detect";
 import IdStatusBar from "./IdStatusBar.jsx";
 
 import Event, { EventContext, useEventListener } from "../../Event.jsx";
-import { ActionButton } from "../../dialogs/components/ActionButton";
 import "../../language";
 import { useTranslation } from 'react-i18next';
 
@@ -39,28 +36,23 @@ import HTMLFrame from "./HTMLFrame.jsx";
 import PreviewContextMenu from "@shared/editor/PreviewContextMenu";
 import { resolveBinderLink } from "./binder-link";
 import { watchExternalEditor } from "./external-editor";
-import { publishWarningMessage } from "../../publish-warning";
-import { renderPublishItem, publishComment } from "../../publish-items";
-import { usePublishRefsDialog } from "../../dialogs/PublishRefsDialog.jsx";
-import { flattenNotes, flattenDiagrams } from "./tree-flatten";
 import { editorHistory, editorHistoryURL, emitHistoryState } from "./editor-history";
 import { tsvToMarkdownTable, detectTableAt } from "./table-markdown";
-import { hasConflictMarkers, buildConflictHTML } from "./conflict-view";
-import { extractMermaidErrorLine, runTemplatePreview } from "./preview-run";
+import { runTemplatePreview } from "./preview-run";
 import { writeFn } from "./editor-save";
-import { downloadBlob, triggerTextDownload } from "./download";
-import { attachDiagramPanZoom } from "./diagram-pan-zoom";
 import { useEditorCandidates } from "./useEditorCandidates";
+import { useEditorDownloads } from "./useEditorDownloads";
+import { useEditorPreview } from "./useEditorPreview";
+import { useEditorPublish } from "./useEditorPublish.jsx";
+import { useTemplatePreviewTargets } from "./useTemplatePreviewTargets";
 import { useSplitterDrag } from "./useSplitterDrag";
 import { useStableHandlers } from "./useStableHandlers";
 import EditorToolbar from "./EditorToolbar.jsx";
 import PreviewToolbar from "./PreviewToolbar.jsx";
 import ParseStatusBar, { ParseDialogs } from "./ParseStatusBar.jsx";
 import '../../assets/Editor.css'
-import { Mode, copyClipboard } from "../../app/App.jsx";
-
-import CloseIcon from '@mui/icons-material/Close';
-import UnpublishedIcon from '@mui/icons-material/Unpublished';
+import { Mode } from "../../mode";
+import { copyClipboard } from "../../app/App.jsx";
 
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
@@ -87,11 +79,6 @@ const MemoParseDialogs = memo(ParseDialogs);
 const MemoPreviewContextMenu = memo(PreviewContextMenu);
 const MemoFontDialog = memo(FontDialog);
 const MemoTableDialog = memo(TableDialog);
-
-// テンプレートプレビューで前回選択したノート・テンプレート・ダイアグラムを記憶する
-let lastPreviewNoteId = "";
-let lastPreviewOtherTemplateId = "";
-let lastPreviewDiagramId = "";
 
 /**
  * テキストを編集する為のコンポーネント。基本的に分割した表示になる
@@ -173,7 +160,7 @@ function Editor(props) {
    * テキストを保存し、保存の状態を表示に反映する。
    * writeFn はデバウンスされるため、追い越された呼び出しの Promise は完了しない。
    */
-  const saveText = (m, i, txt) => {
+  const saveText = useCallback((m, i, txt) => {
     const seq = ++saveSeqRef.current;
     setSaveState("saving");
     const p = writeFn(m, i, txt);
@@ -182,7 +169,7 @@ function Editor(props) {
       () => { if (saveSeqRef.current === seq) setSaveState("error"); },
     );
     return p;
-  };
+  }, []);
 
   // 開くものが変わったら、保存の状態と選択の文字数を戻す
   useEffect(() => {
@@ -205,11 +192,10 @@ function Editor(props) {
   // IME リセット用の hidden input への ref（ウィンドウ再アクティブ時に中継フォーカスとして使う）
   const hiddenFocusRef = useRef(null);
 
-  // useEffect([]) 内など古いクロージャから最新の mode/id/name/html を参照するための ref
+  // useEffect([]) 内など古いクロージャから最新の mode/id/name を参照するための ref
   const modeRef = useRef(mode);
   const idRef = useRef(id);
   const nameRef = useRef(name);
-  const htmlRef = useRef("");
   // ダイアグラムテンプレートの初回描画済みIDを記録（非同期レース対策）
   const diagramInitializedRef = useRef(null);
   // ファイルオープン中フラグ（カーソル/スクロール位置リセット用）
@@ -252,16 +238,45 @@ function Editor(props) {
   // 表示中のプレビューでスクリプトを止めたか（止めたときだけアイコンを出す）
   const [scriptsBlocked, setScriptsBlocked] = useState(false);
 
+  /**
+   * エディタの選んでいる範囲（range を渡せばその範囲）を str で置き換える。
+   * ツールバー・メニュー・検索の置換・オートコンプリートなど、打鍵以外で本文へ入れるときはこれを通す。
+   *
+   * execCommand で入れるので、元に戻す（Ctrl+Z）の対象になる。execCommand は同期で textarea.value を
+   * 確定するため、次のフレームで state と保存へ反映すれば足りる（入力中のデバウンスは通らず、プレビューはすぐ作り直す）。
+   *
+   * @param {string} str 入れる文字列
+   * @param {{ start: number, end: number }} [range] 置き換える範囲。省けばいまの選択範囲
+   * @returns {HTMLTextAreaElement|null} 入れたら textarea、入れなかったら null
+   */
+  const insertIntoEditor = useCallback((str, range) => {
+    // 開いている途中（前の本文を出したまま読んでいる間）は入れない。
+    // 入れると、前の本文に入れた内容が新しく開く側の ID で保存されてしまう（handleChangeText と同じ）
+    if (loadingRef.current) return null;
+    const textarea = document.querySelector("#editor");
+    if (!textarea) return null;
+    // 保存先は入れた時点のもの（次のフレームまでに別のものを開いても、そちらへは保存しない）
+    const m = modeRef.current;
+    const i = idRef.current;
+    textarea.focus();
+    if (range) textarea.setSelectionRange(range.start, range.end);
+    document.execCommand('insertText', false, str);
+    requestAnimationFrame(() => {
+      setText(textarea.value);
+      saveText(m, i, textarea.value);
+    });
+    return textarea;
+  }, [saveText]);
+
   // オートコンプリートの挿入処理
   const handleAutocompleteSelect = useCallback((trigger, selected, replaceStart, replaceEnd) => {
     const textarea = document.querySelector("#editor");
     if (!textarea) return;
-    textarea.focus();
-    textarea.setSelectionRange(replaceStart, replaceEnd);
     // replaceStart がトリガー文字列の位置かどうかで挿入テキストを分岐
     const atTrigger = textarea.value.substring(replaceStart, replaceStart + trigger.length) === trigger;
     let insertText;
     let cursorOffset = 0;
+    let end = replaceEnd;
     if (atTrigger) {
       const filterText = textarea.value.substring(replaceStart + trigger.length, replaceEnd);
       const leadingSpaces = filterText.match(/^(\s*)/)[1];
@@ -273,9 +288,7 @@ function Editor(props) {
       // ID候補選択時: 閉じ引用符を追加し、既存の閉じ引用符があればスキップ
       insertText = '"' + selected + '"';
       const afterEnd = textarea.value.charAt(replaceEnd);
-      if (afterEnd === '"') {
-        textarea.setSelectionRange(replaceStart, replaceEnd + 1);
-      }
+      if (afterEnd === '"') end = replaceEnd + 1;
     } else if (trigger === '{{' && atTrigger) {
       // ブロックキーワード選択時: 閉じタグを自動挿入
       const candidate = goTemplateCandidates.find(c => c.label === selected);
@@ -285,16 +298,12 @@ function Editor(props) {
         cursorOffset = -closing.length;
       }
     }
-    document.execCommand('insertText', false, insertText);
+    if (!insertIntoEditor(insertText, { start: replaceStart, end })) return;
     if (cursorOffset) {
       const pos = textarea.selectionStart + cursorOffset;
       textarea.setSelectionRange(pos, pos);
     }
-    requestAnimationFrame(() => {
-      setText(textarea.value);
-      saveText(mode, id, textarea.value);
-    });
-  }, [mode, id, autoComplete.autoClose]);
+  }, [insertIntoEditor, autoComplete.autoClose]);
 
   // オートコンプリートの候補（テンプレート関数・フィールド・ID・Mermaid）
   const { resolvedCandidates, autocompleteTriggers } = useEditorCandidates({ mode, id, autoComplete, t });
@@ -310,8 +319,6 @@ function Editor(props) {
   const [editorStyle, setEditorStyle] = useState({});
   const editorSettingRef = useRef(null);
 
-  // パースステータス（プレビュー下部のステータスバー用）
-  const [parseStatus, setParseStatus] = useState({ status: "success", err: null, warnings: [] });
   const [parseErrorDlg, setParseErrorDlg] = useState(false);
   const [parseWarningDlg, setParseWarningDlg] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -323,22 +330,25 @@ function Editor(props) {
   const [colorSchemeConfig, setColorSchemeConfig] = useState(null);
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
 
-  //viewHTMLのprop
-  const [html, setHTML] = useState("");
-  useEffect(() => { htmlRef.current = html; }, [html]);
   //更新状態のアイコン
   const [updated, setUpdated] = useState(false);
 
-  // テンプレートプレビュー用
+  // 編集中のテンプレートの種類（layout / content / diagram）
   const [templateType, setTemplateType] = useState("");
-  const [previewLayouts, setPreviewLayouts] = useState([]);
-  const [previewContents, setPreviewContents] = useState([]);
-  const [previewNotes, setPreviewNotes] = useState([]);
-  const [previewNoteId, setPreviewNoteId] = useState("");
-  const [previewOtherTemplateId, setPreviewOtherTemplateId] = useState("");
-  // ダイアグラムテンプレートプレビュー用
-  const [previewDiagrams, setPreviewDiagrams] = useState([]);
-  const [previewDiagramId, setPreviewDiagramId] = useState("");
+  // テンプレートのプレビューに使う相手（ノート・もう一方のテンプレート・ダイアグラム）の一覧と選択
+  const targets = useTemplatePreviewTargets({ onError: (err) => evt.showErrorMessage(err) });
+  const { noteId: previewNoteId, otherTemplateId: previewOtherTemplateId, diagramId: previewDiagramId } = targets;
+
+  // プレビューの生成。出している HTML（html）と変換の結果（parseStatus）はここが持つ。
+  // いつ作るか（開いた直後・入力中のデバウンス）は、下の useEffect([text, openSeq]) が決める
+  const {
+    html, setHTML, htmlRef, parseStatus, setParseStatus,
+    parseText, createMarked, viewDiagramTemplatePreview,
+  } = useEditorPreview({
+    mode, id, name, text, idRef, cursorLineRef, setCursorLine, setAlertsAvailable,
+    styleTemplateId, templateType, previewNoteId, previewOtherTemplateId, previewDiagramId,
+    evt, t,
+  });
 
   // Ctrl+F で検索バーを開く、Ctrl+H で置換モードで開く
   useEffect(() => {
@@ -399,33 +409,20 @@ function Editor(props) {
   }, [text]);
 
   const handleReplace = useCallback((absoluteStart, absoluteEnd, replacement) => {
-    const textarea = document.querySelector('#editor');
-    if (!textarea) return;
-    textarea.focus();
-    textarea.setSelectionRange(absoluteStart, absoluteEnd);
-    document.execCommand('insertText', false, replacement);
-    requestAnimationFrame(() => {
-      setText(textarea.value);
-      saveText(mode, id, textarea.value);
-    });
-  }, [mode, id]);
+    insertIntoEditor(replacement, { start: absoluteStart, end: absoluteEnd });
+  }, [insertIntoEditor]);
 
   const handleReplaceAll = useCallback((matches, replacement) => {
     const textarea = document.querySelector('#editor');
     if (!textarea) return;
-    textarea.focus();
     let newText = text;
     for (let i = matches.length - 1; i >= 0; i--) {
       const m = matches[i];
       newText = newText.substring(0, m.absoluteStart) + replacement + newText.substring(m.absoluteEnd);
     }
-    textarea.select();
-    document.execCommand('insertText', false, newText);
-    requestAnimationFrame(() => {
-      setText(textarea.value);
-      saveText(mode, id, textarea.value);
-    });
-  }, [text, mode, id]);
+    // 全体を選んで置き換える（1 回の「元に戻す」で戻せる）
+    insertIntoEditor(newText, { start: 0, end: textarea.value.length });
+  }, [text, insertIntoEditor]);
 
   useEffect(() => {
     GetConfig().then((conf) => {
@@ -434,6 +431,164 @@ function Editor(props) {
       }
     }).catch(() => {});
   }, []);
+
+  // ---- 開いたときの読み込み（種類ごと） ----
+  // 下の useEffect([id, restoredAt]) から呼ぶ。その描画の id を見る
+
+  // 本文が空のときのステータス
+  const emptyStatus = () => ({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
+
+  /**
+   * 本文を編集する種類（ノート・図・テンプレート）を開く前の準備。
+   * text の差し替えは非同期の読み込みのあとなので、それまで useEffect([text]) でプレビューを作らせない
+   * （これが無いと、空の本文でのエラーや前のファイルのエラー行が、読み終えるまで残る）
+   */
+  const beginOpenText = () => {
+    setEditor(true);
+    // assets/layer モードから戻った場合に viewer 状態を復元する
+    if (editorSettingRef.current) {
+      setViewer(editorSettingRef.current.showPreview);
+    }
+    loadingRef.current = true;
+    setParseStatus({ status: "processing", err: null, warnings: [] });
+  };
+
+  /** 図を開く */
+  const openDiagram = () => {
+    beginOpenText();
+    // 図から図へ移るときは前の本文と図を出したままにし、読み終えてから差し替える。
+    // 種類が変わるときは #mermaidViewer が作り直されるので、text を一旦空にして
+    // 読み終えたときに必ず useEffect([text]) が発火するようにする
+    if (openedModeRef.current !== Mode.diagram) setText("");
+
+    // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
+    // setText が先に走ると styleTemplateId が空のまま初回描画されるため
+    const metaReady = GetDiagram(id).then(async (resp) => {
+      setUpdated(resp.updatedStatus > 0);
+      setIsPrivate(!!resp.private);
+      setAlias(resp.alias ?? '');
+      setName(resp.name);
+      setStyleTemplateId(resp.styleTemplate || "");
+      if (resp.styleTemplate) {
+        if (Mermaid.hasStyleTemplate(resp.styleTemplate)) {
+          // キャッシュ済みなら描画をブロックせずバックグラウンドで最新内容に更新する
+          OpenTemplate(resp.styleTemplate).then((content) => {
+            Mermaid.setStyleTemplate(resp.styleTemplate, content);
+          }).catch(() => {});
+        } else {
+          // 初回はスタイル欠落した描画を防ぐため取得完了を待つ
+          const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
+          Mermaid.setStyleTemplate(resp.styleTemplate, content);
+        }
+      }
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+
+    Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+      // 読んでいる間に別のものを開いていたら捨てる
+      if (idRef.current !== id) return;
+      loadingRef.current = false;
+      fileOpeningRef.current = true;
+      if (diagramText === "") {
+        setParseStatus(emptyStatus());
+        const mermaidEl = document.querySelector('#mermaidViewer');
+        if (mermaidEl) mermaidEl.innerHTML = '';
+      }
+      setText(diagramText);
+      setOpenSeq((n) => n + 1);
+    }).catch((err) => {
+      // 前の図の本文を、開けなかった図のものとして出したままにしない
+      if (idRef.current === id) setText("");
+      evt.showErrorMessage(err);
+    })
+  };
+
+  /** ノートを開く */
+  const openNote = () => {
+    beginOpenText();
+    // ノートからノートへ移るときは前の本文とプレビューを出したままにし、読み終えてから差し替える
+    // （空の本文を挟むと、エディタと行番号が一瞬消えて点滅して見える）
+    if (openedModeRef.current !== Mode.note) setText("");
+
+    OpenNote(id).then((resp) => {
+      // 読んでいる間に別のものを開いていたら捨てる
+      if (idRef.current !== id) return;
+      loadingRef.current = false;
+      fileOpeningRef.current = true;
+      // プレビューは新しいノートの先頭から見せる
+      cursorLineRef.current = 1;
+      if (resp === "") {
+        // ""→"" では useEffect([text]) が発火しないため、ここで直接確定する
+        setParseStatus(emptyStatus());
+        setHTML("");
+      }
+      setText(resp);
+      setOpenSeq((n) => n + 1);
+    }).catch((err) => {
+      // 前のノートの本文を、開けなかったノートのものとして出したままにしない
+      if (idRef.current === id) setText("");
+      evt.showErrorMessage(err);
+    });
+
+    GetNote(id).then((resp) => {
+      setUpdated(resp.updatedStatus > 0);
+      setIsPrivate(!!resp.private);
+      setAlias(resp.alias ?? '');
+      setName(resp.name);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    })
+  };
+
+  /** テンプレートを開く */
+  const openTemplate = () => {
+    beginOpenText();
+    // プレビュー設定を初期化（前回の選択があれば復元）
+    setHTML("");
+    setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
+    setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
+    targets.clearOtherTemplate(); // 同上
+    diagramInitializedRef.current = null; // 同一IDへの再訪問に備えてリセット
+
+    OpenTemplate(id).then((resp) => {
+      loadingRef.current = false;
+      fileOpeningRef.current = true;
+      if (resp === "") {
+        setParseStatus(emptyStatus());
+      }
+      setText(resp);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+
+    GetTemplate(id).then((resp) => {
+      setUpdated(resp.updatedStatus > 0);
+      setName(resp.name);
+      setTemplateType(resp.type);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+
+    // プレビュー用データを取得（テンプレートタイプ確定後に分岐するため、ここではツリーとテンプレート一覧を両方取得）
+    targets.load();
+  };
+
+  /**
+   * アセット・レイヤーを開く。表示と操作は AssetViewer / LayerEditor が担うので、
+   * エディタとプレビューは出さず、名前などだけを読む
+   */
+  const openWithoutEditor = (getMeta) => {
+    setEditor(false);
+    setViewer(false);
+    getMeta(id).then((resp) => {
+      setUpdated(resp.updatedStatus > 0);
+      setIsPrivate(!!resp.private);
+      setName(resp.name);
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    })
+  };
 
   //開いた時の初期処理
   useEffect(() => {
@@ -452,210 +607,15 @@ function Editor(props) {
     evt.selectTreeNode(id);
 
     if (mode === Mode.diagram) {
-
-      setEditor(true);
-      // assets/layer モードから戻った場合に viewer 状態を復元する
-      if (editorSettingRef.current) {
-        setViewer(editorSettingRef.current.showPreview);
-      }
-      // モード切替後に #mermaidViewer が再マウントされるため、text を一旦クリアして
-      // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
-      loadingRef.current = true;
-      setParseStatus({ status: "processing", err: null, warnings: [] });
-      // 図から図へ移るときは前の本文と図を出したままにし、読み終えてから差し替える
-      if (openedModeRef.current !== Mode.diagram) setText("");
-
-      // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
-      // setText が先に走ると styleTemplateId が空のまま初回描画されるため
-      const metaReady = GetDiagram(id).then(async (resp) => {
-        if (resp.updatedStatus > 0) {
-          setUpdated(true);
-        } else {
-          setUpdated(false);
-        }
-        setIsPrivate(!!resp.private);
-        setAlias(resp.alias ?? '');
-        setName(resp.name);
-        setStyleTemplateId(resp.styleTemplate || "");
-        if (resp.styleTemplate) {
-          if (Mermaid.hasStyleTemplate(resp.styleTemplate)) {
-            // キャッシュ済みなら描画をブロックせずバックグラウンドで最新内容に更新する
-            OpenTemplate(resp.styleTemplate).then((content) => {
-              Mermaid.setStyleTemplate(resp.styleTemplate, content);
-            }).catch(() => {});
-          } else {
-            // 初回はスタイル欠落した描画を防ぐため取得完了を待つ
-            const content = await OpenTemplate(resp.styleTemplate).catch(() => "");
-            Mermaid.setStyleTemplate(resp.styleTemplate, content);
-          }
-        }
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      });
-
-      Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
-        // 読んでいる間に別のものを開いていたら捨てる
-        if (idRef.current !== id) return;
-        loadingRef.current = false;
-        fileOpeningRef.current = true;
-        if (diagramText === "") {
-          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
-          const mermaidEl = document.querySelector('#mermaidViewer');
-          if (mermaidEl) mermaidEl.innerHTML = '';
-        }
-        setText(diagramText);
-        setOpenSeq((n) => n + 1);
-      }).catch((err) => {
-        // 前の図の本文を、開けなかった図のものとして出したままにしない
-        if (idRef.current === id) setText("");
-        evt.showErrorMessage(err);
-      })
-
+      openDiagram();
     } else if (mode === Mode.note) {
-
-      setEditor(true);
-      // assets/layer モードから戻った場合に viewer 状態を復元する
-      if (editorSettingRef.current) {
-        setViewer(editorSettingRef.current.showPreview);
-      }
-      // ダイアグラム/テンプレートと同じリセットパターン。
-      // これが無いと、マウント直後の parseText("") による空コンテンツエラーや
-      // 前ファイルのエラー行ハイライトが、ロード完了までの間ガターに赤く残る
-      loadingRef.current = true;
-      setParseStatus({ status: "processing", err: null, warnings: [] });
-      // ノートからノートへ移るときは前の本文とプレビューを出したままにし、読み終えてから差し替える
-      // （空の本文を挟むと、エディタと行番号が一瞬消えて点滅して見える）
-      if (openedModeRef.current !== Mode.note) setText("");
-
-      OpenNote(id).then((resp) => {
-        // 読んでいる間に別のものを開いていたら捨てる
-        if (idRef.current !== id) return;
-        loadingRef.current = false;
-        fileOpeningRef.current = true;
-        // プレビューは新しいノートの先頭から見せる
-        cursorLineRef.current = 1;
-        if (resp === "") {
-          // ""→"" では useEffect([text]) が発火しないため、ここで直接確定する
-          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
-          setHTML("");
-        }
-        setText(resp);
-        setOpenSeq((n) => n + 1);
-      }).catch((err) => {
-        // 前のノートの本文を、開けなかったノートのものとして出したままにしない
-        if (idRef.current === id) setText("");
-        evt.showErrorMessage(err);
-      });
-
-      GetNote(id).then((resp) => {
-        if (resp.updatedStatus > 0) {
-          setUpdated(true);
-        } else {
-          setUpdated(false);
-        }
-        setIsPrivate(!!resp.private);
-        setAlias(resp.alias ?? '');
-        setName(resp.name);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
-
+      openNote();
     } else if (mode === Mode.template) {
-
-      setEditor(true);
-      // assets/layer モードから戻った場合に viewer 状態を復元する
-      if (editorSettingRef.current) {
-        setViewer(editorSettingRef.current.showPreview);
-      }
-      // プレビュー設定を初期化（前回の選択があれば復元）
-      setHTML("");
-      loadingRef.current = true;
-      setParseStatus({ status: "processing", err: null, warnings: [] });
-      setText("");                   // 非同期ロード前にリセット（初回描画ガード用）
-      setTemplateType("");          // 前テンプレートの型が残ると stale preview が発生するためリセット
-      setPreviewOtherTemplateId(""); // 同上
-      diagramInitializedRef.current = null; // 同一IDへの再訪問に備えてリセット
-
-      //テンプレートを開く
-      OpenTemplate(id).then((resp) => {
-        loadingRef.current = false;
-        fileOpeningRef.current = true;
-        if (resp === "") {
-          setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
-        }
-        setText(resp);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      });
-
-      GetTemplate(id).then((resp) => {
-        if (resp.updatedStatus > 0) {
-          setUpdated(true);
-        } else {
-          setUpdated(false);
-        }
-        setName(resp.name);
-        setTemplateType(resp.type);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      });
-
-      // プレビュー用データを取得（テンプレートタイプ確定後に分岐するため、ここではツリーとテンプレート一覧を両方取得）
-      GetHTMLTemplates().then((tmpls) => {
-        setPreviewLayouts(tmpls.layouts ?? []);
-        setPreviewContents(tmpls.contents ?? []);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      });
-
-      GetBinderTree().then((tree) => {
-        // ノート一覧（layout/content テンプレート用）
-        const notes = flattenNotes(tree.data ?? []);
-        setPreviewNotes(notes);
-        if (notes.length > 0) {
-          const restored = lastPreviewNoteId && notes.some(n => n.id === lastPreviewNoteId);
-          setPreviewNoteId(restored ? lastPreviewNoteId : notes[0].id);
-        }
-        // ダイアグラム一覧（diagram テンプレート用）
-        const diagrams = flattenDiagrams(tree.data ?? []);
-        setPreviewDiagrams(diagrams);
-        if (diagrams.length > 0) {
-          const restored = lastPreviewDiagramId && diagrams.some(d => d.id === lastPreviewDiagramId);
-          setPreviewDiagramId(restored ? lastPreviewDiagramId : diagrams[0].id);
-        }
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      });
+      openTemplate();
     } else if (mode === "assets") {
-      // AssetViewer コンポーネントが表示・操作を担うため editor/viewer は不要
-      setEditor(false);
-      setViewer(false);
-      GetAsset(id).then((resp) => {
-        if (resp.updatedStatus > 0) {
-          setUpdated(true);
-        } else {
-          setUpdated(false);
-        }
-        setIsPrivate(!!resp.private);
-        setName(resp.name);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
+      openWithoutEditor(GetAsset);
     } else if (mode === "layer") {
-      // LayerEditor コンポーネントが表示・操作を担うため editor/viewer は不要
-      setEditor(false);
-      setViewer(false);
-      GetLayer(id).then((resp) => {
-        if (resp.updatedStatus > 0) {
-          setUpdated(true);
-        } else {
-          setUpdated(false);
-        }
-        setIsPrivate(!!resp.private);
-        setName(resp.name);
-      }).catch((err) => {
-        evt.showErrorMessage(err);
-      })
+      openWithoutEditor(GetLayer);
     }
 
     openedModeRef.current = mode;
@@ -756,12 +716,8 @@ function Editor(props) {
   // templateType が確定したら「もう一方のテンプレート」のデフォルトを設定（前回選択があれば復元）
   useEffect(() => {
     if (!templateType) return;
-    const others = templateType === "layout" ? previewContents : previewLayouts;
-    if (others.length > 0) {
-      const restored = lastPreviewOtherTemplateId && others.some(t => t.id === lastPreviewOtherTemplateId);
-      setPreviewOtherTemplateId(restored ? lastPreviewOtherTemplateId : others[0].id);
-    }
-  }, [templateType, previewLayouts, previewContents]);
+    targets.selectDefaultOtherTemplate(templateType);
+  }, [templateType, targets.layouts, targets.contents]);
 
   // プレビュー設定が揃ったら自動プレビュー（layout/content テンプレート）
   useEffect(() => {
@@ -810,18 +766,7 @@ function Editor(props) {
    * textarea に保持したまま selectionStart/End を直接読み取る。
    */
   const handleInsertSnippet = (body) => {
-    const textarea = document.querySelector("#editor");
-    if (!textarea) return;
-    textarea.focus();
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    textarea.setSelectionRange(start, end);
-    document.execCommand('insertText', false, body);
-    // execCommand は同期で textarea.value を確定するため、次フレームで state へ反映すれば足りる
-    requestAnimationFrame(() => {
-      setText(textarea.value);
-      saveText(mode, id, textarea.value);
-    });
+    insertIntoEditor(body);
   };
 
   /**
@@ -884,19 +829,7 @@ function Editor(props) {
   // エディタへのテキスト挿入イベントを購読
   // BinderTree などから {{assetImage "id"}} などのテキストをカーソル位置に挿入する
   useEventListener(Event.InsertText, (text) => {
-    const textarea = document.querySelector("#editor");
-    if (!textarea) return;
-
-    textarea.focus();
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    textarea.setSelectionRange(start, end);
-    document.execCommand('insertText', false, text);
-
-    requestAnimationFrame(() => {
-      setText(textarea.value);
-      saveText(modeRef.current, idRef.current, textarea.value);
-    });
+    insertIntoEditor(text);
   });
 
   // エディタへの OS ファイルドロップ: Go ハンドラ (main.go) がアセット登録後に
@@ -926,59 +859,6 @@ function Editor(props) {
       Events.Emit('binder:preview:navigate', { typ: mode, id, name });
     }
   }, [name]);
-
-  const parseText = async () => {
-    if (text === "") {
-      setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
-      setHTML("");
-      const mermaidEl = document.querySelector('#mermaidViewer');
-      if (mermaidEl) mermaidEl.innerHTML = '';
-      return;
-    }
-
-    // 変換している間は前の表示を出したままにする（処理中であることはステータスバーに出る）。
-    // 「Loading...」を挟むと、開くたび・挿入のたびにプレビューが点滅する
-    setParseStatus({ status: "processing", err: null, warnings: [] });
-
-    if (mode === Mode.diagram) {
-      viewDiagram(text).catch((err) => {
-        setParseStatus({ status: "error", err, warnings: [] });
-        evt.showErrorMessage(err);
-      });
-    } else if (mode === Mode.note) {
-      viewHTML(text).catch((err) => {
-        setParseStatus({ status: "error", err, warnings: [] });
-        evt.showErrorMessage(err);
-      });
-    } else if (mode === Mode.template) {
-      if (templateType === "diagram") {
-        // ダイアグラムテンプレート: 選択中のダイアグラムにテンプレートを適用して描画
-        if (!previewDiagramId) return;
-        viewDiagramTemplatePreview(text, previewDiagramId).catch((err) => {
-          setParseStatus({ status: "error", err, warnings: [] });
-          evt.showErrorMessage(err);
-        });
-      } else {
-        if (!previewNoteId || !previewOtherTemplateId || !templateType) return;
-        // テンプレートをファイルに即時保存してからプレビューを生成
-        await SaveTemplate(id, text);
-        runTemplatePreview(id, templateType, previewOtherTemplateId, previewNoteId)
-          .then((result) => {
-            const ws = result.warnings || [];
-            if (result.error) {
-              setParseStatus({ status: "error", err: result.error, warnings: ws });
-            } else {
-              setHTML(result.html);
-              setParseStatus(ws.length > 0 ? { status: "warning", err: null, warnings: ws } : { status: "success", err: null, warnings: [] });
-              Events.Emit('binder:preview:update', { typ: 'template', id, name, html: result.html });
-            }
-          })
-          .catch((err) => setParseStatus({ status: "error", err, warnings: [] }));
-      }
-    } else {
-      //初回時の実行があるか
-    }
-  }
 
   //テキスト変更時の処理
   // handleChangeText（ユーザー入力）→ isEditingRef=true → デバウンス
@@ -1023,152 +903,6 @@ function Editor(props) {
     textarea.setSelectionRange(0, 0);
     textarea.scrollTop = 0;
   }, [openSeq]);
-
-  //データをマークダウンからHTMLに変換
-  // lineNumbers=true のとき parseWithSourceLines を使い data-src-line 属性を付与する（プレビュー用）
-  const createMarked = async (id, txt, local, lineNumbers = false) => {
-    var p = ""
-    var parseError = false;
-    var warnings = [];
-    const result = await ParseNote(id, local, txt);
-    if (result.error) {
-      setParseStatus({ status: "error", err: result.error, errorLine: result.errorLine || 0, warnings: result.warnings || [] });
-      parseError = true;
-      p = txt;
-    } else {
-      p = result.html;
-      warnings = result.warnings || [];
-    }
-
-    var val = lineNumbers ? await Marked.parseWithSourceLines(p) : await Marked.parse(p);
-    // プラグインは描画の前に読み込まれるため、描画のたびに囲みのメニューを出すかを決め直す
-    setAlertsAvailable(hasAlertsPlugin(Marked.getPluginStatus()));
-
-    // エンジンとプラグインの失敗（CDN読込失敗・読込エラー・実行時例外・互換スキップ・
-    // 未適用）を警告として拾う。互換層はプレビューを落とさないために失敗を握り潰すため、
-    // ここで出さないとユーザは記法が黙って消えたことにしか気付けない。
-    // parse 後に取るのは、実行時例外が parse 中に記録されるため。
-    warnings = warnings.concat(Marked.getWarnings(t));
-
-    return { html: val || "", parseError, warnings };
-  }
-
-  /**
-   * HTMLの表示
-   */
-  const viewHTML = async (txt, embNoteElm) => {
-    const _start = Date.now();
-
-    if (mode === "note") {
-
-      // マージコンフリクトマーカーが残っている間は marked を通さず、
-      // 色分けしたコンフリクト表示に切り替える（エディタ側は変更しない）。
-      if (hasConflictMarkers(txt)) {
-        const conflictHtml = buildConflictHTML(txt, t('editor.conflictBanner'));
-        setCursorLine(cursorLineRef.current);
-        setHTML(conflictHtml);
-        setParseStatus({ status: "warning", err: null, warnings: [t('editor.conflictBanner')] });
-        Events.Emit('binder:preview:update', { typ: mode, id, name, html: conflictHtml });
-        return;
-      }
-
-      var result = await createMarked(id, txt, true, true);
-      const noteResult = await CreateNoteHTML(id, true, result.html);
-      // 変換している間に別のものを開いていたら、前のノートの結果で表示を書き換えない
-      if (idRef.current !== id) return;
-      const allWarnings = [...(result.warnings || []), ...(noteResult.warnings || [])];
-      if (noteResult.error) {
-        setParseStatus({ status: "error", err: noteResult.error, warnings: allWarnings });
-      } else {
-        // カーソル行は HTML と同時に渡す（先に渡すと、差し替える前の表示がその行へ動いてしまう）
-        setCursorLine(cursorLineRef.current);
-        setHTML(noteResult.html);
-        if (!result.parseError) {
-          if (allWarnings.length > 0) {
-            setParseStatus({ status: "warning", err: null, warnings: allWarnings });
-          } else {
-            setParseStatus({ status: "success", err: null, warnings: [], ms: Date.now() - _start });
-          }
-        }
-        Events.Emit('binder:preview:update', { typ: mode, id, name, html: noteResult.html });
-      }
-
-    } else if (mode === "template") {
-      //CreateTemplateHTML(id, txt, embNoteElm).then((resp) => {
-      //setHTML(resp);
-      //}).catch((err) => {
-      //Event.showError(err);
-      //})
-    }
-  }
-
-  /**
-   * ダイアグラムの表示
-   */
-  const viewDiagram = async (txt) => {
-    const _start = Date.now();
-
-    const diagramResult = await ParseDiagram(id, true, txt);
-    if (diagramResult.error) {
-      const elm = document.querySelector('#mermaidViewer');
-      if (elm) elm.innerHTML = '';
-      setParseStatus({ status: "error", err: diagramResult.error, errorLine: diagramResult.errorLine || 0, warnings: diagramResult.warnings || [] });
-      return;
-    }
-    let parsedTxt = diagramResult.html;
-    const diagWarnings = diagramResult.warnings || [];
-
-    Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
-
-      // 描いている間に別のものを開いていたら、前の図で表示を書き換えない
-      if (idRef.current !== id) return;
-      var elm = document.querySelector('#mermaidViewer');
-      if (!elm) return;
-      elm.innerHTML = data.svg;
-      if (diagWarnings.length > 0) {
-        setParseStatus({ status: "warning", err: null, warnings: diagWarnings });
-      } else {
-        setParseStatus({ status: "success", err: null, warnings: [], ms: Date.now() - _start });
-      }
-      Events.Emit('binder:preview:update', { typ: mode, id, name, html: parsedTxt, styleTemplateId });
-
-      // 中ボタンのドラッグで移動、ホイールで拡大
-      attachDiagramPanZoom(elm);
-
-    }).catch((err) => {
-      const elm = document.querySelector('#mermaidViewer');
-      if (elm) elm.innerHTML = '';
-      setParseStatus({ status: "error", err, errorLine: extractMermaidErrorLine(err), warnings: diagWarnings });
-    });
-  }
-
-  /**
-   * ダイアグラムテンプレートのプレビュー: 選択ダイアグラムにテンプレートを適用して描画
-   */
-  const viewDiagramTemplatePreview = async (templateText, diagramId) => {
-    if (!diagramId || !templateText) return;
-    OpenDiagram(diagramId).then(async (diagramContent) => {
-      const parsedResult = await ParseDiagram(diagramId, true, diagramContent);
-      const ws = parsedResult.warnings || [];
-      if (parsedResult.error) {
-        setParseStatus({ status: "error", err: parsedResult.error, warnings: ws });
-        return;
-      }
-      let parsedContent = parsedResult.html;
-      const prefix = `%%{init:${templateText}}%%\n`;
-      const fullTxt = prefix + parsedContent;
-      Mermaid.parse(fullTxt).then((data) => {
-        var elm = document.querySelector('#mermaidViewer');
-        if (elm) elm.innerHTML = data.svg;
-        setParseStatus(ws.length > 0 ? { status: "warning", err: null, warnings: ws } : { status: "success", err: null, warnings: [] });
-        Events.Emit('binder:preview:update', { typ: 'diagram', id, name, html: fullTxt });
-      }).catch((err) => {
-        setParseStatus({ status: "error", err, warnings: ws });
-      });
-    }).catch((err) => {
-      setParseStatus({ status: "error", err, warnings: [] });
-    });
-  }
 
   // ---- エディタ/ビューア間のスプリッター ----
   const splitter = useSplitterDrag({
@@ -1354,92 +1088,8 @@ function Editor(props) {
     }).catch((err) => evt.showErrorMessage(err));
   };
 
-  const handleOpenInBrowser = () => {
-    if (!alias) return;
-    let path = null;
-    if (mode === Mode.note) {
-      path = id === "index" ? "/" : `/pages/${alias}.html`;
-    } else if (mode === Mode.diagram) {
-      path = `/images/${alias}.svg`;
-    }
-    if (!path) return;
-    // HTTPサーバを遅延起動してから開く
-    EnsureAddress().then((addr) => {
-      if (addr) Browser.OpenURL(addr + path);
-    }).catch((err) => evt.showErrorMessage(err));
-  };
-
-  // ノートの公開時に、まだ公開していない参照先を一緒に公開するかを聞くダイアログ
-  const [publishRefsDialog, askPublishRefs] = usePublishRefsDialog();
-
-  //出力処理
-  const handlePublish = async () => {
-    try {
-      var elm = "";
-      var pluginWarnings = [];
-      // 一緒に公開する参照先（図・アセット・レイヤー）
-      var refs = [];
-      if (mode === Mode.note) {
-        // 参照先を調べられなくても公開は止めない（公開時の警告で知らせる）
-        const unpublished = await GetUnpublishedRefs(id, text).catch(() => []) ?? [];
-        if (unpublished.length > 0) {
-          refs = await askPublishRefs(unpublished);
-          if (refs === null) return;
-        }
-        const markedResult = await createMarked(id, text, false);
-        elm = markedResult.html;
-        // 出力した HTML は git に記録されるため、エンジン／プラグインが効いていないまま
-        // 出力したことに気付けるよう明示する（出力自体は止めない）。
-        pluginWarnings = Marked.getWarnings(t);
-      } else if (mode === Mode.diagram) {
-        const diagResult = await ParseDiagram(id, false, text);
-        if (diagResult.error) throw new Error(diagResult.error);
-        var obj = await Mermaid.parse(diagResult.html, styleTemplateId);
-        elm = obj.svg;
-      } else if (mode === Mode.template) {
-        elm = text;
-      } else if (mode === Mode.asset) {
-        elm = text;
-      }
-
-      // テンプレート関数の警告（未公開データの参照など）。公開後に 404 になる
-      // 参照はプレビューでは見えないため、公開したこの時点で知らせる
-      let genWarnings;
-      if (refs.length > 0) {
-        // ノートと参照先を 1 回の記録で公開する。同時に公開するもの同士は未公開の警告にならない
-        const items = [{ mode: "note", id, data: elm }];
-        for (const r of refs) {
-          items.push(await renderPublishItem(r));
-        }
-        genWarnings = await GenerateAll(items, publishComment([{ type: "note", name }, ...refs]));
-      } else {
-        genWarnings = await Generate(mode, id, elm);
-      }
-      evt.reloadUnpublished();
-      if (pluginWarnings.length > 0) {
-        evt.showWarningMessage(t("plugin.warn.published", { count: pluginWarnings.length }));
-      } else if (genWarnings?.length > 0) {
-        evt.showWarningMessage(publishWarningMessage(t, genWarnings));
-      } else {
-        evt.showSuccessMessage("Generate.");
-      }
-    } catch (err) {
-      evt.showErrorMessage(err);
-    }
-  }
-
-  //非公開処理
-  const [unpublishConfirm, setUnpublishConfirm] = useState(false);
-  const handleUnpublish = () => setUnpublishConfirm(true);
-  const doUnpublish = () => {
-    setUnpublishConfirm(false);
-    Unpublish(mode, id).then(() => {
-      evt.reloadUnpublished();
-      evt.showSuccessMessage("Unpublish.")
-    }).catch((err) => {
-      evt.showErrorMessage(err);
-    });
-  };
+  // 公開・非公開・ブラウザで開く
+  const pub = useEditorPublish({ mode, id, name, text, alias, styleTemplateId, createMarked, evt, t });
 
   //個別コミットを行う
   // memo 化した CommitBar に渡すため参照を安定させる
@@ -1454,71 +1104,8 @@ function Editor(props) {
     })
   }, [mode, id, comment, name, evt]);
 
-  //SVG のダウンロードを行う
-  const handleDownload = async () => {
-    if (mode === Mode.diagram) {
-      var elm = document.querySelector('#mermaidViewer');
-      downloadBlob(elm.innerHTML, 'image/svg+xml', name + '.svg');
-    } else if (mode === Mode.note) {
-      downloadBlob(html, 'text/html', name + '.html');
-    }
-  }
-
-  /** テキストをそのままダウンロード（テキストステートから直接） */
-  const handleDownloadRaw = () => {
-    if (mode === Mode.note) {
-      triggerTextDownload(text, name + '.md');
-    } else if (mode === Mode.diagram) {
-      triggerTextDownload(text, name + '.mmd');
-    }
-  };
-
-  /** テンプレート関数を展開したテキストをダウンロード（HTML変換前） */
-  const handleDownloadExpanded = async () => {
-    try {
-      if (mode === Mode.note) {
-        const result = await ParseNote(id, false, text);
-        if (result.error) { evt.showErrorMessage(result.error); return; }
-        triggerTextDownload(result.html, name + '.md');
-      } else if (mode === Mode.diagram) {
-        const result = await ParseDiagram(id, false, text);
-        if (result.error) { evt.showErrorMessage(result.error); return; }
-        triggerTextDownload(result.html, name + '.mmd');
-      }
-    } catch (err) {
-      evt.showErrorMessage(err);
-    }
-  };
-
-  const handleDownloadZip = async () => {
-    try {
-      // 依存関係を収集（テンプレート関数展開のためMarkdownを渡す）
-      const deps = await CollectExportDeps(id, text);
-      const diagramSVGs = {};
-
-      if (deps && deps.missingDiagrams && deps.missingDiagrams.length > 0) {
-        for (const diag of deps.missingDiagrams) {
-          try {
-            const source = await OpenDiagram(diag.id);
-            const expandResult = await ParseDiagram(diag.id, false, source);
-            if (expandResult.error) throw new Error(expandResult.error);
-            const diagMeta = await GetDiagram(diag.id);
-            const result = await Mermaid.parse(expandResult.html, diagMeta.styleTemplate);
-            if (result && result.svg) {
-              diagramSVGs[diag.id] = result.svg;
-            }
-          } catch (diagErr) {
-            console.warn("diagram SVG generation failed:", diag.id, diagErr);
-          }
-        }
-      }
-
-      const html = await Marked.parse(deps.expandedMarkdown);
-      await DownloadNote(id, text, html, diagramSVGs);
-    } catch (err) {
-      evt.showErrorMessage(err);
-    }
-  };
+  // ダウンロード（プレビュー・本文そのまま・展開済み・zip）
+  const downloads = useEditorDownloads({ mode, id, name, text, html, onError: (err) => evt.showErrorMessage(err) });
 
   /**
    * ペースト処理: Excelなどからのタブ区切りデータをMarkdownテーブルに変換
@@ -1573,7 +1160,6 @@ function Editor(props) {
     var textarea = document.querySelector("#editor");
     if (!textarea) return;
 
-    textarea.focus();
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value.substring(start, end);
@@ -1591,15 +1177,7 @@ function Editor(props) {
       insertText = buf;
     }
 
-    textarea.setSelectionRange(start, end);
-    document.execCommand('insertText', false, insertText);
-
-    requestAnimationFrame(function () {
-      const val = textarea.value;
-      setText(val);
-      saveText(mode, id, val);
-    })
-
+    insertIntoEditor(insertText);
   }
 
   /**
@@ -1913,6 +1491,21 @@ function Editor(props) {
   // エディタルートではツリーパネルを常に表示する
   const showTree = true;
 
+  // プレビュー（HTMLFrame）へ渡すもの。ノートとテンプレートで同じ
+  const frameProps = {
+    html, cursorLine,
+    colorSchemeAttr: colorSchemeConfig?.attribute,
+    colorSchemeValue: colorSchemeConfig?.values[colorSchemeIndex],
+    customScrollbar: previewScrollbar,
+    allowScripts,
+    onScriptsBlocked: setScriptsBlocked,
+    onLinkExternal: handleLinkExternal,
+    onLinkInternal: handleLinkInternal,
+    onContextMenu: handlePreviewContextMenu,
+    unresolvedLabel: t("preview.unresolvedResource"),
+    unresolvedHints: { diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") },
+  };
+
   // memo にした部品（ツールバー・ダイアログ）へ渡すハンドラ。
   // 打鍵のたびに作り直される関数をそのまま渡すと memo が効かないので、同じ関数のまま渡す
   const h = useStableHandlers({
@@ -1929,20 +1522,20 @@ function Editor(props) {
     tableEdit: handleTableEdit,
     fontDialog: handleFontDialog,
     runEditor: handleRunEditor,
-    downloadRaw: handleDownloadRaw,
-    downloadExpanded: handleDownloadExpanded,
-    // プレビュー側のツールバー（前回の選択はモジュールの変数に覚えておき、開き直したときに戻す）
-    previewDiagramChange: (v) => { lastPreviewDiagramId = v; setPreviewDiagramId(v); },
-    previewOtherTemplateChange: (v) => { lastPreviewOtherTemplateId = v; setPreviewOtherTemplateId(v); },
-    previewNoteChange: (v) => { lastPreviewNoteId = v; setPreviewNoteId(v); },
+    downloadRaw: downloads.downloadRaw,
+    downloadExpanded: downloads.downloadExpanded,
+    // プレビュー側のツールバー（選んだものは useTemplatePreviewTargets が覚えておき、開き直したときに戻す）
+    previewDiagramChange: targets.changeDiagram,
+    previewOtherTemplateChange: targets.changeOtherTemplate,
+    previewNoteChange: targets.changeNote,
     scriptsBlockedClick: () => evt.openBinderModal(),
     nextColorScheme: () => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length),
-    download: handleDownload,
-    downloadZip: handleDownloadZip,
+    download: downloads.download,
+    downloadZip: downloads.downloadZip,
     openPreviewWindow: () => OpenPreviewWindow(mode, id, name),
-    publish: handlePublish,
-    openInBrowser: handleOpenInBrowser,
-    unpublish: handleUnpublish,
+    publish: pub.publish,
+    openInBrowser: pub.openInBrowser,
+    unpublish: pub.unpublish,
     // プレビューのコンテキストメニュー
     closePreviewMenu,
     historyBack: handleHistoryBack,
@@ -2113,12 +1706,12 @@ function Editor(props) {
               {/** プレビューメニュー */}
               <MemoPreviewToolbar
                 isNote={mode === Mode.note} isTemplate={mode === Mode.template} templateType={templateType}
-                previewDiagrams={previewDiagrams} previewDiagramId={previewDiagramId}
+                previewDiagrams={targets.diagrams} previewDiagramId={previewDiagramId}
                 onPreviewDiagramChange={h.previewDiagramChange}
-                previewOtherTemplates={templateType === "layout" ? previewContents : previewLayouts}
+                previewOtherTemplates={targets.otherTemplates(templateType)}
                 previewOtherTemplateId={previewOtherTemplateId}
                 onPreviewOtherTemplateChange={h.previewOtherTemplateChange}
-                previewNotes={previewNotes} previewNoteId={previewNoteId}
+                previewNotes={targets.notes} previewNoteId={previewNoteId}
                 onPreviewNoteChange={h.previewNoteChange}
                 scriptsBlocked={scriptsBlocked} onScriptsBlockedClick={h.scriptsBlockedClick}
                 colorSchemeConfig={colorSchemeConfig} colorSchemeIndex={colorSchemeIndex}
@@ -2133,7 +1726,9 @@ function Editor(props) {
               {/** プレビューコンテンツ */}
               <div id="previewContent">
                 {(mode === Mode.note) &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} onHeadingClick={editor ? handlePreviewHeadingClick : undefined} onBlockDoubleClick={editor ? handlePreviewBlockDoubleClick : undefined} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame {...frameProps}
+                    onHeadingClick={editor ? handlePreviewHeadingClick : undefined}
+                    onBlockDoubleClick={editor ? handlePreviewBlockDoubleClick : undefined} />
                 }
                 {mode === Mode.diagram &&
                   <div id="mermaidViewer"></div>
@@ -2142,7 +1737,7 @@ function Editor(props) {
                   <div id="mermaidViewer"></div>
                 }
                 {mode === Mode.template && templateType !== "diagram" &&
-                  <HTMLFrame html={html} cursorLine={cursorLine} colorSchemeAttr={colorSchemeConfig?.attribute} colorSchemeValue={colorSchemeConfig?.values[colorSchemeIndex]} customScrollbar={previewScrollbar} allowScripts={allowScripts} onScriptsBlocked={setScriptsBlocked} onLinkExternal={handleLinkExternal} onLinkInternal={handleLinkInternal} onContextMenu={handlePreviewContextMenu} unresolvedLabel={t("preview.unresolvedResource")} unresolvedHints={{ diagram: t("preview.unresolvedHint.diagram"), layer: t("preview.unresolvedHint.layer"), asset: t("preview.unresolvedHint.asset") }} />
+                  <HTMLFrame {...frameProps} />
                 }
               </div>
 
@@ -2183,15 +1778,8 @@ function Editor(props) {
         errorOpen={parseErrorDlg} warningOpen={parseWarningDlg}
         onCloseError={h.closeParseError} onCloseWarning={h.closeParseWarning} />
 
-      {/** 未公開確認ダイアログ */}
-      {publishRefsDialog}
-      <Dialog open={unpublishConfirm} onClose={() => setUnpublishConfirm(false)}>
-        <DialogTitle>{t("preview.unpublishConfirm")}</DialogTitle>
-        <DialogActions>
-          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setUnpublishConfirm(false)} />
-          <ActionButton variant="delete" label={t("preview.unpublish")} icon={<UnpublishedIcon />} onClick={doUnpublish} />
-        </DialogActions>
-      </Dialog>
+      {/** 公開まわりのダイアログ（一緒に公開する参照先の選択・非公開の確認） */}
+      {pub.dialogs}
 
       {/** 外部エディタ実行中ロック */}
       <Backdrop open={editorLocked} sx={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.4)' }}>

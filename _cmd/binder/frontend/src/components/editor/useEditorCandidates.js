@@ -6,7 +6,7 @@ import { goTemplateCandidates, dotTopLevelCandidates, dotThisNoteFields, dotThis
 import { buildMermaidCandidates, buildMermaidSyntaxMap, buildMermaidDirections, mermaidKnownKeywords, mermaidDirectionTypes } from "@shared/editor/mermaid-candidates";
 import { detectTemplateFunc } from "@shared/editor/template-detect";
 import { flattenStructures, sortIdCandidates } from "./tree-flatten";
-import { Mode } from "../../app/App.jsx";
+import { Mode } from "../../mode";
 
 /**
  * オートコンプリートの候補を作る。

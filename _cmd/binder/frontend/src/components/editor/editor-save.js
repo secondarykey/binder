@@ -1,5 +1,5 @@
 import { SaveNote, SaveDiagram, SaveTemplate } from "../../../bindings/binder/api/app";
-import { Mode } from "../../app/App.jsx";
+import { Mode } from "../../mode";
 
 //指定秒数での実行処理
 const debouncePromiss = (fn, delay) => {

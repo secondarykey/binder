@@ -54,7 +54,7 @@ describe('EditorComponent', () => {
 
   // ツールバー・ステータスバーは別の部品（EditorToolbar / PreviewToolbar / ParseStatusBar）。
   // エディタ本体から正しくつながっていることを、ノートのルートで描画して確かめる
-  it('ノートを開くと、切り出した部品がつながって描画される', () => {
+  it('ノートを開くと、切り出した部品がつながって描画される', async () => {
     const evt = new Event();
     evt.register('test', Event.InsertText, () => {});
     evt.register('test', Event.ShowMessage, () => {});
@@ -77,6 +77,9 @@ describe('EditorComponent', () => {
     // スプリッター 2 本
     expect(container.querySelector('#splitter')).toBeTruthy();
     expect(container.querySelector('#treeSplitter')).toBeTruthy();
+
+    // 読み終えるのを待つ（読んでいる間は本文へ挿入しない）
+    await act(async () => {});
 
     // 書式ボタン・表示の切り替えを押しても例外にならない（エディタ本体のハンドラまで届く）
     // jsdom には execCommand が無いので差し替える。呼ばれたことが、本体の挿入処理まで届いた証拠になる
@@ -119,9 +122,16 @@ describe('EditorComponent', () => {
     expect(editor().value).toBe('AAA');
     fireEvent.change(editor(), { target: { value: 'AAAx' } });
     expect(editor().value).toBe('AAA');
+    // ツールバーからの挿入も同じ（打鍵と同じく、前の本文に入れたものを b の ID で保存させない）
+    document.execCommand = vi.fn();
+    fireEvent.click(container.querySelector('#editorMenu button[aria-label="bold"]'));
+    expect(document.execCommand).not.toHaveBeenCalled();
 
     await act(async () => { pending.b('BBB'); });
     await waitFor(() => expect(editor().value).toBe('BBB'));
+    // 読み終えたら挿入できる
+    fireEvent.click(container.querySelector('#editorMenu button[aria-label="bold"]'));
+    expect(document.execCommand).toHaveBeenCalledWith('insertText', false, '****');
 
     // 追い越された読み込み（c を開いたあとで届いた b の再読込）は捨てる
     await act(async () => { nav('/editor/note/b2'); });
