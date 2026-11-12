@@ -10,12 +10,21 @@ vi.mock('../../bindings/binder/api/app', async (importOriginal) => ({
   ParseNote: vi.fn(),
   ParseDiagram: vi.fn(),
   CreateNoteHTML: vi.fn(),
+  OpenNote: vi.fn(),
+  GetNote: vi.fn(),
+  OpenTemplate: vi.fn(),
+  GetTemplate: vi.fn(),
+  SaveTemplate: vi.fn(() => Promise.resolve()),
   Unpublish: vi.fn(() => Promise.resolve()),
   EnsureAddress: vi.fn(() => Promise.resolve('http://localhost:1234')),
 }));
 vi.mock('../components/editor/download', () => ({
   downloadBlob: vi.fn(),
   triggerTextDownload: vi.fn(),
+}));
+vi.mock('../components/editor/preview-run', async (importOriginal) => ({
+  ...(await importOriginal()),
+  runTemplatePreview: vi.fn(),
 }));
 vi.mock('../components/editor/engines/Marked.jsx', () => ({
   default: {
@@ -27,6 +36,9 @@ vi.mock('../components/editor/engines/Marked.jsx', () => ({
 }));
 
 import { GetHTMLTemplates, GetBinderTree, ParseNote, ParseDiagram, CreateNoteHTML, Unpublish } from '../../bindings/binder/api/app';
+import { OpenNote, GetNote, OpenTemplate, GetTemplate, SaveTemplate } from '../../bindings/binder/api/app';
+import { runTemplatePreview } from '../components/editor/preview-run';
+import { useEditorDocument } from '../components/editor/useEditorDocument';
 import { Browser } from '@wailsio/runtime';
 import { downloadBlob, triggerTextDownload } from '../components/editor/download';
 import { useTemplatePreviewTargets } from '../components/editor/useTemplatePreviewTargets';
@@ -263,5 +275,130 @@ describe('useEditorPublish', () => {
     const { result } = renderHook(() => useEditorPublish(p));
     act(() => result.current.unpublish());
     expect(Unpublish).not.toHaveBeenCalled();
+  });
+});
+
+describe('useEditorDocument', () => {
+  const base = (over) => ({
+    mode: Mode.note, id: 'n1', restoredAt: undefined,
+    idRef: { current: over?.id ?? 'n1' }, cursorLineRef: { current: 1 },
+    setCursorLine: vi.fn(), setAlertsAvailable: vi.fn(),
+    setEditor: vi.fn(), setViewer: vi.fn(), editorSettingRef: { current: null },
+    evt: { showErrorMessage: vi.fn(), clearMessage: vi.fn(), selectTreeNode: vi.fn() }, t,
+    ...over,
+  });
+
+  beforeEach(() => {
+    ParseNote.mockReset();
+    ParseNote.mockImplementation((id, local, txt) => Promise.resolve({ html: txt, warnings: [] }));
+    CreateNoteHTML.mockImplementation((id, local, html) => Promise.resolve({ html: `<body>${html}</body>`, warnings: [] }));
+    OpenNote.mockImplementation(() => Promise.resolve('hello'));
+    GetNote.mockImplementation(() => Promise.resolve({ name: 'メモ', alias: 'memo', private: true, updatedStatus: 1 }));
+    GetBinderTree.mockImplementation(() => Promise.resolve({ data: [{ id: 'pn', name: 'Note', type: 'note' }] }));
+    GetHTMLTemplates.mockImplementation(() => Promise.resolve({
+      layouts: [{ id: 'pl', name: 'Layout' }], contents: [{ id: 'pc', name: 'Content' }],
+    }));
+    runTemplatePreview.mockReset();
+    SaveTemplate.mockClear();
+  });
+
+  it('ノートを開くと、名前などを読み、読み終えたらすぐプレビューを作る', async () => {
+    const p = base();
+    const { result } = renderHook(() => useEditorDocument(p));
+    // 読んでいる間は入力と挿入を受け付けない印が立つ
+    expect(result.current.loadingRef.current).toBe(true);
+    expect(p.setEditor).toHaveBeenCalledWith(true);
+    expect(p.evt.selectTreeNode).toHaveBeenCalledWith('n1');
+
+    await waitFor(() => expect(result.current.html).toBe('<body><p data-src-line="1">hello</p></body>'));
+    expect(result.current.loadingRef.current).toBe(false);
+    expect(result.current.text).toBe('hello');
+    expect(result.current).toMatchObject({ name: 'メモ', alias: 'memo', isPrivate: true, updated: true });
+    expect(result.current.parseStatus.status).toBe('success');
+  });
+
+  it('入力中（editText）はプレビューを待たせ、setText はすぐ作る', async () => {
+    const { result } = renderHook(() => useEditorDocument(base()));
+    await waitFor(() => expect(result.current.parseStatus.status).toBe('success'));
+    const parsed = () => ParseNote.mock.calls.map((c) => c[2]);
+
+    // 入力中: すぐには変換しない。続けて打つと、最後の本文で 1 回だけ変換する
+    act(() => result.current.editText('hello1'));
+    act(() => result.current.editText('hello12'));
+    expect(parsed()).toEqual(['hello']);
+    await waitFor(() => expect(parsed()).toContain('hello12'), { timeout: 2000 });
+    expect(parsed()).not.toContain('hello1');
+
+    // 挿入など: すぐ変換する
+    act(() => result.current.setText('hello123'));
+    expect(parsed()).toContain('hello123');
+  });
+
+  it('空のノートは、エラーにしてプレビューを空にする', async () => {
+    OpenNote.mockImplementation(() => Promise.resolve(''));
+    const { result } = renderHook(() => useEditorDocument(base()));
+    await waitFor(() => expect(result.current.parseStatus).toMatchObject({ status: 'error', errorLine: 1 }));
+    expect(result.current.loadingRef.current).toBe(false);
+    expect(result.current.html).toBe('');
+    expect(ParseNote).not.toHaveBeenCalled();
+  });
+
+  it('読めなかったら、前の本文を出したままにせず空にする', async () => {
+    const p = base();
+    const { result, rerender } = renderHook((props) => useEditorDocument(props), { initialProps: p });
+    await waitFor(() => expect(result.current.text).toBe('hello'));
+
+    OpenNote.mockImplementation(() => Promise.reject('NG'));
+    p.idRef.current = 'n2';
+    rerender({ ...p, id: 'n2' });
+    await waitFor(() => expect(p.evt.showErrorMessage).toHaveBeenCalledWith('NG'));
+    expect(result.current.text).toBe('');
+  });
+
+  it('同じ id でも restoredAt が変わったら読み直す', async () => {
+    const p = base();
+    const { result, rerender } = renderHook((props) => useEditorDocument(props), { initialProps: p });
+    await waitFor(() => expect(result.current.text).toBe('hello'));
+
+    OpenNote.mockImplementation(() => Promise.resolve('restored'));
+    rerender({ ...p, restoredAt: 1 });
+    await waitFor(() => expect(result.current.text).toBe('restored'));
+  });
+
+  it('アセット・レイヤーは、エディタとプレビューを出さない', async () => {
+    const p = base({ mode: 'assets', id: 'a1' });
+    renderHook(() => useEditorDocument(p));
+    expect(p.setEditor).toHaveBeenCalledWith(false);
+    expect(p.setViewer).toHaveBeenCalledWith(false);
+    expect(OpenNote).not.toHaveBeenCalledWith('a1');
+    await act(async () => {});
+  });
+
+  it('プレビューを使う種類を開くと、設定どおりにプレビューの表示を戻す', async () => {
+    const p = base({ editorSettingRef: { current: { showPreview: false } } });
+    renderHook(() => useEditorDocument(p));
+    expect(p.setViewer).toHaveBeenCalledWith(false);
+    await act(async () => {});
+  });
+
+  it('テンプレート（layout）は、種類と相手が揃ったらプレビューを作る', async () => {
+    OpenTemplate.mockImplementation(() => Promise.resolve('<html>{{.}}</html>'));
+    GetTemplate.mockImplementation(() => Promise.resolve({ name: 'レイアウト', type: 'layout', updatedStatus: 0 }));
+    runTemplatePreview.mockImplementation(() => Promise.resolve({ html: '<PREVIEW>', warnings: [] }));
+
+    const { result } = renderHook(() => useEditorDocument(base({ mode: Mode.template, id: 't1' })));
+    await waitFor(() => expect(result.current.html).toBe('<PREVIEW>'));
+    expect(result.current).toMatchObject({ name: 'レイアウト', templateType: 'layout', updated: false });
+    expect(result.current.text).toBe('<html>{{.}}</html>');
+    // layout を編集中なので、相手は content のテンプレートとノート
+    expect(runTemplatePreview).toHaveBeenCalledWith('t1', 'layout', 'pc', 'pn');
+    expect(result.current.parseStatus.status).toBe('success');
+
+    // 入力すると、保存してからプレビューを作り直す
+    runTemplatePreview.mockImplementation(() => Promise.resolve({ html: '<PREVIEW2>', warnings: ['w'] }));
+    act(() => result.current.editText('<html>x</html>'));
+    await waitFor(() => expect(result.current.html).toBe('<PREVIEW2>'), { timeout: 2000 });
+    expect(SaveTemplate).toHaveBeenCalledWith('t1', '<html>x</html>');
+    expect(result.current.parseStatus).toMatchObject({ status: 'warning', warnings: ['w'] });
   });
 });
