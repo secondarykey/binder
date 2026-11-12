@@ -27,7 +27,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | プラグイン（marked拡張）・ルートファイル（README等） | `_docs/skills/binder-plugin-rootfile/SKILL.md` |
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
 | mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
-| 構造の改善の残り（`api/json` への依存の向き・エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
+| 構造の改善の残り（エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
 | 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `_docs/publish-design.md` |
 | 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `_docs/site-i18n.md` |
@@ -116,6 +116,8 @@ api/ — Go APIレイヤー（App構造体をWails v3 Serviceとしてバイン�
     ↓
 db/  — CSVベースのSQLデータベース（csvq-driver）、DAO
 fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O、コミット管理
+    ↓（db と fs は並び。互いを import しない）
+entity/ — バインダーの中身を表す型と定数（Note・Diagram・Asset 等）。全層から使い、何も import しない
 ```
 
 ### 主要な型
@@ -231,7 +233,8 @@ cd _cmd/binder && wails3 generate bindings -f '' -clean=true
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり
 - コミットメッセージはConventional Commits形式（`fix:`, `feat:`, `docs:`）。末尾に「Glory to mankind.」を付ける
-- `api/json/`パッケージはフロントへ返すモデル型で、`db/model/`（テーブルの行）とは別。名前は api 配下だが、実際は `db`・`db/model`・`fs`・`setup`・ルートパッケージからも import する全層共通の型（`db/model` の `To()` / `ConvertXxx()` が相互に変換する。`ErrorPageAlias` や `TemplateType` などの定数もここ）。`api/json` 自身は他の binder パッケージを import しない
+- バインダーの中身を表す型と定数は `entity/`（`binder/entity`）に置く: `Note` / `Diagram` / `Asset` / `Layer` / `Template` / `Structure`、公開の状態（`Status`）、テンプレートの種類（`TemplateType`）、404 ページの alias（`ErrorPageAlias`）。全層から使う型なので、`entity` 自身は他の binder パッケージを import しない。`db/model/`（テーブルの行）とは別で、`db/model` の `To()` / `ConvertXxx()` が相互に変換する
+- `api/json/`パッケージは画面との受け渡しの型（取り込みの結果・履歴・ツリー・設定など）。`entity` の型は同じ名前のエイリアスで見せている（`json.Note` = `entity.Note`）ので、`api` とルートパッケージは `json.Note` と書いてよい。**`db`・`db/model`・`fs`・`setup` は `api/json` を import しない**（`binder/entity` を直接使う。下の層が api 配下に依存しないため）
 - DAOファイルは`_dao.go`サフィックスを使用（自動生成、手動編集不可）
 - `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
 - セマンティックバージョン操作は`internal.Version`を使用（直接文字列比較は不可）

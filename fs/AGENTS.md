@@ -3,7 +3,7 @@
 go-gitリポジトリのラッパー。バインダー内の全コンテンツ変更はここを経由し、gitコミットされる。
 `billy.Filesystem` 抽象により OSファイルシステム（osfs）とインメモリ（memfs）の両方をサポートする（テストは `NewMemory()` を使用）。
 
-import してよい binder パッケージは `log` と `api/json` だけ。`db` と `settings` は import しない（層の図では `db` と並び。
+import してよい binder パッケージは `log` と `entity` だけ（`api/json` も import しない）。`db` と `settings` は import しない（層の図では `db` と並び。
 `go list -f '{{join .Imports "
 "}}' ./fs | grep ^binder` で確かめられる）。必要なものは使う側から渡す（下の「コミットと署名」と `db.go`）。
 

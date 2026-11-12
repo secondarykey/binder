@@ -18,6 +18,7 @@
 | 閉じて開き直す操作（`api.App.runClosed`）と、それを通る API のテスト（`api/closed_test.go`） | `ac47ddff` |
 | リモートからの取り込みと、取り込み元のバージョンの確認・その場での移行のテスト（`repository_merge_test.go`・`api/closed_test.go`） | `bfbc4994` |
 | `fs` から `db` と `settings` への依存を外す（CSV のファイル名は fs が持つ・署名の既定値は `fs.SetDefaultUser` で渡す） | `112ef29e` |
+| バインダーの中身の型を `binder/entity` へ移し、`db/model`・`db`・`fs`・`setup` の `api/json` への依存を外す | `63252a20` |
 
 ## 先にやること: 実機での確認
 
@@ -51,62 +52,44 @@ Lite / ライセンス:
 
 ## 残っている作業
 
-手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。A・D・E は独立しているので、どれからでもよい（B と C は済み）。
+手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。D と E は独立しているので、どれからでもよい（A・B・C は済み）。
 
-### A. 下の層が `api/json` に依存している
+### A. 下の層が `api/json` に依存している → 済み
 
-**いまの状態**: `db/model`・`db`・`fs`・`setup` とルートパッケージが `binder/api/json` を import している。
-AGENTS.md の層の図（api → ルート → db / fs）と逆向き。
+`db/model`・`db`・`fs`・`setup` は `api/json` を import しなくなった（テスト以外。残るのはルートと `api` 配下）。
 
 ```bash
-# 誰が import しているか
+# 誰が import しているか（ルートの *.go だけが出る）
 grep -rln '"binder/api/json"' --include=*.go . | grep -v _test | grep -v '^./api/'
 ```
 
-| パッケージ | ファイル数（テスト以外） |
-|---|---|
-| ルート（`binder`） | 18 |
-| `fs` | 8 |
-| `db/model` | 6 |
-| `db` | 3 |
-| `setup` | 1 |
+どうしたか:
 
-下の層が使っているのは、API の入出力というよりドメインの型と定数:
+- 新しいパッケージ `binder/entity`（`entity/`）へ、`Note` / `Diagram` / `Asset` / `Layer` / `Template` / `Structure`、
+  `Status` と定数、`TemplateType` と定数、`ErrorPageAlias` / `IsErrorPageAlias` を移した。`entity` は他の binder パッケージを
+  import しない
+- `api/json/entity.go` に同じ名前の**型エイリアス**と定数を置いた。`api` とルートは今までどおり `json.Note` と書ける。
+  JSON のフィールド名は変えていない
+- `db/model`・`db`・`fs`・`setup` は `entity` を直接使うように書き換えた
 
-- 型: `Note` / `Asset` / `Diagram` / `Template` / `Layer` / `Structure`
-- 状態: `Status`（`LatestStatus` / `PrivateStatus` / `UpdatedStatus` / `NothingStatus` / `ErrorStatus`）
-- テンプレートの種類: `TemplateType`（`LayoutTemplateType` / `ContentTemplateType` / `DiagramTemplateType`）
-- 404 ページ: `ErrorPageAlias` / `IsErrorPageAlias`
+決めたこと・分かったこと:
 
-`api/json` 自身は他の binder パッケージを import しないので、循環は起きていない。
-実害は「名前と置き場所が中身と合っていない」ことと、`db/model` が API 層の型を知っていること
-（`db/model/*.go` の `To()` / `ConvertXxx()` が `json.Xxx` と相互に変換する）。
-
-**進め方の案**（影響が全パッケージに及ぶので、一度にやらない）:
-
-1. ドメインの型と定数の置き場所を決める。候補は新しいパッケージ（たとえば `binder/entity`）。
-   `api/json` には API 専用の型（`MergeResult` / `BranchResult` / `HistoryPage` / `ParseResult` など）だけを残す
-2. 新しいパッケージへ型を移し、`api/json` には**型エイリアス**（`type Note = entity.Note`）と定数の再エクスポートを置く。
-   これで import を変えなくても全部がビルドできる
-3. パッケージごとに import を新しい方へ書き換える（`db/model` → `db` → `fs` → `setup` → ルートの順）。
-   1 パッケージずつコミットし、そのつど `go test ./...`
-4. 下の層からの `api/json` の import が無くなったら、エイリアスのうち不要なものを消す
-
-**注意**:
-
-- Wails のバインディングは Go のパッケージパスからモデルの置き場所を決める。型を移すと
-  フロントの `bindings/binder/api/json/models.js` の中身や場所が変わりうる。
-  フロントのソースは `bindings/binder/api/json` を直接 import していない（2026-11-12 時点で 0 件）ので
-  影響は小さいはずだが、移したあと生成し直してビルドとテストで確かめる
-  （型エイリアスがバインディングでどう扱われるかは未確認）
-- JSON のフィールド名（`json:"..."` タグ）は変えない。画面との受け渡しがそのまま壊れる
-- 済んだら AGENTS.md の「コーディング規約」にある `api/json` の説明を直す
-
-**終わりの目安**: 上の grep が、ルートと `api` 配下以外で 0 件になる。
+- **ルートは書き換えていない**。ルートは `json.Leaf` / `json.Tree` / `json.Config` / `json.UserInfo` / `json.PublishRef` など
+  画面向けの型も作って返すので、`api/json` の import は残る。`entity.Note` と `json.Leaf` を 1 つのファイルに混ぜるより、
+  「api とルートは `json.Xxx`、下の層は `entity.Xxx`」と層で分けた方が読みやすいと判断した。
+  ルートの `api/json` への依存（層の図と逆向き）自体は残っている。無くすなら、ルートが返す画面向けの型
+  （`Tree` / `Leaf` / `Config` など）の置き場所から考え直すことになる
+- **エイリアスは消さない**（当初の案の 4）。`api` とルートが使っている
+- **Wails のバインディングは型エイリアスを扱える**。生成すると実体は `bindings/binder/entity/models.js` に出て、
+  `bindings/binder/api/json/models.js` は `export const Note = entity$0.Note;` のように同じ名前で出し直す。
+  `app.js` の関数の数（203）は変わらない。フロントのソースはどちらも直接 import していない。
+  生成し直したうえで、フロントのテスト（102 ファイル 490 件）と `vite build` が通ることを確かめた
+- テストのファイルには `api/json` の import が残っているものがある（`setup/initialize_test.go` の `json.Leaf`）。
+  ツリーを見るためで、問題ない
 
 ### B. `fs` が `db` と `settings` に依存している → 済み
 
-`fs` が import する binder パッケージは `binder/log` と `binder/api/json` だけになった（`api/json` は A の範囲）。
+`fs` が import する binder パッケージは `binder/log` と `binder/entity` だけになった（`api/json` は A で `entity` に替わった）。
 
 ```bash
 go list -f '{{join .Imports "
@@ -120,7 +103,8 @@ go list -f '{{join .Imports "
   `FileSystem` のメソッドへ書き換えることになる。fs はもともとバインダーの中のファイルの置き場所を決めている
   （`notes/` や `db/`）ので、CSV のファイル名もその一部として持たせた。db 側（`db.Tables()`）と同じ名前を
   2 か所に書くことになるので、揃っていることをルートの `table_files_test.go` で確かめている。
-  A でドメイン用のパッケージを作るなら、テーブル名の定数をそこへ置いて 1 か所にまとめられる
+  テーブル名の定数を `binder/entity` へ置けば 1 か所にまとめられるが、DAO の生成（`_cmd/gen`）が `db.XxxTableName` を
+  出しているので、そちらも変えることになる（やっていない）
 - `settings` の方: バインダーごとの署名が無いときの名前とメールを取る関数を `fs.SetDefaultUser` で渡す。
   渡しているのは `setup/signature.go` の `init`（ルートではなく setup にしたのは、バインダーを作る `setup.Install` も
   ユーザ署名で記録するため。ルートは setup を import するので、どちらの経路でも記録の前に設定される）。

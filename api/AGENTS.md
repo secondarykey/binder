@@ -27,7 +27,7 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 }
 ```
 
-- 入出力のモデル型は `api/json/` を使う（`db/model` を直接公開しない）
+- 入出力のモデル型は `api/json/` を使う（`db/model` を直接公開しない）。ノートなどバインダーの中身の型は実体が `binder/entity` にあり、`api/json` がエイリアスで見せている（`json.Note`）。画面との受け渡しだけの型を足すときは `api/json` に、下の層（`db`・`fs`・`setup`）でも使う型を足すときは `entity` に置いてエイリアスを足す
 - **メソッドを追加・変更したらフロントエンドバインディングを再生成する**（`cd _cmd/binder && wails3 task common:generate:bindings`）
 - バインダー未オープンで呼ばれ得るメソッドは `a.current == nil` を確認する（例: `SearchBinder`）
 

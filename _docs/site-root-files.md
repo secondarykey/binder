@@ -181,7 +181,7 @@ Go 側のテストは `fs/alias_test.go` と `asset_root_test.go`。
 ### 表し方: ノートの alias `/404`
 
 フェーズ1と同じ「`/` はサイトのルート」の規則をノートにも当てる。**alias が `/404` のノートは `docs/404.html` に出す。**
-定義は `api/json/note.go` の `ErrorPageAlias` / `IsErrorPageAlias` / `Note.IsErrorPage`（fs・db・binder のどこからも読めるよう json に置く）。
+定義は `entity/note.go` の `ErrorPageAlias` / `IsErrorPageAlias` / `Note.IsErrorPage`（fs・db・binder のどこからも読めるよう `binder/entity` に置く。`api/json` からも同じ名前で使える）。
 
 - ノートで許すルートの alias は `/404` だけ。他の名前を許しても GitHub Pages では意味が無く、URL の基準の扱いが増えるだけのため
 - 本文は Markdown で書け、layout / content テンプレートも普通のノートと同じように選べる
