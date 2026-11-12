@@ -21,12 +21,15 @@
 | バインダーの中身の型を `binder/entity` へ移し、`db/model`・`db`・`fs`・`setup` の `api/json` への依存を外す | `63252a20` |
 | gofmt の掛かっていなかった 12 ファイルの整形。Vite / Vitest の設定の警告（`__dirname`・無視されていた `esbuild.jsx`） | `6527e7b6` `ae1ff372` |
 | ルート・`_cmd`・`_cmd/gen` の `go` ディレクティブを 1.26.0 に揃える。`log/` の自前の `multiHandler` を `slog.NewMultiHandler` に置き換える | `cca490ad` |
+| エディタの `Component.jsx` からダウンロード・プレビューの生成・公開・テンプレートのプレビュー対象を切り出す。本文への挿入を 1 つにまとめる。`Mode` を `src/mode.js` に分ける（2210 行 → 1798 行） | `a7335500` |
 
 ## 先にやること: 実機での確認
 
-上の変更は、テスト（Go 全パス・フロント 102 ファイル 490 件）とビルドでしか確かめていない。
-**アプリを起動して画面を触る確認はしていない**。残りの作業に入る前に、次を一度動かしておく。
-ここで問題が出たら、残りの作業より先に直す。
+上の変更は、テストとビルドでしか確かめていない。
+**アプリを起動して画面を触る確認はしていない**ものを、ここに並べる。問題が出たら、残りの作業より先に直す。
+
+チェックの入っているものは 2026-11-12 に確かめた。入っていないのは、「閉じて開き直す操作」（取り込みなど。
+手間が掛かるので後回しにした。D とは触る場所が重ならない）と、そのあとに行った D の切り出し（`a7335500`）の分。
 
 Lite / ライセンス:
 
@@ -52,9 +55,21 @@ Lite / ライセンス:
 - [x] テンプレート編集時の、プレビュー対象の選択と、開き直したときの前回の選択の復元
 - [x] プレビュー側の「その他」メニュー（別ウィンドウ・公開・ブラウザで開く・非公開）
 
+エディタ（D の切り出し `a7335500` のあと。テストは 105 ファイル 515 件。上と同じところをもう一度触ることになる）:
+
+- [ ] ノート・図・テンプレート（layout / content / diagram）を開き、プレビューが出る。入力してしばらくするとプレビューが変わる
+- [ ] ノートからノート・図から図へ切り替えても点滅しない。切り替えたあとカーソルとスクロールが先頭に戻る
+- [ ] 空のノート・書式の誤った図で、ステータスバーがエラーになり、エラー行が赤くなる
+- [ ] 本文への挿入: スニペット・ID 挿入・囲み・書式ボタン・オートコンプリート（`{{` と ID の `"`）・
+      検索の置換と全置換・ツリーからの挿入（アセットのドロップ）。入れたあと Ctrl+Z で戻せる
+- [ ] ダウンロード（SVG / HTML・そのまま・展開済み・zip）
+- [ ] 公開（参照先を一緒に公開するダイアログが出る場合も）・非公開（確認ダイアログ）・ブラウザで開く
+- [ ] テンプレートを編集するとき、プレビューの相手（ノート・もう一方のテンプレート・図）を選び直せ、開き直すと前の選択に戻る
+- [ ] 別ウィンドウのプレビューが、開いた直後と編集のたびに更新される
+
 ## 残っている作業
 
-手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。残っているのは D だけ（A・B・C・E は済み。E の `__tests__` の平置きは見送り）。
+手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。残っているのは D の一部だけ（A・B・C・E は済み。E の `__tests__` の平置きは見送り）。
 
 ### A. 下の層が `api/json` に依存している → 済み
 
@@ -157,42 +172,58 @@ grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
 
 ### D. エディタ本体（`Component.jsx`）の残り
 
-**いまの状態**: 2119 行。`useState` が 53、`useRef` が 17、`useEffect` が 27 ある。
-残っているのは、開く・変換してプレビューする・保存する・公開する、の流れ。
+**いまの状態**: 1798 行。`useState` が 44、`useRef` が 17、`useEffect` が 26 ある（`a7335500` のあと）。
 構成は `_cmd/binder/frontend/AGENTS.md` の「components/editor/」を参照。
 
-**なぜ残したか**: `text` / `parseStatus` / `html` と、`loadingRef` / `fileOpeningRef` / `isEditingRef` /
-`parseTimerRef` / `diagramInitializedRef` などの ref が、複数の `useEffect` をまたいで順序に依存している
-（非同期ロードの競合対策・入力中のデバウンス・開いた直後のカーソル位置など）。
-テストは「描画できる」と「部品につながっている」だけなので、**動かして確かめずに分けると壊す**。
+```bash
+cd _cmd/binder/frontend/src/components/editor
+wc -l Component.jsx; grep -c '= useState(' Component.jsx; grep -c '= useRef(' Component.jsx; grep -c 'useEffect(() =>' Component.jsx
+```
 
-**分けるなら、切りやすい順**:
+**切り出したもの**（当初の 1〜5 のうち、状態の持ち主を変えずに出せるところまで）:
 
-1. **ダウンロード**（`handleDownload` / `handleDownloadRaw` / `handleDownloadExpanded` / `handleDownloadZip`）。
-   読むのは `mode` / `id` / `name` / `text` / `html` だけで、状態を書かない。`useEditorDownloads` に出せる
-2. **公開**（`handlePublish` / `doUnpublish` / `handleOpenInBrowser` と `unpublishConfirm` の状態）。
-   `createMarked` を使うので、3 のあとの方が切りやすい
-3. **プレビューの生成**（`parseText` / `createMarked` / `viewHTML` / `viewDiagram` /
-   `viewDiagramTemplatePreview`）。`setParseStatus` / `setHTML` と `#mermaidViewer` の DOM を直接触る。
-   フックにして `{ html, parseStatus, parseText }` を返す形が素直だが、4 と絡む
-4. **開いたときの初期処理**（`useEffect(..., [id, restoredAt])` の約 220 行。種類ごとの分岐）。
-   種類ごとの関数に分けるだけでも読みやすくなる。状態のセッターを 15 個ほど使うので、
-   フックに出すなら 3 と一緒に「読み込みとプレビュー」としてまとめて出す
-5. **テキストへの挿入**。`textarea.focus()` → `setSelectionRange` → `document.execCommand('insertText', ...)` →
-   次フレームで `setText` と `saveText`、という同じ形が 8 か所ほどある
-   （`handleInsertSnippet` / `handleInsert` / `handleReplace` / `handleAutocompleteSelect` / `InsertText` のイベントなど）。
-   `insertAtSelection(textarea, text)` のような 1 つの関数にまとめると、行数が減り、挙動も揃う。
-   **これは 1〜4 と独立にできる**
+| 当初の番号 | どうしたか |
+|---|---|
+| 1. ダウンロード | `useEditorDownloads.js`。値を受けて関数を返すだけ |
+| 2. 公開 | `useEditorPublish.jsx`。公開・非公開・ブラウザで開くと、そのダイアログ（`dialogs` で返し、本体が描画に置く） |
+| 3. プレビューの生成 | `useEditorPreview.js`。`parseText` / `createMarked` / 図・テンプレートの描画。`html` と `parseStatus` はここが持つ |
+| 4. 開いたときの初期処理 | **フックには出していない**。本体の中で種類ごとの関数（`openNote` / `openDiagram` / `openTemplate` / `openWithoutEditor`）に分けただけ。テンプレートのプレビューの相手（一覧と選択）は `useTemplatePreviewTargets.js` に出した |
+| 5. テキストへの挿入 | 本体の `insertIntoEditor(str, range)` の 1 つにまとめた（スニペット・書式・置換・全置換・オートコンプリート・`InsertText` のイベント） |
 
-**そのほか、エディタまわりで気付いたこと**:
+決めたこと・分かったこと:
 
+- **`useEffect` は 1 つも動かしていない**（`useEditorPreview` の中の `htmlRef` を合わせる 1 行だけが例外）。
+  「いつプレビューを作るか」（開いた直後は即時・入力中はデバウンス・読み込み中は作らない）は本体の
+  `useEffect([text, openSeq])` のまま。切り出したのは「呼ばれたら 1 回作る」関数だけなので、
+  `loadingRef` / `fileOpeningRef` / `isEditingRef` / `parseTimerRef` の順序の依存には触れていない
+- **`insertIntoEditor` は、開いている途中（`loadingRef` が立っている間）は入れない**。これだけは挙動を変えた。
+  ノートを切り替えた直後は、読み終えるまで前の本文を出したままにしている。その間にツールバーなどから挿入すると、
+  前の本文に入れた内容が**新しく開く側の ID で保存される**（打鍵は `handleChangeText` が同じ理由で止めていたが、
+  挿入は止めていなかった）。保存先も、次のフレームではなく入れた時点の mode / id にしている。
+  読み込みに失敗したまま（`loadingRef` が立ったまま）だと挿入もできないが、打鍵と同じ扱い
+- 貼り付け（`handlePaste`）・表の編集（`handleTableClose`）・Enter / Tab / Ctrl+B などのキー操作は、
+  `insertIntoEditor` に寄せていない。貼り付けとキー操作は入力中の扱い（`isEditingRef` を立ててデバウンス）で、
+  表の編集は `textarea.value` を直接書き換えてから 500ms 待つ（ダイアログが閉じるのを待っていると思われる。
+  元に戻す（Ctrl+Z）の対象にならない）。揃えるなら実機で確かめながら
+- `HTMLFrame` に渡す props の繰り返しは、`frameProps` にまとめた
+- `Mode` は `src/mode.js` に分けた（`app/App.jsx` からも同じものを export している）。import していたのは
+  `Component.jsx` / `useEditorCandidates.js` / `editor-save.js` の 3 ファイルだった。
+  **`Component.jsx` は `copyClipboard` のためにまだ App.jsx を import している**ので、循環（App → Content → Component → App）は
+  残っている。`copyClipboard` は 5 ファイルが使い、8 つのテストが `vi.mock('../app/App', ...)` で差し替えているので、
+  動かすならテストも一緒に書き換える
+
+**残っているもの**:
+
+- **読み込みとプレビューを 1 つのフックにまとめる**（当初の 3 + 4）。`text` / `name` / `updated` / `isPrivate` / `alias` /
+  `styleTemplateId` / `templateType` / `openSeq` と、`loadingRef` / `fileOpeningRef` / `openedModeRef` /
+  `diagramInitializedRef`、それに `useEffect([id, restoredAt])` と `useEffect([text, openSeq])` を
+  「開いているもの」として本体から出す。ここまでやると本体は画面の組み立てと入力の処理だけになるが、
+  `isEditingRef` をキー操作のハンドラと共有しており、`useEffect` の並び順も変わる。
+  **動かして確かめずに分けると壊す**のは変わらないので、上の実機確認を済ませてから、1 つ動かすたびに画面で確かめる
 - `EditorComponent.test.jsx` の `vi.mock('../../../bindings/binder/api/app', ...)` はパスが 1 段多く、
   効いていない（正しくは `'../../bindings/...'`）。いまは実物のバインディングが `Call.ByID` のモック経由で
-  動いている。直すと、モックに無い関数（`GetEditor` など）を足す必要が出る
-- `Mode` は `app/App.jsx` にあり、`Component.jsx` / `useEditorCandidates.js` / `editor-save.js` など 9 ファイルが
-  App.jsx を import している（App → Content → Component → App の循環）。実行時は問題になっていないが、
-  `Mode` を小さなモジュール（たとえば `src/mode.js`）に出すと循環が切れ、部品のテストも軽くなる
-- `HTMLFrame` に渡す props が、ノート用とテンプレート用の 2 か所でほぼ同じ内容を繰り返している
+  動いている。直すと、モックに無い関数（`GetEditor` など）を足す必要が出る。
+  新しく足した `EditorHooks.test.jsx`（切り出したフックのテスト）は正しいパスで差し替えている
 
 ### E. 小さなもの
 
