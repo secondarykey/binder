@@ -17,6 +17,7 @@
 | AGENTS.md の記述を実体に合わせる | `d689c1e7` |
 | 閉じて開き直す操作（`api.App.runClosed`）と、それを通る API のテスト（`api/closed_test.go`） | `ac47ddff` |
 | リモートからの取り込みと、取り込み元のバージョンの確認・その場での移行のテスト（`repository_merge_test.go`・`api/closed_test.go`） | `bfbc4994` |
+| `fs` から `db` と `settings` への依存を外す（CSV のファイル名は fs が持つ・署名の既定値は `fs.SetDefaultUser` で渡す） | `112ef29e` |
 
 ## 先にやること: 実機での確認
 
@@ -50,7 +51,7 @@ Lite / ライセンス:
 
 ## 残っている作業
 
-手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。A と B は独立しているので、どれからでもよい。
+手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。A・D・E は独立しているので、どれからでもよい（B と C は済み）。
 
 ### A. 下の層が `api/json` に依存している
 
@@ -103,34 +104,28 @@ grep -rln '"binder/api/json"' --include=*.go . | grep -v _test | grep -v '^./api
 
 **終わりの目安**: 上の grep が、ルートと `api` 配下以外で 0 件になる。
 
-### B. `fs` が `db` と `settings` に依存している
+### B. `fs` が `db` と `settings` に依存している → 済み
 
-**いまの状態**: 層の図では `fs` と `db` は並びの関係だが、`fs` が両方を import している。
-
-- `fs/db.go` → `binder/db`: テーブル名の定数（`db.NoteTableName` など 6 つ）と `db.Tables()` を、
-  DB の CSV ファイルを git に載せるパスを作るために使っている。使っているのは**名前だけ**
-- `fs/git.go`（816 行目・832 行目付近）→ `binder/settings`: コミットの署名に使う名前とメールを
-  `settings.Get().Git` から読んでいる
+`fs` が import する binder パッケージは `binder/log` と `binder/api/json` だけになった（`api/json` は A の範囲）。
 
 ```bash
-grep -n '"binder/db"\|"binder/settings"' fs/*.go
-grep -n 'db\.\|settings\.' fs/db.go fs/git.go | grep -v _test
+go list -f '{{join .Imports "
+"}}' ./fs | grep ^binder
 ```
 
-**進め方の案**:
+どう外したか（当初の案と違うところがある）:
 
-- `db` の方: テーブル名の一覧を `fs` に渡す形にする。`fs.Load` / `fs.New` の引数か、
-  `FileSystem` のフィールドとして `Binder`（ルート）が設定する。`fs` はテーブルの意味を知らず、
-  「git に載せる DB ファイルの名前の一覧」として持つ。A でドメイン用のパッケージを作るなら、
-  テーブル名の定数をそこへ置く手もある
-- `settings` の方: 署名の既定値（名前・メール）を取る関数を `fs` に注入する。
-  いまも `fs.UserInfo` で渡す経路があるので、設定を読むのは呼び出し側（ルート）に寄せる
-
-**注意**: `fs` のテストはインメモリのファイルシステム（billy）で動く。引数を足すとテストの生成箇所が
-全部変わるので、既定値つきのオプション（未設定なら今と同じ動き）にすると変更が小さい。
-
-**終わりの目安**: `go list -f '{{join .Imports "\n"}}' ./fs | grep ^binder` が `binder/log` と
-（A が済んでいなければ）`binder/api/json` だけになる。
+- `db` の方: テーブル名の一覧を渡す形にはせず、**CSV のファイル名を `fs/db.go` が定数で持つ**ようにした。
+  `fs.NoteTableFile()` などはパッケージの関数で 50 か所ほどから呼ばれており、渡す形にすると全部を
+  `FileSystem` のメソッドへ書き換えることになる。fs はもともとバインダーの中のファイルの置き場所を決めている
+  （`notes/` や `db/`）ので、CSV のファイル名もその一部として持たせた。db 側（`db.Tables()`）と同じ名前を
+  2 か所に書くことになるので、揃っていることをルートの `table_files_test.go` で確かめている。
+  A でドメイン用のパッケージを作るなら、テーブル名の定数をそこへ置いて 1 か所にまとめられる
+- `settings` の方: バインダーごとの署名が無いときの名前とメールを取る関数を `fs.SetDefaultUser` で渡す。
+  渡しているのは `setup/signature.go` の `init`（ルートではなく setup にしたのは、バインダーを作る `setup.Install` も
+  ユーザ署名で記録するため。ルートは setup を import するので、どちらの経路でも記録の前に設定される）。
+  **setup を import せずに fs だけで記録するプログラムを書くと、署名の名前とメールが空になる**
+  （いまは無い。`_cmd` で fs を使うのは setup も使う `_cmd/binder` だけ）
 
 ### C. `api` に残っている `fs` の直接利用
 

@@ -41,3 +41,4 @@ csvq（CSVファイルに対するSQL）を使用。binderリポジトリ内の`
 - `_cmd/gen/main.go` が `db/model/*.go` の構造体タグ（`db:"col_name"`, `db:"id:key"`, `db:"col:insert"`）を読んで `db/*_dao.go` を生成
 - モデルを変更したらリポジトリルートから `go run ./_cmd/gen/main.go` で再生成すること
 - DAOファイルは `_dao.go` サフィックス（自動生成、手動編集不可）
+- テーブルを足したら、`fs/db.go` のファイル名の定数と `allTableFiles` にも足す（fs は db を import しないので、git に載せる CSV のファイル名を自分で持っている。足し忘れはルートの `table_files_test.go` が落ちて分かる）
