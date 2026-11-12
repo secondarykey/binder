@@ -15,6 +15,7 @@
 | ルートの残骸（`fonts.go` / `editor.go`）の片付け。同梱の marked / mermaid を `_cmd/shared/frontend/vendor/` の 1 組にまとめる | `2c547cd6` `54420f66` |
 | エディタの `Component.jsx` から部品・フック・関数を切り出す（3230 行 → 2119 行） | `3b7d659d` |
 | AGENTS.md の記述を実体に合わせる | `d689c1e7` |
+| 閉じて開き直す操作（`api.App.runClosed`）と、それを通る API のテスト（`api/closed_test.go`） | `ac47ddff` |
 
 ## 先にやること: 実機での確認
 
@@ -28,7 +29,8 @@ Lite / ライセンス:
 - [ ] Lite が起動し、テーマ・言語・プレビューが今までどおり動く（`~/.binder` の `_default/` が更新される）
 - [ ] macOS / Linux でビルドできる（アセットのパスを `setup/defaults/_assets/` に変えた）
 
-閉じて開き直す操作（`api.App.runClosed`。ここにはテストが無い）:
+閉じて開き直す操作（`api.App.runClosed`。`api/closed_test.go` でローカルブランチの範囲はテストした。
+リモートからの取り込みと、画面の表示・開き直したあとの画面の更新は実機でしか確かめられない）:
 
 - [ ] 取り込み（他ブランチから / リモートから）: 早送り・衝突なし・衝突ありの 3 通り
 - [ ] 衝突の解決を選んで適用する。取り込みログのノートができる
@@ -147,12 +149,14 @@ grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
 
 **やる価値があるもの**:
 
-- **`runClosed` のテスト**（一番やる価値がある）。「閉じる → 操作 → 開き直す」は取り込み・復元・ブランチ・
-  履歴の整理のすべてが通るのに、テストが無い。`api` のテストは `error_test.go` と `message_test.go` だけ。
-  `test.CreateBinder` でバインダーを作り、`App` に開かせて `SwitchBranch` / `MergeFromLocal` などを呼び、
-  返る `Status` と開き直したあとの状態を確かめる。`App.LoadBinder` は HTTP サーバのアドレスや設定の保存に
-  触るので、テストで何を差し替える必要があるかを先に調べる（`settings` の保存先は `BINDER_LOG_DIR` のような
-  切り替えがあるかを確認する）
+- ~~`runClosed` のテスト~~ → 済み（`api/closed_test.go`）。成功・操作の失敗（`error`）・開き直しの失敗（`reload_error`）、
+  「開いている」印が操作の間も残ること、ブランチの作成・切替、ローカルブランチからの取り込み（早送り・衝突なし・
+  衝突ありと解決の適用・取り込みログのノート）、復元、履歴の整理、不要データの削除、未記録の変更があるときに
+  断ること、開いていないバインダー向けの `*ByPath` を見ている。
+  テストで差し替えたのは設定の保存先だけ: `LoadBinder` が履歴を `setting.json` へ保存するので、`TestMain` で
+  `USERPROFILE`（Windows 以外は `HOME`）を一時ディレクトリへ向けてから `settings.EnsureDir()` を呼ぶ
+  （`settings.Home()` が読む環境変数。`settings` のテストと同じ切り替え方）。HTTP サーバは遅延起動なので触らない。
+  見ていないもの: `MergeFromRemote`（下の項目）、`MergeVersionNewer` の経路、`WindowCloser` の呼び出し
 - **リモートからの取り込み・取り込み元の移行のテスト**。`repository_test.go` はローカルブランチからの
   取り込み（早送り・衝突）だけを見ている。`Repository.Merge` のリモートの経路と
   `checkMergeSourceVersion` / `migrateSourceInPlace`（古いバージョンをその場で移行）は、コードを移しただけで

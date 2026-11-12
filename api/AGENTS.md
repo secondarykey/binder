@@ -42,6 +42,8 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
   - `runClosed(op)` — 開いているバインダーを閉じ、`binder.OpenRepository` で開いて `op` を実行し、開き直す。結果は `closedResult`（`success` / `error`＝操作が失敗・開き直せた / `reload_error`＝開き直せなかった）。取り込み・復元・ブランチ切替・履歴の整理はすべてこれを通す
   - 結果を `json.MergeResult` / `BranchResult` / `CleanupResult` に詰め替える
   
+  テストは `closed_test.go`。`LoadBinder` が履歴を `setting.json` へ保存するので、`TestMain` で設定の保存先（`USERPROFILE` / `HOME`）を一時ディレクトリへ向けている。`App` にバインダーを開かせるテストを足すときは、この `TestMain` の下（`api` パッケージ内）に置く
+
   バインダーを開いていないときの書き込み（`RestoreToCommitByPath` / `SwitchBranchByPath`）は `binder.LockRepository` で「開いている」印を立てる
 - **note.go / diagram.go / assets.go / layer.go / template.go / structure.go** — エンティティ別 CRUD・コンテンツの読み書き
 - **tree.go** — 各種ツリー取得（Binder/Template/Modified/Unpublished/Published）と `MoveNode`
