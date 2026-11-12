@@ -28,6 +28,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
 | mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
 | 構造の改善の残り（エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
+| フロントエンドの高速化（点滅対策・打鍵時の再描画で済んだもの・決めたこと・残りの候補・測り方） | `_docs/frontend-performance.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
 | 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `_docs/publish-design.md` |
 | 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `_docs/site-i18n.md` |
