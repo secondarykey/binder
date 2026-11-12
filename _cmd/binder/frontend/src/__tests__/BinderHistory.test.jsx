@@ -8,11 +8,11 @@ vi.mock('../../bindings/binder/api/app', () => ({
 vi.mock('../../bindings/main/window', () => ({
   OpenOverallHistoryWindow: vi.fn(),
 }));
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import BinderHistory from '../components/BinderHistory';
 import { GetHistories } from '../../bindings/binder/api/app';
-import { copyClipboard } from '../app/App';
+import { copyClipboard } from '../clipboard';
 
 describe('BinderHistory', () => {
   it('renders without crashing', () => {

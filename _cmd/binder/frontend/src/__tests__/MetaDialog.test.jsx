@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import Event, { EventContext } from '../Event';
 
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import MetaDialog from '../dialogs/components/MetaDialog';
 

@@ -14,7 +14,7 @@ import Mermaid from "./engines/Mermaid.jsx";
 import EditorArea from "./EditorArea.jsx";
 import SearchBar from "./SearchBar.jsx";
 import Autocomplete from "./Autocomplete.jsx";
-import { handleMarkdownEnter, handleMarkdownFormat, handleMarkdownTab, scrollCaretIntoView, linkFromPaste } from "@shared/editor/markdown-keys";
+import { handleMarkdownKeyDown, scrollCaretIntoView, linkFromPaste } from "@shared/editor/markdown-keys";
 import { countChars } from "@shared/editor/char-count";
 import { idInsertText, isInsideTemplate } from "./id-insert";
 import { extractHeadings, findHeadingLine } from "@shared/editor/outline";
@@ -47,7 +47,7 @@ import PreviewToolbar from "./PreviewToolbar.jsx";
 import ParseStatusBar, { ParseDialogs } from "./ParseStatusBar.jsx";
 import '../../assets/Editor.css'
 import { Mode } from "../../mode";
-import { copyClipboard } from "../../app/App.jsx";
+import { copyClipboard } from "../../clipboard";
 
 import FontDialog from "../../dialogs/FontDialog.jsx";
 import TableDialog from "../../dialogs/TableDialog.jsx";
@@ -795,6 +795,15 @@ function Editor(props) {
   const downloads = useEditorDownloads({ mode, id, name, text, html, onError: (err) => evt.showErrorMessage(err) });
 
   /**
+   * 入力の続きとして本文を差し替え、保存する（貼り付けの変換・Enter / Tab / Ctrl+B などのキー操作）。
+   * プレビューはデバウンスして作る。打鍵そのもの（handleChangeText）と違い、未記録の印などは付けない
+   */
+  const applyTyped = (value) => {
+    editText(value);
+    saveText(mode, id, value);
+  };
+
+  /**
    * ペースト処理: Excelなどからのタブ区切りデータをMarkdownテーブルに変換
    * タブ区切りと判定された場合、デフォルトのペースト（画像含む）をキャンセルし
    * Markdownテーブルとして挿入する
@@ -802,6 +811,8 @@ function Editor(props) {
   const handlePaste = (e) => {
     const plainText = e.clipboardData?.getData('text/plain');
     if (!plainText) return;
+    // 開いている途中は変換して入れない（そのままの貼り付けは handleChangeText が止める）
+    if (loadingRef.current) return;
 
     // ノートで文字を選んで URL を貼ったら、選んだ文字をリンクにする
     if (mode === Mode.note) {
@@ -811,8 +822,7 @@ function Editor(props) {
       if (link) {
         e.preventDefault();
         document.execCommand('insertText', false, link);
-        editText(textarea.value);
-        saveText(mode, id, textarea.value);
+        applyTyped(textarea.value);
         return;
       }
     }
@@ -829,8 +839,7 @@ function Editor(props) {
     textarea.setSelectionRange(start, end);
     document.execCommand('insertText', false, insertText);
 
-    editText(textarea.value);
-    saveText(mode, id, textarea.value);
+    applyTyped(textarea.value);
   };
 
   /**
@@ -901,70 +910,9 @@ function Editor(props) {
       return;
     }
 
-    // Ctrl+B / Ctrl+I / Ctrl+K
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
-      const key = e.key.toLowerCase();
-      if (key === 'b' || key === 'i' || key === 'k') {
-        e.preventDefault();
-        const textarea = e.target;
-        const result = handleMarkdownFormat(textarea, key);
-        if (result.handled) {
-          textarea.value = result.value;
-          textarea.selectionStart = result.selectionStart;
-          textarea.selectionEnd = result.selectionEnd;
-          editText(result.value);
-          saveText(mode, id, result.value);
-          requestAnimationFrame(() => {
-            textarea.selectionStart = result.selectionStart;
-            textarea.selectionEnd = result.selectionEnd;
-            scrollCaretIntoView(textarea);
-          });
-        }
-        return;
-      }
-    }
-
-    // Tab / Shift+Tab
-    if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      e.preventDefault();
-      const textarea = e.target;
-      const tabSize = editorSettingRef.current?.tabSize || 4;
-      const result = handleMarkdownTab(textarea, e.shiftKey, tabSize);
-      if (result.handled) {
-        textarea.value = result.value;
-        textarea.selectionStart = result.selectionStart;
-        textarea.selectionEnd = result.selectionEnd;
-        editText(result.value);
-        saveText(mode, id, result.value);
-        requestAnimationFrame(() => {
-          textarea.selectionStart = result.selectionStart;
-          textarea.selectionEnd = result.selectionEnd;
-          scrollCaretIntoView(textarea);
-        });
-      }
-      return;
-    }
-
-    if (e.key !== "Enter") {
-      return;
-    }
-    e.preventDefault();
-
-    const textarea = e.target;
-    const result = handleMarkdownEnter(textarea);
-
-    if (result.handled) {
-      textarea.value = result.value;
-      textarea.selectionStart = result.cursor;
-      textarea.selectionEnd = result.cursor;
-      editText(result.value);
-      saveText(mode, id, result.value);
-      requestAnimationFrame(() => {
-        textarea.selectionStart = result.cursor;
-        textarea.selectionEnd = result.cursor;
-        scrollCaretIntoView(textarea);
-      });
-    }
+    // Enter（リストの続き・インデント）/ Tab / Ctrl+B・I・K は、Lite と同じ共有のハンドラに任せる。
+    // textarea.value を直接書き換えるので、変わった本文をここで state と保存へ反映する
+    handleMarkdownKeyDown(e, composingRef, applyTyped, editorSettingRef.current?.tabSize || 4);
   }
 
   /**

@@ -3,31 +3,8 @@ import { render, fireEvent, act, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useNavigate } from 'react-router';
 import Event, { EventContext } from '../Event';
 
-vi.mock('../../../bindings/binder/api/app', () => ({
-  GetNote: vi.fn(() => Promise.resolve({})),
-  ParseNote: vi.fn(() => Promise.resolve('')),
-  OpenNote: vi.fn(() => Promise.resolve('')),
-  GetDiagram: vi.fn(() => Promise.resolve({})),
-  ParseDiagram: vi.fn(() => Promise.resolve('')),
-  OpenDiagram: vi.fn(() => Promise.resolve('')),
-  SaveContent: vi.fn(() => Promise.resolve()),
-  GetConfig: vi.fn(() => Promise.resolve({})),
-  GetFont: vi.fn(() => Promise.resolve({})),
-  Generate: vi.fn(() => Promise.resolve()),
-  Unpublish: vi.fn(() => Promise.resolve()),
-  Commit: vi.fn(() => Promise.resolve()),
-  GetModifiedIds: vi.fn(() => Promise.resolve([])),
-  EnsureAddress: vi.fn(() => Promise.resolve('')),
-  GetSnippets: vi.fn(() => Promise.resolve({ markdowns: [], diagrams: [], templates: [] })),
-  GetStructure: vi.fn(() => Promise.resolve(null)),
-}));
-vi.mock('../../../bindings/main/window', () => ({
-  OpenHistoryWindow: vi.fn(),
-  OpenPreviewWindow: vi.fn(),
-  OpenSearchWindowWithQuery: vi.fn(),
-}));
-
-// 読み込みの順序を確かめるテスト用に、OpenNote だけ差し替える（ほかは生成されたバインディングのまま）
+// 読み込みの順序を確かめるテスト用に、OpenNote だけ差し替える。
+// ほかは生成されたバインディングのままで、setup.js の @wailsio/runtime のモック（Call.ByID）を通る
 vi.mock('../../bindings/binder/api/app', async (importOriginal) => ({
   ...(await importOriginal()),
   OpenNote: vi.fn(() => Promise.resolve('')),
@@ -129,6 +106,12 @@ describe('EditorComponent', () => {
 
     await act(async () => { pending.b('BBB'); });
     await waitFor(() => expect(editor().value).toBe('BBB'));
+    // キー操作（Tab）は共有のハンドラが本文を書き換え、本体の state まで届く
+    editor().setSelectionRange(0, 0);
+    fireEvent.keyDown(editor(), { key: 'Tab' });
+    expect(editor().value).toBe('    BBB');
+    await act(async () => {});
+    expect(editor().value).toBe('    BBB');
     // 読み終えたら挿入できる
     fireEvent.click(container.querySelector('#editorMenu button[aria-label="bold"]'));
     expect(document.execCommand).toHaveBeenCalledWith('insertText', false, '****');

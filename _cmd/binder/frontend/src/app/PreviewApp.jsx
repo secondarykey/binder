@@ -11,7 +11,7 @@ import { Events, Window, Browser } from '@wailsio/runtime';
 import { GetConfig, GetPreviewScrollbar, IsBinderTrusted } from '../../bindings/binder/api/app';
 
 import { SystemMessage } from '../Message';
-import { copyClipboard } from './App';
+import { copyClipboard } from '../clipboard';
 import { EventContext } from '../Event';
 import { resolveBinderLink } from '../components/editor/binder-link';
 import HTMLFrame from '../components/editor/HTMLFrame';

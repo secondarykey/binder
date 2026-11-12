@@ -7,7 +7,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import {EventContext} from '../Event';
-import { copyClipboard } from '../app/App';
+import { copyClipboard } from '../clipboard';
 import "../language";
 import { useTranslation } from 'react-i18next';
 

@@ -8,7 +8,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
   GetLayer: vi.fn(() => Promise.resolve({})),
   RemoveLayer: vi.fn(() => Promise.resolve()),
 }));
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import LayerMetaDialog from '../dialogs/LayerMetaDialog';
 

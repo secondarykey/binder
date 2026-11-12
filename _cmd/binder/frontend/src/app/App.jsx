@@ -35,26 +35,6 @@ import '../assets/App.css';
 import "../language";
 import { useTranslation } from 'react-i18next'
 
-/**
- * クリップボードのコピー
- * @param {*} val
- */
-export async function copyClipboard(val) {
-
-  var clip = navigator.clipboard;
-  if (clip === undefined) {
-    if (global !== undefined) {
-      clip = global.navigator.clipboard;
-    }
-  }
-
-  if (clip !== undefined) {
-    await clip.writeText(val);
-  } else {
-    console.warn("clip board error")
-  }
-}
-
 var intervalId = undefined;
 var autoSaveIntervalId = undefined;
 // 自動保存ループの世代トークン（非同期セットアップのレース対策）

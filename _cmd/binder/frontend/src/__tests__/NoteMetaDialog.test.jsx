@@ -19,7 +19,7 @@ vi.mock('../../bindings/main/window', () => ({
   SelectFile: vi.fn(() => Promise.resolve('')),
   OpenSearchWindowWithQuery: vi.fn(),
 }));
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import { EditNote, GetConfig, GetHTMLTemplates, GetNote, GetPublishSettings } from '../../bindings/binder/api/app';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';

@@ -12,7 +12,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
 vi.mock('../../bindings/main/window', () => ({
   OpenSearchWindowWithQuery: vi.fn(),
 }));
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import DiagramMetaDialog from '../dialogs/DiagramMetaDialog';
 
