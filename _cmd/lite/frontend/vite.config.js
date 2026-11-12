@@ -2,18 +2,18 @@ import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-const sharedDir = path.resolve(__dirname, '../../shared/frontend')
+const sharedDir = path.resolve(import.meta.dirname, '../../shared/frontend')
 // shared/frontend/licenses.js がルートの LICENSE / THIRD_PARTY_LICENSES を ?raw で読む。
 // Vite は ?raw 付きの ID も allow と照合するので、ファイル単位では許可できずディレクトリで許可する
 // （.env や .git は Vite 既定の deny で引き続き拒否される）。
-const repoRoot = path.resolve(__dirname, '../../..')
+const repoRoot = path.resolve(import.meta.dirname, '../../..')
 
 /**
  * shared/ ディレクトリ内の bare import（react, @mui 等）を
  * 本プロジェクトの node_modules で解決するプラグイン
  */
 function resolveSharedDeps() {
-  const anchor = path.resolve(__dirname, 'src/main.jsx')
+  const anchor = path.resolve(import.meta.dirname, 'src/main.jsx')
   return {
     name: 'resolve-shared-deps',
     async resolveId(source, importer, options) {
