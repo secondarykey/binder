@@ -45,7 +45,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 ## ビルド・開発コマンド
 
 ### 前提条件
-- Go 1.26+（アプリ本体 `_cmd/binder`・`_cmd/lite` の go.mod が 1.26.0。ルートのモジュールと `_cmd`・`_cmd/gen` は 1.25.0。CI が使う版は `.github/variables` の `GO_VERSION`）
+- Go 1.26+（ルート・`_cmd`・`_cmd/gen`・`_cmd/binder`・`_cmd/lite` の go.mod はすべて 1.26.0。CI が使う版は `.github/variables` の `GO_VERSION`）
 - Node.js + npm
 - Wails v3 CLI (`go install github.com/wailsapp/wails/v3/cmd/wails3@latest`)
 - Task (`go install github.com/go-task/task/v3/cmd/task@latest`)

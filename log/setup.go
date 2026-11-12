@@ -1,8 +1,6 @@
 package log
 
 import (
-	"context"
-	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -85,7 +83,7 @@ func Init(opts Options) (io.Closer, error) {
 		sinks = append(sinks, wlog.NewSimpleHandler(os.Stderr, &logLevel))
 	}
 
-	var h slog.Handler = multiHandler(sinks)
+	var h slog.Handler = slog.NewMultiHandler(sinks...)
 	if len(sinks) == 1 {
 		h = sinks[0]
 	}
@@ -159,42 +157,3 @@ func (fileCloser) Close() error {
 type nopCloser struct{}
 
 func (nopCloser) Close() error { return nil }
-
-// multiHandler は同じ Record を複数の出口へ渡す。
-// go.mod が Go 1.26 以上になったら slog.NewMultiHandler に置き換える。
-type multiHandler []slog.Handler
-
-func (m multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	for _, h := range m {
-		if h.Enabled(ctx, level) {
-			return true
-		}
-	}
-	return false
-}
-
-func (m multiHandler) Handle(ctx context.Context, r slog.Record) error {
-	var errs []error
-	for _, h := range m {
-		if h.Enabled(ctx, r.Level) {
-			errs = append(errs, h.Handle(ctx, r.Clone()))
-		}
-	}
-	return errors.Join(errs...)
-}
-
-func (m multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	hs := make(multiHandler, len(m))
-	for i, h := range m {
-		hs[i] = h.WithAttrs(attrs)
-	}
-	return hs
-}
-
-func (m multiHandler) WithGroup(name string) slog.Handler {
-	hs := make(multiHandler, len(m))
-	for i, h := range m {
-		hs[i] = h.WithGroup(name)
-	}
-	return hs
-}

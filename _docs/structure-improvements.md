@@ -20,6 +20,7 @@
 | `fs` から `db` と `settings` への依存を外す（CSV のファイル名は fs が持つ・署名の既定値は `fs.SetDefaultUser` で渡す） | `112ef29e` |
 | バインダーの中身の型を `binder/entity` へ移し、`db/model`・`db`・`fs`・`setup` の `api/json` への依存を外す | `63252a20` |
 | gofmt の掛かっていなかった 12 ファイルの整形。Vite / Vitest の設定の警告（`__dirname`・無視されていた `esbuild.jsx`） | `6527e7b6` `ae1ff372` |
+| ルート・`_cmd`・`_cmd/gen` の `go` ディレクティブを 1.26.0 に揃える。`log/` の自前の `multiHandler` を `slog.NewMultiHandler` に置き換える | （このコミット） |
 
 ## 先にやること: 実機での確認
 
@@ -53,7 +54,7 @@ Lite / ライセンス:
 
 ## 残っている作業
 
-手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。残っているのは D と、E のうち判断が要るもの（A・B・C は済み）。
+手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。残っているのは D だけ（A・B・C・E は済み。E の `__tests__` の平置きは見送り）。
 
 ### A. 下の層が `api/json` に依存している → 済み
 
@@ -195,9 +196,8 @@ grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
 
 ### E. 小さなもの
 
-- **`go` ディレクティブの不揃い**。`_cmd/binder`・`_cmd/lite` は 1.26.0、ルート・`_cmd`・`_cmd/gen` は 1.25.0、
-  CI は `.github/variables` の `GO_VERSION`（1.27）。ルートを 1.26 に上げると、`log/TODO.md` にある
-  `slog.NewMultiHandler` への置き換えも一緒にできる。上げるかどうかは判断が要る（利用者のビルド環境に効く）
+- ~~`go` ディレクティブの不揃い~~ → 済み。5 つの go.mod すべてが 1.26.0（README の前提条件はもともと Go 1.26+）。
+  `log/TODO.md` にあった `slog.NewMultiHandler` への置き換えも行った
 - ~~gofmt が掛かっていないファイル~~ → 済み。`gofmt -l . | grep -v node_modules` は 0 件
 - **`__tests__` の平置き**（約 100 ファイル）。`app` / `dialogs` / `components` の区分と対応していない。
   動かすと相対 import と `vi.mock` のパスが全部変わる。得るものが見た目の整理だけなので、**見送ってよい**

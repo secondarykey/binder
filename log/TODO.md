@@ -16,12 +16,7 @@ wenteasy/log の README「使う側のやり方(自分の log パッケージを
 - aibow は画面のお知らせにも出している。出すなら、setting.json の `StartupOk` で自動オープンを止めているところと合わせて考える
 - 改名した異常終了の記録(`binder_crash_<日時>.log`)は片付けで消さないので、溜まり続ける(まれなので今は許す)
 
-## 3. `multiHandler` を自前で持っている
-
-- `slog.NewMultiHandler` は Go 1.26 から。ルートの go.mod が 1.25 なので `setup.go` に小さく書いた。ルートの go.mod を 1.26 以上にしたら置き換える
-  (`_cmd/binder` と `_cmd/lite` の go.mod は 1.26 だが、`log/` はルートのモジュール)
-
-## 4. wenteasy/log の README のテストの書き方(向こうへ伝える)
+## 3. wenteasy/log の README のテストの書き方(向こうへ伝える)
 
 - README の「テスト」は `runtime.FuncForPC(r.PC)` で位置を確かめるとあるが、引数の無い `log.Trace("t")` などはインライン展開され、
   `FuncForPC` は展開された関数(`binder/log.Trace`)を返す。ハンドラ(`AddSource`・`PackageLevelHandler`)は `runtime.CallersFrames` で引くので、
