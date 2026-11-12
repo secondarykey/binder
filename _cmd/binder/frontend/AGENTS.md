@@ -46,7 +46,7 @@
   - 画面の部品（状態はメニューの開閉だけ。何をするかは本体から受け取る）:
     `EditorToolbar.jsx`（編集側のツールバー）/ `ToolbarMenus.jsx`（アウトライン・スニペット・ID 挿入・囲み・その他メニュー。
     Ctrl+Shift+O と Ctrl+T もここ）/ `PreviewToolbar.jsx`（プレビュー側）/ `ParseStatusBar.jsx`（ステータスバーとエラー・警告のダイアログ）/ `IdStatusBar.jsx`
-  - フック: `useEditorCandidates.js`（オートコンプリートの候補）/ `useSplitterDrag.js`（スプリッターのドラッグ）
+  - フック: `useEditorCandidates.js`（オートコンプリートの候補）/ `useSplitterDrag.js`（スプリッターのドラッグ）/ `useStableHandlers.js`（memo にした部品へ渡すハンドラを、描画をまたいで同じ関数にする。本体は 1 文字ごとに描き直されるので、ツールバーやダイアログへはこれを通して渡す）
   - 状態を持たない関数: `tree-flatten.js` / `table-markdown.js` / `conflict-view.js` / `editor-history.js`（閲覧履歴。App.jsx も使う）/
     `preview-run.js` / `editor-save.js`（保存のデバウンス）/ `download.js` / `diagram-pan-zoom.js` / `id-insert.js` / `binder-link.js` / `external-editor.js`
   - `EditorArea.jsx` / `SearchBar.jsx` / `HTMLFrame.jsx` / `Autocomplete.jsx` / `engines/` — `@shared/editor/...` への re-export ラッパー（実体は `_cmd/shared/frontend/`）
@@ -65,7 +65,7 @@
 - テストフレームワーク: Vitest（`vitest.config.js`）
 - テストファイル: `src/__tests__/*.test.jsx`
 - セットアップ: `src/__tests__/setup.js`（`@wailsio/runtime` のグローバルモック、ResizeObserver ポリフィル、i18n 初期化）
-- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 102ファイル・490テスト）
+- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 103ファイル・493テスト）
 
 ```bash
 # フロントエンドテスト実行

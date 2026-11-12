@@ -50,7 +50,7 @@ export function OutlineButton({ text, cursorLineRef, onJump }) {
 
   const open = (el) => {
     const textarea = document.querySelector("#editor");
-    const headings = extractHeadings(textarea ? textarea.value : text);
+    const headings = extractHeadings(textarea ? textarea.value : (text ?? ""));
     const cur = headings.filter((h) => h.line <= cursorLineRef.current).pop();
     setOutline(headings);
     setCurrent(cur ? cur.line : 0);

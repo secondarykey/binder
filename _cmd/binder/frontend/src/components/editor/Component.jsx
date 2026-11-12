@@ -52,6 +52,7 @@ import { downloadBlob, triggerTextDownload } from "./download";
 import { attachDiagramPanZoom } from "./diagram-pan-zoom";
 import { useEditorCandidates } from "./useEditorCandidates";
 import { useSplitterDrag } from "./useSplitterDrag";
+import { useStableHandlers } from "./useStableHandlers";
 import EditorToolbar from "./EditorToolbar.jsx";
 import PreviewToolbar from "./PreviewToolbar.jsx";
 import ParseStatusBar, { ParseDialogs } from "./ParseStatusBar.jsx";
@@ -78,6 +79,14 @@ const MemoTemplateTree = memo(TemplateTree);
 const MemoAutocomplete = memo(Autocomplete);
 const MemoIdStatusBar = memo(IdStatusBar);
 const MemoCommitBar = memo(CommitBar);
+// ツールバーとダイアログも同じく遮断する。本体から渡すハンドラは useStableHandlers で
+// 描画をまたいで同じ関数にしてあるので、表示に関わる値が変わったときだけ描き直される
+const MemoEditorToolbar = memo(EditorToolbar);
+const MemoPreviewToolbar = memo(PreviewToolbar);
+const MemoParseDialogs = memo(ParseDialogs);
+const MemoPreviewContextMenu = memo(PreviewContextMenu);
+const MemoFontDialog = memo(FontDialog);
+const MemoTableDialog = memo(TableDialog);
 
 // テンプレートプレビューで前回選択したノート・テンプレート・ダイアグラムを記憶する
 let lastPreviewNoteId = "";
@@ -787,13 +796,13 @@ function Editor(props) {
     viewDiagramTemplatePreview(text, previewDiagramId);
   }, [previewDiagramId]);
 
-  // モードに対応するスニペット一覧
-  const snippetList = (() => {
+  // モードに対応するスニペット一覧（memo にしたツールバーへ渡すので、中身が同じなら同じ配列にする）
+  const snippetList = useMemo(() => {
     if (mode === Mode.note) return [...(snippets.markdowns ?? []), ...(snippets.templates ?? [])];
     if (mode === Mode.diagram) return snippets.diagrams ?? [];
     if (mode === Mode.template) return snippets.templates ?? [];
     return [];
-  })();
+  }, [mode, snippets]);
 
   /**
    * スニペットをカーソル位置に挿入
@@ -1904,6 +1913,49 @@ function Editor(props) {
   // エディタルートではツリーパネルを常に表示する
   const showTree = true;
 
+  // memo にした部品（ツールバー・ダイアログ）へ渡すハンドラ。
+  // 打鍵のたびに作り直される関数をそのまま渡すと memo が効かないので、同じ関数のまま渡す
+  const h = useStableHandlers({
+    // エディタ側のツールバー
+    toggleLineNumbers: () => { setShowLineNumbers(v => !v); saveEditorSetting({ showLineNumbers: !showLineNumbers }); },
+    toggleWordWrap: () => { setWordWrap(v => !v); saveEditorSetting({ wordWrap: !wordWrap }); },
+    toggleViewer: () => { setViewer(v => !v); saveEditorSetting({ showPreview: !viewer }); },
+    jumpToLine: (line) => jumpToLine(line, true),
+    insertSnippet: handleInsertSnippet,
+    insertId: handleInsertId,
+    error: (err) => evt.showErrorMessage(err),
+    insert: handleInsert,
+    insertAlert: handleInsertAlert,
+    tableEdit: handleTableEdit,
+    fontDialog: handleFontDialog,
+    runEditor: handleRunEditor,
+    downloadRaw: handleDownloadRaw,
+    downloadExpanded: handleDownloadExpanded,
+    // プレビュー側のツールバー（前回の選択はモジュールの変数に覚えておき、開き直したときに戻す）
+    previewDiagramChange: (v) => { lastPreviewDiagramId = v; setPreviewDiagramId(v); },
+    previewOtherTemplateChange: (v) => { lastPreviewOtherTemplateId = v; setPreviewOtherTemplateId(v); },
+    previewNoteChange: (v) => { lastPreviewNoteId = v; setPreviewNoteId(v); },
+    scriptsBlockedClick: () => evt.openBinderModal(),
+    nextColorScheme: () => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length),
+    download: handleDownload,
+    downloadZip: handleDownloadZip,
+    openPreviewWindow: () => OpenPreviewWindow(mode, id, name),
+    publish: handlePublish,
+    openInBrowser: handleOpenInBrowser,
+    unpublish: handleUnpublish,
+    // プレビューのコンテキストメニュー
+    closePreviewMenu,
+    historyBack: handleHistoryBack,
+    historyForward: handleHistoryForward,
+    linkExternal: handleLinkExternal,
+    linkInternal: handleLinkInternal,
+    // ダイアログ
+    fontDialogClose: handleFontDialogClose,
+    tableClose: handleTableClose,
+    closeParseError: () => setParseErrorDlg(false),
+    closeParseWarning: () => setParseWarningDlg(false),
+  });
+
   return (
     <>
       <Paper id="splitScreen">
@@ -1959,22 +2011,23 @@ function Editor(props) {
             <div id="editorWrapper" className={!viewer ? 'viewer-hidden' : ''} style={{ width: (width - 4) + 'px' }}>
 
               {/** テキスト用のメニュー */}
-              <EditorToolbar
+              {/** 本文（text）は渡さない。渡すと打鍵のたびに描き直される。アウトラインは開いたときに textarea から読む */}
+              <MemoEditorToolbar
                 isNote={mode === Mode.note} canDownload={mode === Mode.note || mode === Mode.diagram}
                 showLineNumbers={showLineNumbers}
-                onToggleLineNumbers={() => { setShowLineNumbers(v => !v); saveEditorSetting({ showLineNumbers: !showLineNumbers }); }}
+                onToggleLineNumbers={h.toggleLineNumbers}
                 wordWrap={wordWrap}
-                onToggleWordWrap={() => { setWordWrap(v => !v); saveEditorSetting({ wordWrap: !wordWrap }); }}
+                onToggleWordWrap={h.toggleWordWrap}
                 viewer={viewer}
-                onToggleViewer={() => { setViewer(v => !v); saveEditorSetting({ showPreview: !viewer }); }}
-                text={text} cursorLineRef={cursorLineRef} onJumpToLine={(line) => jumpToLine(line, true)}
-                snippets={snippetList} onInsertSnippet={handleInsertSnippet}
-                currentId={id} onInsertId={handleInsertId} onError={(err) => evt.showErrorMessage(err)}
-                onInsert={handleInsert}
-                alertsAvailable={alertsAvailable} onInsertAlert={handleInsertAlert}
-                onTableEdit={handleTableEdit}
-                onFontDialog={handleFontDialog} onRunEditor={handleRunEditor}
-                onDownloadRaw={handleDownloadRaw} onDownloadExpanded={handleDownloadExpanded}
+                onToggleViewer={h.toggleViewer}
+                cursorLineRef={cursorLineRef} onJumpToLine={h.jumpToLine}
+                snippets={snippetList} onInsertSnippet={h.insertSnippet}
+                currentId={id} onInsertId={h.insertId} onError={h.error}
+                onInsert={h.insert}
+                alertsAvailable={alertsAvailable} onInsertAlert={h.insertAlert}
+                onTableEdit={h.tableEdit}
+                onFontDialog={h.fontDialog} onRunEditor={h.runEditor}
+                onDownloadRaw={h.downloadRaw} onDownloadExpanded={h.downloadExpanded}
               />
 
               {/** オートコンプリートポップアップ */}
@@ -2057,24 +2110,24 @@ function Editor(props) {
           {/** 表示側 */}
             <div id="dataViewer" className={!viewer ? 'hidden' : ''}>
 
-              {/** プレビューメニュー（前回の選択はモジュールの変数に覚えておき、開き直したときに戻す） */}
-              <PreviewToolbar
+              {/** プレビューメニュー */}
+              <MemoPreviewToolbar
                 isNote={mode === Mode.note} isTemplate={mode === Mode.template} templateType={templateType}
                 previewDiagrams={previewDiagrams} previewDiagramId={previewDiagramId}
-                onPreviewDiagramChange={(v) => { lastPreviewDiagramId = v; setPreviewDiagramId(v); }}
+                onPreviewDiagramChange={h.previewDiagramChange}
                 previewOtherTemplates={templateType === "layout" ? previewContents : previewLayouts}
                 previewOtherTemplateId={previewOtherTemplateId}
-                onPreviewOtherTemplateChange={(v) => { lastPreviewOtherTemplateId = v; setPreviewOtherTemplateId(v); }}
+                onPreviewOtherTemplateChange={h.previewOtherTemplateChange}
                 previewNotes={previewNotes} previewNoteId={previewNoteId}
-                onPreviewNoteChange={(v) => { lastPreviewNoteId = v; setPreviewNoteId(v); }}
-                scriptsBlocked={scriptsBlocked} onScriptsBlockedClick={() => evt.openBinderModal()}
+                onPreviewNoteChange={h.previewNoteChange}
+                scriptsBlocked={scriptsBlocked} onScriptsBlockedClick={h.scriptsBlockedClick}
                 colorSchemeConfig={colorSchemeConfig} colorSchemeIndex={colorSchemeIndex}
-                onNextColorScheme={() => setColorSchemeIndex((prev) => (prev + 1) % colorSchemeConfig.values.length)}
-                onDownload={handleDownload} onDownloadZip={handleDownloadZip}
-                onOpenPreviewWindow={() => OpenPreviewWindow(mode, id, name)}
-                onPublish={handlePublish} publishDisabled={parseStatus.status === "error" || isPrivate}
-                onOpenInBrowser={handleOpenInBrowser} openInBrowserDisabled={!alias || mode === Mode.template}
-                onUnpublish={handleUnpublish}
+                onNextColorScheme={h.nextColorScheme}
+                onDownload={h.download} onDownloadZip={h.downloadZip}
+                onOpenPreviewWindow={h.openPreviewWindow}
+                onPublish={h.publish} publishDisabled={parseStatus.status === "error" || isPrivate}
+                onOpenInBrowser={h.openInBrowser} openInBrowserDisabled={!alias || mode === Mode.template}
+                onUnpublish={h.unpublish}
               />
 
               {/** プレビューコンテンツ */}
@@ -2093,15 +2146,15 @@ function Editor(props) {
                 }
               </div>
 
-              <PreviewContextMenu
+              <MemoPreviewContextMenu
                 state={previewMenu}
-                onClose={closePreviewMenu}
-                onBack={handleHistoryBack}
-                onForward={handleHistoryForward}
+                onClose={h.closePreviewMenu}
+                onBack={h.historyBack}
+                onForward={h.historyForward}
                 onCopy={copyClipboard}
                 onCopyLink={copyClipboard}
-                onOpenExternal={handleLinkExternal}
-                onOpenInternal={handleLinkInternal}
+                onOpenExternal={h.linkExternal}
+                onOpenInternal={h.linkInternal}
               />
 
               {/** パースステータスバー */}
@@ -2116,19 +2169,19 @@ function Editor(props) {
       </Paper>
 
       {/** フォント設定 */}
-      <FontDialog show={fontDialog} font={editorFont} onClose={handleFontDialogClose} />
+      <MemoFontDialog show={fontDialog} font={editorFont} onClose={h.fontDialogClose} />
 
       {/** テーブル編集ダイアログ */}
-      <TableDialog
+      <MemoTableDialog
         open={tableDialogOpen}
         tableLines={tableDialogLines}
-        onClose={handleTableClose}
+        onClose={h.tableClose}
       />
 
       {/** パースエラー・警告の詳細ダイアログ */}
-      <ParseDialogs parseStatus={parseStatus}
+      <MemoParseDialogs parseStatus={parseStatus}
         errorOpen={parseErrorDlg} warningOpen={parseWarningDlg}
-        onCloseError={() => setParseErrorDlg(false)} onCloseWarning={() => setParseWarningDlg(false)} />
+        onCloseError={h.closeParseError} onCloseWarning={h.closeParseWarning} />
 
       {/** 未公開確認ダイアログ */}
       {publishRefsDialog}
