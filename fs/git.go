@@ -923,14 +923,9 @@ func (f *FileSystem) CommitSnapshot(m string) error {
 
 func (f *FileSystem) modified(files ...string) ([]string, error) {
 
-	w, err := f.repo.Worktree()
+	status, err := f.worktreeStatus()
 	if err != nil {
-		return nil, xerrors.Errorf("Worktree() error: %w", err)
-	}
-
-	status, err := w.Status()
-	if err != nil {
-		return nil, xerrors.Errorf("Status() error: %w", err)
+		return nil, xerrors.Errorf("worktreeStatus() error: %w", err)
 	}
 
 	names := make([]string, 0, len(files))
@@ -967,7 +962,45 @@ func (f *FileSystem) invalidateStatus() {
 	f.statusMu.Lock()
 	f.statusCache = nil
 	f.statusAt = time.Time{}
+	f.rawStatus = nil
+	f.rawStatusAt = time.Time{}
+	f.statusGen++
 	f.statusMu.Unlock()
+}
+
+// worktreeStatus は素の git status（worktree.Status()）を返す。
+// ワークツリー全体を調べるため重く、短TTLでキャッシュする。
+// 返したマップは共有しているので、呼び出し側は書き換えない（読むだけ）。
+func (f *FileSystem) worktreeStatus() (git.Status, error) {
+
+	f.statusMu.Lock()
+	if f.rawStatus != nil && time.Since(f.rawStatusAt) < statusCacheTTL {
+		cached := f.rawStatus
+		f.statusMu.Unlock()
+		return cached, nil
+	}
+	// 調べている間に無効化されたら、その結果は覚えない（古い状態を残さないため）
+	gen := f.statusGen
+	f.statusMu.Unlock()
+
+	w, err := f.repo.Worktree()
+	if err != nil {
+		return nil, xerrors.Errorf("Worktree() error: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return nil, xerrors.Errorf("Status() error: %w", err)
+	}
+
+	f.statusMu.Lock()
+	if f.statusGen == gen {
+		f.rawStatus = status
+		f.rawStatusAt = time.Now()
+	}
+	f.statusMu.Unlock()
+
+	return status, nil
 }
 
 func (f *FileSystem) Status() (ModifiedFiles, error) {

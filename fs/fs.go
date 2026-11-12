@@ -38,6 +38,14 @@ type FileSystem struct {
 	statusCache ModifiedFiles
 	statusAt    time.Time
 
+	// 素の git status（worktree.Status()）の短TTLキャッシュ。1 件ずつの状態確認
+	// （getStatus → modified）が毎回ワークツリー全体を調べ直すのを防ぐ。
+	// 未公開一覧のように全件を順に確かめる処理では、件数 × 全体の走査になるため。
+	// 無効化と TTL は statusCache と同じ（invalidateStatus）
+	rawStatus   git.Status
+	rawStatusAt time.Time
+	statusGen   uint64 // invalidateStatus のたびに進める
+
 	// ワークツリー・インデックスを変更する操作（create/add/remove/commit）の
 	// 直列化。Wails のバインディング呼び出しは並行実行されるため、同時に
 	// 走った変更操作同士でステージ内容や HEAD 更新が競合するのを防ぐ
