@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"binder/api/json"
+	"binder/entity"
 
 	"golang.org/x/xerrors"
 )
@@ -86,14 +86,14 @@ func isDotName(name string) bool {
 // ValidateNoteAlias はノートの alias が公開先のパスとして使えるかを検証する。
 //
 //   - 空は許す（従来どおり）
-//   - "/404"（json.ErrorPageAlias）は 404 ページ。docs/404.html に公開する。index ノートには使えない
+//   - "/404"（entity.ErrorPageAlias）は 404 ページ。docs/404.html に公開する。index ノートには使えない
 //   - それ以外の "/" で始まるものは不可（ノートをサイトのルートに置けるのは 404 ページだけ）
 //   - "/" "\" を含むもの、"." ".." は不可（docs/pages の外に書き出さないため）
 func ValidateNoteAlias(id, alias string) error {
 	if alias == "" {
 		return nil
 	}
-	if json.IsErrorPageAlias(alias) {
+	if entity.IsErrorPageAlias(alias) {
 		if id == "index" {
 			return xerrors.Errorf("%w: index note cannot be the error page", ErrInvalidNoteAlias)
 		}

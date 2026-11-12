@@ -4,17 +4,17 @@ import (
 	"bytes"
 	"testing"
 
-	"binder/api/json"
+	"binder/entity"
 	"binder/fs"
 )
 
-func newTemplate(id, typ string) *json.Template {
-	return &json.Template{Id: id, Typ: typ}
+func newTemplate(id, typ string) *entity.Template {
+	return &entity.Template{Id: id, Typ: typ}
 }
 
 func TestAddTemplateFrame_Layout(t *testing.T) {
 	data := []byte("<p>layout</p>")
-	got := fs.AddTemplateFrame(json.LayoutTemplateType, data)
+	got := fs.AddTemplateFrame(entity.LayoutTemplateType, data)
 	if !bytes.Contains(got, []byte(`{{ define "Pages" }}`)) {
 		t.Errorf("AddTemplateFrame(layout) missing define frame: %s", got)
 	}
@@ -28,7 +28,7 @@ func TestAddTemplateFrame_Layout(t *testing.T) {
 
 func TestAddTemplateFrame_Content(t *testing.T) {
 	data := []byte("<p>content</p>")
-	got := fs.AddTemplateFrame(json.ContentTemplateType, data)
+	got := fs.AddTemplateFrame(entity.ContentTemplateType, data)
 	if !bytes.Contains(got, []byte(`{{ define "Content" }}`)) {
 		t.Errorf("AddTemplateFrame(content) missing define frame: %s", got)
 	}
@@ -36,7 +36,7 @@ func TestAddTemplateFrame_Content(t *testing.T) {
 
 func TestAddTemplateFrame_Diagram(t *testing.T) {
 	data := []byte("graph TD; A-->B")
-	got := fs.AddTemplateFrame(json.DiagramTemplateType, data)
+	got := fs.AddTemplateFrame(entity.DiagramTemplateType, data)
 	// diagram は HTML ではないのでフレームなしのまま返る
 	if !bytes.Equal(got, data) {
 		t.Errorf("AddTemplateFrame(diagram) should return data unchanged, got: %s", got)
@@ -45,8 +45,8 @@ func TestAddTemplateFrame_Diagram(t *testing.T) {
 
 func TestStripTemplateFrame_Layout(t *testing.T) {
 	data := []byte("<p>layout</p>")
-	framed := fs.AddTemplateFrame(json.LayoutTemplateType, data)
-	got := fs.StripTemplateFrame(json.LayoutTemplateType, framed)
+	framed := fs.AddTemplateFrame(entity.LayoutTemplateType, data)
+	got := fs.StripTemplateFrame(entity.LayoutTemplateType, framed)
 	if !bytes.Equal(got, data) {
 		t.Errorf("StripTemplateFrame(layout) got %q, want %q", got, data)
 	}
@@ -54,8 +54,8 @@ func TestStripTemplateFrame_Layout(t *testing.T) {
 
 func TestStripTemplateFrame_Content(t *testing.T) {
 	data := []byte("<p>content</p>")
-	framed := fs.AddTemplateFrame(json.ContentTemplateType, data)
-	got := fs.StripTemplateFrame(json.ContentTemplateType, framed)
+	framed := fs.AddTemplateFrame(entity.ContentTemplateType, data)
+	got := fs.StripTemplateFrame(entity.ContentTemplateType, framed)
 	if !bytes.Equal(got, data) {
 		t.Errorf("StripTemplateFrame(content) got %q, want %q", got, data)
 	}
@@ -63,7 +63,7 @@ func TestStripTemplateFrame_Content(t *testing.T) {
 
 func TestStripTemplateFrame_NoFrame(t *testing.T) {
 	data := []byte("<p>no frame</p>")
-	got := fs.StripTemplateFrame(json.LayoutTemplateType, data)
+	got := fs.StripTemplateFrame(entity.LayoutTemplateType, data)
 	if !bytes.Equal(got, data) {
 		t.Errorf("StripTemplateFrame(no frame) should return data unchanged, got: %s", got)
 	}
@@ -72,7 +72,7 @@ func TestStripTemplateFrame_NoFrame(t *testing.T) {
 func TestCreateTemplateFile(t *testing.T) {
 	f := createFileSystem(t, "tmpl_create")
 
-	tmpl := newTemplate("tmpl1", string(json.ContentTemplateType))
+	tmpl := newTemplate("tmpl1", string(entity.ContentTemplateType))
 	fn, err := f.CreateTemplateFile(tmpl)
 	if err != nil {
 		t.Fatalf("CreateTemplateFile() error: %v", err)
@@ -85,7 +85,7 @@ func TestCreateTemplateFile(t *testing.T) {
 func TestWriteAndReadTemplate(t *testing.T) {
 	f := createFileSystem(t, "tmpl_rw")
 
-	tmpl := newTemplate("tmpl2", string(json.LayoutTemplateType))
+	tmpl := newTemplate("tmpl2", string(entity.LayoutTemplateType))
 	_, err := f.CreateTemplateFile(tmpl)
 	if err != nil {
 		t.Fatalf("CreateTemplateFile() error: %v", err)
@@ -108,7 +108,7 @@ func TestWriteAndReadTemplate(t *testing.T) {
 func TestDeleteTemplateFile(t *testing.T) {
 	f := createFileSystem(t, "tmpl_delete")
 
-	tmpl := newTemplate("tmpl3", string(json.ContentTemplateType))
+	tmpl := newTemplate("tmpl3", string(entity.ContentTemplateType))
 	fn, err := f.CreateTemplateFile(tmpl)
 	if err != nil {
 		t.Fatalf("CreateTemplateFile() error: %v", err)
@@ -129,7 +129,7 @@ func TestDeleteTemplateFile(t *testing.T) {
 func TestDeleteTemplateFile_NotExist(t *testing.T) {
 	f := createFileSystem(t, "tmpl_delete_ne")
 
-	tmpl := newTemplate("ghost-tmpl", string(json.ContentTemplateType))
+	tmpl := newTemplate("ghost-tmpl", string(entity.ContentTemplateType))
 	_, err := f.DeleteTemplateFile(tmpl)
 	if err == nil {
 		t.Errorf("DeleteTemplateFile() expected error for nonexistent template, got nil")
@@ -139,7 +139,7 @@ func TestDeleteTemplateFile_NotExist(t *testing.T) {
 func TestSetTemplateStatus_Uncommitted(t *testing.T) {
 	f := createFileSystem(t, "tmpl_status_new")
 
-	tmpl := newTemplate("tmpl-st1", string(json.ContentTemplateType))
+	tmpl := newTemplate("tmpl-st1", string(entity.ContentTemplateType))
 	_, err := f.CreateTemplateFile(tmpl)
 	if err != nil {
 		t.Fatalf("CreateTemplateFile() error: %v", err)
@@ -149,15 +149,15 @@ func TestSetTemplateStatus_Uncommitted(t *testing.T) {
 	if err := f.SetTemplateStatus(tmpl); err != nil {
 		t.Fatalf("SetTemplateStatus() error: %v", err)
 	}
-	if tmpl.UpdatedStatus != json.UpdatedStatus {
-		t.Errorf("UpdatedStatus: got %d, want UpdatedStatus(%d)", tmpl.UpdatedStatus, json.UpdatedStatus)
+	if tmpl.UpdatedStatus != entity.UpdatedStatus {
+		t.Errorf("UpdatedStatus: got %d, want UpdatedStatus(%d)", tmpl.UpdatedStatus, entity.UpdatedStatus)
 	}
 }
 
 func TestSetTemplateStatus_Committed(t *testing.T) {
 	f := createFileSystem(t, "tmpl_status_committed")
 
-	tmpl := newTemplate("tmpl-st2", string(json.LayoutTemplateType))
+	tmpl := newTemplate("tmpl-st2", string(entity.LayoutTemplateType))
 	fn, err := f.CreateTemplateFile(tmpl)
 	if err != nil {
 		t.Fatalf("CreateTemplateFile() error: %v", err)
@@ -171,8 +171,8 @@ func TestSetTemplateStatus_Committed(t *testing.T) {
 	if err := f.SetTemplateStatus(tmpl); err != nil {
 		t.Fatalf("SetTemplateStatus() error: %v", err)
 	}
-	if tmpl.UpdatedStatus != json.NothingStatus {
-		t.Errorf("UpdatedStatus: got %d, want NothingStatus(%d)", tmpl.UpdatedStatus, json.NothingStatus)
+	if tmpl.UpdatedStatus != entity.NothingStatus {
+		t.Errorf("UpdatedStatus: got %d, want NothingStatus(%d)", tmpl.UpdatedStatus, entity.NothingStatus)
 	}
 }
 

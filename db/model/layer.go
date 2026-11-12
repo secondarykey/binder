@@ -1,7 +1,7 @@
 package model
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"fmt"
 	"time"
 )
@@ -18,8 +18,8 @@ func (l *Layer) String() string {
 	return fmt.Sprintf("%s", l.Id)
 }
 
-func (l *Layer) To() *json.Layer {
-	var rtn json.Layer
+func (l *Layer) To() *entity.Layer {
+	var rtn entity.Layer
 	rtn.Id = l.Id
 	rtn.Created = l.Created
 	rtn.CreatedUser = l.CreatedUser
@@ -28,7 +28,7 @@ func (l *Layer) To() *json.Layer {
 	return &rtn
 }
 
-func ConvertLayer(l *json.Layer) *Layer {
+func ConvertLayer(l *entity.Layer) *Layer {
 	var rtn Layer
 	rtn.Id = l.Id
 	rtn.Created = l.Created

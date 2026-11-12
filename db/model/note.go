@@ -1,7 +1,7 @@
 package model
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"fmt"
 	"time"
 )
@@ -21,8 +21,8 @@ func (n *Note) String() string {
 	return fmt.Sprintf("%s", n.Id)
 }
 
-func (n *Note) To() *json.Note {
-	var rtn json.Note
+func (n *Note) To() *entity.Note {
+	var rtn entity.Note
 	rtn.Id = n.Id
 	rtn.LayoutTemplate = n.LayoutTemplate
 	rtn.ContentTemplate = n.ContentTemplate
@@ -33,7 +33,7 @@ func (n *Note) To() *json.Note {
 	return &rtn
 }
 
-func ConvertNote(a *json.Note) *Note {
+func ConvertNote(a *entity.Note) *Note {
 	var rtn Note
 	rtn.Id = a.Id
 	rtn.LayoutTemplate = a.LayoutTemplate

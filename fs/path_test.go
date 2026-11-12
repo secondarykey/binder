@@ -1,7 +1,7 @@
 package fs_test
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"binder/fs"
 	"testing"
 )
@@ -24,7 +24,7 @@ func TestToGitBash(t *testing.T) {
 }
 
 func TestHTMLFile(t *testing.T) {
-	var n json.Note
+	var n entity.Note
 
 	var vals = []struct {
 		id    string
@@ -48,7 +48,7 @@ func TestHTMLFile(t *testing.T) {
 }
 
 func TestSVGFile(t *testing.T) {
-	var d json.Diagram
+	var d entity.Diagram
 
 	var vals = []struct {
 		id    string
@@ -71,7 +71,7 @@ func TestSVGFile(t *testing.T) {
 }
 
 func TestPublicMetaFile(t *testing.T) {
-	var n json.Note
+	var n entity.Note
 
 	var vals = []struct {
 		id    string
@@ -94,8 +94,8 @@ func TestPublicMetaFile(t *testing.T) {
 
 func TestPublicAssetFile(t *testing.T) {
 
-	var n json.Note
-	var a json.Asset
+	var n entity.Note
+	var a entity.Asset
 
 	// アセットパスはフラット化され、aliasのみで決まる（親ノードのaliasは不要）
 	var vals = []struct {
@@ -158,7 +158,7 @@ func TestDiagramFile(t *testing.T) {
 
 func TestMetaFile(t *testing.T) {
 
-	var n json.Note
+	var n entity.Note
 	var vals = []struct {
 		id   string
 		want string
@@ -178,7 +178,7 @@ func TestMetaFile(t *testing.T) {
 
 func TestAssetFile(t *testing.T) {
 
-	var a json.Asset
+	var a entity.Asset
 	// アセットパスはフラット化され、a.Idのみで決まる（親ノードのIDは不要）
 	var vals = []struct {
 		id   string
@@ -286,7 +286,7 @@ func TestDatabaseDir(t *testing.T) {
 func TestSetPublishDirectory(t *testing.T) {
 	// デフォルト値 "docs" から変更し、戻す
 	fs.SetPublishDirectory("custom_docs")
-	n := &json.Note{Id: "idx", Alias: "a"}
+	n := &entity.Note{Id: "idx", Alias: "a"}
 	got := fs.HTMLFile(n)
 	if got == "" {
 		t.Errorf("HTMLFile() returned empty after SetPublishDirectory()")

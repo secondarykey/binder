@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"binder/api/json"
+	"binder/entity"
 )
 
 // newStatusTestFS は Status キャッシュ検証用の一時リポジトリを作成し、
 // ノートを1件コミット済みの状態にして返す。
-func newStatusTestFS(t *testing.T) (*FileSystem, string, *json.Note) {
+func newStatusTestFS(t *testing.T) (*FileSystem, string, *entity.Note) {
 	t.Helper()
 	dir := t.TempDir()
 	f, err := New(dir)
@@ -18,7 +18,7 @@ func newStatusTestFS(t *testing.T) (*FileSystem, string, *json.Note) {
 		t.Fatalf("New() error: %v", err)
 	}
 
-	n := &json.Note{}
+	n := &entity.Note{}
 	n.Id = "status-cache-note"
 	n.Alias = "status-cache-alias"
 	if _, err := f.CreateNoteFile(n); err != nil {

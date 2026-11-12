@@ -1,4 +1,4 @@
-package json
+package entity
 
 type Status int
 

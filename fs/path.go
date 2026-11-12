@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"binder/log"
 
 	"fmt"
@@ -85,7 +85,7 @@ func SetPublishDirectory(dir string) {
 
 const pagesDir = "pages"
 
-func HTMLFile(note *json.Note) string {
+func HTMLFile(note *entity.Note) string {
 	if note == nil {
 		return "error"
 	}
@@ -96,12 +96,12 @@ func HTMLFile(note *json.Note) string {
 	return htmlFile(a)
 }
 
-// ErrorPageName は 404 ページ（alias が json.ErrorPageAlias のノート）の、公開ディレクトリ直下でのファイル名。
+// ErrorPageName は 404 ページ（alias が entity.ErrorPageAlias のノート）の、公開ディレクトリ直下でのファイル名。
 // GitHub Pages は公開元の直下にあるこの名前のファイルを、存在しないパスへの応答に使う。
 const ErrorPageName = "404.html"
 
 func htmlFile(a string) string {
-	if json.IsErrorPageAlias(a) {
+	if entity.IsErrorPageAlias(a) {
 		return filepath.Join(publishDir, ErrorPageName)
 	}
 	return filepath.Join(publishDir, pagesDir, fmt.Sprintf("%s.html", a))
@@ -109,7 +109,7 @@ func htmlFile(a string) string {
 
 const resourceDir = "images"
 
-func SVGFile(diagram *json.Diagram) string {
+func SVGFile(diagram *entity.Diagram) string {
 	return svgFile(diagram.Alias)
 }
 
@@ -129,14 +129,14 @@ func publicMetaFilePath(alias string) string {
 	return filepath.Join(publishDir, resourceDir, publicMetaSubDir, strings.TrimPrefix(alias, "/"))
 }
 
-func PublicMetaFile(n *json.Note) string {
+func PublicMetaFile(n *entity.Note) string {
 	if n == nil {
 		return "error"
 	}
 	return publicMetaFilePath(n.Alias)
 }
 
-func PublicAssetFile(a *json.Asset) string {
+func PublicAssetFile(a *entity.Asset) string {
 	if a.Alias == "" {
 		return ""
 	}
@@ -188,11 +188,11 @@ func diagramFile(id string) string {
 const AssetDir = "assets"
 const MetaSubDir = "meta"
 
-func MetaFile(n *json.Note) string {
+func MetaFile(n *entity.Note) string {
 	return filepath.Join(AssetDir, MetaSubDir, n.Id)
 }
 
-func AssetFile(a *json.Asset) string {
+func AssetFile(a *entity.Asset) string {
 	if a.Id == "" {
 		return ""
 	}
@@ -214,7 +214,7 @@ func layerFile(id string) string {
 	return filepath.Join(LayerDir, fmt.Sprintf("%s.json", id))
 }
 
-func PublicLayerFile(l *json.Layer) string {
+func PublicLayerFile(l *entity.Layer) string {
 	if l == nil || l.Alias == "" {
 		return ""
 	}

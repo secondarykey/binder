@@ -1,9 +1,9 @@
 package setup
 
 import (
-	"binder/api/json"
 	"binder/db"
 	"binder/db/model"
+	"binder/entity"
 	"binder/fs"
 	"binder/internal"
 	"binder/log"
@@ -102,7 +102,7 @@ func createStructure(inst *db.Instance, op db.Op, id, parentId, typ, name, detai
 
 func initializeTemplate(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installManifest) error {
 	for _, t := range m.Templates {
-		jt := &json.Template{
+		jt := &entity.Template{
 			Id:   t.Id,
 			Typ:  t.Type,
 			Name: t.Name,
@@ -138,7 +138,7 @@ func initializeTemplate(f *fs.FileSystem, inst *db.Instance, op db.Op, m *instal
 
 func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installManifest) error {
 	for _, n := range m.Notes {
-		jn := &json.Note{
+		jn := &entity.Note{
 			Id:              n.Id,
 			Alias:           n.Alias,
 			Name:            n.Name,
@@ -200,7 +200,7 @@ func initializeNote(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installMan
 
 func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installManifest) error {
 	for _, d := range m.Diagrams {
-		jd := &json.Diagram{
+		jd := &entity.Diagram{
 			ParentId:      d.ParentId,
 			Name:          d.Name,
 			StyleTemplate: d.StyleTemplate,
@@ -253,7 +253,7 @@ func initializeDiagram(f *fs.FileSystem, inst *db.Instance, op db.Op, m *install
 
 func initializeAsset(f *fs.FileSystem, inst *db.Instance, op db.Op, m *installManifest) error {
 	for _, a := range m.Assets {
-		ja := &json.Asset{
+		ja := &entity.Asset{
 			ParentId: a.ParentId,
 			Name:     a.Name,
 			Alias:    a.Alias,

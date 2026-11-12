@@ -1,7 +1,7 @@
 package model
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"fmt"
 	"time"
 )
@@ -27,8 +27,8 @@ func (s *Structure) String() string {
 	return fmt.Sprintf("%s,%s,%s,%s", s.Id, s.ParentId, s.Typ, s.Name)
 }
 
-func (s *Structure) To() *json.Structure {
-	var rtn json.Structure
+func (s *Structure) To() *entity.Structure {
+	var rtn entity.Structure
 	rtn.Id = s.Id
 	rtn.ParentId = s.ParentId
 	rtn.Seq = s.Seq
@@ -46,7 +46,7 @@ func (s *Structure) To() *json.Structure {
 	return &rtn
 }
 
-func ConvertStructure(s *json.Structure) *Structure {
+func ConvertStructure(s *entity.Structure) *Structure {
 	var rtn Structure
 	rtn.Id = s.Id
 	rtn.ParentId = s.ParentId

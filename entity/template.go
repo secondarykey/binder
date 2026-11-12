@@ -1,4 +1,4 @@
-package json
+package entity
 
 import "time"
 
@@ -13,12 +13,6 @@ type Template struct {
 	Updated time.Time `json:"updated"`
 
 	UpdatedStatus Status `json:"updatedStatus"`
-}
-
-type Templates struct {
-	Layouts  []*Template `json:"layouts"`
-	Contents []*Template `json:"contents"`
-	Diagrams []*Template `json:"diagrams"`
 }
 
 type TemplateType string
