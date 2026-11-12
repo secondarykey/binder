@@ -58,7 +58,9 @@
   - 状態を持たない関数: `tree-flatten.js` / `table-markdown.js` / `conflict-view.js` / `editor-history.js`（閲覧履歴。App.jsx も使う）/
     `preview-run.js` / `editor-save.js`（保存のデバウンス）/ `download.js` / `diagram-pan-zoom.js` / `id-insert.js` / `binder-link.js` / `external-editor.js`
   - `EditorArea.jsx` / `SearchBar.jsx` / `HTMLFrame.jsx` / `Autocomplete.jsx` / `engines/` — `@shared/editor/...` への re-export ラッパー（実体は `_cmd/shared/frontend/`）
-  - 種類を見るときの `Mode` は `src/mode.js` から import する（`app/App.jsx` からも同じものを export しているが、エディタの部品から App.jsx を import すると循環する）。
+  - 種類を見るときの `Mode` は `src/mode.js`、ID などのコピーは `src/clipboard.js`（`copyClipboard`）から import する。
+    **部品から `app/App.jsx` を import しない**（App → Content → エディタ → App と循環する。テストでも App 全体を読み込むことになる）
+  - Enter / Tab / Ctrl+B・I・K は共有の `handleMarkdownKeyDown`（`@shared/editor/markdown-keys`。Lite も使う）に任せている
     画面の部品（ツールバーなど）は `isNote` などを props で受ける
 
 **bindings/** — Wails v3が自動生成するJSバインディング（手動編集不可・コミット禁止）
