@@ -20,7 +20,7 @@
 | `fs` から `db` と `settings` への依存を外す（CSV のファイル名は fs が持つ・署名の既定値は `fs.SetDefaultUser` で渡す） | `112ef29e` |
 | バインダーの中身の型を `binder/entity` へ移し、`db/model`・`db`・`fs`・`setup` の `api/json` への依存を外す | `63252a20` |
 | gofmt の掛かっていなかった 12 ファイルの整形。Vite / Vitest の設定の警告（`__dirname`・無視されていた `esbuild.jsx`） | `6527e7b6` `ae1ff372` |
-| ルート・`_cmd`・`_cmd/gen` の `go` ディレクティブを 1.26.0 に揃える。`log/` の自前の `multiHandler` を `slog.NewMultiHandler` に置き換える | （このコミット） |
+| ルート・`_cmd`・`_cmd/gen` の `go` ディレクティブを 1.26.0 に揃える。`log/` の自前の `multiHandler` を `slog.NewMultiHandler` に置き換える | `cca490ad` |
 
 ## 先にやること: 実機での確認
 
