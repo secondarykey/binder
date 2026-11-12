@@ -22,6 +22,7 @@
 | gofmt の掛かっていなかった 12 ファイルの整形。Vite / Vitest の設定の警告（`__dirname`・無視されていた `esbuild.jsx`） | `6527e7b6` `ae1ff372` |
 | ルート・`_cmd`・`_cmd/gen` の `go` ディレクティブを 1.26.0 に揃える。`log/` の自前の `multiHandler` を `slog.NewMultiHandler` に置き換える | `cca490ad` |
 | エディタの `Component.jsx` からダウンロード・プレビューの生成・公開・テンプレートのプレビュー対象を切り出す。本文への挿入を 1 つにまとめる。`Mode` を `src/mode.js` に分ける（2210 行 → 1798 行） | `a7335500` |
+| エディタの `Component.jsx` から、開いているものの読み込みとプレビューを作るタイミングを `useEditorDocument` に切り出す（1798 行 → 1480 行） | `cbea3ee8` |
 
 ## 先にやること: 実機での確認
 
@@ -29,7 +30,7 @@
 **アプリを起動して画面を触る確認はしていない**ものを、ここに並べる。問題が出たら、残りの作業より先に直す。
 
 チェックの入っているものは 2026-11-12 に確かめた。入っていないのは、「閉じて開き直す操作」（取り込みなど。
-手間が掛かるので後回しにした。D とは触る場所が重ならない）と、そのあとに行った D の切り出し（`a7335500`）の分。
+手間が掛かるので後回しにした。D とは触る場所が重ならない）と、最後に行った D の切り出し（`cbea3ee8`）の分。
 
 Lite / ライセンス:
 
@@ -57,19 +58,31 @@ Lite / ライセンス:
 
 エディタ（D の切り出し `a7335500` のあと。テストは 105 ファイル 515 件。上と同じところをもう一度触ることになる）:
 
-- [ ] ノート・図・テンプレート（layout / content / diagram）を開き、プレビューが出る。入力してしばらくするとプレビューが変わる
-- [ ] ノートからノート・図から図へ切り替えても点滅しない。切り替えたあとカーソルとスクロールが先頭に戻る
-- [ ] 空のノート・書式の誤った図で、ステータスバーがエラーになり、エラー行が赤くなる
-- [ ] 本文への挿入: スニペット・ID 挿入・囲み・書式ボタン・オートコンプリート（`{{` と ID の `"`）・
+- [x] ノート・図・テンプレート（layout / content / diagram）を開き、プレビューが出る。入力してしばらくするとプレビューが変わる
+- [x] ノートからノート・図から図へ切り替えても点滅しない。切り替えたあとカーソルとスクロールが先頭に戻る
+- [x] 空のノート・書式の誤った図で、ステータスバーがエラーになり、エラー行が赤くなる
+- [x] 本文への挿入: スニペット・ID 挿入・囲み・書式ボタン・オートコンプリート（`{{` と ID の `"`）・
       検索の置換と全置換・ツリーからの挿入（アセットのドロップ）。入れたあと Ctrl+Z で戻せる
-- [ ] ダウンロード（SVG / HTML・そのまま・展開済み・zip）
-- [ ] 公開（参照先を一緒に公開するダイアログが出る場合も）・非公開（確認ダイアログ）・ブラウザで開く
-- [ ] テンプレートを編集するとき、プレビューの相手（ノート・もう一方のテンプレート・図）を選び直せ、開き直すと前の選択に戻る
-- [ ] 別ウィンドウのプレビューが、開いた直後と編集のたびに更新される
+- [x] ダウンロード（SVG / HTML・そのまま・展開済み・zip）
+- [x] 公開（参照先を一緒に公開するダイアログが出る場合も）・非公開（確認ダイアログ）・ブラウザで開く
+- [x] テンプレートを編集するとき、プレビューの相手（ノート・もう一方のテンプレート・図）を選び直せ、開き直すと前の選択に戻る
+- [x] 別ウィンドウのプレビューが、開いた直後と編集のたびに更新される
+
+エディタ（読み込みとプレビューのタイミングの切り出し `cbea3ee8` のあと。テストは 105 ファイル 523 件。
+`useEffect` を別のフックへ移したので、開く・切り替える・入力するときの動きをもう一度見る）:
+
+- [ ] ノート・図・テンプレート・アセット・レイヤーを順に開き、種類をまたいで切り替える（ノート → 図 → テンプレート → アセット → ノート）。
+      エディタとプレビューの出方、タイトル、記録ボタンの強調が合っている
+- [ ] ノートからノート・図から図へ切り替えても点滅しない。切り替えたあとカーソルとスクロールが先頭に戻る
+- [ ] 入力中はプレビューが少し遅れて変わり、スニペットなどの挿入ではすぐ変わる。カーソル行にプレビューが付いてくる
+- [ ] テンプレート（layout / content / diagram）を開いた直後にプレビューが出る。相手を選び直すと変わる
+- [ ] 履歴から復元したあと、開いているノートの本文とプレビューが復元後のものになる
+- [ ] 外部エディタで編集して保存すると、本文とプレビューが変わる
+- [ ] 別ウィンドウのプレビューが、開いた直後・切り替え・編集のたびに更新される
 
 ## 残っている作業
 
-手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。残っているのは D の一部だけ（A・B・C・E は済み。E の `__tests__` の平置きは見送り）。
+A〜E はすべて済んだ（E の `__tests__` の平置きは見送り）。残っているのは、D の末尾に書いた小さなものだけ。
 
 ### A. 下の層が `api/json` に依存している → 済み
 
@@ -170,9 +183,11 @@ grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
 **やらなくてよさそうなもの**: `fs.UserInfo` などの型や sentinel エラーを `api` から見えなくすること。
 型の詰め替えは api の仕事で、`fs` の import を 0 にすること自体に意味は薄い。
 
-### D. エディタ本体（`Component.jsx`）の残り
+### D. エディタ本体（`Component.jsx`） → 済み
 
-**いまの状態**: 1798 行。`useState` が 44、`useRef` が 17、`useEffect` が 26 ある（`a7335500` のあと）。
+**いまの状態**: 1480 行。`useState` が 36、`useRef` が 11、`useEffect` が 20 ある（`cbea3ee8` のあと）。
+残っているのは、画面の組み立て（JSX と `useStableHandlers` で約 300 行）、入力の処理（キー操作・貼り付け・挿入・検索と置換）、
+設定の同期（フォント・行番号・折り返しなど）、カーソル位置の ID と関数ヒントの検出。
 構成は `_cmd/binder/frontend/AGENTS.md` の「components/editor/」を参照。
 
 ```bash
@@ -180,22 +195,29 @@ cd _cmd/binder/frontend/src/components/editor
 wc -l Component.jsx; grep -c '= useState(' Component.jsx; grep -c '= useRef(' Component.jsx; grep -c 'useEffect(() =>' Component.jsx
 ```
 
-**切り出したもの**（当初の 1〜5 のうち、状態の持ち主を変えずに出せるところまで）:
+**切り出したもの**（`a7335500` で 1・2・3・5 と 4 の一部、`cbea3ee8` で 3 + 4 をまとめた `useEditorDocument`）:
 
 | 当初の番号 | どうしたか |
 |---|---|
 | 1. ダウンロード | `useEditorDownloads.js`。値を受けて関数を返すだけ |
 | 2. 公開 | `useEditorPublish.jsx`。公開・非公開・ブラウザで開くと、そのダイアログ（`dialogs` で返し、本体が描画に置く） |
 | 3. プレビューの生成 | `useEditorPreview.js`。`parseText` / `createMarked` / 図・テンプレートの描画。`html` と `parseStatus` はここが持つ |
-| 4. 開いたときの初期処理 | **フックには出していない**。本体の中で種類ごとの関数（`openNote` / `openDiagram` / `openTemplate` / `openWithoutEditor`）に分けただけ。テンプレートのプレビューの相手（一覧と選択）は `useTemplatePreviewTargets.js` に出した |
+| 4. 開いたときの初期処理 | `useEditorDocument.js`。種類ごとの関数（`openNote` / `openDiagram` / `openTemplate` / `openWithoutEditor`）と `useEffect([id, restoredAt])`。テンプレートのプレビューの相手（一覧と選択）は `useTemplatePreviewTargets.js` |
+| 3 + 4. 読み込みとプレビュー | `useEditorDocument.js` が、`text` / `name` / `updated` / `isPrivate` / `alias` / `styleTemplateId` / `templateType` と、いつプレビューを作るか（`useEffect([text, openSeq])`）を持つ。`useEditorPreview` と `useTemplatePreviewTargets` はこの中で使う |
 | 5. テキストへの挿入 | 本体の `insertIntoEditor(str, range)` の 1 つにまとめた（スニペット・書式・置換・全置換・オートコンプリート・`InsertText` のイベント） |
 
 決めたこと・分かったこと:
 
-- **`useEffect` は 1 つも動かしていない**（`useEditorPreview` の中の `htmlRef` を合わせる 1 行だけが例外）。
-  「いつプレビューを作るか」（開いた直後は即時・入力中はデバウンス・読み込み中は作らない）は本体の
-  `useEffect([text, openSeq])` のまま。切り出したのは「呼ばれたら 1 回作る」関数だけなので、
-  `loadingRef` / `fileOpeningRef` / `isEditingRef` / `parseTimerRef` の順序の依存には触れていない
+- **`useEffect` の並び**。`a7335500` では 1 つも動かさず、`cbea3ee8` で 7 つを `useEditorDocument` へ移した
+  （開く・テンプレートのプレビュー 4 つ・本文が変わったとき・開き終えたとき）。**移した 7 つ同士の並びは変えていない**。
+  本体では、`modeRef` / `idRef` を合わせる `useEffect` のすぐ後ろでフックを呼ぶ（読み込みが `idRef` を見るため、これより前に置かない）。
+  本体に残った `useEffect` との前後は一部入れ替わった: 開く処理が、`nameRef` の同期・オートコンプリート・Ctrl+F と Alt+← の購読・
+  配色の取得より前になり、本文が変わったときの処理が、検索の自動オープン・各種の設定の購読・名前が変わったとき（タイトルの更新）より前になった。
+  どれも ref の同期・購読・設定の取得で、移した 7 つが見る ref（`loadingRef` / `fileOpeningRef` / `isEditingRef` /
+  `parseTimerRef` / `diagramInitializedRef`）にも `text` にも触らないので、互いに依存しない
+- **入力中としての差し替えは `editText` を通す**。`isEditingRef` は `useEditorDocument` の中だけのものにし、
+  本体（打鍵・貼り付け・Enter / Tab / Ctrl+B などのキー操作）は `editText(txt)` を呼ぶ。すぐプレビューを作り直すとき（挿入・外部エディタ）は `setText`。
+  `loadingRef` は本体にも返している（読み込み中の入力と挿入を止めるため）
 - **`insertIntoEditor` は、開いている途中（`loadingRef` が立っている間）は入れない**。これだけは挙動を変えた。
   ノートを切り替えた直後は、読み終えるまで前の本文を出したままにしている。その間にツールバーなどから挿入すると、
   前の本文に入れた内容が**新しく開く側の ID で保存される**（打鍵は `handleChangeText` が同じ理由で止めていたが、
@@ -212,18 +234,18 @@ wc -l Component.jsx; grep -c '= useState(' Component.jsx; grep -c '= useRef(' Co
   残っている。`copyClipboard` は 5 ファイルが使い、8 つのテストが `vi.mock('../app/App', ...)` で差し替えているので、
   動かすならテストも一緒に書き換える
 
-**残っているもの**:
+**残っているもの**（どれも急がない）:
 
-- **読み込みとプレビューを 1 つのフックにまとめる**（当初の 3 + 4）。`text` / `name` / `updated` / `isPrivate` / `alias` /
-  `styleTemplateId` / `templateType` / `openSeq` と、`loadingRef` / `fileOpeningRef` / `openedModeRef` /
-  `diagramInitializedRef`、それに `useEffect([id, restoredAt])` と `useEffect([text, openSeq])` を
-  「開いているもの」として本体から出す。ここまでやると本体は画面の組み立てと入力の処理だけになるが、
-  `isEditingRef` をキー操作のハンドラと共有しており、`useEffect` の並び順も変わる。
-  **動かして確かめずに分けると壊す**のは変わらないので、上の実機確認を済ませてから、1 つ動かすたびに画面で確かめる
+- `Component.jsx` は `copyClipboard` のためにまだ App.jsx を import している（上に書いた循環）
 - `EditorComponent.test.jsx` の `vi.mock('../../../bindings/binder/api/app', ...)` はパスが 1 段多く、
   効いていない（正しくは `'../../bindings/...'`）。いまは実物のバインディングが `Call.ByID` のモック経由で
   動いている。直すと、モックに無い関数（`GetEditor` など）を足す必要が出る。
-  新しく足した `EditorHooks.test.jsx`（切り出したフックのテスト）は正しいパスで差し替えている
+  `EditorHooks.test.jsx`（切り出したフックのテスト）は正しいパスで差し替えている
+- 貼り付け・表の編集・キー操作を `insertIntoEditor` に寄せること（上に書いたとおり、扱いが違う）
+- さらに分けるなら、設定の同期（`GetEditor` / `GetFont` と `binder:editor:*` の購読、`saveEditorSetting`）と、
+  カーソル位置の検出（`detectIdAtCursor` / `detectFuncHint`）が次の候補。どちらも読み込みとは絡まないので、
+  `useEditorDocument` よりは切りやすい。ただし設定の同期は `setViewer` を通して開く処理とつながっている
+  （アセット・レイヤーではプレビューを出さない）
 
 ### E. 小さなもの
 

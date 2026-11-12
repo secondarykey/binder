@@ -41,16 +41,19 @@
 - AssetViewer.jsx / LayerEditor.jsx — アセット表示・レイヤー編集
 - AuthFields.jsx / AuthAccordion.jsx / RemoteSelect.jsx — リモート接続まわりの共通部品（ImportPanel / SendForm / Binder.jsx で共用）
 - components/editor/ — エディタ画面（`/editor/:mode/:id`）
-  - **Component.jsx** — エディタ本体。開く・いつプレビューを作るか・保存する、の状態と流れを持つ（約 1800 行）。
-    ここに残しているのは互いに絡む状態（`text` / `openSeq` / `loadingRef` などの ref と、それを見る `useEffect` の並び）で、**動かして確かめずに分けない**。
-    種類ごとの読み込みは `openNote` / `openDiagram` / `openTemplate` / `openWithoutEditor`。
-    打鍵以外で本文へ入れるとき（ツールバー・メニュー・置換・オートコンプリート）は `insertIntoEditor` を通す（読み込み中は入れない・Ctrl+Z で戻せる）
+  - **Component.jsx** — エディタ本体。画面の組み立て、入力の処理（キー操作・貼り付け・挿入・検索と置換）、保存、設定の同期を持つ（約 1500 行）。
+    打鍵以外で本文へ入れるとき（ツールバー・メニュー・置換・オートコンプリート）は `insertIntoEditor` を通す（読み込み中は入れない・Ctrl+Z で戻せる）。
+    入力中として本文を差し替えるとき（打鍵・貼り付け・キー操作）は `editText`、すぐプレビューを作り直すときは `setText`
+  - **useEditorDocument.js** — 開いているもの。本文・名前などの読み込み（種類ごとの `openNote` / `openDiagram` / `openTemplate` / `openWithoutEditor`）と、
+    いつプレビューを作るか（開いた直後は即時・入力中は 500ms デバウンス・読み込み中は作らない）。
+    **中の `useEffect` の並び順に意味がある**（`loadingRef` などの ref を複数の `useEffect` が順に見る）。入れ替えたり間に足したりするときは画面で確かめる。
+    本体では `modeRef` / `idRef` を合わせる `useEffect` より後ろで呼ぶ
   - 画面の部品（状態はメニューの開閉だけ。何をするかは本体から受け取る）:
     `EditorToolbar.jsx`（編集側のツールバー）/ `ToolbarMenus.jsx`（アウトライン・スニペット・ID 挿入・囲み・その他メニュー。
     Ctrl+Shift+O と Ctrl+T もここ）/ `PreviewToolbar.jsx`（プレビュー側）/ `ParseStatusBar.jsx`（ステータスバーとエラー・警告のダイアログ）/ `IdStatusBar.jsx`
-  - フック: `useEditorPreview.js`（プレビューの生成。`html` と `parseStatus` を持つ。呼ばれたら 1 回作るだけで、いつ作るかは本体が決める）/
+  - フック: `useEditorPreview.js`（プレビューの生成。`html` と `parseStatus` を持つ。呼ばれたら 1 回作るだけで、いつ作るかは `useEditorDocument` が決める）/
     `useEditorPublish.jsx`（公開・非公開・ブラウザで開くと、そのダイアログ）/ `useEditorDownloads.js`（ダウンロード）/
-    `useTemplatePreviewTargets.js`（テンプレートのプレビューに使う相手の一覧と選択。前回の選択を覚える）/
+    `useTemplatePreviewTargets.js`（テンプレートのプレビューに使う相手の一覧と選択。前回の選択を覚える。上の 2 つは `useEditorDocument` の中で使う）/
     `useEditorCandidates.js`（オートコンプリートの候補）/ `useSplitterDrag.js`（スプリッターのドラッグ）/ `useStableHandlers.js`（memo にした部品へ渡すハンドラを、描画をまたいで同じ関数にする。本体は 1 文字ごとに描き直されるので、ツールバーやダイアログへはこれを通して渡す）
   - 状態を持たない関数: `tree-flatten.js` / `table-markdown.js` / `conflict-view.js` / `editor-history.js`（閲覧履歴。App.jsx も使う）/
     `preview-run.js` / `editor-save.js`（保存のデバウンス）/ `download.js` / `diagram-pan-zoom.js` / `id-insert.js` / `binder-link.js` / `external-editor.js`
@@ -71,7 +74,7 @@
 - テストフレームワーク: Vitest（`vitest.config.js`）
 - テストファイル: `src/__tests__/*.test.jsx`
 - セットアップ: `src/__tests__/setup.js`（`@wailsio/runtime` のグローバルモック、ResizeObserver ポリフィル、i18n 初期化）
-- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 105ファイル・515テスト）
+- 全コンポーネントにビルドパスレベルのテストあり（2026-11時点: 105ファイル・523テスト）
 
 ```bash
 # フロントエンドテスト実行
