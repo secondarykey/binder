@@ -113,6 +113,9 @@ function ImageViewer({ src, alt }) {
   // React state を使わず ref で transform 値を保持（ポインタ移動ごとの再レンダーを避ける）
   const tfRef = useRef({ left: 0, top: 0, scale: 1 });
   const [displayScale, setDisplayScale] = useState(null);
+  // 位置と倍率が決まるまで画像を見せない。読み込んだ直後は左上・等倍なので、
+  // そのまま見せると「等倍で出てから収まる位置へ動く」のが見えてしまう
+  const [placed, setPlaced] = useState(false);
 
   const applyTransform = () => {
     if (!imgRef.current) return;
@@ -155,6 +158,7 @@ function ImageViewer({ src, alt }) {
     tfRef.current = { left, top, scale };
     applyTransform();
     setDisplayScale(Math.round(scale * 100));
+    setPlaced(true);
   };
 
   // ホイールドラッグ（中ボタン）による移動。LayerEditor と統一。
@@ -200,6 +204,7 @@ function ImageViewer({ src, alt }) {
           transformOrigin: '0 0',
           maxWidth: 'none', // CSS による自動リサイズを無効化
           userSelect: 'none',
+          visibility: placed ? 'visible' : 'hidden',
         }}
       />
       {displayScale !== null && (
@@ -267,6 +272,13 @@ function AssetViewer() {
   const [detectedMime, setDetectedMime] = useState(null);
   // SVG/HTML デュアルモードのプレビュー表示切替（SVG: デフォルトtrue, HTML: デフォルトfalse）
   const [showPreview, setShowPreview] = useState(true);
+  // いま開こうとしている ID。追い越された読み込みの結果を捨てるのに使う
+  const idRef = useRef(id);
+  // 表示している中身（assetContent）。切り替えのときに前の表示を残すかを決めるのに使う
+  const contentRef = useRef(null);
+  contentRef.current = assetContent;
+  // 前の画像を出したまま次を読んでいる間 true（中身と ID が食い違うので、ダウンロードを止める）
+  const [switching, setSwitching] = useState(false);
 
 
   useEffect(() => {
@@ -294,7 +306,17 @@ function AssetViewer() {
 
   useEffect(() => {
     if (!id) return;
-    setAssetContent(null);
+    idRef.current = id;
+    // 画像から切り替えるときは、次の中身が届くまで前の画像を出したままにする
+    // （一度「Loading...」を挟むと点滅して見える）。
+    // テキスト・SVG は編集できるので残さない。前の本文への入力が新しい ID で保存されてしまう
+    const prev = contentRef.current;
+    const keep = !!prev && isImageMime(mediaType(prev.mime)) && !isSvgMime(mediaType(prev.mime));
+    if (!keep) {
+      contentRef.current = null;
+      setAssetContent(null);
+    }
+    setSwitching(keep);
     setAssetName('');
     setAssetMeta(null);
     setError(null);
@@ -302,6 +324,7 @@ function AssetViewer() {
 
     // メタデータ取得（タイトルはファイルが見つからなくても表示したい）
     GetAsset(id).then((meta) => {
+      if (idRef.current !== id) return;
       setAssetMeta(meta);
       if (meta?.name) {
         setAssetName(meta.name);
@@ -314,12 +337,16 @@ function AssetViewer() {
 
     // ツリーと同じソース（git status）で未コミット状態を判定
     GetModifiedIds().then((ids) => {
+      if (idRef.current !== id) return;
       setUpdated((ids ?? []).includes(id));
     }).catch(() => {});
 
     // コンテンツ取得
     GetAssetContent(id).then((resp) => {
+      if (idRef.current !== id) return;
+      contentRef.current = resp;
       setAssetContent(resp);
+      setSwitching(false);
       if (resp?.name) {
         setAssetName(resp.name);
         evt.changeTitle(resp.name);
@@ -337,6 +364,10 @@ function AssetViewer() {
         }
       }
     }).catch(() => {
+      if (idRef.current !== id) return;
+      contentRef.current = null;
+      setAssetContent(null);
+      setSwitching(false);
       // エラーポップアップではなくビューア内にメッセージを表示
       setError(t('assetViewer.loadError'));
     });
@@ -657,7 +688,7 @@ function AssetViewer() {
         <div className="previewMenuRight">
           <Tooltip title={t("preview.download")} placement="bottom">
             <span>
-              <IconButton size="small" aria-label="download" onClick={handleDownload} disabled={!assetContent || !id} className="editorBtn">
+              <IconButton size="small" aria-label="download" onClick={handleDownload} disabled={!assetContent || !id || switching} className="editorBtn">
                 <DownloadIcon sx={{ fontSize: '16px' }} />
               </IconButton>
             </span>
