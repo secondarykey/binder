@@ -2,8 +2,8 @@ package binder
 
 import (
 	"errors"
-	"html/template"
 	"fmt"
+	"html/template"
 	"io"
 	"regexp"
 	"strings"

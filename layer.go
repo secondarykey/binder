@@ -408,7 +408,9 @@ func (b *Binder) UnpublishLayer(id string) error {
 // エディタプレビューと公開SVG書き出しの両方で使用する。
 // imgAspect は画像の width/height（未知なら 0、その場合は 1 として扱う）。
 // imgHeightPx は画像の自然ピクセル高さ（fontSize・strokeWidth の px → viewBox 変換に使う。
-//   0 なら fallback 値を使用）。
+//
+//	0 なら fallback 値を使用）。
+//
 // viewBox を画像アスペクト比に合わせることで viewBox→表示が等比スケールとなり、
 // ストロークの太さが方向で変わらず、テキストの字形も自然な縦横比で表示される。
 // shape データは正規化 (0-1) で保存されているため、出力時に x 方向のみ aspect 倍する。
@@ -553,6 +555,7 @@ const defaultReferenceHeightPx = 400
 //     画像を自然サイズで表示したときに指定 px で描画される。
 //   - legacy: 正規化値 (< 1) → そのまま viewBox 単位とみなす。
 //   - 空/負: デフォルト 16px を使用。
+//
 // フロント側 effectiveFontSizeVB と同一ロジック。
 func normalizeFontSizeViewBox(fs float64, imgHeightPx int) float64 {
 	if fs <= 0 {

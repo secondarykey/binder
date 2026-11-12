@@ -175,4 +175,3 @@ func TestSetTemplateStatus_Committed(t *testing.T) {
 		t.Errorf("UpdatedStatus: got %d, want NothingStatus(%d)", tmpl.UpdatedStatus, entity.NothingStatus)
 	}
 }
-

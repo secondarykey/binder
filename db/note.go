@@ -3,8 +3,8 @@ package db
 import (
 	"fmt"
 
-	"binder/entity"
 	"binder/db/model"
+	"binder/entity"
 
 	_ "github.com/mithrandie/csvq-driver"
 	"golang.org/x/xerrors"
@@ -17,7 +17,6 @@ func (inst *Instance) ExistNote(id string) bool {
 	}
 	return false
 }
-
 
 func (inst *Instance) FindNotes() ([]*model.Note, error) {
 	return inst.findNote("", "updated_date desc", -1, -1)

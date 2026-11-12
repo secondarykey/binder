@@ -3,8 +3,8 @@ package db
 import (
 	"fmt"
 
-	"binder/entity"
 	"binder/db/model"
+	"binder/entity"
 
 	_ "github.com/mithrandie/csvq-driver"
 	"golang.org/x/xerrors"
@@ -105,7 +105,6 @@ func (inst *Instance) FindAssetWithParent() ([]*entity.Asset, error) {
 	}
 	return rtn, nil
 }
-
 
 func (inst *Instance) GetAssetWithParent(id string) (*entity.Asset, error) {
 

@@ -8,8 +8,8 @@ import (
 // 片側のみの変更は競合なしで自動採用されること。
 func TestMergeDiff3OneSideChange(t *testing.T) {
 	base := "a\nb\nc\n"
-	ours := "a\nB2\nc\n"   // ours が 2行目を変更
-	theirs := "a\nb\nc\n"  // theirs は base のまま
+	ours := "a\nB2\nc\n"  // ours が 2行目を変更
+	theirs := "a\nb\nc\n" // theirs は base のまま
 
 	got, conflicted := mergeDiff3(base, ours, theirs)
 	if conflicted {

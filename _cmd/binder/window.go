@@ -21,14 +21,14 @@ import (
 type Window struct {
 	app *api.App
 
-	runtime        *application.App
-	window         *application.WebviewWindow
-	commitWindow   *application.WebviewWindow
+	runtime              *application.App
+	window               *application.WebviewWindow
+	commitWindow         *application.WebviewWindow
 	historyWindows       map[string]*application.WebviewWindow // key: typ+":"+id
 	overallHistoryWindow *application.WebviewWindow
 	previewWindow        *application.WebviewWindow
-	syslogWindow   *application.WebviewWindow
-	searchWindow   *application.WebviewWindow
+	syslogWindow         *application.WebviewWindow
+	searchWindow         *application.WebviewWindow
 }
 
 func NewWindow(app *api.App) *Window {
