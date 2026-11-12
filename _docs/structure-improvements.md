@@ -19,6 +19,7 @@
 | リモートからの取り込みと、取り込み元のバージョンの確認・その場での移行のテスト（`repository_merge_test.go`・`api/closed_test.go`） | `bfbc4994` |
 | `fs` から `db` と `settings` への依存を外す（CSV のファイル名は fs が持つ・署名の既定値は `fs.SetDefaultUser` で渡す） | `112ef29e` |
 | バインダーの中身の型を `binder/entity` へ移し、`db/model`・`db`・`fs`・`setup` の `api/json` への依存を外す | `63252a20` |
+| gofmt の掛かっていなかった 12 ファイルの整形。Vite / Vitest の設定の警告（`__dirname`・無視されていた `esbuild.jsx`） | `6527e7b6` `ae1ff372` |
 
 ## 先にやること: 実機での確認
 
@@ -52,7 +53,7 @@ Lite / ライセンス:
 
 ## 残っている作業
 
-手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。D と E は独立しているので、どれからでもよい（A・B・C は済み）。
+手を付ける順の目安は「小さく確実なもの → 効果の大きいもの」。残っているのは D と、E のうち判断が要るもの（A・B・C は済み）。
 
 ### A. 下の層が `api/json` に依存している → 済み
 
@@ -197,15 +198,12 @@ grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
 - **`go` ディレクティブの不揃い**。`_cmd/binder`・`_cmd/lite` は 1.26.0、ルート・`_cmd`・`_cmd/gen` は 1.25.0、
   CI は `.github/variables` の `GO_VERSION`（1.27）。ルートを 1.26 に上げると、`log/TODO.md` にある
   `slog.NewMultiHandler` への置き換えも一緒にできる。上げるかどうかは判断が要る（利用者のビルド環境に効く）
-- **gofmt が掛かっていないファイル**が 12 個ある（今回の変更とは無関係。差分が混ざるので別コミットで）
-  ```bash
-  gofmt -l . | grep -v node_modules
-  ```
+- ~~gofmt が掛かっていないファイル~~ → 済み。`gofmt -l . | grep -v node_modules` は 0 件
 - **`__tests__` の平置き**（約 100 ファイル）。`app` / `dialogs` / `components` の区分と対応していない。
   動かすと相対 import と `vi.mock` のパスが全部変わる。得るものが見た目の整理だけなので、**見送ってよい**
-- **Vite の警告**。`vite.config.js` / `vitest.config.js` の `__dirname` が将来の `configLoader: 'native'` で
-  使えなくなる（`import.meta.dirname` へ）。`vitest.config.js` の `esbuild: { jsx: 'automatic' }` は
-  oxc の設定があるため無視されている
+- ~~Vite の警告~~ → 済み。`vite.config.js`（Binder・Lite）と `vitest.config.js` の `__dirname` を `import.meta.dirname` にし、
+  `vitest.config.js` の `esbuild: { jsx: 'automatic' }` を消した。`import.meta.dirname` は Node 20.11 以降で使える
+  （CI は 22）。ビルドに残る警告は、チャンクの大きさ（500 kB 超）のものだけ
 
 ## 作業するときの注意（今回つまずいたこと）
 
