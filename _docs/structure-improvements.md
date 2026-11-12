@@ -16,6 +16,7 @@
 | エディタの `Component.jsx` から部品・フック・関数を切り出す（3230 行 → 2119 行） | `3b7d659d` |
 | AGENTS.md の記述を実体に合わせる | `d689c1e7` |
 | 閉じて開き直す操作（`api.App.runClosed`）と、それを通る API のテスト（`api/closed_test.go`） | `ac47ddff` |
+| リモートからの取り込みと、取り込み元のバージョンの確認・その場での移行のテスト（`repository_merge_test.go`・`api/closed_test.go`） | `bfbc4994` |
 
 ## 先にやること: 実機での確認
 
@@ -29,8 +30,8 @@ Lite / ライセンス:
 - [ ] Lite が起動し、テーマ・言語・プレビューが今までどおり動く（`~/.binder` の `_default/` が更新される）
 - [ ] macOS / Linux でビルドできる（アセットのパスを `setup/defaults/_assets/` に変えた）
 
-閉じて開き直す操作（`api.App.runClosed`。`api/closed_test.go` でローカルブランチの範囲はテストした。
-リモートからの取り込みと、画面の表示・開き直したあとの画面の更新は実機でしか確かめられない）:
+閉じて開き直す操作（`api.App.runClosed`。`api/closed_test.go` でテストした。リモートは bare リポジトリ相手なので、
+実際のサーバとの認証つきの送受信と、画面の表示・開き直したあとの画面の更新は実機でしか確かめられない）:
 
 - [ ] 取り込み（他ブランチから / リモートから）: 早送り・衝突なし・衝突ありの 3 通り
 - [ ] 衝突の解決を選んで適用する。取り込みログのノートができる
@@ -156,12 +157,19 @@ grep -c '\bfs\.[A-Z]' api/*.go | grep -v ':0'
   テストで差し替えたのは設定の保存先だけ: `LoadBinder` が履歴を `setting.json` へ保存するので、`TestMain` で
   `USERPROFILE`（Windows 以外は `HOME`）を一時ディレクトリへ向けてから `settings.EnsureDir()` を呼ぶ
   （`settings.Home()` が読む環境変数。`settings` のテストと同じ切り替え方）。HTTP サーバは遅延起動なので触らない。
-  見ていないもの: `MergeFromRemote`（下の項目）、`MergeVersionNewer` の経路、`WindowCloser` の呼び出し
-- **リモートからの取り込み・取り込み元の移行のテスト**。`repository_test.go` はローカルブランチからの
-  取り込み（早送り・衝突）だけを見ている。`Repository.Merge` のリモートの経路と
-  `checkMergeSourceVersion` / `migrateSourceInPlace`（古いバージョンをその場で移行）は、コードを移しただけで
-  テストが無い。ローカルの bare リポジトリをリモートにすればネットワーク無しで書ける
-  （`fs/git_test.go` や `fs/auth_test.go` にリモートを使う例があるか先に見る）
+  見ていないもの: `WindowCloser` の呼び出し、認証情報の保存（`save` が true）
+- ~~リモートからの取り込み・取り込み元の移行のテスト~~ → 済み（`repository_merge_test.go`、api 側は `api/closed_test.go`）。
+  リモートは `git.PlainInit(dir, true)` で作った bare リポジトリのパスを `origin` にしている（ネットワーク無し）。
+  見ているのは、リモートからの早送り・すでに最新・衝突と解決の適用（取り込みログにリモート名が入る）、
+  取り込み元がアプリより新しい（`MergeVersionNewer`。何も書き込まない）、古すぎる（エラー。何も書き込まない）、
+  古いのでその場で移行する（移行後は元のブランチへ戻り、取り込み元のブランチは動かない）。
+  書くときに分かったこと:
+  - ディレクトリ相手でも `fs.UserInfo.AuthType` が空だと `authMethod` がエラーにする。テストでは `basic` を入れている
+  - 送信（go-git の Push）はリモート追跡の参照（`refs/remotes/origin/<ブランチ>`）も進める。
+    「取ってくる前は取り込めない」を確かめるには、送ったあとその参照も消す
+  - 移行のテストは、いまのスキーマのバインダーの `binder.json` のバージョンだけを `0.10.1` に書き換えた取り込み元で
+    行っている（掛かるのは 0.10.2 の移行だけで、CSV は実質変わらない）。**本当に古いスキーマの CSV を移行して
+    取り込む経路は見ていない**。見るなら古い版のバインダーのひな形が要る
 
 **やらなくてよさそうなもの**: `fs.UserInfo` などの型や sentinel エラーを `api` から見えなくすること。
 型の詰め替えは api の仕事で、`fs` の import を 0 にすること自体に意味は薄い。
