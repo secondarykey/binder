@@ -1,4 +1,33 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useLayoutEffect, memo } from "react";
+
+/**
+ * 行番号ガター。
+ *
+ * 論理行の折り返し行数ぶん visual 行を出す。先頭行に番号、折り返した継続行は
+ * 空白（&nbsp;）にして textarea の各行と 1 対 1 で揃える。
+ *
+ * 打鍵のたびに全行ぶんの要素を作り直さないよう、memo にして props が同じなら描き直さない。
+ * 折り返し行数は配列ではなく文字列（wrapsKey: "1,2,1"）で受ける（中身が同じなら同じとみなせる）。
+ */
+const LineNumbers = memo(function LineNumbers({ wrapsKey, style, activeLine, errorLine, onErrorLineDoubleClick, gutterRef }) {
+  const wraps = wrapsKey.split(',');
+  return (
+    <div className="editorLineNumbers" ref={gutterRef} style={style}>
+      {wraps.flatMap((w, i) => {
+        const n = Number(w) || 1;
+        return Array.from({ length: n }, (_, r) => (
+          <div
+            key={`${i}_${r}`}
+            className={`editorLineNumber${r === 0 && activeLine === i + 1 ? ' active' : ''}${errorLine === i + 1 ? ' error' : ''}`}
+            onDoubleClick={errorLine === i + 1 ? onErrorLineDoubleClick : undefined}
+          >
+            {r === 0 ? i + 1 : ' '}
+          </div>
+        ));
+      })}
+    </div>
+  );
+});
 
 /**
  * 行番号ガター + textarea を一体化したエディタエリアコンポーネント
@@ -16,8 +45,10 @@ import { useRef, useState, useCallback, useEffect } from "react";
  */
 function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onErrorLineDoubleClick, onKeyDown, onChange, onSelect, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, dropTarget }) {
   const lineNumbersRef = useRef(null);
-  // 各論理行が折り返しで何 visual 行になるか（折り返し行数）。
-  const [lineWraps, setLineWraps] = useState([]);
+  // 折り返し行数は下のキャッシュ（行テキスト → 行数）から描画のたびに引く。
+  // 行の位置（何行目か）で持つと、開くものを切り替えた直後に前の本文の行数を当ててしまい、
+  // 計測し直すまで行番号がずれて見える。この state は計測し終えたら描き直すためだけのもの
+  const [, setMeasured] = useState(0);
   // エディタがまだサイズ未確定（幅0）で計測できない時のリトライ回数
   const retryRef = useRef(0);
   // 行テキスト → 折り返し行数のキャッシュ。同じ幅・フォントなら同じ行テキストは
@@ -40,7 +71,6 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     // wordWrap OFF は折り返さないので全行 1（計測不要）
     if (!wordWrap) {
       retryRef.current = 0;
-      setLineWraps(text.split('\n').map(() => 1));
       return;
     }
 
@@ -66,13 +96,16 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     const cache = wrapCacheRef.current;
     const envKey = [availWidth, cs.fontFamily, cs.fontSize, cs.fontWeight, cs.fontStyle,
       cs.lineHeight, cs.letterSpacing, cs.textTransform, cs.tabSize, cs.wordBreak].join('|');
+    let changed = false;
     if (envKey !== envKeyRef.current) {
       envKeyRef.current = envKey;
       cache.clear();
+      changed = true;
     }
     // 肥大化の保険（巨大ファイルの編集を長時間続けた場合）
     if (cache.size > 20000) {
       cache.clear();
+      changed = true;
     }
 
     const lines = text.split('\n');
@@ -121,9 +154,11 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
         cache.set(line, Math.max(1, Math.round(lineEls[i].offsetHeight / unit)));
       });
       document.body.removeChild(mirror);
+      changed = true;
     }
 
-    setLineWraps(lines.map((line) => (line === '' ? 1 : cache.get(line) ?? 1)));
+    // キャッシュが変わったときだけ描き直す
+    if (changed) setMeasured((n) => n + 1);
   }, [text, style, wordWrap]);
 
   // 計測は重いため、連続入力・連続リサイズでは rAF で 1 フレーム 1 回に間引く。
@@ -153,8 +188,23 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     };
   }, []);
 
-  // テキスト・フォント・折り返し変更時に再計算
-  useEffect(() => {
+  // テキスト・フォント・折り返し変更時に再計算。
+  // 通常の入力で変わるのは編集中の 1 行なので、次のフレームへ間引く。
+  // 測っていない行が複数ある（開くものを切り替えた・貼り付けた）ときは、行番号がずれたまま
+  // 1 フレーム描かれないよう、描画の前にその場で測る
+  useLayoutEffect(() => {
+    if (wordWrap) {
+      const cache = wrapCacheRef.current;
+      let unknown = 0;
+      for (const line of text.split('\n')) {
+        if (line === '' || cache.has(line)) continue;
+        if (++unknown > 1) break;
+      }
+      if (unknown > 1) {
+        calcRef.current();
+        return;
+      }
+    }
     scheduleCalc();
   }, [text, style, wordWrap, scheduleCalc]);
 
@@ -176,6 +226,17 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
     }
   };
 
+  // 行番号ガターへ渡す折り返し行数（"1,2,1" の形）
+  const wrapCache = wrapCacheRef.current;
+  const wrapsKey = showLineNumbers
+    ? text.split('\n').map((line) => (!wordWrap || line === '' ? 1 : wrapCache.get(line) ?? 1)).join(',')
+    : '';
+
+  // エラー行のダブルクリック。ガターを描き直させないよう、渡す関数は変えずに中で最新のものを呼ぶ
+  const errorDblClickRef = useRef(onErrorLineDoubleClick);
+  errorDblClickRef.current = onErrorLineDoubleClick;
+  const handleErrorLineDoubleClick = useCallback((e) => errorDblClickRef.current?.(e), []);
+
   const textareaStyle = wordWrap
     ? { ...style, whiteSpace: 'pre-wrap' }
     : { ...style, whiteSpace: 'pre', overflowX: 'auto' };
@@ -183,22 +244,14 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
   return (
     <div className="editorArea">
       {showLineNumbers && (
-        <div className="editorLineNumbers" ref={lineNumbersRef} style={style}>
-          {text.split('\n').flatMap((_, i) => {
-            // 論理行の折り返し行数ぶん visual 行を出す。先頭行に番号、
-            // 折り返した継続行は空白（&nbsp;）にして textarea の各行と 1 対 1 で揃える。
-            const wraps = lineWraps[i] || 1;
-            return Array.from({ length: wraps }, (_, r) => (
-              <div
-                key={`${i}_${r}`}
-                className={`editorLineNumber${r === 0 && activeLine === i + 1 ? ' active' : ''}${errorLine === i + 1 ? ' error' : ''}`}
-                onDoubleClick={errorLine === i + 1 && onErrorLineDoubleClick ? onErrorLineDoubleClick : undefined}
-              >
-                {r === 0 ? i + 1 : ' '}
-              </div>
-            ));
-          })}
-        </div>
+        <LineNumbers
+          wrapsKey={wrapsKey}
+          style={style}
+          activeLine={activeLine}
+          errorLine={errorLine}
+          onErrorLineDoubleClick={handleErrorLineDoubleClick}
+          gutterRef={lineNumbersRef}
+        />
       )}
       <textarea
         id="editor"

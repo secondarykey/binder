@@ -114,4 +114,21 @@ describe('EditorArea line wrap cache', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     spy.mockRestore();
   });
+
+  it('measures before paint when several lines are unknown (switching what is open)', () => {
+    const { rerender, container } = render(<EditorArea text={"aaa"} onChange={() => {}} />);
+    flushRaf();
+
+    // 2 visual 行に折り返す行として測らせる（プローブ "X" は 20、それ以外は 40）
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get() { return this.textContent === 'X' ? 20 : 40; },
+    });
+    const spy = vi.spyOn(document.body, 'appendChild');
+    // 測っていない行が複数 → 次のフレームを待たずに測り、行番号も折り返しぶん出ている
+    rerender(<EditorArea text={"ppp\nqqq"} onChange={() => {}} />);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll('.editorLineNumber').length).toBe(4);
+    spy.mockRestore();
+  });
 });

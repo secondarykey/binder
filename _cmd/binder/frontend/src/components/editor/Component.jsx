@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef, useCallback, useMemo, memo } from "react"
+import { useState, useEffect, useLayoutEffect, useContext, useRef, useCallback, useMemo, memo } from "react"
 import { useParams, useLocation, useNavigate } from "react-router";
 
 import { Backdrop, Button, Dialog, DialogActions, DialogTitle, Paper } from "@mui/material";
@@ -207,6 +207,11 @@ function Editor(props) {
   const fileOpeningRef = useRef(false);
   // 非同期ロード前のリセット中フラグ（空テキストでのparseText発火を抑制）
   const loadingRef = useRef(false);
+  // 開き終えた回数。同じ種類のまま開き直すときは前の本文を出したままにする（空を挟むと点滅する）ので、
+  // 本文が前と同じでも描画し直せるよう、useEffect([text]) をこれでも起こす
+  const [openSeq, setOpenSeq] = useState(0);
+  // 直前に開いていたものの種類（種類が変わるときだけ本文を空に戻す）
+  const openedModeRef = useRef(null);
   useEffect(() => {
     modeRef.current = mode;
     setCursorStructures([]); setCursorStructureIndex(0); lastDetectedUuidsRef.current = null;
@@ -448,7 +453,8 @@ function Editor(props) {
       // 非同期ロード完了時に必ず useEffect([text]) が発火するようにする
       loadingRef.current = true;
       setParseStatus({ status: "processing", err: null, warnings: [] });
-      setText("");
+      // 図から図へ移るときは前の本文と図を出したままにし、読み終えてから差し替える
+      if (openedModeRef.current !== Mode.diagram) setText("");
 
       // メタ情報取得 → スタイルテンプレートキャッシュ → テキスト設定の順に実行
       // setText が先に走ると styleTemplateId が空のまま初回描画されるため
@@ -479,6 +485,8 @@ function Editor(props) {
       });
 
       Promise.all([OpenDiagram(id), metaReady]).then(([diagramText]) => {
+        // 読んでいる間に別のものを開いていたら捨てる
+        if (idRef.current !== id) return;
         loadingRef.current = false;
         fileOpeningRef.current = true;
         if (diagramText === "") {
@@ -487,7 +495,10 @@ function Editor(props) {
           if (mermaidEl) mermaidEl.innerHTML = '';
         }
         setText(diagramText);
+        setOpenSeq((n) => n + 1);
       }).catch((err) => {
+        // 前の図の本文を、開けなかった図のものとして出したままにしない
+        if (idRef.current === id) setText("");
         evt.showErrorMessage(err);
       })
 
@@ -503,18 +514,27 @@ function Editor(props) {
       // 前ファイルのエラー行ハイライトが、ロード完了までの間ガターに赤く残る
       loadingRef.current = true;
       setParseStatus({ status: "processing", err: null, warnings: [] });
-      setText("");
+      // ノートからノートへ移るときは前の本文とプレビューを出したままにし、読み終えてから差し替える
+      // （空の本文を挟むと、エディタと行番号が一瞬消えて点滅して見える）
+      if (openedModeRef.current !== Mode.note) setText("");
 
       OpenNote(id).then((resp) => {
+        // 読んでいる間に別のものを開いていたら捨てる
+        if (idRef.current !== id) return;
         loadingRef.current = false;
         fileOpeningRef.current = true;
+        // プレビューは新しいノートの先頭から見せる
+        cursorLineRef.current = 1;
         if (resp === "") {
           // ""→"" では useEffect([text]) が発火しないため、ここで直接確定する
           setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
           setHTML("");
         }
         setText(resp);
+        setOpenSeq((n) => n + 1);
       }).catch((err) => {
+        // 前のノートの本文を、開けなかったノートのものとして出したままにしない
+        if (idRef.current === id) setText("");
         evt.showErrorMessage(err);
       });
 
@@ -628,6 +648,8 @@ function Editor(props) {
         evt.showErrorMessage(err);
       })
     }
+
+    openedModeRef.current = mode;
 
     // レイアウト反映後にtransitionを再有効化（二重rAFでReact再描画完了を待つ）
     requestAnimationFrame(() => {
@@ -896,7 +918,7 @@ function Editor(props) {
     }
   }, [name]);
 
-  const parseText = async (showLoading = false) => {
+  const parseText = async () => {
     if (text === "") {
       setParseStatus({ status: "error", err: t("preview.emptyContent"), errorLine: 1, warnings: [] });
       setHTML("");
@@ -905,12 +927,9 @@ function Editor(props) {
       return;
     }
 
+    // 変換している間は前の表示を出したままにする（処理中であることはステータスバーに出る）。
+    // 「Loading...」を挟むと、開くたび・挿入のたびにプレビューが点滅する
     setParseStatus({ status: "processing", err: null, warnings: [] });
-    if (showLoading) {
-      setHTML('<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>');
-      const mermaidEl = document.querySelector('#mermaidViewer');
-      if (mermaidEl) mermaidEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px;">Loading...</div>';
-    }
 
     if (mode === Mode.diagram) {
       viewDiagram(text).catch((err) => {
@@ -918,8 +937,6 @@ function Editor(props) {
         evt.showErrorMessage(err);
       });
     } else if (mode === Mode.note) {
-      // カーソル行を確定してから描画
-      setCursorLine(cursorLineRef.current);
       viewHTML(text).catch((err) => {
         setParseStatus({ status: "error", err, warnings: [] });
         evt.showErrorMessage(err);
@@ -985,8 +1002,18 @@ function Editor(props) {
       });
     }
 
-    parseText(true).catch((err) => evt.showErrorMessage(err));
-  }, [text]);
+    parseText().catch((err) => evt.showErrorMessage(err));
+  }, [text, openSeq]);
+
+  // 開き終えたら、描画の前にカーソルとスクロールを先頭へ戻す
+  // （前の本文を出したまま差し替えるので、描画のあとに戻すと前のスクロール位置が一瞬見える）
+  useLayoutEffect(() => {
+    if (!openSeq) return;
+    const textarea = document.querySelector('#editor');
+    if (!textarea) return;
+    textarea.setSelectionRange(0, 0);
+    textarea.scrollTop = 0;
+  }, [openSeq]);
 
   //データをマークダウンからHTMLに変換
   // lineNumbers=true のとき parseWithSourceLines を使い data-src-line 属性を付与する（プレビュー用）
@@ -1029,6 +1056,7 @@ function Editor(props) {
       // 色分けしたコンフリクト表示に切り替える（エディタ側は変更しない）。
       if (hasConflictMarkers(txt)) {
         const conflictHtml = buildConflictHTML(txt, t('editor.conflictBanner'));
+        setCursorLine(cursorLineRef.current);
         setHTML(conflictHtml);
         setParseStatus({ status: "warning", err: null, warnings: [t('editor.conflictBanner')] });
         Events.Emit('binder:preview:update', { typ: mode, id, name, html: conflictHtml });
@@ -1037,10 +1065,14 @@ function Editor(props) {
 
       var result = await createMarked(id, txt, true, true);
       const noteResult = await CreateNoteHTML(id, true, result.html);
+      // 変換している間に別のものを開いていたら、前のノートの結果で表示を書き換えない
+      if (idRef.current !== id) return;
       const allWarnings = [...(result.warnings || []), ...(noteResult.warnings || [])];
       if (noteResult.error) {
         setParseStatus({ status: "error", err: noteResult.error, warnings: allWarnings });
       } else {
+        // カーソル行は HTML と同時に渡す（先に渡すと、差し替える前の表示がその行へ動いてしまう）
+        setCursorLine(cursorLineRef.current);
         setHTML(noteResult.html);
         if (!result.parseError) {
           if (allWarnings.length > 0) {
@@ -1079,6 +1111,8 @@ function Editor(props) {
 
     Mermaid.parse(parsedTxt, styleTemplateId).then((data) => {
 
+      // 描いている間に別のものを開いていたら、前の図で表示を書き換えない
+      if (idRef.current !== id) return;
       var elm = document.querySelector('#mermaidViewer');
       if (!elm) return;
       elm.innerHTML = data.svg;
@@ -1243,6 +1277,10 @@ function Editor(props) {
    * テキストの変更
    */
   const handleChangeText = (e) => {
+
+    // 開いている途中（前の本文を出したまま読んでいる間）の入力は受け付けない。
+    // 受けると、前の本文に打った内容が新しく開く側の ID で保存されてしまう
+    if (loadingRef.current) return;
 
     // ユーザー入力フラグを立てる（useEffect[text] でデバウンスを選択させる）
     isEditingRef.current = true;
