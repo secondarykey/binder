@@ -1,9 +1,9 @@
 package db_test
 
 import (
-	"binder/api/json"
 	"binder/db"
 	"binder/db/model"
+	"binder/entity"
 	"errors"
 	"testing"
 
@@ -277,7 +277,7 @@ func TestFindNotesExcludesErrorPage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetStructure() error:%v", err)
 	}
-	s.Alias = json.ErrorPageAlias
+	s.Alias = entity.ErrorPageAlias
 	if err := inst.UpdateStructure(s, testOp()); err != nil {
 		t.Fatalf("UpdateStructure() error:%v", err)
 	}

@@ -22,7 +22,7 @@ I wanted to write technical texts in text format, so I wanted to create an edito
 
 Common to every platform:
 
-- Go 1.25+
+- Go 1.26+
 - Node.js + npm
 - Wails v3 CLI — `go install github.com/wailsapp/wails/v3/cmd/wails3@latest`
 - Task — `go install github.com/go-task/task/v3/cmd/task@latest`

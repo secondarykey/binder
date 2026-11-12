@@ -1,7 +1,7 @@
 package model
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"fmt"
 	"time"
 )
@@ -19,8 +19,8 @@ func (d *Diagram) String() string {
 	return fmt.Sprintf("%s", d.Id)
 }
 
-func (d *Diagram) To() *json.Diagram {
-	var rtn json.Diagram
+func (d *Diagram) To() *entity.Diagram {
+	var rtn entity.Diagram
 	rtn.Id = d.Id
 	rtn.StyleTemplate = d.StyleTemplate
 	rtn.Created = d.Created
@@ -30,7 +30,7 @@ func (d *Diagram) To() *json.Diagram {
 	return &rtn
 }
 
-func ConvertDiagram(d *json.Diagram) *Diagram {
+func ConvertDiagram(d *entity.Diagram) *Diagram {
 	var rtn Diagram
 	rtn.Id = d.Id
 	rtn.StyleTemplate = d.StyleTemplate

@@ -7,7 +7,7 @@ import { parsePluginMeta } from '@shared/editor/pluginMeta';
 /**
  * 同梱 marked プラグインの回帰テスト。
  *
- * バンドルした marked（vendor）に対して setup/_assets/plugins/marked/ の全プラグインを
+ * バンドルした marked（vendor）に対して setup/defaults/_assets/plugins/marked/ の全プラグインを
  * 適用し、ロードエラーが無いこと・エスケープ修正済みプラグインが特殊文字を
  * エスケープすることを検証する。marked のバンドル更新時にこのテストで
  * silent breakage を検出する。
@@ -15,8 +15,8 @@ import { parsePluginMeta } from '@shared/editor/pluginMeta';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '../../../../../');
-const vendorPath = path.resolve(here, '../assets/vendor/marked.min.js');
-const pluginDir = path.join(repoRoot, 'setup/_assets/plugins/marked');
+const vendorPath = path.resolve(here, '../../../../shared/frontend/vendor/marked.min.js');
+const pluginDir = path.join(repoRoot, 'setup/defaults/_assets/plugins/marked');
 
 let Marked;
 

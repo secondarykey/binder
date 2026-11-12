@@ -27,6 +27,8 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | プラグイン（marked拡張）・ルートファイル（README等） | `_docs/skills/binder-plugin-rootfile/SKILL.md` |
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
 | mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
+| 構造の改善の残り（エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
+| フロントエンドの高速化（点滅対策・打鍵時の再描画で済んだもの・決めたこと・残りの候補・測り方） | `_docs/frontend-performance.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
 | 公開HTMLのデザイン構造（layout/content テンプレート・テンプレートに渡るデータ・CSSアセット・プレビューと公開の差） | `_docs/publish-design.md` |
 | 公開サイトの国際化（ja/en の設計案比較・未決定の検討メモ） | `_docs/site-i18n.md` |
@@ -44,7 +46,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 ## ビルド・開発コマンド
 
 ### 前提条件
-- Go 1.25+
+- Go 1.26+（ルート・`_cmd`・`_cmd/gen`・`_cmd/binder`・`_cmd/lite` の go.mod はすべて 1.26.0。CI が使う版は `.github/variables` の `GO_VERSION`）
 - Node.js + npm
 - Wails v3 CLI (`go install github.com/wailsapp/wails/v3/cmd/wails3@latest`)
 - Task (`go install github.com/go-task/task/v3/cmd/task@latest`)
@@ -61,7 +63,7 @@ OS固有のビルド依存（Wails v3 は cgo で各OSのネイティブWebView�
 実行時（配布物を動かすだけ）に必要なものは別。Linux は `libgtk-4-1` `libwebkitgtk-6.0-4`、
 macOS は 12.0+、Windows は WebView2 ランタイム。
 **リリースzipは `wails3 build` の素のバイナリを固めているだけで deb/rpm ではないため、
-`build/linux/nfpm/nfpm.yaml` の `depends` は配布物に効かない**（実行時依存の告知先は README.md のみ）。
+`_cmd/binder/build/linux/nfpm/nfpm.yaml` の `depends` は配布物に効かない**（実行時依存の告知先は README.md のみ）。
 
 ### 開発・ビルド
 ```bash
@@ -80,6 +82,12 @@ go run ./_cmd/gen/main.go
 # バージョン変更（詳細・注意点は _docs/skills/binder-version-up/SKILL.md）
 go run ./_cmd/version.go 0.0.0
 ```
+
+`_cmd/` 直下の `*.go`（`version.go` のほか、試し書きの `keyring.go` / `recover.go` / `slog.go`）は、
+それぞれが `main()` を持つ 1 ファイル完結のスクリプト。`go run ./_cmd/<ファイル>.go` のようにファイルを指定して動かす
+（`_cmd` をパッケージとして `go build` / `go vet .` はできない）。`_cmd`・`_cmd/gen`・`_cmd/binder`・`_cmd/lite` は
+それぞれ別モジュール（`module main` + `replace binder`）で、ルートの `go test ./...` の対象には入らない。
+ルートの go.mod で依存を上げたら、`_cmd` と `_cmd/gen` でも `go mod tidy` を掛けて揃える。
 
 ### テスト
 ```bash
@@ -109,14 +117,18 @@ api/ — Go APIレイヤー（App構造体をWails v3 Serviceとしてバイン�
     ↓
 db/  — CSVベースのSQLデータベース（csvq-driver）、DAO
 fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O、コミット管理
+    ↓（db と fs は並び。互いを import しない）
+entity/ — バインダーの中身を表す型と定数（Note・Diagram・Asset 等）。全層から使い、何も import しない
 ```
 
 ### 主要な型
 
 - **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）
+- **`Repository`** (repository.go) — バインダーを開かずに（DB を読まずに）リポジトリへ直接行う操作。取り込み（`Merge` / `ApplyMergeResolution`。取り込み元のバージョン確認とその場での移行を含む）・復元・ブランチ・履歴の整理。作業ツリーや pack を丸ごと入れ替える操作は DB を開いたままできないので、`api.App` がバインダーを閉じてからこれを使い、開き直す（`api/AGENTS.md` の `runClosed`）。移行に失敗して開けないバインダーの履歴・ブランチ操作（`*ByPath`）もここ
 - **`api.App`** (api/api.go) — Wails v3 の Service として登録される構造体。初期化（`Setup()`）は Wails の Service ライフサイクルとは独立しており、`main()` から直接呼び出される。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
 - **`Window`** (_cmd/binder/window.go) — Wails v3 の第2 Service。ウィンドウ操作（サイズ変更・移動・最小化・最大化）を担当
-- **`shared.Shared`** (api/shared/shared.go) — Binder/Lite 共通の第3 Service。テーマ・言語・フォント一覧の取得
+- **`shared.Shared`** (api/shared/shared.go) — Binder/Lite 共通の第3 Service。テーマ・言語・フォント一覧の取得。Lite からも使うので `binder`（ルート）・`db`・`fs` を import しない
+- **`setup/defaults`** — テーマ・言語・Lite のプレビュー・同梱プラグインを `~/.binder` へ配置する（アセットは `setup/defaults/_assets/`）。Binder（`setup` 経由）と Lite が使う。`settings` と `log` だけに依存する。バインダーの作成・移行は `setup` 側（アセットは `setup/_assets/`）
 - **`fs.FileSystem`** (fs/fs.go) — go-gitリポジトリのラッパー。全コンテンツ変更はここを経由し、gitコミットされる
 - **`fs.BinderMeta`** (fs/meta.go) — `binder.json` の読み書きを担当。アプリバージョン・name・detail を保持。`Schema` フィールドは後方互換用（非推奨）
 - **`db.Instance`** (db/db.go) — csvqを使用したCSVファイルへのSQLインターフェース。テーブル: notes, diagrams, assets, templates, structures
@@ -129,7 +141,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 - アプリ取得: サービス内から `application.Get()` で `*application.App` を取得
 - ウィンドウ作成: `app.Window.NewWithOptions(opts)` / ダイアログ: `app.Dialog.OpenFile()...` / ブラウザ: `app.Browser.OpenURL(url)`
 - フロントエンドバインディング: `frontend/bindings/binder/api/app.js`（Goパッケージパスに対応、手動編集不可）
-- ビルド設定: `_cmd/binder/Taskfile.yml` + `_cmd/binder/build/config.yml`（Wails v2の `wails.json` はメタデータのみ残存）
+- ビルド設定: `_cmd/binder/Taskfile.yml` + `_cmd/binder/build/config.yml`（Wails v2 の `wails.json` は無い）
 - バージョン: `_cmd/binder/main.go` が `//go:embed version` で `_cmd/binder/version` ファイルからバージョン文字列を取得
 
 ### データフロー
@@ -151,7 +163,7 @@ fs/  — Gitバックのファイルシステム（go-git）、ファイルI/O�
 
 UIではGit用語を隠蔽し、ユーザーフレンドリーな表現を使用する。
 コード内部の変数名・イベント名・ファイル名は元の語（`commit` / `merge` / `push` 等）のまま維持し、
-言語ファイル（`setup/_assets/languages/`）の表示ラベルのみ置き換える:
+言語ファイル（`setup/defaults/_assets/languages/`）の表示ラベルのみ置き換える:
 
 - **コミット → 記録**（Record） / **未コミット → 未記録**（Unrecorded）
 - **マージ → 取り込み**（Bring In）。`share.*` 配下
@@ -222,7 +234,8 @@ cd _cmd/binder && wails3 generate bindings -f '' -clean=true
 - Wailsアプリのエントリーポイントは`_cmd/binder/`（アンダースコアプレフィックスに注意）
 - コードベース全体に日本語コメントあり
 - コミットメッセージはConventional Commits形式（`fix:`, `feat:`, `docs:`）。末尾に「Glory to mankind.」を付ける
-- `api/json/`パッケージはAPI向けのモデル型を含み、`db/model/`とは別
+- バインダーの中身を表す型と定数は `entity/`（`binder/entity`）に置く: `Note` / `Diagram` / `Asset` / `Layer` / `Template` / `Structure`、公開の状態（`Status`）、テンプレートの種類（`TemplateType`）、404 ページの alias（`ErrorPageAlias`）。全層から使う型なので、`entity` 自身は他の binder パッケージを import しない。`db/model/`（テーブルの行）とは別で、`db/model` の `To()` / `ConvertXxx()` が相互に変換する
+- `api/json/`パッケージは画面との受け渡しの型（取り込みの結果・履歴・ツリー・設定など）。`entity` の型は同じ名前のエイリアスで見せている（`json.Note` = `entity.Note`）ので、`api` とルートパッケージは `json.Note` と書いてよい。**`db`・`db/model`・`fs`・`setup` は `api/json` を import しない**（`binder/entity` を直接使う。下の層が api 配下に依存しないため）
 - DAOファイルは`_dao.go`サフィックスを使用（自動生成、手動編集不可）
 - `fs`パッケージはOSファイルシステムとインメモリファイルシステム（billy）の両方をサポート（テスト用）
 - セマンティックバージョン操作は`internal.Version`を使用（直接文字列比較は不可）

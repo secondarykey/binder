@@ -4,7 +4,7 @@ description: >
   Binderのテーマ（外部CSSファイル・CSS変数）と言語（外部JSONファイル・i18n翻訳）の仕組みを提供する。
   CSS変数の追加・変更、ダーク/ライトテーマの編集、翻訳キーの追加、言語ファイル（en.json/ja.json）の編集、
   Go側 i18n（settings.InitI18n / settings.T / SetI18nLanguage / OnLanguageChange）、
-  ~/.binder/ への配置の仕組み（installThemes / installLanguages / UpdateDefaults / _default ディレクトリ）を扱う。
+  ~/.binder/ への配置の仕組み（InstallThemes / InstallLanguages / defaults.Update / _default ディレクトリ）を扱う。
   テーマ、CSS変数、翻訳、i18n、言語ファイル、ダークモードといったキーワードが出る作業、
   UI文字列の追加・変更を行う作業では必ずこのSkillを参照すること。
 ---
@@ -13,11 +13,11 @@ description: >
 
 ## テーマ（外部CSSファイル）
 
-テーマは `setup/_assets/themes/` にデフォルトCSSファイルとして管理し、Go embedでバイナリに埋め込む。アプリ起動時に `~/.binder/themes/_default/` へ配置される。ユーザーは `~/.binder/themes/` に独自CSSを追加でき、同名ファイルはユーザー側が優先される。
+テーマは `setup/defaults/_assets/themes/` にデフォルトCSSファイルとして管理し、Go embedでバイナリに埋め込む。アプリ起動時に `~/.binder/themes/_default/` へ配置される。ユーザーは `~/.binder/themes/` に独自CSSを追加でき、同名ファイルはユーザー側が優先される。
 
 **デフォルトテーマの編集**:
-- `setup/_assets/themes/dark.css` — ダークテーマ
-- `setup/_assets/themes/light.css` — ライトテーマ（darkの全変数を含むこと）
+- `setup/defaults/_assets/themes/dark.css` — ダークテーマ
+- `setup/defaults/_assets/themes/light.css` — ライトテーマ（darkの全変数を含むこと）
 
 **CSSファイル形式**:
 ```css
@@ -43,11 +43,11 @@ description: >
 
 ## 言語（外部JSONファイル）
 
-言語ファイルは `setup/_assets/languages/` にデフォルトJSONファイルとして管理し、Go embedでバイナリに埋め込む。テーマと同じ `_default/` ディレクトリ分離パターンで `~/.binder/languages/` に配置される。
+言語ファイルは `setup/defaults/_assets/languages/` にデフォルトJSONファイルとして管理し、Go embedでバイナリに埋め込む。テーマと同じ `_default/` ディレクトリ分離パターンで `~/.binder/languages/` に配置される。
 
 **デフォルト言語ファイルの編集**:
-- `setup/_assets/languages/en.json` — 英語
-- `setup/_assets/languages/ja.json` — 日本語
+- `setup/defaults/_assets/languages/en.json` — 英語
+- `setup/defaults/_assets/languages/ja.json` — 日本語
 
 **JSONファイル形式**（ネストしたオブジェクト。フロントエンドは `t("menu.binder")` のようにドット記法で参照する）:
 ```json
@@ -95,8 +95,8 @@ Go側で生成するUI文字列（ウィンドウタイトル・ダイアログ�
 
 ## 配置の仕組み（テーマ・言語共通）
 
-- `setup/externals.go` の `installThemes()` / `installLanguages()` が `_assets/` から `~/.binder/{themes,languages}/_default/` にコピー
+- `setup/defaults/defaults.go` の `InstallThemes()` / `InstallLanguages()` が `_assets/` から `~/.binder/{themes,languages}/_default/` にコピー
 - 初回起動時: ファイルが存在しなければコピー（`force=false`）
-- アプリバージョンアップ時・開発モード時: 常に上書き（`setup.UpdateDefaults()` → `force=true`）
+- アプリバージョンアップ時・開発モード時: 常に上書き（`defaults.Update()` → `force=true`）
 - バージョン比較は `setting.json` の `appVersion` フィールドで管理（`setup/setup.go` の `migrateApp()`）
 - 優先順位: ユーザーディレクトリ > `_default/`

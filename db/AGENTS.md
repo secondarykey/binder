@@ -27,7 +27,7 @@ csvq（CSVファイルに対するSQL）を使用。binderリポジトリ内の`
 **アプリレベルマイグレーション** (`setup/setup.go` の `migrateApp()`):
 - `~/.binder/` 配下のアプリ全体の設定・リソースを更新する処理
 - `setting.json` の `appVersion` フィールドで前回起動時のバージョンを記録し、バージョン変更を検出する
-- バージョンが変わった場合または開発モードの場合に `UpdateDefaults()` を実行し、`_default/` のテーマ・言語ファイルを最新に上書きする
+- バージョンが変わった場合または開発モードの場合に `defaults.Update()` を実行し、`_default/` のテーマ・言語ファイルを最新に上書きする
 - `EnsureExists()` の末尾で呼ばれる。バインダーとは無関係にアプリ起動ごとに実行される
 
 **バインダーレベルマイグレーション** (`setup/convert/`):
@@ -41,3 +41,4 @@ csvq（CSVファイルに対するSQL）を使用。binderリポジトリ内の`
 - `_cmd/gen/main.go` が `db/model/*.go` の構造体タグ（`db:"col_name"`, `db:"id:key"`, `db:"col:insert"`）を読んで `db/*_dao.go` を生成
 - モデルを変更したらリポジトリルートから `go run ./_cmd/gen/main.go` で再生成すること
 - DAOファイルは `_dao.go` サフィックス（自動生成、手動編集不可）
+- テーブルを足したら、`fs/db.go` のファイル名の定数と `allTableFiles` にも足す（fs は db を import しないので、git に載せる CSV のファイル名を自分で持っている。足し忘れはルートの `table_files_test.go` が落ちて分かる）

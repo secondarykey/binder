@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"binder/log"
 	"bytes"
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateLayerFile(l *json.Layer) (string, error) {
+func (f *FileSystem) CreateLayerFile(l *entity.Layer) (string, error) {
 
 	fn := LayerFile(l.Id)
 	fp, err := f.Create(fn)
@@ -22,7 +22,7 @@ func (f *FileSystem) CreateLayerFile(l *json.Layer) (string, error) {
 	return fn, nil
 }
 
-func (f *FileSystem) DeleteLayer(l *json.Layer) ([]string, error) {
+func (f *FileSystem) DeleteLayer(l *entity.Layer) ([]string, error) {
 
 	var files []string
 
@@ -75,7 +75,7 @@ func (f *FileSystem) WriteLayer(id string, data []byte) error {
 	return nil
 }
 
-func (f *FileSystem) SetLayerStatus(l *json.Layer) error {
+func (f *FileSystem) SetLayerStatus(l *entity.Layer) error {
 
 	base := LayerFile(l.Id)
 
@@ -89,7 +89,7 @@ func (f *FileSystem) SetLayerStatus(l *json.Layer) error {
 	return nil
 }
 
-func (f *FileSystem) PublishLayer(data []byte, l *json.Layer) (string, error) {
+func (f *FileSystem) PublishLayer(data []byte, l *entity.Layer) (string, error) {
 
 	pub := PublicLayerFile(l)
 	r := bytes.NewReader(data)
@@ -102,7 +102,7 @@ func (f *FileSystem) PublishLayer(data []byte, l *json.Layer) (string, error) {
 	return pub, nil
 }
 
-func (f *FileSystem) UnpublishLayer(l *json.Layer) (string, error) {
+func (f *FileSystem) UnpublishLayer(l *entity.Layer) (string, error) {
 
 	pub := PublicLayerFile(l)
 	err := f.remove(pub)

@@ -119,11 +119,11 @@ func TestDefaultDir(t *testing.T) {
 // ファイルとコンソールの両方に組んだときも、出口のレベルで絞られて両方へ出ること。
 func TestMultiHandler(t *testing.T) {
 	var a, b []slog.Record
-	h := multiHandler{recordHandler{&a}, slog.NewTextHandler(nil, &slog.HandlerOptions{Level: LevelError})}
+	h := slog.NewMultiHandler(recordHandler{&a}, slog.NewTextHandler(nil, &slog.HandlerOptions{Level: LevelError}))
 	if !h.Enabled(context.Background(), LevelInfo) {
 		t.Error("Enabled(INFO) = false, want true (one sink accepts)")
 	}
-	h = multiHandler{recordHandler{&a}, recordHandler{&b}}
+	h = slog.NewMultiHandler(recordHandler{&a}, recordHandler{&b})
 	l := slog.New(h).With("k", "v")
 	l.Info("both")
 	if len(a) != 1 || len(b) != 1 {

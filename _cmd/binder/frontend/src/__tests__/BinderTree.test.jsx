@@ -54,7 +54,7 @@ vi.mock('../../bindings/main/window', () => ({
   OpenSearchWindowWithQuery: vi.fn(),
   SelectFile: vi.fn(() => Promise.resolve('')),
 }));
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import BinderTree from '../components/BinderTree';
 

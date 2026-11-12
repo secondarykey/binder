@@ -27,7 +27,7 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 }
 ```
 
-- 入出力のモデル型は `api/json/` を使う（`db/model` を直接公開しない）
+- 入出力のモデル型は `api/json/` を使う（`db/model` を直接公開しない）。ノートなどバインダーの中身の型は実体が `binder/entity` にあり、`api/json` がエイリアスで見せている（`json.Note`）。画面との受け渡しだけの型を足すときは `api/json` に、下の層（`db`・`fs`・`setup`）でも使う型を足すときは `entity` に置いてエイリアスを足す
 - **メソッドを追加・変更したらフロントエンドバインディングを再生成する**（`cd _cmd/binder && wails3 task common:generate:bindings`）
 - バインダー未オープンで呼ばれ得るメソッドは `a.current == nil` を確認する（例: `SearchBinder`）
 
@@ -35,8 +35,16 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 
 - **api.go** — `App` 本体、`GetVersionInfo`、非同期検索（`SearchBinder`）、`Address` / `EnsureAddress`（HTTPサーバ遅延起動）
 - **binder.go** — バインダーの Load/Create/Close/CreateRemote、公開（`Generate` / `GenerateAll` / `Unpublish*`）。`LoadBinder` はクラッシュ検出フラグ `StartupOk` の管理も行う。
-  `LoadBinder` は切り替え前のバインダーを閉じる（フロントは切り替えで `CloseBinder` を呼ばない）。`holdOpen` は閉じて開き直す操作の間も「開いている」印を持ち続ける（`fs/AGENTS.md`）
-- **git.go** — 最大のファイル。記録（`Commit` / `CommitFiles` / `AutoSave`）、リモートCRUD・Push・PushDocs、マージ（`MergeFromRemote` / `MergeFromLocal` / `ApplyMergeResolution`）、履歴・復元、ブランチ操作、`*ByPath` 系（バインダーを開かずにディレクトリ指定で履歴操作）、クリーンアップ（`SquashHistory` / `RunGC`）
+  `LoadBinder` は切り替え前のバインダーを閉じる（フロントは切り替えで `CloseBinder` を呼ばない）。`holdOpen` は閉じて開き直す操作の間も「開いている」印を持ち続ける（`fs/AGENTS.md`）。
+  `TakeDoctorReport` は開いたときの整合性修復の内容を一度だけ返す（`json.DoctorReport`。フロントは `app/doctorReport.js` でスナックバーに出す）
+- **git.go** — 記録（`Commit` / `CommitFiles` / `AutoSave`）、リモートCRUD・Push・PushDocs、マージ（`MergeFromRemote` / `MergeFromLocal` / `ApplyMergeResolution`）、履歴・復元、ブランチ操作、`*ByPath` 系（バインダーを開かずにディレクトリ指定で履歴操作）、クリーンアップ（`SquashHistory` / `RunGC`）。
+  **`fs.Load` を直接呼ばない**。閉じたバインダーへの操作の中身は `binder.Repository`（ルートの `repository.go`）にあり、ここは次の 2 つだけを行う:
+  - `runClosed(op)` — 開いているバインダーを閉じ、`binder.OpenRepository` で開いて `op` を実行し、開き直す。結果は `closedResult`（`success` / `error`＝操作が失敗・開き直せた / `reload_error`＝開き直せなかった）。取り込み・復元・ブランチ切替・履歴の整理はすべてこれを通す
+  - 結果を `json.MergeResult` / `BranchResult` / `CleanupResult` に詰め替える
+  
+  テストは `closed_test.go`。`LoadBinder` が履歴を `setting.json` へ保存するので、`TestMain` で設定の保存先（`USERPROFILE` / `HOME`）を一時ディレクトリへ向けている。`App` にバインダーを開かせるテストを足すときは、この `TestMain` の下（`api` パッケージ内）に置く
+
+  バインダーを開いていないときの書き込み（`RestoreToCommitByPath` / `SwitchBranchByPath`）は `binder.LockRepository` で「開いている」印を立てる
 - **note.go / diagram.go / assets.go / layer.go / template.go / structure.go** — エンティティ別 CRUD・コンテンツの読み書き
 - **tree.go** — 各種ツリー取得（Binder/Template/Modified/Unpublished/Published）と `MoveNode`
 - **html.go** — プレビュー・公開用HTMLの生成（`CreateNoteHTML` / `Parse*`）
@@ -46,7 +54,7 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 - **snippet.go** — スニペット設定の読み書き（アプリレベル、`settings` へ委譲）
 - **setup.go** — `Setup` / `CheckCompat` / `Convert`
 - **error.go / message.go** — `userError` / `MessageError` / `MarshalError`（詳細は `_docs/skills/binder-user-error/SKILL.md`）
-- **plugin.go / app_plugin.go / rootfile.go** — プラグイン・ルートファイル（詳細は `_docs/skills/binder-plugin-rootfile/SKILL.md`）
+- **plugin.go / app_plugin.go / rootfile.go** — プラグイン・ルートファイル・ルートファイルの雛形（`ListRootFileTemplates` / `ReadRootFileTemplate`）（詳細は `_docs/skills/binder-plugin-rootfile/SKILL.md`）
 
 ## サブパッケージ
 

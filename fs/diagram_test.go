@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"binder/api/json"
+	"binder/entity"
 )
 
-func newDiagram(id, alias string) *json.Diagram {
-	d := &json.Diagram{}
+func newDiagram(id, alias string) *entity.Diagram {
+	d := &entity.Diagram{}
 	d.Id = id
 	d.Alias = alias
 	return d
@@ -163,8 +163,8 @@ func TestSetDiagramStatus_Private(t *testing.T) {
 	if err := f.SetDiagramStatus(d); err != nil {
 		t.Fatalf("SetDiagramStatus() error: %v", err)
 	}
-	if d.PublishStatus != json.PrivateStatus {
-		t.Errorf("PublishStatus: got %d, want PrivateStatus(%d)", d.PublishStatus, json.PrivateStatus)
+	if d.PublishStatus != entity.PrivateStatus {
+		t.Errorf("PublishStatus: got %d, want PrivateStatus(%d)", d.PublishStatus, entity.PrivateStatus)
 	}
 }
 
@@ -186,7 +186,7 @@ func TestSetDiagramStatus_Published(t *testing.T) {
 	if err := f.SetDiagramStatus(d); err != nil {
 		t.Fatalf("SetDiagramStatus() error: %v", err)
 	}
-	if d.PublishStatus != json.LatestStatus {
-		t.Errorf("PublishStatus: got %d, want LatestStatus(%d)", d.PublishStatus, json.LatestStatus)
+	if d.PublishStatus != entity.LatestStatus {
+		t.Errorf("PublishStatus: got %d, want LatestStatus(%d)", d.PublishStatus, entity.LatestStatus)
 	}
 }

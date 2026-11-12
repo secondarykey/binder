@@ -10,8 +10,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/format/diff"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/utils/merkletrie"
 	utils "github.com/go-git/go-git/v5/utils/diff"
+	"github.com/go-git/go-git/v5/utils/merkletrie"
 	dmp "github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/xerrors"
 )

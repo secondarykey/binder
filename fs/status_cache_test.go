@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"binder/api/json"
+	"binder/entity"
 )
 
 // newStatusTestFS は Status キャッシュ検証用の一時リポジトリを作成し、
 // ノートを1件コミット済みの状態にして返す。
-func newStatusTestFS(t *testing.T) (*FileSystem, string, *json.Note) {
+func newStatusTestFS(t *testing.T) (*FileSystem, string, *entity.Note) {
 	t.Helper()
 	dir := t.TempDir()
 	f, err := New(dir)
@@ -18,7 +18,7 @@ func newStatusTestFS(t *testing.T) (*FileSystem, string, *json.Note) {
 		t.Fatalf("New() error: %v", err)
 	}
 
-	n := &json.Note{}
+	n := &entity.Note{}
 	n.Id = "status-cache-note"
 	n.Alias = "status-cache-alias"
 	if _, err := f.CreateNoteFile(n); err != nil {
@@ -106,5 +106,52 @@ func TestStatusReflectsFsWriteImmediately(t *testing.T) {
 	}
 	if len(s) != 0 {
 		t.Errorf("コミット後は変更なしのはず: got %d entries", len(s))
+	}
+}
+
+// TestNoteStatusCacheAndInvalidate は 1 件ずつの状態確認（SetNoteStatus）が
+// 素の git status のキャッシュを使い、fs 経由の書き込み・コミットは即時に反映されることを検証する。
+func TestNoteStatusCacheAndInvalidate(t *testing.T) {
+	f, dir, n := newStatusTestFS(t)
+
+	updated := func() entity.Status {
+		t.Helper()
+		if err := f.SetNoteStatus(n); err != nil {
+			t.Fatalf("SetNoteStatus() error: %v", err)
+		}
+		return n.UpdatedStatus
+	}
+
+	// コミット直後: 変更なし。結果がキャッシュされる
+	if got := updated(); got != entity.NothingStatus {
+		t.Fatalf("コミット直後: got %d, want NothingStatus", got)
+	}
+	if f.rawStatus == nil {
+		t.Error("git status の結果がキャッシュされていない")
+	}
+
+	// fs を経由しない外部変更は TTL 内はキャッシュに隠れる（= キャッシュが返っている）
+	p := filepath.Join(dir, filepath.FromSlash(NoteFile(n.Id)))
+	if err := os.WriteFile(p, []byte("# external change\n"), 0644); err != nil {
+		t.Fatalf("os.WriteFile() error: %v", err)
+	}
+	if got := updated(); got != entity.NothingStatus {
+		t.Errorf("TTL 内はキャッシュが返るはずが、外部変更が見えている: got %d", got)
+	}
+
+	// fs 経由の書き込みは即時に反映される
+	if err := f.WriteNoteText(n.Id, []byte("# v2\n")); err != nil {
+		t.Fatalf("WriteNoteText() error: %v", err)
+	}
+	if got := updated(); got != entity.UpdatedStatus {
+		t.Errorf("fs 経由の変更が即時反映されていない: got %d", got)
+	}
+
+	// コミットで変更なしに戻る
+	if err := f.Commit(M("Update Note", n.Id), NoteFile(n.Id)); err != nil {
+		t.Fatalf("Commit() error: %v", err)
+	}
+	if got := updated(); got != entity.NothingStatus {
+		t.Errorf("コミット後は変更なしのはず: got %d", got)
 	}
 }

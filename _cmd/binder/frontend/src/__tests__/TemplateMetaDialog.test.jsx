@@ -8,7 +8,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
   GetTemplate: vi.fn(() => Promise.resolve({})),
   RemoveTemplate: vi.fn(() => Promise.resolve()),
 }));
-vi.mock('../app/App', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
 import TemplateMetaDialog from '../dialogs/TemplateMetaDialog';
 

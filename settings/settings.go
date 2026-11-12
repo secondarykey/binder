@@ -121,12 +121,12 @@ type Git struct {
 }
 
 type Look struct {
-	DarkMode        bool    `json:"darkMode"`
-	Theme           string  `json:"theme"`
-	WholeText       *Font   `json:"whole"`
-	TreeNoteNum     int     `json:"treeNoteNum"`
-	TreeDisplayMode    string  `json:"treeDisplayMode"`
-	TreeExpandTargets bool    `json:"treeExpandTargets"`
+	DarkMode          bool   `json:"darkMode"`
+	Theme             string `json:"theme"`
+	WholeText         *Font  `json:"whole"`
+	TreeNoteNum       int    `json:"treeNoteNum"`
+	TreeDisplayMode   string `json:"treeDisplayMode"`
+	TreeExpandTargets bool   `json:"treeExpandTargets"`
 	// PreviewScrollbar はプレビュー画面のスクロールバーをエディタ画面と同じ見た目にするか。
 	// 未設定（既存の setting.json）はデフォルトONとして扱うためポインタで保持する
 	PreviewScrollbar *bool   `json:"previewScrollbar,omitempty"`
@@ -146,11 +146,11 @@ type Editor struct {
 }
 
 type AutoCompleteConfig struct {
-	Template   bool `json:"template"`
-	IdAssist   bool `json:"idAssist"`
-	AutoClose  bool `json:"autoClose"`
-	FuncHint   bool `json:"funcHint"`
-	Mermaid    bool `json:"mermaid"`
+	Template  bool `json:"template"`
+	IdAssist  bool `json:"idAssist"`
+	AutoClose bool `json:"autoClose"`
+	FuncHint  bool `json:"funcHint"`
+	Mermaid   bool `json:"mermaid"`
 }
 
 func (e *Editor) UnmarshalJSON(data []byte) error {

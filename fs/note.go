@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"binder/log"
 	"bytes"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (f *FileSystem) CreateNoteFile(n *json.Note) (string, error) {
+func (f *FileSystem) CreateNoteFile(n *entity.Note) (string, error) {
 
 	fn := NoteFile(n.Id)
 	fp, err := f.Create(fn)
@@ -28,7 +28,7 @@ func (f *FileSystem) CreateNoteFile(n *json.Note) (string, error) {
 	return fn, nil
 }
 
-func (f *FileSystem) EditMetadata(n *json.Note, fn string) (string, error) {
+func (f *FileSystem) EditMetadata(n *entity.Note, fn string) (string, error) {
 
 	mf := MetaFile(n)
 	fp, err := f.Create(mf)
@@ -52,7 +52,7 @@ func (f *FileSystem) EditMetadata(n *json.Note, fn string) (string, error) {
 	return mf, nil
 }
 
-func (f *FileSystem) DeleteNote(n *json.Note) ([]string, error) {
+func (f *FileSystem) DeleteNote(n *entity.Note) ([]string, error) {
 
 	var files []string
 
@@ -113,7 +113,7 @@ func (f *FileSystem) WriteNoteText(id string, data []byte) error {
 	return nil
 }
 
-func (f *FileSystem) SetNoteStatus(n *json.Note) error {
+func (f *FileSystem) SetNoteStatus(n *entity.Note) error {
 
 	base := NoteFile(n.Id)
 
@@ -127,7 +127,7 @@ func (f *FileSystem) SetNoteStatus(n *json.Note) error {
 	return nil
 }
 
-func (f *FileSystem) PublishNote(data []byte, n *json.Note) (string, error) {
+func (f *FileSystem) PublishNote(data []byte, n *entity.Note) (string, error) {
 	//公開ファイルを取得
 	pub := HTMLFile(n)
 	r := bytes.NewReader(data)
@@ -141,7 +141,7 @@ func (f *FileSystem) PublishNote(data []byte, n *json.Note) (string, error) {
 }
 
 // PublishNoteMeta はメタ画像を docs/images/meta/{alias} にコピーする。
-func (f *FileSystem) PublishNoteMeta(data []byte, n *json.Note) (string, error) {
+func (f *FileSystem) PublishNoteMeta(data []byte, n *entity.Note) (string, error) {
 	pub := PublicMetaFile(n)
 	r := bytes.NewReader(data)
 
@@ -153,7 +153,7 @@ func (f *FileSystem) PublishNoteMeta(data []byte, n *json.Note) (string, error) 
 	return pub, nil
 }
 
-func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
+func (f *FileSystem) UnpublishNote(n *entity.Note) (string, error) {
 
 	//公開ファイルを取得
 	pub := HTMLFile(n)
@@ -166,7 +166,7 @@ func (f *FileSystem) UnpublishNote(n *json.Note) (string, error) {
 }
 
 // WriteMetaData はバイト列をメタ画像ファイル（assets/meta/{noteId}）に書き込む。
-func (f *FileSystem) WriteMetaData(n *json.Note, data []byte) (string, error) {
+func (f *FileSystem) WriteMetaData(n *entity.Note, data []byte) (string, error) {
 
 	mf := MetaFile(n)
 	fp, err := f.Create(mf)
@@ -185,7 +185,7 @@ func (f *FileSystem) WriteMetaData(n *json.Note, data []byte) (string, error) {
 
 // DeleteMetaFile は assets/meta/{noteId} を削除する。
 // ファイルが存在しない場合は何もしない。
-func (f *FileSystem) DeleteMetaFile(n *json.Note) (string, bool) {
+func (f *FileSystem) DeleteMetaFile(n *entity.Note) (string, bool) {
 	mf := MetaFile(n)
 	if !f.isExist(mf) {
 		return mf, false
@@ -196,7 +196,7 @@ func (f *FileSystem) DeleteMetaFile(n *json.Note) (string, bool) {
 
 // UnpublishNoteMeta はメタ画像 docs/images/meta/{alias} を削除する。
 // ファイルが存在しない場合は何もしない。
-func (f *FileSystem) UnpublishNoteMeta(n *json.Note) (string, bool) {
+func (f *FileSystem) UnpublishNoteMeta(n *entity.Note) (string, bool) {
 
 	pub := PublicMetaFile(n)
 	if !f.isExist(pub) {
@@ -216,7 +216,7 @@ func (f *FileSystem) RenamePublishedNote(oldAlias, newAlias string) ([]string, e
 	// HTML ファイル
 	oldHTML := htmlFile(oldAlias)
 	newHTML := htmlFile(newAlias)
-	if f.isExist(oldHTML) && json.IsErrorPageAlias(oldAlias) != json.IsErrorPageAlias(newAlias) {
+	if f.isExist(oldHTML) && entity.IsErrorPageAlias(oldAlias) != entity.IsErrorPageAlias(newAlias) {
 		// docs/pages/x.html と docs/404.html をまたぐ場合、書き出し済みの HTML は URL の基準
 		// （"../" とサイトのルートからのパス）が違うので、移すと表示が崩れる。
 		// 古い方を消すだけにして公開し直してもらう（structure の更新日が新しくなるので「要再公開」になる）

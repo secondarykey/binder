@@ -3,8 +3,8 @@ package db
 import (
 	"fmt"
 
-	"binder/api/json"
 	"binder/db/model"
+	"binder/entity"
 
 	_ "github.com/mithrandie/csvq-driver"
 	"golang.org/x/xerrors"
@@ -17,7 +17,6 @@ func (inst *Instance) ExistNote(id string) bool {
 	}
 	return false
 }
-
 
 func (inst *Instance) FindNotes() ([]*model.Note, error) {
 	return inst.findNote("", "updated_date desc", -1, -1)
@@ -62,7 +61,7 @@ func (inst *Instance) FindPublishSeqNotes(id string, limit int, offset int) ([]*
 // excludeErrorPage は 404 ページのノート（alias "/404"）を一覧から外す条件。
 // childNotes / latestNotes に 404 ページが並ばないようにする。件数の指定（limit）がずれないよう SQL で外す。
 // csvq は空欄を NULL として読むため、NULL を明示的に残す（比較だけだと空の alias のノートまで落ちる）
-var excludeErrorPage = fmt.Sprintf(" and (alias IS NULL or alias <> '%s')", json.ErrorPageAlias)
+var excludeErrorPage = fmt.Sprintf(" and (alias IS NULL or alias <> '%s')", entity.ErrorPageAlias)
 
 // publishedNoteWhere は公開中のノートを絞り込む条件を返す。
 // 公開を取り下げると republish_date だけが空に戻り publish_date は残るため、republish_date で判定する。

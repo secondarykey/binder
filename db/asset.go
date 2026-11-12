@@ -3,8 +3,8 @@ package db
 import (
 	"fmt"
 
-	"binder/api/json"
 	"binder/db/model"
+	"binder/entity"
 
 	_ "github.com/mithrandie/csvq-driver"
 	"golang.org/x/xerrors"
@@ -22,7 +22,7 @@ func (inst *Instance) FindInAssetId(ids ...interface{}) ([]*model.Asset, error) 
 	return inst.findAsset("id in ("+csvQ(ids)+")", "updated_date desc", -1, -1, ids...)
 }
 
-func (inst *Instance) FindAssetWithParent() ([]*json.Asset, error) {
+func (inst *Instance) FindAssetWithParent() ([]*entity.Asset, error) {
 
 	assets, err := inst.findAsset("", "created_date", -1, -1)
 	if err != nil {
@@ -35,7 +35,7 @@ func (inst *Instance) FindAssetWithParent() ([]*json.Asset, error) {
 		ids[i] = a.Id
 	}
 
-	rtn := make([]*json.Asset, len(assets))
+	rtn := make([]*entity.Asset, len(assets))
 	if len(ids) == 0 {
 		return rtn, nil
 	}
@@ -51,7 +51,7 @@ func (inst *Instance) FindAssetWithParent() ([]*json.Asset, error) {
 	}
 
 	parentIds := make([]interface{}, 0)
-	parentMap := make(map[string][]*json.Asset)
+	parentMap := make(map[string][]*entity.Asset)
 
 	for idx, a := range assets {
 		rtn[idx] = a.To()
@@ -106,8 +106,7 @@ func (inst *Instance) FindAssetWithParent() ([]*json.Asset, error) {
 	return rtn, nil
 }
 
-
-func (inst *Instance) GetAssetWithParent(id string) (*json.Asset, error) {
+func (inst *Instance) GetAssetWithParent(id string) (*entity.Asset, error) {
 
 	a, err := inst.GetAsset(id)
 	if err != nil {

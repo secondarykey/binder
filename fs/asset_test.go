@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"binder/api/json"
+	"binder/entity"
 	"binder/fs"
 )
 
@@ -12,12 +12,12 @@ func TestCreateAsset(t *testing.T) {
 
 	f := createFileSystem(t, "create_asset")
 
-	var a json.Asset
+	var a entity.Asset
 	a.Id = "asset"
 	a.Name = "Test Asset"
 	a.Alias = "pub"
 
-	var n json.Note
+	var n entity.Note
 	n.Id = "note"
 	n.Alias = "noteAlias"
 
@@ -63,7 +63,7 @@ func TestCreateAsset(t *testing.T) {
 func TestWriteAssetText(t *testing.T) {
 	f := createFileSystem(t, "asset_write_text")
 
-	var a json.Asset
+	var a entity.Asset
 	a.Id = "asset-text"
 	a.Alias = "asset-alias"
 
@@ -84,7 +84,7 @@ func TestWriteAssetText(t *testing.T) {
 func TestUnpublishAsset(t *testing.T) {
 	f := createFileSystem(t, "asset_unpublish")
 
-	var a json.Asset
+	var a entity.Asset
 	a.Id = "asset-up"
 	a.Alias = "up-alias"
 
@@ -113,7 +113,7 @@ func TestUnpublishAsset(t *testing.T) {
 func TestRenamePublishedAsset(t *testing.T) {
 	f := createFileSystem(t, "asset_rename")
 
-	var a json.Asset
+	var a entity.Asset
 	a.Id = "asset-ren"
 	a.Alias = "old-asset-alias"
 
@@ -151,7 +151,7 @@ func TestRenamePublishedAsset_NotExist(t *testing.T) {
 func TestSetAssetStatus_Private(t *testing.T) {
 	f := createFileSystem(t, "asset_status_private")
 
-	var a json.Asset
+	var a entity.Asset
 	a.Id = "asset-st"
 	a.Alias = "st-alias"
 
@@ -165,15 +165,15 @@ func TestSetAssetStatus_Private(t *testing.T) {
 	if err := f.SetAssetStatus(&a); err != nil {
 		t.Fatalf("SetAssetStatus() error: %v", err)
 	}
-	if a.PublishStatus != json.PrivateStatus {
-		t.Errorf("PublishStatus: got %d, want PrivateStatus(%d)", a.PublishStatus, json.PrivateStatus)
+	if a.PublishStatus != entity.PrivateStatus {
+		t.Errorf("PublishStatus: got %d, want PrivateStatus(%d)", a.PublishStatus, entity.PrivateStatus)
 	}
 }
 
 func TestSetAssetStatus_Published(t *testing.T) {
 	f := createFileSystem(t, "asset_status_pub")
 
-	var a json.Asset
+	var a entity.Asset
 	a.Id = "asset-st2"
 	a.Alias = "st2-alias"
 
@@ -192,7 +192,7 @@ func TestSetAssetStatus_Published(t *testing.T) {
 	if err := f.SetAssetStatus(&a); err != nil {
 		t.Fatalf("SetAssetStatus() error: %v", err)
 	}
-	if a.PublishStatus != json.LatestStatus {
-		t.Errorf("PublishStatus: got %d, want LatestStatus(%d)", a.PublishStatus, json.LatestStatus)
+	if a.PublishStatus != entity.LatestStatus {
+		t.Errorf("PublishStatus: got %d, want LatestStatus(%d)", a.PublishStatus, entity.LatestStatus)
 	}
 }

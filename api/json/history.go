@@ -26,7 +26,7 @@ type CleanupInfo struct {
 
 // CleanupResult は履歴クリーンアップの実行結果
 type CleanupResult struct {
-	Status     string `json:"status"`     // success, error, reload_error
+	Status     string `json:"status"` // success, error, reload_error
 	Message    string `json:"message"`
 	Address    string `json:"address"`
 	BeforeSize int64  `json:"beforeSize"` // 実行前 .git/objects サイズ（バイト）
@@ -41,7 +41,7 @@ type GCResult struct {
 
 // CommitFileEntry はコミット内の変更ファイル1件
 type CommitFileEntry struct {
-	Typ    string `json:"typ"`    // note, diagram, asset, template
+	Typ    string `json:"typ"` // note, diagram, asset, template
 	Id     string `json:"id"`
 	Action string `json:"action"` // added, modified, deleted
 	Name   string `json:"name"`   // 表示名（Structure から解決）

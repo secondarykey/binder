@@ -1,23 +1,23 @@
 package model
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"fmt"
 	"time"
 )
 
 type Structure struct {
-	Id       string `db:"id:key"`
-	ParentId string `db:"parent_id"`
-	Seq      int    `db:"seq"`
-	Typ      string `db:"type"`
-	Name     string `db:"name"`
-	Detail   string `db:"detail"`
-	Alias     string    `db:"alias"`
-	Publish   time.Time `db:"publish_date"`
-	Republish time.Time `db:"republish_date"`
-	Private   bool      `db:"private"`
-	Created   time.Time `db:"created_date:insert"`
+	Id          string    `db:"id:key"`
+	ParentId    string    `db:"parent_id"`
+	Seq         int       `db:"seq"`
+	Typ         string    `db:"type"`
+	Name        string    `db:"name"`
+	Detail      string    `db:"detail"`
+	Alias       string    `db:"alias"`
+	Publish     time.Time `db:"publish_date"`
+	Republish   time.Time `db:"republish_date"`
+	Private     bool      `db:"private"`
+	Created     time.Time `db:"created_date:insert"`
 	CreatedUser string    `db:"created_user:insert"`
 	Updated     time.Time `db:"updated_date"`
 	UpdatedUser string    `db:"updated_user"`
@@ -27,8 +27,8 @@ func (s *Structure) String() string {
 	return fmt.Sprintf("%s,%s,%s,%s", s.Id, s.ParentId, s.Typ, s.Name)
 }
 
-func (s *Structure) To() *json.Structure {
-	var rtn json.Structure
+func (s *Structure) To() *entity.Structure {
+	var rtn entity.Structure
 	rtn.Id = s.Id
 	rtn.ParentId = s.ParentId
 	rtn.Seq = s.Seq
@@ -46,7 +46,7 @@ func (s *Structure) To() *json.Structure {
 	return &rtn
 }
 
-func ConvertStructure(s *json.Structure) *Structure {
+func ConvertStructure(s *entity.Structure) *Structure {
 	var rtn Structure
 	rtn.Id = s.Id
 	rtn.ParentId = s.ParentId

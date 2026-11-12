@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"binder/api/json"
+	"binder/entity"
 )
 
-func newNote(id, alias string) *json.Note {
-	n := &json.Note{}
+func newNote(id, alias string) *entity.Note {
+	n := &entity.Note{}
 	n.Id = id
 	n.Alias = alias
 	return n
@@ -235,8 +235,8 @@ func TestSetNoteStatus_Private(t *testing.T) {
 	if err := f.SetNoteStatus(n); err != nil {
 		t.Fatalf("SetNoteStatus() error: %v", err)
 	}
-	if n.PublishStatus != json.PrivateStatus {
-		t.Errorf("PublishStatus: got %d, want PrivateStatus(%d)", n.PublishStatus, json.PrivateStatus)
+	if n.PublishStatus != entity.PrivateStatus {
+		t.Errorf("PublishStatus: got %d, want PrivateStatus(%d)", n.PublishStatus, entity.PrivateStatus)
 	}
 }
 
@@ -258,7 +258,7 @@ func TestSetNoteStatus_Published(t *testing.T) {
 	if err := f.SetNoteStatus(n); err != nil {
 		t.Fatalf("SetNoteStatus() error: %v", err)
 	}
-	if n.PublishStatus != json.LatestStatus {
-		t.Errorf("PublishStatus: got %d, want LatestStatus(%d)", n.PublishStatus, json.LatestStatus)
+	if n.PublishStatus != entity.LatestStatus {
+		t.Errorf("PublishStatus: got %d, want LatestStatus(%d)", n.PublishStatus, entity.LatestStatus)
 	}
 }

@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"binder/log"
 	"fmt"
 	"io"
@@ -37,6 +37,14 @@ type FileSystem struct {
 	statusMu    sync.Mutex
 	statusCache ModifiedFiles
 	statusAt    time.Time
+
+	// 素の git status（worktree.Status()）の短TTLキャッシュ。1 件ずつの状態確認
+	// （getStatus → modified）が毎回ワークツリー全体を調べ直すのを防ぐ。
+	// 未公開一覧のように全件を順に確かめる処理では、件数 × 全体の走査になるため。
+	// 無効化と TTL は statusCache と同じ（invalidateStatus）
+	rawStatus   git.Status
+	rawStatusAt time.Time
+	statusGen   uint64 // invalidateStatus のたびに進める
 
 	// ワークツリー・インデックスを変更する操作（create/add/remove/commit）の
 	// 直列化。Wails のバインディング呼び出しは並行実行されるため、同時に
@@ -326,10 +334,10 @@ func (f *FileSystem) copyReader(out string, r io.Reader) error {
 	return nil
 }
 
-func (f *FileSystem) getStatus(source string, republish, structureUpdated time.Time) (json.Status, json.Status, error) {
+func (f *FileSystem) getStatus(source string, republish, structureUpdated time.Time) (entity.Status, entity.Status, error) {
 
-	us := json.ErrorStatus
-	ps := json.ErrorStatus
+	us := entity.ErrorStatus
+	ps := entity.ErrorStatus
 
 	p := ConvertPaths(source)
 	sfn := p[0]
@@ -337,9 +345,9 @@ func (f *FileSystem) getStatus(source string, republish, structureUpdated time.T
 	m, err := f.modified(sfn)
 	if err == nil {
 		if len(m) > 0 {
-			us = json.UpdatedStatus
+			us = entity.UpdatedStatus
 		} else {
-			us = json.NothingStatus
+			us = entity.NothingStatus
 		}
 	} else {
 		log.Warnf("modified error %s:\n%+v", sfn, err)
@@ -347,7 +355,7 @@ func (f *FileSystem) getStatus(source string, republish, structureUpdated time.T
 
 	// DB の republish_date でまず非公開判定
 	if republish.IsZero() {
-		ps = json.PrivateStatus
+		ps = entity.PrivateStatus
 		return us, ps, nil
 	}
 
@@ -358,9 +366,9 @@ func (f *FileSystem) getStatus(source string, republish, structureUpdated time.T
 	}
 
 	if bi.ModTime().After(republish) || structureUpdated.After(republish) {
-		ps = json.UpdatedStatus
+		ps = entity.UpdatedStatus
 	} else {
-		ps = json.LatestStatus
+		ps = entity.LatestStatus
 	}
 
 	return us, ps, nil

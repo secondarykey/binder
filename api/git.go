@@ -1,20 +1,12 @@
 package api
 
 import (
-	. "binder/internal"
-
 	"binder"
 	"binder/api/json"
 	"binder/fs"
 	"binder/log"
-	"binder/settings"
-	"binder/setup/convert"
 
-	"fmt"
 	"time"
-
-	gogitplumbing "github.com/go-git/go-git/v5/plumbing"
-	"golang.org/x/xerrors"
 )
 
 func (a *App) CommitFiles(leafs []*json.Leaf, m string) error {
@@ -157,20 +149,7 @@ func (a *App) ListRemoteBranches(url string, info *json.UserInfo) ([]string, err
 
 	defer log.PrintTrace(log.Func("ListRemoteBranches()"))
 
-	var fsInfo *fs.UserInfo
-	if info != nil {
-		fsInfo = &fs.UserInfo{
-			AuthType:   fs.AuthType(info.AuthType),
-			Username:   info.Username,
-			Password:   info.Password,
-			Token:      info.Token,
-			Passphrase: info.Passphrase,
-			Filename:   info.Filename,
-			Bytes:      info.Bytes,
-		}
-	}
-
-	branches, err := fs.ListRemoteBranches(url, fsInfo)
+	branches, err := fs.ListRemoteBranches(url, toFsUserInfo(info))
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
@@ -178,21 +157,12 @@ func (a *App) ListRemoteBranches(url string, info *json.UserInfo) ([]string, err
 	return branches, nil
 }
 
-func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserInfo, save bool) (*json.MergeResult, error) {
-
-	defer log.PrintTrace(log.Func("MergeFromRemote()", remoteName, remoteBranch))
-
-	// 1. 未コミット変更のチェック
-	ids, err := a.current.GetModifiedIds()
-	if err != nil {
-		return nil, userError(err)
+// toFsUserInfo は画面から受けた認証情報を fs の形にする。nil は nil のまま返す。
+func toFsUserInfo(info *json.UserInfo) *fs.UserInfo {
+	if info == nil {
+		return nil
 	}
-	if len(ids) > 0 {
-		return nil, userError(ErrUncommittedChanges)
-	}
-
-	// 2. 認証情報を変換
-	fsInfo := &fs.UserInfo{
+	return &fs.UserInfo{
 		Name:       info.Name,
 		Email:      info.Email,
 		AuthType:   fs.AuthType(info.AuthType),
@@ -203,168 +173,207 @@ func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserIn
 		Filename:   info.Filename,
 		Bytes:      info.Bytes,
 	}
+}
 
-	// 3. 認証情報の保存（オプション）
+// --- 閉じて→操作して→開き直す ---
+//
+// 取り込み・復元・ブランチ切替・履歴の整理は、作業ツリーや pack を丸ごと入れ替えるので
+// DB を開いたままではできない。開いているバインダーを閉じ、リポジトリへ直接操作し
+// （binder.Repository）、開き直す。操作の中身は binder パッケージ側にあり、
+// ここは閉じる・開き直すことと、結果を画面向けの形にすることだけを行う。
+
+// closedResult の Status。画面はこの値で分岐する。
+const (
+	// statusSuccess は操作も開き直しも成功
+	statusSuccess = "success"
+	// statusError は操作が失敗した（バインダーは開き直せた）
+	statusError = "error"
+	// statusReloadError は開き直せなかった（操作の成否にかかわらず）
+	statusReloadError = "reload_error"
+)
+
+// closedResult は runClosed の結果。
+type closedResult struct {
+	Status  string
+	Message string
+	// Address は開き直したバインダーのアドレス（開き直せなかったら空）
+	Address string
+	// opErr は操作（リポジトリを開くところを含む）のエラー
+	opErr error
+	// reloadErr は開き直しのエラー
+	reloadErr error
+}
+
+// runClosed は開いているバインダーを閉じ、リポジトリへ op を実行して、開き直す。
+// op が失敗しても開き直す。閉じてから開き直すまでの間も「開いている」印は持ち続ける。
+// 戻り値の error は「閉じられなかった」ときだけ（op は実行していない）。
+func (a *App) runClosed(op func(repo *binder.Repository) error) (closedResult, error) {
+
+	var res closedResult
+
+	dir := a.current.Dir()
+	defer a.holdOpen(dir)()
+
+	if err := a.CloseBinder(); err != nil {
+		log.PrintStackTrace(err)
+		return res, err
+	}
+
+	repo, err := binder.OpenRepository(dir)
+	if err == nil {
+		err = op(repo)
+	}
+	if err != nil {
+		log.PrintStackTrace(err)
+		res.opErr = err
+	}
+
+	address, reloadErr := a.LoadBinder(dir)
+	if reloadErr != nil {
+		log.PrintStackTrace(reloadErr)
+		res.reloadErr = reloadErr
+	}
+
+	switch {
+	case res.reloadErr != nil:
+		res.Status = statusReloadError
+		res.Message = res.reloadErr.Error()
+	case res.opErr != nil:
+		res.Status = statusError
+		res.Message = res.opErr.Error()
+		res.Address = address
+	default:
+		res.Status = statusSuccess
+		res.Address = address
+	}
+	return res, nil
+}
+
+// requireRecorded は未記録の変更があればエラーを返す（閉じて行う操作の前に確かめる）。
+func (a *App) requireRecorded() error {
+	ids, err := a.current.GetModifiedIds()
+	if err != nil {
+		return userError(err)
+	}
+	if len(ids) > 0 {
+		return userError(ErrUncommittedChanges)
+	}
+	return nil
+}
+
+// --- 取り込み ---
+
+func (a *App) MergeFromRemote(remoteName, remoteBranch string, info *json.UserInfo, save bool) (*json.MergeResult, error) {
+
+	defer log.PrintTrace(log.Func("MergeFromRemote()", remoteName, remoteBranch))
+
+	if err := a.requireRecorded(); err != nil {
+		return nil, err
+	}
+
+	fsInfo := toFsUserInfo(info)
+
+	// 認証情報の保存（オプション）
 	if save {
 		a.current.SaveUserInfo(fsInfo)
 	}
 
-	// 4. Fetch（Binder を閉じる前に実行 — Fetch はDB操作を伴わない）
-	err = a.current.Fetch(remoteName, remoteBranch, fsInfo)
+	// Fetch は Binder を閉じる前に実行する（DB 操作を伴わない）
+	err := a.current.Fetch(remoteName, remoteBranch, fsInfo)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
 
-	// 5. ディレクトリを保存してから Binder を閉じる
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
+	return a.merge(binder.MergeSource{RemoteName: remoteName, RemoteBranch: remoteBranch})
+}
 
-	err = a.CloseBinder()
+// MergeFromLocal はローカルブランチを現在のブランチにマージする。
+func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
+
+	defer log.PrintTrace(log.Func("MergeFromLocal()", sourceBranch))
+
+	if err := a.requireRecorded(); err != nil {
+		return nil, err
+	}
+
+	return a.merge(binder.MergeSource{LocalBranch: sourceBranch})
+}
+
+// merge は取り込みを実行し、結果を画面向けの形にする。取り込みの中身は binder.Repository.Merge。
+func (a *App) merge(src binder.MergeSource) (*json.MergeResult, error) {
+
+	var out *binder.MergeOutcome
+	res, err := a.runClosed(func(repo *binder.Repository) (err error) {
+		out, err = repo.Merge(src, a.version)
+		return err
+	})
 	if err != nil {
-		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
 
-	// 6. リポジトリを直接開く
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+	// 取り込み元がアプリより新しい: 開き直しに失敗していてもこの結果を返す
+	if out != nil && out.Status == binder.MergeVersionNewer {
+		return &json.MergeResult{Status: out.Status, Address: res.Address}, nil
 	}
 
-	// 7. バージョンチェックと移行処理
-	sourceHash, err := tmpFs.RemoteBranchHash(remoteName, remoteBranch)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
+	if res.Status != statusSuccess {
+		return &json.MergeResult{Status: res.Status, Message: res.Message, Address: res.Address}, nil
 	}
 
-	effectiveHash, versionNewer, err := a.checkMergeSourceVersion(dir, tmpFs, sourceHash)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-	if versionNewer {
-		address, _ := a.LoadBinder(dir)
-		return &json.MergeResult{Status: "version_error", Address: address}, nil
-	}
+	switch out.Status {
+	case binder.MergeApplied:
+		// 衝突なしで取り込んだ → ツリーの修復と取り込みログ
+		a.current.FinishMerge(out.Log)
+		return &json.MergeResult{
+			Status:       statusSuccess,
+			Address:      res.Address,
+			AutoResolved: len(out.Analysis.AutoFiles),
+		}, nil
 
-	logSetter := func(ml *fs.MergeLog) {
-		ml.RemoteName = remoteName
-		ml.RemoteBranch = remoteBranch
-		if branch, err := a.current.GetCurrentBranch(); err == nil {
-			ml.LocalBranch = branch
-		}
-	}
-
-	// 8a. 移行不要: FF マージを試み、diverged ならコンフリクト検出
-	if effectiveHash == sourceHash {
-		status, err := tmpFs.MergeFFOnly(remoteName, remoteBranch)
-		if err != nil {
-			address, reloadErr := a.LoadBinder(dir)
-			if reloadErr != nil {
-				return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
+	case binder.MergeConflicts:
+		// 衝突あり → ユーザの選択を待つ（ApplyMergeResolution）
+		analysis := out.Analysis
+		conflicts := make([]*json.ConflictFile, len(analysis.Conflicts))
+		for i, c := range analysis.Conflicts {
+			conflicts[i] = &json.ConflictFile{
+				Path:        c.Path,
+				Type:        c.Type,
+				Id:          c.Id,
+				Name:        c.Name,
+				OursAction:  c.OursAction,
+				TheirAction: c.TheirAction,
 			}
-			return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
 		}
-
-		if status == "diverged" {
-			analysis, err := tmpFs.DetectConflicts(remoteName, remoteBranch)
-			if err != nil {
-				address, reloadErr := a.LoadBinder(dir)
-				if reloadErr != nil {
-					return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-				}
-				return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-			}
-			return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
-		}
-
-		address, err := a.LoadBinder(dir)
-		if err != nil {
-			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
-		}
-		return &json.MergeResult{Status: status, Address: address}, nil
+		return &json.MergeResult{
+			Status:       out.Status,
+			Address:      res.Address,
+			Conflicts:    conflicts,
+			BaseHash:     analysis.BaseHash.String(),
+			OursHash:     analysis.OursHash.String(),
+			TheirsHash:   analysis.TheirsHash.String(),
+			AutoResolved: len(analysis.AutoFiles),
+		}, nil
 	}
 
-	// 8b. 移行あり: ハッシュ直接指定でコンフリクト検出
-	currentHash, err := tmpFs.HeadHash()
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	analysis, err := tmpFs.DetectConflictsByHash(currentHash.String(), effectiveHash.String())
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
+	// 早送りできた・すでに最新など（fs.MergeFFOnly の結果そのまま）
+	return &json.MergeResult{Status: out.Status, Address: res.Address}, nil
 }
 
 func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.MergeResult, error) {
 
 	defer log.PrintTrace(log.Func("ApplyMergeResolution()"))
 
-	// 1. 未コミットチェック
-	ids, err := a.current.GetModifiedIds()
-	if err != nil {
-		return nil, userError(err)
-	}
-	if len(ids) > 0 {
-		return nil, userError(ErrUncommittedChanges)
+	if err := a.requireRecorded(); err != nil {
+		return nil, err
 	}
 
-	// 2. Binder を閉じる
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
-	err = a.CloseBinder()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
+	src := binder.MergeSource{
+		RemoteName:   resolution.RemoteName,
+		RemoteBranch: resolution.RemoteBranch,
+		LocalBranch:  resolution.SourceBranch,
 	}
 
-	// 3. リポジトリを直接開く
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// 4. 再度コンフリクト検出（ハッシュの整合性を検証）
-	// remoteName/branchName はハッシュから逆引きできないので、
-	// ハッシュを直接使って MergeAnalysis を再構築する
-	analysis, err := tmpFs.DetectConflictsByHash(
-		resolution.OursHash, resolution.TheirsHash)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// 5. ユーザー選択を fs.FileResolution に変換して適用
 	fsResolutions := make([]fs.FileResolution, len(resolution.Resolutions))
 	for i, r := range resolution.Resolutions {
 		fsResolutions[i] = fs.FileResolution{
@@ -373,308 +382,22 @@ func (a *App) ApplyMergeResolution(resolution *json.MergeResolution) (*json.Merg
 		}
 	}
 
-	mergeLog, err := tmpFs.ApplyResolutions(analysis, fsResolutions)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// 6. Binder を再オープン
-	address, err := a.LoadBinder(dir)
-	if err != nil {
-		return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
-	}
-
-	// 6.5 structure 行が失われた orphan 実体ファイルをツリーへ復元する
-	restored, rerr := a.current.ReconcileMergedTree()
-	if rerr != nil {
-		log.Warnf("ReconcileMergedTree() error:\n%+v", rerr)
-	}
-
-	// 7. マージログノートを作成（失敗してもマージ自体は成功とする）
-	if mergeLog != nil {
-		mergeLog.RemoteName = resolution.RemoteName
-		mergeLog.RemoteBranch = resolution.RemoteBranch
-		mergeLog.SourceBranch = resolution.SourceBranch
-		mergeLog.Restored = restored
-		if branch, err := a.current.GetCurrentBranch(); err == nil {
-			mergeLog.LocalBranch = branch
-		}
-		if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-			log.Warnf("CreateMergeLogNote() error:\n+%v", err)
-		}
-	}
-
-	return &json.MergeResult{Status: "success", Address: address}, nil
-}
-
-// migrateSourceInPlace はデタッチドHEADでソースをチェックアウトし、
-// convert.Run() で移行処理を実行して移行後のコミットハッシュを返す。
-// 処理後は元のブランチに戻す。移行コミットはリポジトリのオブジェクトストアに残り、
-// ハッシュ経由でアクセス可能。
-func migrateSourceInPlace(dir string, tmpFs *fs.FileSystem, sourceHash gogitplumbing.Hash, appVer *Version) (gogitplumbing.Hash, error) {
-	currentBranch, err := tmpFs.CurrentBranch()
-	if err != nil {
-		return gogitplumbing.ZeroHash, xerrors.Errorf("CurrentBranch() error: %w", err)
-	}
-
-	// 元のHEADハッシュを保存しておく（CheckoutBranch失敗時の強制復元用）
-	currentHash, err := tmpFs.HeadHash()
-	if err != nil {
-		return gogitplumbing.ZeroHash, xerrors.Errorf("HeadHash() error: %w", err)
-	}
-
-	if err := tmpFs.CheckoutDetached(sourceHash); err != nil {
-		return gogitplumbing.ZeroHash, xerrors.Errorf("CheckoutDetached() error: %w", err)
-	}
-
-	// エラー時も必ず元のブランチに戻す。
-	// CheckoutBranch が失敗した場合は currentHash で強制チェックアウトし、
-	// ワークツリーが不整合な状態で残らないようにする。
-	defer func() {
-		if restoreErr := tmpFs.CheckoutBranch(currentBranch); restoreErr != nil {
-			log.Warnf("migrateSourceInPlace: CheckoutBranch() error, forcing checkout to current hash:\n%+v", restoreErr)
-			if forceErr := tmpFs.CheckoutDetached(currentHash); forceErr != nil {
-				log.Warnf("migrateSourceInPlace: force CheckoutDetached() also failed:\n%+v", forceErr)
-			}
-		}
-	}()
-
-	if _, err := convert.Run(dir, appVer); err != nil {
-		return gogitplumbing.ZeroHash, xerrors.Errorf("convert.Run() error: %w", err)
-	}
-
-	migratedHash, err := tmpFs.HeadHash()
-	if err != nil {
-		return gogitplumbing.ZeroHash, xerrors.Errorf("HeadHash() error: %w", err)
-	}
-
-	return migratedHash, nil
-}
-
-// checkMergeSourceVersion はマージ元のバージョンを確認し、必要なら移行処理を実行する。
-// 戻り値:
-//   - resultHash: 使用すべきハッシュ（移行後はmigratedHash、不要ならsourceHashのまま）
-//   - versionNewer: マージ元がアプリより新しい場合 true（バージョンアップを促す）
-func (a *App) checkMergeSourceVersion(dir string, tmpFs *fs.FileSystem, sourceHash gogitplumbing.Hash) (resultHash gogitplumbing.Hash, versionNewer bool, err error) {
-	meta, err := tmpFs.ReadMetaFromHash(sourceHash)
-	if err != nil {
-		return sourceHash, false, xerrors.Errorf("ReadMetaFromHash() error: %w", err)
-	}
-
-	sourceVer, verErr := NewVersion(meta.Version)
-	if verErr != nil {
-		// パースできない場合は古いバインダーとして扱う
-		sourceVer, _ = NewVersion("0.0.0")
-	}
-
-	// マージ元がアプリより新しい場合はバージョンアップが必要
-	if sourceVer.Gt(a.version) {
-		return sourceHash, true, nil
-	}
-
-	// 移行が不要な場合はそのまま返す
-	if !convert.NeedsMigration(sourceVer) {
-		return sourceHash, false, nil
-	}
-
-	// 最小サポートバージョン未満のマージ元は移行できない（旧移行コードは削除済み）。
-	// このエラーは MergeResult.Message として err.Error() がそのまま表示されるため、
-	// 翻訳済みメッセージを直接返す。
-	minVer, minErr := NewVersion(convert.MinSupportedBinderVersion)
-	if minErr == nil && sourceVer.Lt(minVer) {
-		return sourceHash, false, fmt.Errorf("%s", settings.T("go.error.mergeSourceTooOld"))
-	}
-
-	// 移行が必要: インプレースで実行してハッシュを返す
-	migratedHash, err := migrateSourceInPlace(dir, tmpFs, sourceHash, a.version)
-	if err != nil {
-		return sourceHash, false, xerrors.Errorf("migrateSourceInPlace() error: %w", err)
-	}
-
-	return migratedHash, false, nil
-}
-
-// MergeFromLocal はローカルブランチを現在のブランチにマージする。
-// handleMergeAnalysis はコンフリクト分析結果を処理し、自動解決またはユーザー選択待ちの結果を返す。
-func (a *App) handleMergeAnalysis(dir string, tmpFs *fs.FileSystem, analysis *fs.MergeAnalysis, logSetter func(*fs.MergeLog)) (*json.MergeResult, error) {
-	if len(analysis.Conflicts) == 0 {
-		// 全て自動解決可能 → 即マージ
-		mergeLog, err := tmpFs.ApplyResolutions(analysis, nil)
-		if err != nil {
-			address, reloadErr := a.LoadBinder(dir)
-			if reloadErr != nil {
-				return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-			}
-			return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-		}
-		address, err := a.LoadBinder(dir)
-		if err != nil {
-			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
-		}
-		// structure 行が失われた orphan 実体ファイルをツリーへ復元する
-		restored, rerr := a.current.ReconcileMergedTree()
-		if rerr != nil {
-			log.Warnf("ReconcileMergedTree() error:\n%+v", rerr)
-		}
-		if mergeLog != nil {
-			logSetter(mergeLog)
-			mergeLog.Restored = restored
-			if err := a.current.CreateMergeLogNote(mergeLog); err != nil {
-				log.Warnf("CreateMergeLogNote() error:\n%+v", err)
-			}
-		}
-		return &json.MergeResult{
-			Status:       "success",
-			Address:      address,
-			AutoResolved: len(analysis.AutoFiles),
-		}, nil
-	}
-
-	// コンフリクトあり → Binder を再オープンしてユーザー選択を待つ
-	address, reloadErr := a.LoadBinder(dir)
-	if reloadErr != nil {
-		return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-	}
-	conflicts := make([]*json.ConflictFile, len(analysis.Conflicts))
-	for i, c := range analysis.Conflicts {
-		conflicts[i] = &json.ConflictFile{
-			Path:        c.Path,
-			Type:        c.Type,
-			Id:          c.Id,
-			Name:        c.Name,
-			OursAction:  c.OursAction,
-			TheirAction: c.TheirAction,
-		}
-	}
-	return &json.MergeResult{
-		Status:       "conflicts",
-		Address:      address,
-		Conflicts:    conflicts,
-		BaseHash:     analysis.BaseHash.String(),
-		OursHash:     analysis.OursHash.String(),
-		TheirsHash:   analysis.TheirsHash.String(),
-		AutoResolved: len(analysis.AutoFiles),
-	}, nil
-}
-
-// MergeFromLocal はローカルブランチを現在のブランチにマージする。
-func (a *App) MergeFromLocal(sourceBranch string) (*json.MergeResult, error) {
-
-	defer log.PrintTrace(log.Func("MergeFromLocal()", sourceBranch))
-
-	// 1. 未コミット変更のチェック
-	ids, err := a.current.GetModifiedIds()
+	var mergeLog *fs.MergeLog
+	res, err := a.runClosed(func(repo *binder.Repository) (err error) {
+		mergeLog, err = repo.ApplyMergeResolution(src, resolution.OursHash, resolution.TheirsHash, fsResolutions)
+		return err
+	})
 	if err != nil {
 		return nil, userError(err)
 	}
-	if len(ids) > 0 {
-		return nil, userError(ErrUncommittedChanges)
+	if res.Status != statusSuccess {
+		return &json.MergeResult{Status: res.Status, Message: res.Message, Address: res.Address}, nil
 	}
 
-	// 2. ディレクトリを保存してから Binder を閉じる
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
+	// ツリーの修復と取り込みログ（失敗しても取り込み自体は成功とする）
+	a.current.FinishMerge(mergeLog)
 
-	err = a.CloseBinder()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-
-	// 3. リポジトリを直接開く
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// 4. バージョンチェックと移行処理
-	sourceHash, err := tmpFs.LocalBranchHash(sourceBranch)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	effectiveHash, versionNewer, err := a.checkMergeSourceVersion(dir, tmpFs, sourceHash)
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-	if versionNewer {
-		address, _ := a.LoadBinder(dir)
-		return &json.MergeResult{Status: "version_error", Address: address}, nil
-	}
-
-	logSetter := func(ml *fs.MergeLog) {
-		ml.SourceBranch = sourceBranch
-		if branch, err := a.current.GetCurrentBranch(); err == nil {
-			ml.LocalBranch = branch
-		}
-	}
-
-	// 5a. 移行不要: FF マージを試み、diverged ならコンフリクト検出
-	if effectiveHash == sourceHash {
-		status, err := tmpFs.MergeFFOnlyLocal(sourceBranch)
-		if err != nil {
-			address, reloadErr := a.LoadBinder(dir)
-			if reloadErr != nil {
-				return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-			}
-			return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-		}
-
-		if status == "diverged" {
-			analysis, err := tmpFs.DetectConflictsFromLocalBranch(sourceBranch)
-			if err != nil {
-				address, reloadErr := a.LoadBinder(dir)
-				if reloadErr != nil {
-					return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-				}
-				return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-			}
-			return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
-		}
-
-		address, err := a.LoadBinder(dir)
-		if err != nil {
-			return &json.MergeResult{Status: "reload_error", Message: err.Error()}, nil
-		}
-		return &json.MergeResult{Status: status, Address: address}, nil
-	}
-
-	// 5b. 移行あり: ハッシュ直接指定でコンフリクト検出
-	currentHash, err := tmpFs.HeadHash()
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	analysis, err := tmpFs.DetectConflictsByHash(currentHash.String(), effectiveHash.String())
-	if err != nil {
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.MergeResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.MergeResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	return a.handleMergeAnalysis(dir, tmpFs, analysis, logSetter)
+	return &json.MergeResult{Status: statusSuccess, Address: res.Address}, nil
 }
 
 func (a *App) GetModifiedIds() ([]string, error) {
@@ -729,96 +452,45 @@ func (a *App) GetCommitFiles(hash string) ([]*json.CommitFileEntry, error) {
 
 	defer log.PrintTrace(log.Func("GetCommitFiles()", hash))
 
-	files, err := a.current.GetCommitFiles(hash)
+	entries, err := a.current.GetCommitFileEntries(hash)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
-	return toCommitFileEntries(files, a.current), nil
+	return entries, nil
+}
+
+// runClosedBranch は runClosed の結果を BranchResult にする。
+func (a *App) runClosedBranch(op func(repo *binder.Repository) error) (*json.BranchResult, error) {
+	res, err := a.runClosed(op)
+	if err != nil {
+		return nil, userError(err)
+	}
+	return &json.BranchResult{Status: res.Status, Message: res.Message, Address: res.Address}, nil
 }
 
 func (a *App) RestoreToCommit(hash string) (*json.BranchResult, error) {
 
 	defer log.PrintTrace(log.Func("RestoreToCommit()", hash))
 
-	// 未コミット変更のチェック
-	ids, err := a.current.GetModifiedIds()
-	if err != nil {
-		return nil, userError(err)
-	}
-	if len(ids) > 0 {
-		return nil, userError(ErrUncommittedChanges)
+	if err := a.requireRecorded(); err != nil {
+		return nil, err
 	}
 
-	// ディレクトリを保存してから Binder を閉じる
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
-
-	err = a.CloseBinder()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-
-	// リポジトリを直接開いて復元
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	err = tmpFs.RestoreToCommit(hash)
-	if err != nil {
-		log.PrintStackTrace(err)
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// Binder を再読み込み
-	address, err := a.LoadBinder(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
-	}
-
-	return &json.BranchResult{Status: "success", Address: address}, nil
+	return a.runClosedBranch(func(repo *binder.Repository) error {
+		return repo.RestoreToCommit(hash)
+	})
 }
 
 // --- ByPath 系: バインダー未オープン状態でディレクトリパスから直接操作する ---
+// a.current が同じディレクトリを開いていたら、開いているバインダー向けの操作と同じ流れにする。
 
 // GetOverallHistoryByPath はバインダーを開かずにディレクトリパスから全体履歴を取得する。
-// binder.Load() を試み、失敗したら fs.Load() にフォールバックする。
 func (a *App) GetOverallHistoryByPath(dir string, limit int, offset int) (*json.HistoryPage, error) {
 
 	defer log.PrintTrace(log.Func("GetOverallHistoryByPath()", dir))
 
-	// まず binder.Load() を試みる
-	b, err := binder.Load(dir)
-	if err == nil {
-		defer b.Close()
-		commits, hasMore, err := b.GetOverallHistory(limit, offset)
-		if err != nil {
-			log.PrintStackTrace(err)
-			return nil, userError(err)
-		}
-		return toHistoryPage(commits, hasMore), nil
-	}
-
-	// binder.Load() 失敗 → fs.Load() にフォールバック
-	log.Warnf("binder.Load() failed, falling back to fs.Load():\n%+v", err)
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-	commits, hasMore, err := tmpFs.GetOverallHistory(limit, offset)
+	commits, hasMore, err := binder.OverallHistoryByPath(dir, limit, offset)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
@@ -831,75 +503,38 @@ func (a *App) GetCommitFilesByPath(dir string, hash string) ([]*json.CommitFileE
 
 	defer log.PrintTrace(log.Func("GetCommitFilesByPath()", dir, hash))
 
-	// まず binder.Load() を試みる（名前解決のため）
-	b, err := binder.Load(dir)
-	if err == nil {
-		defer b.Close()
-		files, err := b.GetCommitFiles(hash)
-		if err != nil {
-			log.PrintStackTrace(err)
-			return nil, userError(err)
-		}
-		return toCommitFileEntries(files, b), nil
-	}
-
-	// binder.Load() 失敗 → fs.Load() にフォールバック（名前解決なし）
-	log.Warnf("binder.Load() failed, falling back to fs.Load():\n%+v", err)
-	tmpFs, err := fs.Load(dir)
+	entries, err := binder.CommitFileEntriesByPath(dir, hash)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
-	}
-	files, err := tmpFs.GetCommitFiles(hash)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-	// 名前解決なし: パスをそのまま名前にする
-	entries := make([]*json.CommitFileEntry, len(files))
-	for i, f := range files {
-		entries[i] = &json.CommitFileEntry{
-			Typ:    f.Typ,
-			Id:     f.Id,
-			Action: f.Action,
-			Name:   f.Id,
-		}
 	}
 	return entries, nil
 }
 
 // RestoreToCommitByPath はバインダーを開かずにディレクトリパスから指定コミットに復元する。
-// もし a.current が同じディレクトリを開いていたら Close→Restore→Reload する。
 func (a *App) RestoreToCommitByPath(dir string, hash string) (*json.BranchResult, error) {
 
 	defer log.PrintTrace(log.Func("RestoreToCommitByPath()", dir, hash))
 
-	// a.current が同じディレクトリを開いていたら既存の RestoreToCommit と同じフローにする
 	if a.current != nil && a.current.Dir() == dir {
 		return a.RestoreToCommit(hash)
 	}
 
-	// バインダー未オープン: fs.Load で直接復元する。
 	// 書き込む間は「開いている」印を立て、別のプロセスが開いていれば触らない
-	if err := fs.AcquireOpen(dir); err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-	defer fs.ReleaseOpen(dir)
-
-	tmpFs, err := fs.Load(dir)
+	repo, err := binder.LockRepository(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
+	defer repo.Close()
 
-	err = tmpFs.RestoreToCommit(hash)
+	err = repo.RestoreToCommit(hash)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return &json.BranchResult{Status: "error", Message: err.Error()}, nil
+		return &json.BranchResult{Status: statusError, Message: err.Error()}, nil
 	}
 
-	return &json.BranchResult{Status: "success"}, nil
+	return &json.BranchResult{Status: statusSuccess}, nil
 }
 
 // ListBranchesByPath はバインダーを開かずにディレクトリパスからブランチ一覧を取得する。
@@ -911,13 +546,13 @@ func (a *App) ListBranchesByPath(dir string) ([]string, error) {
 		return a.ListBranches()
 	}
 
-	tmpFs, err := fs.Load(dir)
+	repo, err := binder.OpenRepository(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
 
-	branches, err := tmpFs.ListBranches()
+	branches, err := repo.ListBranches()
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
@@ -934,13 +569,13 @@ func (a *App) CurrentBranchByPath(dir string) (string, error) {
 		return a.CurrentBranch()
 	}
 
-	tmpFs, err := fs.Load(dir)
+	repo, err := binder.OpenRepository(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", userError(err)
 	}
 
-	name, err := tmpFs.CurrentBranch()
+	name, err := repo.CurrentBranch()
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", userError(err)
@@ -949,7 +584,6 @@ func (a *App) CurrentBranchByPath(dir string) (string, error) {
 }
 
 // SwitchBranchByPath はバインダーを開かずにディレクトリパスから指定ブランチに切り替える。
-// もし a.current が同じディレクトリを開いていたら SwitchBranch と同じフローにする。
 // ワークツリーに未コミット変更がある場合（移行処理失敗後など）は
 // git reset --hard HEAD でリセットしてからチェックアウトする。
 func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, error) {
@@ -961,33 +595,26 @@ func (a *App) SwitchBranchByPath(dir string, name string) (*json.BranchResult, e
 	}
 
 	// 書き込む間は「開いている」印を立て、別のプロセスが開いていれば触らない
-	if err := fs.AcquireOpen(dir); err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-	defer fs.ReleaseOpen(dir)
-
-	tmpFs, err := fs.Load(dir)
+	repo, err := binder.LockRepository(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
+	defer repo.Close()
 
-	// 未コミット変更がある場合（移行失敗後など）はリセットしてからチェックアウトする。
-	// ワークツリーがクリーンでない状態のままブランチ切替すると、
-	// dirty な変更が切替先ブランチに持ち込まれるのを防ぐ。
-	if err = tmpFs.ResetHard(); err != nil {
+	// 汚れたまま切り替えると、変更が切替先のブランチに持ち込まれる
+	if err = repo.DiscardChanges(); err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
 
-	err = tmpFs.CheckoutBranch(name)
+	err = repo.SwitchBranch(name)
 	if err != nil {
 		log.PrintStackTrace(err)
-		return &json.BranchResult{Status: "error", Message: err.Error()}, nil
+		return &json.BranchResult{Status: statusError, Message: err.Error()}, nil
 	}
 
-	return &json.BranchResult{Status: "success"}, nil
+	return &json.BranchResult{Status: statusSuccess}, nil
 }
 
 // toHistoryPage は CommitInfo スライスを HistoryPage JSON に変換する。
@@ -1001,34 +628,6 @@ func toHistoryPage(commits []*fs.CommitInfo, hasMore bool) *json.HistoryPage {
 		}
 	}
 	return &json.HistoryPage{Entries: entries, HasMore: hasMore}
-}
-
-// toCommitFileEntries は CommitFile スライスを CommitFileEntry JSON に変換する。
-// Binder が利用可能なら Structure から名前解決する。
-func toCommitFileEntries(files []*fs.CommitFile, b *binder.Binder) []*json.CommitFileEntry {
-	entries := make([]*json.CommitFileEntry, len(files))
-	for i, f := range files {
-		name := f.Id
-		if b != nil {
-			switch f.Typ {
-			case "database", "publish", "other":
-				name = f.Id
-			case "asset":
-				name = f.Id
-			default:
-				if s, err := b.GetStructure(f.Id); err == nil && s.Name != "" {
-					name = s.Name
-				}
-			}
-		}
-		entries[i] = &json.CommitFileEntry{
-			Typ:    f.Typ,
-			Id:     f.Id,
-			Action: f.Action,
-			Name:   name,
-		}
-	}
-	return entries
 }
 
 func (a *App) GetHistory(typ string, id string, limit int, offset int) (*json.HistoryPage, error) {
@@ -1080,101 +679,22 @@ func (a *App) SwitchBranch(name string) (*json.BranchResult, error) {
 
 	defer log.PrintTrace(log.Func("SwitchBranch()", name))
 
-	// 未コミット変更のチェック
-	ids, err := a.current.GetModifiedIds()
-	if err != nil {
-		return nil, userError(err)
-	}
-	if len(ids) > 0 {
-		return nil, userError(ErrUncommittedChanges)
+	if err := a.requireRecorded(); err != nil {
+		return nil, err
 	}
 
-	// ディレクトリを保存してから Binder を閉じる
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
-
-	err = a.CloseBinder()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-
-	// リポジトリを直接開いてチェックアウト
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		// Binder を復旧
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	err = tmpFs.CheckoutBranch(name)
-	if err != nil {
-		log.PrintStackTrace(err)
-		// Binder を復旧
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// Binder を再読み込み
-	address, err := a.LoadBinder(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
-	}
-
-	return &json.BranchResult{Status: "success", Address: address}, nil
+	return a.runClosedBranch(func(repo *binder.Repository) error {
+		return repo.SwitchBranch(name)
+	})
 }
 
 func (a *App) CreateBranch(name string) (*json.BranchResult, error) {
 
 	defer log.PrintTrace(log.Func("CreateBranch()", name))
 
-	// ディレクトリを保存してから Binder を閉じる
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
-
-	err := a.CloseBinder()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-
-	// リポジトリを直接開いてブランチ作成+チェックアウト
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	err = tmpFs.Branch(name)
-	if err != nil {
-		log.PrintStackTrace(err)
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.BranchResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.BranchResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	// Binder を再読み込み
-	address, err := a.LoadBinder(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return &json.BranchResult{Status: "reload_error", Message: err.Error()}, nil
-	}
-
-	return &json.BranchResult{Status: "success", Address: address}, nil
+	return a.runClosedBranch(func(repo *binder.Repository) error {
+		return repo.CreateBranch(name)
+	})
 }
 
 // GetCleanupInfo は指定日時でのクリーンアップ統計情報を返す。
@@ -1204,7 +724,6 @@ func (a *App) GetCleanupInfo(beforeRFC3339 string) (*json.CleanupInfo, error) {
 }
 
 // SquashHistory は指定日時より古い履歴を圧縮する。
-// RestoreToCommit と同じ close→操作→reload パターンを使用。
 func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 
 	defer log.PrintTrace(log.Func("SquashHistory()", beforeRFC3339))
@@ -1214,53 +733,25 @@ func (a *App) SquashHistory(beforeRFC3339 string) (*json.CleanupResult, error) {
 		return nil, userError(err)
 	}
 
-	// 未コミット変更のチェック
-	ids, err := a.current.GetModifiedIds()
+	if err := a.requireRecorded(); err != nil {
+		return nil, err
+	}
+
+	var result *fs.SquashResult
+	res, err := a.runClosed(func(repo *binder.Repository) (err error) {
+		result, err = repo.SquashHistory(before)
+		return err
+	})
 	if err != nil {
 		return nil, userError(err)
 	}
-	if len(ids) > 0 {
-		return nil, userError(ErrUncommittedChanges)
-	}
-
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
-
-	err = a.CloseBinder()
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
-	}
-
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.CleanupResult{Status: "reload_error", Message: reloadErr.Error()}, nil
-		}
-		return &json.CleanupResult{Status: "error", Message: err.Error(), Address: address}, nil
-	}
-
-	result, err := tmpFs.SquashHistory(before)
-	if err != nil {
-		log.PrintStackTrace(err)
-		address, reloadErr := a.LoadBinder(dir)
-		if reloadErr != nil {
-			return &json.CleanupResult{Status: "error", Message: err.Error(), Address: address}, nil
-		}
-		return &json.CleanupResult{Status: "error", Message: err.Error()}, nil
-	}
-
-	address, err := a.LoadBinder(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return &json.CleanupResult{Status: "reload_error", Message: err.Error()}, nil
+	if res.Status != statusSuccess {
+		return &json.CleanupResult{Status: res.Status, Message: res.Message, Address: res.Address}, nil
 	}
 
 	return &json.CleanupResult{
-		Status:     "success",
-		Address:    address,
+		Status:     statusSuccess,
+		Address:    res.Address,
 		BeforeSize: result.BeforeSize,
 		AfterSize:  result.AfterSize,
 	}, nil
@@ -1273,28 +764,20 @@ func (a *App) RunGC() (*json.GCResult, error) {
 
 	defer log.PrintTrace(log.Func("RunGC()"))
 
-	dir := a.current.Dir()
-	defer a.holdOpen(dir)()
-
-	err := a.CloseBinder()
+	var result *fs.GCResult
+	res, err := a.runClosed(func(repo *binder.Repository) error {
+		result = repo.GC()
+		return nil
+	})
 	if err != nil {
-		log.PrintStackTrace(err)
 		return nil, userError(err)
 	}
-
-	tmpFs, err := fs.Load(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		a.LoadBinder(dir)
-		return nil, userError(err)
+	// ほかの操作と違い、失敗は Status ではなくエラーで返す（画面側がそう受けている）
+	if res.opErr != nil {
+		return nil, userError(res.opErr)
 	}
-
-	result := tmpFs.GC()
-
-	_, err = a.LoadBinder(dir)
-	if err != nil {
-		log.PrintStackTrace(err)
-		return nil, userError(err)
+	if res.reloadErr != nil {
+		return nil, userError(res.reloadErr)
 	}
 
 	return &json.GCResult{

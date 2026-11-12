@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"binder/api/json"
+	"binder/entity"
 	"binder/fs"
 )
 
@@ -76,7 +76,7 @@ func TestPublicAssetFileRoot(t *testing.T) {
 		{"", ""},
 	}
 	for _, tt := range tests {
-		got := filepath.ToSlash(fs.PublicAssetFile(&json.Asset{Alias: tt.alias}))
+		got := filepath.ToSlash(fs.PublicAssetFile(&entity.Asset{Alias: tt.alias}))
 		if got != tt.want {
 			t.Errorf("PublicAssetFile(%q) = %q, want %q", tt.alias, got, tt.want)
 		}
@@ -118,19 +118,19 @@ func TestValidateNoteAlias(t *testing.T) {
 // TestErrorPageHTMLFile は 404 ページのノートの公開先が docs/404.html になることを検証する
 func TestErrorPageHTMLFile(t *testing.T) {
 	tests := []struct {
-		note json.Note
+		note entity.Note
 		want string
 	}{
-		{json.Note{Id: "n", Alias: "/404"}, "docs/404.html"},
-		{json.Note{Id: "n", Alias: "404"}, "docs/pages/404.html"},
-		{json.Note{Id: "index", Alias: "index"}, "docs/index.html"},
+		{entity.Note{Id: "n", Alias: "/404"}, "docs/404.html"},
+		{entity.Note{Id: "n", Alias: "404"}, "docs/pages/404.html"},
+		{entity.Note{Id: "index", Alias: "index"}, "docs/index.html"},
 	}
 	for _, tt := range tests {
 		if got := filepath.ToSlash(fs.HTMLFile(&tt.note)); got != tt.want {
 			t.Errorf("HTMLFile(%q) = %q, want %q", tt.note.Alias, got, tt.want)
 		}
 	}
-	if got := filepath.ToSlash(fs.PublicMetaFile(&json.Note{Alias: "/404"})); got != "docs/images/meta/404" {
+	if got := filepath.ToSlash(fs.PublicMetaFile(&entity.Note{Alias: "/404"})); got != "docs/images/meta/404" {
 		t.Errorf("PublicMetaFile(/404) = %q", got)
 	}
 }

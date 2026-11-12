@@ -7,7 +7,7 @@ import { Check, Close, ContentCopy, Delete, Search } from "@mui/icons-material";
 import { useTranslation } from 'react-i18next';
 import "../../language";
 
-import { copyClipboard } from "../../app/App";
+import { copyClipboard } from "../../clipboard";
 import { EventContext } from "../../Event";
 import { DialogErrorContext } from "./DialogError";
 import { ActionButton } from "./ActionButton";

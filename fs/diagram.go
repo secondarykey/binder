@@ -1,7 +1,7 @@
 package fs
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"binder/log"
 	"bytes"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 )
 
 // ID 指定は上位でやっておく
-func (f *FileSystem) CreateDiagramFile(d *json.Diagram) (string, error) {
+func (f *FileSystem) CreateDiagramFile(d *entity.Diagram) (string, error) {
 
 	fn := DiagramFile(d.Id)
 	//ノートファイルを作成
@@ -24,7 +24,7 @@ func (f *FileSystem) CreateDiagramFile(d *json.Diagram) (string, error) {
 	return fn, nil
 }
 
-func (f *FileSystem) DeleteDiagram(d *json.Diagram) ([]string, error) {
+func (f *FileSystem) DeleteDiagram(d *entity.Diagram) ([]string, error) {
 
 	var files []string
 
@@ -77,7 +77,7 @@ func (f *FileSystem) WriteDiagram(id string, data []byte) error {
 	return nil
 }
 
-func (f *FileSystem) SetDiagramStatus(d *json.Diagram) error {
+func (f *FileSystem) SetDiagramStatus(d *entity.Diagram) error {
 
 	base := DiagramFile(d.Id)
 
@@ -91,7 +91,7 @@ func (f *FileSystem) SetDiagramStatus(d *json.Diagram) error {
 	return nil
 }
 
-func (f *FileSystem) PublishDiagram(data []byte, d *json.Diagram) (string, error) {
+func (f *FileSystem) PublishDiagram(data []byte, d *entity.Diagram) (string, error) {
 
 	//公開ファイルを取得
 	pub := SVGFile(d)
@@ -105,7 +105,7 @@ func (f *FileSystem) PublishDiagram(data []byte, d *json.Diagram) (string, error
 	return pub, nil
 }
 
-func (f *FileSystem) UnpublishDiagram(d *json.Diagram) (string, error) {
+func (f *FileSystem) UnpublishDiagram(d *entity.Diagram) (string, error) {
 
 	//公開ファイルを取得
 	pub := SVGFile(d)

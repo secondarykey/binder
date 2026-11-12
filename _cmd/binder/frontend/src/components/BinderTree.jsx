@@ -35,7 +35,7 @@ import { OpenHistoryWindow, SelectFile, DownloadDocs, DownloadAll } from '../../
 import "../language";
 import { useTranslation } from 'react-i18next';
 
-import { copyClipboard } from '../app/App';
+import { copyClipboard } from '../clipboard';
 
 import Event, { EventContext, useEventListener } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';

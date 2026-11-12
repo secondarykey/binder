@@ -1,7 +1,7 @@
 package model
 
 import (
-	"binder/api/json"
+	"binder/entity"
 	"fmt"
 	"time"
 )
@@ -21,8 +21,8 @@ func (a *Asset) String() string {
 	return fmt.Sprintf("%s", a.Id)
 }
 
-func (a *Asset) To() *json.Asset {
-	var rtn json.Asset
+func (a *Asset) To() *entity.Asset {
+	var rtn entity.Asset
 	rtn.Id = a.Id
 	rtn.Binary = a.Binary
 	rtn.Mime = a.Mime
@@ -33,7 +33,7 @@ func (a *Asset) To() *json.Asset {
 	return &rtn
 }
 
-func ConvertAsset(a *json.Asset) *Asset {
+func ConvertAsset(a *entity.Asset) *Asset {
 	var rtn Asset
 	rtn.Id = a.Id
 	rtn.Binary = a.Binary

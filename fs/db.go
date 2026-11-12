@@ -1,46 +1,44 @@
 package fs
 
 import (
-	"binder/db"
-
 	"golang.org/x/xerrors"
 )
 
+// DB の CSV ファイル名（db ディレクトリの下）。git に載せるパスを作るために fs が持つ。
+// fs は db パッケージを import しない（層の図では並び）ので、db のテーブル名から作らずにここへ書く。
+// db 側のファイル名（db.Tables()）と揃っていることは、ルートの table_files_test.go が確かめる。
+// テーブルを足したら、ここと allTableFiles にも足す。
+const (
+	noteTableFileName      = "notes.csv"
+	diagramTableFileName   = "diagrams.csv"
+	assetTableFileName     = "assets.csv"
+	layerTableFileName     = "layers.csv"
+	templateTableFileName  = "templates.csv"
+	structureTableFileName = "structures.csv"
+)
+
 func NoteTableFile() string {
-	return tableFiles(db.NoteTableName)[0]
+	return tablePath(noteTableFileName)
 }
 
 func DiagramTableFile() string {
-	return tableFiles(db.DiagramTableName)[0]
+	return tablePath(diagramTableFileName)
 }
 
 func AssetTableFile() string {
-	return tableFiles(db.AssetTableName)[0]
+	return tablePath(assetTableFileName)
 }
 
 func LayerTableFile() string {
-	return tableFiles(db.LayerTableName)[0]
+	return tablePath(layerTableFileName)
 }
 
 func TemplateTableFile() string {
-	return tableFiles(db.TemplateTableName)[0]
+	return tablePath(templateTableFileName)
 }
 
 func StructureTableFile() string {
-	return tableFiles(db.StructureTableName)[0]
-}
-
-func tableFile(v string) string {
-	return tableFiles(v)[0]
-}
-
-func tableFiles(v ...string) []string {
-	names := db.Tables()
-	files := make([]string, len(v))
-	for idx, n := range v {
-		files[idx] = tablePath(names[n])
-	}
-	return files
+	return tablePath(structureTableFileName)
 }
 
 func tablePath(f string) string {
@@ -67,9 +65,20 @@ func (f *FileSystem) SchemaCommit(fn string) error {
 	return nil
 }
 
+// AllTableFiles は git に載せる DB の CSV ファイルのパスをすべて返す。
+func AllTableFiles() []string {
+	return allTableFiles()
+}
+
 func allTableFiles() []string {
-	return tableFiles(db.NoteTableName,
-		db.DiagramTableName, db.AssetTableName, db.LayerTableName, db.TemplateTableName, db.StructureTableName)
+	return []string{
+		NoteTableFile(),
+		DiagramTableFile(),
+		AssetTableFile(),
+		LayerTableFile(),
+		TemplateTableFile(),
+		StructureTableFile(),
+	}
 }
 
 func (f *FileSystem) AddDBFiles() error {

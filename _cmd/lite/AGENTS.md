@@ -27,8 +27,13 @@ React フロントエンド (MUI, Vite)
 api/lite/api.go — 薄い Service（ファイルI/O + テーマ/言語）
     ↓
 os.ReadFile / os.WriteFile（標準ライブラリ）
-setup/, settings/（Binder と共有）
+setup/defaults/, settings/（Binder と共有）
 ```
+
+**Lite に入れてよい binder パッケージは `log` / `settings` / `api/lite` / `api/shared` / `setup/defaults` だけ**。
+ルートの `binder`・`db`・`fs`・`setup` を import すると（間接でも）go-git と csvq がバイナリに入る
+（外したときに Lite のバイナリが約 8MB 減った）。import を足したら `cd _cmd/lite && go list -deps . | grep ^binder` で確かめる。
+ライセンス文も Go では持たず、フロントが `@shared/licenses` で読む（`_cmd/shared/frontend/AGENTS.md`）。
 
 ## Go バックエンド
 

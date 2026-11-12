@@ -3,6 +3,10 @@
 go-gitリポジトリのラッパー。バインダー内の全コンテンツ変更はここを経由し、gitコミットされる。
 `billy.Filesystem` 抽象により OSファイルシステム（osfs）とインメモリ（memfs）の両方をサポートする（テストは `NewMemory()` を使用）。
 
+import してよい binder パッケージは `log` と `entity` だけ（`api/json` も import しない）。`db` と `settings` は import しない（層の図では `db` と並び。
+`go list -f '{{join .Imports "
+"}}' ./fs | grep ^binder` で確かめられる）。必要なものは使う側から渡す（下の「コミットと署名」と `db.go`）。
+
 ## FileSystem の生成
 
 - `New(dir)` / `NewWithBranch(dir, branch)` — git init して新規作成
@@ -48,7 +52,9 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 
 ## コミットと署名（git.go）
 
-- `Commit(m, files...)` — **ユーザ署名**でコミット。バインダー固有署名（`SetUserSig`）> アプリ設定（`settings.Get().Git`）の優先順
+- `Commit(m, files...)` — **ユーザ署名**でコミット。バインダー固有署名（`SetUserSig`）> 既定の署名の優先順。
+  既定の署名は `SetDefaultUser` で渡された関数から取る（fs は設定を読まない）。アプリの設定（`settings.Get().Git`）から取る関数を
+  `setup/signature.go` の `init` が渡している。渡されていなければ名前もメールも空になる
 - `AutoCommit(m, files...)` / `CommitAll(m)` — **システム署名**（"Binder System" <binder@localhost>）。自動処理・マイグレーション用
 - `CommitSnapshot(m)` — システム署名で作業ツリーを丸ごと（**未追跡ファイル込み**、`add -A` 相当）コミット。更新なしなら `UpdatedFilesError`。
   `CommitAll` は go-git の `commit -a` 相当で**未追跡ファイルを拾わない**一方、
@@ -73,7 +79,7 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 - **note.go / diagram.go / asset.go / layer.go / template.go** — エンティティ別ファイル操作（Create/Read/Write/Delete/Publish/Unpublish/Rename）。テンプレートは `AddTemplateFrame` / `StripTemplateFrame` で編集用フレームを付脱
 - **rootfile.go / plugin.go** — ルートファイル・プラグイン（詳細は `_docs/skills/binder-plugin-rootfile/SKILL.md`）
 - **meta.go** — `BinderMeta`（binder.json）: version / minAppVersion / name / detail / markedUrl / mermaidUrl / optimizeImage / publishOnly / publishBranch / publishSubDir / previewColorScheme。`Schema` フィールドは0.3.2未満との後方互換用（非推奨）
-- **db.go** — `db/` 配下CSVテーブルのパス解決・ステージング
+- **db.go** — `db/` 配下CSVテーブルのパス解決・ステージング。CSV のファイル名（`notes.csv` など）は fs が定数で持つ。`db.Tables()` と揃っていることはルートの `table_files_test.go` が確かめる
 - **user.go / crypt.go** — `user_data.enc`（暗号化された `UserInfo`: git署名＋認証情報。`AuthType`: basic / token / ssh_key / ssh_agent）
 - **merge.go / merge_csv.go / diff3.go** — 3-wayマージ。CSVは行単位マージ（`MergeAnalysis` / `MergeLog`）。マージ後の整合性回復: dangling parent の index直下への救済（`RepairDanglingParents`）、structure行が失われた実体ファイルの復元
 - **diff.go** — 差分・パッチ生成ヘルパー
@@ -94,6 +100,7 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 - 立てる場所: `binder.Load()` の先頭（インデックス復旧・スキーマ修復・doctor より前）と `Binder.Close()`。
   `Load()` を通らずに書き込む API（`Convert`、`RestoreToCommitByPath` / `SwitchBranchByPath`）は自分で立てる。
   閉じて `fs.Load()` で書いてから開き直す API（復元・ブランチ切替・取り込み・履歴の整理）は `api.App.holdOpen` で間も持ち続ける
+- 最後の `ReleaseOpen` で両方のファイルを消す（消せなくてもロックが外れていれば「開いていない」と判定される）
 - クラッシュで残ったファイルはロックされていないので「開いている」とは判定されない（次に開くときに書き換える）
 - ロックは Windows が `LockFileEx`（中身の読み取りを妨げないよう遠いオフセットの 1 バイト）、それ以外が `flock`
 

@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"binder"
 	"binder/settings"
 )
 
@@ -44,14 +43,7 @@ func (s *Shared) GetLanguageData(code string) (string, error) {
 	return settings.ReadLanguageJSON(code)
 }
 
-// --- ライセンス ---
-
-// GetLicense はアプリケーションのライセンスを返す。
-func (s *Shared) GetLicense() (string, error) {
-	return binder.LicenseText, nil
-}
-
-// GetThirdPartyLicenses はサードパーティライセンスを返す。
-func (s *Shared) GetThirdPartyLicenses() (string, error) {
-	return binder.ThirdPartyLicensesText, nil
-}
+// ライセンス文はここでは返さない。フロントがルートの LICENSE / THIRD_PARTY_LICENSES を
+// ビルド時に取り込む（_cmd/shared/frontend/licenses.js）。Go で埋め込むにはルートパッケージ
+// （binder）を import する必要があり、Lite まで db / fs を抱え込むため。
+// このパッケージは Lite からも使うので、binder（ルート）・db・fs を import しない。

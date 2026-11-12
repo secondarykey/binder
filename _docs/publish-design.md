@@ -260,5 +260,5 @@ srcdoc なのでこのURLを読み込めない。`<img src="{{ url ... }}">` は
 - 組み立て: [html.go](../html.go) `createHTMLTemplate` / `createDto` / `CreateNoteHTML`
 - 関数: [html_func.go](../html_func.go) `defineFuncMap`
 - フレーム: [fs/template.go](../fs/template.go) `AddTemplateFrame` / `StripTemplateFrame`
-- 型: [api/json/template.go](../api/json/template.go) `layout` / `content` / `diagram`
+- 型: [entity/template.go](../entity/template.go) `layout` / `content` / `diagram`
 - プリセット: `setup/_assets/install/{blog,document,simple}/`（`manifest.json` が対応関係の実例）

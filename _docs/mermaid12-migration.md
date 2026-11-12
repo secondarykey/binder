@@ -105,7 +105,7 @@ const DefaultOpts = {
 
 ## 段階 2: 0.17.0 でやること
 
-- [x] 同梱 `mermaid.min.js` を 12.1.0 に差し替える（`_cmd/binder/frontend/src/assets/vendor/` と `_cmd/lite/frontend/src/assets/vendor/`）。
+- [x] 同梱 `mermaid.min.js` を 12.1.0 に差し替える（`_cmd/binder/frontend/src/assets/vendor/` と `_cmd/lite/frontend/src/assets/vendor/`）。 現在は `_cmd/shared/frontend/vendor/` の 1 箇所にまとめてあり、バージョンも同じ場所の `index.js`。
   生成方法は下の「バンドル生成手順」
 - [x] バージョン文字列を更新する（`_cmd/binder/frontend/src/main.jsx` の `MERMAID_VENDOR_VERSION`、`_cmd/lite/frontend/src/main.jsx` の `setVendorVersion`）
 - [x] バインダー設定の入力例（`_cmd/binder/frontend/src/dialogs/Binder.jsx` の placeholder）を更新する

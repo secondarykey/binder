@@ -21,7 +21,7 @@ type CSVRowSummary struct {
 type MergedCSV struct {
 	Header        []string
 	Rows          []csvRow
-	Changed       bool // base から変更があったか
+	Changed       bool            // base から変更があったか
 	AddedOurs     []CSVRowSummary // ours のみに追加された行
 	AddedTheirs   []CSVRowSummary // theirs のみに追加された行
 	DeletedOurs   []CSVRowSummary // ours で削除された行（theirs 側を尊重）

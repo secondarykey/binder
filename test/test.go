@@ -25,10 +25,12 @@ func init() {
 }
 
 // readConfigVersion は _cmd/binder/build/config.yml からアプリバージョンを読み出す。
-// Go テストはパッケージディレクトリ (test/) から実行されるため、相対パスで参照できる。
+// Go テストはそれを呼んだパッケージのディレクトリで実行される（ルートのテストならルート、
+// test/ のテストなら test/）ので、作業ディレクトリから上へたどって探す。
+// 「..」固定だとルートのテストから読めず、0.0.0 のバインダーを作ってしまう
+// （0.0.0 は取り込み元として古すぎる扱いになり、取り込みのテストができない）。
 func readConfigVersion() string {
-	p := filepath.Join("..", "_cmd", "binder", "build", "config.yml")
-	data, err := os.ReadFile(p)
+	data, err := readUpward(filepath.Join("_cmd", "binder", "build", "config.yml"))
 	if err != nil {
 		return "0.0.0"
 	}
@@ -44,6 +46,25 @@ func readConfigVersion() string {
 		return "0.0.0"
 	}
 	return s[:end]
+}
+
+// readUpward は作業ディレクトリから上へたどり、最初に見つかった rel を読む。
+func readUpward(rel string) ([]byte, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	for {
+		data, err := os.ReadFile(filepath.Join(dir, rel))
+		if err == nil {
+			return data, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return nil, err
+		}
+		dir = parent
+	}
 }
 
 func NewVer(ver string) *Version {
