@@ -52,7 +52,7 @@ func TestDoctorRecreatesMissingNoteFile(t *testing.T) {
 	}
 
 	// 詰み解消の確認: ファイル欠損で失敗していた削除が可能になる
-	if _, err := b.RemoveNote(id); err != nil {
+	if _, err := b.RemoveNote(id, false); err != nil {
 		t.Errorf("doctor 後の RemoveNote() error: %v", err)
 	}
 }
@@ -164,7 +164,7 @@ func TestRemoveNoteWithMissingFile(t *testing.T) {
 		t.Fatalf("os.Remove() error: %v", err)
 	}
 
-	if _, err := b.RemoveNote(id); err != nil {
+	if _, err := b.RemoveNote(id, false); err != nil {
 		t.Fatalf("欠損ファイルのままの RemoveNote() error: %v", err)
 	}
 	if _, err := b.GetNote(id); err == nil {

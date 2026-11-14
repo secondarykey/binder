@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Menu, MenuItem, Dialog, DialogTitle, DialogActions, Tooltip, IconButton, Divider } from '@mui/material';
+import { Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, IconButton, Divider } from '@mui/material';
 
 import CloseIcon from '@mui/icons-material/Close';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
@@ -26,7 +26,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 import { Events, Browser } from '@wailsio/runtime';
 
-import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, RemoveDiagram, RemoveAsset, RemoveLayer,
+import { GetBinderTree, GetModifiedIds, GetUnpublishedTree, MoveNode, DropAsset, RemoveNote, HasChildren, RemoveDiagram, RemoveAsset, RemoveLayer,
          EditNote, EditDiagram, EditAsset, EditLayer, AddTextAsset, GetNote, GetDiagram, GetAsset, GetLayer, GetHTMLTemplates, EnsureAddress, GetFullPath,
          IsGitBashPath, GetGitBashFullPath, GetTreeDisplayMode, GetTreeExpandTargets, SaveLastData } from '../../bindings/binder/api/app';
 
@@ -39,6 +39,7 @@ import { copyClipboard } from '../clipboard';
 
 import Event, { EventContext, useEventListener } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
+import HierarchyDeleteOption from '../dialogs/components/HierarchyDeleteOption';
 import Tree from './Tree';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
 import DiagramMetaDialog from '../dialogs/DiagramMetaDialog';
@@ -227,7 +228,8 @@ function BinderTree(props) {
   const [localPublishDirtyIds, setLocalPublishDirtyIds] = useState(new Set());
 
   // 削除確認ダイアログの状態
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null });
+  // hasChildren: 下層を持つノートか / withChildren: 「階層データの削除」にチェックを入れたか
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, node: null, hasChildren: false, withChildren: false });
 
   // メタ編集ダイアログの状態
   const [editDialog, setEditDialog] = useState({ open: false, type: null, id: null });
@@ -695,7 +697,7 @@ function BinderTree(props) {
       const type = node.nodeType || node.type;
       if (type === 'folder') return;
       e.preventDefault();
-      setDeleteConfirm({ open: true, node });
+      openDeleteConfirm(node);
     }
   };
 
@@ -873,22 +875,40 @@ function BinderTree(props) {
     }
   };
 
-  /** 削除確認ダイアログを開く */
+  /**
+   * 削除確認ダイアログを開く。ノートは下層の有無をバインダーに問い合わせる
+   * （表示モードによってはツリーに下層が出ていないため、ツリーの children では判定しない）
+   */
+  const openDeleteConfirm = (node) => {
+    const type = node.nodeType || node.type;
+    if (type !== 'note') {
+      setDeleteConfirm({ open: true, node, hasChildren: false, withChildren: false });
+      return;
+    }
+    HasChildren(node.id).then((has) => {
+      setDeleteConfirm({ open: true, node, hasChildren: !!has, withChildren: false });
+    }).catch((err) => {
+      evt.showErrorMessage(err);
+    });
+  };
+
+  /** 削除確認ダイアログを開く（コンテキストメニュー） */
   const handleDeleteRequest = () => {
     const node = contextMenu.node;
     closeAllMenus();
-    setDeleteConfirm({ open: true, node });
+    openDeleteConfirm(node);
   };
 
   /** 削除確認後の実行 */
   const handleDeleteConfirm = () => {
-    const { node } = deleteConfirm;
-    setDeleteConfirm({ open: false, node: null });
+    const { node, hasChildren, withChildren } = deleteConfirm;
     if (!node) return;
+    if (hasChildren && !withChildren) return;
+    setDeleteConfirm({ open: false, node: null, hasChildren: false, withChildren: false });
 
     const type = node.nodeType || node.type;
     const remove =
-      type === 'note'    ? RemoveNote(node.id) :
+      type === 'note'    ? RemoveNote(node.id, hasChildren && withChildren) :
       type === 'diagram' ? RemoveDiagram(node.id) :
       type === 'layer'   ? RemoveLayer(node.id) :
                            RemoveAsset(node.id);
@@ -920,8 +940,11 @@ function BinderTree(props) {
 
   /** 削除をキャンセル */
   const handleDeleteCancel = () => {
-    setDeleteConfirm({ open: false, node: null });
+    setDeleteConfirm({ open: false, node: null, hasChildren: false, withChildren: false });
   };
+
+  // 削除確認の対象が下層を持つノートか（「階層データの削除」を出すか）
+  const deleteNeedsHierarchy = deleteConfirm.hasChildren;
 
   // 現在右クリックされているノードの元type
   const contextNodeType = contextMenu.node?.nodeType;
@@ -1179,9 +1202,18 @@ function BinderTree(props) {
       <DialogTitle>
         {t("tree.deleteConfirm", { name: deleteConfirm.node?.name })}
       </DialogTitle>
+      {deleteNeedsHierarchy && (
+        <DialogContent>
+          <HierarchyDeleteOption
+            checked={deleteConfirm.withChildren}
+            onChange={(checked) => setDeleteConfirm(prev => ({ ...prev, withChildren: checked }))}
+          />
+        </DialogContent>
+      )}
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={handleDeleteCancel} />
-        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={handleDeleteConfirm}
+          disabled={deleteNeedsHierarchy && !deleteConfirm.withChildren} />
       </DialogActions>
     </Dialog>
 

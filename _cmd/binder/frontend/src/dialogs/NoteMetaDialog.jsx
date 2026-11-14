@@ -11,7 +11,7 @@ import PublishDateField from "./components/PublishDateField";
 
 import {
   GetNote, GetHTMLTemplates, GetNoteImageURL, DeleteNoteImage, UploadNoteImage,
-  EditNote, RemoveNote, PrivatizeChildren, GetConfig, GetPublishSettings,
+  EditNote, RemoveNote, HasChildren, PrivatizeChildren, GetConfig, GetPublishSettings,
 } from "../../bindings/binder/api/app";
 import { SelectFile, OpenSearchWindowWithQuery } from "../../bindings/main/window";
 import noImage from '../assets/images/noimage.png';
@@ -19,6 +19,7 @@ import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
 import MetaDialog from "./components/MetaDialog";
 import ConfirmDialog from "./components/ConfirmDialog";
+import HierarchyDeleteOption from "./components/HierarchyDeleteOption";
 import { ActionButton } from "./components/ActionButton";
 import { errorPageWarnings, isErrorPageAlias, toggleErrorPageAlias } from "./errorPage";
 import "../language";
@@ -46,6 +47,9 @@ function NoteMetaDialog({ open, id, onClose }) {
   const [hasImage, setHasImage] = useState(false);
   const [confirmDeleteImage, setConfirmDeleteImage] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // 削除確認: 下層があるか・「階層データの削除」にチェックを入れたか
+  const [deleteHasChildren, setDeleteHasChildren] = useState(false);
+  const [deleteWithChildren, setDeleteWithChildren] = useState(false);
   const [privateConfirm, setPrivateConfirm] = useState(false);
   const [includeChildren, setIncludeChildren] = useState(false);
   const [detail, setDetail] = useState("");
@@ -152,9 +156,18 @@ function NoteMetaDialog({ open, id, onClose }) {
     }
   };
 
+  const handleDeleteRequest = () => {
+    setDeleteWithChildren(false);
+    HasChildren(id).then((has) => {
+      setDeleteHasChildren(!!has);
+      setConfirmDelete(true);
+    }).catch((err) => showError(err));
+  };
+
   const handleDeleteConfirm = () => {
+    if (deleteHasChildren && !deleteWithChildren) return;
     setConfirmDelete(false);
-    RemoveNote(id).then(() => {
+    RemoveNote(id, deleteHasChildren && deleteWithChildren).then(() => {
       evt.refreshTree();
       evt.showSuccessMessage(t("note.removeSuccess"));
       onClose();
@@ -206,7 +219,7 @@ function NoteMetaDialog({ open, id, onClose }) {
       id={id} onSave={handleSave}
       onSearch={() => OpenSearchWindowWithQuery(id)}
       isPrivate={isPrivate} onPrivateChange={setIsPrivate}
-      onDelete={() => setConfirmDelete(true)} deleteDisabled={isIndex}
+      onDelete={handleDeleteRequest} deleteDisabled={isIndex}
     >
       <FormControl>
         <FormLabel>{t("common.name")}</FormLabel>
@@ -347,7 +360,12 @@ function NoteMetaDialog({ open, id, onClose }) {
       message={t("note.deleteConfirm", { name })}
       onCancel={() => setConfirmDelete(false)}
       onConfirm={handleDeleteConfirm}
-    />
+      confirmDisabled={deleteHasChildren && !deleteWithChildren}
+    >
+      {deleteHasChildren && (
+        <HierarchyDeleteOption checked={deleteWithChildren} onChange={setDeleteWithChildren} />
+      )}
+    </ConfirmDialog>
 
     <ConfirmDialog
       open={confirmDeleteImage}

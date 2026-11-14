@@ -10,6 +10,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
   MoveNode: vi.fn(() => Promise.resolve()),
   DropAsset: vi.fn(() => Promise.resolve()),
   RemoveNote: vi.fn(() => Promise.resolve()),
+  HasChildren: vi.fn(() => Promise.resolve(false)),
   RemoveDiagram: vi.fn(() => Promise.resolve()),
   RemoveAsset: vi.fn(() => Promise.resolve()),
   RemoveLayer: vi.fn(() => Promise.resolve()),

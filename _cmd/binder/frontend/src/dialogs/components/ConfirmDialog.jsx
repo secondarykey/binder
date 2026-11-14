@@ -11,9 +11,11 @@ import { ActionButton } from './ActionButton';
 
 /**
  * 確認ダイアログ（削除確認などに使用）
- * @param {{ open: boolean, title: string, message: string, onCancel: () => void, onConfirm: () => void }} props
+ * children はメッセージの下に出す（チェックボックス等）。confirmDisabled で実行ボタンを押せなくする。
+ * @param {{ open: boolean, title: string, message: string, onCancel: () => void, onConfirm: () => void,
+ *           confirmDisabled?: boolean, children?: React.ReactNode }} props
  */
-function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
+function ConfirmDialog({ open, title, message, onCancel, onConfirm, confirmDisabled = false, children }) {
   const {t} = useTranslation();
   return (
     <Dialog
@@ -25,9 +27,14 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
       <DialogContentText style={{ padding: "0 24px 8px", color: "var(--text-secondary)", flex: 1 }}>
         {message}
       </DialogContentText>
+      {children && (
+        <div style={{ padding: "0 24px 8px" }}>
+          {children}
+        </div>
+      )}
       <DialogActions>
         <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={onCancel} />
-        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={onConfirm} />
+        <ActionButton variant="delete" label={t("common.delete")} icon={<DeleteIcon />} onClick={onConfirm} disabled={confirmDisabled} />
       </DialogActions>
     </Dialog>
   );

@@ -29,4 +29,18 @@ describe('ConfirmDialog', () => {
     await userEvent.click(confirmButton);
     expect(handleConfirm).toHaveBeenCalledTimes(1);
   });
+
+  it('renders children and keeps confirm disabled when confirmDisabled', async () => {
+    const handleConfirm = vi.fn();
+    render(
+      <ConfirmDialog open={true} title="Delete?" message="Are you sure?" onCancel={() => {}} onConfirm={handleConfirm} confirmDisabled>
+        <span>extra option</span>
+      </ConfirmDialog>
+    );
+    expect(screen.getByText('extra option')).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button');
+    const confirmButton = buttons[buttons.length - 1];
+    expect(confirmButton).toBeDisabled();
+    expect(handleConfirm).not.toHaveBeenCalled();
+  });
 });

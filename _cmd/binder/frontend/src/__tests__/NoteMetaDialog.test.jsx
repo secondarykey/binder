@@ -11,6 +11,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
   UploadNoteImage: vi.fn(() => Promise.resolve()),
   EditNote: vi.fn(() => Promise.resolve()),
   RemoveNote: vi.fn(() => Promise.resolve()),
+  HasChildren: vi.fn(() => Promise.resolve(false)),
   PrivatizeChildren: vi.fn(() => Promise.resolve()),
   GetConfig: vi.fn(() => Promise.resolve({})),
   GetPublishSettings: vi.fn(() => Promise.resolve({})),
@@ -21,7 +22,7 @@ vi.mock('../../bindings/main/window', () => ({
 }));
 vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
 
-import { EditNote, GetConfig, GetHTMLTemplates, GetNote, GetPublishSettings } from '../../bindings/binder/api/app';
+import { EditNote, GetConfig, GetHTMLTemplates, GetNote, GetPublishSettings, HasChildren, RemoveNote } from '../../bindings/binder/api/app';
 import NoteMetaDialog from '../dialogs/NoteMetaDialog';
 
 function renderDialog(id = 'test-id') {
@@ -154,6 +155,48 @@ describe('NoteMetaDialog', () => {
 
       await openWebPublish('about');
       expect(screen.queryByText('note.errorPageNoSiteUrl')).toBeNull();
+    });
+  });
+
+  describe('delete', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      GetNote.mockImplementation(() => Promise.resolve(note('about')));
+    });
+
+    // 確認ダイアログの削除ボタン（MetaDialog の削除ボタンより後ろに出る）
+    const confirmDeleteButton = () => screen.getAllByTestId('DeleteIcon').at(-1).closest('button');
+
+    it('deletes a note without children as before', async () => {
+      HasChildren.mockImplementation(() => Promise.resolve(false));
+      renderDialog('n1');
+      await screen.findByTestId('note-alias');
+
+      fireEvent.click(screen.getByLabelText('delete'));
+      await screen.findByText('note.deleteTitle');
+      expect(screen.queryByRole('checkbox', { name: 'note.deleteWithChildren' })).toBeNull();
+
+      fireEvent.click(confirmDeleteButton());
+      await waitFor(() => expect(RemoveNote).toHaveBeenCalledWith('n1', false));
+    });
+
+    it('deletes a note with children only after checking the hierarchy option', async () => {
+      HasChildren.mockImplementation(() => Promise.resolve(true));
+      renderDialog('n1');
+      await screen.findByTestId('note-alias');
+
+      fireEvent.click(screen.getByLabelText('delete'));
+      const checkbox = await screen.findByRole('checkbox', { name: 'note.deleteWithChildren' });
+      expect(checkbox.checked).toBe(false);
+      expect(screen.queryByText('note.deleteWithChildrenWarning')).toBeNull();
+      expect(confirmDeleteButton().disabled).toBe(true);
+
+      fireEvent.click(checkbox);
+      expect(screen.getByText('note.deleteWithChildrenWarning')).toBeInTheDocument();
+      expect(confirmDeleteButton().disabled).toBe(false);
+
+      fireEvent.click(confirmDeleteButton());
+      await waitFor(() => expect(RemoveNote).toHaveBeenCalledWith('n1', true));
     });
   });
 });

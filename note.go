@@ -43,7 +43,12 @@ func (b *Binder) GetNote(id string) (*json.Note, error) {
 	return rtn, nil
 }
 
-func (b *Binder) RemoveNote(id string) (*json.Note, error) {
+// RemoveNote はノートを削除する。
+//
+// 子要素（ノート・ダイアグラム・アセット・レイヤー）を持つノートは、withChildren が true の
+// ときだけ子孫ごと削除し、1 回の記録にまとめる。false のときは ErrNoteHasChildren を返す
+// （画面の「階層データの削除」にチェックを入れたときだけ true で呼ばれる）。
+func (b *Binder) RemoveNote(id string, withChildren bool) (*json.Note, error) {
 
 	if b == nil {
 		return nil, EmptyError
@@ -54,55 +59,156 @@ func (b *Binder) RemoveNote(id string) (*json.Note, error) {
 		return nil, ErrIndexNoteUndeletable
 	}
 
-	// 子要素が存在する場合は削除不可
 	children, err := b.db.FindStructuresByParent(id)
 	if err != nil {
 		return nil, xerrors.Errorf("db.FindStructuresByParent() error: %w", err)
 	}
-	if len(children) > 0 {
+	if len(children) > 0 && !withChildren {
 		return nil, xerrors.Errorf("%w: %s", ErrNoteHasChildren, id)
 	}
 
-	n, err := b.db.GetNote(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	var files []string
+	if len(children) > 0 {
+		files, err = b.removeDescendants(id)
+		if err != nil {
+			return nil, xerrors.Errorf("removeDescendants() error: %w", err)
+		}
 	}
 
-	s, err := b.db.GetStructure(id)
+	j, nf, err := b.deleteNote(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+		return nil, xerrors.Errorf("deleteNote() error: %w", err)
 	}
-
-	j := n.To()
-	j.ApplyStructure(s.To())
-
-	//TODO 親に持つオブジェクトをすべて取得
-	//ファイルを削除
-	files, err := b.fileSystem.DeleteNote(j)
-	if err != nil {
-		return nil, xerrors.Errorf("fs.DeleteNote() error: %w", err)
-	}
-
-	//DBを削除
-	err = b.db.DeleteNote(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
-	}
-
-	err = b.db.DeleteStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
-	}
-
+	files = append(files, nf...)
 	files = append(files, fs.NoteTableFile(), fs.StructureTableFile())
 
 	//コミット
-	err = b.fileSystem.Commit(fs.M("Remove Note", j.Name), files...)
+	err = b.fileSystem.Commit(fs.M("Remove Note", j.Name), uniqueFiles(files)...)
 	if err != nil {
 		return nil, xerrors.Errorf("Commit() error: %w", err)
 	}
 
 	return j, nil
+}
+
+// deleteNote はノートの実体ファイル（公開済みのファイル・メタ画像を含む）とテーブルの行を消す。
+// 記録はしない。返すファイルにテーブルのファイルは含まない。
+func (b *Binder) deleteNote(id string) (*json.Note, []string, error) {
+
+	n, err := b.db.GetNote(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetNote() error: %w", err)
+	}
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
+	j := n.To()
+	j.ApplyStructure(s.To())
+
+	//ファイルを削除
+	files, err := b.fileSystem.DeleteNote(j)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("fs.DeleteNote() error: %w", err)
+	}
+
+	//DBを削除
+	err = b.db.DeleteNote(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
+	}
+
+	err = b.db.DeleteStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
+	return j, files, nil
+}
+
+// removeDescendants は parentId の下にあるものをすべて消し、記録に含めるファイル
+// （テーブルのファイルを含む）を返す。記録はしない。
+//
+// 途中で知らない種類に当たって半端に消えないよう、先に下層をすべて集めて種類を確かめてから、
+// 葉の側から消す（アセットはレイヤーを消してから消す）。
+func (b *Binder) removeDescendants(parentId string) ([]string, error) {
+
+	var targets []*model.Structure
+	if err := b.collectDescendants(parentId, &targets); err != nil {
+		return nil, xerrors.Errorf("collectDescendants() error: %w", err)
+	}
+
+	for _, s := range targets {
+		switch s.Typ {
+		case "note", "diagram", "asset", "layer":
+		default:
+			return nil, xerrors.Errorf("unknown structure type %q: %s", s.Typ, s.Id)
+		}
+	}
+
+	var files []string
+	for _, s := range targets {
+
+		var df []string
+		var err error
+
+		switch s.Typ {
+		case "note":
+			_, df, err = b.deleteNote(s.Id)
+			df = append(df, fs.NoteTableFile())
+		case "diagram":
+			_, df, err = b.deleteDiagram(s.Id)
+			df = append(df, fs.DiagramTableFile())
+		case "asset":
+			_, df, err = b.deleteAsset(s.Id)
+			df = append(df, fs.AssetTableFile())
+		case "layer":
+			_, df, err = b.deleteLayer(s.Id)
+			df = append(df, fs.LayerTableFile())
+		}
+		if err != nil {
+			return nil, xerrors.Errorf("delete %s(%s) error: %w", s.Typ, s.Id, err)
+		}
+		files = append(files, df...)
+	}
+
+	if len(targets) > 0 {
+		files = append(files, fs.StructureTableFile())
+	}
+	return files, nil
+}
+
+// collectDescendants は parentId の下にあるものを、子が親より先に来る順（帰りがけ順）で集める。
+func (b *Binder) collectDescendants(parentId string, targets *[]*model.Structure) error {
+
+	children, err := b.db.FindStructuresByParent(parentId)
+	if err != nil {
+		return xerrors.Errorf("db.FindStructuresByParent(%s) error: %w", parentId, err)
+	}
+
+	for _, s := range children {
+		if err := b.collectDescendants(s.Id, targets); err != nil {
+			return err
+		}
+		*targets = append(*targets, s)
+	}
+	return nil
+}
+
+// uniqueFiles は順序を保ったまま重複を除く。
+func uniqueFiles(files []string) []string {
+	seen := make(map[string]struct{}, len(files))
+	rtn := make([]string, 0, len(files))
+	for _, f := range files {
+		if _, ok := seen[f]; ok {
+			continue
+		}
+		seen[f] = struct{}{}
+		rtn = append(rtn, f)
+	}
+	return rtn
 }
 
 func (b *Binder) EditNote(n *json.Note, metaName string) (*json.Note, error) {
