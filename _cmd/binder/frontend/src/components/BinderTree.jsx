@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 
 import { Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, IconButton, Divider } from '@mui/material';
 
@@ -120,6 +120,26 @@ const collectDescendantIds = (node, ids = new Set()) => {
   return ids;
 };
 
+/** ツリーの種類からエディタの URL を作る（アセットだけ URL 上は assets） */
+const editorPath = (type, id) => "/editor/" + (type === 'asset' ? 'assets' : type) + "/" + id;
+
+/** エディタの URL（/editor/:mode/:id）から開いているデータの ID を取り出す */
+const openedIdFromPath = (pathname) => {
+  const m = /^\/editor\/[^/]+\/([^/]+)/.exec(pathname || "");
+  return m ? decodeURIComponent(m[1]) : null;
+};
+
+/**
+ * 削除したあとに開く「上の階層」を返す（ツリー生データから）。
+ * 直上がノート（レイヤーはアセット）なのでそれを返し、見つからなければ index ノート。
+ */
+const findParentForRemoval = (nodes, id) => {
+  const ancestors = findAncestorIds(nodes, id) || [];
+  const parent = ancestors.length > 0 ? findNodeInTree(nodes, ancestors[ancestors.length - 1]) : null;
+  if (!parent) return { type: 'note', id: 'index' };
+  return { type: parent.nodeType || parent.type, id: parent.id };
+};
+
 /**
  * ツリー（生データ）から子を持つ全ノードのIDを収集する（展開可能なノード）
  */
@@ -166,6 +186,7 @@ function BinderTree(props) {
 
   const evt = useContext(EventContext);
   const nav = useNavigate();
+  const location = useLocation();
   const {t} = useTranslation();
 
   // ツリーデータ（APIから取得した生データ）
@@ -547,11 +568,7 @@ function BinderTree(props) {
   const handleClick = (node) => {
     const type = node.nodeType || node.type;
     SaveLastData(type, node.id).catch(() => {});
-    if (type === 'asset') {
-      nav("/editor/assets/" + node.id);
-    } else {
-      nav("/editor/" + type + "/" + node.id);
-    }
+    nav(editorPath(type, node.id));
   };
 
   /** コンテキストメニューを開く */
@@ -906,6 +923,11 @@ function BinderTree(props) {
     if (hasChildren && !withChildren) return;
     setDeleteConfirm({ open: false, node: null, hasChildren: false, withChildren: false });
 
+    // 消える ID（下層ごと消す場合は下層も）と、消したあとに開く上の階層を先に控えておく
+    const rawNode = findNodeInTree(treeRef.current, node.id) || node;
+    const removedIds = collectDescendantIds(rawNode);
+    const parent = findParentForRemoval(treeRef.current, node.id);
+
     const type = node.nodeType || node.type;
     const remove =
       type === 'note'    ? RemoveNote(node.id, hasChildren && withChildren) :
@@ -914,6 +936,15 @@ function BinderTree(props) {
                            RemoveAsset(node.id);
 
     remove.then(() => {
+      // 消したものを開いていたら上の階層を開く。選択も上の階層へ移す
+      const openedId = openedIdFromPath(location.pathname);
+      if (openedId && removedIds.has(openedId)) {
+        SaveLastData(parent.type, parent.id).catch(() => {});
+        nav(editorPath(parent.type, parent.id));
+        setSelectedId(parent.id);
+      } else if (removedIds.has(selectedIdRef.current)) {
+        setSelectedId(parent.id);
+      }
       evt.refreshTree();
       evt.showSuccessMessage(t("common.deleted"));
     }).catch((err) => {

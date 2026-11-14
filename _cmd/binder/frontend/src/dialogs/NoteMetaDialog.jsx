@@ -172,6 +172,7 @@ function NoteMetaDialog({ open, id, onClose }) {
       evt.showSuccessMessage(t("note.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
+      evt.selectTreeNode(parentId);
     }).catch((err) => showError(err));
   };
 
