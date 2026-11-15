@@ -5,6 +5,7 @@ import (
 	"binder/log"
 	"binder/settings"
 	"fmt"
+	filedialog "main/dialog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,16 +30,14 @@ func NewWindow(app *lite.App) *Window {
 func (w *Window) OpenFileDialog() (string, error) {
 	defer log.PrintTrace(log.Func("OpenFileDialog()"))
 
-	result, err := w.runtime.Dialog.OpenFile().
+	// 取り消しは空文字（Windows だけエラーで返るのを揃える）
+	result, err := filedialog.Path(w.runtime.Dialog.OpenFile().
 		SetTitle(settings.T("go.dialog.openFile")).
 		AddFilter(settings.T("go.filter.markdown"), "*.md;*.markdown;*.txt").
 		AddFilter(settings.T("go.filter.mermaid"), "*.mmd;*.mermaid").
 		AddFilter(settings.T("go.filter.all"), "*.*").
-		PromptForSingleSelection()
+		PromptForSingleSelection())
 	if err != nil {
-		if result == "" {
-			return "", nil
-		}
 		return "", fmt.Errorf("OpenFileDialog() error\n%+v", err)
 	}
 	return result, nil
@@ -61,11 +60,9 @@ func (w *Window) SaveFileDialog(defaultPath string) (string, error) {
 		dialog.SetFilename(name)
 	}
 
-	result, err := dialog.PromptForSingleSelection()
+	// 取り消しは空文字（Windows だけエラーで返るのを揃える）
+	result, err := filedialog.Path(dialog.PromptForSingleSelection())
 	if err != nil {
-		if result == "" {
-			return "", nil
-		}
 		return "", fmt.Errorf("SaveFileDialog() error\n%+v", err)
 	}
 	return result, nil
