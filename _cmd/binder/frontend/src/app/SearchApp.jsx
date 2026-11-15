@@ -29,6 +29,11 @@ function MermaidSVG(props) {
   );
 }
 
+// 最大サイズの制限を外すときの値。
+// SetMaxSize(0, 0) は Windows・macOS では「制限なし」だが、Linux（GTK4）版の Wails は 0 を書き込まず
+// 前の制限（未検索時の高さ 46）が残るため、どの OS でも効く十分大きい値を渡す。
+export const NO_MAX_SIZE = 99999;
+
 /**
  * バインダー全体検索ウィンドウ
  * ノートとダイアグラムの名前・内容を検索し、結果をストリーミング表示する。
@@ -84,7 +89,7 @@ function SearchApp() {
       setSelectedTypes(null);
       if (q.trim()) {
         if (!searchedRef.current) {
-          Window.SetMaxSize(0, 0);
+          Window.SetMaxSize(NO_MAX_SIZE, NO_MAX_SIZE);
           Window.SetMinSize(500, 300);
           animateResizeRef.current(46, 500, 200);
         }
@@ -105,7 +110,7 @@ function SearchApp() {
   useEffect(() => {
     inputRef.current?.focus();
     if (initialQuery.trim()) {
-      Window.SetMaxSize(0, 0);
+      Window.SetMaxSize(NO_MAX_SIZE, NO_MAX_SIZE);
       Window.SetMinSize(500, 300);
       animateResizeRef.current(46, 500, 200);
       setSearched(true);
@@ -123,7 +128,7 @@ function SearchApp() {
     setSelectedTypes(null);
     setSearching(true);
     if (!searched) {
-      Window.SetMaxSize(0, 0);
+      Window.SetMaxSize(NO_MAX_SIZE, NO_MAX_SIZE);
       Window.SetMinSize(500, 300);
       animateResizeRef.current(46, 500, 200);
     }

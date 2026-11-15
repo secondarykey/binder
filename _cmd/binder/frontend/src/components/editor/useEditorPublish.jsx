@@ -14,6 +14,7 @@ import { usePublishRefsDialog } from "../../dialogs/PublishRefsDialog.jsx";
 import { publishWarningMessage } from "../../publish-warning";
 import { renderPublishItem, publishComment } from "../../publish-items";
 import { Mode } from "../../mode";
+import { publicPath } from "../../public-url";
 
 /**
  * エディタで開いているものの公開・非公開・ブラウザで開く。
@@ -107,16 +108,16 @@ export function useEditorPublish({ mode, id, name, text, alias, styleTemplateId,
   // 公開したものを OS のブラウザで開く
   const openInBrowser = () => {
     if (!alias) return;
-    let path = null;
+    let path = "";
     if (mode === Mode.note) {
-      path = id === "index" ? "/" : `/pages/${alias}.html`;
+      path = publicPath("note", alias, id);
     } else if (mode === Mode.diagram) {
-      path = `/images/${alias}.svg`;
+      path = publicPath("diagram", alias);
     }
     if (!path) return;
-    // HTTPサーバを遅延起動してから開く
+    // HTTPサーバを遅延起動してから開く（OpenURL の失敗も拾うため then の中で return する）
     EnsureAddress().then((addr) => {
-      if (addr) Browser.OpenURL(addr + path);
+      if (addr) return Browser.OpenURL(addr + path);
     }).catch((err) => evt.showErrorMessage(err));
   };
 

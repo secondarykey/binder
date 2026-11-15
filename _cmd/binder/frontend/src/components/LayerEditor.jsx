@@ -20,6 +20,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { GetLayerWithParent, GetLayerContent, SaveLayerContent, GetAssetContent, EnsureAddress, Generate, Unpublish, Commit, GetModifiedIds } from '../../bindings/binder/api/app';
 import { GetFontNames } from '../../bindings/binder/api/shared/shared';
 import { Browser } from '@wailsio/runtime';
+import { publicPath } from "../public-url";
 import CommitBar from './CommitBar';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import { EventContext } from '../Event';
@@ -956,11 +957,11 @@ function LayerEditor() {
   };
 
   const handleOpenInBrowser = () => {
-    const a = layer?.alias;
-    if (!a) return;
-    // HTTPサーバを遅延起動してから開く
+    const path = publicPath("layer", layer?.alias);
+    if (!path) return;
+    // HTTPサーバを遅延起動してから開く（OpenURL の失敗も拾うため then の中で return する）
     EnsureAddress().then((addr) => {
-      if (addr) Browser.OpenURL(`${addr}/layers/${a}.svg`);
+      if (addr) return Browser.OpenURL(addr + path);
     }).catch((err) => evt.showErrorMessage(err));
   };
 

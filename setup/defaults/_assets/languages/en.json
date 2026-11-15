@@ -782,6 +782,7 @@
             "listWorks" : "Could not load the unsaved content",
             "pasteImage" : "Could not save the pasted image",
             "openPreview" : "Could not open the preview files",
+            "openLink" : "Could not open the link in the browser",
             "openWindow" : "Could not open in a new window",
             "copyPath" : "Could not copy the path",
             "pastePath" : "Could not open the pasted path"

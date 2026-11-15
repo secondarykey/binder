@@ -1069,7 +1069,7 @@ function BinderTree(props) {
       </MenuItem>
       <Divider />
       {/** ブラウザで開く */}
-      <MenuItem onClick={() => { closeMoreMenu(); EnsureAddress().then((addr) => { if (addr) Browser.OpenURL(addr + "/"); }).catch(() => {}); }}>
+      <MenuItem onClick={() => { closeMoreMenu(); EnsureAddress().then((addr) => { if (addr) return Browser.OpenURL(addr + "/"); }).catch((err) => evt.showErrorMessage(err)); }}>
         <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
       </MenuItem>
       {/** ダウンロード */}

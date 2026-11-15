@@ -680,6 +680,7 @@ function App() {
                 cursorLine={cursorLine}
                 path={activeTab.path}
                 work={activeTab.work}
+                onError={showError}
               />
             </Box>
           </>

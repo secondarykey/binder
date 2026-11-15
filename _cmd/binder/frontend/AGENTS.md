@@ -59,6 +59,10 @@
     `preview-run.js` / `editor-save.js`（保存のデバウンス）/ `download.js` / `diagram-pan-zoom.js` / `id-insert.js` / `binder-link.js` / `external-editor.js`
   - `EditorArea.jsx` / `SearchBar.jsx` / `HTMLFrame.jsx` / `Autocomplete.jsx` / `engines/` — `@shared/editor/...` への re-export ラッパー（実体は `_cmd/shared/frontend/`）
   - 種類を見るときの `Mode` は `src/mode.js`、ID などのコピーは `src/clipboard.js`（`copyClipboard`）から import する。
+  - 公開したものを「ブラウザで開く」ときのパスは `src/public-url.js` の `publicPath(kind, alias, id)` で作る（自分で `/assets/${alias}` のように組み立てない）。
+    alias を `encodeURIComponent` するため。Wails の `Browser.OpenURL` は空白・全角スペース・`<>`・`$` などを含む URL を拒否する。
+    サイトのルートに置くアセット（`/robots.txt`）と 404 ページ（`/404`）もここで扱う。
+    `Browser.OpenURL` は Promise を `then` の中で return して、失敗を `.catch` でエラー表示に回す
     **部品から `app/App.jsx` を import しない**（App → Content → エディタ → App と循環する。テストでも App 全体を読み込むことになる）
   - Enter / Tab / Ctrl+B・I・K は共有の `handleMarkdownKeyDown`（`@shared/editor/markdown-keys`。Lite も使う）に任せている
     画面の部品（ツールバーなど）は `isNote` などを props で受ける

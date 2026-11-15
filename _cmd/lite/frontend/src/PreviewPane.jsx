@@ -30,7 +30,7 @@ const IMAGE_CACHE_MAX = 100;
  * 切り替えは親（App）がタブごとに管理する。
  * path（ファイル）か work（保存前のワーク）を基準に、相対パスの画像を読み込んで表示する。
  */
-function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work }) {
+function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work, onError }) {
   const { t, i18n } = useTranslation();
   const [html, setHtml] = useState('');
   const [currentTheme, setCurrentTheme] = useState(document.documentElement.dataset.theme || 'dark');
@@ -125,7 +125,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work }
   // プレビュー内の外部リンクは OS のブラウザで開く。
   // Lite にはバインダーが無いため、内部リンク（相対パス）は何も起こさない
   const handleLinkExternal = (url) => {
-    Browser.OpenURL(url).catch(() => {});
+    Browser.OpenURL(url).catch((err) => onError?.('lite.error.openLink', err));
   };
 
   return (

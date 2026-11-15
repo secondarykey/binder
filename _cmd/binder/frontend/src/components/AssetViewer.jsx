@@ -21,6 +21,7 @@ import { Events, Browser } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
 import { ActionButton } from '../dialogs/components/ActionButton';
+import { publicPath } from "../public-url";
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -400,11 +401,11 @@ function AssetViewer() {
   };
 
   const handleOpenInBrowser = () => {
-    const a = assetMeta?.alias;
-    if (!a) return;
-    // HTTPサーバを遅延起動してから開く
+    const path = publicPath("asset", assetMeta?.alias);
+    if (!path) return;
+    // HTTPサーバを遅延起動してから開く（OpenURL の失敗も拾うため then の中で return する）
     EnsureAddress().then((addr) => {
-      if (addr) Browser.OpenURL(`${addr}/assets/${a}`);
+      if (addr) return Browser.OpenURL(addr + path);
     }).catch((err) => evt.showErrorMessage(err));
   };
 
