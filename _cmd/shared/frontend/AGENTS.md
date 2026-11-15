@@ -22,6 +22,10 @@ _cmd/shared/frontend/editor/
     Mermaid.jsx        mermaid.js ラッパー
 _cmd/shared/frontend/licenses.js
                        ライセンス文（ルートの LICENSE / THIRD_PARTY_LICENSES を ?raw で取り込む）
+_cmd/shared/frontend/error-message.js
+                       Wails から返ったエラーを画面に出す文字列にする（errorMessage）。
+                       MarshalError の無い Lite 用。Binder は MessageError を扱う src/error.js の parseError を使う。
+                       テストは Binder 側の src/__tests__/errorMessage.test.js
 ```
 
 ライセンス文は Go から返さず、`licenses.js` がリポジトリルートの 2 ファイルをビルド時に取り込む。

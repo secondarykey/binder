@@ -8,6 +8,7 @@ import { ReadFile, SaveFile, InitialFiles, GetTheme, GetLanguage, GetEditorSetti
 import { OpenFileDialog, SaveFileDialog, Terminate, OpenInNewWindow, CopyToClipboard, PasteFilePath } from '../bindings/main/window';
 import { setThemeMode } from './theme';
 import Mermaid from '@shared/editor/engines/Mermaid';
+import { errorMessage } from '@shared/error-message';
 
 import TabBar from './TabBar';
 import EditorPane from './EditorPane';
@@ -15,6 +16,7 @@ import PreviewPane from './PreviewPane';
 import TitleBar from './TitleBar';
 import ConfirmDialog from './ConfirmDialog';
 import SettingDialog from './SettingDialog';
+import ErrorSnackbar from './ErrorSnackbar';
 import { useScrollbarOffset } from './useHasScrollbar';
 
 import './language';
@@ -53,6 +55,14 @@ function App() {
   const [editorFont, setEditorFont] = useState(null);
   // エディタのカーソル行（1始まり）。プレビューのスクロール位置を追従させる
   const [cursorLine, setCursorLine] = useState(1);
+
+  // --- 失敗した操作の表示 ---
+  // { title, detail } か null。titleKey は lite.error.* の翻訳キー
+  const [error, setError] = useState(null);
+  const showError = useCallback((titleKey, err) => {
+    console.error(titleKey, err);
+    setError({ title: t(titleKey), detail: errorMessage(err) });
+  }, [t]);
 
   // textarea はタブ間で使い回すため、切り替え時は先頭に戻す
   useEffect(() => {
@@ -119,10 +129,10 @@ function App() {
     pendingWorks.current.clear();
     await Promise.all(entries.map(([name, content]) =>
       SaveWork(name, content).catch((err) => {
-        console.error('SaveWork error:', err);
+        showError('lite.error.saveWork', err);
       })
     ));
-  }, []);
+  }, [showError]);
 
   // 打鍵ごとではなく WORK_SAVE_INTERVAL に1回だけ書き出す。
   // タイマーが動いている間は内容の差し替えのみ行い、再スケジュールしない
@@ -192,14 +202,20 @@ function App() {
       }]);
       setActiveTabId(id);
     } catch (err) {
-      console.error('Open file error:', err);
+      showError('lite.error.open', err);
     }
-  }, [tabs]);
+  }, [tabs, showError]);
 
   const openFile = useCallback(async () => {
-    const path = await OpenFileDialog();
+    let path;
+    try {
+      path = await OpenFileDialog();
+    } catch (err) {
+      showError('lite.error.open', err);
+      return;
+    }
     openFilePath(path);
-  }, [openFilePath]);
+  }, [openFilePath, showError]);
 
   // 新規タブはワークとして即座にファイル化する。
   // 名前（Untitled / Untitled-2 ...）は Go 側が未使用のものを選んで予約するため、
@@ -209,7 +225,7 @@ function App() {
     try {
       name = await CreateWork();
     } catch (err) {
-      console.error('CreateWork error:', err);
+      showError('lite.error.newFile', err);
       return;
     }
     const id = nextTabId++;
@@ -223,7 +239,7 @@ function App() {
       mermaidMode: false,
     }]);
     setActiveTabId(id);
-  }, []);
+  }, [showError]);
 
   // 保存先が変わるとき（ワークの初めての保存・名前を付けて保存）は、本文が参照する画像を
   // 新しい <ファイル名>.assets/ へ写し、パスを書き換えた本文を返す
@@ -241,7 +257,7 @@ function App() {
       try {
         await DeleteWork(tab.work);
       } catch (err) {
-        console.error('DeleteWork error:', err);
+        showError('lite.error.deleteWork', err);
       }
     }
     setTabs(prev => prev.map(t =>
@@ -249,7 +265,7 @@ function App() {
         ? { ...t, path: savePath, filename, work: null, savedContent: content, ...(content !== tab.content ? { content } : {}) }
         : t
     ));
-  }, []);
+  }, [showError]);
 
   const saveActiveTab = useCallback(async () => {
     if (!activeTab) return;
@@ -261,7 +277,7 @@ function App() {
       try {
         savePath = await SaveFileDialog('untitled.md');
       } catch (err) {
-        console.error('SaveFileDialog error:', err);
+        showError('lite.error.save', err);
         return;
       }
       if (!savePath) return; // キャンセル
@@ -275,9 +291,9 @@ function App() {
       await SaveFile(savePath, content);
       await applySavedPath(activeTab, savePath, content);
     } catch (err) {
-      console.error('Save error:', err);
+      showError('lite.error.save', err);
     }
-  }, [activeTab, applySavedPath]);
+  }, [activeTab, applySavedPath, showError]);
 
   const saveAsActiveTab = useCallback(async () => {
     if (!activeTab) return;
@@ -288,7 +304,7 @@ function App() {
     try {
       savePath = await SaveFileDialog(defaultPath);
     } catch (err) {
-      console.error('SaveFileDialog error:', err);
+      showError('lite.error.save', err);
       return;
     }
     if (!savePath) return;
@@ -298,9 +314,9 @@ function App() {
       await SaveFile(savePath, content);
       await applySavedPath(activeTab, savePath, content);
     } catch (err) {
-      console.error('Save error:', err);
+      showError('lite.error.save', err);
     }
-  }, [activeTab, applySavedPath]);
+  }, [activeTab, applySavedPath, showError]);
 
   // 貼り付けた画像を、今のファイル（保存前ならワーク）の隣の <ファイル名>.assets/ に保存する
   const saveImage = useCallback(({ data, ext }) => {
@@ -337,12 +353,12 @@ function App() {
       try {
         await DeleteWork(tab.work);
       } catch (err) {
-        console.error('DeleteWork error:', err);
+        showError('lite.error.deleteWork', err);
       }
     }
 
     removeTab(tabId);
-  }, [tabs, t, showConfirm, removeTab]);
+  }, [tabs, t, showConfirm, removeTab, showError]);
 
   const updateContent = useCallback((newContent) => {
     setTabs(prev => prev.map(tab =>
@@ -414,11 +430,11 @@ function App() {
       try {
         works = await ListWorks();
       } catch (err) {
-        console.error('ListWorks error:', err);
+        showError('lite.error.listWorks', err);
       }
       const ok = await restoreWorks(works || []);
       if (!ok) newFile();
-    });
+    }).catch((err) => showError('lite.error.open', err));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- ファイルドロップ ---
@@ -528,17 +544,23 @@ function App() {
         onOpenNewWindow={async (tabId) => {
           const tab = tabs.find(t => t.id === tabId);
           if (tab?.path) {
-            await OpenInNewWindow(tab.path);
+            await OpenInNewWindow(tab.path).catch((err) => showError('lite.error.openWindow', err));
           }
         }}
         onCopyTab={async (tabId) => {
           const tab = tabs.find(t => t.id === tabId);
           if (tab?.path) {
-            await CopyToClipboard(tab.path);
+            await CopyToClipboard(tab.path).catch((err) => showError('lite.error.copyPath', err));
           }
         }}
         onPasteTab={async () => {
-          const path = await PasteFilePath();
+          let path;
+          try {
+            path = await PasteFilePath();
+          } catch (err) {
+            showError('lite.error.pastePath', err);
+            return;
+          }
           if (path) openFilePath(path);
         }}
       />
@@ -565,6 +587,7 @@ function App() {
                 tabSize={tabSize}
                 onCursorLineChange={setCursorLine}
                 onSaveImage={saveImage}
+                onError={showError}
               />
               {/* プレビュー展開ボタン（折りたたみ時、エディタ右端に表示） */}
               {previewCollapsed && (
@@ -691,7 +714,10 @@ function App() {
             openFilePath(p);
           }
         }}
+        onError={showError}
       />
+
+      <ErrorSnackbar error={error} onClose={() => setError(null)} />
     </Box>
   );
 }

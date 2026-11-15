@@ -20,8 +20,9 @@ import { useTranslation } from 'react-i18next';
  *
  * onSaveImage を渡すと、画像の貼り付けを受け付ける。
  * onSaveImage({ data, ext }) は画像を保存し、本文に書く相対パスを返す。
+ * onError(titleKey, err) は貼り付けた画像を保存できなかったときに呼ぶ。
  */
-function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [], onCursorLineChange, onSaveImage }) {
+function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumbers, onLineNumbersToggle, font, tabSize = 4, autocompleteTriggers = [], onCursorLineChange, onSaveImage, onError }) {
   const { t } = useTranslation();
   const wrapBtnRight = useScrollbarOffset('#editor', 6, text);
   const wrapBtnBottom = useHScrollbarOffset('#editor', 6, text);
@@ -151,8 +152,8 @@ function EditorPane({ text, onChange, wordWrap, onWordWrapToggle, showLineNumber
         textarea.setSelectionRange(start, end);
         document.execCommand('insertText', false, markdownImage(rel));
       })
-      .catch((err) => console.error('paste image error:', err));
-  }, [onSaveImage]);
+      .catch((err) => onError?.('lite.error.pasteImage', err));
+  }, [onSaveImage, onError]);
 
   const handleCompositionStart = useCallback(() => {
     composingRef.current = true;
