@@ -237,7 +237,7 @@ func (h *handler) serveWithAliasCheck(w http.ResponseWriter, r *http.Request) {
 	s, err := h.binder.db.FindStructureByAlias(info.alias, info.typ)
 	if err != nil {
 		log.Warnf("FindStructureByAlias(%s,%s): %v", info.alias, info.typ, err)
-		h.fileServer.ServeHTTP(w, r)
+		h.serveFile(w, r)
 		return
 	}
 
@@ -442,26 +442,71 @@ func (h *handler) stripSitePath(r *http.Request) *http.Request {
 	return r2
 }
 
+// docsName は URL のパスを公開ディレクトリ（docs）の中の名前に直す。docs そのものは "."。
+func docsName(urlPath string) string {
+	name := strings.TrimPrefix(pathpkg.Clean("/"+urlPath), "/")
+	if name == "" {
+		name = "."
+	}
+	return name
+}
+
 // exists は公開ディレクトリに URL のパスの実体（ファイルかディレクトリ）があるかを返す。
 func (h *handler) exists(urlPath string) bool {
 	if h.docs == nil {
 		return true
 	}
-	name := strings.TrimPrefix(pathpkg.Clean("/"+urlPath), "/")
-	if name == "" {
-		name = "."
-	}
-	_, err := stdFs.Stat(h.docs, name)
+	_, err := stdFs.Stat(h.docs, docsName(urlPath))
 	return err == nil
 }
 
 // serveFile は公開ディレクトリのファイルを返す。無ければ 404 ページを返す。
+//
+// ディレクトリは中の index.html があるときだけ http.FileServer に任せる。
+// 無いときに任せると一覧を作ろうとし、バインダーのファイルシステムは ReadDir を持たないので
+// 「Error reading directory」の 1 行だけ（500）になってしまう。一覧は出さず、何が無いかを返す。
 func (h *handler) serveFile(w http.ResponseWriter, r *http.Request) {
-	if !h.exists(r.URL.Path) {
+	if h.docs == nil {
+		h.fileServer.ServeHTTP(w, r)
+		return
+	}
+	name := docsName(r.URL.Path)
+	fi, err := stdFs.Stat(h.docs, name)
+	if err != nil {
+		if name == "." {
+			// まだ何も公開しておらず、公開ディレクトリそのものが無い
+			h.serveDirWithoutIndex(w, name)
+			return
+		}
 		h.serveNotFound(w)
 		return
 	}
+	if fi.IsDir() {
+		if _, err := stdFs.Stat(h.docs, pathpkg.Join(name, "index.html")); err != nil {
+			h.serveDirWithoutIndex(w, name)
+			return
+		}
+	}
 	h.fileServer.ServeHTTP(w, r)
+}
+
+// serveDirWithoutIndex は index.html の無いディレクトリへの応答を返す。
+// サイトのルート（"/"）は index ノートの出力先なので、ノートと同じく公開の状態を案内する。
+// それ以外のディレクトリは 404 ページを返す。
+func (h *handler) serveDirWithoutIndex(w http.ResponseWriter, name string) {
+	if name == "." && h.binder != nil && h.binder.db != nil {
+		s, err := h.binder.db.GetStructure("index")
+		if err != nil {
+			log.Warnf("GetStructure(index): %v", err)
+		} else if s.Private {
+			writeErrorPage(w, http.StatusForbidden, "トップページ（index）は非公開です(403)")
+			return
+		} else if s.Republish.IsZero() {
+			writeErrorPage(w, http.StatusNotFound, "トップページ（index）はまだ公開処理を行っていません(404)")
+			return
+		}
+	}
+	h.serveNotFound(w)
 }
 
 // serveNotFound は存在しないパスへの応答を返す。

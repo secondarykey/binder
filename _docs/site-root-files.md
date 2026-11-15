@@ -249,6 +249,10 @@ wrapper に「いま書き出しているページ」（`page`）を持たせ、
   `docs` にそのパスの実体があるとき（リポジトリ名と docs 直下のディレクトリ名が同じ等）は外さない
 - 未公開・非公開のページへの案内（「まだ公開処理を行っていません」「非公開のページです」）は作者向けの情報なので残す
 - 手で置いた `docs/404.html`（アセットとしても 404 ノートとしても登録の無いもの）も同じように使う
+- ディレクトリの URL（`/`・`/pages/` 等）は、中に `index.html` があるときだけ `http.FileServer` に任せる（`serveFile`）。
+  無いときに任せると一覧を作ろうとし、バインダーのファイルシステムは `ReadDir` を持たないので「Error reading directory」の 1 行（500）になる。
+  `/` は index ノートの出力先なので、index が未公開なら「トップページ（index）はまだ公開処理を行っていません(404)」、非公開なら 403 を返す。
+  それ以外のディレクトリは 404 ページ（`serveDirWithoutIndex`）
 
 ### UI
 
@@ -266,6 +270,7 @@ wrapper に「いま書き出しているページ」（`page`）を持たせ、
 | 対象 | ファイル |
 |---|---|
 | 公開先・取り下げ・リンク解決・alias の検証・URL の基準・embed・一覧からの除外・alias の変更・プレビューサーバ・手置きの 404.html | `error_page_test.go` |
+| プレビューサーバのディレクトリの URL（`/`・`/pages/`） | `http_dir_test.go` |
 | `ValidateNoteAlias` / `HTMLFile` | `fs/alias_test.go` |
 | `siteURLPath` | `site_url_internal_test.go` |
 | DB の一覧からの除外 | `db/note_test.go` |
