@@ -8,7 +8,7 @@ vi.mock('../../bindings/binder/api/app', () => ({
 vi.mock('../../bindings/main/window', () => ({
   OpenOverallHistoryWindow: vi.fn(),
 }));
-vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn(() => Promise.resolve()) }));
 
 import BinderHistory from '../components/BinderHistory';
 import { GetHistories } from '../../bindings/binder/api/app';
@@ -38,6 +38,23 @@ describe('BinderHistory', () => {
     const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[1]);
     await waitFor(() => expect(copyClipboard).toHaveBeenCalledWith('D:/work/binder1'));
-    expect(evt.showSuccessMessage).toHaveBeenCalled();
+    await waitFor(() => expect(evt.showSuccessMessage).toHaveBeenCalled());
+  });
+
+  it('shows an error instead of success when copying fails', async () => {
+    GetHistories.mockResolvedValueOnce(['D:/work/binder1']);
+    copyClipboard.mockImplementationOnce(() => Promise.reject(new Error('could not copy')));
+    const evt = new Event();
+    evt.showSuccessMessage = vi.fn();
+    evt.showErrorMessage = vi.fn();
+    render(
+      <EventContext.Provider value={evt}>
+        <BinderHistory />
+      </EventContext.Provider>
+    );
+    await screen.findByText('D:/work/binder1');
+    fireEvent.click(screen.getAllByRole('button')[1]);
+    await waitFor(() => expect(evt.showErrorMessage).toHaveBeenCalled());
+    expect(evt.showSuccessMessage).not.toHaveBeenCalled();
   });
 });

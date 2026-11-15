@@ -611,7 +611,7 @@ function BinderTree(props) {
   const handleCopyId = () => {
     const id = contextMenu.node.id;
     closeAllMenus();
-    copyClipboard(id);
+    copyClipboard(id).catch((err) => evt.showErrorMessage(err));
   };
 
   /** Copy > パス */
@@ -619,7 +619,7 @@ function BinderTree(props) {
     const { id, nodeType } = contextMenu.node;
     closeAllMenus();
     GetFullPath(nodeType, id).then((path) => {
-      if (path) copyClipboard(path);
+      if (path) return copyClipboard(path);
     }).catch((err) => evt.showErrorMessage(err));
   };
 
@@ -628,7 +628,7 @@ function BinderTree(props) {
     const { id, nodeType } = contextMenu.node;
     closeAllMenus();
     GetGitBashFullPath(nodeType, id).then((path) => {
-      if (path) copyClipboard(path);
+      if (path) return copyClipboard(path);
     }).catch((err) => evt.showErrorMessage(err));
   };
 
@@ -703,7 +703,7 @@ function BinderTree(props) {
 
     if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
-      copyClipboard(selectedId);
+      copyClipboard(selectedId).catch((err) => evt.showErrorMessage(err));
       return;
     }
 

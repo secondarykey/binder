@@ -1172,6 +1172,7 @@ function Editor(props) {
     historyForward: handleHistoryForward,
     linkExternal: handleLinkExternal,
     linkInternal: handleLinkInternal,
+    copy: (val) => copyClipboard(val).catch((err) => evt.showErrorMessage(err)),
     // ダイアログ
     fontDialogClose: handleFontDialogClose,
     tableClose: handleTableClose,
@@ -1376,8 +1377,8 @@ function Editor(props) {
                 onClose={h.closePreviewMenu}
                 onBack={h.historyBack}
                 onForward={h.historyForward}
-                onCopy={copyClipboard}
-                onCopyLink={copyClipboard}
+                onCopy={h.copy}
+                onCopyLink={h.copy}
                 onOpenExternal={h.linkExternal}
                 onOpenInternal={h.linkInternal}
               />

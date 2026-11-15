@@ -753,6 +753,7 @@
             "assetsNoteOnly" : "Assets can only be added to notes",
             "emptyDirectory" : "Please select a directory",
             "unexpected" : "An unexpected error occurred",
+            "clipboard" : "Could not copy to the clipboard. Another app may be using it",
             "noteHasChildren" : "A note with child items can be deleted only when \"Delete hierarchical data\" is checked",
             "indexNoteUndeletable" : "The index note cannot be deleted",
             "assetHasLayers" : "This asset has layers and cannot be deleted",
@@ -783,6 +784,7 @@
             "pasteImage" : "Could not save the pasted image",
             "openPreview" : "Could not open the preview files",
             "openLink" : "Could not open the link in the browser",
+            "copy" : "Could not copy",
             "openWindow" : "Could not open in a new window",
             "copyPath" : "Could not copy the path",
             "pastePath" : "Could not open the pasted path"

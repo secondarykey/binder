@@ -59,6 +59,8 @@
     `preview-run.js` / `editor-save.js`（保存のデバウンス）/ `download.js` / `diagram-pan-zoom.js` / `id-insert.js` / `binder-link.js` / `external-editor.js`
   - `EditorArea.jsx` / `SearchBar.jsx` / `HTMLFrame.jsx` / `Autocomplete.jsx` / `engines/` — `@shared/editor/...` への re-export ラッパー（実体は `_cmd/shared/frontend/`）
   - 種類を見るときの `Mode` は `src/mode.js`、ID などのコピーは `src/clipboard.js`（`copyClipboard`）から import する。
+    `copyClipboard` は Promise を返す。`navigator.clipboard` が無い・失敗したときは Go（`Window.CopyToClipboard`）でコピーし、それも失敗したら reject する。
+    呼ぶ側は成功の表示を `then` の中で出し、`.catch` でエラーを出す（Linux の配布版は `navigator.clipboard` が無い可能性があり、Windows は Go のコピーも失敗しうる）
   - 公開したものを「ブラウザで開く」ときのパスは `src/public-url.js` の `publicPath(kind, alias, id)` で作る（自分で `/assets/${alias}` のように組み立てない）。
     alias を `encodeURIComponent` するため。Wails の `Browser.OpenURL` は空白・全角スペース・`<>`・`$` などを含む URL を拒否する。
     サイトのルートに置くアセット（`/robots.txt`）と 404 ページ（`/404`）もここで扱う。

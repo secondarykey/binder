@@ -4,6 +4,7 @@ import (
 	"binder/api/lite"
 	"binder/log"
 	"binder/settings"
+	"errors"
 	"fmt"
 	filedialog "main/dialog"
 	"os"
@@ -103,8 +104,13 @@ func (w *Window) SavePosition() error {
 }
 
 // CopyToClipboard はテキストをクリップボードにコピーする。
-func (w *Window) CopyToClipboard(text string) {
-	w.runtime.Clipboard.SetText(text)
+// SetText の戻り値は Windows でだけ失敗を表す（ほかのアプリがクリップボードを開いている間など）。
+// Linux の実装は常に true を返すので、失敗しても分からない。
+func (w *Window) CopyToClipboard(text string) error {
+	if !w.runtime.Clipboard.SetText(text) {
+		return errors.New(settings.T("go.error.clipboard"))
+	}
+	return nil
 }
 
 // PasteFilePath はクリップボードから有効なファイルパスを取得して返す。

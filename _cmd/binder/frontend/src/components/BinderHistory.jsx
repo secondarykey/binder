@@ -35,8 +35,9 @@ function BinderHistory(props) {
 
   //パスをクリップボードにコピーする
   const handleCopyPath = (val) => {
-    copyClipboard(val);
-    evt.showSuccessMessage(t('binderHistory.copied'));
+    copyClipboard(val)
+      .then(() => evt.showSuccessMessage(t('binderHistory.copied')))
+      .catch((err) => evt.showErrorMessage(err));
   }
 
   return (<>

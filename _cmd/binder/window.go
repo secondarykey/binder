@@ -5,6 +5,7 @@ import (
 	"binder/fs"
 	"binder/log"
 	"binder/settings"
+	"errors"
 	"fmt"
 	"log/slog"
 	filedialog "main/dialog"
@@ -40,6 +41,17 @@ func NewWindow(app *api.App) *Window {
 
 func (win *Window) OpenURL(url string) {
 	win.runtime.Browser.OpenURL(url)
+}
+
+// CopyToClipboard はテキストを OS のクリップボードにコピーする。
+// フロントの navigator.clipboard が使えない・失敗したときの代わり（src/clipboard.js）。
+// SetText の戻り値は Windows でだけ失敗を表す（ほかのアプリがクリップボードを開いている間など）。
+// Linux の実装は常に true を返すので、失敗しても分からない。
+func (win *Window) CopyToClipboard(text string) error {
+	if !win.runtime.Clipboard.SetText(text) {
+		return errors.New(settings.T("go.error.clipboard"))
+	}
+	return nil
 }
 
 func (r *Window) OpenFileDialog(create bool, defaultDir string) (string, error) {

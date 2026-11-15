@@ -96,26 +96,32 @@ function createButton(doc, getText, ctx) {
     e.preventDefault();
     e.stopPropagation();
 
+    const showCopied = () => {
+      btn.textContent = btn.dataset.copiedLabel;
+      btn.classList.add('copied');
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        btn.textContent = btn.dataset.copyLabel;
+        btn.setAttribute('aria-label', btn.dataset.copyLabel);
+        btn.classList.remove('copied');
+        timer = null;
+      }, COPIED_DURATION);
+    };
+
+    let rtn;
     try {
-      const rtn = ctx.onCopy(getText());
-      // Wails のバインディングは Promise を返す。失敗を握り潰さずログに残す
-      if (rtn && typeof rtn.then === 'function') {
-        rtn.catch((err) => console.error('[Binder] copy failed:', err));
-      }
+      rtn = ctx.onCopy(getText());
     } catch (err) {
       console.error('[Binder] copy failed:', err);
       return;
     }
-
-    btn.textContent = btn.dataset.copiedLabel;
-    btn.classList.add('copied');
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      btn.textContent = btn.dataset.copyLabel;
-      btn.setAttribute('aria-label', btn.dataset.copyLabel);
-      btn.classList.remove('copied');
-      timer = null;
-    }, COPIED_DURATION);
+    // Wails のバインディングは Promise を返す。コピーできてから「Copied」にする
+    // （失敗したら表示は変えない。画面へのエラー表示は onCopy を渡す側が行う）
+    if (rtn && typeof rtn.then === 'function') {
+      rtn.then(showCopied, (err) => console.error('[Binder] copy failed:', err));
+      return;
+    }
+    showCopied();
   });
 
   return btn;

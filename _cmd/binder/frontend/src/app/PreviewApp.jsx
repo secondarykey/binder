@@ -135,6 +135,9 @@ function PreviewApp() {
   const handleHistoryBack = () => Events.Emit('binder:editor:historyNav', { dir: 'back' });
   const handleHistoryForward = () => Events.Emit('binder:editor:historyNav', { dir: 'forward' });
 
+  // 選択テキスト・リンクのコピー。コピーできなかったらエラーを出す
+  const handleCopy = (val) => copyClipboard(val).catch((err) => evt.showErrorMessage(err));
+
   // プレビュー内の外部リンク: OSのブラウザで開く
   const handleLinkExternal = (url) => {
     Browser.OpenURL(url).catch((err) => evt.showErrorMessage(err));
@@ -222,8 +225,8 @@ function PreviewApp() {
         onClose={closeMenu}
         onBack={handleHistoryBack}
         onForward={handleHistoryForward}
-        onCopy={copyClipboard}
-        onCopyLink={copyClipboard}
+        onCopy={handleCopy}
+        onCopyLink={handleCopy}
         onOpenExternal={handleLinkExternal}
         onOpenInternal={handleLinkInternal}
       />

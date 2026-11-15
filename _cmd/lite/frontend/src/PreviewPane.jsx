@@ -128,6 +128,13 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work, 
     Browser.OpenURL(url).catch((err) => onError?.('lite.error.openLink', err));
   };
 
+  // コピーできなかったらエラーを出す。コードブロックのボタンは投げ直して「Copied」にしない
+  const handleCopy = (text) => CopyToClipboard(text).catch((err) => onError?.('lite.error.copy', err));
+  const handleCopyCode = (text) => CopyToClipboard(text).catch((err) => {
+    onError?.('lite.error.copy', err);
+    throw err;
+  });
+
   return (
     <Box sx={{ height: '100%', overflow: 'hidden', position: 'relative' }}>
       <HTMLFrame
@@ -136,7 +143,7 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work, 
         onContextMenu={handleContextMenu}
         unresolvedLabel={t('lite.imageNotFound')}
         resolveImage={resolveImage}
-        onCopyCode={CopyToClipboard}
+        onCopyCode={handleCopyCode}
         copyLabels={copyLabels}
         inlineMermaid={!mermaidMode}
         cursorLine={mermaidMode ? null : cursorLine}
@@ -149,8 +156,8 @@ function PreviewPane({ text, mermaidMode, onToggleMode, cursorLine, path, work, 
       <PreviewContextMenu
         state={menu}
         onClose={closeMenu}
-        onCopy={CopyToClipboard}
-        onCopyLink={CopyToClipboard}
+        onCopy={handleCopy}
+        onCopyLink={handleCopy}
         onOpenExternal={handleLinkExternal}
       />
 

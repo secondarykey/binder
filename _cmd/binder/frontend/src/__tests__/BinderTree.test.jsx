@@ -55,7 +55,7 @@ vi.mock('../../bindings/main/window', () => ({
   OpenSearchWindowWithQuery: vi.fn(),
   SelectFile: vi.fn(() => Promise.resolve('')),
 }));
-vi.mock('../clipboard', () => ({ copyClipboard: vi.fn() }));
+vi.mock('../clipboard', () => ({ copyClipboard: vi.fn(() => Promise.resolve()) }));
 
 import { GetBinderTree, HasChildren, RemoveNote, SaveLastData } from '../../bindings/binder/api/app';
 import BinderTree from '../components/BinderTree';
