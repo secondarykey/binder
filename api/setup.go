@@ -11,14 +11,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// Setup はアプリレベルの準備（~/.binder の作成・移行など）を行い、設定を返す。
+// 準備に失敗してもエラーと一緒に設定を返す（settings.Get() は読めなければ既定値を返す）。
+// main() はエラーをログに残して起動を続けるため、nil を返すとそこで落ちる。
 func (a *App) Setup() (*settings.Setting, error) {
 
 	err := setup.EnsureExists(a.version, a.devMode)
-	if err != nil {
-		return nil, xerrors.Errorf("setup.EnsureExists() error: %w", err)
-	}
-
 	set := settings.Get()
+	if err != nil {
+		return set, xerrors.Errorf("setup.EnsureExists() error: %w", err)
+	}
 	return set, nil
 }
 

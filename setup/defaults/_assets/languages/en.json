@@ -754,6 +754,7 @@
             "emptyDirectory" : "Please select a directory",
             "unexpected" : "An unexpected error occurred",
             "clipboard" : "Could not copy to the clipboard. Another app may be using it",
+            "keyringUnavailable" : "The OS keyring is not available, so credentials cannot be saved or loaded. On Linux, check that a Secret Service such as gnome-keyring is running",
             "noteHasChildren" : "A note with child items can be deleted only when \"Delete hierarchical data\" is checked",
             "indexNoteUndeletable" : "The index note cannot be deleted",
             "assetHasLayers" : "This asset has layers and cannot be deleted",

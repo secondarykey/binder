@@ -8,6 +8,7 @@ import (
 	"binder"
 	"binder/db"
 	"binder/fs"
+	"binder/setup"
 )
 
 func TestUserErrorMapsSentinels(t *testing.T) {
@@ -21,6 +22,7 @@ func TestUserErrorMapsSentinels(t *testing.T) {
 		{"duplicateAlias", db.DuplicateAlias},
 		{"duplicateKey", db.DuplicateKey},
 		{"uncommitted", ErrUncommittedChanges},
+		{"keyringUnavailable", setup.ErrKeyringUnavailable},
 		{"binderNotOpened", binder.EmptyError},
 	}
 	for _, c := range cases {

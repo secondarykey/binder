@@ -96,9 +96,13 @@ func main() {
 	app.SetDevMode(isDev)
 
 	// 2. セットアップ（devMode 判定後に実行し、アプリバージョンアップ処理を含む）
+	// 失敗しても起動は続ける（Setup はエラーのときも設定を返す）
 	set, err := app.Setup()
 	if err != nil {
 		log.PrintStackTrace(err)
+	}
+	if set == nil {
+		set = settings.Get()
 	}
 
 	// i18n 初期化（ウィンドウ作成前に実行）

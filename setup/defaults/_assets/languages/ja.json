@@ -754,6 +754,7 @@
             "emptyDirectory" : "ディレクトリを選択してください",
             "unexpected" : "異常が発生しました",
             "clipboard" : "クリップボードにコピーできませんでした。ほかのアプリがクリップボードを使っている可能性があります",
+            "keyringUnavailable" : "OS の鍵の保管場所が使えないため、認証情報を保存・読み込みできません。Linux では gnome-keyring などの Secret Service が動いているか確認してください",
             "noteHasChildren" : "子要素があるノートは「階層データの削除」にチェックを入れたときだけ削除できます",
             "indexNoteUndeletable" : "indexノートは削除できません",
             "assetHasLayers" : "レイヤーがあるアセットは削除できません",
