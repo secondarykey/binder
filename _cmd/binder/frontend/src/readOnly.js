@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { IsReadOnly } from '../bindings/binder/api/app';
+import { IsReadOnly, IsOpenedElsewhere } from '../bindings/binder/api/app';
 
 /**
  * 読み取り専用で開いているか（別の Binder が開いているバインダーを見るだけで開いたとき）。
@@ -35,6 +35,21 @@ export function useBinderReadOnly(binderPath = '') {
   }, [askGo]);
   if (binderPath) return false;
   return ctx !== null ? ctx : fromGo;
+}
+
+/**
+ * 左メニューの鍵のボタンを押したときにすることを決める。
+ * 相手の Binder がまだ開いていれば 'reload'（読み直す）、閉じていれば（ロックが外れていれば）
+ * 'confirm'（編集できるように開き直すかを聞く）。確かめられなければ 'reload'。
+ *
+ * @param {string} dir 開いているバインダー
+ * @param {(dir: string) => Promise<boolean>} isOpenedElsewhere テストで差し替える
+ * @returns {Promise<'reload'|'confirm'>}
+ */
+export function readOnlyClickAction(dir, isOpenedElsewhere = IsOpenedElsewhere) {
+  return isOpenedElsewhere(dir)
+    .then((opened) => (opened ? 'reload' : 'confirm'))
+    .catch(() => 'reload');
 }
 
 /** 「別の Binder で開かれている」の MessageError.code（api/message.go の CodeOpenedElsewhere）。 */

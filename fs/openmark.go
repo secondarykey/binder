@@ -133,6 +133,37 @@ func AcquireOpen(dir string) error {
 	return nil
 }
 
+// IsOpenedElsewhere は、別のプロセスが dir を開いている（ロックを持っている）かを返す。
+// 読み取り専用で開いているときに、相手が閉じたかを確かめるのに使う。
+//
+// 印を立てずにロックを試し、取れたらすぐ外す。ロックファイルが無ければ誰も開いていない
+// （最後の ReleaseOpen が消す）ので、作らずに false を返す。このプロセスが印を持っていれば false。
+func IsOpenedElsewhere(dir string) (bool, error) {
+	if holdsOpen(dir) {
+		return false, nil
+	}
+	lockPath := filepath.Join(dir, git.GitDirName, OpenLockName)
+	f, err := os.OpenFile(lockPath, os.O_RDWR, 0)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, xerrors.Errorf("os.OpenFile(%s) error: %w", lockPath, err)
+	}
+	defer f.Close()
+
+	if err := tryLock(f); err != nil {
+		if errors.Is(err, errLocked) {
+			return true, nil
+		}
+		return false, xerrors.Errorf("tryLock(%s) error: %w", lockPath, err)
+	}
+	if err := unlock(f); err != nil {
+		log.Warnf("binder-open.lock のロック解除に失敗:\n%+v", err)
+	}
+	return false, nil
+}
+
 // holdsOpen は、このプロセスが dir の「開いている」印を持っているかを返す。
 // 持っていなければ、別のプロセスがそのバインダーを開いて書いている最中かもしれない。
 func holdsOpen(dir string) bool {

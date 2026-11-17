@@ -22,7 +22,7 @@ import Menu from '../app/Menu';
 import Tree from '../components/Tree';
 import EditorArea from '@shared/editor/EditorArea';
 import { parseError } from '../error';
-import { ReadOnlyContext, useReadOnly, useBinderReadOnly, CodeOpenedElsewhere } from '../readOnly';
+import { ReadOnlyContext, useReadOnly, useBinderReadOnly, CodeOpenedElsewhere, readOnlyClickAction } from '../readOnly';
 
 beforeEach(() => {
   isReadOnlyMock.mockReset();
@@ -112,10 +112,9 @@ describe('Menu', () => {
     );
   };
 
-  it('読み取り専用では書き込むための画面を出さず、鍵のボタンから読み直す・開き直すを選べる', async () => {
-    const onReload = vi.fn();
-    const onReopen = vi.fn();
-    renderMenu(true, { onReloadReadOnly: onReload, onReopenWritable: onReopen });
+  it('読み取り専用では書き込むための画面を出さず、一番下に鍵のボタンを出す', () => {
+    const onClick = vi.fn();
+    renderMenu(true, { onReadOnlyClick: onClick });
 
     expect(screen.queryByLabelText('content')).toBeNull(); // テンプレート設定
     expect(screen.getByLabelText('history')).toBeInTheDocument();
@@ -125,23 +124,30 @@ describe('Menu', () => {
     const history = screen.getByLabelText('history');
     expect(history.compareDocumentPosition(lock) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
-    // 押すとメニューが開く（押しても何も起きない、にしない）
     fireEvent.click(lock);
-    let items = await screen.findAllByRole('menuitem');
-    expect(items).toHaveLength(2);
-    fireEvent.click(items[0]);
-    expect(onReload).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByLabelText('read only'));
-    items = await screen.findAllByRole('menuitem');
-    fireEvent.click(items[1]);
-    expect(onReopen).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('普段は読み取り専用の表示を出さない', () => {
     renderMenu(false);
     expect(screen.queryByLabelText('read only')).toBeNull();
     expect(screen.getByLabelText('content')).toBeInTheDocument();
+  });
+});
+
+describe('readOnlyClickAction（鍵のボタンを押したとき）', () => {
+  it('相手がまだ開いていれば読み直す', async () => {
+    const check = vi.fn(() => Promise.resolve(true));
+    await expect(readOnlyClickAction('D:\\memo', check)).resolves.toBe('reload');
+    expect(check).toHaveBeenCalledWith('D:\\memo');
+  });
+
+  it('相手が閉じていれば（ロックが外れていれば）開き直すかを聞く', async () => {
+    await expect(readOnlyClickAction('D:\\memo', () => Promise.resolve(false))).resolves.toBe('confirm');
+  });
+
+  it('確かめられなければ読み直す', async () => {
+    await expect(readOnlyClickAction('D:\\memo', () => Promise.reject(new Error('x')))).resolves.toBe('reload');
   });
 });
 

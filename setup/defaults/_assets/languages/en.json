@@ -721,9 +721,10 @@
     },
     "readOnly" : {
         "open" : "Open read-only",
-        "label" : "Read-only",
-        "reload" : "Reload",
-        "reopen" : "Reopen for editing"
+        "tooltip" : "Read-only (click to reload)",
+        "reloaded" : "Reloaded",
+        "unlocked" : "The lock has been released. Reopen for editing?",
+        "reopen" : "Reopen"
     },
     "go" : {
         "window" : {

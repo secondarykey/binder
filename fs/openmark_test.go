@@ -122,14 +122,37 @@ func TestOpenMarkOpenedElsewhere(t *testing.T) {
 		t.Errorf("Dir = %q, want %q", oe.Dir, dir)
 	}
 
+	// 相手が開いている間は IsOpenedElsewhere が true
+	if got, err := IsOpenedElsewhere(dir); err != nil || !got {
+		t.Errorf("IsOpenedElsewhere() = %v, %v, want true", got, err)
+	}
+
 	// 失敗した Acquire は数に入らない。相手が閉じれば開ける
 	if err := unlock(f); err != nil {
 		t.Fatal(err)
 	}
+	if got, err := IsOpenedElsewhere(dir); err != nil || got {
+		t.Errorf("相手が閉じたあとの IsOpenedElsewhere() = %v, %v, want false", got, err)
+	}
 	if err := AcquireOpen(dir); err != nil {
 		t.Fatalf("相手が閉じた後の AcquireOpen() error: %v", err)
 	}
+	// 自分が印を持っていれば false
+	if got, err := IsOpenedElsewhere(dir); err != nil || got {
+		t.Errorf("自分が開いているときの IsOpenedElsewhere() = %v, %v, want false", got, err)
+	}
 	ReleaseOpen(dir)
+}
+
+// 誰も開いていない（ロックファイルが無い）ときは false で、ファイルも作らない
+func TestIsOpenedElsewhereNoLockFile(t *testing.T) {
+	dir := newOpenMarkDir(t)
+	if got, err := IsOpenedElsewhere(dir); err != nil || got {
+		t.Errorf("IsOpenedElsewhere() = %v, %v, want false", got, err)
+	}
+	if markerExists(dir, OpenLockName) {
+		t.Error("IsOpenedElsewhere がロックファイルを作った")
+	}
 }
 
 // クラッシュで残った印（ロックされていないファイル）は開いているとみなさず、上書きする
