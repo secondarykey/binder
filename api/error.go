@@ -74,12 +74,16 @@ func userError(err error) error {
 // 起動時に前回のバインダーを自動で開いたときは、画面にバインダーの名前が出ていないため。
 // 本文に名前、詳細（スナックバーをダブルクリック）に場所を出す。
 func openedElsewhereError(err error) error {
+	const namedKey = "go.error.openedElsewhereNamed"
+	const pathKey = "go.error.openedElsewherePath"
 	var oe *fs.OpenedElsewhereError
-	if !errors.As(err, &oe) || oe.Dir == "" {
+	named, path := settings.T(namedKey), settings.T(pathKey)
+	// 言語ファイルが古い（~/.binder へ配り直す前）とキーがそのまま返るので、これまでの文で出す
+	if !errors.As(err, &oe) || oe.Dir == "" || named == namedKey || path == pathKey {
 		return Wrap(err, settings.T("go.error.openedElsewhere"))
 	}
-	body := strings.ReplaceAll(settings.T("go.error.openedElsewhereNamed"), "{{name}}", binderDisplayName(oe.Dir))
-	detail := strings.ReplaceAll(settings.T("go.error.openedElsewherePath"), "{{path}}", oe.Dir)
+	body := strings.ReplaceAll(named, "{{name}}", binderDisplayName(oe.Dir))
+	detail := strings.ReplaceAll(path, "{{path}}", oe.Dir)
 	return WithDetail(err, body, detail)
 }
 

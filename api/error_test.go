@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"binder"
 	"binder/db"
 	"binder/fs"
+	"binder/settings"
 	"binder/setup"
+	"binder/setup/defaults"
 )
 
 func TestUserErrorMapsSentinels(t *testing.T) {
@@ -82,23 +85,45 @@ func TestUserErrorOpenedElsewhere(t *testing.T) {
 	if err := fs.SaveMeta(dir, &fs.BinderMeta{Version: "0.0.0", Name: "技術メモ"}); err != nil {
 		t.Fatal(err)
 	}
-
 	in := fmt.Errorf("binder.Load() error: %w", &fs.OpenedElsewhereError{Dir: dir})
-	got := userError(in)
+
+	// 言語ファイルが古い（新しいキーが無い）ときは、これまでの文で出す。
+	// 翻訳をまだ読んでいなければキーがそのまま返るので、その状態で確かめる
 	var me *MessageError
+	if settings.T("go.error.openedElsewhereNamed") == "go.error.openedElsewhereNamed" {
+		got := userError(in)
+		if !errors.As(got, &me) {
+			t.Fatal("result is not *MessageError")
+		}
+		if me.Body != settings.T("go.error.openedElsewhere") || me.Detail != "" {
+			t.Errorf("翻訳なし: body = %q, detail = %q", me.Body, me.Detail)
+		}
+	}
+
+	// 翻訳があれば名前と場所を入れる（TestMain が home を一時ディレクトリへ向けている）
+	if err := defaults.InstallLanguages(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.InitI18n("ja"); err != nil {
+		t.Fatal(err)
+	}
+	got := userError(in)
 	if !errors.As(got, &me) {
 		t.Fatal("result is not *MessageError")
 	}
-	if me.Body == "" || me.Detail == "" {
-		t.Errorf("body = %q, detail = %q: どちらも空にしない", me.Body, me.Detail)
+	if !strings.Contains(me.Body, "技術メモ") {
+		t.Errorf("body = %q: バインダーの名前が入っていない", me.Body)
+	}
+	if !strings.Contains(me.Detail, dir) {
+		t.Errorf("detail = %q: 場所が入っていない", me.Detail)
 	}
 	if !errors.Is(got, fs.ErrOpenedElsewhere) {
 		t.Error("errors.Is chain broken")
 	}
 
-	// 場所を持たない古い形（sentinel だけ）でも、これまでの文で出す
+	// 場所を持たない形（sentinel だけ）は、これまでの文で出す
 	old := userError(fs.ErrOpenedElsewhere)
-	if !errors.As(old, &me) || me.Body == "" {
+	if !errors.As(old, &me) || me.Body != settings.T("go.error.openedElsewhere") {
 		t.Errorf("sentinel only: %v", old)
 	}
 }
