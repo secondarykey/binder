@@ -1,7 +1,7 @@
 # 読み取り専用で開く（別の Binder が開いているバインダー）
 
 別の Binder がバインダーを開いているとき（`.git/binder-open.lock` がロックされているとき）、
-今は `fs.ErrOpenedElsewhere` で開けず、メッセージ（`go.error.openedElsewhereNamed`）を出すだけになっている。
+今は `fs.ErrOpenedElsewhere` で開けず、メッセージ（`go.error.openedElsewhereAt`。バインダーのパスを入れる）を出すだけになっている。
 これを、**見るだけなら開ける**ようにする。
 
 この文書は設計で、実装はまだ。利用者と決めたことは最後の「決めたこと」にある。

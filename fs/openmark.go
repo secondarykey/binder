@@ -42,7 +42,7 @@ var ErrOpenedElsewhere = errors.New("binder is opened by another process")
 
 // OpenedElsewhereError は、どのバインダーが別のプロセスで開かれているかを持つ。
 // 起動時に前回のバインダーを自動で開くと、画面からはどのバインダーのことか分からないため、
-// API 層がこの Dir からバインダーの名前と場所をメッセージに入れる。
+// API 層がこの Dir（バインダーのパス）をメッセージに入れる。
 type OpenedElsewhereError struct {
 	Dir  string    // バインダーのディレクトリ（AcquireOpen に渡されたもの）
 	Info *OpenInfo // 開いている側の情報。読めなければ nil

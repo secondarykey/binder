@@ -97,7 +97,7 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 
 - `AcquireOpen(dir)` / `ReleaseOpen(dir)` — 対で呼ぶ。同じプロセスの中では参照カウント（ByPath 系 API が開いているバインダーを再度 `binder.Load()` するため）。
   別のプロセスがロックを持っていれば `*OpenedElsewhereError`（`Dir` と `Info` を持ち、`errors.Is(err, ErrOpenedElsewhere)` に当たる）。
-  API 層はバインダーの名前（binder.json の name、無ければフォルダ名）を本文に、場所を詳細に入れる（`go.error.openedElsewhereNamed` / `openedElsewherePath`）。
+  API 層はバインダーのパスを本文に入れる（`go.error.openedElsewhereAt`。バインダー一覧もパスで並んでいるため、名前ではなくパス）。
   起動時に前回のバインダーを自動で開いたときは、画面にどのバインダーかが出ていないため。`.git` が無ければ何もしない
 - 立てる場所: `binder.Load()` の先頭（インデックス復旧・スキーマ修復・doctor より前）と `Binder.Close()`。
   `Load()` を通らずに書き込む API（`Convert`、`RestoreToCommitByPath` / `SwitchBranchByPath`）は自分で立てる。

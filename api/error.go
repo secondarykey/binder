@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"path/filepath"
 	"strings"
 
 	"binder"
@@ -71,27 +70,15 @@ func userError(err error) error {
 }
 
 // openedElsewhereError は「別の Binder で開かれている」を、どのバインダーかが分かる文にする。
-// 起動時に前回のバインダーを自動で開いたときは、画面にバインダーの名前が出ていないため。
-// 本文に名前、詳細（スナックバーをダブルクリック）に場所を出す。
+// 起動時に前回のバインダーを自動で開いたときは、画面にどのバインダーかが出ていないため。
+// 本文にバインダーのパスを入れる。バインダー一覧（BinderHistory.jsx）もパスで並んでいるので、同じ書き方にする。
 func openedElsewhereError(err error) error {
-	const namedKey = "go.error.openedElsewhereNamed"
-	const pathKey = "go.error.openedElsewherePath"
+	const atKey = "go.error.openedElsewhereAt"
 	var oe *fs.OpenedElsewhereError
-	named, path := settings.T(namedKey), settings.T(pathKey)
+	at := settings.T(atKey)
 	// 言語ファイルが古い（~/.binder へ配り直す前）とキーがそのまま返るので、これまでの文で出す
-	if !errors.As(err, &oe) || oe.Dir == "" || named == namedKey || path == pathKey {
+	if !errors.As(err, &oe) || oe.Dir == "" || at == atKey {
 		return Wrap(err, settings.T("go.error.openedElsewhere"))
 	}
-	body := strings.ReplaceAll(named, "{{name}}", binderDisplayName(oe.Dir))
-	detail := strings.ReplaceAll(path, "{{path}}", oe.Dir)
-	return WithDetail(err, body, detail)
-}
-
-// binderDisplayName はバインダー一覧に出るのと同じ名前（binder.json の name）を返す。
-// 名前が無い・読めなければフォルダ名を返す。
-func binderDisplayName(dir string) string {
-	if meta, err := fs.LoadMeta(dir); err == nil && meta != nil && meta.Name != "" {
-		return meta.Name
-	}
-	return filepath.Base(filepath.Clean(dir))
+	return Wrap(err, strings.ReplaceAll(at, "{{path}}", oe.Dir))
 }

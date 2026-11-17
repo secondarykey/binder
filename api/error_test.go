@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -79,28 +78,25 @@ func TestGetConfigWithoutBinder(t *testing.T) {
 	}
 }
 
-// 「別の Binder で開かれている」は、どのバインダーか（名前と場所）を出す
+// 「別の Binder で開かれている」は、どのバインダーか（バインダー一覧と同じパス）を出す
 func TestUserErrorOpenedElsewhere(t *testing.T) {
-	dir := t.TempDir()
-	if err := fs.SaveMeta(dir, &fs.BinderMeta{Version: "0.0.0", Name: "技術メモ"}); err != nil {
-		t.Fatal(err)
-	}
+	dir := filepath.Join(t.TempDir(), "技術メモ")
 	in := fmt.Errorf("binder.Load() error: %w", &fs.OpenedElsewhereError{Dir: dir})
 
 	// 言語ファイルが古い（新しいキーが無い）ときは、これまでの文で出す。
 	// 翻訳をまだ読んでいなければキーがそのまま返るので、その状態で確かめる
 	var me *MessageError
-	if settings.T("go.error.openedElsewhereNamed") == "go.error.openedElsewhereNamed" {
+	if settings.T("go.error.openedElsewhereAt") == "go.error.openedElsewhereAt" {
 		got := userError(in)
 		if !errors.As(got, &me) {
 			t.Fatal("result is not *MessageError")
 		}
-		if me.Body != settings.T("go.error.openedElsewhere") || me.Detail != "" {
-			t.Errorf("翻訳なし: body = %q, detail = %q", me.Body, me.Detail)
+		if me.Body != settings.T("go.error.openedElsewhere") {
+			t.Errorf("翻訳なし: body = %q", me.Body)
 		}
 	}
 
-	// 翻訳があれば名前と場所を入れる（TestMain が home を一時ディレクトリへ向けている）
+	// 翻訳があればパスを入れる（TestMain が home を一時ディレクトリへ向けている）
 	if err := defaults.InstallLanguages(true); err != nil {
 		t.Fatal(err)
 	}
@@ -111,11 +107,8 @@ func TestUserErrorOpenedElsewhere(t *testing.T) {
 	if !errors.As(got, &me) {
 		t.Fatal("result is not *MessageError")
 	}
-	if !strings.Contains(me.Body, "技術メモ") {
-		t.Errorf("body = %q: バインダーの名前が入っていない", me.Body)
-	}
-	if !strings.Contains(me.Detail, dir) {
-		t.Errorf("detail = %q: 場所が入っていない", me.Detail)
+	if !strings.Contains(me.Body, dir) {
+		t.Errorf("body = %q: バインダーのパスが入っていない", me.Body)
 	}
 	if !errors.Is(got, fs.ErrOpenedElsewhere) {
 		t.Error("errors.Is chain broken")
@@ -125,25 +118,6 @@ func TestUserErrorOpenedElsewhere(t *testing.T) {
 	old := userError(fs.ErrOpenedElsewhere)
 	if !errors.As(old, &me) || me.Body != settings.T("go.error.openedElsewhere") {
 		t.Errorf("sentinel only: %v", old)
-	}
-}
-
-func TestBinderDisplayName(t *testing.T) {
-	named := t.TempDir()
-	if err := fs.SaveMeta(named, &fs.BinderMeta{Version: "0.0.0", Name: "技術メモ"}); err != nil {
-		t.Fatal(err)
-	}
-	if got := binderDisplayName(named); got != "技術メモ" {
-		t.Errorf("binderDisplayName(名前あり) = %q, want 技術メモ", got)
-	}
-
-	// 名前が無ければフォルダ名
-	unnamed := filepath.Join(t.TempDir(), "notes-folder")
-	if err := os.Mkdir(unnamed, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if got := binderDisplayName(unnamed); got != "notes-folder" {
-		t.Errorf("binderDisplayName(binder.json なし) = %q, want notes-folder", got)
 	}
 }
 
