@@ -3,6 +3,9 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"binder"
@@ -70,6 +73,52 @@ func TestGetConfigWithoutBinder(t *testing.T) {
 	}
 	if conf != nil {
 		t.Errorf("GetConfig() without binder should return nil, got: %+v", conf)
+	}
+}
+
+// 「別の Binder で開かれている」は、どのバインダーか（名前と場所）を出す
+func TestUserErrorOpenedElsewhere(t *testing.T) {
+	dir := t.TempDir()
+	if err := fs.SaveMeta(dir, &fs.BinderMeta{Version: "0.0.0", Name: "技術メモ"}); err != nil {
+		t.Fatal(err)
+	}
+
+	in := fmt.Errorf("binder.Load() error: %w", &fs.OpenedElsewhereError{Dir: dir})
+	got := userError(in)
+	var me *MessageError
+	if !errors.As(got, &me) {
+		t.Fatal("result is not *MessageError")
+	}
+	if me.Body == "" || me.Detail == "" {
+		t.Errorf("body = %q, detail = %q: どちらも空にしない", me.Body, me.Detail)
+	}
+	if !errors.Is(got, fs.ErrOpenedElsewhere) {
+		t.Error("errors.Is chain broken")
+	}
+
+	// 場所を持たない古い形（sentinel だけ）でも、これまでの文で出す
+	old := userError(fs.ErrOpenedElsewhere)
+	if !errors.As(old, &me) || me.Body == "" {
+		t.Errorf("sentinel only: %v", old)
+	}
+}
+
+func TestBinderDisplayName(t *testing.T) {
+	named := t.TempDir()
+	if err := fs.SaveMeta(named, &fs.BinderMeta{Version: "0.0.0", Name: "技術メモ"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := binderDisplayName(named); got != "技術メモ" {
+		t.Errorf("binderDisplayName(名前あり) = %q, want 技術メモ", got)
+	}
+
+	// 名前が無ければフォルダ名
+	unnamed := filepath.Join(t.TempDir(), "notes-folder")
+	if err := os.Mkdir(unnamed, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if got := binderDisplayName(unnamed); got != "notes-folder" {
+		t.Errorf("binderDisplayName(binder.json なし) = %q, want notes-folder", got)
 	}
 }
 

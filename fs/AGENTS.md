@@ -96,7 +96,9 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 アプリが開いているかを判定する。go-git は `.git/index` を lock ファイル無しで書くため、`index.lock` では判定できない。
 
 - `AcquireOpen(dir)` / `ReleaseOpen(dir)` — 対で呼ぶ。同じプロセスの中では参照カウント（ByPath 系 API が開いているバインダーを再度 `binder.Load()` するため）。
-  別のプロセスがロックを持っていれば `ErrOpenedElsewhere`（API 層で `go.error.openedElsewhere`）。`.git` が無ければ何もしない
+  別のプロセスがロックを持っていれば `*OpenedElsewhereError`（`Dir` と `Info` を持ち、`errors.Is(err, ErrOpenedElsewhere)` に当たる）。
+  API 層はバインダーの名前（binder.json の name、無ければフォルダ名）を本文に、場所を詳細に入れる（`go.error.openedElsewhereNamed` / `openedElsewherePath`）。
+  起動時に前回のバインダーを自動で開いたときは、画面にどのバインダーかが出ていないため。`.git` が無ければ何もしない
 - 立てる場所: `binder.Load()` の先頭（インデックス復旧・スキーマ修復・doctor より前）と `Binder.Close()`。
   `Load()` を通らずに書き込む API（`Convert`、`RestoreToCommitByPath` / `SwitchBranchByPath`）は自分で立てる。
   閉じて `fs.Load()` で書いてから開き直す API（復元・ブランチ切替・取り込み・履歴の整理）は `api.App.holdOpen` で間も持ち続ける

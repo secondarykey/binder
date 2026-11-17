@@ -37,7 +37,24 @@ const (
 )
 
 // ErrOpenedElsewhere は別のプロセス（もう一つの Binder 等）がバインダーを開いているときのエラー。
+// AcquireOpen は *OpenedElsewhereError で返す（errors.Is でこれに当たる）。
 var ErrOpenedElsewhere = errors.New("binder is opened by another process")
+
+// OpenedElsewhereError は、どのバインダーが別のプロセスで開かれているかを持つ。
+// 起動時に前回のバインダーを自動で開くと、画面からはどのバインダーのことか分からないため、
+// API 層がこの Dir からバインダーの名前と場所をメッセージに入れる。
+type OpenedElsewhereError struct {
+	Dir  string    // バインダーのディレクトリ（AcquireOpen に渡されたもの）
+	Info *OpenInfo // 開いている側の情報。読めなければ nil
+}
+
+func (e *OpenedElsewhereError) Error() string {
+	return fmt.Sprintf("%v: %s (%s)", ErrOpenedElsewhere, e.Dir, describeOpenInfo(e.Info))
+}
+
+func (e *OpenedElsewhereError) Unwrap() error {
+	return ErrOpenedElsewhere
+}
 
 // OpenInfo は binder-open.json の中身。
 type OpenInfo struct {
@@ -101,7 +118,8 @@ func AcquireOpen(dir string) error {
 	if err := tryLock(f); err != nil {
 		f.Close()
 		if errors.Is(err, errLocked) {
-			return xerrors.Errorf("%w (%s)", ErrOpenedElsewhere, describeOpenInfo(gitDir))
+			info, _ := ReadOpenInfo(dir)
+			return xerrors.Errorf("AcquireOpen() error: %w", &OpenedElsewhereError{Dir: dir, Info: info})
 		}
 		return xerrors.Errorf("tryLock(%s) error: %w", lockPath, err)
 	}
@@ -192,9 +210,8 @@ func ReadOpenInfo(dir string) (*OpenInfo, error) {
 	return &info, nil
 }
 
-func describeOpenInfo(gitDir string) string {
-	info, err := ReadOpenInfo(filepath.Dir(gitDir))
-	if err != nil || info == nil {
+func describeOpenInfo(info *OpenInfo) string {
+	if info == nil {
 		return "unknown process"
 	}
 	return fmt.Sprintf("pid=%d host=%s since=%s", info.PID, info.Host, info.OpenedAt.Format(time.RFC3339))

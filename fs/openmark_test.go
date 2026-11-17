@@ -113,6 +113,14 @@ func TestOpenMarkOpenedElsewhere(t *testing.T) {
 	if !errors.Is(err, ErrOpenedElsewhere) {
 		t.Fatalf("AcquireOpen() = %v, want ErrOpenedElsewhere", err)
 	}
+	// どのバインダーかをメッセージに出せるよう、場所を持たせている
+	var oe *OpenedElsewhereError
+	if !errors.As(err, &oe) {
+		t.Fatalf("AcquireOpen() = %v, want *OpenedElsewhereError", err)
+	}
+	if oe.Dir != dir {
+		t.Errorf("Dir = %q, want %q", oe.Dir, dir)
+	}
 
 	// 失敗した Acquire は数に入らない。相手が閉じれば開ける
 	if err := unlock(f); err != nil {

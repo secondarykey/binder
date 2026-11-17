@@ -2,6 +2,8 @@ package api
 
 import (
 	"errors"
+	"path/filepath"
+	"strings"
 
 	"binder"
 	"binder/db"
@@ -52,7 +54,7 @@ func userError(err error) error {
 	case errors.Is(err, convert.ErrNotBinder):
 		return Wrap(err, settings.T("go.error.notBinder"))
 	case errors.Is(err, fs.ErrOpenedElsewhere):
-		return Wrap(err, settings.T("go.error.openedElsewhere"))
+		return openedElsewhereError(err)
 	case errors.Is(err, ErrUncommittedChanges):
 		return Wrap(err, settings.T("go.error.uncommitted"))
 	case errors.Is(err, setup.ErrKeyringUnavailable):
@@ -66,4 +68,26 @@ func userError(err error) error {
 	default:
 		return Wrap(err, settings.T("go.error.unexpected"))
 	}
+}
+
+// openedElsewhereError は「別の Binder で開かれている」を、どのバインダーかが分かる文にする。
+// 起動時に前回のバインダーを自動で開いたときは、画面にバインダーの名前が出ていないため。
+// 本文に名前、詳細（スナックバーをダブルクリック）に場所を出す。
+func openedElsewhereError(err error) error {
+	var oe *fs.OpenedElsewhereError
+	if !errors.As(err, &oe) || oe.Dir == "" {
+		return Wrap(err, settings.T("go.error.openedElsewhere"))
+	}
+	body := strings.ReplaceAll(settings.T("go.error.openedElsewhereNamed"), "{{name}}", binderDisplayName(oe.Dir))
+	detail := strings.ReplaceAll(settings.T("go.error.openedElsewherePath"), "{{path}}", oe.Dir)
+	return WithDetail(err, body, detail)
+}
+
+// binderDisplayName はバインダー一覧に出るのと同じ名前（binder.json の name）を返す。
+// 名前が無い・読めなければフォルダ名を返す。
+func binderDisplayName(dir string) string {
+	if meta, err := fs.LoadMeta(dir); err == nil && meta != nil && meta.Name != "" {
+		return meta.Name
+	}
+	return filepath.Base(filepath.Clean(dir))
 }
