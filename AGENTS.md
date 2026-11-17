@@ -104,7 +104,13 @@ cd _cmd/binder/frontend && npx vitest run
 # ファイルダイアログの結果を揃える部分（_cmd は別モジュールなのでルートの go test ./... に入らない）
 cd _cmd/binder && go test ./dialog
 cd _cmd/lite && go test ./dialog
+
+# Lite の起動中のプロセスへファイルを渡す部分（Windows の名前付きパイプ）
+cd _cmd/lite && go test ./ipc
 ```
+
+`_cmd` の各モジュールは名前が `main` なので、`package main` に置いたテストはビルドできない（`cannot import "main"`）。
+テストしたい部分は `dialog` / `ipc` のようにサブパッケージへ分ける。
 
 ファイルダイアログ（`Dialog.OpenFile()` / `SaveFile()`）の結果は、必ず `dialog.Path`（`_cmd/binder/dialog` / `_cmd/lite/dialog`。同じものが 2 つある）を通す。
 Wails v3.0.0 では Windows だけ、取り消すと `cancelled by user` のエラーが返る。`dialog.Path` はこれだけを空文字にし、ほかのエラーはそのまま返す

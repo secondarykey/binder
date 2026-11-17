@@ -16,6 +16,8 @@ import (
 	"binder/log"
 	"binder/settings"
 	"binder/setup/defaults"
+
+	"main/ipc"
 )
 
 //go:embed all:frontend/dist
@@ -69,7 +71,7 @@ func main() {
 	}
 
 	// ファイル指定ありの場合: 既存プロセスがあればそちらで開いて終了
-	if !newWindow && len(filePaths) > 0 && trySendToExisting(filePaths) {
+	if !newWindow && len(filePaths) > 0 && ipc.SendToExisting(filePaths) {
 		os.Exit(0)
 	}
 
@@ -87,7 +89,7 @@ func main() {
 	// パイプサーバー起動: 他プロセスからのファイル受信を待機
 	var wailsApp *application.App
 	win := new(Window)
-	listenForFiles(func(files []string) {
+	ipc.ListenForFiles(func(files []string) {
 		if wailsApp == nil {
 			return
 		}
