@@ -91,7 +91,19 @@ export function SystemMessage(props) {
                 <Alert severity={msgObj.type}
                     variant="filled"
                     action={msgObj.action ? (
-                        <Button color="inherit" size="small"
+                        // 文字だけだと本文と見分けにくいので、枠付きのボタンにする（action.icon があれば前に付ける）
+                        <Button color="inherit" size="small" variant="outlined"
+                            startIcon={msgObj.action.icon}
+                            sx={{
+                                borderColor: 'currentColor',
+                                fontWeight: 'bold',
+                                whiteSpace: 'nowrap',
+                                textTransform: 'none',
+                                ml: 1,
+                                '&:hover': { borderColor: 'currentColor', backgroundColor: 'rgba(255,255,255,0.16)' },
+                                // style.css の .MuiSvgIcon-root が svg に --icon-color を付けるので、文字と同じ色に戻す
+                                '& .MuiSvgIcon-root': { color: 'inherit !important' },
+                            }}
                             onClick={() => {
                                 hideSlideMessage();
                                 msgObj.action.onClick();

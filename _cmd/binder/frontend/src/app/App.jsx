@@ -10,6 +10,7 @@ import BranchHistoryModal from './BranchHistoryModal.jsx';
 
 import { Box, Toolbar, Typography, IconButton, Tooltip, Dialog, DialogTitle, DialogActions } from '@mui/material';
 import EditNoteIcon from '@mui/icons-material/EditNote';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
@@ -203,7 +204,11 @@ function App() {
   const showOpenError = (err, dir, openLastData = false) => {
     const msg = Message.createMessage("error", err);
     if (parseError(err).code === CodeOpenedElsewhere) {
-      msg.action = { label: t("readOnly.open"), onClick: () => loadBinder(dir, openLastData, true) };
+      msg.action = {
+        label: t("readOnly.open"),
+        icon: <VisibilityIcon fontSize="small" />,
+        onClick: () => loadBinder(dir, openLastData, true),
+      };
     }
     evt.showMessage(msg);
   };
