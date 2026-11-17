@@ -27,6 +27,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | プラグイン（marked拡張）・ルートファイル（README等） | `_docs/skills/binder-plugin-rootfile/SKILL.md` |
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
 | mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
+| 読み取り専用で開く設計（別の Binder が開いているバインダー。開くときに書いているもの・書き込みを止める 2 段・画面で出さないもの・決めること。未実装） | `_docs/readonly-open.md` |
 | 構造の改善の残り（エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
 | フロントエンドの高速化（点滅対策・打鍵時の再描画で済んだもの・決めたこと・残りの候補・測り方） | `_docs/frontend-performance.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
