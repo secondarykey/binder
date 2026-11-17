@@ -41,6 +41,28 @@ describe('parseError の code', () => {
     expect(r.body).toContain('D:\\memo');
   });
 
+  // 今の @wailsio/runtime（3.0.0-alpha2.x）は message に本文、cause に MessageError の中身を入れて投げる
+  it('runtime が err.cause に入れた MessageError から code / kind / detail を読む', () => {
+    const err = new Error('バインダー「D:\\memo」は別の Binder で開かれています');
+    err.name = 'RuntimeError';
+    err.cause = { body: 'バインダー「D:\\memo」は別の Binder で開かれています', code: 'openedElsewhere', kind: 'warning', detail: 'DETAIL', cause: 'stack' };
+    const r = parseError(err);
+    expect(r.code).toBe(CodeOpenedElsewhere);
+    expect(r.kind).toBe('warning');
+    expect(r.detail).toBe('DETAIL');
+    expect(r.body).toContain('D:\\memo');
+    expect(r.debug).toContain('stack');
+  });
+
+  it('err.cause が MessageError でなければ、これまでどおり message を読む', () => {
+    const err = new Error('plain\nmore');
+    err.cause = { something: 1 };
+    const r = parseError(err);
+    expect(r.body).toBe('plain');
+    expect(r.detail).toBe('more');
+    expect(r.code).toBeUndefined();
+  });
+
   it('code が無ければ undefined', () => {
     const env = JSON.stringify({ message: 'x', cause: { body: 'B' }, kind: 'RuntimeError' });
     expect(parseError(new Error(env)).code).toBeUndefined();
