@@ -154,34 +154,9 @@ func (b *Binder) RemoveDiagram(id string) (*json.Diagram, error) {
 		return nil, EmptyError
 	}
 
-	d, err := b.db.GetDiagram(id)
+	m, files, err := b.deleteDiagram(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
-	}
-
-	s, err := b.db.GetStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
-	}
-
-	m := d.To()
-	m.ApplyStructure(s.To())
-
-	//ファイルを削除
-	files, err := b.fileSystem.DeleteDiagram(m)
-	if err != nil {
-		return nil, xerrors.Errorf("fs.DeleteDiagram() error: %w", err)
-	}
-
-	//DBを削除
-	err = b.db.DeleteDiagram(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteNote() error: %w", err)
-	}
-
-	err = b.db.DeleteStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+		return nil, xerrors.Errorf("deleteDiagram() error: %w", err)
 	}
 
 	files = append(files, fs.DiagramTableFile(), fs.StructureTableFile())
@@ -193,6 +168,43 @@ func (b *Binder) RemoveDiagram(id string) (*json.Diagram, error) {
 	}
 
 	return m, nil
+}
+
+// deleteDiagram はダイアグラムの実体ファイル（公開済みの SVG を含む）とテーブルの行を消す。
+// 記録はしない。返すファイルにテーブルのファイルは含まない。
+func (b *Binder) deleteDiagram(id string) (*json.Diagram, []string, error) {
+
+	d, err := b.db.GetDiagram(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetDiagram() error: %w", err)
+	}
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
+	m := d.To()
+	m.ApplyStructure(s.To())
+
+	//ファイルを削除
+	files, err := b.fileSystem.DeleteDiagram(m)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("fs.DeleteDiagram() error: %w", err)
+	}
+
+	//DBを削除
+	err = b.db.DeleteDiagram(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteDiagram() error: %w", err)
+	}
+
+	err = b.db.DeleteStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
+	return m, files, nil
 }
 
 func (b *Binder) GetUnpublishedDiagrams() ([]*json.Diagram, error) {

@@ -5,8 +5,10 @@ import (
 	"binder/fs"
 	"binder/log"
 	"binder/settings"
+	"errors"
 	"fmt"
 	"log/slog"
+	filedialog "main/dialog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -41,6 +43,17 @@ func (win *Window) OpenURL(url string) {
 	win.runtime.Browser.OpenURL(url)
 }
 
+// CopyToClipboard はテキストを OS のクリップボードにコピーする。
+// フロントの navigator.clipboard が使えない・失敗したときの代わり（src/clipboard.js）。
+// SetText の戻り値は Windows でだけ失敗を表す（ほかのアプリがクリップボードを開いている間など）。
+// Linux の実装は常に true を返すので、失敗しても分からない。
+func (win *Window) CopyToClipboard(text string) error {
+	if !win.runtime.Clipboard.SetText(text) {
+		return errors.New(settings.T("go.error.clipboard"))
+	}
+	return nil
+}
+
 func (r *Window) OpenFileDialog(create bool, defaultDir string) (string, error) {
 
 	dialog := r.runtime.Dialog.OpenFile().
@@ -54,27 +67,21 @@ func (r *Window) OpenFileDialog(create bool, defaultDir string) (string, error) 
 		}
 	}
 
-	result, err := dialog.PromptForSingleSelection()
+	// 取り消しは空文字（Windows だけエラーで返るのを揃える）
+	result, err := filedialog.Path(dialog.PromptForSingleSelection())
 	if err != nil {
-		// ダイアログがキャンセルされた場合はエラーではなく空文字を返す
-		if result == "" {
-			return "", nil
-		}
 		return "", fmt.Errorf("OpenFileDialog() error\n%+v", err)
 	}
 	return result, nil
 }
 
 func (r *Window) OpenFilePicker(name, ptn string) (string, error) {
-	result, err := r.runtime.Dialog.OpenFile().
+	// 取り消しは空文字（Windows だけエラーで返るのを揃える）
+	result, err := filedialog.Path(r.runtime.Dialog.OpenFile().
 		SetTitle(settings.T("go.dialog.selectFile")).
 		AddFilter(name, ptn).
-		PromptForSingleSelection()
+		PromptForSingleSelection())
 	if err != nil {
-		// ダイアログがキャンセルされた場合はエラーではなく空文字を返す
-		if result == "" {
-			return "", nil
-		}
 		return "", fmt.Errorf("OpenFilePicker() error\n%+v", err)
 	}
 	return result, nil
@@ -489,16 +496,13 @@ func (win *Window) downloadSaveDialog(suffix string) (string, error) {
 	now := time.Now().Format("20060102150405")
 	defaultName := fmt.Sprintf("%s_%s%s.zip", now, name, suffix)
 
-	// 保存先ダイアログを表示
-	savePath, err := win.runtime.Dialog.SaveFile().
+	// 保存先ダイアログを表示（取り消しは空文字）
+	savePath, err := filedialog.Path(win.runtime.Dialog.SaveFile().
 		SetButtonText(settings.T("go.dialog.save")).
 		AddFilter(settings.T("go.filter.zip"), "*.zip").
 		SetFilename(defaultName).
-		PromptForSingleSelection()
+		PromptForSingleSelection())
 	if err != nil {
-		if savePath == "" {
-			return "", nil
-		}
 		log.PrintStackTrace(err)
 		return "", fmt.Errorf("SaveFile dialog error\n%+v", err)
 	}

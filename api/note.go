@@ -20,11 +20,13 @@ func (a *App) EditNote(n *json.Note, imageName string) (*json.Note, error) {
 	return n, nil
 }
 
-func (a *App) RemoveNote(id string) error {
+// RemoveNote はノートを削除する。withChildren が true のときは下層（ノート・ダイアグラム・
+// アセット・レイヤー）ごと削除する。false で下層があるときはエラーになる。
+func (a *App) RemoveNote(id string, withChildren bool) error {
 
 	defer log.PrintTrace(log.Func("RemoveNote()"))
 
-	_, err := a.current.RemoveNote(id)
+	_, err := a.current.RemoveNote(id, withChildren)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return userError(err)

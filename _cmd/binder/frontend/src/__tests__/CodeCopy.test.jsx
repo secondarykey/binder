@@ -59,6 +59,40 @@ describe('attachCodeCopy', () => {
     expect(btn.textContent).toBe('Copy');
   });
 
+  it('shows the copied label only after the returned promise resolves', async () => {
+    const doc = setBody('<pre><code>a\n</code></pre>');
+    let resolve;
+    attachCodeCopy(doc, {
+      onCopy: () => new Promise((r) => { resolve = r; }),
+      copyLabel: 'Copy',
+      copiedLabel: 'Copied',
+    });
+
+    const btn = doc.querySelector('.binderCopyButton');
+    btn.click();
+    expect(btn.textContent).toBe('Copy');
+    resolve();
+    await Promise.resolve();
+    expect(btn.textContent).toBe('Copied');
+  });
+
+  it('keeps the label when the returned promise is rejected', async () => {
+    const doc = setBody('<pre><code>a\n</code></pre>');
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    attachCodeCopy(doc, {
+      onCopy: () => Promise.reject(new Error('failed')),
+      copyLabel: 'Copy',
+      copiedLabel: 'Copied',
+    });
+
+    const btn = doc.querySelector('.binderCopyButton');
+    btn.click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(btn.textContent).toBe('Copy');
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
   it('does nothing without onCopy', () => {
     const doc = setBody('<pre><code>a\n</code></pre>');
     expect(attachCodeCopy(doc, {})).toBe(0);

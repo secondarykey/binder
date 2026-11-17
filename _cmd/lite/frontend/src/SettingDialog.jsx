@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * lite 設定ダイアログ（タブ化：外観 / ライセンス）
  */
-function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }) {
+function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles, onError }) {
   const { t } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -99,7 +99,7 @@ function SettingDialog({ open, onClose, settings, onSettingsSaved, onOpenFiles }
         onClose();
       }
     } catch (err) {
-      console.error('OpenPreviewFiles error:', err);
+      onError?.('lite.error.openPreview', err);
     }
   };
 

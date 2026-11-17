@@ -89,6 +89,7 @@ function DiagramMetaDialog({ open, id, onClose }) {
       evt.showSuccessMessage(t("diagram.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
+      evt.selectTreeNode(parentId);
     }).catch((err) => showError(err));
   };
 

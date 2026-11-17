@@ -98,6 +98,7 @@ function AssetMetaDialog({ open, id, onClose }) {
       evt.showSuccessMessage(t("asset.removeSuccess"));
       onClose();
       nav("/editor/note/" + parentId);
+      evt.selectTreeNode(parentId);
     }).catch((err) => showError(err));
   };
 

@@ -15,6 +15,18 @@ func (b *Binder) GetStructure(id string) (*model.Structure, error) {
 	return b.db.GetStructure(id)
 }
 
+// HasChildren は id の下に何か（ノート・ダイアグラム・アセット・レイヤー）があるかを返す。
+func (b *Binder) HasChildren(id string) (bool, error) {
+	if b == nil {
+		return false, EmptyError
+	}
+	children, err := b.db.FindStructuresByParent(id)
+	if err != nil {
+		return false, xerrors.Errorf("db.FindStructuresByParent() error: %w", err)
+	}
+	return len(children) > 0, nil
+}
+
 // ResolveLinkPath は公開URLのパス（/pages/x.html、/images/x.svg 等）から
 // 対応するStructureを返す。
 // エンティティURLでないパス、または未登録のエイリアスの場合は nil を返す。

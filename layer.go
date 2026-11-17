@@ -234,32 +234,9 @@ func (b *Binder) RemoveLayer(id string) (*json.Layer, error) {
 		return nil, EmptyError
 	}
 
-	l, err := b.db.GetLayer(id)
+	m, files, err := b.deleteLayer(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetLayer() error: %w", err)
-	}
-
-	s, err := b.db.GetStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.GetStructure() error: %w", err)
-	}
-
-	m := l.To()
-	m.ApplyStructure(s.To())
-
-	files, err := b.fileSystem.DeleteLayer(m)
-	if err != nil {
-		return nil, xerrors.Errorf("fs.DeleteLayer() error: %w", err)
-	}
-
-	err = b.db.DeleteLayer(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteLayer() error: %w", err)
-	}
-
-	err = b.db.DeleteStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+		return nil, xerrors.Errorf("deleteLayer() error: %w", err)
 	}
 
 	files = append(files, fs.LayerTableFile(), fs.StructureTableFile())
@@ -270,6 +247,41 @@ func (b *Binder) RemoveLayer(id string) (*json.Layer, error) {
 	}
 
 	return m, nil
+}
+
+// deleteLayer はレイヤーの実体ファイル（公開済みのファイルを含む）とテーブルの行を消す。
+// 記録はしない。返すファイルにテーブルのファイルは含まない。
+func (b *Binder) deleteLayer(id string) (*json.Layer, []string, error) {
+
+	l, err := b.db.GetLayer(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetLayer() error: %w", err)
+	}
+
+	s, err := b.db.GetStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetStructure() error: %w", err)
+	}
+
+	m := l.To()
+	m.ApplyStructure(s.To())
+
+	files, err := b.fileSystem.DeleteLayer(m)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("fs.DeleteLayer() error: %w", err)
+	}
+
+	err = b.db.DeleteLayer(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteLayer() error: %w", err)
+	}
+
+	err = b.db.DeleteStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
+	return m, files, nil
 }
 
 func (b *Binder) GetUnpublishedLayers() ([]*json.Layer, error) {

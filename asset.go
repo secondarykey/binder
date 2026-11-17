@@ -391,26 +391,9 @@ func (b *Binder) RemoveAsset(id string) (*json.Asset, error) {
 		return nil, xerrors.Errorf("%w: %s", ErrAssetHasLayers, id)
 	}
 
-	a, err := b.db.GetAssetWithParent(id)
+	a, files, err := b.deleteAsset(id)
 	if err != nil {
-		return nil, xerrors.Errorf("db.GetAsset() error: %w", err)
-	}
-
-	//DBから削除
-	err = b.db.DeleteAsset(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
-	}
-
-	err = b.db.DeleteStructure(id)
-	if err != nil {
-		return nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
-	}
-
-	//ファイルを削除
-	files, err := b.fileSystem.DeleteAsset(a)
-	if err != nil {
-		return nil, xerrors.Errorf("fs.RemoveAsset() error: %w", err)
+		return nil, xerrors.Errorf("deleteAsset() error: %w", err)
 	}
 
 	files = append(files, fs.AssetTableFile(), fs.StructureTableFile())
@@ -421,6 +404,36 @@ func (b *Binder) RemoveAsset(id string) (*json.Asset, error) {
 	}
 
 	return a, nil
+}
+
+// deleteAsset はアセットのテーブルの行と実体ファイル（公開済みのファイルを含む）を消す。
+// 記録はしない。返すファイルにテーブルのファイルは含まない。
+// 子（レイヤー）の有無は見ないので、呼ぶ側で先に消しておく。
+func (b *Binder) deleteAsset(id string) (*json.Asset, []string, error) {
+
+	a, err := b.db.GetAssetWithParent(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.GetAssetWithParent() error: %w", err)
+	}
+
+	//DBから削除
+	err = b.db.DeleteAsset(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteAsset() error: %w", err)
+	}
+
+	err = b.db.DeleteStructure(id)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("db.DeleteStructure() error: %w", err)
+	}
+
+	//ファイルを削除
+	files, err := b.fileSystem.DeleteAsset(a)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("fs.DeleteAsset() error: %w", err)
+	}
+
+	return a, files, nil
 }
 
 // SetAssetAsMetaImage はアセット画像を親ノートのメタ画像として設定する。

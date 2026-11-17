@@ -7,6 +7,7 @@ import (
 	"binder/db"
 	"binder/fs"
 	"binder/settings"
+	"binder/setup"
 	"binder/setup/convert"
 )
 
@@ -54,6 +55,8 @@ func userError(err error) error {
 		return Wrap(err, settings.T("go.error.openedElsewhere"))
 	case errors.Is(err, ErrUncommittedChanges):
 		return Wrap(err, settings.T("go.error.uncommitted"))
+	case errors.Is(err, setup.ErrKeyringUnavailable):
+		return Wrap(err, settings.T("go.error.keyringUnavailable"))
 	case errors.Is(err, fs.UpdatedFilesError):
 		return Info(err, settings.T("go.error.noUpdates"))
 	case errors.Is(err, binder.EmptyError):

@@ -77,7 +77,10 @@ function LayerMetaDialog({ open, id, onClose }) {
       evt.refreshTree();
       evt.showSuccessMessage(t("layer.removeSuccess"));
       onClose();
-      if (parentId) nav("/editor/assets/" + parentId);
+      if (parentId) {
+        nav("/editor/assets/" + parentId);
+        evt.selectTreeNode(parentId);
+      }
     }).catch((err) => showError(err));
   };
 

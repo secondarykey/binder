@@ -270,6 +270,26 @@ describe('useEditorPublish', () => {
     expect(Browser.OpenURL).not.toHaveBeenCalled();
   });
 
+  it('alias はエンコードして開き、404 ページはルートの 404.html を開く', async () => {
+    const open = (over) => {
+      Browser.OpenURL.mockClear();
+      const { result } = renderHook(() => useEditorPublish(base(over)));
+      act(() => result.current.openInBrowser());
+    };
+    open({ alias: 'my memo' });
+    await waitFor(() => expect(Browser.OpenURL).toHaveBeenCalledWith('http://localhost:1234/pages/my%20memo.html'));
+    open({ alias: '/404' });
+    await waitFor(() => expect(Browser.OpenURL).toHaveBeenCalledWith('http://localhost:1234/404.html'));
+  });
+
+  it('ブラウザで開けなかったらエラーを出す', async () => {
+    Browser.OpenURL = vi.fn(() => Promise.reject(new Error('OpenURL failed')));
+    const p = base();
+    const { result } = renderHook(() => useEditorPublish(p));
+    act(() => result.current.openInBrowser());
+    await waitFor(() => expect(p.evt.showErrorMessage).toHaveBeenCalled());
+  });
+
   it('非公開は、確認してから行う', async () => {
     const p = base();
     const { result } = renderHook(() => useEditorPublish(p));

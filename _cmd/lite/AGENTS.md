@@ -51,6 +51,10 @@ setup/defaults/, settings/（Binder と共有）
 - **EditorPane.jsx** — エディタラッパー。共有 EditorArea + SearchBar + Markdown入力支援 + 行番号トグル（左上）+ 折り返しトグル（右下）。カーソル行を `onCursorLineChange` で親へ通知する
 - **PreviewPane.jsx** — プレビュー。共有 HTMLFrame + Marked/Mermaid エンジン。Markdown/Mermaid 切り替えボタン（右上）。`MutationObserver` でテーマ変更を検知し再描画。コードブロックのコピーボタン（`onCopyCode` に `CopyToClipboard` を渡す）と ```mermaid の図描画（`inlineMermaid`。Markdown モード時のみ）
 - **ConfirmDialog.jsx** — カスタム確認ダイアログ（Promise ベース）
+- **ErrorSnackbar.jsx** — 操作の失敗を画面下に出す（閉じるまで残す）。`App.jsx` の `showError(titleKey, err)` で出す。
+  見出しは `lite.error.*`（何が失敗したか）、本文は Go から返ったエラーの文（`@shared/error-message` の `errorMessage`）。
+  ファイルを開く・保存・ダイアログ・ワーク・画像の貼り付け・プレビューファイル・タブのメニューの失敗はすべてこれを通す（`console.error` だけで済ませない）。
+  `EditorPane` / `SettingDialog` には `onError` として渡す
 - **theme.js** — テーマ管理。system/light/dark の3モード対応。system モードは `prefers-color-scheme` を監視
 - **language.jsx** — i18next 初期化
 - **useHasScrollbar.js** — スクロールバー検出フック（`useScrollbarOffset`, `useHScrollbarOffset`, `useIframeScrollbarOffset`）。ボタン位置調整用

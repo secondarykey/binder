@@ -50,17 +50,9 @@ func EnsureExists(ver *Version, devMode bool) error {
 		return xerrors.Errorf("defaults.InstallPlugins() error: %w", err)
 	}
 
-	// 旧サービス名のキーを新サービス名に移行
-	if err := migrateUserKeyService(); err != nil {
-		return xerrors.Errorf("migrateUserKeyService() error: %w", err)
-	}
-
-	//暗号化キーが存在しない場合
-	if !isExistsUserKey() {
-		err := setUserKey()
-		if err != nil {
-			return xerrors.Errorf("setUserKey() error: %w", err)
-		}
+	// 認証情報の暗号化に使う鍵を用意する（鍵の保管場所が使えなくても起動は止めない）
+	if err := prepareUserKey(); err != nil {
+		return xerrors.Errorf("prepareUserKey() error: %w", err)
 	}
 
 	// アプリレベルのバージョンアップ処理

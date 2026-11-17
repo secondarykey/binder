@@ -50,8 +50,9 @@ function MetaDialog({
   }, [open]);
 
   const handleCopyId = () => {
-    copyClipboard(id);
-    evt.showSuccessMessage("Copied.");
+    copyClipboard(id)
+      .then(() => evt.showSuccessMessage("Copied."))
+      .catch((err) => evt.showErrorMessage(err));
   };
 
   const ctxValue = { setMsg: setDialogMsg, clearMsg: () => setDialogMsg(null) };

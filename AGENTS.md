@@ -100,7 +100,15 @@ go test ./fs/ -run TestAssetRead
 
 # フロントエンドテスト実行
 cd _cmd/binder/frontend && npx vitest run
+
+# ファイルダイアログの結果を揃える部分（_cmd は別モジュールなのでルートの go test ./... に入らない）
+cd _cmd/binder && go test ./dialog
+cd _cmd/lite && go test ./dialog
 ```
+
+ファイルダイアログ（`Dialog.OpenFile()` / `SaveFile()`）の結果は、必ず `dialog.Path`（`_cmd/binder/dialog` / `_cmd/lite/dialog`。同じものが 2 つある）を通す。
+Wails v3.0.0 では Windows だけ、取り消すと `cancelled by user` のエラーが返る。`dialog.Path` はこれだけを空文字にし、ほかのエラーはそのまま返す
+（「結果が空ならエラーを捨てる」と書くと、ダイアログが開けなかったような本当のエラーまで黙って消える）。Wails を上げたら、Windows で 1 回取り消して確かめる。
 
 **テスト実行は必須**: Go・フロントエンドいずれの変更でも、コミット前に関連テストを実行してパスを確認すること。全テストがパスする状態を維持する。テストが壊れたまま放置しない。
 
