@@ -20,8 +20,14 @@ type MessageError struct {
 	Body   string // スナックバー等に1行で表示するユーザ向けメッセージ
 	Detail string // 詳細情報（任意。ダブルクリックで表示）
 	Kind   string // メッセージ種別: "error"（既定）, "warning", "info"
-	Cause  error  // 原因となった元 error（任意。デバッグ・errors.Is/As チェーン用）
+	// Code はフロントが原因を見分けるための符号（任意）。Body は言語で変わるので、
+	// 原因ごとに画面の動きを変えるときはこれを見る（例: "openedElsewhere" ならスナックバーに「読み取り専用で開く」を出す）
+	Code  string
+	Cause error // 原因となった元 error（任意。デバッグ・errors.Is/As チェーン用）
 }
+
+// CodeOpenedElsewhere は、別の Binder が開いているため開けなかったときの Code。
+const CodeOpenedElsewhere = "openedElsewhere"
 
 // Error は人間可読の1行を返す（ログ・envelope.message 用）。Body を優先する。
 func (e *MessageError) Error() string {
@@ -47,6 +53,7 @@ type messagePayload struct {
 	Body   string `json:"body"`
 	Detail string `json:"detail,omitempty"`
 	Kind   string `json:"kind,omitempty"`
+	Code   string `json:"code,omitempty"`
 	Cause  string `json:"cause,omitempty"`
 }
 
@@ -55,7 +62,7 @@ type messagePayload struct {
 // これによりスタックトレース（関数名・file:line）を含み、フロントの折りたたみ
 // デバッグ情報で技術的詳細を確認できる（Error() は1行のままログ用に保つ）。
 func (e *MessageError) MarshalJSON() ([]byte, error) {
-	p := messagePayload{Body: e.Body, Detail: e.Detail, Kind: e.Kind}
+	p := messagePayload{Body: e.Body, Detail: e.Detail, Kind: e.Kind, Code: e.Code}
 	if e.Cause != nil {
 		p.Cause = fmt.Sprintf("%+v", e.Cause)
 	}

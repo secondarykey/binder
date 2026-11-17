@@ -30,6 +30,9 @@ type FileSystem struct {
 	base    string
 	userSig *UserInfo // バインダーごとのユーザ署名（nil の場合はアプリ設定を使用）
 
+	// readOnly は LoadReadOnly で開いたとき true（readonly.go）。fs は書き込みを断る readOnlyFS になっている
+	readOnly bool
+
 	// Status() の短TTLキャッシュ。ツリー再読込やコミット直後は複数箇所から
 	// 連続で Status() が呼ばれるため、フル git status + blob ハッシュ比較の
 	// 重複実行を防ぐ。アプリ内の変更操作は invalidateStatus() で即時無効化し、

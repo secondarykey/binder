@@ -44,6 +44,17 @@ func OpenRepository(dir string) (*Repository, error) {
 	return &Repository{dir: dir, fs: f}, nil
 }
 
+// OpenRepositoryReadOnly は dir のリポジトリを読み取り専用で開く（fs.LoadReadOnly）。
+// 読むだけの操作（バインダーを開かずに履歴やブランチを見る）はこちらを使う。
+// 書き込みは fs が断るので、別の Binder が開いていても相手のファイルに触らない。
+func OpenRepositoryReadOnly(dir string) (*Repository, error) {
+	f, err := fs.LoadReadOnly(dir)
+	if err != nil {
+		return nil, err
+	}
+	return &Repository{dir: dir, fs: f}, nil
+}
+
 // LockRepository は「開いている」印を立ててから dir のリポジトリを開く。
 // 別のプロセスが開いていればエラーになる。バインダーを開いていない状態で書き込むとき用。
 // 使い終わったら Close で印を外す。
@@ -113,16 +124,17 @@ func (r *Repository) GC() *fs.GCResult {
 }
 
 // OverallHistoryByPath は、バインダーを開いていない dir の全体履歴を返す。
-// まずバインダーとして開き、開けなければ（移行前・壊れているなど）リポジトリだけを読む。
+// まずバインダーとして読み取り専用で開き、開けなければ（移行前・壊れているなど）リポジトリだけを読む。
+// 読むだけなので書き込まない（別の Binder が開いていても相手のファイルに触らない）。
 func OverallHistoryByPath(dir string, limit, offset int) ([]*fs.CommitInfo, bool, error) {
-	b, err := Load(dir)
+	b, err := LoadReadOnly(dir)
 	if err == nil {
 		defer b.Close()
 		return b.GetOverallHistory(limit, offset)
 	}
 
-	log.Warnf("binder.Load() failed, falling back to fs.Load():\n%+v", err)
-	r, err := OpenRepository(dir)
+	log.Warnf("binder.LoadReadOnly() failed, falling back to fs.LoadReadOnly():\n%+v", err)
+	r, err := OpenRepositoryReadOnly(dir)
 	if err != nil {
 		return nil, false, err
 	}
@@ -130,16 +142,16 @@ func OverallHistoryByPath(dir string, limit, offset int) ([]*fs.CommitInfo, bool
 }
 
 // CommitFileEntriesByPath は、バインダーを開いていない dir のコミットのファイル一覧を返す。
-// バインダーとして開ければ名前を解決し、開けなければ ID をそのまま名前にする。
+// バインダーとして（読み取り専用で）開ければ名前を解決し、開けなければ ID をそのまま名前にする。
 func CommitFileEntriesByPath(dir string, hash string) ([]*json.CommitFileEntry, error) {
-	b, err := Load(dir)
+	b, err := LoadReadOnly(dir)
 	if err == nil {
 		defer b.Close()
 		return b.GetCommitFileEntries(hash)
 	}
 
-	log.Warnf("binder.Load() failed, falling back to fs.Load():\n%+v", err)
-	r, err := OpenRepository(dir)
+	log.Warnf("binder.LoadReadOnly() failed, falling back to fs.LoadReadOnly():\n%+v", err)
+	r, err := OpenRepositoryReadOnly(dir)
 	if err != nil {
 		return nil, err
 	}

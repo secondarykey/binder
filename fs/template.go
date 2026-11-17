@@ -2,7 +2,6 @@ package fs
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"time"
 
@@ -105,7 +104,7 @@ func (f *FileSystem) WriteTemplate(t *entity.Template, data []byte) (string, err
 
 	fp, err := f.Create(fn)
 	if err != nil {
-		return "", fmt.Errorf("Open() error\n%+v", err)
+		return "", xerrors.Errorf("Open() error: %w", err)
 	}
 	defer fp.Close()
 
@@ -114,7 +113,7 @@ func (f *FileSystem) WriteTemplate(t *entity.Template, data []byte) (string, err
 
 	_, err = fp.Write(data)
 	if err != nil {
-		return "", fmt.Errorf("Write() error\n%+v", err)
+		return "", xerrors.Errorf("Write() error: %w", err)
 	}
 	return fn, nil
 }

@@ -4,7 +4,6 @@ import (
 	"binder/entity"
 	"binder/log"
 	"bytes"
-	"fmt"
 	"io"
 
 	"golang.org/x/xerrors"
@@ -53,7 +52,7 @@ func (f *FileSystem) ReadLayer(w io.Writer, id string) error {
 
 	err := f.readFile(w, fn)
 	if err != nil {
-		return fmt.Errorf("layerTextFile() error\n%+v", err)
+		return xerrors.Errorf("layerTextFile() error: %w", err)
 	}
 	return nil
 }
@@ -64,13 +63,13 @@ func (f *FileSystem) WriteLayer(id string, data []byte) error {
 
 	fp, err := f.Create(fn)
 	if err != nil {
-		return fmt.Errorf("Open() error\n%+v", err)
+		return xerrors.Errorf("Open() error: %w", err)
 	}
 	defer fp.Close()
 
 	_, err = fp.Write([]byte(data))
 	if err != nil {
-		return fmt.Errorf("Write() error\n%+v", err)
+		return xerrors.Errorf("Write() error: %w", err)
 	}
 	return nil
 }
