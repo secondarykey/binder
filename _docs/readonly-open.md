@@ -79,14 +79,17 @@ csvq は読むときに、`db/` に一時的な読み取りロックのファイ
   そのあとの `LoadBinder` はロックに当たって失敗し、`reload_error`（バインダーが開いていない状態）にもなる。
   `runClosed` の先頭で `a.current.ReadOnly()` なら `ErrReadOnly` を返し、閉じる前に断る
 - バインダーを開かずに書く `*ByPath`（`RestoreToCommitByPath` / `SwitchBranchByPath`）は、`binder.LockRepository` でロックを取りに行くので、相手が開いていれば今でも失敗する。そのままでよい
-- バインダーを開かずに読む `*ByPath` も、読むだけでは済んでいない（読み取り専用で開いたときに限らず、今もそう）:
+- バインダーを開かずに読む `*ByPath`:
   - `GetOverallHistoryByPath` / `GetCommitFilesByPath`（`repository.go` の `OverallHistoryByPath` / `CommitFileEntriesByPath`）は、
-    まず普通の `binder.Load` で開く（ロックが取れれば doctor などで**書く**）。相手がロックを持っていれば失敗し、
-    `OpenRepository` → `fs.Load` に回るので、そこでも**インデックスの自動復旧で書くことがある**
-  - `ListBranchesByPath` / `CurrentBranchByPath` は `OpenRepository` → `fs.Load`（同じく自動復旧で書くことがある）
+    まず普通の `binder.Load` で開く（ロックが取れれば doctor などで**書く**。ロックを持って書くので壊しはしない）。
+    相手がロックを持っていれば失敗し、`OpenRepository` → `fs.Load` に回る
+  - `ListBranchesByPath` / `CurrentBranchByPath` は `OpenRepository` → `fs.Load`
+  - `fs.Load` のインデックスの自動復旧は、以前はロックを持たなくても動き、相手が書いている最中のインデックスを壊すことがあった。
+    **2026-11-18 に直した**（印を持つときだけ復旧する。`fs/AGENTS.md` のトラブルシュート）。今は `fs.Load` を通るだけなら書かない
   
-  読むだけの `*ByPath` は、`binder.LoadReadOnly` と `fs.LoadReadOnly` を使う `binder.OpenRepositoryReadOnly` に切り替える。
-  名前の解決に DB が要るものは `LoadReadOnly`、git だけで済むものは `OpenRepositoryReadOnly`
+  読むだけの `*ByPath` は、`binder.LoadReadOnly` と `binder.OpenRepositoryReadOnly`（`fs.LoadReadOnly` を使う）に切り替える。
+  名前の解決に DB が要るものは `LoadReadOnly`、git だけで済むものは `OpenRepositoryReadOnly`。
+  読むだけの画面で doctor などが動かなくなる（ロックが取れたときの書き込みも無くなる）
 
 ### エラーの見せ方
 

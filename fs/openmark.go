@@ -133,6 +133,16 @@ func AcquireOpen(dir string) error {
 	return nil
 }
 
+// holdsOpen は、このプロセスが dir の「開いている」印を持っているかを返す。
+// 持っていなければ、別のプロセスがそのバインダーを開いて書いている最中かもしれない。
+func holdsOpen(dir string) bool {
+	key := openKey(dir)
+	openMu.Lock()
+	defer openMu.Unlock()
+	_, ok := openEntries[key]
+	return ok
+}
+
 // ReleaseOpen は AcquireOpen で立てた印を下ろす。最後の 1 つで印のファイルを消す。
 func ReleaseOpen(dir string) {
 

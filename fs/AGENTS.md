@@ -115,7 +115,10 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
   リネームを使わず truncate + 直接書き込みで更新するため、書き込みの交錯・中断で壊れる。
   アプリ内の並行書き込みは `lockedStorage`（storage.go）と `gitMu`（fs.go）で防いでいるが、
   **書き込み中の電源断・プロセス強制終了・外部ツールの干渉では今後も起こりうる**
-- **自動復旧（index_recovery.go）**: `Load()` 直後に一度だけ `repo.Storer.Index()` を読み、
+- **自動復旧（index_recovery.go）**: このプロセスが「開いている」印（`AcquireOpen`）を持っているときだけ行う。
+  印を持たない `Load()`（バインダーを開かずに履歴を見る `*ByPath` の読み取り）では、別の Binder が書き直している最中の
+  インデックスを読み、古い前半と新しい後半が混ざって `ErrInvalidChecksum` になることがある。それを直すと相手のインデックスを本当に壊すため。
+  `Load()` 直後に一度だけ `repo.Storer.Index()` を読み、
   エラーが `plumbing/format/index` の sentinel（`ErrMalformedSignature` / `ErrInvalidChecksum` /
   `ErrUnknownExtension` / `ErrMalformedIndexFile`）に該当する場合のみ復旧する（それ以外の
   エラーでは何もしない）。壊れた `.git/index` は `.git/index.broken` に退避したうえで、

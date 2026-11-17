@@ -2,9 +2,12 @@ package fs_test
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"binder/fs"
+	"binder/test"
 )
 
 // TestRepairCorruptIndexRecoversFromHead は、破損した .git/index を検出した場合に
@@ -121,6 +124,96 @@ func TestRepairCorruptIndexKeepsUnrecordedAsModified(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("Status() did not report unrecorded note %s as modified: %+v", n.Id, mods)
+	}
+}
+
+// newCorruptIndexBinder は、記録が 1 つあり、.git/index のチェックサムが合わないバインダーを作る。
+// 別の Binder がインデックスを書き直している最中に読むと、古い前半と新しい後半が混ざって
+// こうなる（index.ErrInvalidChecksum。自動復旧の対象）。
+func newCorruptIndexBinder(t *testing.T, name string) (dir string, index []byte) {
+	t.Helper()
+	dir = filepath.Join(test.Dir, name)
+	f, err := fs.New(dir)
+	if err != nil {
+		t.Fatalf("fs.New() error: %v", err)
+	}
+	n := newNote("idx-"+name, "alias-"+name)
+	if _, err := f.CreateNoteFile(n); err != nil {
+		t.Fatalf("CreateNoteFile() error: %v", err)
+	}
+	if err := f.WriteNoteText(n.Id, []byte("# recorded\n")); err != nil {
+		t.Fatalf("WriteNoteText() error: %v", err)
+	}
+	if err := f.Commit(fs.M("Create Note", n.Id), fs.NoteFile(n.Id)); err != nil {
+		t.Fatalf("Commit() error: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("Close() error: %v", err)
+	}
+
+	p := filepath.Join(dir, ".git", "index")
+	index, err = os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index[len(index)-1] ^= 0xff // 末尾のチェックサムを壊す
+	if err := os.WriteFile(p, index, 0644); err != nil {
+		t.Fatal(err)
+	}
+	return dir, index
+}
+
+// 「開いている」印を持たずに Load したときは、インデックスが壊れて見えても書き直さない。
+// バインダーを開かずに履歴を見る（*ByPath）とき、別の Binder が書いている最中のインデックスを
+// 読んでも、相手のインデックスを壊さないため。
+func TestLoadWithoutOpenMarkDoesNotRepairIndex(t *testing.T) {
+	dir, corrupt := newCorruptIndexBinder(t, "index_repair_unlocked")
+
+	f, err := fs.Load(dir)
+	if err != nil {
+		t.Fatalf("fs.Load() error: %v", err)
+	}
+	defer f.Close()
+
+	got, err := os.ReadFile(filepath.Join(dir, ".git", "index"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, corrupt) {
+		t.Error("印を持たない Load がインデックスを書き換えた")
+	}
+	if f.BrokenIndexBackupExistsForTest() {
+		t.Error("印を持たない Load が index.broken を作った")
+	}
+}
+
+// 「開いている」印を持っているときは、今までどおり自動復旧する。
+func TestLoadWithOpenMarkRepairsIndex(t *testing.T) {
+	dir, corrupt := newCorruptIndexBinder(t, "index_repair_locked")
+
+	if err := fs.AcquireOpen(dir); err != nil {
+		t.Fatalf("AcquireOpen() error: %v", err)
+	}
+	defer fs.ReleaseOpen(dir)
+
+	f, err := fs.Load(dir)
+	if err != nil {
+		t.Fatalf("fs.Load() error: %v", err)
+	}
+	defer f.Close()
+
+	if !f.BrokenIndexBackupExistsForTest() {
+		t.Error("印を持つ Load が自動復旧しなかった（index.broken が無い）")
+	}
+	got, err := os.ReadFile(filepath.Join(dir, ".git", "index"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Equal(got, corrupt) {
+		t.Error("印を持つ Load がインデックスを直さなかった")
+	}
+	if _, err := f.Status(); err != nil {
+		t.Errorf("復旧後の Status() error: %v", err)
 	}
 }
 
