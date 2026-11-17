@@ -31,6 +31,20 @@ func (a *App) IsReadOnly() bool {
 	return a.current.ReadOnly()
 }
 
+// IsOpenedElsewhere は、別の Binder が dir を開いている（ロックを持っている）かを返す。
+// 読み取り専用で開いているときに、相手が閉じたか（編集できるように開き直せるか）を確かめる。
+// 何も書かない（ロックファイルも作らない）。
+func (a *App) IsOpenedElsewhere(dir string) (bool, error) {
+	defer log.PrintTrace(log.Func("IsOpenedElsewhere()", dir))
+
+	opened, err := fs.IsOpenedElsewhere(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return false, userError(err)
+	}
+	return opened, nil
+}
+
 // checkReadOnlyCompat は、読み取り専用でそのまま読めるバージョンかを確かめる。
 // スキーマが同じ（CompatOK / CompatVersionOnly）なら読める。移行が要るものは ErrReadOnlyIncompatible。
 func (a *App) checkReadOnlyCompat(dir string) error {

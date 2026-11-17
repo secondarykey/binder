@@ -8,7 +8,9 @@ import SettingModal from '../dialogs/SettingModal.jsx';
 import BinderModal from '../dialogs/BinderModal.jsx';
 import BranchHistoryModal from './BranchHistoryModal.jsx';
 
-import { Box, Toolbar, Typography, IconButton, Tooltip } from '@mui/material';
+import { Box, Toolbar, Typography, IconButton, Tooltip, Dialog, DialogTitle, DialogActions } from '@mui/material';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import { ActionButton } from '../dialogs/components/ActionButton';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -26,7 +28,7 @@ import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/w
 import Event, { EventContext, useEventListener } from "../Event";
 import Message, { SystemMessage } from '../Message';
 import { parseError } from '../error';
-import { ReadOnlyContext, CodeOpenedElsewhere } from '../readOnly';
+import { ReadOnlyContext, CodeOpenedElsewhere, readOnlyClickAction } from '../readOnly';
 import { doctorReportMessage } from './doctorReport';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog, BinderTooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
@@ -99,6 +101,8 @@ function App() {
   const [devMode, setDevMode] = useState(false);
   // 読み取り専用で開いているか。ReadOnlyContext で配下の部品へ配る
   const [readOnly, setReadOnly] = useState(false);
+  // 読み取り専用で、相手が閉じた（ロックが外れた）ときの「開き直しますか？」
+  const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
   const CompatOK = 0;
@@ -207,7 +211,8 @@ function App() {
   // LoadBinder を呼んでエディタに遷移する
   // openLastData=true の場合、前回開いたデータに遷移する
   // asReadOnly=true の場合、読み取り専用で開く（LoadBinderReadOnly）
-  const loadBinder = (dir, openLastData = false, asReadOnly = false) => {
+  // onLoaded は開けたときに呼ぶ（読み直したことを知らせるなど）
+  const loadBinder = (dir, openLastData = false, asReadOnly = false, onLoaded = undefined) => {
     // 切り替え前のバインダーの現在ページをメモリに保存
     if (currentBinderDir) {
       const m = location.pathname.match(/^\/editor\/([^/]+)\/(.+)$/);
@@ -232,6 +237,7 @@ function App() {
       currentBinderDir = dir;
       currentReadOnly = asReadOnly;
       setReadOnly(asReadOnly);
+      onLoaded?.();
 
       // 開いたときに整合性を修復していたら知らせる（外部のツールで編集した後の書き損じ等）
       TakeDoctorReport().then((report) => {
@@ -285,12 +291,27 @@ function App() {
 
   // 読み取り専用で開いているバインダーを読み直す（相手の Binder の変更を見る）。今見ているページに戻る
   const reloadReadOnly = () => {
-    if (currentBinderDir) loadBinder(currentBinderDir, false, true);
+    if (currentBinderDir) {
+      loadBinder(currentBinderDir, false, true, () => evt.showSuccessMessage(t("readOnly.reloaded")));
+    }
   };
 
   // 編集できるように開き直す。相手がまだ開いていれば「別の Binder で開かれています」になり、読み取り専用のまま残る
   const reopenWritable = () => {
     if (currentBinderDir) openBinder(currentBinderDir);
+  };
+
+  // 左メニューの鍵のボタン: 相手がまだ開いていれば読み直す。
+  // 相手が閉じていれば（ロックが外れていれば）、編集できるように開き直すかを聞く
+  const handleReadOnlyClick = () => {
+    if (!currentBinderDir) return;
+    readOnlyClickAction(currentBinderDir).then((action) => {
+      if (action === 'confirm') {
+        setReopenConfirmOpen(true);
+      } else {
+        reloadReadOnly();
+      }
+    });
   };
 
   const handleConvertConfirm = () => {
@@ -695,7 +716,7 @@ function App() {
       {/** タイトルバー下のメインエリア（左メニュー＋コンテンツ） */}
       <div id="mainArea">
         {/** 左メニュー部 */}
-        <Menu onReloadReadOnly={reloadReadOnly} onReopenWritable={reopenWritable} />
+        <Menu onReadOnlyClick={handleReadOnlyClick} />
         {/** メイン表示。起動時の自動オープン判定中はスプラッシュで覆い、履歴一覧のチラつきを防ぐ */}
         {booting ? (
           <div style={{ flex: 1, minWidth: 0, backgroundColor: 'var(--bg-app)' }} />
@@ -770,6 +791,18 @@ function App() {
         minBinderVersion={compatVersions.minBinderVersion}
         onClose={() => setBinderTooOldOpen(false)}
       />
+
+      {/** 読み取り専用: 相手が閉じたので開き直すか */}
+      <Dialog open={reopenConfirmOpen} onClose={() => setReopenConfirmOpen(false)}
+        PaperProps={{ style: { backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" } }}>
+        <DialogTitle>{t("readOnly.unlocked")}</DialogTitle>
+        <DialogActions>
+          <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />}
+            onClick={() => setReopenConfirmOpen(false)} />
+          <ActionButton variant="confirm" label={t("readOnly.reopen")} icon={<EditNoteIcon />}
+            onClick={() => { setReopenConfirmOpen(false); reopenWritable(); }} />
+        </DialogActions>
+      </Dialog>
 
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />

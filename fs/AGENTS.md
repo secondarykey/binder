@@ -98,6 +98,7 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 （`_docs/skills/binder-organize` の Preflight / Validate）が、ロックファイルを排他で開けるかどうかで
 アプリが開いているかを判定する。go-git は `.git/index` を lock ファイル無しで書くため、`index.lock` では判定できない。
 
+- `IsOpenedElsewhere(dir)` — 別のプロセスがロックを持っているか。印を立てずにロックを試してすぐ外す（ロックファイルが無ければ作らない）。読み取り専用で開いているときに、相手が閉じたかを確かめるのに使う
 - `AcquireOpen(dir)` / `ReleaseOpen(dir)` — 対で呼ぶ。同じプロセスの中では参照カウント（ByPath 系 API が開いているバインダーを再度 `binder.Load()` するため）。
   別のプロセスがロックを持っていれば `*OpenedElsewhereError`（`Dir` と `Info` を持ち、`errors.Is(err, ErrOpenedElsewhere)` に当たる）。
   API 層はバインダーのパスを本文に入れる（`go.error.openedElsewhereAt`。バインダー一覧もパスで並んでいるため、名前ではなくパス）。

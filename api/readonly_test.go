@@ -29,7 +29,7 @@ import (
 var readOnlyReadMethods = []string{
 	"GetVersionInfo", "SearchBinder", "Address", "EnsureAddress",
 	"GetAsset", "GetAssetContent", "DetectAssetMime",
-	"TakeDoctorReport", "GetInstallPresets", "GetUnpublishedRefs", "GetFullPath", "IsReadOnly",
+	"TakeDoctorReport", "GetInstallPresets", "GetUnpublishedRefs", "GetFullPath", "IsReadOnly", "IsOpenedElsewhere",
 	"GetConfig", "GetPublishSettings", "GetUserInfo", "IsBinderTrusted",
 	"GetDiagram", "OpenDiagram",
 	"CollectExportDeps", "GetBinderName",
