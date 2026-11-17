@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { Routes, Route, useNavigate, useLocation } from "react-router";
 
-import { IconButton, Paper, Divider, Tooltip } from '@mui/material';
+import { IconButton, Paper, Divider, Tooltip, Menu as MuiMenu, MenuItem } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CommitIcon from '@mui/icons-material/Commit';
@@ -67,6 +67,8 @@ function Menu(props) {
   const location = useLocation();
   // 読み取り専用では、書き込むための画面（テンプレート設定・未記録一覧・未公開一覧）を出さない
   const readOnly = useReadOnly();
+  // 読み取り専用のメニュー（読み直す・編集できるように開き直す）を開く位置（{ top, left }）
+  const [readOnlyMenu, setReadOnlyMenu] = useState(null);
 
   // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
   const isEditorRoute = /^\/editor\//.test(location.pathname);
@@ -177,29 +179,6 @@ function Menu(props) {
   const OpenBinderComponent = () => {
     return (
       <>
-        {/** 読み取り専用の表示と、読み直す・編集できるように開き直す（_docs/readonly-open.md） */}
-        {readOnly && (
-          <>
-            <Tooltip title={t("readOnly.label")} placement="right">
-              <span className="leftButton readOnlyMark" aria-label="read only"
-                style={{ display: 'flex', justifyContent: 'center', color: 'var(--accent-orange)' }}>
-                <LockIcon className="leftIcon" />
-              </span>
-            </Tooltip>
-            <Tooltip title={t("readOnly.reload")} placement="right">
-              <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="reload read only" onClick={() => props.onReloadReadOnly?.()}>
-                <RefreshIcon className="leftIcon" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t("readOnly.reopen")} placement="right">
-              <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="reopen writable" onClick={() => props.onReopenWritable?.()}>
-                <EditNoteIcon className="leftIcon" />
-              </IconButton>
-            </Tooltip>
-            <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
-          </>
-        )}
-
         {/** BinderTree */}
         <Tooltip title={t("menu.binder")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}
@@ -259,6 +238,22 @@ function Menu(props) {
             <SettingsApplications fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
+
+        {/** 読み取り専用（_docs/readonly-open.md）。バインダー設定の下に少し空けて黄色で出す。
+             押すと「読み直す」「編集できるように開き直す」を選ぶ */}
+        {readOnly && (
+          <Tooltip title={t("readOnly.label")} placement="right">
+            <IconButton className="leftButton" size="small" edge="start" aria-label="read only"
+              onClick={(e) => {
+                // OpenBinderComponent は Menu の描き直しで作り直されるので、要素ではなく位置で開く
+                const r = e.currentTarget.getBoundingClientRect();
+                setReadOnlyMenu({ top: r.top, left: r.right });
+              }}
+              sx={{ mt: '12px', color: 'var(--accent-yellow, #f2d024) !important' }}>
+              <LockIcon className="leftIcon" />
+            </IconButton>
+          </Tooltip>
+        )}
       </>);
   }
 
@@ -274,6 +269,21 @@ function Menu(props) {
           <Route path={"/file/*"} element={<></>} />
           <Route path="*" element={<OpenBinderComponent />} />
         </Routes>
+
+        {/** 読み取り専用のメニュー（上の鍵のボタンで開く） */}
+        <MuiMenu
+          open={readOnly && Boolean(readOnlyMenu)}
+          anchorReference="anchorPosition"
+          anchorPosition={readOnlyMenu ?? undefined}
+          onClose={() => setReadOnlyMenu(null)}
+        >
+          <MenuItem onClick={() => { setReadOnlyMenu(null); props.onReloadReadOnly?.(); }}>
+            <RefreshIcon sx={{ fontSize: '16px', mr: 1 }} />{t("readOnly.reload")}
+          </MenuItem>
+          <MenuItem onClick={() => { setReadOnlyMenu(null); props.onReopenWritable?.(); }}>
+            <EditNoteIcon sx={{ fontSize: '16px', mr: 1 }} />{t("readOnly.reopen")}
+          </MenuItem>
+        </MuiMenu>
 
         {/** Settingsのボタン */}
         <Tooltip title={t("menu.setting")} placement="right">

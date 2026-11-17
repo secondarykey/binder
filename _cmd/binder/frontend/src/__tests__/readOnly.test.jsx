@@ -112,18 +112,29 @@ describe('Menu', () => {
     );
   };
 
-  it('読み取り専用では書き込むための画面を出さず、読み直す・開き直すを出す', () => {
+  it('読み取り専用では書き込むための画面を出さず、鍵のボタンから読み直す・開き直すを選べる', async () => {
     const onReload = vi.fn();
     const onReopen = vi.fn();
     renderMenu(true, { onReloadReadOnly: onReload, onReopenWritable: onReopen });
 
     expect(screen.queryByLabelText('content')).toBeNull(); // テンプレート設定
-    expect(screen.getByLabelText('read only')).toBeInTheDocument();
     expect(screen.getByLabelText('history')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('reload read only'));
-    fireEvent.click(screen.getByLabelText('reopen writable'));
+    // 鍵のボタンはバインダーのメニューの一番下（履歴 → バインダー設定 → 鍵 の順）
+    const lock = screen.getByLabelText('read only');
+    const history = screen.getByLabelText('history');
+    expect(history.compareDocumentPosition(lock) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // 押すとメニューが開く（押しても何も起きない、にしない）
+    fireEvent.click(lock);
+    let items = await screen.findAllByRole('menuitem');
+    expect(items).toHaveLength(2);
+    fireEvent.click(items[0]);
     expect(onReload).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByLabelText('read only'));
+    items = await screen.findAllByRole('menuitem');
+    fireEvent.click(items[1]);
     expect(onReopen).toHaveBeenCalledTimes(1);
   });
 
