@@ -4,6 +4,7 @@ import { Box, Tab, Tabs } from '@mui/material';
 import OverallHistoryDetail from './OverallHistoryDetail';
 import { BranchPanel } from '../dialogs/BranchModal';
 import ImportPanel from '../dialogs/ImportPanel';
+import { useBinderReadOnly } from '../readOnly';
 
 import '../language';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,8 @@ import { useTranslation } from 'react-i18next';
  */
 function OverallHistoryRight({ binderPath = '', hash = null, onBack, onClose = () => {} }) {
   const { t } = useTranslation();
+  // 読み取り専用ではブランチ操作・取り込みを出さない（記録の詳細だけ見られる）
+  const readOnly = useBinderReadOnly(binderPath);
 
   const [tab, setTab] = useState('branch');
 
@@ -35,6 +38,10 @@ function OverallHistoryRight({ binderPath = '', hash = null, onBack, onClose = (
         <OverallHistoryDetail binderPath={binderPath} hash={hash} onBack={onBack} />
       </Box>
     );
+  }
+
+  if (readOnly) {
+    return <Box sx={{ height: '100%' }} />;
   }
 
   // バインダー未オープン時はタブを出さずブランチ操作だけを見せる

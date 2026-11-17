@@ -19,7 +19,7 @@ import i18n from 'i18next';
  * ユーザ向けメッセージに差し替える。
  *
  * @param {Error|string|object} err
- * @returns {{ body: string, detail: string, debug: string, kind: string|undefined }}
+ * @returns {{ body: string, detail: string, debug: string, kind: string|undefined, code: string|undefined }}
  */
 export function parseError(err) {
   const isObj = err && typeof err === 'object';
@@ -30,6 +30,8 @@ export function parseError(err) {
   let detail = '';
   let debug = stack || '';
   let kind;
+  // code: 原因を見分ける符号（MessageError.Code）。本文は言語で変わるので、画面の動きを変えるときはこれを見る
+  let code;
 
   if (typeof raw === 'string') {
     let env = null;
@@ -42,6 +44,7 @@ export function parseError(err) {
         body = cause.body;
         detail = cause.detail || '';
         kind = cause.kind || undefined;
+        code = cause.code || undefined;
         debug = [cause.cause, stack].filter(Boolean).join('\n') || raw;
       } else if (typeof env.message === 'string') {
         // 未変換の Go エラー: 先頭行を body、残り（スタック等）は detail/debug へ
@@ -74,7 +77,7 @@ export function parseError(err) {
     detail = '';
   }
 
-  return { body, detail, debug, kind };
+  return { body, detail, debug, kind, code };
 }
 
 export default parseError;

@@ -719,6 +719,12 @@
         "row" : "Its information was missing, so it was filled in",
         "reparented" : "Its parent was not found, so it was moved under index"
     },
+    "readOnly" : {
+        "open" : "Open read-only",
+        "label" : "Read-only",
+        "reload" : "Reload",
+        "reopen" : "Reopen for editing"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",

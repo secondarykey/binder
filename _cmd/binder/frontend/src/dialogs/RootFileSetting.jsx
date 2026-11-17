@@ -17,6 +17,7 @@ import { ListRootFiles, ReadRootFile, SaveRootFile, RemoveRootFile, RenameRootFi
 import Marked from "../components/editor/engines/Marked";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
+import { useReadOnly } from '../readOnly';
 import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -37,6 +38,8 @@ function RootFileSetting() {
   const evt = useContext(EventContext);
   const { showError } = useDialogMessage();
   const { t } = useTranslation();
+  // 読み取り専用では中身を見るだけ（追加・保存・名前の変更・削除をしない）
+  const readOnly = useReadOnly();
 
   const [files, setFiles] = useState([]);
 
@@ -193,10 +196,10 @@ function RootFileSetting() {
           <Typography variant="caption" sx={{ flex: 1, color: 'var(--text-muted)', textAlign: 'left' }}>
             {t("rootFile.hint")}
           </Typography>
-          {templates.length > 0 && (
+          {!readOnly && templates.length > 0 && (
             <ActionButton variant="confirm" icon={<PostAddIcon />} label={t("rootFile.addFromTemplate")} onClick={(e) => setTemplateAnchor(e.currentTarget)} size="small" />
           )}
-          <ActionButton variant="save" icon={<AddIcon />} label={t("common.add")} onClick={handleOpenAddDialog} size="small" />
+          {!readOnly && <ActionButton variant="save" icon={<AddIcon />} label={t("common.add")} onClick={handleOpenAddDialog} size="small" />}
         </Box>
 
         {/** ファイル一覧 */}
@@ -221,7 +224,7 @@ function RootFileSetting() {
                     primary={f.name}
                     primaryTypographyProps={{ fontSize: '13px', textAlign: 'left' }}
                   />
-                  <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
+                  {!readOnly && <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
                     <IconButton
                       size="small"
                       title={t("common.edit")}
@@ -246,7 +249,7 @@ function RootFileSetting() {
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
-                  </ListItemIcon>
+                  </ListItemIcon>}
                 </ListItemButton>
               ))}
             </List>
@@ -332,6 +335,7 @@ function RootFileSetting() {
           {editMode === "edit" ? (
             <textarea
               value={editContent}
+              readOnly={readOnly}
               onChange={(e) => setEditContent(e.target.value)}
               spellCheck={false}
               style={{
@@ -371,7 +375,7 @@ function RootFileSetting() {
         </DialogContent>
         <DialogActions>
           <ActionButton variant="cancel" label={t("common.cancel")} icon={<CloseIcon />} onClick={() => setEditDialog(false)} />
-          <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleEditSave} />
+          {!readOnly && <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleEditSave} />}
         </DialogActions>
       </Dialog>
 

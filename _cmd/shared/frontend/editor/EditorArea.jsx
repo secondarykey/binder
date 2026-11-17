@@ -42,8 +42,10 @@ const LineNumbers = memo(function LineNumbers({ wrapsKey, style, activeLine, err
  *   onSelect        - 選択範囲の変更ハンドラ（textarea の外でドラッグを離したときも呼ばれる）
  *   dropTarget      - textarea に付与する Wails ファイルドロップ用の data 属性
  *                     （data-file-drop-target 等。未指定ならドロップ先にしない）
+ *   readOnly        - 読めるが書けない textarea にする（Binder の読み取り専用で開いたとき）。
+ *                     カーソル移動・選択・コピーはできる。ドロップ先にもしない
  */
-function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onErrorLineDoubleClick, onKeyDown, onChange, onSelect, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, dropTarget }) {
+function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, activeLine, errorLine, onErrorLineDoubleClick, onKeyDown, onChange, onSelect, onPaste, onCursorMove, onCompositionStart, onCompositionEnd, dropTarget, readOnly = false }) {
   const lineNumbersRef = useRef(null);
   // 折り返し行数は下のキャッシュ（行テキスト → 行数）から描画のたびに引く。
   // 行の位置（何行目か）で持つと、開くものを切り替えた直後に前の本文の行数を当ててしまい、
@@ -258,16 +260,17 @@ function EditorArea({ text, style, showLineNumbers = true, wordWrap = true, acti
         style={textareaStyle}
         wrap={wordWrap ? 'soft' : 'off'}
         value={text}
+        readOnly={readOnly}
         onKeyDown={onKeyDown}
         onChange={onChange}
         onSelect={onSelect}
-        onPaste={onPaste}
+        onPaste={readOnly ? undefined : onPaste}
         onClick={onCursorMove}
         onKeyUp={onCursorMove}
         onCompositionStart={onCompositionStart}
         onCompositionEnd={onCompositionEnd}
         onScroll={handleEditorScroll}
-        {...dropTarget}
+        {...(readOnly ? {} : dropTarget)}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import Event, { EventContext } from '../Event';
 
 vi.mock('../../bindings/binder/api/app', () => ({
+  IsReadOnly: vi.fn(() => Promise.resolve(false)),
   GetFont: vi.fn(() => Promise.resolve({})),
   GetHistoryPatch: vi.fn(() => Promise.resolve('')),
   GetModifiedIds: vi.fn(() => Promise.resolve([])),

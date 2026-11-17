@@ -11,6 +11,10 @@ import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
 import { SettingsApplications, LibraryBooks as LibraryBooksIcon, Search as SearchIcon } from '@mui/icons-material';
+import LockIcon from '@mui/icons-material/Lock';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import { useReadOnly } from '../readOnly';
 import { OpenSearchWindow } from '../../bindings/main/window';
 import { Events } from '@wailsio/runtime';
 import TemplateTree from './TemplateTree';
@@ -61,6 +65,8 @@ function Menu(props) {
   const evt = useContext(EventContext)
   const nav = useNavigate();
   const location = useLocation();
+  // 読み取り専用では、書き込むための画面（テンプレート設定・未記録一覧・未公開一覧）を出さない
+  const readOnly = useReadOnly();
 
   // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
   const isEditorRoute = /^\/editor\//.test(location.pathname);
@@ -171,6 +177,29 @@ function Menu(props) {
   const OpenBinderComponent = () => {
     return (
       <>
+        {/** 読み取り専用の表示と、読み直す・編集できるように開き直す（_docs/readonly-open.md） */}
+        {readOnly && (
+          <>
+            <Tooltip title={t("readOnly.label")} placement="right">
+              <span className="leftButton readOnlyMark" aria-label="read only"
+                style={{ display: 'flex', justifyContent: 'center', color: 'var(--accent-orange)' }}>
+                <LockIcon className="leftIcon" />
+              </span>
+            </Tooltip>
+            <Tooltip title={t("readOnly.reload")} placement="right">
+              <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="reload read only" onClick={() => props.onReloadReadOnly?.()}>
+                <RefreshIcon className="leftIcon" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t("readOnly.reopen")} placement="right">
+              <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="reopen writable" onClick={() => props.onReopenWritable?.()}>
+                <EditNoteIcon className="leftIcon" />
+              </IconButton>
+            </Tooltip>
+            <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
+          </>
+        )}
+
         {/** BinderTree */}
         <Tooltip title={t("menu.binder")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="binder" onClick={handleClickTree}
@@ -187,6 +216,7 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
+        {!readOnly && (<>
         {/** Template */}
         <Tooltip title={t("menu.template")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}
@@ -211,6 +241,7 @@ function Menu(props) {
             <PublishIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
+        </>)}
 
         {/** Divider */}
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />

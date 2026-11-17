@@ -18,6 +18,7 @@ import Marked from "../components/editor/engines/Marked";
 import { parsePluginMeta, pluginCompatStatus } from "@shared/editor/pluginMeta";
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
+import { useReadOnly } from '../readOnly';
 import { ActionButton } from './components/ActionButton';
 import { PluginMetaLine, MarkedVersionLine, StatusDot, formatMarkedVersion } from './components/PluginMeta';
 import "../language";
@@ -34,6 +35,8 @@ function PluginSetting() {
   const evt = useContext(EventContext);
   const { showError } = useDialogMessage();
   const { t } = useTranslation();
+  // 読み取り専用では一覧を見るだけ（追加・更新・名前の変更・削除・インストールをしない）
+  const readOnly = useReadOnly();
 
   const [engine, setEngine] = useState("marked");
   const [plugins, setPlugins] = useState([]);
@@ -243,7 +246,7 @@ function PluginSetting() {
               ))}
             </Select>
           </FormControl>
-          <ActionButton variant="save" icon={<AddIcon />} label={t("common.add")} onClick={handleOpenAddDialog} size="small" />
+          {!readOnly && <ActionButton variant="save" icon={<AddIcon />} label={t("common.add")} onClick={handleOpenAddDialog} size="small" />}
         </Box>
 
         {/** プラグイン一覧 */}
@@ -287,7 +290,7 @@ function PluginSetting() {
                       secondaryTypographyProps={{ component: 'div', fontSize: '11px' }}
                     />
                   </Box>
-                  <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
+                  {!readOnly && <ListItemIcon sx={{ minWidth: 'auto', gap: 0.5 }}>
                     <IconButton
                       size="small"
                       title={t("plugin.update")}
@@ -312,7 +315,7 @@ function PluginSetting() {
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
-                  </ListItemIcon>
+                  </ListItemIcon>}
                 </ListItemButton>
                 );
               })}
@@ -320,8 +323,8 @@ function PluginSetting() {
           )}
         </FormControl>
 
-        {/** アプリプラグインからのインストール */}
-        {appPlugins.length > 0 && (
+        {/** アプリプラグインからのインストール（読み取り専用では出さない） */}
+        {!readOnly && appPlugins.length > 0 && (
           <FormControl>
             <FormLabel sx={{ mb: 1 }}>{t("plugin.appPlugins")}</FormLabel>
             <List dense disablePadding>

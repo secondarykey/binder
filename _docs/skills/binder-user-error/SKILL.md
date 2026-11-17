@@ -21,6 +21,8 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
 ## Go 側 (`api/message.go`)
 
 - **`MessageError{ Body, Detail, Kind, Cause }`** — ユーザ向け構造化エラー。`Error()` は人間可読1行（ログ用）、`Unwrap()` で `errors.Is/As` チェーン維持、`MarshalJSON()` は `{body, detail, kind, cause}` を返す（`cause` は `fmt.Sprintf("%+v", Cause)` で **xerrors のスタックトレース**＝関数名・file:line を含める）
+- **`Code`** — フロントが原因を見分けるための符号（任意。JSON は `code`、`parseError` が `code` で返す）。本文は言語で変わるので、原因ごとに画面の動きを変えるときはこれを見る。
+  今は `openedElsewhere`（`api.CodeOpenedElsewhere`。スナックバーに「読み取り専用で開く」を出す）だけ
 - **`Kind`** — メッセージ種別。`"error"`（既定・省略可）/ `"warning"` / `"info"`。フロントのスナックバー色・severity を制御する。`Wrap` 系は Kind 空（= error 扱い）、`Info()` / `Warning()` が専用コンストラクタ
 - コンストラクタ: `Wrap(cause, body)`, `Wrapf(...)`, `WithDetail(cause, body, detail)`, `Info(cause, body)`, `Warning(cause, body)`
 - **`MarshalError(err)`** — `_cmd/binder/main.go` の `application.Options.MarshalError` に登録。`errors.As` で `*MessageError` を探して JSON 化、無ければ nil
@@ -38,7 +40,7 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
    - `userError` の switch に `case errors.Is(err, ErrXxx): return Wrap(err, settings.T("go.error.xxx"))` を追加。エラーではなく情報通知（例: 変更なし）は `Info(err, ...)` を、警告は `Warning(err, ...)` を使う
    - `setup/defaults/_assets/languages/{en,ja}.json` の `go.error.*` にメッセージを追加
 3. 据え置いてよいもの: `fmt.Errorf("%s", settings.T("go.error.*"))`（既に翻訳済み）、panic 復帰、HTML生成の parse error 等の固有メッセージ。内部ヘルパーの `xerrors(%w)` は伝播用に維持（上位 API が `userError` で包む）
-   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.ErrInvalidNoteAlias` / `fs.ErrInvalidAlias` / `fs.ErrReservedAlias` / `fs.ErrOpenedElsewhere`（別の Binder が開いている。`fs/openmark.go`。中身は `*fs.OpenedElsewhereError` で、`userError` は `errors.As` でパスを取り出して本文に入れる） / `fs.UpdatedFilesError`（Info）。
+   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.ErrInvalidNoteAlias` / `fs.ErrInvalidAlias` / `fs.ErrReservedAlias` / `fs.ErrOpenedElsewhere`（別の Binder が開いている。`fs/openmark.go`。中身は `*fs.OpenedElsewhereError` で、`userError` は `errors.As` でパスを取り出して本文に入れる） / `fs.ErrReadOnly` / `db.ErrReadOnly`（読み取り専用で開いたバインダーへの書き込み。Warning） / `api.ErrReadOnlyIncompatible` / `fs.UpdatedFilesError`（Info）。
      `fs.ErrInvalidNoteAlias` は `fs.ErrInvalidAlias` を包んでいるので、`userError` では先に判定する
 
 ## フロント側

@@ -27,7 +27,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | プラグイン（marked拡張）・ルートファイル（README等） | `_docs/skills/binder-plugin-rootfile/SKILL.md` |
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
 | mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
-| 読み取り専用で開く設計（別の Binder が開いているバインダー。開くときに書いているもの・書き込みを止める 2 段・画面で出さないもの・決めたこと。未実装） | `_docs/readonly-open.md` |
+| 読み取り専用で開く（別の Binder が開いているバインダー。開くときに書いているもの・書き込みを止める 2 段・画面で出さないもの・決めたこと・実装で変えたこと） | `_docs/readonly-open.md` |
 | 構造の改善の残り（エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
 | フロントエンドの高速化（点滅対策・打鍵時の再描画で済んだもの・決めたこと・残りの候補・測り方） | `_docs/frontend-performance.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
@@ -138,7 +138,8 @@ entity/ — バインダーの中身を表す型と定数（Note・Diagram・Ass
 
 ### 主要な型
 
-- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）
+- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）。
+  別の Binder が開いているバインダーは `LoadReadOnly()` で読み取り専用で開ける（ロックを取らず、何も書かない。`_docs/readonly-open.md`）
 - **`Repository`** (repository.go) — バインダーを開かずに（DB を読まずに）リポジトリへ直接行う操作。取り込み（`Merge` / `ApplyMergeResolution`。取り込み元のバージョン確認とその場での移行を含む）・復元・ブランチ・履歴の整理。作業ツリーや pack を丸ごと入れ替える操作は DB を開いたままできないので、`api.App` がバインダーを閉じてからこれを使い、開き直す（`api/AGENTS.md` の `runClosed`）。移行に失敗して開けないバインダーの履歴・ブランチ操作（`*ByPath`）もここ
 - **`api.App`** (api/api.go) — Wails v3 の Service として登録される構造体。初期化（`Setup()`）は Wails の Service ライフサイクルとは独立しており、`main()` から直接呼び出される。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
 - **`Window`** (_cmd/binder/window.go) — Wails v3 の第2 Service。ウィンドウ操作（サイズ変更・移動・最小化・最大化）を担当

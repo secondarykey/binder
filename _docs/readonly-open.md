@@ -4,7 +4,8 @@
 今は `fs.ErrOpenedElsewhere` で開けず、メッセージ（`go.error.openedElsewhereAt`。バインダーのパスを入れる）を出すだけになっている。
 これを、**見るだけなら開ける**ようにする。
 
-この文書は設計で、実装はまだ。利用者と決めたことは最後の「決めたこと」にある。
+2026-11-18 に実装した。設計から変えたところは最後の「実装で変えたこと」にある。利用者と決めたことは「決めたこと」にある。
+実機（Binder を 2 つ起動する）での確認はまだ（「テスト」の実機の項）。
 
 ## 目的と範囲
 
@@ -181,3 +182,21 @@ Lite は使わないので既定は `false`。
 3. **バインダー設定** — 見るだけで開ける。左メニューに出し、各タブの値は見られるが、保存・追加・削除のボタンは出さない
    （個人情報設定・リモート・プラグイン・ルートファイルのタブも同じ。認証情報の中身は今までどおり出さない）
 4. **読み取り専用の表示の位置** — 左メニューの上。「読み取り専用」の表示と、読み直す・編集できるように開き直すのボタンをここに置く
+
+## 実装で変えたこと（2026-11-18）
+
+- **fs の止め方**: 書き込みの下回りを 1 つずつ洗い出す代わりに、`fs.LoadReadOnly` は書き込みを断る `billy.Filesystem`（`readOnlyFS`、`fs/readonly.go`）で開く。
+  `Create` / 書き込みの `OpenFile` / `Rename` / `Remove` / `MkdirAll` / `TempFile` / `Symlink` を `fs.ErrReadOnly` で断り、`Chroot` 先も同じにする。
+  ワークツリーも `.git`（go-git のストレージ）もここを通るので、記録・ブランチ・インデックスの書き込みまで一番下で止まる。
+  billy を通らずに `os` で直接書くのは取り込みの解決（`merge.go` の `ApplyResolutions` / `normalizeMergedTree`）だけで、ここは `checkWritable` で止める
+- **エラーの鎖**: fs の `fmt.Errorf("...\n%+v", err)` 12 か所を `xerrors.Errorf("...: %w", err)` にした。`%+v` で包むと `errors.Is` が `ErrReadOnly` まで届かず、「異常が発生しました」になっていた
+- **`Convert` も断る**: 読み取り専用の App は「開いている」印を持たないので、`Convert` の `AcquireOpen` が通ってしまうことがある。開いている読み取り専用のバインダーと同じ場所なら先に断る
+- **移行の要るバインダー**: `LoadBinderReadOnly` が `setup.CheckCompat` を見て、`CompatOK` / `CompatVersionOnly` 以外は `api.ErrReadOnlyIncompatible`（`go.error.readOnlyIncompatible`）で開かない
+- **表示**: 左メニュー（アイコンの列）の上に、鍵のアイコン（ツールチップ「読み取り専用」）と、読み直す・編集できるように開き直すのアイコンを並べた。説明の文は画面に書かない
+- **別ウィンドウ**: `useBinderReadOnly(binderPath)`（`src/readOnly.js`）。App の配下なら `ReadOnlyContext`、そうでなければ開いたときに `IsReadOnly()` を聞く。
+  全体履歴のモーダルは App が起動時から持っているので、開いたときに聞くと古い値になる。そのため `ReadOnlyContext` の既定値を `null`（App の配下ではない）にして見分ける
+- **テンプレート**: 左メニューのテンプレート設定を出さないので、テンプレートのツリー（`TemplateTree`）は読み取り専用では開けない前提にした。
+  検索ウィンドウからテンプレートを開いた場合は、エディタは読み取り専用になるが、エディタ横のテンプレートのツリーの操作（並べ替え・削除）は出たまま（押しても Go が断る）
+- **テスト**: `api/readonly_test.go`。App の公開メソッドを読む・書く・アプリの設定・開く閉じるのどれかに分類し（`TestReadOnlyMethodsClassified`）、
+  書くものを全部呼んでも `.git` を含むディレクトリのハッシュが変わらないことを確かめる（`TestReadOnlyWritesNothing`）。
+  `readOnlyFS` と `db.ReadOnly` を外すとこのテストが落ちることを確かめてある。フロントは `src/__tests__/readOnly.test.jsx`

@@ -20,11 +20,13 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { Events, Window } from '@wailsio/runtime';
-import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds, TakeDoctorReport } from '../../bindings/binder/api/app';
+import { GetPath, GetConfig, GetVersionInfo, CloseBinder, LoadBinder, LoadBinderReadOnly, CheckCompat, Convert, SaveLastData, GetAutoSave, AutoSave, GetModifiedIds, TakeDoctorReport } from '../../bindings/binder/api/app';
 import { SavePosition, Terminate, OpenSyslogWindow } from '../../bindings/main/window';
 
 import Event, { EventContext, useEventListener } from "../Event";
-import { SystemMessage } from '../Message';
+import Message, { SystemMessage } from '../Message';
+import { parseError } from '../error';
+import { ReadOnlyContext, CodeOpenedElsewhere } from '../readOnly';
 import { doctorReportMessage } from './doctorReport';
 import ConvertDialog, { NeedUpdateDialog, TooOldDialog, BinderTooOldDialog } from '../dialogs/components/ConvertDialog';
 import MarkedScript from '../components/editor/engines/Marked';
@@ -46,6 +48,9 @@ var autoSaveGen = 0;
  */
 const binderLastData = new Map();
 let currentBinderDir = null;
+// 開いているバインダーが読み取り専用か（_docs/readonly-open.md）。
+// タイマーや終了処理から見るため、state とは別に持つ
+let currentReadOnly = false;
 
 /**
  * アプリケーション全体
@@ -92,6 +97,8 @@ function App() {
   // 起動時の自動オープン判定が終わるまで true。履歴一覧の一瞬の表示（チラつき）を隠す
   const [booting, setBooting] = useState(true);
   const [devMode, setDevMode] = useState(false);
+  // 読み取り専用で開いているか。ReadOnlyContext で配下の部品へ配る
+  const [readOnly, setReadOnly] = useState(false);
 
   // CompatStatus 定数（Go 側の CompatStatus と一致）
   const CompatOK = 0;
@@ -127,8 +134,9 @@ function App() {
           Convert(dir).then(() => {
             loadBinder(dir, openLastData);
           }).catch((err) => {
+            // 別の Binder が開いていると Convert もロックに当たる。スキーマは同じなので読み取り専用なら開ける
             setBooting(false);
-            evt.showErrorMessage(err);
+            showOpenError(err, dir, openLastData);
           });
           break;
         case CompatTooOld:
@@ -172,7 +180,8 @@ function App() {
         clearInterval(autoSaveIntervalId);
       }
       autoSaveIntervalId = setInterval(function () {
-        if (!currentBinderDir) return;
+        // 読み取り専用では記録しない
+        if (!currentBinderDir || currentReadOnly) return;
         AutoSave().then((n) => {
           if (n > 0) {
             // ツリーの未記録強調・エディタのコミットボタンを更新
@@ -186,9 +195,19 @@ function App() {
     }).catch(() => {});
   };
 
+  // 開けなかったときのエラーを出す。別の Binder が開いているときは「読み取り専用で開く」ボタンを付ける
+  const showOpenError = (err, dir, openLastData = false) => {
+    const msg = Message.createMessage("error", err);
+    if (parseError(err).code === CodeOpenedElsewhere) {
+      msg.action = { label: t("readOnly.open"), onClick: () => loadBinder(dir, openLastData, true) };
+    }
+    evt.showMessage(msg);
+  };
+
   // LoadBinder を呼んでエディタに遷移する
   // openLastData=true の場合、前回開いたデータに遷移する
-  const loadBinder = (dir, openLastData = false) => {
+  // asReadOnly=true の場合、読み取り専用で開く（LoadBinderReadOnly）
+  const loadBinder = (dir, openLastData = false, asReadOnly = false) => {
     // 切り替え前のバインダーの現在ページをメモリに保存
     if (currentBinderDir) {
       const m = location.pathname.match(/^\/editor\/([^/]+)\/(.+)$/);
@@ -202,7 +221,8 @@ function App() {
     MarkedScript.reset();
     MermaidScript.reset();
     editorHistory.clear();
-    LoadBinder(dir).then((href) => {
+    const load = asReadOnly ? LoadBinderReadOnly : LoadBinder;
+    load(dir).then((href) => {
       // marked エンジンを起動直後にバックグラウンドで先読み（ウォームアップ）。
       // 初回ノート描画のクリティカルパス上で init()（CDN/vendor 読込 + プラグイン適用）を
       // 走らせると数百ms かかるため、エディタのマウントと並行して温めておく。
@@ -210,6 +230,8 @@ function App() {
       MarkedScript.ensureInit().catch(() => {});
       evt.changeAddress(href);
       currentBinderDir = dir;
+      currentReadOnly = asReadOnly;
+      setReadOnly(asReadOnly);
 
       // 開いたときに整合性を修復していたら知らせる（外部のツールで編集した後の書き損じ等）
       TakeDoctorReport().then((report) => {
@@ -257,8 +279,18 @@ function App() {
       }
     }).catch((err) => {
       setBooting(false);
-      evt.showErrorMessage(err);
+      showOpenError(err, dir, openLastData);
     });
+  };
+
+  // 読み取り専用で開いているバインダーを読み直す（相手の Binder の変更を見る）。今見ているページに戻る
+  const reloadReadOnly = () => {
+    if (currentBinderDir) loadBinder(currentBinderDir, false, true);
+  };
+
+  // 編集できるように開き直す。相手がまだ開いていれば「別の Binder で開かれています」になり、読み取り専用のまま残る
+  const reopenWritable = () => {
+    if (currentBinderDir) openBinder(currentBinderDir);
   };
 
   const handleConvertConfirm = () => {
@@ -466,6 +498,8 @@ function App() {
   // バインダーを閉じてトップへ移動する（保存・確認を伴わない実処理）
   const closeAndGoHome = () => {
     CloseBinder().then(() => {
+      currentReadOnly = false;
+      setReadOnly(false);
       setPageTitle("");
       setBinderName("");
       nav("/");
@@ -497,6 +531,11 @@ function App() {
         binderLastData.set(currentBinderDir, { mode, id: m[2] });
       }
       currentBinderDir = null;
+    }
+    // 読み取り専用では記録しないので、確認も自動保存もせずに閉じる
+    if (currentReadOnly) {
+      closeAndGoHome();
+      return;
     }
     GetAutoSave().then((a) => {
       if (a && a.onLeave && a.confirmOnClose) {
@@ -543,6 +582,10 @@ function App() {
 
   //終了処理
   const handleExit = () => {
+    if (currentReadOnly) {
+      doTerminate();
+      return;
+    }
     GetAutoSave().then((a) => {
       if (a && a.onClose && a.confirmOnClose && currentBinderDir) {
         // 「終了時に保存」が確認モード: 未記録があれば一覧を出してから終了、無ければそのまま終了
@@ -559,6 +602,7 @@ function App() {
   var sidebarClass = sidebarOpen ? "open" : "";
 
   return (
+    <ReadOnlyContext.Provider value={readOnly}>
     <div id="App">
 
       {/** 全幅タイトルバー */}
@@ -651,7 +695,7 @@ function App() {
       {/** タイトルバー下のメインエリア（左メニュー＋コンテンツ） */}
       <div id="mainArea">
         {/** 左メニュー部 */}
-        <Menu />
+        <Menu onReloadReadOnly={reloadReadOnly} onReopenWritable={reopenWritable} />
         {/** メイン表示。起動時の自動オープン判定中はスプラッシュで覆い、履歴一覧のチラつきを防ぐ */}
         {booting ? (
           <div style={{ flex: 1, minWidth: 0, backgroundColor: 'var(--bg-app)' }} />
@@ -730,6 +774,7 @@ function App() {
       {/** 別コンポーネントメッセージ */}
       <SystemMessage />
     </div>
+    </ReadOnlyContext.Provider>
   );
 }
 

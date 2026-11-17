@@ -24,6 +24,7 @@ import { publicPath } from "../public-url";
 import CommitBar from './CommitBar';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import { EventContext } from '../Event';
+import { useReadOnly } from '../readOnly';
 import "../language";
 import { useTranslation } from 'react-i18next';
 import '../assets/Editor.css';
@@ -313,6 +314,10 @@ const lineToolIcon = (type) => {
 function LayerEditor() {
   const { id } = useParams();
   const evt = useContext(EventContext);
+  // 読み取り専用では図形を描く・動かす・消す・保存する・記録する・公開することをしない（拡大・移動して見ることはできる）
+  const readOnly = useReadOnly();
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
   const { t } = useTranslation();
 
   const [layer, setLayer] = useState(null);
@@ -452,6 +457,8 @@ function LayerEditor() {
   useEffect(() => {
     if (!id) return;
     if (!loadedRef.current) return;
+    // 読み取り専用では保存しない
+    if (readOnlyRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       SaveLayerContent(id, JSON.stringify({ shapes }))
@@ -523,6 +530,7 @@ function LayerEditor() {
   };
 
   const handlePointerDown = (e) => {
+    if (readOnlyRef.current) return;
     if (e.button !== 0) return;
     if (tool === 'select') return;
     const { x, y } = toClientPos(e);
@@ -752,6 +760,7 @@ function LayerEditor() {
   };
 
   const handleShapePointerDown = (e, shapeId) => {
+    if (readOnlyRef.current) return;
     if (tool !== 'select') return;
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -766,6 +775,7 @@ function LayerEditor() {
   };
 
   const handleHandlePointerDown = (e, handle, shapeId) => {
+    if (readOnlyRef.current) return;
     if (e.button !== 0) return;
     e.stopPropagation();
     const orig = shapes.find((s) => s.id === shapeId);
@@ -780,6 +790,7 @@ function LayerEditor() {
   // 回転ハンドルをドラッグ開始。startAngle はポインタが図形中心から見た
   // viewBox 座標上の角度。以降 move で現在角度との差分を rotation に加算する。
   const handleRotateHandlePointerDown = (e, shapeId) => {
+    if (readOnlyRef.current) return;
     if (e.button !== 0) return;
     e.stopPropagation();
     const orig = shapes.find((s) => s.id === shapeId);
@@ -814,6 +825,7 @@ function LayerEditor() {
     } catch (_) { /* noop */ }
   };
   const handleTextShapeDoubleClick = (e, shapeId) => {
+    if (readOnlyRef.current) return;
     if (tool !== 'select') return;
     e.stopPropagation();
     e.preventDefault();
@@ -856,6 +868,7 @@ function LayerEditor() {
     if (tool === 'polyline' && polylinePoints.length > 0) return;
     const onKey = (e) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      if (readOnlyRef.current) return;
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       e.preventDefault();
@@ -868,6 +881,7 @@ function LayerEditor() {
   const handleShapeContextMenu = (e, shapeId) => {
     e.preventDefault();
     e.stopPropagation();
+    if (readOnlyRef.current) return;
     setSelectedId(shapeId);
     setCtxMenu({ mouseX: e.clientX, mouseY: e.clientY, shapeId });
   };
@@ -885,7 +899,7 @@ function LayerEditor() {
   };
 
   const updateSelected = (patch) => {
-    if (!selectedId) return;
+    if (!selectedId || readOnly) return;
     setShapes((prev) => prev.map((s) => (s.id === selectedId ? { ...s, ...patch } : s)));
   };
 
@@ -1223,16 +1237,20 @@ function LayerEditor() {
         onClose={closeMoreMenu}
         slotProps={{ paper: { sx: { minWidth: 160 } } }}
       >
-        <MenuItem onClick={() => { closeMoreMenu(); handlePublish(); }} disabled={generating || !id}>
-          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
-        </MenuItem>
+        {!readOnly && (
+          <MenuItem onClick={() => { closeMoreMenu(); handlePublish(); }} disabled={generating || !id}>
+            <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+          </MenuItem>
+        )}
         <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!layer?.alias}>
           <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
         </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
-          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-        </MenuItem>
+        {!readOnly && <Divider />}
+        {!readOnly && (
+          <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+            <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+          </MenuItem>
+        )}
       </Menu>
 
       {/* 線種サブメニュー */}
@@ -1583,13 +1601,15 @@ function LayerEditor() {
         </Paper>
       </div>
 
-      {/* ステータスバー */}
-      <CommitBar
-        comment={comment}
-        onCommentChange={setComment}
-        updated={updated}
-        onCommit={handleCommit}
-      />
+      {/* ステータスバー（読み取り専用では記録しないので出さない） */}
+      {!readOnly && (
+        <CommitBar
+          comment={comment}
+          onCommentChange={setComment}
+          updated={updated}
+          onCommit={handleCommit}
+        />
+      )}
 
       {/* 右クリックメニュー (BinderTree と同じスタイル) */}
       <Menu

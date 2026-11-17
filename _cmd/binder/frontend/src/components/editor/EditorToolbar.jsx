@@ -70,9 +70,11 @@ function FormatButton({ title, label, onClick, children }) {
  * @param {boolean} isNote ノートを編集しているか（書式・アウトラインはノートだけ）
  * @param {boolean} canDownload テキストをダウンロードできるか（ノート・ダイアグラム）
  * @param {(s: string, e?: string) => void} onInsert 選択を s と e で挟む（e が無ければ各行の頭に s）
+ * @param {boolean} readOnly 読み取り専用で開いているか。本文に入れるもの（スニペット・ID・書式・囲み・表）と
+ *   外部エディタは出さない（行番号・アウトライン・折り返し・プレビュー・フォント・ダウンロードは使える）
  */
 function EditorToolbar({
-  isNote, canDownload,
+  isNote, canDownload, readOnly = false,
   showLineNumbers, onToggleLineNumbers,
   wordWrap, onToggleWordWrap,
   viewer, onToggleViewer,
@@ -99,14 +101,16 @@ function EditorToolbar({
         {/** アウトライン（ノート編集時のみ表示） */}
         {isNote && <OutlineButton text={text} cursorLineRef={cursorLineRef} onJump={onJumpToLine} />}
 
+        {!readOnly && <>
         {/** スニペット挿入 */}
         <SnippetButton snippets={snippets} onInsert={onInsertSnippet} />
 
         {/** ID挿入 */}
         <IdInsertButton currentId={currentId} onInsert={onInsertId} onError={onError} />
+        </>}
 
         {/** マークダウン書式ボタン（ノート編集時のみ表示） */}
-        {isNote && <>
+        {isNote && !readOnly && <>
           <ToolbarDivider />
 
           <FormatButton title={`${t("editor.bold")} (Ctrl+B)`} label="bold" onClick={() => onInsert("**", "**")}>
@@ -160,7 +164,7 @@ function EditorToolbar({
 
         {/** その他メニュー */}
         <EditorMoreButton canDownload={canDownload}
-          onFontDialog={onFontDialog} onRunEditor={onRunEditor}
+          onFontDialog={onFontDialog} onRunEditor={readOnly ? undefined : onRunEditor}
           onDownloadRaw={onDownloadRaw} onDownloadExpanded={onDownloadExpanded} />
 
       </Container>

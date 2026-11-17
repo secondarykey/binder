@@ -719,6 +719,12 @@
         "row" : "情報が欠けていたため補いました",
         "reparented" : "親が見つからないため、index の下へ移しました"
     },
+    "readOnly" : {
+        "open" : "読み取り専用で開く",
+        "label" : "読み取り専用",
+        "reload" : "読み直す",
+        "reopen" : "編集できるように開き直す"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",

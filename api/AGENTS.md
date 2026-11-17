@@ -29,12 +29,16 @@ func (a *App) DoSomething(id string) (*json.Xxx, error) {
 
 - 入出力のモデル型は `api/json/` を使う（`db/model` を直接公開しない）。ノートなどバインダーの中身の型は実体が `binder/entity` にあり、`api/json` がエイリアスで見せている（`json.Note`）。画面との受け渡しだけの型を足すときは `api/json` に、下の層（`db`・`fs`・`setup`）でも使う型を足すときは `entity` に置いてエイリアスを足す
 - **メソッドを追加・変更したらフロントエンドバインディングを再生成する**（`cd _cmd/binder && wails3 task common:generate:bindings`）
+- **公開メソッドを足したら `readonly_test.go` の分類に入れる**（読む / 書く / アプリの設定 / 開く閉じる）。入れないと `TestReadOnlyMethodsClassified` が落ちる。
+  書くものは `readOnlyWriteMethods` に入れると、読み取り専用で開いたバインダーで呼んでも何も書かないことを `TestReadOnlyWritesNothing` が確かめる。
+  バインダーを閉じて開き直す操作は `runClosed` を通す（読み取り専用なら閉じる前に断る）
 - バインダー未オープンで呼ばれ得るメソッドは `a.current == nil` を確認する（例: `SearchBinder`）
 
 ## ファイル別の責務
 
 - **api.go** — `App` 本体、`GetVersionInfo`、非同期検索（`SearchBinder`）、`Address` / `EnsureAddress`（HTTPサーバ遅延起動）
 - **binder.go** — バインダーの Load/Create/Close/CreateRemote、公開（`Generate` / `GenerateAll` / `Unpublish*`）。`LoadBinder` はクラッシュ検出フラグ `StartupOk` の管理も行う。
+  `LoadBinderReadOnly` / `IsReadOnly` は読み取り専用で開く（`_docs/readonly-open.md`）。移行が要るバインダーは `ErrReadOnlyIncompatible` で開かない。
   `LoadBinder` は切り替え前のバインダーを閉じる（フロントは切り替えで `CloseBinder` を呼ばない）。`holdOpen` は閉じて開き直す操作の間も「開いている」印を持ち続ける（`fs/AGENTS.md`）。
   `TakeDoctorReport` は開いたときの整合性修復の内容を一度だけ返す（`json.DoctorReport`。フロントは `app/doctorReport.js` でスナックバーに出す）
 - **git.go** — 記録（`Commit` / `CommitFiles` / `AutoSave`）、リモートCRUD・Push・PushDocs、マージ（`MergeFromRemote` / `MergeFromLocal` / `ApplyMergeResolution`）、履歴・復元、ブランチ操作、`*ByPath` 系（バインダーを開かずにディレクトリ指定で履歴操作）、クリーンアップ（`SquashHistory` / `RunGC`）。

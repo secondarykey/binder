@@ -87,6 +87,9 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 - **search.go** — 未実装スタブ
 - **index_recovery.go** — `Load()` 時の gitインデックス破損検出・自動復旧（詳細下記トラブルシュート節）
 - **openmark.go**（+ `openmark_windows.go` / `openmark_unix.go`）— 「開いている」印（下記）
+- **readonly.go** — 読み取り専用で開く（`LoadReadOnly`）。書き込みを `ErrReadOnly` で断る `billy.Filesystem`（`readOnlyFS`）で開くので、
+  ワークツリーも `.git` も一番下で止まる。billy を通らずに `os` で書く処理を足すときは、先頭で `checkWritable()` を呼ぶ（今は `merge.go` の取り込みの解決だけ）。
+  エラーは `%w` で包む（`fmt.Errorf("...%+v")` で包むと `errors.Is(err, ErrReadOnly)` が届かず、画面に「異常が発生しました」が出る）
 
 ## 「開いている」印（openmark.go）
 

@@ -19,6 +19,7 @@ import { Events, Window } from '@wailsio/runtime';
 import { GetHistory, GetModifiedIds, RestoreHistory } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useBinderReadOnly } from '../readOnly';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +32,8 @@ const PAGE_SIZE = 10;
 function HistoryMenu({ typ, id }) {
 
   const evt = useContext(EventContext);
+  // 読み取り専用では記録に戻さない
+  const readOnly = useBinderReadOnly();
   const { hash } = useParams();
   const nav = useNavigate();
   const { t } = useTranslation();
@@ -82,6 +85,8 @@ function HistoryMenu({ typ, id }) {
 
   const handleContextMenu = (e, entry) => {
     e.preventDefault();
+    // 右クリックのメニューは「この記録に戻す」だけなので、読み取り専用では出さない
+    if (readOnly) return;
     setCtxMenu({ mouseX: e.clientX, mouseY: e.clientY, entry });
   };
 
