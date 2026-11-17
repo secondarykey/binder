@@ -192,7 +192,9 @@ Lite は使わないので既定は `false`。
 - **エラーの鎖**: fs の `fmt.Errorf("...\n%+v", err)` 12 か所を `xerrors.Errorf("...: %w", err)` にした。`%+v` で包むと `errors.Is` が `ErrReadOnly` まで届かず、「異常が発生しました」になっていた
 - **`Convert` も断る**: 読み取り専用の App は「開いている」印を持たないので、`Convert` の `AcquireOpen` が通ってしまうことがある。開いている読み取り専用のバインダーと同じ場所なら先に断る
 - **移行の要るバインダー**: `LoadBinderReadOnly` が `setup.CheckCompat` を見て、`CompatOK` / `CompatVersionOnly` 以外は `api.ErrReadOnlyIncompatible`（`go.error.readOnlyIncompatible`）で開かない
-- **表示**: 左メニュー（アイコンの列）の上に、鍵のアイコン（ツールチップ「読み取り専用」）と、読み直す・編集できるように開き直すのアイコンを並べた。説明の文は画面に書かない
+- **表示**: 左メニュー（アイコンの列）の一番下、バインダー設定の下に少し空けて、黄色の鍵のボタン（ツールチップ「読み取り専用」）を出す。
+  押すと「読み直す」「編集できるように開き直す」のメニューが開く。色はテーマの `--accent-yellow`（無いテーマでは `#f2d024`）。説明の文は画面に書かない。
+  最初は左メニューの上に鍵（押せない印）と 2 つのアイコンを並べたが、分かりにくく、印の方を押して何も起きないことがあったので変えた
 - **別ウィンドウ**: `useBinderReadOnly(binderPath)`（`src/readOnly.js`）。App の配下なら `ReadOnlyContext`、そうでなければ開いたときに `IsReadOnly()` を聞く。
   全体履歴のモーダルは App が起動時から持っているので、開いたときに聞くと古い値になる。そのため `ReadOnlyContext` の既定値を `null`（App の配下ではない）にして見分ける
 - **テンプレート**: 左メニューのテンプレート設定を出さないので、テンプレートのツリー（`TemplateTree`）は読み取り専用では開けない前提にした。
