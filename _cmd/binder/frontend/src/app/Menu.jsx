@@ -249,8 +249,9 @@ function Menu(props) {
                 const r = e.currentTarget.getBoundingClientRect();
                 setReadOnlyMenu({ top: r.top, left: r.right });
               }}
-              sx={{ mt: '12px', color: 'var(--accent-yellow, #f2d024) !important' }}>
-              <LockIcon className="leftIcon" />
+              sx={{ mt: '12px' }}>
+              {/** 色は svg に付ける（style.css の .MuiSvgIcon-root が svg に --icon-color を付けるので、ボタンの色は届かない） */}
+              <LockIcon className="leftIcon" sx={{ color: 'var(--accent-yellow, #f2d024) !important' }} />
             </IconButton>
           </Tooltip>
         )}
