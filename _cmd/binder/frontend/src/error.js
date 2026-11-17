@@ -6,8 +6,12 @@ import i18n from 'i18next';
  *
  * Wails v3 はバインドメソッドの error を
  *   {"message": err.Error(), "cause": MarshalError(err), "kind": "RuntimeError"}
- * という envelope JSON にして返し、フロントは `throw new Error(<envelope>)` する。
- * そのため Error.message が envelope JSON 文字列になる。
+ * という envelope JSON にして返す。フロントが受け取る形は @wailsio/runtime の版で 2 通りある:
+ *   - 今の runtime（3.0.0-alpha2.x）: 応答が application/json なら
+ *     `new RuntimeError(envelope.message)` に `err.cause = envelope.cause` を付けて投げる。
+ *     Error.message は本文（err.Error()）だけで、構造は err.cause（オブジェクト）にある
+ *   - それ以外: `throw new Error(<envelope>)`。Error.message が envelope JSON 文字列になる
+ * 両方を読む（err.cause を先に見る）。前者を読み落とすと、本文は出るが kind / detail / code が取れない。
  *
  * MessageError を返した場合、envelope.cause に {body, detail, kind, cause} が入る。
  * kind はメッセージ種別（"error" / "warning" / "info"）。省略時は呼び出し元の指定に従う。
@@ -33,7 +37,16 @@ export function parseError(err) {
   // code: 原因を見分ける符号（MessageError.Code）。本文は言語で変わるので、画面の動きを変えるときはこれを見る
   let code;
 
-  if (typeof raw === 'string') {
+  // 今の runtime: 構造化エラー（MessageError）は err.cause に入っている
+  const direct = isObj ? structuredCause(err.cause) : null;
+
+  if (direct) {
+    body = direct.body;
+    detail = direct.detail || '';
+    kind = direct.kind || undefined;
+    code = direct.code || undefined;
+    debug = [direct.cause, stack].filter(Boolean).join('\n') || (typeof raw === 'string' ? raw : '');
+  } else if (typeof raw === 'string') {
     let env = null;
     try { env = JSON.parse(raw); } catch (_) { env = null; }
 
@@ -78,6 +91,21 @@ export function parseError(err) {
   }
 
   return { body, detail, debug, kind, code };
+}
+
+/**
+ * err.cause が MessageError の中身（{body, detail, kind, code, cause}）ならそれを返す。
+ * 文字列の JSON で来ても読む。それ以外（未変換のエラー・JS の Error の cause など）は null。
+ */
+function structuredCause(cause) {
+  let c = cause;
+  if (typeof c === 'string') {
+    try { c = JSON.parse(c); } catch (_) { return null; }
+  }
+  if (c && typeof c === 'object' && !Array.isArray(c) && typeof c.body === 'string' && c.body) {
+    return c;
+  }
+  return null;
 }
 
 export default parseError;
