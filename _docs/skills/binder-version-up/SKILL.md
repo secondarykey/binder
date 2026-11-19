@@ -38,6 +38,18 @@ go run ./_cmd/version.go 0.0.0
 
 ローカルで `go run _cmd/version.go` だけを実行した場合は info 系が取り残されるため、
 ローカルでプラットフォームバージョンまで揃えたいときは `wails3 update build-assets` を併せて実行すること。
+`Taskfile.local.yml` を置いていれば（AGENTS.md「ローカルデプロイ」）、`wails3 task local:build-info` が
+`version.go` → 両アプリの `update build-assets` → homepage の後処理までを CI と同じフラグで行う。
+
+## 自動の patch 上げ（`-auto`）
+
+```bash
+go run ./_cmd/version.go -auto
+```
+
+`v` + 今のバージョンのタグがあれば patch を 1 つ上げて 6 ファイルを書き換え、無ければ何もしない。
+判定は versionup.yml と同じで、`local:deploy` の最初に呼ばれる。上げた先のタグもすでにあるとき
+（`version` が古いタグに追いついていない）は止まるので、`version` を手で直す。
 
 ## `wails3 update build-assets` の必須フラグと落とし穴
 

@@ -90,6 +90,33 @@ go run ./_cmd/version.go 0.0.0
 それぞれ別モジュール（`module main` + `replace binder`）で、ルートの `go test ./...` の対象には入らない。
 ルートの go.mod で依存を上げたら、`_cmd` と `_cmd/gen` でも `go mod tidy` を掛けて揃える。
 
+### ローカルデプロイ（個人用・任意）
+
+手元でビルドしたものを普段使う場所へ入れるタスク。`_cmd/binder/Taskfile.yml` と `_cmd/lite/Taskfile.yml` は
+`Taskfile.local.yml` を `optional: true` で読み込むので、置いた人にだけ `local:` のタスクが増える（無くても他のタスクは動く）。
+`Taskfile.local.yml` は git 管理外で、使う人が `_cmd/binder/` と `_cmd/lite/` に置く（中身は同じでよい）。
+ひな形はリポジトリに置いていない。wails3 の local-deploy の標準テンプレートを元に、このリポジトリでは次のように変えている:
+
+- `build-info` は版が共通なので両アプリの `update build-assets` を CI（versionup.yml）と同じフラグで行い、nfpm.yaml の homepage を直す（Windows に sed は無いので PowerShell）
+- `version.go` と同じくリポジトリルートで動かし（`dir: ../..`）、コミットの対象は両アプリのビルド情報のファイル。アイコン（`icons.icns` / `icon.ico`）は入れない
+- `TAG_VERSION` の既定は `"false"`（タグは CI が打つ）
+
+```bash
+cd _cmd/binder   # Lite は _cmd/lite
+wails3 task local:install                       # ビルドしてコピーするだけ（版上げ・コミットはしない）
+wails3 task local:deploy                        # patch の自動 bump → ビルド情報の反映 → ビルド → ビルド情報のコミット → コピー
+wails3 task local:build-info                    # ビルド情報の反映だけ（version.go と両アプリの update build-assets。CI と同じフラグ）
+wails3 task local:install DEPLOY_DEST="D:/tmp"  # コピー先を変える（既定は %LOCALAPPDATA%/Programs/<APP_NAME>）
+```
+
+- 普段は `local:install` を使う。起動中のアプリは止めてから上書きする
+- `local:deploy` は、`v` + 今の版のタグ（= CI がリリース済み）があれば patch を上げる（`go run _cmd/version.go -auto`）。
+  版は Binder と Lite で共通なので、どちらで deploy しても両アプリのビルド情報を反映し、そのファイルだけをコミットする
+  （作業中の他の変更は巻き込まない）。タグは versionup.yml が打つので手元では打たない（`TAG_VERSION` の既定は `false`）。
+  上げた版は、`main` へマージしたときに CI がそのままの番号でリリースする。リリース後は `git fetch --tags` しておくと次の deploy で上がる
+- どちらも `wails3 build` を通すので `npm install` が走ることがある（package.json が変わったとき・初回）。**ワークツリーでは実行しない**（Junction を壊す。下の「ワークツリー開発の必須手順」）
+- 共有の Taskfile.yml から `local:` のタスクを呼ばない（置いていない環境で落ちる）
+
 ### テスト
 ```bash
 # 全Goテスト実行
