@@ -71,6 +71,17 @@
 
 **bindings/** — Wails v3が自動生成するJSバインディング（手動編集不可・コミット禁止）
 
+## 読み取り専用で開いているとき
+
+別の Binder が開いているバインダーは読み取り専用で開ける（`_docs/readonly-open.md`）。状態は `src/readOnly.js`:
+
+- メインウィンドウの部品は `useReadOnly()`（`App.jsx` が `ReadOnlyContext` で配る）。別ウィンドウでも使う部品は `useBinderReadOnly(binderPath)`
+  （App の配下でなければ `IsReadOnly()` を聞く）
+- **バインダーに書くボタン・メニュー・キー操作を足したら、読み取り専用では出さない**（保存・作成・名前の変更・削除・移動・記録・公開・取り込み・復元・設定の保存）。
+  出し忘れても Go が断る（「読み取り専用で開いています」）ので壊れはしないが、押せるのに失敗するボタンになる
+- 見る・コピー・ダウンロード・ブラウザで開く・アプリの設定（`setting.json`）は読み取り専用でも使える
+- エディタの本文は共有の `EditorArea` に `readOnly` を渡す。キーで本文を書き換える処理（`handleMarkdownKeyDown` など）は `textarea.value` を直接書くので、`readOnly` 属性だけでは止まらない。呼ぶ側で止める
+
 ## テーマ・言語の利用
 
 - テーマ: `var(--変数名)` をsx prop / inline style / CSS いずれでも使用可能。切り替えは `applyTheme(themeId)`（`src/theme.js`）。CSS変数の追加は `_docs/skills/binder-i18n-theme/SKILL.md` を参照

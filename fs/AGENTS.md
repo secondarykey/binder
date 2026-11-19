@@ -87,6 +87,9 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 - **search.go** — 未実装スタブ
 - **index_recovery.go** — `Load()` 時の gitインデックス破損検出・自動復旧（詳細下記トラブルシュート節）
 - **openmark.go**（+ `openmark_windows.go` / `openmark_unix.go`）— 「開いている」印（下記）
+- **readonly.go** — 読み取り専用で開く（`LoadReadOnly`）。書き込みを `ErrReadOnly` で断る `billy.Filesystem`（`readOnlyFS`）で開くので、
+  ワークツリーも `.git` も一番下で止まる。billy を通らずに `os` で書く処理を足すときは、先頭で `checkWritable()` を呼ぶ（今は `merge.go` の取り込みの解決だけ）。
+  エラーは `%w` で包む（`fmt.Errorf("...%+v")` で包むと `errors.Is(err, ErrReadOnly)` が届かず、画面に「異常が発生しました」が出る）
 
 ## 「開いている」印（openmark.go）
 
@@ -95,8 +98,11 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
 （`_docs/skills/binder-organize` の Preflight / Validate）が、ロックファイルを排他で開けるかどうかで
 アプリが開いているかを判定する。go-git は `.git/index` を lock ファイル無しで書くため、`index.lock` では判定できない。
 
+- `IsOpenedElsewhere(dir)` — 別のプロセスがロックを持っているか。印を立てずにロックを試してすぐ外す（ロックファイルが無ければ作らない）。読み取り専用で開いているときに、相手が閉じたかを確かめるのに使う
 - `AcquireOpen(dir)` / `ReleaseOpen(dir)` — 対で呼ぶ。同じプロセスの中では参照カウント（ByPath 系 API が開いているバインダーを再度 `binder.Load()` するため）。
-  別のプロセスがロックを持っていれば `ErrOpenedElsewhere`（API 層で `go.error.openedElsewhere`）。`.git` が無ければ何もしない
+  別のプロセスがロックを持っていれば `*OpenedElsewhereError`（`Dir` と `Info` を持ち、`errors.Is(err, ErrOpenedElsewhere)` に当たる）。
+  API 層はバインダーのパスを本文に入れる（`go.error.openedElsewhereAt`。バインダー一覧もパスで並んでいるため、名前ではなくパス）。
+  起動時に前回のバインダーを自動で開いたときは、画面にどのバインダーかが出ていないため。`.git` が無ければ何もしない
 - 立てる場所: `binder.Load()` の先頭（インデックス復旧・スキーマ修復・doctor より前）と `Binder.Close()`。
   `Load()` を通らずに書き込む API（`Convert`、`RestoreToCommitByPath` / `SwitchBranchByPath`）は自分で立てる。
   閉じて `fs.Load()` で書いてから開き直す API（復元・ブランチ切替・取り込み・履歴の整理）は `api.App.holdOpen` で間も持ち続ける
@@ -113,7 +119,10 @@ alias は公開先のパスを兼ねるため、保存時に `alias.go` で検�
   リネームを使わず truncate + 直接書き込みで更新するため、書き込みの交錯・中断で壊れる。
   アプリ内の並行書き込みは `lockedStorage`（storage.go）と `gitMu`（fs.go）で防いでいるが、
   **書き込み中の電源断・プロセス強制終了・外部ツールの干渉では今後も起こりうる**
-- **自動復旧（index_recovery.go）**: `Load()` 直後に一度だけ `repo.Storer.Index()` を読み、
+- **自動復旧（index_recovery.go）**: このプロセスが「開いている」印（`AcquireOpen`）を持っているときだけ行う。
+  印を持たない `Load()`（バインダーを開かずに履歴を見る `*ByPath` の読み取り）では、別の Binder が書き直している最中の
+  インデックスを読み、古い前半と新しい後半が混ざって `ErrInvalidChecksum` になることがある。それを直すと相手のインデックスを本当に壊すため。
+  `Load()` 直後に一度だけ `repo.Storer.Index()` を読み、
   エラーが `plumbing/format/index` の sentinel（`ErrMalformedSignature` / `ErrInvalidChecksum` /
   `ErrUnknownExtension` / `ErrMalformedIndexFile`）に該当する場合のみ復旧する（それ以外の
   エラーでは何もしない）。壊れた `.git/index` は `.git/index.broken` に退避したうえで、

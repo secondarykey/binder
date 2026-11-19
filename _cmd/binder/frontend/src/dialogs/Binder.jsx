@@ -16,6 +16,7 @@ import Scripter from "../components/editor/engines/Scripter";
 
 import { EventContext } from "../Event";
 import { useDialogMessage } from './components/DialogError';
+import { useReadOnly } from '../readOnly';
 import { ActionButton } from './components/ActionButton';
 import "../language";
 import { useTranslation } from 'react-i18next';
@@ -37,6 +38,8 @@ function Binder({ isModal, ...props }) {
   const evt = useContext(EventContext);
   const { showError } = useDialogMessage();
   const {t} = useTranslation();
+  // 読み取り専用では値を見るだけ（保存ボタンを出さない）
+  const readOnly = useReadOnly();
 
   // CDN URL から "pkg@x.y.z" のバージョンを読み取る（読み取れなければ null）
   const cdnVersion = (url, pkg) => {
@@ -358,7 +361,7 @@ function Binder({ isModal, ...props }) {
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />
+              {!readOnly && <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSave} />}
             </Box>
 
           </div>
@@ -415,7 +418,7 @@ function Binder({ isModal, ...props }) {
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
               {scriptSaving && <CircularProgress size={24} />}
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveScript} disabled={scriptSaving} />
+              {!readOnly && <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveScript} disabled={scriptSaving} />}
             </Box>
 
           </div>
@@ -459,7 +462,7 @@ function Binder({ isModal, ...props }) {
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />
+              {!readOnly && <ActionButton variant="save" label={t("common.save")} icon={<CheckIcon style={{ filter: 'drop-shadow(2px 2px 2px currentColor)' }} />} onClick={handleSaveUserInfo} />}
             </Box>
 
           </div>

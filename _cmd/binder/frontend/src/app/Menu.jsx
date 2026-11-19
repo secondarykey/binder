@@ -11,6 +11,8 @@ import FileMenu from './FileMenu';
 import BinderTree from '../components/BinderTree';
 
 import { SettingsApplications, LibraryBooks as LibraryBooksIcon, Search as SearchIcon } from '@mui/icons-material';
+import LockIcon from '@mui/icons-material/Lock';
+import { useReadOnly } from '../readOnly';
 import { OpenSearchWindow } from '../../bindings/main/window';
 import { Events } from '@wailsio/runtime';
 import TemplateTree from './TemplateTree';
@@ -61,6 +63,8 @@ function Menu(props) {
   const evt = useContext(EventContext)
   const nav = useNavigate();
   const location = useLocation();
+  // 読み取り専用では、書き込むための画面（テンプレート設定・未記録一覧・未公開一覧）を出さない
+  const readOnly = useReadOnly();
 
   // エディタルートでは Editor 内部でツリーを管理するため #menu を非表示にする
   const isEditorRoute = /^\/editor\//.test(location.pathname);
@@ -187,6 +191,7 @@ function Menu(props) {
           </IconButton>
         </Tooltip>
 
+        {!readOnly && (<>
         {/** Template */}
         <Tooltip title={t("menu.template")} placement="right">
           <IconButton className="leftButton" size="small" edge="start" color="inherit" aria-label="content" onClick={handleClickTemplate}
@@ -211,6 +216,7 @@ function Menu(props) {
             <PublishIcon fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
+        </>)}
 
         {/** Divider */}
         <Divider flexItem sx={{ borderColor: 'var(--border-primary)', mx: '6px' }} />
@@ -228,6 +234,19 @@ function Menu(props) {
             <SettingsApplications fill="white" className="leftIcon" />
           </IconButton>
         </Tooltip>
+
+        {/** 読み取り専用（_docs/readonly-open.md）。バインダー設定の下に少し空けて黄色で出す。
+             押すと読み直す。相手が閉じていれば、編集できるように開き直すかを聞く（App.jsx の handleReadOnlyClick） */}
+        {readOnly && (
+          <Tooltip title={t("readOnly.tooltip")} placement="right">
+            <IconButton className="leftButton" size="small" edge="start" aria-label="read only"
+              onClick={() => props.onReadOnlyClick?.()}
+              sx={{ mt: '12px' }}>
+              {/** 色は svg に付ける（style.css の .MuiSvgIcon-root が svg に --icon-color を付けるので、ボタンの色は届かない） */}
+              <LockIcon className="leftIcon" sx={{ color: 'var(--accent-yellow, #f2d024) !important' }} />
+            </IconButton>
+          </Tooltip>
+        )}
       </>);
   }
 

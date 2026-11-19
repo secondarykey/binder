@@ -233,12 +233,25 @@ func createSystemOperation() Op {
 }
 
 type Instance struct {
-	db   *sql.DB
-	ctx  context.Context
-	path string
+	db       *sql.DB
+	ctx      context.Context
+	path     string
+	readOnly bool
 }
 
+// ErrReadOnly は読み取り専用で開いた DB に書こうとしたときのエラー（_docs/readonly-open.md）。
+var ErrReadOnly = errors.New("database is opened read-only")
+
 type DBOptions func(*Instance) error
+
+// ReadOnly は書き込み（INSERT / UPDATE / DELETE）を断る DB にする。
+// 書き込みはすべて run を通るので、そこで止める。
+func ReadOnly() DBOptions {
+	return func(inst *Instance) error {
+		inst.readOnly = true
+		return nil
+	}
+}
 
 func WithContext(ctx context.Context) DBOptions {
 	return func(inst *Instance) error {
@@ -295,6 +308,10 @@ func (inst *Instance) getRows(ctx context.Context, sql string, args ...interface
 }
 
 func (inst *Instance) run(sql string, args ...interface{}) (int64, error) {
+
+	if inst.readOnly {
+		return -1, xerrors.Errorf("run() error: %w", ErrReadOnly)
+	}
 
 	stmt, err := inst.db.Prepare(sql)
 	if err != nil {

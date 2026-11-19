@@ -46,9 +46,10 @@ function PreviewSelect({ value, items, onChange, sx }) {
  * @param {boolean} isTemplate テンプレートを編集しているか
  * @param {string} templateType テンプレートの種類（layout / content / diagram）
  * @param {Array} previewOtherTemplates 相手側のテンプレート（layout を編集中なら content の一覧）
+ * @param {boolean} readOnly 読み取り専用で開いているか。公開・非公開を出さない
  */
 function PreviewToolbar({
-  isNote, isTemplate, templateType,
+  isNote, isTemplate, templateType, readOnly = false,
   previewDiagrams, previewDiagramId, onPreviewDiagramChange,
   previewOtherTemplates, previewOtherTemplateId, onPreviewOtherTemplateChange,
   previewNotes, previewNoteId, onPreviewNoteChange,
@@ -135,16 +136,20 @@ function PreviewToolbar({
         <PreviewIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.openPreviewWindow")}
       </MenuItem>
       <Divider />
-      <MenuItem onClick={() => { closeMore(); onPublish(); }} disabled={publishDisabled}>
-        <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
-      </MenuItem>
+      {!readOnly && (
+        <MenuItem onClick={() => { closeMore(); onPublish(); }} disabled={publishDisabled}>
+          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+        </MenuItem>
+      )}
       <MenuItem onClick={() => { closeMore(); onOpenInBrowser(); }} disabled={openInBrowserDisabled}>
         <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
       </MenuItem>
-      <Divider />
-      <MenuItem onClick={() => { closeMore(); onUnpublish(); }}>
-        <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-      </MenuItem>
+      {!readOnly && <Divider />}
+      {!readOnly && (
+        <MenuItem onClick={() => { closeMore(); onUnpublish(); }}>
+          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+        </MenuItem>
+      )}
     </Menu>
   </>);
 }

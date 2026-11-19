@@ -133,7 +133,8 @@ const hasExternalFiles = (dataTransfer) => {
 };
 
 
-const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu, renaming, renamingValue, onRenameChange, onRenameCommit, onRenameCancel }) => {
+// readOnly: ドラッグで並べ替えない（読み取り専用で開いているとき。_docs/readonly-open.md）
+const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], onChange, selected, onSelect, icons = {}, onNodeContextMenu, renaming, renamingValue, onRenameChange, onRenameCommit, onRenameCancel, readOnly = false }) => {
   const [data, setData] = useState(initialData);
   const [selectedId, setSelectedId] = useState(selected);
   const [dropTargetInfo, setDropTargetInfo] = useState(null);
@@ -321,8 +322,8 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
     return (
       <NodeWrapper key={node.id} $isRoot={isRoot} $isBefore={isBefore} $isAfter={isAfter}>
         <NodeContentContainer
-          draggable={!isRoot && !isRenaming}
-          onDragStart={(e) => !isRoot && !isRenaming && handleDragStart(e, node.id)}
+          draggable={!readOnly && !isRoot && !isRenaming}
+          onDragStart={(e) => !readOnly && !isRoot && !isRenaming && handleDragStart(e, node.id)}
           onDragOver={(e) => handleDragOver(e, node.id, isRoot, node.nodeType || node.type)}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -340,7 +341,7 @@ const Tree = ({ data: initialData, onClick, onExpand, expand: expandedIds = [], 
           }}
           $isInside={isInside}
           $isDragging={draggingId === node.id}
-          data-file-drop-target=""
+          {...(readOnly ? {} : { 'data-file-drop-target': '' })}
           data-wails-node-id={node.id}
           data-wails-node-type={node.nodeType || ''}
         >
@@ -429,6 +430,7 @@ Tree.propTypes = {
   onRenameChange: PropTypes.func,
   onRenameCommit: PropTypes.func,
   onRenameCancel: PropTypes.func,
+  readOnly: PropTypes.bool,
 };
 
 // EmptySpacer は廃止（NodeContent の padding-left でアイコン位置を統一）

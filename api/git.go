@@ -6,6 +6,7 @@ import (
 	"binder/fs"
 	"binder/log"
 
+	"fmt"
 	"time"
 )
 
@@ -210,6 +211,13 @@ type closedResult struct {
 func (a *App) runClosed(op func(repo *binder.Repository) error) (closedResult, error) {
 
 	var res closedResult
+
+	// 読み取り専用では閉じる前に断る。この先の OpenRepository は普通の fs.Load で書き込み、
+	// holdOpen は相手のロックに当たっても先へ進むため、通すと相手の Binder が開いているバインダーに書いてしまう。
+	// 開き直し（LoadBinder）もロックに当たって失敗し、バインダーが開いていない状態になる
+	if a.current.ReadOnly() {
+		return res, fmt.Errorf("runClosed() error: %w", fs.ErrReadOnly)
+	}
 
 	dir := a.current.Dir()
 	defer a.holdOpen(dir)()
@@ -546,7 +554,7 @@ func (a *App) ListBranchesByPath(dir string) ([]string, error) {
 		return a.ListBranches()
 	}
 
-	repo, err := binder.OpenRepository(dir)
+	repo, err := binder.OpenRepositoryReadOnly(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return nil, userError(err)
@@ -569,7 +577,7 @@ func (a *App) CurrentBranchByPath(dir string) (string, error) {
 		return a.CurrentBranch()
 	}
 
-	repo, err := binder.OpenRepository(dir)
+	repo, err := binder.OpenRepositoryReadOnly(dir)
 	if err != nil {
 		log.PrintStackTrace(err)
 		return "", userError(err)

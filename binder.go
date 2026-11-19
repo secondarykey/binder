@@ -35,6 +35,9 @@ type Binder struct {
 	// doctorReport は Load() 時の RunDoctor で修復した内容。修復が無ければ nil。
 	// 画面で知らせるため TakeDoctorReport() で一度だけ取り出す
 	doctorReport *DoctorReport
+
+	// readOnly は LoadReadOnly で開いたとき true。「開いている」印を持たない
+	readOnly bool
 }
 
 type userOp struct {
@@ -215,6 +218,59 @@ func Load(dir string) (rtn *Binder, rtnErr error) {
 	}
 
 	return &b, nil
+}
+
+// LoadReadOnly はバインダーを読み取り専用で開く（_docs/readonly-open.md）。
+// 別の Binder が開いている（「開いている」印をほかのプロセスが持っている）バインダーを見るためのもの。
+//
+// Load が開くときに行う書き込みはすべてしない: 「開いている」印、インデックスの自動復旧、
+// docs/ の作成、スキーマの修復、user_data.enc の作成、整合性の修復（doctor）。
+// 書き込みは fs（readOnlyFS）と db（db.ReadOnly）が断る。
+// スキーマの移行が要るかどうかはアプリのバージョンが要るので、呼び出し側（api）が先に確かめる。
+func LoadReadOnly(dir string) (*Binder, error) {
+
+	log.Noticef("Load Binder (read-only):%s", dir)
+
+	bfs, err := fs.LoadReadOnly(dir)
+	if err != nil {
+		return nil, xerrors.Errorf("fs.LoadReadOnly() error: %w", err)
+	}
+
+	if err := setup.CheckDirectory(dir, false); err != nil {
+		return nil, xerrors.Errorf("setup.CheckDirectory() error: %w", err)
+	}
+
+	inst, err := db.New(bfs.DatabaseDir(), db.ReadOnly())
+	if err != nil {
+		return nil, xerrors.Errorf("db.New() error: %w", err)
+	}
+	if err := inst.Open(); err != nil {
+		return nil, xerrors.Errorf("db.Open() error: %w", err)
+	}
+
+	var b Binder
+	b.dir = dir
+	b.fileSystem = bfs
+	b.db = inst
+	b.readOnly = true
+
+	// 署名は記録しないので要らないが、操作者の名前（op）に使うので読めれば読む。無くても作らない
+	if key, err := setup.GetUserKey(); err == nil {
+		if info, err := bfs.LoadUserData(key); err == nil && info != nil {
+			bfs.SetUserSig(info)
+		}
+	}
+	b.op = createUserOp(bfs.UserName())
+
+	return &b, nil
+}
+
+// ReadOnly は読み取り専用で開いているかを返す。
+func (b *Binder) ReadOnly() bool {
+	if b == nil {
+		return false
+	}
+	return b.readOnly
 }
 
 func (b *Binder) GetPlugins(engine string) ([]fs.PluginInfo, error) {
@@ -411,8 +467,8 @@ func (b *Binder) Close() error {
 	}
 
 	// Load() で立てた「開いている」印を下ろす。二重に Close されても下ろすのは 1 回だけにする
-	// （fileSystem は 1 回目の Close で nil になる）
-	if fp != nil {
+	// （fileSystem は 1 回目の Close で nil になる）。読み取り専用では印を立てていない
+	if fp != nil && !b.readOnly {
 		fs.ReleaseOpen(b.dir)
 	}
 

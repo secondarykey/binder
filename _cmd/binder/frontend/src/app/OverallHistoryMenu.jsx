@@ -21,6 +21,7 @@ import { Events, Window } from '@wailsio/runtime';
 import { GetOverallHistory, GetOverallHistoryByPath, GetModifiedIds, RestoreToCommit, RestoreToCommitByPath, GetCleanupInfo, SquashHistory, RunGC } from '../../bindings/binder/api/app';
 
 import { EventContext } from '../Event';
+import { useBinderReadOnly } from '../readOnly';
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +36,8 @@ const PAGE_SIZE = 10;
 function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSelect, onClose }) {
 
   const evt = useContext(EventContext);
+  // 読み取り専用では、記録に戻す・履歴の整理・不要データの削除をしない
+  const readOnly = useBinderReadOnly(binderPath);
   const { hash: routerHash } = useParams();
   const nav = useNavigate();
   const { t } = useTranslation();
@@ -109,6 +112,8 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
 
   const handleContextMenu = (e, entry) => {
     e.preventDefault();
+    // 右クリックのメニューは「この記録に戻す」だけなので、読み取り専用では出さない
+    if (readOnly) return;
     setCtxMenu({ mouseX: e.clientX, mouseY: e.clientY, entry });
   };
 
@@ -343,8 +348,8 @@ function OverallHistoryMenu({ binderPath, selectedHash: selectedHashProp, onSele
 
     </List>
 
-    {/* リポジトリメンテナンス（ByPath モードでは非表示・下部固定） */}
-    {!binderPath && !loading && entries.length > 0 && (
+    {/* リポジトリメンテナンス（ByPath モード・読み取り専用では非表示・下部固定） */}
+    {!binderPath && !readOnly && !loading && entries.length > 0 && (
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, py: 1, borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
         <Button
           startIcon={<CleaningServicesIcon fontSize="small" />}

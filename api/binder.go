@@ -7,14 +7,62 @@ import (
 	"binder/log"
 	"binder/settings"
 	"binder/setup"
+	"binder/setup/convert"
 	"fmt"
 
 	"golang.org/x/xerrors"
 )
 
-func (a *App) LoadBinder(dir string) (result string, err error) {
-
+func (a *App) LoadBinder(dir string) (string, error) {
 	defer log.PrintTrace(log.Func("LoadBinder()"))
+	return a.loadBinder(dir, false)
+}
+
+// LoadBinderReadOnly はバインダーを読み取り専用で開く（_docs/readonly-open.md）。
+// 別の Binder が開いているバインダーを見るためのもの。書き込み系の API は fs.ErrReadOnly / db.ErrReadOnly で失敗する。
+// スキーマの移行が要るバインダーは、この版のクエリで読めないので開かない。
+func (a *App) LoadBinderReadOnly(dir string) (string, error) {
+	defer log.PrintTrace(log.Func("LoadBinderReadOnly()"))
+	return a.loadBinder(dir, true)
+}
+
+// IsReadOnly は開いているバインダーが読み取り専用かを返す。開いていなければ false。
+func (a *App) IsReadOnly() bool {
+	return a.current.ReadOnly()
+}
+
+// IsOpenedElsewhere は、別の Binder が dir を開いている（ロックを持っている）かを返す。
+// 読み取り専用で開いているときに、相手が閉じたか（編集できるように開き直せるか）を確かめる。
+// 何も書かない（ロックファイルも作らない）。
+func (a *App) IsOpenedElsewhere(dir string) (bool, error) {
+	defer log.PrintTrace(log.Func("IsOpenedElsewhere()", dir))
+
+	opened, err := fs.IsOpenedElsewhere(dir)
+	if err != nil {
+		log.PrintStackTrace(err)
+		return false, userError(err)
+	}
+	return opened, nil
+}
+
+// checkReadOnlyCompat は、読み取り専用でそのまま読めるバージョンかを確かめる。
+// スキーマが同じ（CompatOK / CompatVersionOnly）なら読める。移行が要るものは ErrReadOnlyIncompatible。
+func (a *App) checkReadOnlyCompat(dir string) error {
+	res, err := setup.CheckCompat(dir, a.version)
+	if err != nil {
+		return xerrors.Errorf("setup.CheckCompat() error: %w", err)
+	}
+	switch res.Status {
+	case setup.CompatOK, setup.CompatVersionOnly:
+		return nil
+	case setup.CompatNotBinder:
+		return xerrors.Errorf("%s: %w", dir, convert.ErrNotBinder)
+	default:
+		return xerrors.Errorf("compat status %d: %w", res.Status, ErrReadOnlyIncompatible)
+	}
+}
+
+func (a *App) loadBinder(dir string, readOnly bool) (result string, err error) {
 
 	// ロードは同時に1本だけにする（loadMu のコメント参照）
 	a.loadMu.Lock()
@@ -32,7 +80,15 @@ func (a *App) LoadBinder(dir string) (result string, err error) {
 		return "", xerrors.Errorf("%s", settings.T("go.error.emptyDirectory"))
 	}
 
-	b, err := binder.Load(dir)
+	var b *binder.Binder
+	if readOnly {
+		if err := a.checkReadOnlyCompat(dir); err != nil {
+			return "", userError(err)
+		}
+		b, err = binder.LoadReadOnly(dir)
+	} else {
+		b, err = binder.Load(dir)
+	}
 	if err != nil {
 		return "", userError(err)
 	}

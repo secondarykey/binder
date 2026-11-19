@@ -318,9 +318,12 @@ export function EditorMoreButton({ canDownload, onFontDialog, onRunEditor, onDow
       <MenuItem onClick={() => { close(); onFontDialog(); }}>
         <FontDownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.fontSetting")}
       </MenuItem>
-      <MenuItem onClick={() => { close(); onRunEditor(); }}>
-        <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
-      </MenuItem>
+      {/** 外部エディタ（読み取り専用では onRunEditor を渡さないので出さない。外部エディタはファイルを直接書き換える） */}
+      {onRunEditor && (
+        <MenuItem onClick={() => { close(); onRunEditor(); }}>
+          <LaunchIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("editor.openExternalEditor")}
+        </MenuItem>
+      )}
       {canDownload && <Divider />}
       {canDownload && (
         <MenuItem onClick={(e) => { e.stopPropagation(); setDownloadAnchor(e.currentTarget); }} sx={{ display: 'flex', justifyContent: 'space-between' }}>

@@ -16,11 +16,16 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
 ## 伝達メカニズム（Wails v3）
 
 バインドメソッドが error を返すと Wails は
-`CallError{ Message: err.Error(), Cause: MarshalError(err), Kind: "RuntimeError" }` を JSON 化して HTTP エラーボディで返す。フロントの `@wailsio/runtime` は `throw new Error(<その JSON>)` するため、**JS の `Error.message` がこの envelope JSON 文字列**になる。`application.Options.MarshalError func(error) []byte` フックで envelope の `cause` に任意の構造化 JSON を載せられる（非nil を返すとそれが `cause` に入り、nil ならデフォルトの `json.Marshal(&err)`≒`{}` にフォールバック）。
+`CallError{ Message: err.Error(), Cause: MarshalError(err), Kind: "RuntimeError" }` を JSON 化して HTTP エラーボディで返す。フロントが受け取る形は `@wailsio/runtime` の版で 2 通りある:
+今の runtime（3.0.0-alpha2.x）は応答が `application/json` なら **`new RuntimeError(envelope.message)` に `err.cause = envelope.cause` を付けて投げる**（`Error.message` は本文だけで、構造は `err.cause` のオブジェクト）。
+それ以外は `throw new Error(<その JSON>)` で、`Error.message` が envelope JSON 文字列になる。`parseError` は両方を読む（`err.cause` を先に見る）。
+前者を読み落とすと本文は出るが `kind`・`detail`・`code` が取れない（2026-11-18 まで実際に取れていなかった）。`application.Options.MarshalError func(error) []byte` フックで envelope の `cause` に任意の構造化 JSON を載せられる（非nil を返すとそれが `cause` に入り、nil ならデフォルトの `json.Marshal(&err)`≒`{}` にフォールバック）。
 
 ## Go 側 (`api/message.go`)
 
 - **`MessageError{ Body, Detail, Kind, Cause }`** — ユーザ向け構造化エラー。`Error()` は人間可読1行（ログ用）、`Unwrap()` で `errors.Is/As` チェーン維持、`MarshalJSON()` は `{body, detail, kind, cause}` を返す（`cause` は `fmt.Sprintf("%+v", Cause)` で **xerrors のスタックトレース**＝関数名・file:line を含める）
+- **`Code`** — フロントが原因を見分けるための符号（任意。JSON は `code`、`parseError` が `code` で返す）。本文は言語で変わるので、原因ごとに画面の動きを変えるときはこれを見る。
+  今は `openedElsewhere`（`api.CodeOpenedElsewhere`。スナックバーに「読み取り専用で開く」を出す）だけ
 - **`Kind`** — メッセージ種別。`"error"`（既定・省略可）/ `"warning"` / `"info"`。フロントのスナックバー色・severity を制御する。`Wrap` 系は Kind 空（= error 扱い）、`Info()` / `Warning()` が専用コンストラクタ
 - コンストラクタ: `Wrap(cause, body)`, `Wrapf(...)`, `WithDetail(cause, body, detail)`, `Info(cause, body)`, `Warning(cause, body)`
 - **`MarshalError(err)`** — `_cmd/binder/main.go` の `application.Options.MarshalError` に登録。`errors.As` で `*MessageError` を探して JSON 化、無ければ nil
@@ -38,12 +43,12 @@ API メソッドが返すエラーを、フロントで「1行メッセージ＋
    - `userError` の switch に `case errors.Is(err, ErrXxx): return Wrap(err, settings.T("go.error.xxx"))` を追加。エラーではなく情報通知（例: 変更なし）は `Info(err, ...)` を、警告は `Warning(err, ...)` を使う
    - `setup/defaults/_assets/languages/{en,ja}.json` の `go.error.*` にメッセージを追加
 3. 据え置いてよいもの: `fmt.Errorf("%s", settings.T("go.error.*"))`（既に翻訳済み）、panic 復帰、HTML生成の parse error 等の固有メッセージ。内部ヘルパーの `xerrors(%w)` は伝播用に維持（上位 API が `userError` で包む）
-   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.ErrInvalidNoteAlias` / `fs.ErrInvalidAlias` / `fs.ErrReservedAlias` / `fs.ErrOpenedElsewhere`（別の Binder が開いている。`fs/openmark.go`） / `fs.UpdatedFilesError`（Info）。
+   - 既存 sentinel 例: `binder.ErrNoteHasChildren` / `binder.ErrAssetHasLayers` / `db.DuplicateAlias` / `db.DuplicateKey` / `convert.ErrNotBinder` / `api.ErrUncommittedChanges` / `fs.ErrInvalidNoteAlias` / `fs.ErrInvalidAlias` / `fs.ErrReservedAlias` / `fs.ErrOpenedElsewhere`（別の Binder が開いている。`fs/openmark.go`。中身は `*fs.OpenedElsewhereError` で、`userError` は `errors.As` でパスを取り出して本文に入れる） / `fs.ErrReadOnly` / `db.ErrReadOnly`（読み取り専用で開いたバインダーへの書き込み。Warning） / `api.ErrReadOnlyIncompatible` / `fs.UpdatedFilesError`（Info）。
      `fs.ErrInvalidNoteAlias` は `fs.ErrInvalidAlias` を包んでいるので、`userError` では先に判定する
 
 ## フロント側
 
-- **`src/error.js` の `parseError(err)`** — `err.message` を `JSON.parse` して envelope を取り出し、`cause` に `body` があれば `{ body, detail, debug, kind }` に正規化（`cause.cause`＝Goスタックは `debug` へ）。`cause` が無い未変換エラーは `message` の先頭行を `body`、残りを `debug` にフォールバック。JSON でない文字列（フロント由来・`t()`）はそのまま `body`。`": panic:"` を含むメッセージは Wails v3 の panic recovery として検出し、body を `go.error.unexpected` に差し替える
+- **`src/error.js` の `parseError(err)`** — `err.cause` が MessageError の中身（`body` を持つオブジェクト）ならそれを使う。無ければ `err.message` を `JSON.parse` して envelope を取り出し、`cause` に `body` があれば `{ body, detail, debug, kind }` に正規化（`cause.cause`＝Goスタックは `debug` へ）。`cause` が無い未変換エラーは `message` の先頭行を `body`、残りを `debug` にフォールバック。JSON でない文字列（フロント由来・`t()`）はそのまま `body`。`": panic:"` を含むメッセージは Wails v3 の panic recovery として検出し、body を `go.error.unexpected` に差し替える
 - `src/Message.jsx`（スナックバー）/ `src/dialogs/components/DialogError.jsx` が `parseError` を使い、**body をスナックバー**、ダブルクリックで **detail**、折りたたみ「デバッグ情報」で **debug**（Goスタック＋JSスタック）を表示。Go 側が `kind` を指定していればスナックバーの severity（色）に反映する（info=青、warning=橙、error=赤）
 - i18n: ユーザ向けメッセージは `go.error.*`（Go側）、折りたたみ見出し等は `common.*`
 

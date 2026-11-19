@@ -14,6 +14,7 @@ import { GetFont,GetHistoryPatch, GetModifiedIds, RestoreHistory } from "../../b
 import MermaidScript from "../components/editor/engines/Mermaid";
 
 import { EventContext } from "../Event";
+import { useBinderReadOnly } from "../readOnly";
 import "../language";
 import { useTranslation } from 'react-i18next';
 
@@ -238,6 +239,8 @@ function HistoryPatch({ typ, id }) {
     const evt = useContext(EventContext);
     const { hash } = useParams();
     const {t} = useTranslation();
+    // 読み取り専用では記録に戻さない（戻すボタンを出さない）
+    const readOnly = useBinderReadOnly();
 
     const [source,     setSource]     = useState("");
     const [historical, setHistorical] = useState("");
@@ -370,7 +373,7 @@ function HistoryPatch({ typ, id }) {
                     {/* 左: Historical ラベル + Restore ボタン */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>Historical</span>
-                        <Tooltip title="Restore">
+                        {!readOnly && <Tooltip title="Restore">
                             <span>
                                 <IconButton
                                     size="small"
@@ -388,7 +391,7 @@ function HistoryPatch({ typ, id }) {
                                     <RestoreIcon fontSize="small" />
                                 </IconButton>
                             </span>
-                        </Tooltip>
+                        </Tooltip>}
                     </div>
                     {/* 右: Diff トグルボタン（ダイアグラム以外） */}
                     {!isDiagram && (

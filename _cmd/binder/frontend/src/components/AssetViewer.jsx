@@ -20,6 +20,7 @@ import EditorArea from './editor/EditorArea';
 import { Events, Browser } from '@wailsio/runtime';
 import { SelectFile } from '../../bindings/main/window';
 import { EventContext } from '../Event';
+import { useReadOnly } from '../readOnly';
 import { ActionButton } from '../dialogs/components/ActionButton';
 import { publicPath } from "../public-url";
 import "../language";
@@ -238,6 +239,8 @@ function ImageViewer({ src, alt }) {
  */
 function AssetViewer() {
   const evt = useContext(EventContext);
+  // 読み取り専用では、ファイルの差し替え・本文の編集・記録・公開などをしない（見る・ダウンロードはできる）
+  const readOnly = useReadOnly();
   const { id } = useParams();
   const nav = useNavigate();
   const {t} = useTranslation();
@@ -635,7 +638,9 @@ function AssetViewer() {
         <EditorArea
           text={editText}
           style={editorStyle}
+          readOnly={readOnly}
           onChange={(e) => {
+            if (readOnly) return;
             setEditText(e.target.value);
             setUpdated(true);
             saveAssetText(id, e.target.value).then(() => {
@@ -655,10 +660,12 @@ function AssetViewer() {
           <Typography variant="caption" sx={{ color: 'var(--text-tertiary)', display: 'block', mb: 2 }}>
             {t("assetViewer.currentMime", { mime: mime || 'unknown' })}
           </Typography>
-          <Button size="small" variant="outlined" onClick={handleOpenMimeFixDlg}
-            sx={{ fontSize: '12px', textTransform: 'none', borderColor: 'var(--border-strong)', color: 'var(--text-secondary)' }}>
-            {t("assetViewer.fixMimeType")}
-          </Button>
+          {!readOnly && (
+            <Button size="small" variant="outlined" onClick={handleOpenMimeFixDlg}
+              sx={{ fontSize: '12px', textTransform: 'none', borderColor: 'var(--border-strong)', color: 'var(--text-secondary)' }}>
+              {t("assetViewer.fixMimeType")}
+            </Button>
+          )}
         </div>
       );
     }
@@ -669,13 +676,15 @@ function AssetViewer() {
       {/* メニューバー */}
       <div id="previewMenu">
         <div className="previewMenuLeft">
-          <Tooltip title={t("assetViewer.updateFile")} placement="bottom">
-            <span>
-              <IconButton size="small" aria-label="update file" onClick={handleUpdateFile} disabled={updating || !id} className="editorBtn">
-                <AttachFileIcon sx={{ fontSize: '16px' }} />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {!readOnly && (
+            <Tooltip title={t("assetViewer.updateFile")} placement="bottom">
+              <span>
+                <IconButton size="small" aria-label="update file" onClick={handleUpdateFile} disabled={updating || !id} className="editorBtn">
+                  <AttachFileIcon sx={{ fontSize: '16px' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
           {assetContent && (isSvgMime(assetContent.mime) || isHtmlMime(assetContent.mime)) && (
             <Tooltip title={showPreview ? t("assetViewer.editSource") : t("assetViewer.showPreview")} placement="bottom">
               <span>
@@ -714,12 +723,12 @@ function AssetViewer() {
         onClose={closeMoreMenu}
         slotProps={{ paper: { sx: { minWidth: 160 } } }}
       >
-        {assetContent && isImageMime(assetContent.mime) && (
+        {!readOnly && assetContent && isImageMime(assetContent.mime) && (
           <MenuItem onClick={() => { closeMoreMenu(); handleSetMetaImage(); }} disabled={!id}>
             <ImageIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.setMetaImage")}
           </MenuItem>
         )}
-        {assetContent && isTextMime(assetContent.mime) && (
+        {!readOnly && assetContent && isTextMime(assetContent.mime) && (
           <MenuItem onClick={() => { closeMoreMenu(); handleMigrate(); }} disabled={migrating || !id}>
             <NoteAddIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("assetViewer.migrate")}
           </MenuItem>
@@ -729,17 +738,21 @@ function AssetViewer() {
             <span><DownloadIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.download")}</span><span>▶</span>
           </MenuItem>
         )}
-        {assetContent && (isImageMime(assetContent.mime) || isTextMime(assetContent.mime)) && <Divider />}
-        <MenuItem onClick={() => { closeMoreMenu(); handleGenerate(); }} disabled={generating || !id}>
-          <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
-        </MenuItem>
+        {assetContent && isTextMime(assetContent.mime) && <Divider />}
+        {!readOnly && (
+          <MenuItem onClick={() => { closeMoreMenu(); handleGenerate(); }} disabled={generating || !id}>
+            <PublishIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.publish")}
+          </MenuItem>
+        )}
         <MenuItem onClick={() => { closeMoreMenu(); handleOpenInBrowser(); }} disabled={!assetMeta?.alias}>
           <OpenInBrowserIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("tree.openBrowser")}
         </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
-          <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
-        </MenuItem>
+        {!readOnly && <Divider />}
+        {!readOnly && (
+          <MenuItem onClick={() => { closeMoreMenu(); handleUnpublish(); }} disabled={!id}>
+            <UnpublishedIcon sx={{ fontSize: '14px', mr: 1, verticalAlign: 'middle' }} />{t("preview.unpublish")}
+          </MenuItem>
+        )}
       </Menu>
       {/* テキストダウンロードサブメニュー */}
       <Menu
@@ -759,13 +772,15 @@ function AssetViewer() {
         {content}
       </div>
 
-      {/* ステータスバー */}
-      <CommitBar
-        comment={comment}
-        onCommentChange={setComment}
-        updated={updated}
-        onCommit={handleCommit}
-      />
+      {/* ステータスバー（読み取り専用では記録しないので出さない） */}
+      {!readOnly && (
+        <CommitBar
+          comment={comment}
+          onCommentChange={setComment}
+          updated={updated}
+          onCommit={handleCommit}
+        />
+      )}
 
       {/* ノート移行確認ダイアログ */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>

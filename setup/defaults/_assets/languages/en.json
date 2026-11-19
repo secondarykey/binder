@@ -719,6 +719,13 @@
         "row" : "Its information was missing, so it was filled in",
         "reparented" : "Its parent was not found, so it was moved under index"
     },
+    "readOnly" : {
+        "open" : "Open read-only",
+        "tooltip" : "Read-only (click to reload)",
+        "reloaded" : "Reloaded",
+        "unlocked" : "The lock has been released. Reopen for editing?",
+        "reopen" : "Reopen"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",
@@ -765,6 +772,9 @@
             "duplicateName" : "That name is already in use",
             "notBinder" : "This folder is not a binder",
             "openedElsewhere" : "This binder is open in another Binder. Close it there first",
+            "openedElsewhereAt" : "The binder \"{{path}}\" is open in another Binder. Close it there first",
+            "readOnly" : "This binder is open read-only",
+            "readOnlyIncompatible" : "This binder needs migration and cannot be opened read-only",
             "uncommitted" : "There are unrecorded changes. Please record them first",
             "noUpdates" : "No changes to record",
             "mergeSourceTooOld" : "The merge source uses a data format that is too old to migrate. Please open it with an older version of the app first"

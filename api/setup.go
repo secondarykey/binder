@@ -44,6 +44,12 @@ func (a *App) Convert(dir string) (err error) {
 		}
 	}()
 
+	// 読み取り専用で開いているバインダーは移行しない（この App は「開いている」印を持っていないので、
+	// 下の AcquireOpen が通ってしまうことがある）
+	if a.current.ReadOnly() && a.current.Dir() == dir {
+		return userError(fs.ErrReadOnly)
+	}
+
 	// 移行はバインダーへ書き込むため、その間は「開いている」印を立てる（fs/openmark.go）
 	if err := fs.AcquireOpen(dir); err != nil {
 		log.PrintStackTrace(err)

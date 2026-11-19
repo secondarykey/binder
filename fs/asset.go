@@ -108,13 +108,13 @@ func (f *FileSystem) WriteAssetText(id string, data []byte) error {
 	n := assetFile(id)
 	fp, err := f.Create(n)
 	if err != nil {
-		return fmt.Errorf("Open() error\n%+v", err)
+		return xerrors.Errorf("Open() error: %w", err)
 	}
 	defer fp.Close()
 
 	_, err = fp.Write(data)
 	if err != nil {
-		return fmt.Errorf("Write() error\n%+v", err)
+		return xerrors.Errorf("Write() error: %w", err)
 	}
 	return nil
 }

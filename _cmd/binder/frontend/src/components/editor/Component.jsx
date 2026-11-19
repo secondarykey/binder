@@ -36,6 +36,7 @@ import { watchExternalEditor } from "./external-editor";
 import { editorHistory, editorHistoryURL, emitHistoryState } from "./editor-history";
 import { tsvToMarkdownTable, detectTableAt } from "./table-markdown";
 import { writeFn } from "./editor-save";
+import { useReadOnly } from "../../readOnly";
 import { useEditorCandidates } from "./useEditorCandidates";
 import { useEditorDownloads } from "./useEditorDownloads";
 import { useEditorDocument } from "./useEditorDocument";
@@ -142,6 +143,11 @@ function Editor(props) {
   // 囲み（GitHub Alerts）。プラグインが効いているときだけメニューを出す
   const [alertsAvailable, setAlertsAvailable] = useState(false);
 
+  // 読み取り専用で開いているか（_docs/readonly-open.md）。本文は読めるが、入力・挿入・保存・記録・公開をしない
+  const readOnly = useReadOnly();
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
+
   // 保存の状態（null: 開いたまま / saving: 保存待ち・保存中 / saved: 保存済み / error: 失敗）
   const [saveState, setSaveState] = useState(null);
   // 最後に頼んだ保存の番号。追い越された保存の結果で状態を書き換えないために使う
@@ -154,6 +160,8 @@ function Editor(props) {
    * writeFn はデバウンスされるため、追い越された呼び出しの Promise は完了しない。
    */
   const saveText = useCallback((m, i, txt) => {
+    // 読み取り専用では保存しない（本文も書き換えられないようにしているが、念のためここでも止める）
+    if (readOnlyRef.current) return Promise.resolve();
     const seq = ++saveSeqRef.current;
     setSaveState("saving");
     const p = writeFn(m, i, txt);
@@ -246,6 +254,7 @@ function Editor(props) {
     // 開いている途中（前の本文を出したまま読んでいる間）は入れない。
     // 入れると、前の本文に入れた内容が新しく開く側の ID で保存されてしまう（handleChangeText と同じ）
     if (loadingRef.current) return null;
+    if (readOnlyRef.current) return null;
     const textarea = document.querySelector("#editor");
     if (!textarea) return null;
     // 保存先は入れた時点のもの（次のフレームまでに別のものを開いても、そちらへは保存しない）
@@ -809,6 +818,7 @@ function Editor(props) {
    * Markdownテーブルとして挿入する
    */
   const handlePaste = (e) => {
+    if (readOnly) return;
     const plainText = e.clipboardData?.getData('text/plain');
     if (!plainText) return;
     // 開いている途中は変換して入れない（そのままの貼り付けは handleChangeText が止める）
@@ -899,7 +909,7 @@ function Editor(props) {
       return;
     }
 
-    if (ac.handleKeyDown(e)) return;
+    if (!readOnly && ac.handleKeyDown(e)) return;
 
     // Ctrl+Enter: IDステータスバーのアイテムへ遷移
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && cursorStructures.length > 0) {
@@ -909,6 +919,10 @@ function Editor(props) {
       handleIdNavigate(urlMode, s.id);
       return;
     }
+
+    // 読み取り専用では、本文を書き換えるキー操作（リストの続き・Tab・Ctrl+B など）をしない。
+    // 共有のハンドラは textarea.value を直接書き換えるので、readOnly 属性だけでは止まらない
+    if (readOnly) return;
 
     // Enter（リストの続き・インデント）/ Tab / Ctrl+B・I・K は、Lite と同じ共有のハンドラに任せる。
     // textarea.value を直接書き換えるので、変わった本文をここで state と保存へ反映する
@@ -1238,6 +1252,7 @@ function Editor(props) {
               {/** 本文（text）は渡さない。渡すと打鍵のたびに描き直される。アウトラインは開いたときに textarea から読む */}
               <MemoEditorToolbar
                 isNote={mode === Mode.note} canDownload={mode === Mode.note || mode === Mode.diagram}
+                readOnly={readOnly}
                 showLineNumbers={showLineNumbers}
                 onToggleLineNumbers={h.toggleLineNumbers}
                 wordWrap={wordWrap}
@@ -1272,7 +1287,7 @@ function Editor(props) {
                   onNavigate={handleSearchNavigate}
                   onClearHighlight={() => setActiveMatchLine(null)}
                   initialQuery={searchQuery}
-                  replaceMode={replaceMode}
+                  replaceMode={replaceMode && !readOnly}
                   onReplace={handleReplace}
                   onReplaceAll={handleReplaceAll}
                 />
@@ -1294,6 +1309,7 @@ function Editor(props) {
                 onCursorMove={handleCursorMove}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
+                readOnly={readOnly}
                 dropTarget={mode === Mode.note ? {
                   'data-file-drop-target': '',
                   'data-wails-node-id': id,
@@ -1311,13 +1327,15 @@ function Editor(props) {
                 funcHint={funcHint}
               />
 
-              {/** コミットバー */}
-              <MemoCommitBar
-                comment={comment}
-                onCommentChange={setComment}
-                updated={updated}
-                onCommit={handleCommit}
-              />
+              {/** コミットバー（読み取り専用では記録しないので出さない） */}
+              {!readOnly && (
+                <MemoCommitBar
+                  comment={comment}
+                  onCommentChange={setComment}
+                  updated={updated}
+                  onCommit={handleCommit}
+                />
+              )}
             </div>
           }
 
@@ -1337,6 +1355,7 @@ function Editor(props) {
               {/** プレビューメニュー */}
               <MemoPreviewToolbar
                 isNote={mode === Mode.note} isTemplate={mode === Mode.template} templateType={templateType}
+                readOnly={readOnly}
                 previewDiagrams={targets.diagrams} previewDiagramId={previewDiagramId}
                 onPreviewDiagramChange={h.previewDiagramChange}
                 previewOtherTemplates={targets.otherTemplates(templateType)}

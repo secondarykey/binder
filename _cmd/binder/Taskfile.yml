@@ -5,6 +5,10 @@ includes:
   windows: ./build/windows/Taskfile.yml
   darwin: ./build/darwin/Taskfile.yml
   linux: ./build/linux/Taskfile.yml
+  # 個人用のローカルデプロイ（git 管理外。無ければ何も増えない）。作り方は AGENTS.md「ローカルデプロイ」
+  local:
+    taskfile: Taskfile.local.yml
+    optional: true
 
 vars:
   APP_NAME: "binder"

@@ -30,6 +30,9 @@ type FileSystem struct {
 	base    string
 	userSig *UserInfo // バインダーごとのユーザ署名（nil の場合はアプリ設定を使用）
 
+	// readOnly は LoadReadOnly で開いたとき true（readonly.go）。fs は書き込みを断る readOnlyFS になっている
+	readOnly bool
+
 	// Status() の短TTLキャッシュ。ツリー再読込やコミット直後は複数箇所から
 	// 連続で Status() が呼ばれるため、フル git status + blob ハッシュ比較の
 	// 重複実行を防ぐ。アプリ内の変更操作は invalidateStatus() で即時無効化し、
@@ -99,8 +102,16 @@ func Load(dir string) (*FileSystem, error) {
 	b.base = dir
 
 	// gitインデックス破損（電源断・強制終了・外部ツール干渉等）を検出した場合のみ
-	// 自動復旧する。Load() 時の一回限りのチェックに限定する（詳細は index_recovery.go）
-	b.repairIndexIfCorrupt()
+	// 自動復旧する。Load() 時の一回限りのチェックに限定する（詳細は index_recovery.go）。
+	//
+	// 復旧はこのプロセスが「開いている」印（openmark.go）を持っているときだけ行う。
+	// 持たずに読むだけの呼び出し（バインダーを開かずに履歴を見る *ByPath）では、
+	// 別の Binder がインデックスを書き直している最中のファイルを読み、
+	// 古い前半と新しい後半が混ざってチェックサムが合わないことがある。
+	// それを破損と見て書き直すと、相手が使っているインデックスを本当に壊してしまう
+	if holdsOpen(dir) {
+		b.repairIndexIfCorrupt()
+	}
 
 	return &b, nil
 }

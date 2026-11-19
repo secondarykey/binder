@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -105,12 +106,14 @@ func (v *ver) isError() bool {
 
 var (
 	bump     bool
+	auto     bool
 	printVer bool
 )
 
 func main() {
 
 	flag.BoolVar(&bump, "bump", false, "対話的にバージョンを選択して更新")
+	flag.BoolVar(&auto, "auto", false, "v+現在のバージョンのタグがあれば patch を 1 つ上げる（無ければ何もしない）")
 	flag.BoolVar(&printVer, "print", false, "現在のバージョンを表示")
 	flag.Parse()
 
@@ -142,6 +145,10 @@ func run(args []string) error {
 		return err
 	}
 
+	if auto {
+		return autoBump(now)
+	}
+
 	// 引数なし・フラグなし: version ファイルのバージョンで他ファイルを同期
 	if len(args) == 0 && !bump {
 		fmt.Println("Version:", now)
@@ -161,6 +168,43 @@ func run(args []string) error {
 	if rtn.isError() {
 		return fmt.Errorf("input version error")
 	}
+
+	return setVersion(rtn)
+}
+
+// autoBump は、v+現在のバージョンのタグがある（= リリース済みなのに version を上げていない）とき、
+// patch を 1 つ上げる。タグが無ければ何もしない。
+// 判定は versionup.yml（CI）と同じ。手元で上げた版は、CI がそのままの番号でリリースする。
+func autoBump(now *ver) error {
+
+	if now.isError() {
+		return fmt.Errorf("version file error")
+	}
+
+	tag := "v" + now.String()
+	if !tagExists(tag) {
+		fmt.Printf("Version: %s (tag %s not found. no bump)\n", now, tag)
+		return nil
+	}
+
+	next := now.addPatch()
+	// 上げた先のタグもすでにあるなら、version ファイルが古いタグに追いついていない。
+	// 進めると古いコミットを指すタグと同じ版ができるので止める
+	if nextTag := "v" + next.String(); tagExists(nextTag) {
+		return fmt.Errorf("tag %s already exists. version file (%s) is behind the tags. fix it by hand", nextTag, now)
+	}
+
+	fmt.Printf("Bump: %s -> %s (tag %s exists)\n", now, next, tag)
+	return setVersion(next)
+}
+
+// tagExists は、ローカルにタグがあるかを返す
+func tagExists(tag string) bool {
+	return exec.Command("git", "rev-parse", "-q", "--verify", "refs/tags/"+tag).Run() == nil
+}
+
+// setVersion は version ファイル（Binder・Lite）を書き換え、他ファイルへ同期する
+func setVersion(rtn *ver) error {
 
 	fmt.Println("Version:", rtn)
 

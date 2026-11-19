@@ -27,6 +27,7 @@ Binderは技術文書作成向けの実験的なデスクトップMarkdownエデ
 | プラグイン（marked拡張）・ルートファイル（README等） | `_docs/skills/binder-plugin-rootfile/SKILL.md` |
 | marked バージョン移行計画（0.14.0互換基盤→0.15.0/0.16.0でバンドル更新）・プラグイン互換設計 | `_docs/marked-migration.md` |
 | mermaid 12 移行計画（0.17.0 で同梱版を更新・12 の破壊的変更・theme/look/layout の優先順位・残作業） | `_docs/mermaid12-migration.md` |
+| 読み取り専用で開く（別の Binder が開いているバインダー。開くときに書いているもの・書き込みを止める 2 段・画面で出さないもの・決めたこと・実装で変えたこと） | `_docs/readonly-open.md` |
 | 構造の改善の残り（エディタ本体の分割など。済んだもの・実機で確かめること・進め方の案） | `_docs/structure-improvements.md` |
 | フロントエンドの高速化（点滅対策・打鍵時の再描画で済んだもの・決めたこと・残りの候補・測り方） | `_docs/frontend-performance.md` |
 | macOS の署名・notarization（Gatekeeper対策・必要なSecrets・検証手順） | `_docs/macos-signing.md` |
@@ -89,6 +90,33 @@ go run ./_cmd/version.go 0.0.0
 それぞれ別モジュール（`module main` + `replace binder`）で、ルートの `go test ./...` の対象には入らない。
 ルートの go.mod で依存を上げたら、`_cmd` と `_cmd/gen` でも `go mod tidy` を掛けて揃える。
 
+### ローカルデプロイ（個人用・任意）
+
+手元でビルドしたものを普段使う場所へ入れるタスク。`_cmd/binder/Taskfile.yml` と `_cmd/lite/Taskfile.yml` は
+`Taskfile.local.yml` を `optional: true` で読み込むので、置いた人にだけ `local:` のタスクが増える（無くても他のタスクは動く）。
+`Taskfile.local.yml` は git 管理外で、使う人が `_cmd/binder/` と `_cmd/lite/` に置く（中身は同じでよい）。
+ひな形はリポジトリに置いていない。wails3 の local-deploy の標準テンプレートを元に、このリポジトリでは次のように変えている:
+
+- `build-info` は版が共通なので両アプリの `update build-assets` を CI（versionup.yml）と同じフラグで行い、nfpm.yaml の homepage を直す（Windows に sed は無いので PowerShell）
+- `version.go` と同じくリポジトリルートで動かし（`dir: ../..`）、コミットの対象は両アプリのビルド情報のファイル。アイコン（`icons.icns` / `icon.ico`）は入れない
+- `TAG_VERSION` の既定は `"false"`（タグは CI が打つ）
+
+```bash
+cd _cmd/binder   # Lite は _cmd/lite
+wails3 task local:install                       # ビルドしてコピーするだけ（版上げ・コミットはしない）
+wails3 task local:deploy                        # patch の自動 bump → ビルド情報の反映 → ビルド → ビルド情報のコミット → コピー
+wails3 task local:build-info                    # ビルド情報の反映だけ（version.go と両アプリの update build-assets。CI と同じフラグ）
+wails3 task local:install DEPLOY_DEST="D:/tmp"  # コピー先を変える（既定は %LOCALAPPDATA%/Programs/<APP_NAME>）
+```
+
+- 普段は `local:install` を使う。起動中のアプリは止めてから上書きする
+- `local:deploy` は、`v` + 今の版のタグ（= CI がリリース済み）があれば patch を上げる（`go run _cmd/version.go -auto`）。
+  版は Binder と Lite で共通なので、どちらで deploy しても両アプリのビルド情報を反映し、そのファイルだけをコミットする
+  （作業中の他の変更は巻き込まない）。タグは versionup.yml が打つので手元では打たない（`TAG_VERSION` の既定は `false`）。
+  上げた版は、`main` へマージしたときに CI がそのままの番号でリリースする。リリース後は `git fetch --tags` しておくと次の deploy で上がる
+- どちらも `wails3 build` を通すので `npm install` が走ることがある（package.json が変わったとき・初回）。**ワークツリーでは実行しない**（Junction を壊す。下の「ワークツリー開発の必須手順」）
+- 共有の Taskfile.yml から `local:` のタスクを呼ばない（置いていない環境で落ちる）
+
 ### テスト
 ```bash
 # 全Goテスト実行
@@ -104,7 +132,13 @@ cd _cmd/binder/frontend && npx vitest run
 # ファイルダイアログの結果を揃える部分（_cmd は別モジュールなのでルートの go test ./... に入らない）
 cd _cmd/binder && go test ./dialog
 cd _cmd/lite && go test ./dialog
+
+# Lite の起動中のプロセスへファイルを渡す部分（Windows の名前付きパイプ）
+cd _cmd/lite && go test ./ipc
 ```
+
+`_cmd` の各モジュールは名前が `main` なので、`package main` に置いたテストはビルドできない（`cannot import "main"`）。
+テストしたい部分は `dialog` / `ipc` のようにサブパッケージへ分ける。
 
 ファイルダイアログ（`Dialog.OpenFile()` / `SaveFile()`）の結果は、必ず `dialog.Path`（`_cmd/binder/dialog` / `_cmd/lite/dialog`。同じものが 2 つある）を通す。
 Wails v3.0.0 では Windows だけ、取り消すと `cancelled by user` のエラーが返る。`dialog.Path` はこれだけを空文字にし、ほかのエラーはそのまま返す
@@ -131,7 +165,8 @@ entity/ — バインダーの中身を表す型と定数（Note・Diagram・Ass
 
 ### 主要な型
 
-- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）
+- **`Binder`** (binder.go) — 中心的なオーケストレータ。FileSystem、DB、HTTPサーバーへの参照を保持。ライフサイクル: `Load()` → 使用 → `Close()`。開いている間は `.git/binder-open.lock` にロックを掛け、外部のツールに「開いている」ことを示す（`fs/AGENTS.md`）。`Load()` 時に整合性修復（`RunDoctor`、doctor.go: structures ↔ 実体テーブル ↔ 実体ファイルのズレを検査・修復）を自動実行する。修復した内容は `TakeDoctorReport()` で一度だけ取り出せ、フロントが開いた直後にスナックバーで知らせる（`app/doctorReport.js`）。
+  別の Binder が開いているバインダーは `LoadReadOnly()` で読み取り専用で開ける（ロックを取らず、何も書かない。`_docs/readonly-open.md`）
 - **`Repository`** (repository.go) — バインダーを開かずに（DB を読まずに）リポジトリへ直接行う操作。取り込み（`Merge` / `ApplyMergeResolution`。取り込み元のバージョン確認とその場での移行を含む）・復元・ブランチ・履歴の整理。作業ツリーや pack を丸ごと入れ替える操作は DB を開いたままできないので、`api.App` がバインダーを閉じてからこれを使い、開き直す（`api/AGENTS.md` の `runClosed`）。移行に失敗して開けないバインダーの履歴・ブランチ操作（`*ByPath`）もここ
 - **`api.App`** (api/api.go) — Wails v3 の Service として登録される構造体。初期化（`Setup()`）は Wails の Service ライフサイクルとは独立しており、`main()` から直接呼び出される。フロントエンドからのメソッド呼び出しを受け、`Binder`に委譲
 - **`Window`** (_cmd/binder/window.go) — Wails v3 の第2 Service。ウィンドウ操作（サイズ変更・移動・最小化・最大化）を担当

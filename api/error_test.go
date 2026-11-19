@@ -3,12 +3,17 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"binder"
 	"binder/db"
 	"binder/fs"
+	"binder/settings"
 	"binder/setup"
+	"binder/setup/defaults"
 )
 
 func TestUserErrorMapsSentinels(t *testing.T) {
@@ -70,6 +75,49 @@ func TestGetConfigWithoutBinder(t *testing.T) {
 	}
 	if conf != nil {
 		t.Errorf("GetConfig() without binder should return nil, got: %+v", conf)
+	}
+}
+
+// 「別の Binder で開かれている」は、どのバインダーか（バインダー一覧と同じパス）を出す
+func TestUserErrorOpenedElsewhere(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "技術メモ")
+	in := fmt.Errorf("binder.Load() error: %w", &fs.OpenedElsewhereError{Dir: dir})
+
+	// 言語ファイルが古い（新しいキーが無い）ときは、これまでの文で出す。
+	// 翻訳をまだ読んでいなければキーがそのまま返るので、その状態で確かめる
+	var me *MessageError
+	if settings.T("go.error.openedElsewhereAt") == "go.error.openedElsewhereAt" {
+		got := userError(in)
+		if !errors.As(got, &me) {
+			t.Fatal("result is not *MessageError")
+		}
+		if me.Body != settings.T("go.error.openedElsewhere") {
+			t.Errorf("翻訳なし: body = %q", me.Body)
+		}
+	}
+
+	// 翻訳があればパスを入れる（TestMain が home を一時ディレクトリへ向けている）
+	if err := defaults.InstallLanguages(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.InitI18n("ja"); err != nil {
+		t.Fatal(err)
+	}
+	got := userError(in)
+	if !errors.As(got, &me) {
+		t.Fatal("result is not *MessageError")
+	}
+	if !strings.Contains(me.Body, dir) {
+		t.Errorf("body = %q: バインダーのパスが入っていない", me.Body)
+	}
+	if !errors.Is(got, fs.ErrOpenedElsewhere) {
+		t.Error("errors.Is chain broken")
+	}
+
+	// 場所を持たない形（sentinel だけ）は、これまでの文で出す
+	old := userError(fs.ErrOpenedElsewhere)
+	if !errors.As(old, &me) || me.Body != settings.T("go.error.openedElsewhere") {
+		t.Errorf("sentinel only: %v", old)
 	}
 }
 

@@ -370,6 +370,11 @@ func (f *FileSystem) analyzeChanges(baseHash, oursHash, theirsHash plumbing.Hash
 // 戻り値の MergeLog にはマージの詳細情報が含まれる。
 func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions []FileResolution) (*MergeLog, error) {
 
+	// この先は billy を通らず os で直接書くため、読み取り専用ならここで断る
+	if err := f.checkWritable(); err != nil {
+		return nil, xerrors.Errorf("ApplyResolutions() error: %w", err)
+	}
+
 	oursCommit, err := f.repo.CommitObject(analysis.OursHash)
 	if err != nil {
 		return nil, xerrors.Errorf("CommitObject(ours) error: %w", err)
@@ -530,6 +535,9 @@ func (f *FileSystem) ApplyResolutions(analysis *MergeAnalysis, userResolutions [
 // dangling parent_id を持ち GetBinderTree で不可視（orphan）になるため、
 // それらを救済してツリーに復帰させる。変更があった場合のみファイルを書き戻す。
 func (f *FileSystem) normalizeMergedTree(wt *git.Worktree) ([]CSVRowSummary, error) {
+	if err := f.checkWritable(); err != nil {
+		return nil, xerrors.Errorf("normalizeMergedTree() error: %w", err)
+	}
 	rel := structureCSVPath()
 	fullPath := filepath.Join(f.base, filepath.FromSlash(rel))
 

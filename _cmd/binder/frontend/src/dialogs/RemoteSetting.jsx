@@ -12,6 +12,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { RemoteList, AddRemote, EditRemote, DeleteRemote } from '../../bindings/binder/api/app';
 
 import { useDialogMessage } from './components/DialogError';
+import { useReadOnly } from '../readOnly';
 import { ActionButton } from './components/ActionButton';
 import '../language';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,8 @@ function RemoteSetting({ open, onClose, onChanged = () => {} }) {
 
   const { showError } = useDialogMessage();
   const { t } = useTranslation();
+  // 読み取り専用では一覧を見るだけ（追加・編集・削除をしない）
+  const readOnly = useReadOnly();
 
   const [remoteList, setRemoteList] = useState([]);
 
@@ -109,9 +112,11 @@ function RemoteSetting({ open, onClose, onChanged = () => {} }) {
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--text-secondary)' }}>
           <Box component="span" sx={{ flex: 1 }}>{t('binder.settingRemote')}</Box>
-          <IconButton size="small" onClick={openAddDialog} aria-label="add">
-            <AddIcon fontSize="small" />
-          </IconButton>
+          {!readOnly && (
+            <IconButton size="small" onClick={openAddDialog} aria-label="add">
+              <AddIcon fontSize="small" />
+            </IconButton>
+          )}
         </DialogTitle>
         <DialogContent>
           <Typography variant="caption" sx={{ color: 'var(--text-muted)', display: 'block', mb: 1 }}>
@@ -121,7 +126,7 @@ function RemoteSetting({ open, onClose, onChanged = () => {} }) {
             {remoteList.map((r) => (
               <ListItemButton
                 key={r.name}
-                onClick={() => openEditDialog(r)}
+                onClick={() => { if (!readOnly) openEditDialog(r); }}
                 sx={{ py: 0.5, '&:hover': { backgroundColor: 'var(--bg-elevated)' } }}
               >
                 <ListItemText
@@ -130,15 +135,17 @@ function RemoteSetting({ open, onClose, onChanged = () => {} }) {
                   primaryTypographyProps={{ fontSize: '13px' }}
                   secondaryTypographyProps={{ fontSize: '11px', color: 'var(--text-secondary)' }}
                 />
-                <ListItemIcon sx={{ minWidth: 'auto' }}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
-                    sx={{ '& svg': { fill: 'var(--accent-red)' } }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </ListItemIcon>
+                {!readOnly && (
+                  <ListItemIcon sx={{ minWidth: 'auto' }}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); openDeleteDialog(r.name); }}
+                      sx={{ '& svg': { fill: 'var(--accent-red)' } }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </ListItemIcon>
+                )}
               </ListItemButton>
             ))}
           </List>

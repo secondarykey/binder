@@ -719,6 +719,13 @@
         "row" : "情報が欠けていたため補いました",
         "reparented" : "親が見つからないため、index の下へ移しました"
     },
+    "readOnly" : {
+        "open" : "読み取り専用で開く",
+        "tooltip" : "読み取り専用（押すと読み直します）",
+        "reloaded" : "読み直しました",
+        "unlocked" : "ロックが解除されています。開き直しますか？",
+        "reopen" : "開き直す"
+    },
     "go" : {
         "window" : {
             "main" : "Binder",
@@ -765,6 +772,9 @@
             "duplicateName" : "その名前は既に使用されています",
             "notBinder" : "このフォルダはバインダーではありません",
             "openedElsewhere" : "このバインダーは別の Binder で開かれています。そちらを閉じてから開いてください",
+            "openedElsewhereAt" : "バインダー「{{path}}」は別の Binder で開かれています。そちらを閉じてから開いてください",
+            "readOnly" : "読み取り専用で開いています",
+            "readOnlyIncompatible" : "このバインダーは移行が必要なため、読み取り専用では開けません",
             "uncommitted" : "未記録の変更があります。先に記録してください",
             "noUpdates" : "記録する変更がありません",
             "mergeSourceTooOld" : "マージ元のデータ形式が古すぎるため移行できません。以前のバージョンのアプリで開いて移行してください"
