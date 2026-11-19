@@ -96,8 +96,9 @@ func main() {
 		for _, f := range files {
 			wailsApp.Event.Emit("lite:file:dropped", f)
 		}
+		// Focus は最小化していれば元に戻してから前面に出す。Restore は最大化も解除してしまうので呼ばない。
+		// 前面に出せるのは、送ってきた Lite が許可を渡したとき（ipc.SendToExisting）
 		if win.window != nil {
-			win.window.Restore()
 			win.window.Focus()
 		}
 	})

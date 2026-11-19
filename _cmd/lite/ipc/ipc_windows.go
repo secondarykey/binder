@@ -14,7 +14,10 @@ import (
 
 	"binder/log"
 
+	"golang.org/x/xerrors"
+
 	"github.com/Microsoft/go-winio"
+	"golang.org/x/sys/windows"
 )
 
 const pipeName = `\\.\pipe\binder-lite`
@@ -31,10 +34,43 @@ func SendToExisting(files []string) bool {
 		return false
 	}
 	defer conn.Close()
+	allowForeground(conn)
 	for _, f := range files {
 		conn.Write([]byte(f + "\n"))
 	}
 	return true
+}
+
+var procAllowSetForegroundWindow = windows.NewLazySystemDLL("user32.dll").NewProc("AllowSetForegroundWindow")
+
+// allowForeground は、パイプの持ち主の Lite がウィンドウを前面に出せるようにする。
+//
+// Windows は、裏で動いているプロセスが自分で SetForegroundWindow しても前面に出さない
+// （タスクバーが点滅するだけ）。エクスプローラーから起動されたこちらのプロセスは前面に出る権利を
+// 持っているので、送る前に持ち主へ AllowSetForegroundWindow で譲る。
+// 譲れなくてもファイルは開けるので、失敗はログに残すだけにする。
+func allowForeground(conn net.Conn) {
+	pid, err := pipeServerPID(conn)
+	if err != nil {
+		log.Info("パイプの持ち主の Lite が分からないので、前面に出す許可を渡しません", "err", err)
+		return
+	}
+	if r, _, err := procAllowSetForegroundWindow.Call(uintptr(pid)); r == 0 {
+		log.Info("前面に出す許可を渡せませんでした", "pid", pid, "err", err)
+	}
+}
+
+// pipeServerPID は、conn の向こうでパイプを持っているプロセスの ID を返す。
+func pipeServerPID(conn net.Conn) (uint32, error) {
+	fd, ok := conn.(interface{ Fd() uintptr })
+	if !ok {
+		return 0, xerrors.Errorf("パイプのハンドルを取れません: %T", conn)
+	}
+	var pid uint32
+	if err := windows.GetNamedPipeServerProcessId(windows.Handle(fd.Fd()), &pid); err != nil {
+		return 0, xerrors.Errorf("GetNamedPipeServerProcessId() error: %w", err)
+	}
+	return pid, nil
 }
 
 // ListenForFiles は名前付きパイプサーバーを起動し、他プロセスからのファイル受信を待機する。

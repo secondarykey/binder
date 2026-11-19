@@ -94,3 +94,33 @@ func TestWaitListenPipeNoOwner(t *testing.T) {
 	}
 	l.Close()
 }
+
+// 前面に出す許可を渡す相手（パイプの持ち主）のプロセス ID が取れる。
+func TestPipeServerPID(t *testing.T) {
+	name := testPipeName()
+	l, err := winio.ListenPipe(name, nil)
+	if err != nil {
+		t.Fatalf("ListenPipe() error: %v", err)
+	}
+	defer l.Close()
+	go func() {
+		c, err := l.Accept()
+		if err == nil {
+			c.Close()
+		}
+	}()
+
+	conn, err := winio.DialPipe(name, nil)
+	if err != nil {
+		t.Fatalf("DialPipe() error: %v", err)
+	}
+	defer conn.Close()
+
+	pid, err := pipeServerPID(conn)
+	if err != nil {
+		t.Fatalf("pipeServerPID() error: %v", err)
+	}
+	if int(pid) != os.Getpid() {
+		t.Errorf("pipeServerPID() = %d, want %d", pid, os.Getpid())
+	}
+}

@@ -42,7 +42,10 @@ setup/defaults/, settings/（Binder と共有）
 - **`ipc`** (_cmd/lite/ipc/) — 起動中の Lite へ開くファイルを渡す（Windows のみ。名前付きパイプ `\\.\pipe\binder-lite`）。
   ファイルを指定して起動すると、パイプを持っている Lite に送って終わる（`--new-window` のときは送らない）。
   2 つ目以降の Lite はパイプを作れない（go-winio が `FILE_CREATE` で作るので `Access is denied`）ため、
-  2 秒ごとに作り直しを試し、持ち主の Lite が終わったら引き継ぐ。待つこと・引き継いだことは INFO でログに出す
+  2 秒ごとに作り直しを試し、持ち主の Lite が終わったら引き継ぐ。待つこと・引き継いだことは INFO でログに出す。
+  受け取った Lite はウィンドウを前面に出す（`Focus()`。`Restore()` は最大化を解除するので呼ばない）。
+  Windows は裏のプロセスが自分で前面に出ることを許さないため、送る側が送る前に
+  パイプの持ち主へ `AllowSetForegroundWindow` で前面に出る権利を渡している（`allowForeground`）
 - Binder の `fs/`, `db/`, `api/` には一切依存しない
 - Lite は `binder/api` を import できないため `MarshalError` を登録していない（`MessageError` を生成しないので実害なし。共有が必要になったら lite が import できるパッケージへ切り出す）
 
